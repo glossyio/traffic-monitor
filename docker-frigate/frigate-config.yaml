@@ -1,0 +1,64 @@
+mqtt:
+  enabled: False
+
+detectors: # <---- add detectors
+  coral:
+    type: edgetpu
+    device: usb
+
+ffmpeg:
+  hwaccel_args: preset-rpi-64-h264
+
+cameras:
+  picam_h264: # <------ Name the camera
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://10.10.10.235:8554/picam_h264
+          roles:
+            - detect
+    detect:
+      enabled: True # <---- disable detection until you have a working camera feed
+      width: 1536 # <---- update for your camera's resolution
+      height: 864 # <---- update for your camera's resolution
+      # Optional: desired fps for your camera for the input with the detect role (default: shown below)
+      # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
+      fps: 5
+      # Optional: Number of frames without a detection before Frigate considers an object to be gone. (default: 5x the frame rate)
+      max_disappeared: 25
+      # Optional: Configuration for stationary object tracking
+      stationary:
+        # Optional: Frequency for confirming stationary objects (default: shown below)
+        # When set to 0, object detection will not confirm stationary objects until movement is detected.
+        # If set to 10, object detection will run to confirm the object still exists on every 10th frame.
+        interval: 10
+        # Optional: Number of frames without a position change for an object to be considered stationary (default: 10x the frame rate or 10s)
+        threshold: 50
+
+objects:
+  track:
+    - bicycle
+    - person
+    - car
+    - motorcycle
+    - dog
+
+record:
+  enabled: True
+  retain:
+    days: 0
+  events:
+      retain:
+        default: 3
+        mode: active_objects
+
+snapshots:
+  enabled: True
+  clean_copy: True
+  bounding_box: True
+  crop: True
+  retain:
+    default: 60
+
+
+

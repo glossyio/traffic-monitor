@@ -1,4 +1,5 @@
 ## Scripts to run for buster-p01
+#assume lastest Raspberry PI OS Debian 12 (bookworm) and recommended software (full install)
 #update system
 sudo apt-get update
 sudo apt-get upgrade -y
@@ -26,7 +27,7 @@ sudo apt-get upgrade -y
 
 
 
-#alternative intall, for dev
+#alternative docker intall, for dev
 # here https://raspberrytips.com/docker-on-raspberry-pi/
 # or #https://docs.docker.com/engine/install/raspberry-pi-os/#install-using-the-convenience-script
 curl -sSL https://get.docker.com | sh
@@ -41,10 +42,11 @@ sudo usermod -aG docker $USER
 #create directories and config.yml
 mkdir ~/code/frigate  #for config and files
 mkdir ~/code/frigate/storage  #for media
-#download Dockerfile for Frigate
-touch ~/code/frigate/config.yml
-echo \
-    "frigate config > ~/code/frigate/config.yml"
+
+##TODO download Dockerfile for Frigate from repo
+cp ../docker-frigate/docker-compose-frigate.yaml ~/code/frigate/config.yml
+
+docker compose up -n
 
 ##-- /frigate
 
@@ -104,3 +106,14 @@ sudo apt-get update
 sudo apt-get install libedgetpu1-std
 
 ##-- /coral tpu drivers
+
+
+##-- docker run node-red container
+# this is OK for development, for Prod, may want Dockerfile to copy local resources only
+#  this would avoid the need for /data volume to be mounted and keep flow/settings in a git repo
+mkdir -p ~/code/nodered/data
+
+docker run -d --restart on-failure:3 -p 1880:1880 -v ~/code/nodered/data:/data --name nodered nodered/node-red
+
+# access via http://[IP]:1880
+##-- /node-red
