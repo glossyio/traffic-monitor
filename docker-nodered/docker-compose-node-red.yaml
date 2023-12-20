@@ -1,0 +1,29 @@
+################################################################################
+# Node-RED Stack or Compose
+################################################################################
+# docker stack deploy node-red --compose-file docker-compose-node-red.yml
+# docker-compose -f docker-compose-node-red.yml -p myNoderedProject up
+################################################################################
+version: "3.9"
+
+services:
+  node-red:
+    image: nodered/node-red:latest
+    ports:
+      - "1880:1880"
+      - "1883:1883"
+    networks:
+      - node-red-net
+    volumes:
+      - ~/code/nodered/data:/data
+    devices:
+      - "/dev/ttyACM0"
+    group-add:
+      - dialout
+
+volumes:
+  ~/code/nodered/data:
+
+networks:
+  node-red-net:
+

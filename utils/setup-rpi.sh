@@ -61,7 +61,6 @@ mkdir ~/code/go2rtc
 
 
 #install go2rtc binary
-
 sudo mkdir /var/lib/go2rtc
 
 #sudo curl -O -L https://github.com/AlexxIT/go2rtc/releases/download/v1.8.2/go2rtc_linux_arm64
@@ -113,7 +112,16 @@ sudo apt-get install libedgetpu1-std
 #  this would avoid the need for /data volume to be mounted and keep flow/settings in a git repo
 mkdir -p ~/code/nodered/data
 
-docker run -d --restart on-failure:3 -p 1880:1880 -v ~/code/nodered/data:/data --name nodered nodered/node-red
+# docker run -d \
+#   --restart on-failure:3 \
+#   -p 1880:1880 \
+#   -p 1883:1883 \
+#   -v ~/code/nodered/data:/data \
+#   --device=/dev/ttyACM0 \
+#   -u node-red:dialout \
+#   --group-add dialout \
+#   --name nodered \
+#   nodered/node-red
 
 # access via http://[IP]:1880
 ##-- /node-red

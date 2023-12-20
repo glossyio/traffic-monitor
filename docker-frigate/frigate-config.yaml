@@ -1,6 +1,12 @@
 mqtt:
   enabled: False
-
+  # Required: host name
+  host: 10.10.10.235
+  # Optional: port (default: shown below)
+  port: 1883
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+  
 detectors: # <---- add detectors
   coral:
     type: edgetpu
@@ -21,6 +27,31 @@ cameras:
       enabled: True # <---- disable detection until you have a working camera feed
       width: 1536 # <---- update for your camera's resolution
       height: 864 # <---- update for your camera's resolution
+      # Optional: desired fps for your camera for the input with the detect role (default: shown below)
+      # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
+      fps: 5
+      # Optional: Number of frames without a detection before Frigate considers an object to be gone. (default: 5x the frame rate)
+      max_disappeared: 25
+      # Optional: Configuration for stationary object tracking
+      stationary:
+        # Optional: Frequency for confirming stationary objects (default: shown below)
+        # When set to 0, object detection will not confirm stationary objects until movement is detected.
+        # If set to 10, object detection will run to confirm the object still exists on every 10th frame.
+        interval: 10
+        # Optional: Number of frames without a position change for an object to be considered stationary (default: 10x the frame rate or 10s)
+        threshold: 50
+
+  unifi-cam-pi-replica:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsps://10.10.10.1:7441/ec9Y7Ls0rz6yLaIg?enableSrtp
+          roles:
+            - detect
+    detect:
+      enabled: True # <---- disable detection until you have a working camera feed
+      width: 1280
+      height: 720
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
@@ -59,6 +90,3 @@ snapshots:
   crop: True
   retain:
     default: 60
-
-
-
