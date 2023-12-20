@@ -3,6 +3,8 @@
 ################################################################################
 # docker stack deploy node-red --compose-file docker-compose-node-red.yml
 # docker-compose -f docker-compose-node-red.yml -p myNoderedProject up
+# for OPS-243 device, see
+#   https://nodered.org/docs/getting-started/docker#serial-port---dialout---adding-groups 
 ################################################################################
 version: "3.9"
 
