@@ -6,7 +6,7 @@ mqtt:
   port: 1883
   user: "{FRIGATE_MQTT_USER}"
   password: "{FRIGATE_MQTT_PASSWORD}"
-  
+
 detectors: # <---- add detectors
   coral:
     type: edgetpu

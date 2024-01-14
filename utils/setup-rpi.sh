@@ -1,5 +1,6 @@
 ## Scripts to run for buster-p01
 #assume lastest Raspberry PI OS Debian 12 (bookworm) and recommended software (full install)
+# full install required for camera (lite version does not have H.264 codec for libcamera)
 #update system
 sudo apt-get update
 sudo apt-get upgrade -y
@@ -40,13 +41,14 @@ sudo usermod -aG docker $USER
 
 ## Add Frigate Dockerfile
 #create directories and config.yml
-mkdir ~/code/frigate  #for config and files
-mkdir ~/code/frigate/storage  #for media
+mkdir -p ~/code/frigate  #for config and files
+mkdir -p ~/code/frigate/storage  #for media
 
-##TODO download Dockerfile for Frigate from repo
-cp ../docker-frigate/docker-compose-frigate.yaml ~/code/frigate/config.yml
+# copy repo files to local folders
+cp ../docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
+cp ../docker-frigate/frigate-config.yaml ~/code/frigate/config.yml
 
-docker compose up -n
+#docker compose up -n
 
 ##-- /frigate
 
@@ -54,19 +56,19 @@ docker compose up -n
 
 ## Add go2rtc Dockerfile -- Don't use Dockerfile, will have to pass /dev/; instead, install locally
 ## background:  https://community.home-assistant.io/t/raspberry-pi-camera-as-dumb-h264-stream-for-frigate/565784/4
+## alternatively use docker for libcamera, pass for now: https://github.com/raspberrypi/rpicam-apps/issues/270#issuecomment-1059372626
 #create directories
-mkdir ~/code/go2rtc
+mkdir -p ~/code/go2rtc
 
 #for go2rtc config, https://github.com/AlexxIT/go2rtc#source-exec
-
 
 #install go2rtc binary
 sudo mkdir /var/lib/go2rtc
 
 #sudo curl -O -L https://github.com/AlexxIT/go2rtc/releases/download/v1.8.2/go2rtc_linux_arm64
-sudo curl -L https://github.com/AlexxIT/go2rtc/releases/download/v1.8.2/go2rtc_linux_arm64 -o /var/lib/go2rtc/go2rtc
-sudo chmod 755 /var/lib/go2rtc/go2rtc
-sudo chmod +x /var/lib/go2rtc/go2rtc
+sudo curl -L https://github.com/AlexxIT/go2rtc/releases/download/v1.8.5/go2rtc_linux_arm64 -o /var/lib/go2rtc/go2rtc_linux_arm64_185
+sudo chmod 755 /var/lib/go2rtc/go2rtc_linux_arm64_185
+sudo chmod +x /var/lib/go2rtc/go2rtc_linux_arm64_185
 
 echo \
   "# /etc/systemd/system/go2rtc_server.service
@@ -79,7 +81,7 @@ After=network.target rc-local.service
 [Service]
 Restart=always
 WorkingDirectory=/var/lib/go2rtc/
-ExecStart=/bin/bash /var/lib/go2rtc/go2rtc
+ExecStart=/var/lib/go2rtc/go2rtc_linux_arm64_185
 
 [Install]
 WantedBy=multi-user.target" | \
@@ -92,6 +94,10 @@ streams:
   picam_h264: exec:libcamera-vid --width 2304 --height 1296 --framerate 30 -t 0 --inline -o -" | \
   sudo tee /var/lib/go2rtc/go2rtc.yaml > /dev/null
 sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
+
+
+sudo systemctl start go2rtc_server
+sudo systemctl enable go2rtc_server
 
 ##-- /go2rtc
 
@@ -123,5 +129,16 @@ mkdir -p ~/code/nodered/data
 #   --name nodered \
 #   nodered/node-red
 
+cp ../docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
+
 # access via http://[IP]:1880
 ##-- /node-red
+
+
+##-- docker compose build and start containers
+
+docker compose \
+   -f ~/code/frigate/docker-compose-frigate.yml \
+   -f ~/code/nodered/docker-compose-node-red.yml \
+   up --detach
+

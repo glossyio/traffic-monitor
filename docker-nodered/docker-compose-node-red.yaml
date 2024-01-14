@@ -20,11 +20,8 @@ services:
       - ~/code/nodered/data:/data
     devices:
       - "/dev/ttyACM0"
-    group-add:
+    group_add:
       - dialout
-
-volumes:
-  ~/code/nodered/data:
 
 networks:
   node-red-net:
