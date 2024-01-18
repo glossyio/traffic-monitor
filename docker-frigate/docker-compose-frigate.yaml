@@ -9,7 +9,7 @@ services:
     privileged: true # this may not be necessary for all setups
     restart: unless-stopped
     image: ghcr.io/blakeblackshear/frigate:stable
-    shm_size: "96mb" # update for your cameras based on calculation above
+    shm_size: "128mb" # update for your cameras based on calculation https://docs.frigate.video/frigate/installation#calculating-required-shm-size
     devices:
       - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, needs to be modified for other versions
     volumes:
