@@ -91,10 +91,12 @@ sudo chmod 644 /etc/systemd/system/go2rtc_server.service
 echo \
 "# /var/lib/go2rtc/go2rtc.yaml
 streams:
-  picam_h264: exec:libcamera-vid --width 2304 --height 1296 --framerate 30 -t 0 --inline -o -" | \
+  picam_h264: exec:rpicam-vid --camera 0 --mode 2304:1296 --framerate 15 --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -" | \
   sudo tee /var/lib/go2rtc/go2rtc.yaml > /dev/null
 sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 
+#rpicam-vid settings
+# rpicam-vid --list-cameras for modes available
 
 sudo systemctl start go2rtc_server
 sudo systemctl enable go2rtc_server
