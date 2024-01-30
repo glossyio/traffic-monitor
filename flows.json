@@ -1,1 +1,302 @@
-[]
+[
+    {
+        "id": "94d07e407c25f282",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "88db96152b3568aa",
+        "type": "serial-port",
+        "name": "/dev/ttyACM0 (OPS24-C)",
+        "serialport": "/dev/ttyACM0",
+        "serialbaud": "19200",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": "10000"
+    },
+    {
+        "id": "503aeb95652e2ae8",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "send Query Sensor Part Number",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "?P",
+        "payloadType": "str",
+        "x": 210,
+        "y": 200,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "e43506628b4a1cdb",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "AN-10 API Interface",
+        "info": "https://omnipresense.com/wp-content/uploads/2023/11/AN-010-Z_API_Interface.pdf",
+        "x": 170,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "490d12fc644f0914",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "init: switch to JSON, MPH, no factions",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "\"ONOJF0USS2A!?P@O\" & \"@|60\\n\" & \"A!\"",
+        "payloadType": "str",
+        "x": 230,
+        "y": 120,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "4907ca649aa63c1c",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "send Query Module Info",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "??",
+        "payloadType": "str",
+        "x": 180,
+        "y": 280,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "bb2b78040385d37e",
+        "type": "json",
+        "z": "94d07e407c25f282",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 170,
+        "y": 580,
+        "wires": [
+            [
+                "36b68e0861cc5fc4",
+                "b7a14838fe3c713e"
+            ]
+        ]
+    },
+    {
+        "id": "36b68e0861cc5fc4",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "16dcdaf44cc5b739",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "send Query Sampling rate",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "s?",
+        "payloadType": "str",
+        "x": 190,
+        "y": 340,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "87a395a01109d939",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "init: change range to not report",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "r>100",
+        "payloadType": "str",
+        "x": 210,
+        "y": 400,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "b7a14838fe3c713e",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "name": "if message contains TimedSpeedCounts",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "TimedSpeedCounts",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 480,
+        "y": 640,
+        "wires": [
+            [
+                "94ebe85f6ac396fe"
+            ]
+        ]
+    },
+    {
+        "id": "94ebe85f6ac396fe",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "name": "if TimedSpeedCounts contains inbound",
+        "property": "payload.TimedSpeedCounts.direction",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "inbound",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 860,
+        "y": 640,
+        "wires": [
+            [
+                "47f7f4a43b071ab6"
+            ]
+        ]
+    },
+    {
+        "id": "47f7f4a43b071ab6",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "name": "change TimedSpeedCounts.count to number",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$number(payload.TimedSpeedCounts.count)\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 870,
+        "y": 700,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "affe7cfb9861e62d",
+        "type": "serial in",
+        "z": "94d07e407c25f282",
+        "name": "receive ttyACM0",
+        "serial": "88db96152b3568aa",
+        "x": 140,
+        "y": 500,
+        "wires": [
+            [
+                "bb2b78040385d37e"
+            ]
+        ]
+    },
+    {
+        "id": "8e8ede8ca221552b",
+        "type": "serial out",
+        "z": "94d07e407c25f282",
+        "name": "send to OPS24-C",
+        "serial": "88db96152b3568aa",
+        "x": 610,
+        "y": 200,
+        "wires": []
+    }
+]
