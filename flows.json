@@ -2,7 +2,15 @@
     {
         "id": "94d07e407c25f282",
         "type": "tab",
-        "label": "Flow 1",
+        "label": "flow-radar-01",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "49e416bfab1d4055",
+        "type": "tab",
+        "label": "Frigate MQTT",
         "disabled": false,
         "info": "",
         "env": []
@@ -26,6 +34,37 @@
         "out": "char",
         "addchar": "",
         "responsetimeout": "10000"
+    },
+    {
+        "id": "a5d65dd0e3566daa",
+        "type": "mqtt-broker",
+        "name": "mqtt-broker-frigate",
+        "broker": "10.10.10.235",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
     },
     {
         "id": "503aeb95652e2ae8",
@@ -133,16 +172,16 @@
         "id": "36b68e0861cc5fc4",
         "type": "debug",
         "z": "94d07e407c25f282",
-        "name": "debug 1",
+        "name": "debug-radar-all-output",
         "active": true,
         "tosidebar": true,
-        "console": true,
+        "console": false,
         "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 390,
+        "x": 420,
         "y": 580,
         "wires": []
     },
@@ -221,7 +260,8 @@
         "y": 640,
         "wires": [
             [
-                "94ebe85f6ac396fe"
+                "94ebe85f6ac396fe",
+                "86c37839a1fac0d2"
             ]
         ]
     },
@@ -297,6 +337,122 @@
         "serial": "88db96152b3568aa",
         "x": 610,
         "y": 200,
+        "wires": []
+    },
+    {
+        "id": "86c37839a1fac0d2",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug-radar-TimedSpeedCounts",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "1720d60a87cfb2d7",
+        "type": "aedes broker",
+        "z": "49e416bfab1d4055",
+        "name": "frigate-local",
+        "mqtt_port": "1883",
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "certname": "",
+        "keyname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 190,
+        "y": 160,
+        "wires": [
+            [
+                "6c2d22f0a8cb1fc1"
+            ],
+            [
+                "fd148029fe6bee47"
+            ]
+        ]
+    },
+    {
+        "id": "6c2d22f0a8cb1fc1",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug: Broker status events",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "fd148029fe6bee47",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug: broker publish events",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "038275ccb8bafbb0",
+        "type": "mqtt in",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "topic": "frigate/events",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 210,
+        "y": 300,
+        "wires": [
+            [
+                "4a1c5b87abde2112"
+            ]
+        ]
+    },
+    {
+        "id": "4a1c5b87abde2112",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug: published frigate messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 280,
         "wires": []
     }
 ]
