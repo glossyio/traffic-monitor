@@ -39,7 +39,7 @@
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
-        "broker": "10.10.10.235",
+        "broker": "10.10.10.224",
         "port": "1883",
         "clientid": "",
         "autoConnect": true,
