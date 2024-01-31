@@ -611,6 +611,26 @@
         "wires": []
     },
     {
+        "id": "b8f09eb5bad1c457",
+        "type": "comment",
+        "z": "49e416bfab1d4055",
+        "name": "collect TimedSpeedCounts from radar for event",
+        "info": "",
+        "x": 580,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "df15577b1109b274",
+        "type": "comment",
+        "z": "49e416bfab1d4055",
+        "name": "send back Frigate sublabel with speed(s) back for event",
+        "info": "",
+        "x": 600,
+        "y": 540,
+        "wires": []
+    },
+    {
         "id": "8cee82669b6b8512",
         "type": "comment",
         "z": "90d5c925f9fbf9fd",
@@ -1115,6 +1135,18 @@
         "type": "inject",
         "z": "b7a05959.ff8688",
         "name": "Send \"marker\"",
+        "props": [
+            {
+                "p": "payload",
+                "v": "doesnt matter",
+                "vt": "str"
+            },
+            {
+                "p": "topic",
+                "v": "",
+                "vt": "str"
+            }
+        ],
         "repeat": "60",
         "crontab": "",
         "once": true,
@@ -1245,9 +1277,7 @@
         "x": 1080,
         "y": 300,
         "wires": [
-            [
-                "456ccd66.575a24"
-            ]
+            []
         ]
     },
     {
@@ -1279,9 +1309,7 @@
         "x": 1090,
         "y": 336,
         "wires": [
-            [
-                "456ccd66.575a24"
-            ]
+            []
         ]
     },
     {
@@ -1434,9 +1462,7 @@
         "x": 990,
         "y": 100,
         "wires": [
-            [
-                "456ccd66.575a24"
-            ]
+            []
         ]
     },
     {
@@ -1500,34 +1526,6 @@
                 "c1c79f1a.ceba7"
             ]
         ]
-    },
-    {
-        "id": "456ccd66.575a24",
-        "type": "ui_worldmap",
-        "z": "b7a05959.ff8688",
-        "group": "2ff065ae.0ccc6a",
-        "order": 1,
-        "width": "6",
-        "height": "4",
-        "name": "",
-        "lat": "37.373194",
-        "lon": "-121.909639",
-        "zoom": "15",
-        "layer": "OSM",
-        "cluster": "",
-        "maxage": "",
-        "usermenu": "hide",
-        "layers": "hide",
-        "panit": "false",
-        "panlock": "false",
-        "zoomlock": "false",
-        "hiderightclick": "false",
-        "coords": "none",
-        "showgrid": "false",
-        "path": "/worldmap",
-        "x": 1200,
-        "y": 180,
-        "wires": []
     },
     {
         "id": "ea3add2b.7d041",
@@ -1614,5 +1612,37 @@
                 "381a8156.e7914e"
             ]
         ]
+    },
+    {
+        "id": "bd62bba04f30a10a",
+        "type": "worldmap",
+        "z": "b7a05959.ff8688",
+        "name": "",
+        "lat": "",
+        "lon": "",
+        "zoom": "",
+        "layer": "",
+        "cluster": "",
+        "maxage": "",
+        "usermenu": "show",
+        "layers": "show",
+        "panit": "false",
+        "panlock": "false",
+        "zoomlock": "false",
+        "hiderightclick": "false",
+        "coords": "false",
+        "showgrid": "false",
+        "showruler": "false",
+        "allowFileDrop": "false",
+        "path": "/worldmap",
+        "overlist": "DR,CO,RA,DN",
+        "maplist": "OSMG,OSMC,EsriC,EsriS,UKOS",
+        "mapname": "",
+        "mapurl": "",
+        "mapopt": "",
+        "mapwms": false,
+        "x": 1240,
+        "y": 160,
+        "wires": []
     }
 ]
