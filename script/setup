@@ -9,9 +9,30 @@ cd "$(dirname "$0")/.."
 
 script/bootstrap
 
+echo "==> Setting up Dockerfiles…"
+##-- install Frigate
+## Add Frigate Dockerfile
+#create directories and config.yml
+mkdir -p ~/code/frigate  #for config and files
+mkdir -p ~/code/frigate/storage  #for media
+
+# copy repo files to local folders
+cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
+cp docker-frigate/frigate-config.yaml ~/code/frigate/config.yml
+##-- /frigate
+
+
+##-- Add node-red Dockerfile
+mkdir -p ~/code/nodered/data
+
+# copy repo files to local folders
+cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
+cp -rp node-red-project ~/code/nodered/data/node-red-project
+##-- /node-red
+
 echo "==> Setting up go2rtc systemd service…"
 
-##-- install go2rtc to use the Rpi camera
+##-- set up go2rtc to use the Rpi camera
 echo \
   "# /etc/systemd/system/go2rtc_server.service
 # to run: sudo systemctl stop/start/restart/enable/disable go2rtc_server
@@ -23,7 +44,7 @@ After=network.target rc-local.service
 [Service]
 Restart=always
 WorkingDirectory=/var/lib/go2rtc/
-ExecStart=/var/lib/go2rtc/go2rtc_linux_arm64_185
+ExecStart=/var/lib/go2rtc/go2rtc_linux_arm64
 
 [Install]
 WantedBy=multi-user.target" | \
