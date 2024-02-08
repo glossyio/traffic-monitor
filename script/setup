@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# script/setup: Set up application for the first time after cloning, or set it
+#               back to the initial first unused state.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+script/bootstrap
+
+echo "==> Setting up go2rtc systemd service…"
+
+##-- install go2rtc to use the Rpi camera
+echo \
+  "# /etc/systemd/system/go2rtc_server.service
+# to run: sudo systemctl stop/start/restart/enable/disable go2rtc_server
+
+[Unit]
+Description=go2rtc
+After=network.target rc-local.service
+
+[Service]
+Restart=always
+WorkingDirectory=/var/lib/go2rtc/
+ExecStart=/var/lib/go2rtc/go2rtc_linux_arm64_185
+
+[Install]
+WantedBy=multi-user.target" | \
+  sudo tee /etc/systemd/system/go2rtc_server.service > /dev/null
+sudo chmod 644 /etc/systemd/system/go2rtc_server.service
+
+echo \
+"# /var/lib/go2rtc/go2rtc.yaml
+streams:
+  picam_h264: exec:rpicam-vid --camera 0 --mode 2304:1296 --framerate 15 --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -" | \
+  sudo tee /var/lib/go2rtc/go2rtc.yaml > /dev/null
+sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
+
+#rpicam-vid settings
+# rpicam-vid --list-cameras for modes available
+
