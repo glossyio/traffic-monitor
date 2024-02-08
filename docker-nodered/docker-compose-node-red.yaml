@@ -1,0 +1,28 @@
+################################################################################
+# Node-RED Stack or Compose
+################################################################################
+# docker stack deploy node-red --compose-file docker-compose-node-red.yml
+# docker-compose -f docker-compose-node-red.yml -p myNoderedProject up
+# for OPS-243 device, see
+#   https://nodered.org/docs/getting-started/docker#serial-port---dialout---adding-groups 
+################################################################################
+version: "3.9"
+
+services:
+  node-red:
+    image: nodered/node-red:latest
+    ports:
+      - "1880:1880"
+      - "1883:1883"
+    networks:
+      - node-red-net
+    volumes:
+      - ~/code/nodered/data:/data
+    devices:
+      - "/dev/ttyACM0"
+    group_add:
+      - dialout
+
+networks:
+  node-red-net:
+
