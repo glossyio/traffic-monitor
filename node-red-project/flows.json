@@ -114,7 +114,8 @@
                 "default": "#0094CE",
                 "baseColor": "#0094CE",
                 "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
+                "edited": true,
+                "reset": false
             },
             "darkTheme": {
                 "default": "#097479",
@@ -222,31 +223,6 @@
         "responsetimeout": "10000"
     },
     {
-        "id": "503aeb95652e2ae8",
-        "type": "inject",
-        "z": "94d07e407c25f282",
-        "name": "send Query Sensor Part Number",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "?P",
-        "payloadType": "str",
-        "x": 210,
-        "y": 200,
-        "wires": [
-            [
-                "8e8ede8ca221552b"
-            ]
-        ]
-    },
-    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -271,7 +247,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "\"ONOJF0USS2A!?P@O\" & \"@|60\\n\" & \"A!\"",
+        "payload": "ONOJF0USS2K+A!",
         "payloadType": "str",
         "x": 230,
         "y": 120,
@@ -279,13 +255,14 @@
             [
                 "8e8ede8ca221552b"
             ]
-        ]
+        ],
+        "info": "\"ON\" & \"OJ\" & \"F0\" & \"US\" & \"S2\" & \"K+\" & \"A!\"\n\n**ON** Detected Object Write\nSensor determines if an object is present by\nlooking for 2 consecutive speed reports. If\nmet, the max speed detected is reported. If a\nfaster speed is detected, additional speeds are\nreported. This lowers the number of speed\nreports for a given detected object. Use On to\nturn the mode off.\n\n**OJ** JSON Mode Write\nTurns on output to format data in JSON\nformat. An example would output:\n{\"speed\":\"0.06\"}. Use Oj to turn off JSON\nmode.\n\n**Fn** Decimal Places Write\nSet n to the number of decimal places to be\nreported. For example, setting to F2 will\nreport 2 decimal places (ex. 10.35). F0 will\nprovide the integer value only. Valid values of\nn are 0-5.\n\n**US** Miles per hour Write {\"Units\":\"mph\"} Calculations are based on the\ninternational mile (1,609.344 m per mile).\n\n**S2** 20K samples/second Write\n\n**K+** Peak Speed Average Enable Write Enables speed averaging of peak detected\nvalues across the nearest two speeds\ndetected. (-A, -C)\n\n**A!** Save Configuration Write Saves current configuration settings in flash\nmemory. Upon power loss or recycling power,\nthe saved configurations will be used as the\ndefault.\n"
     },
     {
         "id": "4907ca649aa63c1c",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "send Query Module Info",
+        "name": "query Module Info, after 1 sec",
         "props": [
             {
                 "p": "payload"
@@ -293,18 +270,19 @@
         ],
         "repeat": "",
         "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
+        "once": true,
+        "onceDelay": "1",
         "topic": "",
         "payload": "??",
         "payloadType": "str",
-        "x": 180,
-        "y": 280,
+        "x": 210,
+        "y": 180,
         "wires": [
             [
                 "8e8ede8ca221552b"
             ]
-        ]
+        ],
+        "info": "**??** Module Information Read\n{\"Product\":\"OPS242\"}\n{\"Version\":\"1.3.9\"}\n{\"SamplingRate\":10000, \"resolution\":0.0607}\n{“SampleSize”:1024}\n{\"Clock\":\"54\"}\n{\"Q2COUNT\":\"1149 (~22980 counts/sec)\n@t=37\"}\n{\"PowerMode\":\"Continuous\"}\n{\"Squelch\":\"100\"}\n{“RequiredMinSpeed”:”0.000”}"
     },
     {
         "id": "bb2b78040385d37e",
@@ -314,12 +292,11 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 170,
-        "y": 580,
+        "x": 190,
+        "y": 760,
         "wires": [
             [
                 "36b68e0861cc5fc4",
-                "b7a14838fe3c713e",
                 "ab1b88cd16ef31c4"
             ]
         ]
@@ -337,14 +314,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 420,
-        "y": 580,
+        "x": 440,
+        "y": 760,
         "wires": []
     },
     {
         "id": "16dcdaf44cc5b739",
         "type": "inject",
         "z": "94d07e407c25f282",
+        "d": true,
         "name": "send Query Sampling rate",
         "props": [
             {
@@ -359,7 +337,7 @@
         "payload": "s?",
         "payloadType": "str",
         "x": 190,
-        "y": 340,
+        "y": 300,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -370,6 +348,7 @@
         "id": "87a395a01109d939",
         "type": "inject",
         "z": "94d07e407c25f282",
+        "d": true,
         "name": "init: change range to not report",
         "props": [
             {
@@ -388,35 +367,10 @@
         "payload": "r>100",
         "payloadType": "str",
         "x": 210,
-        "y": 400,
+        "y": 360,
         "wires": [
             [
                 "8e8ede8ca221552b"
-            ]
-        ]
-    },
-    {
-        "id": "b7a14838fe3c713e",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "if message contains TimedSpeedCounts",
-        "property": "payload",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "TimedSpeedCounts",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 480,
-        "y": 640,
-        "wires": [
-            [
-                "86c37839a1fac0d2"
             ]
         ]
     },
@@ -437,8 +391,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 860,
-        "y": 640,
+        "x": 900,
+        "y": 820,
         "wires": [
             [
                 "47f7f4a43b071ab6"
@@ -464,8 +418,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 870,
-        "y": 700,
+        "x": 910,
+        "y": 860,
         "wires": [
             []
         ]
@@ -476,11 +430,12 @@
         "z": "94d07e407c25f282",
         "name": "receive ttyACM0",
         "serial": "88db96152b3568aa",
-        "x": 140,
-        "y": 500,
+        "x": 160,
+        "y": 680,
         "wires": [
             [
-                "bb2b78040385d37e"
+                "bb2b78040385d37e",
+                "ccd16a974b7dc6c9"
             ]
         ]
     },
@@ -492,23 +447,6 @@
         "serial": "88db96152b3568aa",
         "x": 610,
         "y": 200,
-        "wires": []
-    },
-    {
-        "id": "86c37839a1fac0d2",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug-radar-TimedSpeedCounts",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 860,
-        "y": 540,
         "wires": []
     },
     {
@@ -528,11 +466,13 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 450,
-        "y": 760,
+        "x": 490,
+        "y": 820,
         "wires": [
             [
-                "35c0bee67148cfa7"
+                "35c0bee67148cfa7",
+                "94ebe85f6ac396fe",
+                "38a35462.571bfc"
             ]
         ]
     },
@@ -549,9 +489,150 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 850,
-        "y": 780,
+        "x": 890,
+        "y": 740,
         "wires": []
+    },
+    {
+        "id": "38a35462.571bfc",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "name": "if TimedSpeedCounts contains outbound",
+        "property": "payload.TimedSpeedCounts.direction",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "outbound",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 900,
+        "y": 960,
+        "wires": [
+            [
+                "4614d19e.bd756"
+            ]
+        ]
+    },
+    {
+        "id": "4614d19e.bd756",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "name": "change TimedSpeedCounts.count to number",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$number(payload.TimedSpeedCounts.count)\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 910,
+        "y": 1000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ccd16a974b7dc6c9",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "5c9f0ea3d994a42c",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "init: set unix time, after 3 secs",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "3",
+        "topic": "",
+        "payload": "\"C=\" & $millis() & \"CZ=PST+-8\"",
+        "payloadType": "jsonata",
+        "x": 210,
+        "y": 420,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "e8e6eaf852900af0",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "get human readable timestamp, after 4 secs",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "4",
+        "topic": "",
+        "payload": "OH",
+        "payloadType": "str",
+        "x": 250,
+        "y": 480,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "9585fc99f2e09487",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "query Output settings, after 2 secs",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "2",
+        "topic": "",
+        "payload": "O?o?",
+        "payloadType": "str",
+        "x": 220,
+        "y": 240,
+        "wires": [
+            []
+        ],
+        "info": "**O?/o?** Output Settings Write\nOutput current output settings for speed and\nrange. Use O? for speed settings and o? for\nrange settings."
     },
     {
         "id": "1720d60a87cfb2d7",
@@ -979,8 +1060,7 @@
         "y": 480,
         "wires": [
             [
-                "a0102cc6.bed61",
-                "38a35462.571bfc"
+                "a0102cc6.bed61"
             ]
         ]
     },
@@ -1079,31 +1159,6 @@
         ]
     },
     {
-        "id": "38a35462.571bfc",
-        "type": "switch",
-        "z": "b7a05959.ff8688",
-        "name": "if TimedSpeedCounts contains outbound",
-        "property": "payload.TimedSpeedCounts.direction",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "outbound",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 420,
-        "y": 680,
-        "wires": [
-            [
-                "4614d19e.bd756"
-            ]
-        ]
-    },
-    {
         "id": "b1b60443.11c098",
         "type": "ui_chart",
         "z": "b7a05959.ff8688",
@@ -1142,34 +1197,6 @@
         "y": 680,
         "wires": [
             []
-        ]
-    },
-    {
-        "id": "4614d19e.bd756",
-        "type": "change",
-        "z": "b7a05959.ff8688",
-        "name": "change TimedSpeedCounts.count to number",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$number(payload.TimedSpeedCounts.count)\t",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 430,
-        "y": 720,
-        "wires": [
-            [
-                "b1b60443.11c098",
-                "2e6a9fd1.298f"
-            ]
         ]
     },
     {
