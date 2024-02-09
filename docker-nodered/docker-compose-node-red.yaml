@@ -10,6 +10,8 @@ version: "3.9"
 
 services:
   node-red:
+    container_name: nodered
+    restart: unless-stopped
     image: nodered/node-red:latest
     ports:
       - "1880:1880"

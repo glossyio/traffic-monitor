@@ -19,7 +19,8 @@ sudo systemctl enable go2rtc_server
 docker compose \
    -f ~/code/frigate/docker-compose-frigate.yml \
    -f ~/code/nodered/docker-compose-node-red.yml \
-   up --detach
+    -f ~/code/influxdb/docker-compose-influxdb.yml \
+  up --detach
 
 # access frigate via http://[IP]:5000
 # access node-red via http://[IP]:1880
