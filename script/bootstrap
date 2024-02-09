@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# script/bootstrap: Resolve all dependencies that the application requires to
+#                   run.
+# scripts based on https://github.com/github/scripts-to-rule-them-all
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+#assume lastest Raspberry PI OS Debian 12 (bookworm) and recommended software (full install)
+# full install required for camera (lite version does not have H.264 codec for libcamera)
+#update system
+sudo apt-get update
+sudo apt-get upgrade -y
+
+##-- install docker / docker compose,
+#alternative docker intall, for dev
+# here https://raspberrytips.com/docker-on-raspberry-pi/
+# or #https://docs.docker.com/engine/install/raspberry-pi-os/#install-using-the-convenience-script
+echo "==> Installing docker…"
+curl -sSL https://get.docker.com | sh
+
+sudo usermod -aG docker $USER
+##-- /docker
+
+#clone repo to get all the files
+git clone https://github.com/glossyio/rpi-buster
+cd rpi-buster/
+
+#install go2rtc binary
+echo "==> Installing go2rtc…"
+
+sudo mkdir /var/lib/go2rtc
+sudo curl -L https://github.com/AlexxIT/go2rtc/releases/download/v1.8.5/go2rtc_linux_arm64 -o /var/lib/go2rtc/go2rtc_linux_arm64
+sudo chmod 755 /var/lib/go2rtc/go2rtc_linux_arm64
+sudo chmod +x /var/lib/go2rtc/go2rtc_linux_arm64
+##-- /go2rtc
+
+
+##-- install coral tpu drivers
+#install EdgeTPU runtime library (??) https://coral.ai/docs/accelerator/get-started/#1-install-the-edge-tpu-runtime
+echo "==> Installing Coral TPU drivers…"
+echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo apt-get update
+
+sudo apt-get install libedgetpu1-std
+##-- /coral tpu drivers
+

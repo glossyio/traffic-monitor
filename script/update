@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# script/update: Update application to run for its current checkout.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+script/bootstrap
+
+echo "==> Updating docker containers…"
+
+# rebuild docker containers
+docker compose \
+   -f ~/code/frigate/docker-compose-frigate.yml \
+   -f ~/code/nodered/docker-compose-node-red.yml \
+   up --detach --build
+
