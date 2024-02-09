@@ -293,7 +293,7 @@
         "action": "",
         "pretty": false,
         "x": 190,
-        "y": 760,
+        "y": 700,
         "wires": [
             [
                 "36b68e0861cc5fc4",
@@ -306,7 +306,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -315,7 +315,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 440,
-        "y": 760,
+        "y": 700,
         "wires": []
     },
     {
@@ -391,8 +391,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1000,
-        "y": 820,
+        "x": 1020,
+        "y": 640,
         "wires": [
             [
                 "47f7f4a43b071ab6"
@@ -418,8 +418,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1010,
-        "y": 860,
+        "x": 1030,
+        "y": 680,
         "wires": [
             []
         ]
@@ -431,7 +431,7 @@
         "name": "receive ttyACM0",
         "serial": "88db96152b3568aa",
         "x": 160,
-        "y": 680,
+        "y": 620,
         "wires": [
             [
                 "bb2b78040385d37e",
@@ -472,12 +472,10 @@
         "repair": false,
         "outputs": 2,
         "x": 530,
-        "y": 820,
+        "y": 760,
         "wires": [
             [
-                "35c0bee67148cfa7",
-                "94ebe85f6ac396fe",
-                "38a35462.571bfc"
+                "7055d871474e5c63"
             ],
             []
         ]
@@ -495,8 +493,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1010,
-        "y": 740,
+        "x": 1030,
+        "y": 560,
         "wires": []
     },
     {
@@ -516,8 +514,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1000,
-        "y": 960,
+        "x": 1020,
+        "y": 780,
         "wires": [
             [
                 "4614d19e.bd756"
@@ -543,8 +541,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1010,
-        "y": 1000,
+        "x": 1030,
+        "y": 820,
         "wires": [
             []
         ]
@@ -554,7 +552,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug 1",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -563,7 +561,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 480,
-        "y": 680,
+        "y": 620,
         "wires": []
     },
     {
@@ -639,6 +637,35 @@
             []
         ],
         "info": "**O?/o?** Output Settings Write\nOutput current output settings for speed and\nrange. Use O? for speed settings and o? for\nrange settings."
+    },
+    {
+        "id": "7055d871474e5c63",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "name": "add payload.timestamp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.timestamp",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 820,
+        "wires": [
+            [
+                "35c0bee67148cfa7",
+                "94ebe85f6ac396fe",
+                "38a35462.571bfc"
+            ]
+        ]
     },
     {
         "id": "1720d60a87cfb2d7",
