@@ -223,6 +223,34 @@
         "responsetimeout": "10000"
     },
     {
+        "id": "d50d0c9f.31e858",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false
+    },
+    {
+        "id": "73598328fc95017b",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "influxdb-node-red",
+        "usetls": false,
+        "tls": "d50d0c9f.31e858",
+        "influxdbVersion": "2.0",
+        "url": "http://10.10.10.224:8086",
+        "timeout": "10",
+        "rejectUnauthorized": true
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -375,56 +403,6 @@
         ]
     },
     {
-        "id": "94ebe85f6ac396fe",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "if TimedSpeedCounts contains inbound",
-        "property": "payload.TimedSpeedCounts.direction",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "inbound",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1020,
-        "y": 640,
-        "wires": [
-            [
-                "47f7f4a43b071ab6"
-            ]
-        ]
-    },
-    {
-        "id": "47f7f4a43b071ab6",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "name": "change TimedSpeedCounts.count to number",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$number(payload.TimedSpeedCounts.count)\t",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1030,
-        "y": 680,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
@@ -493,59 +471,9 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1030,
-        "y": 560,
+        "x": 970,
+        "y": 760,
         "wires": []
-    },
-    {
-        "id": "38a35462.571bfc",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "if TimedSpeedCounts contains outbound",
-        "property": "payload.TimedSpeedCounts.direction",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "outbound",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1020,
-        "y": 780,
-        "wires": [
-            [
-                "4614d19e.bd756"
-            ]
-        ]
-    },
-    {
-        "id": "4614d19e.bd756",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "name": "change TimedSpeedCounts.count to number",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$number(payload.TimedSpeedCounts.count)\t",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1030,
-        "y": 820,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "ccd16a974b7dc6c9",
@@ -662,10 +590,91 @@
         "wires": [
             [
                 "35c0bee67148cfa7",
-                "94ebe85f6ac396fe",
-                "38a35462.571bfc"
+                "9496fe7a475726de"
             ]
         ]
+    },
+    {
+        "id": "9496fe7a475726de",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "name": "format data for influxdb TimedSpeedCounts measurement",
+        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 820,
+        "wires": [
+            [
+                "617c9bb213538929"
+            ]
+        ]
+    },
+    {
+        "id": "617c9bb213538929",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb speed",
+        "measurement": "TimedSpeedCounts",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-05",
+        "x": 1380,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "c96c20a6a94d3073",
+        "type": "catch",
+        "z": "94d07e407c25f282",
+        "name": "catch influxdb writes",
+        "scope": [
+            "617c9bb213538929"
+        ],
+        "uncaught": false,
+        "x": 1370,
+        "y": 860,
+        "wires": [
+            [
+                "16550239673f6d6d"
+            ]
+        ]
+    },
+    {
+        "id": "16550239673f6d6d",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug influxdb write errors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1620,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "a9d702a51bc8f0c9",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "variables to pass",
+        "info": "IP address (for influxDB server)\nLocation (string for influxDB)\n\n\n",
+        "x": 880,
+        "y": 60,
+        "wires": []
     },
     {
         "id": "1720d60a87cfb2d7",
