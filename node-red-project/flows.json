@@ -334,7 +334,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -456,7 +456,8 @@
                 "7055d871474e5c63"
             ],
             []
-        ]
+        ],
+        "info": "TimedSpeedCounts default to 1-minute intervals\n- `count` represents number of objects at any speed\n- `average` represents the mean speed (average of units for all counts)\n- `units` represents the `average` units\n- `direction` indicates inbound/outbound relative to radar, will have both each interval"
     },
     {
         "id": "35c0bee67148cfa7",
@@ -674,6 +675,26 @@
         "info": "IP address (for influxDB server)\nLocation (string for influxDB)\n\n\n",
         "x": 880,
         "y": 60,
+        "wires": []
+    },
+    {
+        "id": "526eb1967dda78c4",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "TimedSpeedCounts default to 1-minute intervals",
+        "info": "",
+        "x": 520,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "90ba0975afc39fae",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "TODO: capture DetectedObjectVelocity, query w/ event later",
+        "info": "",
+        "x": 880,
+        "y": 660,
         "wires": []
     },
     {
