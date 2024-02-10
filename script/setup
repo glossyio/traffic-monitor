@@ -15,8 +15,6 @@ echo "==> Setting up Dockerfiles…"
 #create directories and config.yml
 mkdir -p ~/code/frigate  #for config and files
 mkdir -p ~/code/frigate/storage  #for media
-
-# copy repo files to local folders
 cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
 cp docker-frigate/frigate-config.yaml ~/code/frigate/config.yml
 ##-- /frigate
@@ -24,11 +22,17 @@ cp docker-frigate/frigate-config.yaml ~/code/frigate/config.yml
 
 ##-- Add node-red Dockerfile
 mkdir -p ~/code/nodered/data
-
-# copy repo files to local folders
 cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
 cp -rp node-red-project ~/code/nodered/data/node-red-project
 ##-- /node-red
+
+
+##-- Add influxDB Dockerfile
+mkdir -p ~/code/influxdb/data
+mkdir -p ~/code/influxdb/config
+cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
+##-- /influxdb
+
 
 echo "==> Setting up go2rtc systemd service…"
 

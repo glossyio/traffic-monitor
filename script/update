@@ -14,5 +14,6 @@ echo "==> Updating docker containers…"
 docker compose \
    -f ~/code/frigate/docker-compose-frigate.yml \
    -f ~/code/nodered/docker-compose-node-red.yml \
+   -f ~/code/influxdb/docker-compose-influxdb.yml \
    up --detach --build
 
