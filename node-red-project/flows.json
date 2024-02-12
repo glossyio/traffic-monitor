@@ -223,6 +223,34 @@
         "responsetimeout": "10000"
     },
     {
+        "id": "d50d0c9f.31e858",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false
+    },
+    {
+        "id": "73598328fc95017b",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "influxdb-node-red",
+        "usetls": false,
+        "tls": "d50d0c9f.31e858",
+        "influxdbVersion": "2.0",
+        "url": "http://10.10.10.224:8086",
+        "timeout": "10",
+        "rejectUnauthorized": true
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -293,7 +321,7 @@
         "action": "",
         "pretty": false,
         "x": 190,
-        "y": 760,
+        "y": 700,
         "wires": [
             [
                 "36b68e0861cc5fc4",
@@ -315,7 +343,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 440,
-        "y": 760,
+        "y": 700,
         "wires": []
     },
     {
@@ -375,63 +403,13 @@
         ]
     },
     {
-        "id": "94ebe85f6ac396fe",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "if TimedSpeedCounts contains inbound",
-        "property": "payload.TimedSpeedCounts.direction",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "inbound",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 900,
-        "y": 820,
-        "wires": [
-            [
-                "47f7f4a43b071ab6"
-            ]
-        ]
-    },
-    {
-        "id": "47f7f4a43b071ab6",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "name": "change TimedSpeedCounts.count to number",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$number(payload.TimedSpeedCounts.count)\t",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 910,
-        "y": 860,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
         "name": "receive ttyACM0",
         "serial": "88db96152b3568aa",
         "x": 160,
-        "y": 680,
+        "y": 620,
         "wires": [
             [
                 "bb2b78040385d37e",
@@ -453,7 +431,7 @@
         "id": "ab1b88cd16ef31c4",
         "type": "switch",
         "z": "94d07e407c25f282",
-        "name": "if payload has key TimedSpeedCounts",
+        "name": "if payload has key TimedSpeedCounts & count > 0",
         "property": "payload",
         "propertyType": "msg",
         "rules": [
@@ -461,26 +439,31 @@
                 "t": "hask",
                 "v": "TimedSpeedCounts",
                 "vt": "str"
+            },
+            {
+                "t": "jsonata_exp",
+                "v": "$number(msg.payload.TimedSpeedCounts.count) > 0",
+                "vt": "jsonata"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
-        "x": 490,
-        "y": 820,
+        "outputs": 2,
+        "x": 530,
+        "y": 760,
         "wires": [
             [
-                "35c0bee67148cfa7",
-                "94ebe85f6ac396fe",
-                "38a35462.571bfc"
-            ]
-        ]
+                "7055d871474e5c63"
+            ],
+            []
+        ],
+        "info": "TimedSpeedCounts default to 1-minute intervals\n- `count` represents number of objects at any speed\n- `average` represents the mean speed (average of units for all counts)\n- `units` represents the `average` units\n- `direction` indicates inbound/outbound relative to radar, will have both each interval"
     },
     {
         "id": "35c0bee67148cfa7",
         "type": "debug",
         "z": "94d07e407c25f282",
-        "name": "debug-radar-key-TimedSpeedCounts",
+        "name": "debug-radar-key-valid-TimedSpeedCounts",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -489,66 +472,16 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
-        "y": 740,
+        "x": 970,
+        "y": 760,
         "wires": []
-    },
-    {
-        "id": "38a35462.571bfc",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "if TimedSpeedCounts contains outbound",
-        "property": "payload.TimedSpeedCounts.direction",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "outbound",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 900,
-        "y": 960,
-        "wires": [
-            [
-                "4614d19e.bd756"
-            ]
-        ]
-    },
-    {
-        "id": "4614d19e.bd756",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "name": "change TimedSpeedCounts.count to number",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$number(payload.TimedSpeedCounts.count)\t",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 910,
-        "y": 1000,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "ccd16a974b7dc6c9",
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug 1",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -557,7 +490,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 480,
-        "y": 680,
+        "y": 620,
         "wires": []
     },
     {
@@ -633,6 +566,136 @@
             []
         ],
         "info": "**O?/o?** Output Settings Write\nOutput current output settings for speed and\nrange. Use O? for speed settings and o? for\nrange settings."
+    },
+    {
+        "id": "7055d871474e5c63",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "name": "add payload.timestamp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.timestamp",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 820,
+        "wires": [
+            [
+                "35c0bee67148cfa7",
+                "9496fe7a475726de"
+            ]
+        ]
+    },
+    {
+        "id": "9496fe7a475726de",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "name": "format data for influxdb TimedSpeedCounts measurement",
+        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 820,
+        "wires": [
+            [
+                "617c9bb213538929"
+            ]
+        ]
+    },
+    {
+        "id": "617c9bb213538929",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb speed",
+        "measurement": "TimedSpeedCounts",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-05",
+        "x": 1380,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "c96c20a6a94d3073",
+        "type": "catch",
+        "z": "94d07e407c25f282",
+        "name": "catch influxdb writes",
+        "scope": [
+            "617c9bb213538929"
+        ],
+        "uncaught": false,
+        "x": 1370,
+        "y": 860,
+        "wires": [
+            [
+                "16550239673f6d6d"
+            ]
+        ]
+    },
+    {
+        "id": "16550239673f6d6d",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug influxdb write errors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1620,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "a9d702a51bc8f0c9",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "variables to pass",
+        "info": "IP address (for influxDB server)\nLocation (string for influxDB)\n\n\n",
+        "x": 880,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "526eb1967dda78c4",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "TimedSpeedCounts default to 1-minute intervals",
+        "info": "",
+        "x": 520,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "90ba0975afc39fae",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "TODO: capture DetectedObjectVelocity, query w/ event later",
+        "info": "",
+        "x": 880,
+        "y": 660,
+        "wires": []
     },
     {
         "id": "1720d60a87cfb2d7",
