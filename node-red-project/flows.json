@@ -721,8 +721,8 @@
         "type": "comment",
         "z": "94d07e407c25f282",
         "name": "variables to pass",
-        "info": "IP address (for influxDB server)\nLocation (string for influxDB)\n\n\n",
-        "x": 880,
+        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n\n\n",
+        "x": 820,
         "y": 60,
         "wires": []
     },
@@ -952,10 +952,10 @@
         "id": "b8f09eb5bad1c457",
         "type": "comment",
         "z": "49e416bfab1d4055",
-        "name": "collect TimedSpeedCounts from radar for event",
-        "info": "",
-        "x": 580,
-        "y": 400,
+        "name": "collect DetectedObjectVelocity from radar for event",
+        "info": "Get all DetectedObjectVelocity from Event `start_time` to `end_time`\n- Get both Inbound/Outbound (make determination later)\n- Assume ZONES set up in camera - near/far and `entered_zones` contains them *in order*\n- Take IQR? Mean? Median?",
+        "x": 390,
+        "y": 420,
         "wires": []
     },
     {
@@ -963,7 +963,7 @@
         "type": "comment",
         "z": "49e416bfab1d4055",
         "name": "send back Frigate sublabel with speed(s) back for event",
-        "info": "",
+        "info": "API example (python):\n```\nrequests.post(f\"{FRIGATE_HOST}/api/events/{event_id}/sub_label\", json={\"subLabel\": vehicle_name, \"subLabelScore\": round(score, 2)})\n```",
         "x": 600,
         "y": 540,
         "wires": []
