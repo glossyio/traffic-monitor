@@ -15,18 +15,17 @@ version: "3.9"
 services:
   influxdb:
     container_name: influxdb
-    restart: unless-stopped
+    restart: unless-stopped 
     image: influxdb:2.7.5
     volumes:
       - ~/code/influxdb/data:/var/lib/influxdb2
-      - ~/code/influxdb/config:/etc/influxdb2
+      - ~/code/influxdb/config:/etc/influxdb2  
     ports:
       - "8086:8086"
     environment:
       DOCKER_INFLUXDB_INIT_MODE: "setup"
       DOCKER_INFLUXDB_INIT_USERNAME: "influxdb_user"
       DOCKER_INFLUXDB_INIT_PASSWORD: "influxdb_pass"
-      DOCKER_INFLUXDB_INIT_ORG: "influx_org"
-      DOCKER_INFLUXDB_INIT_BUCKET: "influx_bucket"
-
-
+      DOCKER_INFLUXDB_INIT_ORG: "taffic_monitor_01"
+      DOCKER_INFLUXDB_INIT_BUCKET: "influxdb_bucket"
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "influxdb_admin_token"
