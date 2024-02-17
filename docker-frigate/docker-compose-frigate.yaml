@@ -14,7 +14,7 @@ services:
       - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, needs to be modified for other versions
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/code/frigate/config.yml:/config/config.yml
+      - ~/code/frigate/config:/config
       - ~/code/frigate/storage:/media/frigate
       - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
         target: /tmp/cache
