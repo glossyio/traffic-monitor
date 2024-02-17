@@ -31,6 +31,48 @@
         "info": ""
     },
     {
+        "id": "04cc3b7b3e019683",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "TimedSpeedCounts records",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "ab1b88cd16ef31c4",
+            "35c0bee67148cfa7",
+            "7055d871474e5c63",
+            "9496fe7a475726de",
+            "617c9bb213538929",
+            "c96c20a6a94d3073",
+            "526eb1967dda78c4"
+        ],
+        "x": 74,
+        "y": 999,
+        "w": 1312,
+        "h": 222
+    },
+    {
+        "id": "1d00b3011a12b204",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "DetectedObjectVelocity records",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "04f7f4b860fe36bc",
+            "4039fcd5e467867d",
+            "4681243b9c70e906",
+            "b8db51ab64a3d61e",
+            "b0814f902d047f9f"
+        ],
+        "x": 74,
+        "y": 799,
+        "w": 1332,
+        "h": 182
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -325,7 +367,8 @@
         "wires": [
             [
                 "36b68e0861cc5fc4",
-                "ab1b88cd16ef31c4"
+                "ab1b88cd16ef31c4",
+                "04f7f4b860fe36bc"
             ]
         ]
     },
@@ -431,6 +474,7 @@
         "id": "ab1b88cd16ef31c4",
         "type": "switch",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "name": "if payload has key TimedSpeedCounts & count > 0",
         "property": "payload",
         "propertyType": "msg",
@@ -449,8 +493,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 530,
-        "y": 760,
+        "x": 290,
+        "y": 1040,
         "wires": [
             [
                 "7055d871474e5c63"
@@ -463,6 +507,7 @@
         "id": "35c0bee67148cfa7",
         "type": "debug",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "name": "debug-radar-key-valid-TimedSpeedCounts",
         "active": true,
         "tosidebar": true,
@@ -472,8 +517,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 970,
-        "y": 760,
+        "x": 730,
+        "y": 1040,
         "wires": []
     },
     {
@@ -571,6 +616,7 @@
         "id": "7055d871474e5c63",
         "type": "change",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "name": "add payload.timestamp",
         "rules": [
             {
@@ -586,8 +632,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
-        "y": 820,
+        "x": 370,
+        "y": 1100,
         "wires": [
             [
                 "35c0bee67148cfa7",
@@ -599,6 +645,7 @@
         "id": "9496fe7a475726de",
         "type": "function",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "name": "format data for influxdb TimedSpeedCounts measurement",
         "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
         "outputs": 1,
@@ -607,8 +654,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1010,
-        "y": 820,
+        "x": 770,
+        "y": 1100,
         "wires": [
             [
                 "617c9bb213538929"
@@ -619,8 +666,9 @@
         "id": "617c9bb213538929",
         "type": "influxdb out",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "influxdb": "73598328fc95017b",
-        "name": "write influxdb speed",
+        "name": "write influxdb TimedSpeedCounts",
         "measurement": "TimedSpeedCounts",
         "precision": "",
         "retentionPolicy": "",
@@ -629,21 +677,22 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 1380,
-        "y": 820,
+        "x": 1180,
+        "y": 1100,
         "wires": []
     },
     {
         "id": "c96c20a6a94d3073",
         "type": "catch",
         "z": "94d07e407c25f282",
-        "name": "catch influxdb writes",
+        "g": "04cc3b7b3e019683",
+        "name": "catch influxdb writes TimedSpeedCounts",
         "scope": [
             "617c9bb213538929"
         ],
         "uncaught": false,
-        "x": 1370,
-        "y": 860,
+        "x": 1200,
+        "y": 1140,
         "wires": [
             [
                 "16550239673f6d6d"
@@ -663,8 +712,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1620,
-        "y": 860,
+        "x": 1580,
+        "y": 1140,
         "wires": []
     },
     {
@@ -681,21 +730,124 @@
         "id": "526eb1967dda78c4",
         "type": "comment",
         "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
         "name": "TimedSpeedCounts default to 1-minute intervals",
         "info": "",
-        "x": 520,
+        "x": 280,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "04f7f4b860fe36bc",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "if payload has key DetectedObjectVelocity",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "hask",
+                "v": "DetectedObjectVelocity",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 260,
+        "y": 840,
+        "wires": [
+            [
+                "4039fcd5e467867d"
+            ]
+        ]
+    },
+    {
+        "id": "4039fcd5e467867d",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "add payload.timestamp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.timestamp",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 370,
+        "y": 900,
+        "wires": [
+            [
+                "4681243b9c70e906"
+            ]
+        ]
+    },
+    {
+        "id": "4681243b9c70e906",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "format data for influxdb DetectedObjectVelocity measurement",
+        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 900,
+        "wires": [
+            [
+                "b8db51ab64a3d61e"
+            ]
+        ]
+    },
+    {
+        "id": "b8db51ab64a3d61e",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb DetectedObjectVelocity",
+        "measurement": "DetectedObjectVelocity",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-05",
+        "x": 1190,
         "y": 900,
         "wires": []
     },
     {
-        "id": "90ba0975afc39fae",
-        "type": "comment",
+        "id": "b0814f902d047f9f",
+        "type": "catch",
         "z": "94d07e407c25f282",
-        "name": "TODO: capture DetectedObjectVelocity, query w/ event later",
-        "info": "",
-        "x": 880,
-        "y": 660,
-        "wires": []
+        "g": "1d00b3011a12b204",
+        "name": "catch influxdb writes DetectedObjectVelocity",
+        "scope": [
+            "b8db51ab64a3d61e"
+        ],
+        "uncaught": false,
+        "x": 1210,
+        "y": 940,
+        "wires": [
+            [
+                "16550239673f6d6d"
+            ]
+        ]
     },
     {
         "id": "1720d60a87cfb2d7",
