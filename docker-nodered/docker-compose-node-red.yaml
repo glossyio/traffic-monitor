@@ -24,6 +24,10 @@ services:
       - "/dev/ttyACM0"
     group_add:
       - dialout
+    environment:
+      VAR_DEVICE_IP: "10.10.10.224"
+      VAR_LOCATION: "ne26th-wasco-sb-01"
+      VAR_RADAR_CAMERA: "picam_h264"
 
 networks:
   node-red-net:
