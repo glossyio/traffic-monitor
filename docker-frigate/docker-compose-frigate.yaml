@@ -2,7 +2,6 @@
 # Frigate NVR Compose
 # mqtt credentials come from broker (set up via node-red)
 ################################################################################
-version: "3.9"
 services:
   frigate:
     container_name: frigate
