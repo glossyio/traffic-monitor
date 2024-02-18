@@ -6,8 +6,6 @@
 # for OPS-243 device, see
 #   https://nodered.org/docs/getting-started/docker#serial-port---dialout---adding-groups 
 ################################################################################
-version: "3.9"
-
 services:
   node-red:
     container_name: nodered
@@ -16,15 +14,18 @@ services:
     ports:
       - "1880:1880"
       - "1883:1883"
-    networks:
-      - node-red-net
     volumes:
       - ~/code/nodered/data:/data
     devices:
       - "/dev/ttyACM0"
     group_add:
       - dialout
-
-networks:
-  node-red-net:
-
+    environment:
+      VAR_DEVICE_IP: "10.10.10.224"
+      VAR_LOCATION: "ne26th-wasco-sb-01"
+      VAR_RADAR_CAMERA: "picam_h264"
+    depends_on:
+      frigate:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
