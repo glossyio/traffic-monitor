@@ -33,6 +33,8 @@ mkdir -p ~/code/influxdb/config
 cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
 ##-- /influxdb
 
+##--add combined compose file to start all services
+cp compose.yaml ~/code/compose.yaml
 
 echo "==> Setting up go2rtc systemd service…"
 
