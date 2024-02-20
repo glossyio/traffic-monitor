@@ -969,6 +969,121 @@
         "wires": []
     },
     {
+        "id": "a980360b45ee8b7b",
+        "type": "http request",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.224:5000/api/events/1708220841.127413-uctgde",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 620,
+        "wires": [
+            [
+                "521a1c5d5d51f5b9"
+            ]
+        ]
+    },
+    {
+        "id": "521a1c5d5d51f5b9",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - http 01 return",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "32a0f2a8f17ce82c",
+        "type": "inject",
+        "z": "49e416bfab1d4055",
+        "name": "make request",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 620,
+        "wires": [
+            [
+                "a980360b45ee8b7b"
+            ]
+        ]
+    },
+    {
+        "id": "178ee5ca97585a4b",
+        "type": "influxdb in",
+        "z": "49e416bfab1d4055",
+        "influxdb": "73598328fc95017b",
+        "name": "query-01",
+        "query": "from(bucket: \"tm-05\")\n\t|> range(start: -3h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"DetectedObjectVelocity\")\n  |> filter(fn: (r) => r[\"_field\"] == \"velocity\")\n  |> filter(fn: (r) => r[\"direction\"] == \"inbound\")\n  |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-01-nb\")\n  |> filter(fn: (r) => r[\"units\"] == \"mph\")",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 300,
+        "y": 720,
+        "wires": [
+            [
+                "c6df4e04754031df"
+            ]
+        ]
+    },
+    {
+        "id": "e91b829fc7e76871",
+        "type": "inject",
+        "z": "49e416bfab1d4055",
+        "name": "make query",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 720,
+        "wires": [
+            [
+                "178ee5ca97585a4b"
+            ]
+        ]
+    },
+    {
+        "id": "c6df4e04754031df",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb query 01",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 720,
+        "wires": []
+    },
+    {
         "id": "8cee82669b6b8512",
         "type": "comment",
         "z": "90d5c925f9fbf9fd",
