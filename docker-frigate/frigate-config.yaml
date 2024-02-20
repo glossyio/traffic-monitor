@@ -1,7 +1,7 @@
 mqtt:
   enabled: False
   # Required: host name
-  host: 10.10.10.235
+  host: 10.10.10.224
   # Optional: port (default: shown below)
   port: 1883
   user: "{FRIGATE_MQTT_USER}"
@@ -20,16 +20,23 @@ cameras:
     enabled: True
     ffmpeg:
       inputs:
-        - path: rtsp://10.10.10.235:8554/picam_h264
+        - path: rtsp://10.10.10.224:8554/picam_h264
           roles:
             - detect
     detect:
       enabled: True # <---- disable detection until you have a working camera feed
-      width: 1536 # <---- update for your camera's resolution
-      height: 864 # <---- update for your camera's resolution
+      width: 2304 # <---- update for your camera's resolution
+      height: 1296 # <---- update for your camera's resolution
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
+    zones:
+      zone_picam_h264_far:
+        coordinates: 2304,436,2304,0,0,0,0,1078
+      zone_picam_h264_near:
+        coordinates: 2304,1296,2304,444,0,1070,0,1296
+      zone_picam_h264_radar:
+        coordinates: 1022,584,1005,776,1299,778,1305,584
 
   unifi-cam-pi-replica:
     enabled: True
@@ -57,10 +64,11 @@ objects:
 record:
   enabled: True
   retain:
-    days: 0
+    days: 3
+    mode: motion
   events:
       retain:
-        default: 3
+        default: 21
         mode: active_objects
 
 snapshots:
