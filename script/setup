@@ -17,7 +17,7 @@ echo "==> Setting up Dockerfiles…"
 mkdir -p ~/code/frigate  #for config and files
 mkdir -p ~/code/frigate/storage  #for media
 cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
-cp docker-frigate/frigate-config.yaml ~/code/frigate/config.yml
+cp docker-frigate/frigate-config.yaml ~/code/frigate/config/config.yml
 ##-- /frigate
 
 
