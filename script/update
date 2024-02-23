@@ -6,14 +6,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-script/bootstrap
+#uncomment for re-downloading any dependencies that may need to be updated
+#script/bootstrap
 
 echo "==> Updating docker containers…"
 
 # rebuild docker containers
-docker compose \
-   -f ~/code/frigate/docker-compose-frigate.yml \
-   -f ~/code/nodered/docker-compose-node-red.yml \
-   -f ~/code/influxdb/docker-compose-influxdb.yml \
-   up --detach --force-recreate --build --remove-orphans
+docker compose -f ~/code/compose.yaml up --detach --force-recreate --build --remove-orphans
 

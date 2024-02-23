@@ -12,10 +12,15 @@ cd "$(dirname "$0")/.."
 if [ -n "$1" ]; then
   # use first argument as an environment name. Use this to decide how to connect
   # to the appropriate console.
-  if [ "$1" = "production" ]; then
+  if [ "$1" = "frigate" ]; then
     #production env
-  elif [ "$1" = "staging" ]; then
+    docker exec -ti frigate /bin/bash
+  elif [ "$1" = "nodered" ]; then
     #staging env
+    docker exec -ti nodered /bin/bash
+  elif [ "$1" = "influxdb" ]; then
+    #staging env
+    docker exec -ti influxdb /bin/bash
   else
     echo "Sorry, I don't know how to connect to the '$1' environment."
     exit 1

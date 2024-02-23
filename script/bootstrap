@@ -25,8 +25,9 @@ sudo usermod -aG docker $USER
 ##-- /docker
 
 #clone repo to get all the files
-git clone https://github.com/glossyio/rpi-buster
-cd rpi-buster/
+# unncomment this if you run the bootstrap script standalone
+#git clone https://github.com/glossyio/rpi-buster
+#cd rpi-buster/
 
 #install go2rtc binary
 echo "==> Installing go2rtc…"
@@ -48,3 +49,5 @@ sudo apt-get update
 sudo apt-get install libedgetpu1-std
 ##-- /coral tpu drivers
 
+echo "==> Rebooting system"
+sudo reboot
