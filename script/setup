@@ -61,7 +61,7 @@ sudo chmod 644 /etc/systemd/system/go2rtc_server.service
 echo \
 "# /var/lib/go2rtc/go2rtc.yaml
 streams:
-  picam_h264: exec:rpicam-vid --camera 0 --mode 2304:1296 --framerate 15 -exposure sport --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -
+  picam_h264: exec:rpicam-vid --camera 0 --mode 2304:1296 --framerate 15 --exposure sport --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -
   picam_gs_h264: exec:rpicam-vid --camera 1 --mode 1456:1088 --framerate 15 --exposure sport --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -" | \
   sudo tee /var/lib/go2rtc/go2rtc.yaml > /dev/null
 sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
