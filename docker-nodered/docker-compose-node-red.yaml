@@ -21,7 +21,8 @@ services:
     group_add:
       - dialout
     environment:
-      VAR_DEVICE_IP: "10.10.10.224"
+      NODE_RED_ENABLE_PROJECTS: "true"
+      VAR_DEVICE_IP: "10.10.10.223"
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
     depends_on:

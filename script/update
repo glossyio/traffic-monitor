@@ -9,6 +9,10 @@ cd "$(dirname "$0")/.."
 #uncomment for re-downloading any dependencies that may need to be updated
 #script/bootstrap
 
+echo "==> Removing existing docker containers..."
+
+docker compose -f ~/code/compose.yaml down --remove-orphans
+
 echo "==> Updating docker containers…"
 
 # rebuild docker containers
