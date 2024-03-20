@@ -14,7 +14,7 @@ echo "==> Setting up Dockerfiles…"
 ##-- install Frigate
 ## Add Frigate Dockerfile
 #create directories and config.yml
-mkdir -p ~/code/frigate  #for config and files
+mkdir -p ~/code/frigate  #for files
 mkdir -p ~/code/frigate/config  #for frigate configuration file
 mkdir -p ~/code/frigate/storage  #for media
 cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
