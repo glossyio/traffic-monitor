@@ -46,8 +46,8 @@ cameras:
             - detect
     detect:
       enabled: False # <---- disable detection until you have a working camera feed
-      width: 2304 # <---- update for your camera's resolution
-      height: 1296 # <---- update for your camera's resolution
+      width: 1456 # <---- update for your camera's resolution
+      height: 1088 # <---- update for your camera's resolution
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
