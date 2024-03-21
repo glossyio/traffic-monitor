@@ -60,7 +60,7 @@ cameras:
           roles:
             - detect
     detect:
-      enabled: True # <---- disable detection until you have a working camera feed
+      enabled: False # <---- disable detection until you have a working camera feed
       width: 1280
       height: 720
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
