@@ -49,5 +49,8 @@ sudo apt-get update
 sudo apt-get install libedgetpu1-std
 ##-- /coral tpu drivers
 
+echo "==> Install screen for radar"
+sudo apt-get install screen
+
 echo "==> Rebooting system"
 sudo reboot
