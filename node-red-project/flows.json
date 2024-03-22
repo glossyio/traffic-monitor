@@ -105,7 +105,7 @@
         "database": "database",
         "name": "influxdb-node-red",
         "usetls": false,
-        "tls": "d50d0c9f.31e858",
+        "tls": "",
         "influxdbVersion": "2.0",
         "url": "http://10.10.10.223:8086",
         "timeout": "10",
@@ -145,6 +145,7 @@
         "id": "490d12fc644f0914",
         "type": "inject",
         "z": "94d07e407c25f282",
+        "d": true,
         "name": "init: switch to JSON, MPH, no factions",
         "props": [
             {
