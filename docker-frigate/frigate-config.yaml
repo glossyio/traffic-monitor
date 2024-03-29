@@ -37,6 +37,9 @@ cameras:
         coordinates: 2304,1296,2304,444,0,1070,0,1296
       zone_picam_h264_radar:
         coordinates: 1022,584,1005,776,1299,778,1305,584
+    motion: # mask intersection
+      mask:
+      - 0,419,0,0,889,0,1083,0,2019,0,1982,270,1094,306
   picam_gs_h264: # <------ Name the camera
     enabled: False
     ffmpeg:
