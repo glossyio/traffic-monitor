@@ -66,6 +66,30 @@
         "h": 182
     },
     {
+        "id": "3acc78eb8fcb72f8",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "TimedSpeedCounts records",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c1154952a99c99a3",
+            "207eac3ff9b634a5",
+            "2fded2c6588bfd47",
+            "1daaab9e36f6fdb2",
+            "0cccf06fa248a643",
+            "ab905349bef72bac",
+            "18b1eaf942e6b674",
+            "ffefd7af202792df",
+            "65512a020a745b9a"
+        ],
+        "x": 74,
+        "y": 1259,
+        "w": 1692,
+        "h": 182
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -157,7 +181,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "ONOJF0USS2K+A!",
+        "payload": "OJONOSF0USS2K+OUOTR>5O=1A! ",
         "payloadType": "str",
         "x": 230,
         "y": 120,
@@ -208,7 +232,8 @@
             [
                 "36b68e0861cc5fc4",
                 "ab1b88cd16ef31c4",
-                "04f7f4b860fe36bc"
+                "04f7f4b860fe36bc",
+                "c1154952a99c99a3"
             ]
         ]
     },
@@ -324,7 +349,7 @@
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
         "name": "debug-radar-key-valid-TimedSpeedCounts",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -510,7 +535,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1580,
+        "x": 1940,
         "y": 1140,
         "wires": []
     },
@@ -529,7 +554,7 @@
         "type": "comment",
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
-        "name": "TimedSpeedCounts default to 1-minute intervals",
+        "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
         "x": 280,
         "y": 1180,
@@ -649,7 +674,7 @@
         "z": "94d07e407c25f282",
         "name": "send to OPS24-C",
         "serial": "d65c36624d553ee7",
-        "x": 610,
+        "x": 650,
         "y": 120,
         "wires": []
     },
@@ -715,6 +740,213 @@
                 "8e8ede8ca221552b"
             ]
         ]
+    },
+    {
+        "id": "c1154952a99c99a3",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "if payload has key speed",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "hask",
+                "v": "speed",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 210,
+        "y": 1300,
+        "wires": [
+            [
+                "2fded2c6588bfd47"
+            ]
+        ],
+        "info": "TimedSpeedCounts default to 1-minute intervals\n- `count` represents number of objects at any speed\n- `average` represents the mean speed (average of units for all counts)\n- `units` represents the `average` units\n- `direction` indicates inbound/outbound relative to radar, will have both each interval"
+    },
+    {
+        "id": "207eac3ff9b634a5",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "debug-radar-key-valid-raw-speeds",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 1300,
+        "wires": []
+    },
+    {
+        "id": "2fded2c6588bfd47",
+        "type": "change",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "add payload.timestamp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.timestamp",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 370,
+        "y": 1360,
+        "wires": [
+            [
+                "207eac3ff9b634a5",
+                "18b1eaf942e6b674"
+            ]
+        ]
+    },
+    {
+        "id": "1daaab9e36f6fdb2",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb RawSpeedMagnitude",
+        "measurement": "RawSpeedMagnitude",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-05",
+        "x": 1560,
+        "y": 1340,
+        "wires": []
+    },
+    {
+        "id": "0cccf06fa248a643",
+        "type": "catch",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "catch influxdb writes RawSpeedMagnitude",
+        "scope": [
+            "1daaab9e36f6fdb2"
+        ],
+        "uncaught": false,
+        "x": 1580,
+        "y": 1400,
+        "wires": [
+            [
+                "16550239673f6d6d"
+            ]
+        ]
+    },
+    {
+        "id": "ab905349bef72bac",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "format data for influxdb speed, magnitude measurement, inbound",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 1340,
+        "wires": [
+            [
+                "1daaab9e36f6fdb2",
+                "65512a020a745b9a"
+            ]
+        ]
+    },
+    {
+        "id": "18b1eaf942e6b674",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "switch inbound, outbound speed",
+        "property": "payload.speed",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "t": "lt",
+                "v": "0",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 690,
+        "y": 1360,
+        "wires": [
+            [
+                "ab905349bef72bac"
+            ],
+            [
+                "ffefd7af202792df"
+            ]
+        ]
+    },
+    {
+        "id": "ffefd7af202792df",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "format data for influxdb speed, magnitude measurement, outbound",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 1400,
+        "wires": [
+            [
+                "1daaab9e36f6fdb2",
+                "65512a020a745b9a"
+            ]
+        ]
+    },
+    {
+        "id": "65512a020a745b9a",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "debug-radar-raws-speeds-write",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1550,
+        "y": 1300,
+        "wires": []
     },
     {
         "id": "6c2d22f0a8cb1fc1",
