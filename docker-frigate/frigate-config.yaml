@@ -31,11 +31,11 @@ cameras:
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
     zones:
-      zone_picam_h264_far:
-        coordinates: 2304,436,2304,0,0,546,0,997
-      zone_picam_h264_near:
-        coordinates: 2304,772,2304,170,1925,426,0,951,0,1296,563,1296
-      zone_picam_h264_radar:
+      zone_far:
+        coordinates: 2304,416,2304,183,0,637,0,944
+      zone_near:
+        coordinates: 2304,665,2304,421,0,1007,0,1266
+      zone_radar:
         coordinates: 1022,584,1005,776,1299,778,1305,584
     motion: # mask intersection
       mask:
@@ -54,6 +54,11 @@ cameras:
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
+    zones:
+      zone_far:
+        coordinates: 1044,406,0,67,0,872
+      zone_near:
+        coordinates: 1456,1088,1456,564,0,1088
 
   unifi-cam-pi-replica:
     enabled: False
