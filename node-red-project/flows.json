@@ -1186,8 +1186,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 750,
-        "y": 360,
+        "x": 570,
+        "y": 420,
         "wires": [
             [
                 "6cfe5662fc478c14"
@@ -1196,23 +1196,6 @@
                 "6cfe5662fc478c14"
             ]
         ]
-    },
-    {
-        "id": "4da64f8fa893d5e5",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - influxdb delay 5-sec",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1760,
-        "y": 500,
-        "wires": []
     },
     {
         "id": "6cfe5662fc478c14",
@@ -1226,8 +1209,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1030,
-        "y": 360,
+        "x": 830,
+        "y": 420,
         "wires": [
             [
                 "9f1012eacf4d076f",
@@ -1248,8 +1231,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1280,
-        "y": 360,
+        "x": 1060,
+        "y": 420,
         "wires": []
     },
     {
@@ -1264,15 +1247,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1160,
-        "y": 420,
+        "x": 980,
+        "y": 480,
         "wires": [
             [
                 "6f8144816d69687d",
-                "f6c01dada26789f1",
-                "94bf7ee4f62f5852",
-                "cfa7d1ed2b94f977",
-                "552d8ae14f66d353"
+                "d541afce049d3481"
             ]
         ]
     },
@@ -1289,59 +1269,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1680,
-        "y": 420,
+        "x": 1120,
+        "y": 540,
         "wires": []
     },
     {
-        "id": "78816dc4ce463c87",
-        "type": "influxdb in",
-        "z": "49e416bfab1d4055",
-        "influxdb": "73598328fc95017b",
-        "name": "query event end DetectedObjectVelocity range",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 1420,
-        "y": 500,
-        "wires": [
-            [
-                "4da64f8fa893d5e5"
-            ]
-        ]
-    },
-    {
-        "id": "f6c01dada26789f1",
-        "type": "delay",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "pauseType": "delay",
-        "timeout": "5",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1140,
-        "y": 500,
-        "wires": [
-            [
-                "78816dc4ce463c87"
-            ]
-        ]
-    },
-    {
-        "id": "5bed0aa9a887245a",
+        "id": "8bfe9073f29ff037",
         "type": "debug",
         "z": "49e416bfab1d4055",
-        "name": "debug - influxdb delay 10",
+        "name": "debug - influxdb delay 0-sec",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1350,12 +1286,12 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1750,
-        "y": 580,
+        "x": 1420,
+        "y": 540,
         "wires": []
     },
     {
-        "id": "ced009415eb941b4",
+        "id": "d541afce049d3481",
         "type": "influxdb in",
         "z": "49e416bfab1d4055",
         "influxdb": "73598328fc95017b",
@@ -1366,157 +1302,10 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 1420,
-        "y": 580,
+        "y": 480,
         "wires": [
             [
-                "5bed0aa9a887245a"
-            ]
-        ]
-    },
-    {
-        "id": "94bf7ee4f62f5852",
-        "type": "delay",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "pauseType": "delay",
-        "timeout": "10",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1140,
-        "y": 580,
-        "wires": [
-            [
-                "ced009415eb941b4"
-            ]
-        ]
-    },
-    {
-        "id": "251d183912dc4b24",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - influxdb delay 15-s",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1760,
-        "y": 640,
-        "wires": []
-    },
-    {
-        "id": "59ace42aa67e9935",
-        "type": "influxdb in",
-        "z": "49e416bfab1d4055",
-        "influxdb": "73598328fc95017b",
-        "name": "query event end DetectedObjectVelocity range",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 1420,
-        "y": 640,
-        "wires": [
-            [
-                "251d183912dc4b24"
-            ]
-        ]
-    },
-    {
-        "id": "cfa7d1ed2b94f977",
-        "type": "delay",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "pauseType": "delay",
-        "timeout": "15",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1140,
-        "y": 640,
-        "wires": [
-            [
-                "59ace42aa67e9935"
-            ]
-        ]
-    },
-    {
-        "id": "dc7e60441c1d4eb0",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - influxdb delay 30-sec",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1760,
-        "y": 700,
-        "wires": []
-    },
-    {
-        "id": "6340fdddac0e48d6",
-        "type": "influxdb in",
-        "z": "49e416bfab1d4055",
-        "influxdb": "73598328fc95017b",
-        "name": "query event end DetectedObjectVelocity range",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 1420,
-        "y": 700,
-        "wires": [
-            [
-                "dc7e60441c1d4eb0"
-            ]
-        ]
-    },
-    {
-        "id": "552d8ae14f66d353",
-        "type": "delay",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "pauseType": "delay",
-        "timeout": "30",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1140,
-        "y": 700,
-        "wires": [
-            [
-                "6340fdddac0e48d6"
+                "8bfe9073f29ff037"
             ]
         ]
     },
