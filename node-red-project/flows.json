@@ -58,7 +58,8 @@
             "4039fcd5e467867d",
             "4681243b9c70e906",
             "b8db51ab64a3d61e",
-            "b0814f902d047f9f"
+            "b0814f902d047f9f",
+            "67f64c75edc0ef13"
         ],
         "x": 74,
         "y": 799,
@@ -490,7 +491,7 @@
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
         "name": "format data for influxdb TimedSpeedCounts measurement",
-        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -611,7 +612,8 @@
         "y": 900,
         "wires": [
             [
-                "4681243b9c70e906"
+                "4681243b9c70e906",
+                "67f64c75edc0ef13"
             ]
         ]
     },
@@ -621,7 +623,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "format data for influxdb DetectedObjectVelocity measurement",
-        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -775,7 +777,7 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "debug-radar-key-valid-raw-speeds",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -859,7 +861,7 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "format data for influxdb speed, magnitude measurement, inbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -915,7 +917,7 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "format data for influxdb speed, magnitude measurement, outbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -947,6 +949,24 @@
         "statusType": "auto",
         "x": 1550,
         "y": 1300,
+        "wires": []
+    },
+    {
+        "id": "67f64c75edc0ef13",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "debug-radar-DetectObjectVelocity",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 840,
         "wires": []
     },
     {
@@ -1181,7 +1201,7 @@
         "id": "4da64f8fa893d5e5",
         "type": "debug",
         "z": "49e416bfab1d4055",
-        "name": "debug - influxdb query 01",
+        "name": "debug - influxdb delay 5-sec",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1190,7 +1210,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1750,
+        "x": 1760,
         "y": 500,
         "wires": []
     },
@@ -1199,7 +1219,7 @@
         "type": "function",
         "z": "49e416bfab1d4055",
         "name": "calculate direction",
-        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\nreturn msg;",
+        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1236,20 +1256,23 @@
         "id": "6539eff5f28950e2",
         "type": "function",
         "z": "49e416bfab1d4055",
-        "name": "create influxdb query based on msg",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor(msg.payload.after.start_time) +\", stop: \" + Math.ceil(msg.payload.after.end_time) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\n\nmsg.query = query;\nreturn msg;",
+        "name": "create influxdb query based on msg, +/- 2 sec",
+        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1320,
+        "x": 1160,
         "y": 420,
         "wires": [
             [
                 "6f8144816d69687d",
-                "78816dc4ce463c87"
+                "f6c01dada26789f1",
+                "94bf7ee4f62f5852",
+                "cfa7d1ed2b94f977",
+                "552d8ae14f66d353"
             ]
         ]
     },
@@ -1266,7 +1289,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1580,
+        "x": 1680,
         "y": 420,
         "wires": []
     },
@@ -1286,6 +1309,214 @@
         "wires": [
             [
                 "4da64f8fa893d5e5"
+            ]
+        ]
+    },
+    {
+        "id": "f6c01dada26789f1",
+        "type": "delay",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1140,
+        "y": 500,
+        "wires": [
+            [
+                "78816dc4ce463c87"
+            ]
+        ]
+    },
+    {
+        "id": "5bed0aa9a887245a",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb delay 10",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1750,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "ced009415eb941b4",
+        "type": "influxdb in",
+        "z": "49e416bfab1d4055",
+        "influxdb": "73598328fc95017b",
+        "name": "query event end DetectedObjectVelocity range",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 1420,
+        "y": 580,
+        "wires": [
+            [
+                "5bed0aa9a887245a"
+            ]
+        ]
+    },
+    {
+        "id": "94bf7ee4f62f5852",
+        "type": "delay",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "10",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1140,
+        "y": 580,
+        "wires": [
+            [
+                "ced009415eb941b4"
+            ]
+        ]
+    },
+    {
+        "id": "251d183912dc4b24",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb delay 15-s",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1760,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "59ace42aa67e9935",
+        "type": "influxdb in",
+        "z": "49e416bfab1d4055",
+        "influxdb": "73598328fc95017b",
+        "name": "query event end DetectedObjectVelocity range",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 1420,
+        "y": 640,
+        "wires": [
+            [
+                "251d183912dc4b24"
+            ]
+        ]
+    },
+    {
+        "id": "cfa7d1ed2b94f977",
+        "type": "delay",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "15",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1140,
+        "y": 640,
+        "wires": [
+            [
+                "59ace42aa67e9935"
+            ]
+        ]
+    },
+    {
+        "id": "dc7e60441c1d4eb0",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb delay 30-sec",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1760,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "6340fdddac0e48d6",
+        "type": "influxdb in",
+        "z": "49e416bfab1d4055",
+        "influxdb": "73598328fc95017b",
+        "name": "query event end DetectedObjectVelocity range",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 1420,
+        "y": 700,
+        "wires": [
+            [
+                "dc7e60441c1d4eb0"
+            ]
+        ]
+    },
+    {
+        "id": "552d8ae14f66d353",
+        "type": "delay",
+        "z": "49e416bfab1d4055",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "30",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1140,
+        "y": 700,
+        "wires": [
+            [
+                "6340fdddac0e48d6"
             ]
         ]
     },
