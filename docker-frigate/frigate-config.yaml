@@ -40,6 +40,12 @@ cameras:
     motion: # mask intersection
       mask:
       - 0,419,0,0,889,0,1083,0,2019,0,1982,270,1094,306
+    objects:
+      filters:
+        car:
+          mask:
+          - 0,320,0,0
+
   picam_gs_h264: # <------ Name the camera
     enabled: False
     ffmpeg:
