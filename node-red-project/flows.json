@@ -407,6 +407,7 @@
         "id": "e8e6eaf852900af0",
         "type": "inject",
         "z": "94d07e407c25f282",
+        "d": true,
         "name": "get human readable timestamp, after 4 secs",
         "props": [
             {
@@ -999,7 +1000,8 @@
         "y": 300,
         "wires": [
             [
-                "4a1c5b87abde2112"
+                "4a1c5b87abde2112",
+                "bcdcd8861df95e07"
             ]
         ]
     },
@@ -1008,7 +1010,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "debug: published frigate messages",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1021,23 +1023,13 @@
         "wires": []
     },
     {
-        "id": "b8f09eb5bad1c457",
-        "type": "comment",
-        "z": "49e416bfab1d4055",
-        "name": "collect DetectedObjectVelocity from radar for event",
-        "info": "Get all DetectedObjectVelocity from Event `start_time` to `end_time`\n- Get both Inbound/Outbound (make determination later)\n- Assume ZONES set up in camera - near/far and `entered_zones` contains them *in order*\n- Take IQR? Mean? Median?",
-        "x": 390,
-        "y": 420,
-        "wires": []
-    },
-    {
         "id": "df15577b1109b274",
         "type": "comment",
         "z": "49e416bfab1d4055",
         "name": "send back Frigate sublabel with speed(s) back for event",
         "info": "API example (python):\n```\nrequests.post(f\"{FRIGATE_HOST}/api/events/{event_id}/sub_label\", json={\"subLabel\": vehicle_name, \"subLabelScore\": round(score, 2)})\n```",
-        "x": 600,
-        "y": 540,
+        "x": 782,
+        "y": 595,
         "wires": []
     },
     {
@@ -1056,8 +1048,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 310,
-        "y": 620,
+        "x": 312,
+        "y": 655,
         "wires": [
             [
                 "521a1c5d5d51f5b9"
@@ -1077,8 +1069,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 620,
+        "x": 542,
+        "y": 655,
         "wires": []
     },
     {
@@ -1092,49 +1084,13 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 130,
-        "y": 620,
+        "x": 132,
+        "y": 655,
         "wires": [
             [
                 "a980360b45ee8b7b"
             ]
         ]
-    },
-    {
-        "id": "e91b829fc7e76871",
-        "type": "inject",
-        "z": "49e416bfab1d4055",
-        "name": "make query",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 130,
-        "y": 720,
-        "wires": [
-            [
-                "178ee5ca97585a4b"
-            ]
-        ]
-    },
-    {
-        "id": "c6df4e04754031df",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - influxdb query 01",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 550,
-        "y": 720,
-        "wires": []
     },
     {
         "id": "1720d60a87cfb2d7",
@@ -1164,21 +1120,172 @@
         ]
     },
     {
-        "id": "178ee5ca97585a4b",
+        "id": "bcdcd8861df95e07",
+        "type": "switch",
+        "z": "49e416bfab1d4055",
+        "name": "payload.type == \"end\"",
+        "property": "payload.type",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "end",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 500,
+        "y": 360,
+        "wires": [
+            [
+                "67f433ccd5912ebd"
+            ]
+        ]
+    },
+    {
+        "id": "67f433ccd5912ebd",
+        "type": "switch",
+        "z": "49e416bfab1d4055",
+        "name": "after label is car or bike",
+        "property": "payload.after.label",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "car",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "bicycle",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 750,
+        "y": 360,
+        "wires": [
+            [
+                "6cfe5662fc478c14"
+            ],
+            [
+                "6cfe5662fc478c14"
+            ]
+        ]
+    },
+    {
+        "id": "4da64f8fa893d5e5",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb query 01",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1750,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "6cfe5662fc478c14",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "name": "calculate direction",
+        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 360,
+        "wires": [
+            [
+                "9f1012eacf4d076f",
+                "6539eff5f28950e2"
+            ]
+        ]
+    },
+    {
+        "id": "9f1012eacf4d076f",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug: calc direction",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1280,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "6539eff5f28950e2",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "name": "create influxdb query based on msg",
+        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor(msg.payload.after.start_time) +\", stop: \" + Math.ceil(msg.payload.after.end_time) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\n\nmsg.query = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1320,
+        "y": 420,
+        "wires": [
+            [
+                "6f8144816d69687d",
+                "78816dc4ce463c87"
+            ]
+        ]
+    },
+    {
+        "id": "6f8144816d69687d",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "query",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1580,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "78816dc4ce463c87",
         "type": "influxdb in",
         "z": "49e416bfab1d4055",
         "influxdb": "73598328fc95017b",
-        "name": "query-01",
-        "query": "from(bucket: \"tm-05\")\n\t|> range(start: -3h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"DetectedObjectVelocity\")\n  |> filter(fn: (r) => r[\"_field\"] == \"velocity\")\n  |> filter(fn: (r) => r[\"direction\"] == \"inbound\")\n  |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-01-nb\")\n  |> filter(fn: (r) => r[\"units\"] == \"mph\")",
+        "name": "query event end DetectedObjectVelocity range",
+        "query": "",
         "rawOutput": false,
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 300,
-        "y": 720,
+        "x": 1420,
+        "y": 500,
         "wires": [
             [
-                "c6df4e04754031df"
+                "4da64f8fa893d5e5"
             ]
         ]
     },
