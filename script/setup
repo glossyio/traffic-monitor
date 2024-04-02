@@ -39,6 +39,13 @@ mkdir -p ~/code/influxdb/config
 cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
 ##-- /influxdb
 
+
+##-- Add mongo Dockerfile
+mkdir -p ~/code/mongodb/data
+cp docker-mongodb/docker-compose-mongodb.yaml ~/code/mongodb/docker-compose-mongodb.yml
+##-- /mongo
+
+
 ##--add combined compose file to start all services
 cp compose.yaml ~/code/compose.yaml
 

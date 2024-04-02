@@ -31,3 +31,5 @@ services:
         condition: service_healthy
       influxdb:
         condition: service_healthy
+      mongodb:
+        condition: service_healthy
