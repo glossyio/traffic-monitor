@@ -196,7 +196,7 @@
         "type": "serial-port",
         "name": "",
         "serialport": "/dev/ttyACM0",
-        "serialbaud": "9600",
+        "serialbaud": "19200",
         "databits": "8",
         "parity": "none",
         "stopbits": "1",
@@ -378,8 +378,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 170,
-        "y": 560,
+        "x": 670,
+        "y": 280,
         "wires": [
             [
                 "36b68e0861cc5fc4",
@@ -402,8 +402,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 520,
-        "y": 560,
+        "x": 1020,
+        "y": 280,
         "wires": []
     },
     {
@@ -526,8 +526,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 560,
-        "y": 500,
+        "x": 1060,
+        "y": 220,
         "wires": []
     },
     {
@@ -698,7 +698,7 @@
         "z": "94d07e407c25f282",
         "name": "variables to pass",
         "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n\n\n",
-        "x": 820,
+        "x": 360,
         "y": 60,
         "wires": []
     },
@@ -811,10 +811,10 @@
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive ttyACM0",
+        "name": "receive OPS243 serial (USB - /dev/ttyACM0)",
         "serial": "d65c36624d553ee7",
-        "x": 140,
-        "y": 500,
+        "x": 730,
+        "y": 220,
         "wires": [
             [
                 "bb2b78040385d37e",
@@ -826,9 +826,9 @@
         "id": "8e8ede8ca221552b",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS24-C",
+        "name": "send to OPS243 serial (USB)",
         "serial": "d65c36624d553ee7",
-        "x": 650,
+        "x": 680,
         "y": 120,
         "wires": []
     },
