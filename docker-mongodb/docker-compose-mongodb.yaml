@@ -1,9 +1,12 @@
 ################################################################################
 # MongoDB official container and web interface
 # 
+# mongo-express: basicAuth credentials are "admin:pass", 
+#   it is recommended you change this in your config.js!
 ################################################################################
 
 # Use root/example as user/password credentials
+
 services:
 
   mongo:
@@ -11,8 +14,8 @@ services:
     image: mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: mongodbpass
     ports:
       - 27017:27017
     volumes:
@@ -20,11 +23,6 @@ services:
     depends_on:
       frigate:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:27017/ping"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
 
   mongo-express:
     container_name: mongoui
@@ -33,15 +31,9 @@ services:
     ports:
       - 8081:8081
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongoadmin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongodbpass
+      ME_CONFIG_MONGODB_URL: mongodb://mongoadmin:mongodbpass@mongo:27017/
     depends_on:
-      mongo:
+      frigate:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/ping"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
-
