@@ -40,10 +40,10 @@
             "c96c20a6a94d3073",
             "526eb1967dda78c4"
         ],
-        "x": 74,
+        "x": 54,
         "y": 999,
-        "w": 1312,
-        "h": 222
+        "w": 1152,
+        "h": 262
     },
     {
         "id": "1d00b3011a12b204",
@@ -58,18 +58,19 @@
             "4039fcd5e467867d",
             "4681243b9c70e906",
             "b8db51ab64a3d61e",
-            "b0814f902d047f9f"
+            "b0814f902d047f9f",
+            "67f64c75edc0ef13"
         ],
-        "x": 74,
-        "y": 799,
-        "w": 1332,
-        "h": 182
+        "x": 54,
+        "y": 679,
+        "w": 1132,
+        "h": 262
     },
     {
         "id": "3acc78eb8fcb72f8",
         "type": "group",
         "z": "94d07e407c25f282",
-        "name": "TimedSpeedCounts records",
+        "name": "Raw speed records",
         "style": {
             "label": true
         },
@@ -84,10 +85,65 @@
             "ffefd7af202792df",
             "65512a020a745b9a"
         ],
-        "x": 74,
-        "y": 1259,
-        "w": 1692,
-        "h": 182
+        "x": 54,
+        "y": 1299,
+        "w": 1152,
+        "h": 302
+    },
+    {
+        "id": "8dd778b3e5d3a05c",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "listen to MQTT payloads, categorize",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bcdcd8861df95e07",
+            "67f433ccd5912ebd",
+            "6cfe5662fc478c14"
+        ],
+        "x": 34,
+        "y": 259,
+        "w": 312,
+        "h": 202
+    },
+    {
+        "id": "e7337074cbb5c952",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "query InfluxDB for Event speed readings",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6539eff5f28950e2",
+            "d541afce049d3481",
+            "e63efdd922665136",
+            "092f3fb8f472ef20"
+        ],
+        "x": 34,
+        "y": 519,
+        "w": 532,
+        "h": 262
+    },
+    {
+        "id": "9ee8ebd820661432",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "create Frigate /api/subLabel request to event for speed",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "031f1f21a0ab203d",
+            "0f3ff76b20f6fea0",
+            "669e68daa73311d6"
+        ],
+        "x": 674,
+        "y": 519,
+        "w": 352,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -140,7 +196,7 @@
         "type": "serial-port",
         "name": "",
         "serialport": "/dev/ttyACM0",
-        "serialbaud": "9600",
+        "serialbaud": "19200",
         "databits": "8",
         "parity": "none",
         "stopbits": "1",
@@ -154,6 +210,102 @@
         "out": "char",
         "addchar": "",
         "responsetimeout": "5000"
+    },
+    {
+        "id": "97157ec786fbe8be",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
     },
     {
         "id": "e43506628b4a1cdb",
@@ -210,7 +362,7 @@
         "payload": "??",
         "payloadType": "str",
         "x": 210,
-        "y": 180,
+        "y": 160,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -226,8 +378,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 190,
-        "y": 700,
+        "x": 670,
+        "y": 280,
         "wires": [
             [
                 "36b68e0861cc5fc4",
@@ -250,8 +402,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 440,
-        "y": 700,
+        "x": 1020,
+        "y": 280,
         "wires": []
     },
     {
@@ -273,7 +425,7 @@
         "payload": "s?",
         "payloadType": "str",
         "x": 190,
-        "y": 300,
+        "y": 240,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -303,7 +455,7 @@
         "payload": "r>100",
         "payloadType": "str",
         "x": 210,
-        "y": 360,
+        "y": 280,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -333,7 +485,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 290,
+        "x": 270,
         "y": 1040,
         "wires": [
             [
@@ -357,8 +509,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 730,
-        "y": 1040,
+        "x": 990,
+        "y": 1100,
         "wires": []
     },
     {
@@ -374,15 +526,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 480,
-        "y": 620,
+        "x": 1060,
+        "y": 220,
         "wires": []
     },
     {
         "id": "5c9f0ea3d994a42c",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: set unix time, after 3 secs",
+        "name": "init: set unix time, after 0.2-secs",
         "props": [
             {
                 "p": "payload"
@@ -391,12 +543,12 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "3",
+        "onceDelay": ".2",
         "topic": "",
-        "payload": "\"C=\" & $millis() & \"CZ=PST+-8\"",
+        "payload": "\"C=\" & $millis()/1000",
         "payloadType": "jsonata",
         "x": 210,
-        "y": 480,
+        "y": 360,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -422,7 +574,7 @@
         "payload": "OH",
         "payloadType": "str",
         "x": 250,
-        "y": 540,
+        "y": 400,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -447,7 +599,7 @@
         "payload": "O?o?",
         "payloadType": "str",
         "x": 230,
-        "y": 240,
+        "y": 200,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -475,7 +627,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 370,
+        "x": 350,
         "y": 1100,
         "wires": [
             [
@@ -490,15 +642,15 @@
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
         "name": "format data for influxdb TimedSpeedCounts measurement",
-        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 770,
-        "y": 1100,
+        "x": 490,
+        "y": 1160,
         "wires": [
             [
                 "617c9bb213538929"
@@ -515,8 +667,8 @@
             "617c9bb213538929"
         ],
         "uncaught": false,
-        "x": 1200,
-        "y": 1140,
+        "x": 980,
+        "y": 1160,
         "wires": [
             [
                 "16550239673f6d6d"
@@ -536,7 +688,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1940,
+        "x": 1560,
         "y": 1140,
         "wires": []
     },
@@ -546,7 +698,7 @@
         "z": "94d07e407c25f282",
         "name": "variables to pass",
         "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n\n\n",
-        "x": 820,
+        "x": 360,
         "y": 60,
         "wires": []
     },
@@ -557,8 +709,8 @@
         "g": "04cc3b7b3e019683",
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
-        "x": 280,
-        "y": 1180,
+        "x": 1000,
+        "y": 1040,
         "wires": []
     },
     {
@@ -579,8 +731,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 260,
-        "y": 840,
+        "x": 240,
+        "y": 720,
         "wires": [
             [
                 "4039fcd5e467867d"
@@ -607,11 +759,12 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 370,
-        "y": 900,
+        "x": 350,
+        "y": 780,
         "wires": [
             [
-                "4681243b9c70e906"
+                "4681243b9c70e906",
+                "67f64c75edc0ef13"
             ]
         ]
     },
@@ -621,15 +774,15 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "format data for influxdb DetectedObjectVelocity measurement",
-        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 760,
-        "y": 900,
+        "x": 500,
+        "y": 840,
         "wires": [
             [
                 "b8db51ab64a3d61e"
@@ -646,8 +799,8 @@
             "b8db51ab64a3d61e"
         ],
         "uncaught": false,
-        "x": 1210,
-        "y": 940,
+        "x": 990,
+        "y": 900,
         "wires": [
             [
                 "16550239673f6d6d"
@@ -658,10 +811,10 @@
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive ttyACM0",
+        "name": "receive OPS243 serial (USB - /dev/ttyACM0)",
         "serial": "d65c36624d553ee7",
-        "x": 160,
-        "y": 620,
+        "x": 730,
+        "y": 220,
         "wires": [
             [
                 "bb2b78040385d37e",
@@ -673,9 +826,9 @@
         "id": "8e8ede8ca221552b",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS24-C",
+        "name": "send to OPS243 serial (USB)",
         "serial": "d65c36624d553ee7",
-        "x": 650,
+        "x": 680,
         "y": 120,
         "wires": []
     },
@@ -694,8 +847,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 1180,
-        "y": 1100,
+        "x": 620,
+        "y": 1220,
         "wires": []
     },
     {
@@ -713,7 +866,7 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 1190,
+        "x": 610,
         "y": 900,
         "wires": []
     },
@@ -735,7 +888,7 @@
         "payload": "r>0r<0A!",
         "payloadType": "str",
         "x": 180,
-        "y": 420,
+        "y": 320,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -760,8 +913,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 210,
-        "y": 1300,
+        "x": 190,
+        "y": 1340,
         "wires": [
             [
                 "2fded2c6588bfd47"
@@ -783,8 +936,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 1300,
+        "x": 1000,
+        "y": 1340,
         "wires": []
     },
     {
@@ -807,8 +960,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 370,
-        "y": 1360,
+        "x": 350,
+        "y": 1400,
         "wires": [
             [
                 "207eac3ff9b634a5",
@@ -831,8 +984,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 1560,
-        "y": 1340,
+        "x": 980,
+        "y": 1540,
         "wires": []
     },
     {
@@ -845,8 +998,8 @@
             "1daaab9e36f6fdb2"
         ],
         "uncaught": false,
-        "x": 1580,
-        "y": 1400,
+        "x": 1020,
+        "y": 1460,
         "wires": [
             [
                 "16550239673f6d6d"
@@ -859,15 +1012,15 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "format data for influxdb speed, magnitude measurement, inbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
-        "y": 1340,
+        "x": 540,
+        "y": 1520,
         "wires": [
             [
                 "1daaab9e36f6fdb2",
@@ -898,8 +1051,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 690,
-        "y": 1360,
+        "x": 390,
+        "y": 1460,
         "wires": [
             [
                 "ab905349bef72bac"
@@ -915,15 +1068,15 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "format data for influxdb speed, magnitude measurement, outbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: \"ne26th-wasco-01-nb\",\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
-        "y": 1400,
+        "x": 540,
+        "y": 1560,
         "wires": [
             [
                 "1daaab9e36f6fdb2",
@@ -945,8 +1098,26 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1550,
-        "y": 1300,
+        "x": 990,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "67f64c75edc0ef13",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "debug-radar-DetectObjectVelocity",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 780,
         "wires": []
     },
     {
@@ -962,8 +1133,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 500,
-        "y": 140,
+        "x": 340,
+        "y": 40,
         "wires": []
     },
     {
@@ -979,8 +1150,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 500,
-        "y": 180,
+        "x": 340,
+        "y": 80,
         "wires": []
     },
     {
@@ -996,8 +1167,8 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 210,
-        "y": 300,
+        "x": 90,
+        "y": 180,
         "wires": [
             [
                 "4a1c5b87abde2112",
@@ -1018,79 +1189,9 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 280,
+        "x": 360,
+        "y": 160,
         "wires": []
-    },
-    {
-        "id": "df15577b1109b274",
-        "type": "comment",
-        "z": "49e416bfab1d4055",
-        "name": "send back Frigate sublabel with speed(s) back for event",
-        "info": "API example (python):\n```\nrequests.post(f\"{FRIGATE_HOST}/api/events/{event_id}/sub_label\", json={\"subLabel\": vehicle_name, \"subLabelScore\": round(score, 2)})\n```",
-        "x": 782,
-        "y": 595,
-        "wires": []
-    },
-    {
-        "id": "a980360b45ee8b7b",
-        "type": "http request",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://10.10.10.224:5000/api/events/1708220841.127413-uctgde",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 312,
-        "y": 655,
-        "wires": [
-            [
-                "521a1c5d5d51f5b9"
-            ]
-        ]
-    },
-    {
-        "id": "521a1c5d5d51f5b9",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - http 01 return",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 542,
-        "y": 655,
-        "wires": []
-    },
-    {
-        "id": "32a0f2a8f17ce82c",
-        "type": "inject",
-        "z": "49e416bfab1d4055",
-        "name": "make request",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 132,
-        "y": 655,
-        "wires": [
-            [
-                "a980360b45ee8b7b"
-            ]
-        ]
     },
     {
         "id": "1720d60a87cfb2d7",
@@ -1108,8 +1209,8 @@
         "persistence_bind": "memory",
         "dburl": "",
         "usetls": false,
-        "x": 190,
-        "y": 160,
+        "x": 90,
+        "y": 60,
         "wires": [
             [
                 "6c2d22f0a8cb1fc1"
@@ -1123,6 +1224,7 @@
         "id": "bcdcd8861df95e07",
         "type": "switch",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "payload.type == \"end\"",
         "property": "payload.type",
         "propertyType": "msg",
@@ -1136,8 +1238,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 500,
-        "y": 360,
+        "x": 160,
+        "y": 300,
         "wires": [
             [
                 "67f433ccd5912ebd"
@@ -1148,6 +1250,7 @@
         "id": "67f433ccd5912ebd",
         "type": "switch",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "after label is car or bike",
         "property": "payload.after.label",
         "propertyType": "msg",
@@ -1166,7 +1269,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 750,
+        "x": 210,
         "y": 360,
         "wires": [
             [
@@ -1178,36 +1281,20 @@
         ]
     },
     {
-        "id": "4da64f8fa893d5e5",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - influxdb query 01",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1750,
-        "y": 500,
-        "wires": []
-    },
-    {
         "id": "6cfe5662fc478c14",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "calculate direction",
-        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_picam_h264_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\nreturn msg;",
+        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\n\nmsg.topic = \"event_end_car_bike\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1030,
-        "y": 360,
+        "x": 230,
+        "y": 420,
         "wires": [
             [
                 "9f1012eacf4d076f",
@@ -1220,36 +1307,38 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "debug: calc direction",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1280,
-        "y": 360,
+        "x": 760,
+        "y": 280,
         "wires": []
     },
     {
         "id": "6539eff5f28950e2",
         "type": "function",
         "z": "49e416bfab1d4055",
-        "name": "create influxdb query based on msg",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor(msg.payload.after.start_time) +\", stop: \" + Math.ceil(msg.payload.after.end_time) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\n\nmsg.query = query;\nreturn msg;",
+        "g": "e7337074cbb5c952",
+        "name": "create influxdb query based on msg, +/- 2 sec, return median",
+        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1320,
-        "y": 420,
+        "x": 280,
+        "y": 560,
         "wires": [
             [
                 "6f8144816d69687d",
-                "78816dc4ce463c87"
+                "d541afce049d3481",
+                "0f3ff76b20f6fea0"
             ]
         ]
     },
@@ -1257,8 +1346,8 @@
         "id": "6f8144816d69687d",
         "type": "debug",
         "z": "49e416bfab1d4055",
-        "name": "debug 2",
-        "active": true,
+        "name": "debug-influxdb-query-string-01",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1266,14 +1355,32 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1580,
-        "y": 420,
+        "x": 790,
+        "y": 340,
         "wires": []
     },
     {
-        "id": "78816dc4ce463c87",
+        "id": "8bfe9073f29ff037",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug - influxdb return delay 0-sec",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1300,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "d541afce049d3481",
         "type": "influxdb in",
         "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
         "influxdb": "73598328fc95017b",
         "name": "query event end DetectedObjectVelocity range",
         "query": "",
@@ -1281,13 +1388,205 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 1420,
-        "y": 500,
+        "x": 300,
+        "y": 620,
         "wires": [
             [
-                "4da64f8fa893d5e5"
+                "092f3fb8f472ef20",
+                "882bc1f194714da1"
             ]
         ]
+    },
+    {
+        "id": "031f1f21a0ab203d",
+        "type": "http request",
+        "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
+        "name": "add subLabel to event",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://{{{frigate_ip}}}:5000/api/events/{{{event_id}}}/sub_label",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 900,
+        "y": 680,
+        "wires": [
+            [
+                "50574c0e9f62cf10"
+            ]
+        ]
+    },
+    {
+        "id": "0f3ff76b20f6fea0",
+        "type": "join",
+        "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
+        "name": "join message objects",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 800,
+        "y": 560,
+        "wires": [
+            [
+                "8a665815ec136e90",
+                "669e68daa73311d6"
+            ]
+        ]
+    },
+    {
+        "id": "8a665815ec136e90",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "debug event car bike speed",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1280,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "e63efdd922665136",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "query, add topic",
+        "func": "msg.topic = \"query_return\"\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 740,
+        "wires": [
+            [
+                "0f3ff76b20f6fea0",
+                "8bfe9073f29ff037"
+            ]
+        ]
+    },
+    {
+        "id": "669e68daa73311d6",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
+        "name": "create subLabel message",
+        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.event_end_car_bike.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.query_return[0].units + \"_\" + msg.payload.query_return[0].direction), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return[0]._value)/1000)\n    };\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 620,
+        "wires": [
+            [
+                "1b0344bd4829de6b",
+                "031f1f21a0ab203d"
+            ]
+        ]
+    },
+    {
+        "id": "1b0344bd4829de6b",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "subLabel complete message to send",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1310,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "092f3fb8f472ef20",
+        "type": "switch",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "pass valid query returns",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 410,
+        "y": 680,
+        "wires": [
+            [
+                "e63efdd922665136"
+            ]
+        ]
+    },
+    {
+        "id": "882bc1f194714da1",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "influxdb query return",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "50574c0e9f62cf10",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "name": "frigate return, event speed sub_label",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1310,
+        "y": 680,
+        "wires": []
     },
     {
         "id": "8cee82669b6b8512",
