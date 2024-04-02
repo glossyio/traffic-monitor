@@ -91,6 +91,61 @@
         "h": 302
     },
     {
+        "id": "8dd778b3e5d3a05c",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "listen to MQTT payloads, categorize",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bcdcd8861df95e07",
+            "67f433ccd5912ebd",
+            "6cfe5662fc478c14"
+        ],
+        "x": 34,
+        "y": 259,
+        "w": 312,
+        "h": 202
+    },
+    {
+        "id": "e7337074cbb5c952",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "query InfluxDB for Event speed readings",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6539eff5f28950e2",
+            "d541afce049d3481",
+            "e63efdd922665136",
+            "092f3fb8f472ef20"
+        ],
+        "x": 34,
+        "y": 519,
+        "w": 532,
+        "h": 262
+    },
+    {
+        "id": "9ee8ebd820661432",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "create Frigate /api/subLabel request to event for speed",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "031f1f21a0ab203d",
+            "0f3ff76b20f6fea0",
+            "669e68daa73311d6"
+        ],
+        "x": 674,
+        "y": 519,
+        "w": 352,
+        "h": 202
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -1139,76 +1194,6 @@
         "wires": []
     },
     {
-        "id": "df15577b1109b274",
-        "type": "comment",
-        "z": "49e416bfab1d4055",
-        "name": "send back Frigate sublabel with speed(s) back for event",
-        "info": "API example (python):\n```\nrequests.post(f\"{FRIGATE_HOST}/api/events/{event_id}/sub_label\", json={\"subLabel\": vehicle_name, \"subLabelScore\": round(score, 2)})\n```",
-        "x": 700,
-        "y": 860,
-        "wires": []
-    },
-    {
-        "id": "a980360b45ee8b7b",
-        "type": "http request",
-        "z": "49e416bfab1d4055",
-        "name": "",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://10.10.10.224:5000/api/events/1708220841.127413-uctgde",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 370,
-        "y": 940,
-        "wires": [
-            [
-                "521a1c5d5d51f5b9"
-            ]
-        ]
-    },
-    {
-        "id": "521a1c5d5d51f5b9",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "name": "debug - http 01 return",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 940,
-        "wires": []
-    },
-    {
-        "id": "32a0f2a8f17ce82c",
-        "type": "inject",
-        "z": "49e416bfab1d4055",
-        "name": "make request",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 190,
-        "y": 940,
-        "wires": [
-            [
-                "a980360b45ee8b7b"
-            ]
-        ]
-    },
-    {
         "id": "1720d60a87cfb2d7",
         "type": "aedes broker",
         "z": "49e416bfab1d4055",
@@ -1239,6 +1224,7 @@
         "id": "bcdcd8861df95e07",
         "type": "switch",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "payload.type == \"end\"",
         "property": "payload.type",
         "propertyType": "msg",
@@ -1252,8 +1238,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 320,
-        "y": 220,
+        "x": 160,
+        "y": 300,
         "wires": [
             [
                 "67f433ccd5912ebd"
@@ -1264,6 +1250,7 @@
         "id": "67f433ccd5912ebd",
         "type": "switch",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "after label is car or bike",
         "property": "payload.after.label",
         "propertyType": "msg",
@@ -1282,8 +1269,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 370,
-        "y": 280,
+        "x": 210,
+        "y": 360,
         "wires": [
             [
                 "6cfe5662fc478c14"
@@ -1297,6 +1284,7 @@
         "id": "6cfe5662fc478c14",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
         "name": "calculate direction",
         "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\n\nmsg.topic = \"event_end_car_bike\";\nreturn msg;",
         "outputs": 1,
@@ -1305,8 +1293,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 340,
+        "x": 230,
+        "y": 420,
         "wires": [
             [
                 "9f1012eacf4d076f",
@@ -1327,15 +1315,16 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1420,
-        "y": 340,
+        "x": 760,
+        "y": 280,
         "wires": []
     },
     {
         "id": "6539eff5f28950e2",
         "type": "function",
         "z": "49e416bfab1d4055",
-        "name": "create influxdb query based on msg, +/- 2 sec",
+        "g": "e7337074cbb5c952",
+        "name": "create influxdb query based on msg, +/- 2 sec, return median",
         "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"\" + msg.payload.after.nr_direction + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -1343,8 +1332,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
-        "y": 400,
+        "x": 280,
+        "y": 560,
         "wires": [
             [
                 "6f8144816d69687d",
@@ -1366,8 +1355,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1450,
-        "y": 400,
+        "x": 790,
+        "y": 340,
         "wires": []
     },
     {
@@ -1383,14 +1372,15 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1460,
-        "y": 520,
+        "x": 1300,
+        "y": 740,
         "wires": []
     },
     {
         "id": "d541afce049d3481",
         "type": "influxdb in",
         "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
         "influxdb": "73598328fc95017b",
         "name": "query event end DetectedObjectVelocity range",
         "query": "",
@@ -1398,8 +1388,8 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 580,
-        "y": 460,
+        "x": 300,
+        "y": 620,
         "wires": [
             [
                 "092f3fb8f472ef20",
@@ -1411,6 +1401,7 @@
         "id": "031f1f21a0ab203d",
         "type": "http request",
         "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
         "name": "add subLabel to event",
         "method": "POST",
         "ret": "txt",
@@ -1423,8 +1414,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1160,
-        "y": 700,
+        "x": 900,
+        "y": 680,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1435,6 +1426,7 @@
         "id": "0f3ff76b20f6fea0",
         "type": "join",
         "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
         "name": "join message objects",
         "mode": "custom",
         "build": "object",
@@ -1451,8 +1443,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 980,
-        "y": 580,
+        "x": 800,
+        "y": 560,
         "wires": [
             [
                 "8a665815ec136e90",
@@ -1473,14 +1465,15 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1440,
-        "y": 580,
+        "x": 1280,
+        "y": 560,
         "wires": []
     },
     {
         "id": "e63efdd922665136",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
         "name": "query, add topic",
         "func": "msg.topic = \"query_return\"\nreturn msg;",
         "outputs": 1,
@@ -1489,8 +1482,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 920,
-        "y": 520,
+        "x": 460,
+        "y": 740,
         "wires": [
             [
                 "0f3ff76b20f6fea0",
@@ -1502,6 +1495,7 @@
         "id": "669e68daa73311d6",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "g": "9ee8ebd820661432",
         "name": "create subLabel message",
         "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.event_end_car_bike.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.query_return[0].units + \"_\" + msg.payload.query_return[0].direction), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return[0]._value)/1000)\n    };\n\nreturn newMsg;",
         "outputs": 1,
@@ -1510,8 +1504,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1030,
-        "y": 640,
+        "x": 850,
+        "y": 620,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1532,14 +1526,15 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1470,
-        "y": 640,
+        "x": 1310,
+        "y": 620,
         "wires": []
     },
     {
         "id": "092f3fb8f472ef20",
         "type": "switch",
         "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
         "name": "pass valid query returns",
         "property": "payload",
         "propertyType": "msg",
@@ -1551,8 +1546,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 690,
-        "y": 520,
+        "x": 410,
+        "y": 680,
         "wires": [
             [
                 "e63efdd922665136"
@@ -1564,7 +1559,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "influxdb query return",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1572,8 +1567,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1420,
-        "y": 460,
+        "x": 760,
+        "y": 400,
         "wires": []
     },
     {
@@ -1581,7 +1576,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "frigate return, event speed sub_label",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1589,8 +1584,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1470,
-        "y": 700,
+        "x": 1310,
+        "y": 680,
         "wires": []
     },
     {
