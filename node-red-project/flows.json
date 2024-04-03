@@ -147,8 +147,8 @@
             "1b0344bd4829de6b",
             "50574c0e9f62cf10"
         ],
-        "x": 1814,
-        "y": 239,
+        "x": 734,
+        "y": 1239,
         "w": 692,
         "h": 142
     },
@@ -156,14 +156,9 @@
         "id": "d14033e4e7acdf1b",
         "type": "group",
         "z": "49e416bfab1d4055",
+        "name": "write to mongodb",
         "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
+            "label": true
         },
         "nodes": [
             "400aaccc21e5eaf7",
@@ -172,8 +167,8 @@
             "466942b727a6409c",
             "b7fa755e674904a4"
         ],
-        "x": 1174,
-        "y": 1039,
+        "x": 734,
+        "y": 959,
         "w": 612,
         "h": 202
     },
@@ -1436,8 +1431,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 2000,
-        "y": 340,
+        "x": 920,
+        "y": 1340,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1480,7 +1475,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "match Event+Radar direction",
-        "func": "//if only 1 Radar.direction USE THAT\nif (msg.payload.query_return_median.length == 1) {\n    //  check if Event.nr_direction MATCHES Radar.direction THEN good\n    if (msg.payload.frigate_event.after.nr_direction == msg.payload.query_return_median[0].direction) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.frigate_event.after.nr_direction;\n    }\n    //  if Event.nr_direction == undefined THEN use 1 that came through radar \n    else if (msg.payload.frigate_event.after.nr_direction == undefined) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.query_return_median[0].direction;\n    }\n}\n//  multiple radar directions, but if Event.nr_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.query_return_median.length > 1)\n    && (msg.payload.frigate_event.after.nr_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload.query_return_median.map((o) => o.direction).indexOf(msg.payload.frigate_event.after.nr_direction) >= 0) {\n        msg.dir_speed_status = \"direction_speed_match\";\n    }\n    else {\n        msg.dir_speed_status = \"direction_speed_no_match\";\n        msg.direction_match = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n    msg.dir_speed_status = \"direction_speed_no_match\"; \n    msg.direction_match = undefined;\n    }\n\nreturn msg;",
+        "func": "//if only 1 Radar.direction USE THAT\nif (msg.payload.query_return_median.length == 1) {\n    //  check if Event.nr_direction MATCHES Radar.direction THEN good\n    if (msg.payload.frigate_event.after.nr_direction == msg.payload.query_return_median[0].direction) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.frigate_event.after.nr_direction;\n        msg.speed_match = msg.payload.query_return_median[0]._value;\n    }\n    //  if Event.nr_direction == undefined THEN use 1 that came through radar \n    else if (msg.payload.frigate_event.after.nr_direction == undefined) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.query_return_median[0].direction;\n        msg.speed_match = msg.payload.query_return_median[0]._value;\n    }\n}\n//  multiple radar directions, but if Event.nr_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.query_return_median.length > 1)\n    && (msg.payload.frigate_event.after.nr_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    var dirIndex = msg.payload.query_return_median.map((o) => o.direction).indexOf(msg.payload.frigate_event.after.nr_direction);\n    if (dirIndex >= 0) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.query_return_median[dirIndex].direction;\n        msg.speed_match = msg.payload.query_return_median[dirIndex]._value;\n    }\n    else {\n        msg.dir_speed_status = \"direction_speed_no_match\";\n        msg.direction_match = undefined;\n        msg.speed_match = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        msg.dir_speed_status = \"direction_speed_no_match\"; \n        msg.direction_match = undefined;\n        msg.speed_match = undefined;\n    }\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1492,7 +1487,8 @@
         "wires": [
             [
                 "b9ec057a98fc7391",
-                "b71b0fcb6d1e558c"
+                "b71b0fcb6d1e558c",
+                "669e68daa73311d6"
             ]
         ]
     },
@@ -1502,15 +1498,15 @@
         "z": "49e416bfab1d4055",
         "g": "9ee8ebd820661432",
         "name": "create subLabel message",
-        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.event_end_car_bike.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.query_return[0].units + \"_\" + msg.payload.query_return[0].direction), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return[0]._value)/1000)\n    };\n\nreturn newMsg;",
+        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.query_return_median[0].units + \"_\" + msg.payload.query_return_median[0].direction), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1950,
-        "y": 280,
+        "x": 870,
+        "y": 1280,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1532,8 +1528,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2310,
-        "y": 280,
+        "x": 1230,
+        "y": 1280,
         "wires": []
     },
     {
@@ -1550,8 +1546,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2310,
-        "y": 340,
+        "x": 1230,
+        "y": 1340,
         "wires": []
     },
     {
@@ -1567,8 +1563,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "",
-        "x": 1350,
-        "y": 1200,
+        "x": 910,
+        "y": 1120,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1589,8 +1585,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1600,
-        "y": 1200,
+        "x": 1160,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1599,15 +1595,15 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "create mongo message",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\nnewMsg.payload.event.speed_calc = msg.speed_match;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1310,
-        "y": 1140,
+        "x": 870,
+        "y": 1060,
         "wires": [
             [
                 "466942b727a6409c"
@@ -1629,8 +1625,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1620,
-        "y": 1140,
+        "x": 1180,
+        "y": 1060,
         "wires": []
     },
     {
@@ -1708,8 +1704,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1560,
-        "y": 1080,
+        "x": 1120,
+        "y": 1000,
         "wires": []
     },
     {
