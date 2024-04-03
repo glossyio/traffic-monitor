@@ -122,9 +122,6 @@
             "d541afce049d3481",
             "e63efdd922665136",
             "0f3ff76b20f6fea0",
-            "6f8144816d69687d",
-            "882bc1f194714da1",
-            "4b9e13a989c07a78",
             "b9ec057a98fc7391",
             "29ba5f8d0c2ef420",
             "065e571efca99657",
@@ -133,7 +130,7 @@
         ],
         "x": 94,
         "y": 519,
-        "w": 1572,
+        "w": 1112,
         "h": 382
     },
     {
@@ -1398,28 +1395,9 @@
         "y": 560,
         "wires": [
             [
-                "6f8144816d69687d",
                 "d541afce049d3481"
             ]
         ]
-    },
-    {
-        "id": "6f8144816d69687d",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
-        "name": "debug-influxdb-query-string-01",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "query",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1490,
-        "y": 560,
-        "wires": []
     },
     {
         "id": "d541afce049d3481",
@@ -1437,7 +1415,6 @@
         "y": 620,
         "wires": [
             [
-                "882bc1f194714da1",
                 "29ba5f8d0c2ef420"
             ]
         ]
@@ -1488,12 +1465,11 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 950,
+        "x": 930,
         "y": 680,
         "wires": [
             [
-                "e63efdd922665136",
-                "4b9e13a989c07a78"
+                "e63efdd922665136"
             ]
         ],
         "info": "# Sample Output:\n\n```\n{\n    \"topic\": \"query_return\",\n    \"payload\": {\n        \"event_end_car_bike\": {\n            \"before\": {\n                \"id\": \"1712153303.328575-u22ucl\",\n                \"camera\": \"picam_h264\",\n                \"frame_time\": 1712153456.913404,\n                \"snapshot\": {\n                    \"frame_time\": 1712153453.713148,\n                    \"box\": [\n                        842,\n                        253,\n                        2131,\n                        897\n                    ],\n                    \"area\": 830116,\n                    \"region\": [\n                        592,\n                        0,\n                        2304,\n                        1712\n                    ],\n                    \"score\": 0.8046875,\n                    \"attributes\": []\n                },\n                \"label\": \"car\",\n                \"sub_label\": null,\n                \"top_score\": 0.80859375,\n                \"false_positive\": false,\n                \"start_time\": 1712153303.328575,\n                \"end_time\": null,\n                \"score\": 0.796875,\n                \"box\": [\n                    365,\n                    197,\n                    1008,\n                    533\n                ],\n                \"area\": 216048,\n                \"ratio\": 1.9136904761904763,\n                \"region\": [\n                    301,\n                    0,\n                    1057,\n                    756\n                ],\n                \"stationary\": false,\n                \"motionless_count\": 2,\n                \"position_changes\": 2,\n                \"current_zones\": [],\n                \"entered_zones\": [\n                    \"zone_near\",\n                    \"zone_far\"\n                ],\n                \"has_clip\": true,\n                \"has_snapshot\": true,\n                \"attributes\": {},\n                \"current_attributes\": []\n            },\n            \"after\": {\n                \"id\": \"1712153303.328575-u22ucl\",\n                \"camera\": \"picam_h264\",\n                \"frame_time\": 1712153469.448711,\n                \"snapshot\": {\n                    \"frame_time\": 1712153453.713148,\n                    \"box\": [\n                        842,\n                        253,\n                        2131,\n                        897\n                    ],\n                    \"area\": 830116,\n                    \"region\": [\n                        592,\n                        0,\n                        2304,\n                        1712\n                    ],\n                    \"score\": 0.8046875,\n                    \"attributes\": []\n                },\n                \"label\": \"car\",\n                \"sub_label\": null,\n                \"top_score\": 0.80859375,\n                \"false_positive\": false,\n                \"start_time\": 1712153303.328575,\n                \"end_time\": 1712153474.711017,\n                \"score\": 0.6171875,\n                \"box\": [\n                    0,\n                    341,\n                    70,\n                    441\n                ],\n                \"area\": 7000,\n                \"ratio\": 0.7,\n                \"region\": [\n                    0,\n                    188,\n                    428,\n                    616\n                ],\n                \"stationary\": false,\n                \"motionless_count\": 0,\n                \"position_changes\": 2,\n                \"current_zones\": [],\n                \"entered_zones\": [\n                    \"zone_near\",\n                    \"zone_far\"\n                ],\n                \"has_clip\": true,\n                \"has_snapshot\": true,\n                \"attributes\": {},\n                \"current_attributes\": [],\n                \"nr_direction\": \"outbound\"\n            },\n            \"type\": \"end\"\n        },\n        \"query_return\": [\n            {\n                \"result\": \"_result\",\n                \"table\": 0,\n                \"_start\": \"2024-04-03T14:08:21Z\",\n                \"_stop\": \"2024-04-03T14:11:17Z\",\n                \"_field\": \"velocity\",\n                \"_measurement\": \"DetectedObjectVelocity\",\n                \"direction\": \"outbound\",\n                \"location\": \"ne26th-wasco-sb-01\",\n                \"units\": \"mph\",\n                \"_value\": -8\n            }\n        ]\n    },\n    \"qos\": 0,\n    \"retain\": false,\n    \"_msgid\": \"19500feb8926f41d\",\n    \"query\": \"from(bucket: \\\"tm-05\\\")\\n    |> range(start: 1712153301, stop: 1712153477)\\n    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"outbound\\\")\\n    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"ne26th-wasco-sb-01\\\")\\n    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n    |> median(column: \\\"_value\\\")\\n\"\n}\n```"
@@ -1504,14 +1480,14 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "match Event+Radar direction",
-        "func": "//if only 1 Radar.direction USE THAT\nif (msg.payload.query_return_median.length == 1) {\n    //  check if Event.nr_direction MATCHES Radar.direction THEN good\n    if (msg.payload.frigate_event.after.nr_direction == msg.payload.query_return_median[0].direction) {\n        msg.status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.frigate_event.after.nr_direction;\n    }\n    //  if Event.nr_direction == \"undefined\" THEN use 1 that came through radar \n    else if (msg.payload.frigate_event.after.nr_direction == \"undefined\") {\n        msg.status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.query_return_median[0].direction;\n    }\n}\n//  multiple radar directions, but if Event.nr_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.query_return_median.length > 1)\n    && (msg.payload.frigate_event.after.nr_direction != \"undefined\")) {\n\n    //find matching median value to frigate_event\n    if (msg.payload.query_return_median.map((o) => o.direction).indexOf(msg.payload.frigate_event.after.nr_direction) >= 0) {\n        msg.status = \"direction_speed_match\";\n    }\n    else {msg.status = \"direction_speed_no_match\";}\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse { msg.status = \"direction_speed_no_match\"; }\n\nreturn msg;",
+        "func": "//if only 1 Radar.direction USE THAT\nif (msg.payload.query_return_median.length == 1) {\n    //  check if Event.nr_direction MATCHES Radar.direction THEN good\n    if (msg.payload.frigate_event.after.nr_direction == msg.payload.query_return_median[0].direction) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.frigate_event.after.nr_direction;\n    }\n    //  if Event.nr_direction == undefined THEN use 1 that came through radar \n    else if (msg.payload.frigate_event.after.nr_direction == undefined) {\n        msg.dir_speed_status = \"direction_speed_match\";\n        msg.direction_match = msg.payload.query_return_median[0].direction;\n    }\n}\n//  multiple radar directions, but if Event.nr_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.query_return_median.length > 1)\n    && (msg.payload.frigate_event.after.nr_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload.query_return_median.map((o) => o.direction).indexOf(msg.payload.frigate_event.after.nr_direction) >= 0) {\n        msg.dir_speed_status = \"direction_speed_match\";\n    }\n    else {\n        msg.dir_speed_status = \"direction_speed_no_match\";\n        msg.direction_match = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n    msg.dir_speed_status = \"direction_speed_no_match\"; \n    msg.direction_match = undefined;\n    }\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1040,
+        "x": 1020,
         "y": 740,
         "wires": [
             [
@@ -1558,24 +1534,6 @@
         "statusType": "auto",
         "x": 2310,
         "y": 280,
-        "wires": []
-    },
-    {
-        "id": "882bc1f194714da1",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
-        "name": "influxdb query return",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1460,
-        "y": 620,
         "wires": []
     },
     {
@@ -1641,7 +1599,7 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "create mongo message",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.event_end_car_bike.after.id;\nnewMsg.payload.event.camera = msg.payload.event_end_car_bike.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.event_end_car_bike.after.frame_time;\nnewMsg.payload.event.label = msg.payload.event_end_car_bike.after.label;\nnewMsg.payload.event.sub_label = msg.payload.event_end_car_bike.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.event_end_car_bike.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.event_end_car_bike.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.event_end_car_bike.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.event_end_car_bike.after.entered_zones; //array\nnewMsg.payload.event.nr_direction = msg.payload.event_end_car_bike.after.nr_direction;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1656,16 +1614,6 @@
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
-    },
-    {
-        "id": "b1445c4ba4ad3238",
-        "type": "comment",
-        "z": "49e416bfab1d4055",
-        "name": "Also query for non-matching speed readings at same time (if missing direction)",
-        "info": "",
-        "x": 310,
-        "y": 1120,
-        "wires": []
     },
     {
         "id": "466942b727a6409c",
@@ -1765,37 +1713,21 @@
         "wires": []
     },
     {
-        "id": "4b9e13a989c07a78",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1420,
-        "y": 680,
-        "wires": []
-    },
-    {
         "id": "b9ec057a98fc7391",
         "type": "debug",
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
-        "name": "debug 4",
+        "name": "event+radar w direction calcs",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1420,
-        "y": 740,
+        "x": 1040,
+        "y": 560,
         "wires": []
     },
     {
