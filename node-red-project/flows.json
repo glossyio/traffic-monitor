@@ -134,12 +134,14 @@
             "29ba5f8d0c2ef420",
             "065e571efca99657",
             "5cd8c1f5d6326bf1",
-            "34e3fdd428d4761c"
+            "34e3fdd428d4761c",
+            "629e4b3f709f1e32",
+            "be1439498cc44b59"
         ],
         "x": 94,
         "y": 519,
         "w": 1112,
-        "h": 382
+        "h": 442
     },
     {
         "id": "9ee8ebd820661432",
@@ -172,13 +174,12 @@
             "400aaccc21e5eaf7",
             "078438fe6e931391",
             "b71b0fcb6d1e558c",
-            "466942b727a6409c",
-            "b7fa755e674904a4"
+            "466942b727a6409c"
         ],
         "x": 734,
-        "y": 959,
+        "y": 1039,
         "w": 732,
-        "h": 202
+        "h": 142
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -348,10 +349,10 @@
         "name": "mongo-local-docker",
         "protocol": "mongodb",
         "hostname": "10.10.10.223",
-        "port": "",
+        "port": "27017",
         "dbName": "tm-21",
-        "appName": "traffic_monitor",
-        "authSource": "nodered",
+        "appName": "",
+        "authSource": "",
         "authMechanism": "DEFAULT",
         "tls": false,
         "tlsCAFile": "",
@@ -362,7 +363,7 @@
         "minPoolSize": "0",
         "maxPoolSize": "100",
         "maxIdleTimeMS": "0",
-        "uri": "",
+        "uri": "mongodb://mongoadmin:mongodbpass@10.10.10.223:27017/tm-21?directConnection=true&authSource=admin&appName=mongosh+2.2.0",
         "advanced": "{}",
         "uriTabActive": "tab-uri-simple"
     },
@@ -1393,7 +1394,8 @@
                 "9f1012eacf4d076f",
                 "6539eff5f28950e2",
                 "065e571efca99657",
-                "0f3ff76b20f6fea0"
+                "0f3ff76b20f6fea0",
+                "629e4b3f709f1e32"
             ]
         ]
     },
@@ -1403,7 +1405,7 @@
         "z": "49e416bfab1d4055",
         "g": "8dd778b3e5d3a05c",
         "name": "debug: calc direction",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1496,7 +1498,7 @@
         "joinerType": "str",
         "accumulate": false,
         "timeout": "",
-        "count": "3",
+        "count": "4",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -1606,7 +1608,7 @@
         "handleDocId": false,
         "name": "mongo insertOne events",
         "x": 1010,
-        "y": 1120,
+        "y": 1140,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1628,7 +1630,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1250,
-        "y": 1120,
+        "y": 1140,
         "wires": []
     },
     {
@@ -1637,7 +1639,7 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "create mongo message",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\nnewMsg.payload.event.speed_calc = msg.speed_match;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\nnewMsg.payload.event.speed_calc = msg.speed_match;\nnewMsg.payload.event.thumbnail_base64jpg = msg.payload.event_api.thumbnail;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1645,7 +1647,7 @@
         "finalize": "",
         "libs": [],
         "x": 870,
-        "y": 1060,
+        "y": 1080,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1669,7 +1671,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1300,
-        "y": 1060,
+        "y": 1080,
         "wires": []
     },
     {
@@ -1735,29 +1737,12 @@
         ]
     },
     {
-        "id": "b7fa755e674904a4",
-        "type": "debug",
-        "z": "49e416bfab1d4055",
-        "g": "d14033e4e7acdf1b",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1240,
-        "y": 1000,
-        "wires": []
-    },
-    {
         "id": "b9ec057a98fc7391",
         "type": "debug",
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "event+radar w direction calcs",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1784,6 +1769,52 @@
         "libs": [],
         "x": 580,
         "y": 680,
+        "wires": [
+            [
+                "0f3ff76b20f6fea0"
+            ]
+        ]
+    },
+    {
+        "id": "629e4b3f709f1e32",
+        "type": "http request",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "frigate http /api/events/id",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.223:5000/api/events/{{{payload.after.id}}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 490,
+        "y": 920,
+        "wires": [
+            [
+                "be1439498cc44b59"
+            ]
+        ]
+    },
+    {
+        "id": "be1439498cc44b59",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "add topic, `event_api`",
+        "func": "msg.topic = \"event_api\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 920,
         "wires": [
             [
                 "0f3ff76b20f6fea0"
