@@ -1,11 +1,11 @@
 mqtt:
-  enabled: False
+  enabled: false
   # Required: host name
-  host: 10.10.10.224
+  host: 10.10.10.223
   # Optional: port (default: shown below)
   port: 1883
-  user: "{FRIGATE_MQTT_USER}"
-  password: "{FRIGATE_MQTT_PASSWORD}"
+  user: '{FRIGATE_MQTT_USER}'
+  password: '{FRIGATE_MQTT_PASSWORD}'
 
 detectors: # <---- add detectors
   coral:
@@ -17,14 +17,14 @@ ffmpeg:
 
 cameras:
   picam_h264: # <------ Name the camera
-    enabled: False
+    enabled: true
     ffmpeg:
       inputs:
-        - path: rtsp://10.10.10.224:8554/picam_h264
-          roles:
-            - detect
+      - path: rtsp://10.10.10.223:8554/picam_h264
+        roles:
+        - detect
     detect:
-      enabled: False # <---- disable detection until you have a working camera feed
+      enabled: false # <---- disable detection until you have a working camera feed
       width: 2304 # <---- update for your camera's resolution
       height: 1296 # <---- update for your camera's resolution
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
@@ -32,23 +32,27 @@ cameras:
       fps: 5
     zones:
       zone_far:
-        coordinates: 2304,416,2304,183,0,637,0,944
+        coordinates: 1248,556,926,497,231,657,477,769
       zone_near:
-        coordinates: 2304,665,2304,421,0,1007,0,1266
-      zone_radar:
-        coordinates: 1022,584,1005,776,1299,778,1305,584
-    motion: # mask intersection
+        coordinates: 1690,695,1355,563,429,754,825,982
+    motion:
       mask:
       - 0,419,0,0,889,0,1083,0,2019,0,1982,270,1094,306
+    objects:
+      filters:
+        car:
+          mask:
+          - 0,320,0,0
+
   picam_gs_h264: # <------ Name the camera
-    enabled: False
+    enabled: false
     ffmpeg:
       inputs:
-        - path: rtsp://10.10.10.224:8554/picam_gs_h264
-          roles:
-            - detect
+      - path: rtsp://10.10.10.223:8554/picam_gs_h264
+        roles:
+        - detect
     detect:
-      enabled: False # <---- disable detection until you have a working camera feed
+      enabled: false # <---- disable detection until you have a working camera feed
       width: 1456 # <---- update for your camera's resolution
       height: 1088 # <---- update for your camera's resolution
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
@@ -56,19 +60,19 @@ cameras:
       fps: 5
     zones:
       zone_far:
-        coordinates: 1044,406,0,67,0,872
+        coordinates: 1137,444,0,67,0,876
       zone_near:
-        coordinates: 1456,1088,1456,564,0,1088
+        coordinates: 1456,1088,1456,539,1215,462,0,880,0,1088
 
   unifi-cam-pi-replica:
-    enabled: False
+    enabled: false
     ffmpeg:
       inputs:
-        - path: rtsps://10.10.10.1:7441/ec9Y7Ls0rz6yLaIg?enableSrtp
-          roles:
-            - detect
+      - path: rtsps://10.10.10.1:7441/ec9Y7Ls0rz6yLaIg?enableSrtp
+        roles:
+        - detect
     detect:
-      enabled: False # <---- disable detection until you have a working camera feed
+      enabled: false # <---- disable detection until you have a working camera feed
       width: 1280
       height: 720
       # Optional: desired fps for your camera for the input with the detect role (default: shown below)
@@ -77,26 +81,26 @@ cameras:
 
 objects:
   track:
-    - bicycle
-    - person
-    - car
-    - motorcycle
-    - dog
+  - bicycle
+  - person
+  - car
+  - motorcycle
+  - dog
 
 record:
-  enabled: True
+  enabled: true
   retain:
     days: 3
     mode: motion
   events:
-      retain:
-        default: 21
-        mode: active_objects
+    retain:
+      default: 21
+      mode: active_objects
 
 snapshots:
-  enabled: True
-  clean_copy: True
-  bounding_box: True
-  crop: True
+  enabled: true
+  clean_copy: true
+  bounding_box: true
+  crop: true
   retain:
     default: 60
