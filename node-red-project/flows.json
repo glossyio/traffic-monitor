@@ -129,16 +129,13 @@
             "0f3ff76b20f6fea0",
             "b9ec057a98fc7391",
             "29ba5f8d0c2ef420",
-            "065e571efca99657",
-            "5cd8c1f5d6326bf1",
-            "34e3fdd428d4761c",
             "629e4b3f709f1e32",
             "be1439498cc44b59"
         ],
         "x": 94,
         "y": 519,
         "w": 1112,
-        "h": 442
+        "h": 262
     },
     {
         "id": "9ee8ebd820661432",
@@ -154,8 +151,8 @@
             "1b0344bd4829de6b",
             "50574c0e9f62cf10"
         ],
-        "x": 734,
-        "y": 1239,
+        "x": 874,
+        "y": 1039,
         "w": 692,
         "h": 142
     },
@@ -173,10 +170,28 @@
             "b71b0fcb6d1e558c",
             "466942b727a6409c"
         ],
-        "x": 734,
-        "y": 1039,
+        "x": 874,
+        "y": 839,
         "w": 732,
         "h": 142
+    },
+    {
+        "id": "33bbc9893e1eae0e",
+        "type": "group",
+        "z": "49e416bfab1d4055",
+        "name": "NOT USED query non-agregate InfluxDB",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "065e571efca99657",
+            "5cd8c1f5d6326bf1",
+            "34e3fdd428d4761c"
+        ],
+        "x": 94,
+        "y": 839,
+        "w": 692,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -347,7 +362,7 @@
         "protocol": "mongodb",
         "hostname": "10.10.10.223",
         "port": "27017",
-        "dbName": "tm-21",
+        "dbName": "tm-22",
         "appName": "",
         "authSource": "",
         "authMechanism": "DEFAULT",
@@ -1359,7 +1374,6 @@
             [
                 "9f1012eacf4d076f",
                 "6539eff5f28950e2",
-                "065e571efca99657",
                 "0f3ff76b20f6fea0",
                 "629e4b3f709f1e32"
             ]
@@ -1441,8 +1455,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 920,
-        "y": 1340,
+        "x": 1060,
+        "y": 1140,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1464,7 +1478,7 @@
         "joinerType": "str",
         "accumulate": false,
         "timeout": "",
-        "count": "4",
+        "count": "3",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -1515,8 +1529,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 1280,
+        "x": 1010,
+        "y": 1080,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1538,8 +1552,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
-        "y": 1280,
+        "x": 1370,
+        "y": 1080,
         "wires": []
     },
     {
@@ -1556,8 +1570,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
-        "y": 1340,
+        "x": 1370,
+        "y": 1140,
         "wires": []
     },
     {
@@ -1573,8 +1587,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "mongo insertOne events",
-        "x": 1010,
-        "y": 1140,
+        "x": 1150,
+        "y": 940,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1595,8 +1609,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1250,
-        "y": 1140,
+        "x": 1390,
+        "y": 940,
         "wires": []
     },
     {
@@ -1605,15 +1619,15 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "create mongo message",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload.event = {}; // single collection of strings\nnewMsg.payload.radar = {}; // contain all desired radar readings\n\n// Frigate Event info\nnewMsg.payload.event.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.event.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.event.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.event.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.event.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.event.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.event.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.event.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.event.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.event.direction_calc = msg.direction_match;\nnewMsg.payload.event.speed_calc = msg.speed_match;\nnewMsg.payload.event.thumbnail_base64jpg = msg.payload.event_api.thumbnail;\n\n// Attached Radar info\n\nnewMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\nnewMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n//newMsg.payload.radar = {}; // contain all desired radar readings\n//Don't attach radar data here... Just conflates the reporting DB\n\n// Frigate Event info\nnewMsg.payload.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.direction_calc = msg.direction_match;\nnewMsg.payload.speed_calc = msg.speed_match;\nnewMsg.payload.thumbnail_base64jpg = msg.payload.event_api.thumbnail;\n\n// Attached Radar info\n\n//newMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\n//newMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 1080,
+        "x": 1010,
+        "y": 880,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1636,15 +1650,16 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1300,
-        "y": 1080,
+        "x": 1440,
+        "y": 880,
         "wires": []
     },
     {
         "id": "065e571efca99657",
         "type": "function",
         "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
+        "d": true,
+        "g": "33bbc9893e1eae0e",
         "name": "create influxdb query based on msg, +/- 2 sec, DetectedObjectVelocity all directions, non-agg",
         "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
@@ -1654,7 +1669,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 740,
+        "y": 880,
         "wires": [
             [
                 "5cd8c1f5d6326bf1"
@@ -1665,7 +1680,8 @@
         "id": "5cd8c1f5d6326bf1",
         "type": "influxdb in",
         "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
+        "d": true,
+        "g": "33bbc9893e1eae0e",
         "influxdb": "73598328fc95017b",
         "name": "query DetectedObjectVelocity, non-agg",
         "query": "",
@@ -1674,7 +1690,7 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 490,
-        "y": 800,
+        "y": 940,
         "wires": [
             [
                 "34e3fdd428d4761c"
@@ -1685,7 +1701,8 @@
         "id": "34e3fdd428d4761c",
         "type": "function",
         "z": "49e416bfab1d4055",
-        "g": "e7337074cbb5c952",
+        "d": true,
+        "g": "33bbc9893e1eae0e",
         "name": "query, add topic, `query_return_nonagg`",
         "func": "msg.topic = \"query_return_nonagg\"\nreturn msg;",
         "outputs": 1,
@@ -1695,11 +1712,9 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 860,
+        "y": 1000,
         "wires": [
-            [
-                "0f3ff76b20f6fea0"
-            ]
+            []
         ]
     },
     {
@@ -1758,8 +1773,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 490,
-        "y": 920,
+        "x": 230,
+        "y": 740,
         "wires": [
             [
                 "be1439498cc44b59"
@@ -1779,8 +1794,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 920,
+        "x": 480,
+        "y": 740,
         "wires": [
             [
                 "0f3ff76b20f6fea0"
