@@ -24,12 +24,44 @@
         "env": []
     },
     {
-        "id": "6b7a48cdf37ecce9",
+        "id": "28627559bebdc324",
         "type": "tab",
-        "label": "Example mongodb4",
+        "label": "Flow 1",
         "disabled": false,
         "info": "",
         "env": []
+    },
+    {
+        "id": "e1fd8135.0c3c98",
+        "type": "subflow",
+        "name": "Subflow 1",
+        "info": "",
+        "category": "",
+        "in": [
+            {
+                "x": 80,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "dfb183f3.faeb4"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 460,
+                "y": 320,
+                "wires": [
+                    {
+                        "id": "10e682f6.b25e1d",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#DDAA99"
     },
     {
         "id": "04cc3b7b3e019683",
@@ -260,102 +292,6 @@
         "responsetimeout": "5000"
     },
     {
-        "id": "97157ec786fbe8be",
-        "type": "ui_base",
-        "theme": {
-            "name": "theme-light",
-            "lightTheme": {
-                "default": "#0094CE",
-                "baseColor": "#0094CE",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
-            },
-            "darkTheme": {
-                "default": "#097479",
-                "baseColor": "#097479",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
-            },
-            "customTheme": {
-                "name": "Untitled Theme 1",
-                "default": "#4B7930",
-                "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-            },
-            "themeState": {
-                "base-color": {
-                    "default": "#0094CE",
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-titlebar-backgroundColor": {
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-backgroundColor": {
-                    "value": "#fafafa",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#1bbfff",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "widget-textColor": {
-                    "value": "#111111",
-                    "edited": false
-                },
-                "widget-backgroundColor": {
-                    "value": "#0094ce",
-                    "edited": false
-                },
-                "widget-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "base-font": {
-                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-                }
-            },
-            "angularTheme": {
-                "primary": "indigo",
-                "accents": "blue",
-                "warn": "red",
-                "background": "grey",
-                "palette": "light"
-            }
-        },
-        "site": {
-            "name": "Node-RED Dashboard",
-            "hideToolbar": "false",
-            "allowSwipe": "false",
-            "lockMenu": "false",
-            "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
-            "sizes": {
-                "sx": 48,
-                "sy": 48,
-                "gx": 6,
-                "gy": 6,
-                "cx": 6,
-                "cy": 6,
-                "px": 0,
-                "py": 0
-            }
-        }
-    },
-    {
         "id": "4b8d22be1aa15cf2",
         "type": "mongodb4-client",
         "name": "mongo-local-docker",
@@ -380,38 +316,176 @@
         "uriTabActive": "tab-uri-simple"
     },
     {
-        "id": "e2bc7ac9aa77279e",
-        "type": "mongodb4-client",
-        "name": "simple connection",
-        "protocol": "mongodb",
-        "hostname": "localhost",
-        "port": "",
-        "dbName": "nodered",
-        "authSource": "nodered",
-        "authMechanism": "SCRAM-SHA-256",
-        "tls": false,
-        "tlsCAFile": "",
-        "tlsInsecure": false,
-        "uri": "",
-        "advanced": "{\"connectTimeoutMS\": 30000}",
-        "uriTabActive": "tab-uri-simple"
+        "id": "b24572c.f46531",
+        "type": "change",
+        "z": "e1fd8135.0c3c98",
+        "name": "mi-clear",
+        "rules": [
+            {
+                "t": "set",
+                "p": "player",
+                "pt": "global",
+                "to": "2",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "ui_control",
+                "pt": "msg",
+                "to": "{\"icon\":\"mi-clear\",\"bgcolor\":\"#FF4444\"}",
+                "tot": "json"
+            },
+            {
+                "t": "set",
+                "p": "color",
+                "pt": "msg",
+                "to": "red",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 400,
+        "y": 100,
+        "wires": [
+            [
+                "94219e5b.949e7"
+            ]
+        ]
     },
     {
-        "id": "dd0b7f14421d961d",
-        "type": "mongodb4-client",
-        "name": "advanced connection",
-        "protocol": "mongodb",
-        "hostname": "",
-        "port": "",
-        "dbName": "nodered",
-        "authSource": "nodered",
-        "authMechanism": "SCRAM-SHA-256",
-        "tls": false,
-        "tlsCAFile": "",
-        "tlsInsecure": false,
-        "uri": "mongodb://localhost:27017",
-        "advanced": "",
-        "uriTabActive": "tab-uri-advanced"
+        "id": "f983ea23.268478",
+        "type": "switch",
+        "z": "e1fd8135.0c3c98",
+        "name": "Player 1 or 2",
+        "property": "player",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "num"
+            },
+            {
+                "t": "eq",
+                "v": "2",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "b24572c.f46531"
+            ],
+            [
+                "f5db7ec0.bab29"
+            ]
+        ]
+    },
+    {
+        "id": "f5db7ec0.bab29",
+        "type": "change",
+        "z": "e1fd8135.0c3c98",
+        "name": "mi-clear",
+        "rules": [
+            {
+                "t": "set",
+                "p": "player",
+                "pt": "global",
+                "to": "1",
+                "tot": "num"
+            },
+            {
+                "t": "set",
+                "p": "ui_control",
+                "pt": "msg",
+                "to": "{ \"icon\":\"mi-lens\" }",
+                "tot": "json"
+            },
+            {
+                "t": "set",
+                "p": "color",
+                "pt": "msg",
+                "to": "blue",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 400,
+        "y": 140,
+        "wires": [
+            [
+                "94219e5b.949e7"
+            ]
+        ]
+    },
+    {
+        "id": "10e682f6.b25e1d",
+        "type": "function",
+        "z": "e1fd8135.0c3c98",
+        "name": "Check for Winner",
+        "func": "// b [r][c] r=row c= column\n\nmsg.payload = \"no winner yet\"\nvar b = global.get(\"board\")\n\n//node.warn(\"b = \"+b)\n//node.warn(\"b[0][0] = \"+b[0][0])\n//node.warn(\"b[0][1] = \"+b[0][1])\n//node.warn(\"b[0][2] = \"+b[0][2])\nvar tt =b[0][0] + b[0][1] + b[0][2]\n//node.warn(\"tt = \"+tt)\n// ----------------------------------------------------------\n// check to see if all squares used - draw unless someone won\nvar t = 0\nfor (r=0; r<3; r++){\n    for (c=0; c<3; c++){\n        t += b[r][c]\n    }\n}\n//node.warn(\"total = \"+t)\nif (t == 13) msg.payload = \"It's a draw\"\n\n// ----------------------------------------------------------\n// Check to see if X wins \n// Check row 1 - 3\nif ((b[0][0] + b[0][1] + b[0][2]) == 3) msg.payload = \"X wins\"\nif ((b[1][0] + b[1][1] + b[1][2]) == 3) msg.payload = \"X wins\"\nif ((b[2][0] + b[2][1] + b[2][2]) == 3) msg.payload = \"X wins\"\n\n// Check column 1 - 3\nif ((b[0][0] + b[1][0] + b[2][0]) == 3) msg.payload = \"X wins\"\nif ((b[0][1] + b[1][1] + b[2][1]) == 3) msg.payload = \"X wins\"\nif ((b[0][2] + b[1][2] + b[2][2]) == 3) msg.payload = \"X wins\"\n\n// Check DIAGONALS\nif ((b[0][0] + b[1][1] + b[2][2]) == 3) msg.payload = \"X wins\"\nif ((b[2][0] + b[1][1] + b[0][2]) == 3) msg.payload = \"X wins\"\n\n// ----------------------------------------------------------\n// Check to see if O wins \n// Check row 1 - 3\nif ((b[0][0] + b[0][1] + b[0][2]) == 6) msg.payload = \"O wins\"\nif ((b[1][0] + b[1][1] + b[1][2]) == 6) msg.payload = \"O wins\"\nif ((b[2][0] + b[2][1] + b[2][2]) == 6) msg.payload = \"O wins\"\n\n// Check column 1 - 3\nif ((b[0][0] + b[1][0] + b[2][0]) == 6) msg.payload = \"O wins\"\nif ((b[0][1] + b[1][1] + b[2][1]) == 6) msg.payload = \"O wins\"\nif ((b[0][2] + b[1][2] + b[2][2]) == 6) msg.payload = \"O wins\"\n\n// Check DIAGONALS\nif ((b[0][0] + b[1][1] + b[2][2]) == 6) msg.payload = \"O wins\"\nif ((b[2][0] + b[1][1] + b[0][2]) == 6) msg.payload = \"O wins\"\n\n// ----------------------------------------------------------\n// \nif (msg.payload != \"no winner yet\") msg.gameover = \"no\"\nif (msg.payload == \"It's a draw\")   msg.gameover = \"draw\"\nif (msg.payload == \"X wins\")   msg.gameover = \"yes\"\nif (msg.payload == \"O wins\")   msg.gameover = \"yes\"\n\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "94219e5b.949e7",
+        "type": "change",
+        "z": "e1fd8135.0c3c98",
+        "name": "disable square",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 600,
+        "y": 120,
+        "wires": [
+            [
+                "10e682f6.b25e1d"
+            ]
+        ]
+    },
+    {
+        "id": "dfb183f3.faeb4",
+        "type": "function",
+        "z": "e1fd8135.0c3c98",
+        "name": "Mark square used",
+        "func": "var square = msg.payload\nvar p = global.get(\"player\")\nvar b = global.get(\"board\")\n//node.warn(\"square =\"+square)\nswitch (square) {\n    case 0:\n        b[0][0] = p\n        break\n    case 1:\n        b[0][1] = p\n        break\n    case 2:\n        b[0][2] = p\n        break\n    case 10:\n        b[1][0] = p\n        break\n    case 11:\n        b[1][1] = p\n        break\n    case 12:\n        b[1][2] = p\n        break\n    case 20:\n        b[2][0] = p\n        break\n    case 21:\n        b[2][1] = p\n        break\n    case 22:\n        b[2][2] = p\n        break\n        \n}\nglobal.set(\"board\",b)\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 210,
+        "y": 60,
+        "wires": [
+            [
+                "f983ea23.268478"
+            ]
+        ]
     },
     {
         "id": "e43506628b4a1cdb",
@@ -1842,894 +1916,6 @@
         "info": "",
         "x": 220,
         "y": 140,
-        "wires": []
-    },
-    {
-        "id": "fe36b4aab8e4b51e",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "0",
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 80,
-        "wires": [
-            [
-                "02df4cd3db727bea"
-            ]
-        ]
-    },
-    {
-        "id": "02df4cd3db727bea",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{name: 'marina', age: 22}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 80,
-        "wires": [
-            [
-                "fbdbc88728b6bb53"
-            ]
-        ]
-    },
-    {
-        "id": "fbdbc88728b6bb53",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "insertOne",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 480,
-        "y": 80,
-        "wires": [
-            [
-                "ad6bea22c0e0b689"
-            ]
-        ]
-    },
-    {
-        "id": "ad6bea22c0e0b689",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "8ee269b8753b02a1",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 140,
-        "wires": [
-            [
-                "b3879290c479d05d"
-            ]
-        ]
-    },
-    {
-        "id": "b3879290c479d05d",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [[\n    {name: 'chris', age: 22},\n    {name: 'markus', age: 22}\n]];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 140,
-        "wires": [
-            [
-                "f5c11e1900707b1c"
-            ]
-        ]
-    },
-    {
-        "id": "f5c11e1900707b1c",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "insertMany",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 490,
-        "y": 140,
-        "wires": [
-            [
-                "7a265f43dea48889"
-            ]
-        ]
-    },
-    {
-        "id": "7a265f43dea48889",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 140,
-        "wires": []
-    },
-    {
-        "id": "5c8f4bef1a115679",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 260,
-        "wires": [
-            [
-                "df0db7fed54ff2ef"
-            ]
-        ]
-    },
-    {
-        "id": "df0db7fed54ff2ef",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{name: 'marina'}, {fields: {name: 1, age: 1}}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 260,
-        "wires": [
-            [
-                "fb9612f0dabb7e67"
-            ]
-        ]
-    },
-    {
-        "id": "fb9612f0dabb7e67",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "findOne",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 480,
-        "y": 260,
-        "wires": [
-            [
-                "fc1f0dfb426c9034"
-            ]
-        ]
-    },
-    {
-        "id": "fc1f0dfb426c9034",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "5b61665e0f5cc0c5",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 320,
-        "wires": [
-            [
-                "91c84ba4d12fb033"
-            ]
-        ]
-    },
-    {
-        "id": "91c84ba4d12fb033",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{age: 22}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 320,
-        "wires": [
-            [
-                "daa4aeeeb29120ca"
-            ]
-        ]
-    },
-    {
-        "id": "daa4aeeeb29120ca",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "find",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "find.toArray",
-        "x": 490,
-        "y": 320,
-        "wires": [
-            [
-                "39ce7da42ba01b32"
-            ]
-        ]
-    },
-    {
-        "id": "39ce7da42ba01b32",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "1075d26bfd292f92",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 380,
-        "wires": [
-            [
-                "f83a21e14acc6837"
-            ]
-        ]
-    },
-    {
-        "id": "f83a21e14acc6837",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{age: 22}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 380,
-        "wires": [
-            [
-                "0d76106c415ab9bc"
-            ]
-        ]
-    },
-    {
-        "id": "0d76106c415ab9bc",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "find",
-        "output": "forEach",
-        "handleDocId": false,
-        "name": "find.forEach",
-        "x": 490,
-        "y": 380,
-        "wires": [
-            [
-                "6c446d0d50cd33eb"
-            ]
-        ]
-    },
-    {
-        "id": "6c446d0d50cd33eb",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 380,
-        "wires": []
-    },
-    {
-        "id": "e00d5ecdcb458feb",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 440,
-        "wires": [
-            [
-                "5a7163e6a172dec5"
-            ]
-        ]
-    },
-    {
-        "id": "5a7163e6a172dec5",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{age: 22}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 440,
-        "wires": [
-            [
-                "eeb034c85f0a357e"
-            ]
-        ]
-    },
-    {
-        "id": "eeb034c85f0a357e",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "dd0b7f14421d961d",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "countDocuments",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "countDocuments",
-        "x": 510,
-        "y": 440,
-        "wires": [
-            [
-                "2f288690a68278bd"
-            ]
-        ]
-    },
-    {
-        "id": "2f288690a68278bd",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 440,
-        "wires": []
-    },
-    {
-        "id": "d5700bd465e13fa5",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 200,
-        "wires": [
-            [
-                "2581ad0e69bb4b74"
-            ]
-        ]
-    },
-    {
-        "id": "2581ad0e69bb4b74",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{}, {$inc: {age: 1}, $set: {aged: true}}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 200,
-        "wires": [
-            [
-                "ec5005a3a476c75b"
-            ]
-        ]
-    },
-    {
-        "id": "ec5005a3a476c75b",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "updateMany",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 490,
-        "y": 200,
-        "wires": [
-            [
-                "513e182443df307e"
-            ]
-        ]
-    },
-    {
-        "id": "513e182443df307e",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "1dac7a6a0bc94b9b",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 500,
-        "wires": [
-            [
-                "3fca5aea8063c42f"
-            ]
-        ]
-    },
-    {
-        "id": "3fca5aea8063c42f",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "with doc _id",
-        "func": "// query a document id with string, \n// the operation node will handle this\nmsg.payload = [{_id: \"6333409294471deda67da815\"}];\n\n// operation node will substitute, if valid id string\n// msg.payload = [{_id: ObjectId(\"6333409294471deda67da815\")}]\n\n// THIS EXAMPLE WILL ONLY WORK IF YOU HAVE A DOCUMENT WITH THIS ID IN YOUR DATA SET :-)\n\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 500,
-        "wires": [
-            [
-                "0179da6221e5f29c"
-            ]
-        ]
-    },
-    {
-        "id": "0179da6221e5f29c",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "findOne",
-        "output": "toArray",
-        "handleDocId": true,
-        "name": "findOne",
-        "x": 480,
-        "y": 500,
-        "wires": [
-            [
-                "1cc86e86236b50da"
-            ]
-        ]
-    },
-    {
-        "id": "1cc86e86236b50da",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 500,
-        "wires": []
-    },
-    {
-        "id": "0f1419fe40a054a4",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 560,
-        "wires": [
-            [
-                "103caed91230c198"
-            ]
-        ]
-    },
-    {
-        "id": "103caed91230c198",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "set payload",
-        "func": "msg.payload = [{age: {$gt: 25}}];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 560,
-        "wires": [
-            [
-                "3b5f6cbbc8585516"
-            ]
-        ]
-    },
-    {
-        "id": "3b5f6cbbc8585516",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "deleteMany",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 490,
-        "y": 560,
-        "wires": [
-            [
-                "d69cf47b58e754d7"
-            ]
-        ]
-    },
-    {
-        "id": "d69cf47b58e754d7",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 560,
-        "wires": []
-    },
-    {
-        "id": "d72c3423667d2fe7",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 680,
-        "wires": [
-            [
-                "4fbc5c911d465894"
-            ]
-        ]
-    },
-    {
-        "id": "4fbc5c911d465894",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "db",
-        "collection": "",
-        "operation": "stats",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "db stats",
-        "x": 480,
-        "y": 680,
-        "wires": [
-            [
-                "53eb06efe65bcfc4"
-            ]
-        ]
-    },
-    {
-        "id": "53eb06efe65bcfc4",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "payload",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 700,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "4efb71ded2d8a294",
-        "type": "inject",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 620,
-        "wires": [
-            [
-                "f345242e576f8361"
-            ]
-        ]
-    },
-    {
-        "id": "f345242e576f8361",
-        "type": "function",
-        "z": "6b7a48cdf37ecce9",
-        "name": "distinct age",
-        "func": "msg.payload = [\"age\"];\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 620,
-        "wires": [
-            [
-                "9960080cec50e212"
-            ]
-        ]
-    },
-    {
-        "id": "9960080cec50e212",
-        "type": "mongodb4",
-        "z": "6b7a48cdf37ecce9",
-        "clientNode": "e2bc7ac9aa77279e",
-        "mode": "collection",
-        "collection": "persons",
-        "operation": "distinct",
-        "output": "toArray",
-        "handleDocId": false,
-        "name": "",
-        "x": 480,
-        "y": 620,
-        "wires": [
-            [
-                "df8bfd9233fa703a"
-            ]
-        ]
-    },
-    {
-        "id": "df8bfd9233fa703a",
-        "type": "debug",
-        "z": "6b7a48cdf37ecce9",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 620,
         "wires": []
     }
 ]
