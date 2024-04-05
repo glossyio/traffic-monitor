@@ -109,25 +109,6 @@
         "h": 142
     },
     {
-        "id": "3acc78eb8fcb72f8",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "Raw speed records",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "1daaab9e36f6fdb2",
-            "ab905349bef72bac",
-            "65512a020a745b9a",
-            "b52127adb9f3a79e"
-        ],
-        "x": 394,
-        "y": 779,
-        "w": 752,
-        "h": 202
-    },
-    {
         "id": "8dd778b3e5d3a05c",
         "type": "group",
         "z": "49e416bfab1d4055",
@@ -223,6 +204,25 @@
         "x": 94,
         "y": 839,
         "w": 692,
+        "h": 202
+    },
+    {
+        "id": "e138c998bef7d520",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "Raw speed records",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "d5e5d0f288f9b186",
+            "7b220a40adc14e3c",
+            "d88af763b70480d0",
+            "5f62cb744592b108"
+        ],
+        "x": 394,
+        "y": 779,
+        "w": 752,
         "h": 202
     },
     {
@@ -677,65 +677,6 @@
         "wires": []
     },
     {
-        "id": "1daaab9e36f6fdb2",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb RawSpeedMagnitude",
-        "measurement": "RawSpeedMagnitude",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "tm-05",
-        "x": 660,
-        "y": 880,
-        "wires": []
-    },
-    {
-        "id": "ab905349bef72bac",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "format influxdb write raw speed, magnitude",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        speed: Number(msg.payload.speed[0]),\n        magnitude: Number(msg.payload.magnitude[0]),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        units: String(msg.payload.unit)\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 590,
-        "y": 820,
-        "wires": [
-            [
-                "1daaab9e36f6fdb2",
-                "65512a020a745b9a"
-            ]
-        ]
-    },
-    {
-        "id": "65512a020a745b9a",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "debug-radar-raws-speeds-write",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 970,
-        "y": 820,
-        "wires": []
-    },
-    {
         "id": "67f64c75edc0ef13",
         "type": "debug",
         "z": "94d07e407c25f282",
@@ -818,7 +759,7 @@
         "id": "d30801432e1972b3",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: set radar time, after 0.2",
+        "name": "init: set radar time (in seconds), after 0.2",
         "props": [
             {
                 "p": "payload"
@@ -835,7 +776,7 @@
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
-        "x": 200,
+        "x": 240,
         "y": 200,
         "wires": [
             [
@@ -989,17 +930,6 @@
         ]
     },
     {
-        "id": "b52127adb9f3a79e",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "update to handle O3 speeds (array currently using [0])",
-        "info": "",
-        "x": 620,
-        "y": 940,
-        "wires": []
-    },
-    {
         "id": "ea5d7236f592558d",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -1046,9 +976,79 @@
                 "9496fe7a475726de"
             ],
             [
-                "ab905349bef72bac"
+                "7b220a40adc14e3c"
             ]
         ]
+    },
+    {
+        "id": "d5e5d0f288f9b186",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb RawSpeedMagnitude",
+        "measurement": "RawSpeedMagnitude",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-05",
+        "x": 660,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "7b220a40adc14e3c",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "format influxdb write raw speed, magnitude",
+        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        [msg.payload.unit]: String(msg.payload.speed),\n        magnitude: String(msg.payload.magnitude),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n    }\n];\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 820,
+        "wires": [
+            [
+                "d5e5d0f288f9b186",
+                "d88af763b70480d0"
+            ]
+        ]
+    },
+    {
+        "id": "d88af763b70480d0",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "debug-radar-raws-speeds-write",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "5f62cb744592b108",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "handle O3 speeds by saving array to each _value",
+        "info": "",
+        "x": 600,
+        "y": 940,
+        "wires": []
     },
     {
         "id": "6c2d22f0a8cb1fc1",
