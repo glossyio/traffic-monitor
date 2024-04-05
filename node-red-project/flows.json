@@ -80,17 +80,15 @@
             "label": true
         },
         "nodes": [
-            "ab1b88cd16ef31c4",
             "35c0bee67148cfa7",
-            "7055d871474e5c63",
             "9496fe7a475726de",
             "617c9bb213538929",
             "526eb1967dda78c4"
         ],
-        "x": 54,
-        "y": 779,
-        "w": 1152,
-        "h": 262
+        "x": 394,
+        "y": 599,
+        "w": 852,
+        "h": 142
     },
     {
         "id": "1d00b3011a12b204",
@@ -101,16 +99,14 @@
             "label": true
         },
         "nodes": [
-            "04f7f4b860fe36bc",
-            "4039fcd5e467867d",
             "4681243b9c70e906",
             "b8db51ab64a3d61e",
             "67f64c75edc0ef13"
         ],
-        "x": 54,
-        "y": 459,
-        "w": 1092,
-        "h": 262
+        "x": 394,
+        "y": 439,
+        "w": 812,
+        "h": 142
     },
     {
         "id": "3acc78eb8fcb72f8",
@@ -121,19 +117,15 @@
             "label": true
         },
         "nodes": [
-            "c1154952a99c99a3",
-            "207eac3ff9b634a5",
-            "2fded2c6588bfd47",
             "1daaab9e36f6fdb2",
             "ab905349bef72bac",
-            "18b1eaf942e6b674",
-            "ffefd7af202792df",
-            "65512a020a745b9a"
+            "65512a020a745b9a",
+            "b52127adb9f3a79e"
         ],
-        "x": 54,
-        "y": 1079,
-        "w": 1132,
-        "h": 302
+        "x": 394,
+        "y": 779,
+        "w": 752,
+        "h": 202
     },
     {
         "id": "8dd778b3e5d3a05c",
@@ -518,9 +510,7 @@
         "wires": [
             [
                 "36b68e0861cc5fc4",
-                "ab1b88cd16ef31c4",
-                "04f7f4b860fe36bc",
-                "c1154952a99c99a3"
+                "830348149cb405ae"
             ]
         ]
     },
@@ -542,45 +532,12 @@
         "wires": []
     },
     {
-        "id": "ab1b88cd16ef31c4",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "name": "if payload has key TimedSpeedCounts & count > 0",
-        "property": "payload",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "hask",
-                "v": "TimedSpeedCounts",
-                "vt": "str"
-            },
-            {
-                "t": "jsonata_exp",
-                "v": "$number(msg.payload.TimedSpeedCounts.count) > 0",
-                "vt": "jsonata"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 270,
-        "y": 820,
-        "wires": [
-            [
-                "7055d871474e5c63"
-            ],
-            []
-        ],
-        "info": "TimedSpeedCounts default to 1-minute intervals\n- `count` represents number of objects at any speed\n- `average` represents the mean speed (average of units for all counts)\n- `units` represents the `average` units\n- `direction` indicates inbound/outbound relative to radar, will have both each interval"
-    },
-    {
         "id": "35c0bee67148cfa7",
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
-        "name": "debug-radar-key-valid-TimedSpeedCounts",
-        "active": false,
+        "name": "debug-write-radar-key-valid-TimedSpeedCounts",
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -588,57 +545,29 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 990,
-        "y": 880,
+        "x": 1020,
+        "y": 640,
         "wires": []
-    },
-    {
-        "id": "7055d871474e5c63",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "name": "add payload.timestamp",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload.timestamp",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 350,
-        "y": 880,
-        "wires": [
-            [
-                "35c0bee67148cfa7",
-                "9496fe7a475726de"
-            ]
-        ]
     },
     {
         "id": "9496fe7a475726de",
         "type": "function",
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
-        "name": "format data for influxdb TimedSpeedCounts measurement",
-        "func": "msg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn msg;",
+        "name": "format influxdb write TimedSpeedCounts",
+        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: (msg.payload.TimedSpeedCounts.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 490,
-        "y": 940,
+        "x": 580,
+        "y": 640,
         "wires": [
             [
-                "617c9bb213538929"
+                "617c9bb213538929",
+                "35c0bee67148cfa7"
             ]
         ]
     },
@@ -659,83 +588,29 @@
         "g": "04cc3b7b3e019683",
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
-        "x": 1000,
-        "y": 820,
+        "x": 1020,
+        "y": 700,
         "wires": []
-    },
-    {
-        "id": "04f7f4b860fe36bc",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "name": "if payload has key DetectedObjectVelocity",
-        "property": "payload",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "hask",
-                "v": "DetectedObjectVelocity",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 240,
-        "y": 500,
-        "wires": [
-            [
-                "4039fcd5e467867d"
-            ]
-        ]
-    },
-    {
-        "id": "4039fcd5e467867d",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "name": "add payload.timestamp",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload.timestamp",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 350,
-        "y": 560,
-        "wires": [
-            [
-                "4681243b9c70e906",
-                "67f64c75edc0ef13"
-            ]
-        ]
     },
     {
         "id": "4681243b9c70e906",
         "type": "function",
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
-        "name": "format data for influxdb DetectedObjectVelocity measurement",
-        "func": "msg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "name": "format influxdb write DetectedObjectVelocity",
+        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 500,
-        "y": 620,
+        "x": 590,
+        "y": 480,
         "wires": [
             [
-                "b8db51ab64a3d61e"
+                "b8db51ab64a3d61e",
+                "67f64c75edc0ef13"
             ]
         ]
     },
@@ -778,8 +653,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 620,
-        "y": 1000,
+        "x": 660,
+        "y": 700,
         "wires": []
     },
     {
@@ -797,83 +672,9 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 610,
-        "y": 680,
+        "x": 670,
+        "y": 540,
         "wires": []
-    },
-    {
-        "id": "c1154952a99c99a3",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "if payload has key speed",
-        "property": "payload",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "hask",
-                "v": "speed",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 190,
-        "y": 1120,
-        "wires": [
-            [
-                "2fded2c6588bfd47"
-            ]
-        ],
-        "info": "TimedSpeedCounts default to 1-minute intervals\n- `count` represents number of objects at any speed\n- `average` represents the mean speed (average of units for all counts)\n- `units` represents the `average` units\n- `direction` indicates inbound/outbound relative to radar, will have both each interval"
-    },
-    {
-        "id": "207eac3ff9b634a5",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "debug-radar-key-valid-raw-speeds",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1000,
-        "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "2fded2c6588bfd47",
-        "type": "change",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "add payload.timestamp",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload.timestamp",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 350,
-        "y": 1180,
-        "wires": [
-            [
-                "207eac3ff9b634a5",
-                "18b1eaf942e6b674"
-            ]
-        ]
     },
     {
         "id": "1daaab9e36f6fdb2",
@@ -890,8 +691,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "tm-05",
-        "x": 980,
-        "y": 1320,
+        "x": 660,
+        "y": 880,
         "wires": []
     },
     {
@@ -899,72 +700,16 @@
         "type": "function",
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
-        "name": "format data for influxdb speed, magnitude measurement, inbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"inbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
+        "name": "format influxdb write raw speed, magnitude",
+        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        speed: Number(msg.payload.speed[0]),\n        magnitude: Number(msg.payload.magnitude[0]),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        units: String(msg.payload.unit)\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 540,
-        "y": 1300,
-        "wires": [
-            [
-                "1daaab9e36f6fdb2",
-                "65512a020a745b9a"
-            ]
-        ]
-    },
-    {
-        "id": "18b1eaf942e6b674",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "switch inbound, outbound speed",
-        "property": "payload.speed",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "gt",
-                "v": "0",
-                "vt": "num"
-            },
-            {
-                "t": "lt",
-                "v": "0",
-                "vt": "num"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 390,
-        "y": 1240,
-        "wires": [
-            [
-                "ab905349bef72bac"
-            ],
-            [
-                "ffefd7af202792df"
-            ]
-        ]
-    },
-    {
-        "id": "ffefd7af202792df",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "3acc78eb8fcb72f8",
-        "name": "format data for influxdb speed, magnitude measurement, outbound",
-        "func": "msg.payload = [\n    {\n        speed: Number(msg.payload.speed),\n        magnitude: Number(msg.payload.magnitude),\n        time: msg.payload.timestamp\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(\"outbound\"),\n        units: String(msg.payload.unit)\n    }\n];\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 540,
-        "y": 1340,
+        "x": 590,
+        "y": 820,
         "wires": [
             [
                 "1daaab9e36f6fdb2",
@@ -978,24 +723,6 @@
         "z": "94d07e407c25f282",
         "g": "3acc78eb8fcb72f8",
         "name": "debug-radar-raws-speeds-write",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 990,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "67f64c75edc0ef13",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "name": "debug-radar-DetectObjectVelocity",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1004,8 +731,26 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 960,
-        "y": 560,
+        "x": 970,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "67f64c75edc0ef13",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "debug-radar-write-DetectObjectVelocity",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 480,
         "wires": []
     },
     {
@@ -1240,6 +985,68 @@
         "wires": [
             [
                 "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "b52127adb9f3a79e",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "g": "3acc78eb8fcb72f8",
+        "name": "update to handle O3 speeds (array currently using [0])",
+        "info": "",
+        "x": 620,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "ea5d7236f592558d",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "name": "also capture the OC values (object summary)",
+        "info": "",
+        "x": 570,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "830348149cb405ae",
+        "type": "switch",
+        "z": "94d07e407c25f282",
+        "name": "radar payload type",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "hask",
+                "v": "DetectedObjectVelocity",
+                "vt": "str"
+            },
+            {
+                "t": "hask",
+                "v": "TimedSpeedCounts",
+                "vt": "str"
+            },
+            {
+                "t": "hask",
+                "v": "speed",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 170,
+        "y": 520,
+        "wires": [
+            [
+                "4681243b9c70e906"
+            ],
+            [
+                "9496fe7a475726de"
+            ],
+            [
+                "ab905349bef72bac"
             ]
         ]
     },
