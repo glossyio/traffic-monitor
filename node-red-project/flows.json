@@ -104,9 +104,9 @@
             "67f64c75edc0ef13"
         ],
         "x": 394,
-        "y": 439,
-        "w": 812,
-        "h": 142
+        "y": 399,
+        "w": 452,
+        "h": 182
     },
     {
         "id": "8dd778b3e5d3a05c",
@@ -504,7 +504,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 670,
+        "x": 850,
         "y": 280,
         "wires": [
             [
@@ -518,7 +518,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -526,7 +526,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
+        "x": 1080,
         "y": 280,
         "wires": []
     },
@@ -608,8 +608,7 @@
         "y": 480,
         "wires": [
             [
-                "b8db51ab64a3d61e",
-                "67f64c75edc0ef13"
+                "b8db51ab64a3d61e"
             ]
         ]
     },
@@ -681,7 +680,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -689,8 +688,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1000,
-        "y": 480,
+        "x": 580,
+        "y": 440,
         "wires": []
     },
     {
@@ -964,7 +963,8 @@
         "y": 520,
         "wires": [
             [
-                "4681243b9c70e906"
+                "4681243b9c70e906",
+                "67f64c75edc0ef13"
             ],
             [
                 "9496fe7a475726de"
@@ -1421,7 +1421,7 @@
         "z": "49e416bfab1d4055",
         "g": "9ee8ebd820661432",
         "name": "create subLabel message",
-        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.direction_match), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
+        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.direction_match), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
