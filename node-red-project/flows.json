@@ -75,7 +75,7 @@
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
-        "name": "TimedSpeedCounts records",
+        "name": "@O - TimedSpeedCounts",
         "style": {
             "label": true
         },
@@ -94,7 +94,7 @@
         "id": "1d00b3011a12b204",
         "type": "group",
         "z": "94d07e407c25f282",
-        "name": "DetectedObjectVelocity records",
+        "name": "ON - DetectedObjectVelocity, for single object",
         "style": {
             "label": true
         },
@@ -123,8 +123,8 @@
             "9f1012eacf4d076f"
         ],
         "x": 34,
-        "y": 259,
-        "w": 612,
+        "y": 239,
+        "w": 672,
         "h": 222
     },
     {
@@ -146,9 +146,9 @@
             "be1439498cc44b59"
         ],
         "x": 94,
-        "y": 519,
-        "w": 1112,
-        "h": 262
+        "y": 499,
+        "w": 1012,
+        "h": 322
     },
     {
         "id": "9ee8ebd820661432",
@@ -164,8 +164,8 @@
             "1b0344bd4829de6b",
             "50574c0e9f62cf10"
         ],
-        "x": 874,
-        "y": 1039,
+        "x": 554,
+        "y": 1019,
         "w": 692,
         "h": 142
     },
@@ -173,7 +173,7 @@
         "id": "d14033e4e7acdf1b",
         "type": "group",
         "z": "49e416bfab1d4055",
-        "name": "write to mongodb",
+        "name": "write Event+Speed to mongodb",
         "style": {
             "label": true
         },
@@ -183,34 +183,16 @@
             "b71b0fcb6d1e558c",
             "466942b727a6409c"
         ],
-        "x": 874,
-        "y": 839,
+        "x": 554,
+        "y": 859,
         "w": 732,
         "h": 142
-    },
-    {
-        "id": "33bbc9893e1eae0e",
-        "type": "group",
-        "z": "49e416bfab1d4055",
-        "name": "NOT USED query non-agregate InfluxDB",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "065e571efca99657",
-            "5cd8c1f5d6326bf1",
-            "34e3fdd428d4761c"
-        ],
-        "x": 94,
-        "y": 839,
-        "w": 692,
-        "h": 202
     },
     {
         "id": "e138c998bef7d520",
         "type": "group",
         "z": "94d07e407c25f282",
-        "name": "Raw speed records",
+        "name": "OS - payload, raw speed+magnitude",
         "style": {
             "label": true
         },
@@ -221,9 +203,26 @@
             "5f62cb744592b108"
         ],
         "x": 394,
-        "y": 779,
+        "y": 759,
         "w": 752,
         "h": 202
+    },
+    {
+        "id": "5930ccb76242c558",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "OC - payload, object summary+vehicle length",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "5dda1e574a7acdc9",
+            "3fc9a8ed49514be5"
+        ],
+        "x": 394,
+        "y": 979,
+        "w": 752,
+        "h": 82
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -519,7 +518,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -537,7 +536,7 @@
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
         "name": "debug-write-radar-key-valid-TimedSpeedCounts",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -555,7 +554,7 @@
         "z": "94d07e407c25f282",
         "g": "04cc3b7b3e019683",
         "name": "format influxdb write TimedSpeedCounts",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: (msg.payload.TimedSpeedCounts.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        units: String(msg.payload.TimedSpeedCounts.units)\n    }\n];\nreturn newMsg;",
+        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        speed_average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: (msg.payload.TimedSpeedCounts.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        speed_units: msg.payload.TimedSpeedCounts.units\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -576,7 +575,7 @@
         "type": "comment",
         "z": "94d07e407c25f282",
         "name": "variables to pass",
-        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n\n\n",
+        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n- `influxdb_database` \n\n",
         "x": 360,
         "y": 60,
         "wires": []
@@ -598,7 +597,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "format influxdb write DetectedObjectVelocity",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        units: String(msg.payload.unit)\n    }\n];\nreturn newMsg;",
+        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        velocity_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -652,7 +651,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-05",
+        "bucket": "tm-13",
         "x": 660,
         "y": 700,
         "wires": []
@@ -671,7 +670,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-05",
+        "bucket": "tm-13",
         "x": 670,
         "y": 540,
         "wires": []
@@ -682,7 +681,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -930,20 +929,10 @@
         ]
     },
     {
-        "id": "ea5d7236f592558d",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "name": "also capture the OC values (object summary)",
-        "info": "",
-        "x": 570,
-        "y": 1040,
-        "wires": []
-    },
-    {
         "id": "830348149cb405ae",
         "type": "switch",
         "z": "94d07e407c25f282",
-        "name": "radar payload type",
+        "name": "radar payload key type",
         "property": "payload",
         "propertyType": "msg",
         "rules": [
@@ -961,12 +950,17 @@
                 "t": "hask",
                 "v": "speed",
                 "vt": "str"
+            },
+            {
+                "t": "hask",
+                "v": "delta_time_msec",
+                "vt": "str"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 3,
-        "x": 170,
+        "outputs": 4,
+        "x": 180,
         "y": 520,
         "wires": [
             [
@@ -977,6 +971,9 @@
             ],
             [
                 "7b220a40adc14e3c"
+            ],
+            [
+                "5dda1e574a7acdc9"
             ]
         ]
     },
@@ -994,9 +991,9 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-05",
+        "bucket": "tm-13",
         "x": 660,
-        "y": 880,
+        "y": 860,
         "wires": []
     },
     {
@@ -1005,7 +1002,7 @@
         "z": "94d07e407c25f282",
         "g": "e138c998bef7d520",
         "name": "format influxdb write raw speed, magnitude",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        [msg.payload.unit]: String(msg.payload.speed),\n        magnitude: String(msg.payload.magnitude),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n    }\n];\nreturn newMsg;",
+        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed),\n        magnitude: String(msg.payload.magnitude),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1013,7 +1010,7 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 820,
+        "y": 800,
         "wires": [
             [
                 "d5e5d0f288f9b186",
@@ -1036,7 +1033,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 970,
-        "y": 820,
+        "y": 800,
         "wires": []
     },
     {
@@ -1047,7 +1044,46 @@
         "name": "handle O3 speeds by saving array to each _value",
         "info": "",
         "x": 600,
-        "y": 940,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "5dda1e574a7acdc9",
+        "type": "mongodb4",
+        "z": "94d07e407c25f282",
+        "g": "5930ccb76242c558",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "radar_oc_payloads",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo insertOne radar_oc_payload",
+        "x": 560,
+        "y": 1020,
+        "wires": [
+            [
+                "3fc9a8ed49514be5"
+            ]
+        ]
+    },
+    {
+        "id": "3fc9a8ed49514be5",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "5930ccb76242c558",
+        "name": "mongo radar_oc_payload return",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 1020,
         "wires": []
     },
     {
@@ -1169,7 +1205,7 @@
         "repair": false,
         "outputs": 1,
         "x": 160,
-        "y": 300,
+        "y": 280,
         "wires": [
             [
                 "67f433ccd5912ebd"
@@ -1205,7 +1241,7 @@
         "repair": false,
         "outputs": 3,
         "x": 220,
-        "y": 360,
+        "y": 340,
         "wires": [
             [
                 "6cfe5662fc478c14"
@@ -1232,7 +1268,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 440,
+        "y": 420,
         "wires": [
             [
                 "9f1012eacf4d076f",
@@ -1256,8 +1292,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 500,
-        "y": 300,
+        "x": 560,
+        "y": 280,
         "wires": []
     },
     {
@@ -1266,7 +1302,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "create influxdb query based on msg, +/- 2 sec all directions, return median",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
+        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-13\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1274,7 +1310,7 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 560,
+        "y": 540,
         "wires": [
             [
                 "d541afce049d3481"
@@ -1293,8 +1329,8 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 490,
-        "y": 620,
+        "x": 510,
+        "y": 600,
         "wires": [
             [
                 "29ba5f8d0c2ef420"
@@ -1318,8 +1354,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1060,
-        "y": 1140,
+        "x": 740,
+        "y": 1120,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1347,8 +1383,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 930,
-        "y": 680,
+        "x": 810,
+        "y": 660,
         "wires": [
             [
                 "e63efdd922665136"
@@ -1369,8 +1405,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1020,
-        "y": 740,
+        "x": 900,
+        "y": 720,
         "wires": [
             [
                 "b9ec057a98fc7391",
@@ -1385,15 +1421,15 @@
         "z": "49e416bfab1d4055",
         "g": "9ee8ebd820661432",
         "name": "create subLabel message",
-        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.query_return_median[0].units + \"_\" + msg.payload.query_return_median[0].direction), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
+        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.payload.direction_match), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1010,
-        "y": 1080,
+        "x": 690,
+        "y": 1060,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1415,8 +1451,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1370,
-        "y": 1080,
+        "x": 1050,
+        "y": 1060,
         "wires": []
     },
     {
@@ -1433,8 +1469,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1370,
-        "y": 1140,
+        "x": 1050,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1450,8 +1486,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "mongo insertOne events",
-        "x": 1150,
-        "y": 940,
+        "x": 830,
+        "y": 960,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1472,8 +1508,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1390,
-        "y": 940,
+        "x": 1070,
+        "y": 960,
         "wires": []
     },
     {
@@ -1489,8 +1525,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1010,
-        "y": 880,
+        "x": 690,
+        "y": 900,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1513,72 +1549,9 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1440,
-        "y": 880,
+        "x": 1120,
+        "y": 900,
         "wires": []
-    },
-    {
-        "id": "065e571efca99657",
-        "type": "function",
-        "z": "49e416bfab1d4055",
-        "d": true,
-        "g": "33bbc9893e1eae0e",
-        "name": "create influxdb query based on msg, +/- 2 sec, DetectedObjectVelocity all directions, non-agg",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-05\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"units\\\"] == \\\"mph\\\")\\n\";\n\nmsg.query = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 880,
-        "wires": [
-            [
-                "5cd8c1f5d6326bf1"
-            ]
-        ]
-    },
-    {
-        "id": "5cd8c1f5d6326bf1",
-        "type": "influxdb in",
-        "z": "49e416bfab1d4055",
-        "d": true,
-        "g": "33bbc9893e1eae0e",
-        "influxdb": "73598328fc95017b",
-        "name": "query DetectedObjectVelocity, non-agg",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 490,
-        "y": 940,
-        "wires": [
-            [
-                "34e3fdd428d4761c"
-            ]
-        ]
-    },
-    {
-        "id": "34e3fdd428d4761c",
-        "type": "function",
-        "z": "49e416bfab1d4055",
-        "d": true,
-        "g": "33bbc9893e1eae0e",
-        "name": "query, add topic, `query_return_nonagg`",
-        "func": "msg.topic = \"query_return_nonagg\"\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 600,
-        "y": 1000,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "b9ec057a98fc7391",
@@ -1594,8 +1567,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1040,
-        "y": 560,
+        "x": 940,
+        "y": 780,
         "wires": []
     },
     {
@@ -1611,8 +1584,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 580,
-        "y": 680,
+        "x": 540,
+        "y": 660,
         "wires": [
             [
                 "0f3ff76b20f6fea0"
@@ -1637,7 +1610,7 @@
         "senderr": false,
         "headers": [],
         "x": 230,
-        "y": 740,
+        "y": 720,
         "wires": [
             [
                 "be1439498cc44b59"
@@ -1658,7 +1631,7 @@
         "finalize": "",
         "libs": [],
         "x": 480,
-        "y": 740,
+        "y": 720,
         "wires": [
             [
                 "0f3ff76b20f6fea0"
