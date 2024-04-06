@@ -192,7 +192,7 @@
         "id": "e138c998bef7d520",
         "type": "group",
         "z": "94d07e407c25f282",
-        "name": "OS - payload, raw speed+magnitude",
+        "name": "OS O3 - payload, raw speed+magnitude",
         "style": {
             "label": true
         },
@@ -220,9 +220,28 @@
             "3fc9a8ed49514be5"
         ],
         "x": 394,
+        "y": 1199,
+        "w": 332,
+        "h": 142
+    },
+    {
+        "id": "e5b5b46703e248e9",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "OS O1 (equivalent) - payload, raw speed+magnitude",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "da47f12a5e2cd512",
+            "ef9cb704c91a3ef6",
+            "c1c1371cdf7151aa",
+            "58e0b10c67841b60"
+        ],
+        "x": 394,
         "y": 979,
-        "w": 752,
-        "h": 82
+        "w": 792,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -970,10 +989,12 @@
                 "9496fe7a475726de"
             ],
             [
-                "7b220a40adc14e3c"
+                "7b220a40adc14e3c",
+                "ef9cb704c91a3ef6"
             ],
             [
-                "5dda1e574a7acdc9"
+                "5dda1e574a7acdc9",
+                "3fc9a8ed49514be5"
             ]
         ]
     },
@@ -1061,11 +1082,9 @@
         "handleDocId": false,
         "name": "mongo insertOne radar_oc_payload",
         "x": 560,
-        "y": 1020,
+        "y": 1240,
         "wires": [
-            [
-                "3fc9a8ed49514be5"
-            ]
+            []
         ]
     },
     {
@@ -1073,7 +1092,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "5930ccb76242c558",
-        "name": "mongo radar_oc_payload return",
+        "name": "mongo radar_oc_payload",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1082,8 +1101,78 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 970,
+        "x": 530,
+        "y": 1300,
+        "wires": []
+    },
+    {
+        "id": "da47f12a5e2cd512",
+        "type": "influxdb out",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "influxdb": "73598328fc95017b",
+        "name": "write influxdb RawSpeedMagnitude_single",
+        "measurement": "RawSpeedMagnitude_single",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "taffic_monitor_01",
+        "bucket": "tm-13",
+        "x": 690,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "ef9cb704c91a3ef6",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "format influxdb write raw speed, magnitude single",
+        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed[0]),\n        magnitude: String(msg.payload.magnitude[0]),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
         "y": 1020,
+        "wires": [
+            [
+                "da47f12a5e2cd512",
+                "c1c1371cdf7151aa"
+            ]
+        ]
+    },
+    {
+        "id": "c1c1371cdf7151aa",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "debug-radar-raws-speeds-write_single",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 990,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "58e0b10c67841b60",
+        "type": "comment",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "manually take top 1 speed, magnitude (effectively O1)",
+        "info": "",
+        "x": 620,
+        "y": 1140,
         "wires": []
     },
     {
