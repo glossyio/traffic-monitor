@@ -1890,70 +1890,6 @@
         "wires": []
     },
     {
-        "id": "4eb9c44480b80a24",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "name": "format payload for object counts",
-        "func": "\nvar newMsg = [{\n    \"series\": \"\",\n    \"data\": {\"x\": \"\", \"y\": \"\"},\n    \"labels\": \"\"\n}];\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 730,
-        "y": 100,
-        "wires": [
-            [
-                "c932fb4a6231b23f"
-            ]
-        ]
-    },
-    {
-        "id": "c932fb4a6231b23f",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "name": "24-hour objects",
-        "group": "06dde4be9a9a6b27",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "label": "chart",
-        "chartType": "line",
-        "legend": "false",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": true,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "24",
-        "removeOlderPoints": "10000",
-        "removeOlderUnit": "3600",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 1040,
-        "y": 100,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
@@ -2043,7 +1979,7 @@
         "id": "08d030ffc3fe6adb",
         "type": "ui_chart",
         "z": "28627559bebdc324",
-        "name": "24-hour objects",
+        "name": "7-day summary, objects",
         "group": "06dde4be9a9a6b27",
         "order": 0,
         "width": 0,
@@ -2057,9 +1993,9 @@
         "dot": true,
         "ymin": "",
         "ymax": "",
-        "removeOlder": "24",
+        "removeOlder": "7",
         "removeOlderPoints": "10000",
-        "removeOlderUnit": "3600",
+        "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
         "useUTC": false,
@@ -2077,8 +2013,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 600,
-        "y": 280,
+        "x": 810,
+        "y": 540,
         "wires": [
             []
         ]
@@ -2105,7 +2041,7 @@
         "id": "b241a0ef89fd7ce4",
         "type": "http request",
         "z": "28627559bebdc324",
-        "name": "",
+        "name": "frigate api/events/summary",
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -2117,11 +2053,12 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 310,
+        "x": 260,
         "y": 440,
         "wires": [
             [
-                "921bd254e41a46da"
+                "921bd254e41a46da",
+                "eb140f61419c6a08"
             ]
         ],
         "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
@@ -2157,8 +2094,79 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 550,
+        "x": 760,
         "y": 440,
+        "wires": []
+    },
+    {
+        "id": "4f9eaaedbbe2a45e",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "",
+        "info": "display basics- line:\n1 camera per chart: `camera`\n- series: `label`\n- lables: null\n- x: `day`\n- y: `count`",
+        "x": 300,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "eb140f61419c6a08",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "structure data",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem.camera = env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 540,
+        "wires": [
+            [
+                "08d030ffc3fe6adb",
+                "7d670f6e8d75b305"
+            ]
+        ]
+    },
+    {
+        "id": "4c5033c624e893a0",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "name": "frigate api/events/summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.223:5000/api/events/summary",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 260,
+        "y": 700,
+        "wires": [
+            []
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "7d670f6e8d75b305",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 660,
         "wires": []
     },
     {
