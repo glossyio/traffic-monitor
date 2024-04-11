@@ -626,7 +626,7 @@
         "type": "comment",
         "z": "94d07e407c25f282",
         "name": "variables to pass",
-        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n- `influxdb_database` \n\n",
+        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)  --- env.get(\"VAR_DEVICE_IP\")\n- `location` string (for influxDB `location` tag)  --- env.get(\"VAR_LOCATION\")\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config  --- env.get(\"VAR_RADAR_CAMERA\")  \n- `influxdb_database`   --- env.get(\"VAR_INFLUXDB_BUCKET\")\n\n",
         "x": 360,
         "y": 60,
         "wires": []
@@ -881,7 +881,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "\"OJUSF0S2K+IGONO3OUOTOhOC\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
+        "payload": "\"OJUSF2S2K+IGONO3OUOTOhOC\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
         "payloadType": "jsonata",
         "x": 230,
         "y": 160,
@@ -1420,6 +1420,7 @@
         "id": "031f1f21a0ab203d",
         "type": "http request",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "add subLabel to event",
         "method": "POST",
@@ -1489,8 +1490,7 @@
         "wires": [
             [
                 "b9ec057a98fc7391",
-                "b71b0fcb6d1e558c",
-                "669e68daa73311d6"
+                "b71b0fcb6d1e558c"
             ]
         ]
     },
@@ -1498,6 +1498,7 @@
         "id": "669e68daa73311d6",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "create subLabel message",
         "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.direction_match), \n    \"subLabelScore\": (Math.abs(msg.speed_match)/1000)\n    };\n\nreturn newMsg;",
@@ -1520,6 +1521,7 @@
         "id": "1b0344bd4829de6b",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "subLabel complete message to send",
         "active": false,
@@ -1538,6 +1540,7 @@
         "id": "50574c0e9f62cf10",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "frigate return, event speed sub_label",
         "active": false,
@@ -1850,7 +1853,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "pass query otherwise empty set",
-        "func": "var newMsg = {};\nif (msg.topic == \"query_return_median\") {return msg} \nelse {\n    newMsg.topic = \"query_return_median\";\n    newMsg.payload.query_return_median = [];\n    return newMsg;\n}",
+        "func": "var newMsg = {};\nif (msg.topic == \"query_return_median\") {return msg} \nelse {\n    newMsg.topic = \"query_return_median\";\n    newMsg.payload = {};\n    newMsg.payload.query_return_median = [];\n    return newMsg;\n}",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2097,6 +2100,66 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "b241a0ef89fd7ce4",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.223:5000/api/events/summary",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 440,
+        "wires": [
+            [
+                "921bd254e41a46da"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "91d3f8965f62f4b0",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "name": "trigger Event query every 5-min",
+        "props": [],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 200,
+        "y": 380,
+        "wires": [
+            [
+                "b241a0ef89fd7ce4"
+            ]
+        ]
+    },
+    {
+        "id": "921bd254e41a46da",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 440,
+        "wires": []
     },
     {
         "id": "e9da260ad8a83698",
