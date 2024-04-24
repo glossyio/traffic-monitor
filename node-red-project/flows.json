@@ -40,38 +40,6 @@
         "env": []
     },
     {
-        "id": "e1fd8135.0c3c98",
-        "type": "subflow",
-        "name": "Subflow 1",
-        "info": "",
-        "category": "",
-        "in": [
-            {
-                "x": 80,
-                "y": 60,
-                "wires": [
-                    {
-                        "id": "dfb183f3.faeb4"
-                    }
-                ]
-            }
-        ],
-        "out": [
-            {
-                "x": 460,
-                "y": 320,
-                "wires": [
-                    {
-                        "id": "10e682f6.b25e1d",
-                        "port": 0
-                    }
-                ]
-            }
-        ],
-        "env": [],
-        "color": "#DDAA99"
-    },
-    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -118,13 +86,14 @@
         },
         "nodes": [
             "bcdcd8861df95e07",
-            "67f433ccd5912ebd",
+            "9f1012eacf4d076f",
+            "ed3267eeb15ef14e",
             "6cfe5662fc478c14",
-            "9f1012eacf4d076f"
+            "98e23f2c38047c05"
         ],
-        "x": 34,
-        "y": 239,
-        "w": 672,
+        "x": 14,
+        "y": 199,
+        "w": 772,
         "h": 222
     },
     {
@@ -143,12 +112,15 @@
             "b9ec057a98fc7391",
             "29ba5f8d0c2ef420",
             "629e4b3f709f1e32",
-            "be1439498cc44b59"
+            "be1439498cc44b59",
+            "9b02f14fb1d60b89",
+            "23df4abbd743c2e1",
+            "823f58ae26a49321"
         ],
-        "x": 94,
-        "y": 499,
-        "w": 1012,
-        "h": 322
+        "x": 14,
+        "y": 459,
+        "w": 1312,
+        "h": 302
     },
     {
         "id": "9ee8ebd820661432",
@@ -164,8 +136,8 @@
             "1b0344bd4829de6b",
             "50574c0e9f62cf10"
         ],
-        "x": 554,
-        "y": 1019,
+        "x": 474,
+        "y": 979,
         "w": 692,
         "h": 142
     },
@@ -183,8 +155,8 @@
             "b71b0fcb6d1e558c",
             "466942b727a6409c"
         ],
-        "x": 554,
-        "y": 859,
+        "x": 474,
+        "y": 819,
         "w": 732,
         "h": 142
     },
@@ -334,176 +306,236 @@
         "uriTabActive": "tab-uri-simple"
     },
     {
-        "id": "b24572c.f46531",
-        "type": "change",
-        "z": "e1fd8135.0c3c98",
-        "name": "mi-clear",
-        "rules": [
-            {
-                "t": "set",
-                "p": "player",
-                "pt": "global",
-                "to": "2",
-                "tot": "num"
+        "id": "d20486757aef47d3",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
             },
-            {
-                "t": "set",
-                "p": "ui_control",
-                "pt": "msg",
-                "to": "{\"icon\":\"mi-clear\",\"bgcolor\":\"#FF4444\"}",
-                "tot": "json"
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
             },
-            {
-                "t": "set",
-                "p": "color",
-                "pt": "msg",
-                "to": "red",
-                "tot": "str"
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
             }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 400,
-        "y": 100,
-        "wires": [
-            [
-                "94219e5b.949e7"
-            ]
-        ]
-    },
-    {
-        "id": "f983ea23.268478",
-        "type": "switch",
-        "z": "e1fd8135.0c3c98",
-        "name": "Player 1 or 2",
-        "property": "player",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "1",
-                "vt": "num"
-            },
-            {
-                "t": "eq",
-                "v": "2",
-                "vt": "num"
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
             }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 190,
-        "y": 120,
-        "wires": [
-            [
-                "b24572c.f46531"
-            ],
-            [
-                "f5db7ec0.bab29"
-            ]
-        ]
+        }
     },
     {
-        "id": "f5db7ec0.bab29",
-        "type": "change",
-        "z": "e1fd8135.0c3c98",
-        "name": "mi-clear",
-        "rules": [
-            {
-                "t": "set",
-                "p": "player",
-                "pt": "global",
-                "to": "1",
-                "tot": "num"
+        "id": "b6d86231fb09af0f",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "1f15adecfe5a580a",
+        "type": "ui_group",
+        "name": "Default",
+        "tab": "b6d86231fb09af0f",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "d9c88b99.c91ee8",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-dark",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
             },
-            {
-                "t": "set",
-                "p": "ui_control",
-                "pt": "msg",
-                "to": "{ \"icon\":\"mi-lens\" }",
-                "tot": "json"
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
             },
-            {
-                "t": "set",
-                "p": "color",
-                "pt": "msg",
-                "to": "blue",
-                "tot": "str"
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#097479",
+                    "value": "#097479",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#097479",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#333333",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#0eb8c0",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#555555",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#333333",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#eeeeee",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#097479",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#333333",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey"
             }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 400,
-        "y": 140,
-        "wires": [
-            [
-                "94219e5b.949e7"
-            ]
-        ]
-    },
-    {
-        "id": "10e682f6.b25e1d",
-        "type": "function",
-        "z": "e1fd8135.0c3c98",
-        "name": "Check for Winner",
-        "func": "// b [r][c] r=row c= column\n\nmsg.payload = \"no winner yet\"\nvar b = global.get(\"board\")\n\n//node.warn(\"b = \"+b)\n//node.warn(\"b[0][0] = \"+b[0][0])\n//node.warn(\"b[0][1] = \"+b[0][1])\n//node.warn(\"b[0][2] = \"+b[0][2])\nvar tt =b[0][0] + b[0][1] + b[0][2]\n//node.warn(\"tt = \"+tt)\n// ----------------------------------------------------------\n// check to see if all squares used - draw unless someone won\nvar t = 0\nfor (r=0; r<3; r++){\n    for (c=0; c<3; c++){\n        t += b[r][c]\n    }\n}\n//node.warn(\"total = \"+t)\nif (t == 13) msg.payload = \"It's a draw\"\n\n// ----------------------------------------------------------\n// Check to see if X wins \n// Check row 1 - 3\nif ((b[0][0] + b[0][1] + b[0][2]) == 3) msg.payload = \"X wins\"\nif ((b[1][0] + b[1][1] + b[1][2]) == 3) msg.payload = \"X wins\"\nif ((b[2][0] + b[2][1] + b[2][2]) == 3) msg.payload = \"X wins\"\n\n// Check column 1 - 3\nif ((b[0][0] + b[1][0] + b[2][0]) == 3) msg.payload = \"X wins\"\nif ((b[0][1] + b[1][1] + b[2][1]) == 3) msg.payload = \"X wins\"\nif ((b[0][2] + b[1][2] + b[2][2]) == 3) msg.payload = \"X wins\"\n\n// Check DIAGONALS\nif ((b[0][0] + b[1][1] + b[2][2]) == 3) msg.payload = \"X wins\"\nif ((b[2][0] + b[1][1] + b[0][2]) == 3) msg.payload = \"X wins\"\n\n// ----------------------------------------------------------\n// Check to see if O wins \n// Check row 1 - 3\nif ((b[0][0] + b[0][1] + b[0][2]) == 6) msg.payload = \"O wins\"\nif ((b[1][0] + b[1][1] + b[1][2]) == 6) msg.payload = \"O wins\"\nif ((b[2][0] + b[2][1] + b[2][2]) == 6) msg.payload = \"O wins\"\n\n// Check column 1 - 3\nif ((b[0][0] + b[1][0] + b[2][0]) == 6) msg.payload = \"O wins\"\nif ((b[0][1] + b[1][1] + b[2][1]) == 6) msg.payload = \"O wins\"\nif ((b[0][2] + b[1][2] + b[2][2]) == 6) msg.payload = \"O wins\"\n\n// Check DIAGONALS\nif ((b[0][0] + b[1][1] + b[2][2]) == 6) msg.payload = \"O wins\"\nif ((b[2][0] + b[1][1] + b[0][2]) == 6) msg.payload = \"O wins\"\n\n// ----------------------------------------------------------\n// \nif (msg.payload != \"no winner yet\") msg.gameover = \"no\"\nif (msg.payload == \"It's a draw\")   msg.gameover = \"draw\"\nif (msg.payload == \"X wins\")   msg.gameover = \"yes\"\nif (msg.payload == \"O wins\")   msg.gameover = \"yes\"\n\nreturn msg;\n",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 610,
-        "y": 180,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "94219e5b.949e7",
-        "type": "change",
-        "z": "e1fd8135.0c3c98",
-        "name": "disable square",
-        "rules": [
-            {
-                "t": "set",
-                "p": "enabled",
-                "pt": "msg",
-                "to": "false",
-                "tot": "bool"
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 56,
+                "sy": 56,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
             }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 600,
-        "y": 120,
-        "wires": [
-            [
-                "10e682f6.b25e1d"
-            ]
-        ]
+        }
     },
     {
-        "id": "dfb183f3.faeb4",
-        "type": "function",
-        "z": "e1fd8135.0c3c98",
-        "name": "Mark square used",
-        "func": "var square = msg.payload\nvar p = global.get(\"player\")\nvar b = global.get(\"board\")\n//node.warn(\"square =\"+square)\nswitch (square) {\n    case 0:\n        b[0][0] = p\n        break\n    case 1:\n        b[0][1] = p\n        break\n    case 2:\n        b[0][2] = p\n        break\n    case 10:\n        b[1][0] = p\n        break\n    case 11:\n        b[1][1] = p\n        break\n    case 12:\n        b[1][2] = p\n        break\n    case 20:\n        b[2][0] = p\n        break\n    case 21:\n        b[2][1] = p\n        break\n    case 22:\n        b[2][2] = p\n        break\n        \n}\nglobal.set(\"board\",b)\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 210,
-        "y": 60,
-        "wires": [
-            [
-                "f983ea23.268478"
-            ]
-        ]
+        "id": "665d947f9a312a33",
+        "type": "ui_tab",
+        "name": "Events",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "06dde4be9a9a6b27",
+        "type": "ui_group",
+        "name": "Monitor Events Dashboard",
+        "tab": "665d947f9a312a33",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "e43506628b4a1cdb",
@@ -594,7 +626,7 @@
         "type": "comment",
         "z": "94d07e407c25f282",
         "name": "variables to pass",
-        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)\n- `location` string (for influxDB `location` tag)\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config\n- `influxdb_database` \n\n",
+        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)  --- env.get(\"VAR_DEVICE_IP\")\n- `location` string (for influxDB `location` tag)  --- env.get(\"VAR_LOCATION\")\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config  --- env.get(\"VAR_RADAR_CAMERA\")  \n- `influxdb_database`   --- env.get(\"VAR_INFLUXDB_BUCKET\")\n\n",
         "x": 360,
         "y": 60,
         "wires": []
@@ -699,7 +731,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -786,7 +818,7 @@
                 "vt": "str"
             }
         ],
-        "repeat": "",
+        "repeat": "3600",
         "crontab": "",
         "once": true,
         "onceDelay": "0.2",
@@ -820,7 +852,7 @@
         "once": true,
         "onceDelay": "0.3",
         "topic": "",
-        "payload": "\"CZ=\" & \"PST-7\" & \"\\n\"",
+        "payload": "\"CZ\" & \"PST-7\" & \"\\n\"",
         "payloadType": "jsonata",
         "x": 210,
         "y": 240,
@@ -849,7 +881,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "\"OJUSF0S2K+IGONO3OUOTOhOC\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
+        "payload": "\"OJUSF2S2K+IGONO3OUOTOhOC\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
         "payloadType": "jsonata",
         "x": 230,
         "y": 160,
@@ -1093,7 +1125,7 @@
         "z": "94d07e407c25f282",
         "g": "5930ccb76242c558",
         "name": "mongo radar_oc_payload",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1223,7 +1255,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 90,
-        "y": 160,
+        "y": 140,
         "wires": [
             [
                 "4a1c5b87abde2112",
@@ -1245,7 +1277,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 340,
-        "y": 160,
+        "y": 140,
         "wires": []
     },
     {
@@ -1293,53 +1325,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 160,
-        "y": 280,
+        "x": 140,
+        "y": 240,
         "wires": [
             [
-                "67f433ccd5912ebd"
-            ]
-        ]
-    },
-    {
-        "id": "67f433ccd5912ebd",
-        "type": "switch",
-        "z": "49e416bfab1d4055",
-        "g": "8dd778b3e5d3a05c",
-        "name": "after label is car, bike, motorcycle (bikes)",
-        "property": "payload.after.label",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "car",
-                "vt": "str"
-            },
-            {
-                "t": "eq",
-                "v": "bicycle",
-                "vt": "str"
-            },
-            {
-                "t": "eq",
-                "v": "motorcycle",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 3,
-        "x": 220,
-        "y": 340,
-        "wires": [
-            [
-                "6cfe5662fc478c14"
-            ],
-            [
-                "6cfe5662fc478c14"
-            ],
-            [
-                "6cfe5662fc478c14"
+                "ed3267eeb15ef14e"
             ]
         ]
     },
@@ -1348,22 +1338,22 @@
         "type": "function",
         "z": "49e416bfab1d4055",
         "g": "8dd778b3e5d3a05c",
-        "name": "calculate direction, add topic `event_end_car_bike`",
-        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\n\nmsg.topic = \"frigate_event\";\nreturn msg;",
+        "name": "calculate direction based on frigate event zones",
+        "func": "var $myZoneNearIndex = msg.payload.after.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.payload.after.entered_zones.indexOf(\"zone_far\");\n\nvar $myDirection = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nmsg.payload.after.nr_direction = $myDirection;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 290,
-        "y": 420,
+        "x": 580,
+        "y": 380,
         "wires": [
             [
                 "9f1012eacf4d076f",
-                "6539eff5f28950e2",
                 "0f3ff76b20f6fea0",
-                "629e4b3f709f1e32"
+                "629e4b3f709f1e32",
+                "9b02f14fb1d60b89"
             ]
         ]
     },
@@ -1373,7 +1363,7 @@
         "z": "49e416bfab1d4055",
         "g": "8dd778b3e5d3a05c",
         "name": "debug: calc direction",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1381,8 +1371,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 560,
-        "y": 280,
+        "x": 540,
+        "y": 240,
         "wires": []
     },
     {
@@ -1390,7 +1380,7 @@
         "type": "function",
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
-        "name": "create influxdb query based on msg, +/- 2 sec all directions, return median",
+        "name": "create influxdb query, return DetectedObjectVelocity median",
         "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-13\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -1398,8 +1388,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 380,
-        "y": 540,
+        "x": 260,
+        "y": 600,
         "wires": [
             [
                 "d541afce049d3481"
@@ -1418,8 +1408,8 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 510,
-        "y": 600,
+        "x": 430,
+        "y": 660,
         "wires": [
             [
                 "29ba5f8d0c2ef420"
@@ -1430,6 +1420,7 @@
         "id": "031f1f21a0ab203d",
         "type": "http request",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "add subLabel to event",
         "method": "POST",
@@ -1443,8 +1434,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 740,
-        "y": 1120,
+        "x": 660,
+        "y": 1080,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1472,8 +1463,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 810,
-        "y": 660,
+        "x": 1130,
+        "y": 580,
         "wires": [
             [
                 "e63efdd922665136"
@@ -1494,13 +1485,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
-        "y": 720,
+        "x": 1180,
+        "y": 640,
         "wires": [
             [
                 "b9ec057a98fc7391",
-                "b71b0fcb6d1e558c",
-                "669e68daa73311d6"
+                "b71b0fcb6d1e558c"
             ]
         ]
     },
@@ -1508,17 +1498,18 @@
         "id": "669e68daa73311d6",
         "type": "function",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "create subLabel message",
-        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.direction_match), \n    \"subLabelScore\": (Math.abs(msg.payload.query_return_median[0]._value)/1000)\n    };\n\nreturn newMsg;",
+        "func": "var newMsg = {};\n\nnewMsg.event_id = msg.payload.frigate_event.after.id;\nnewMsg.frigate_ip = env.get(\"VAR_DEVICE_IP\");\n\nnewMsg.payload = {\n    \"subLabel\": String(\"speed_\" + msg.direction_match), \n    \"subLabelScore\": (Math.abs(msg.speed_match)/1000)\n    };\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 690,
-        "y": 1060,
+        "x": 610,
+        "y": 1020,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1530,6 +1521,7 @@
         "id": "1b0344bd4829de6b",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "subLabel complete message to send",
         "active": false,
@@ -1540,14 +1532,15 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1050,
-        "y": 1060,
+        "x": 970,
+        "y": 1020,
         "wires": []
     },
     {
         "id": "50574c0e9f62cf10",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "9ee8ebd820661432",
         "name": "frigate return, event speed sub_label",
         "active": false,
@@ -1558,8 +1551,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1050,
-        "y": 1120,
+        "x": 970,
+        "y": 1080,
         "wires": []
     },
     {
@@ -1575,8 +1568,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "mongo insertOne events",
-        "x": 830,
-        "y": 960,
+        "x": 750,
+        "y": 920,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1597,8 +1590,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1070,
-        "y": 960,
+        "x": 990,
+        "y": 920,
         "wires": []
     },
     {
@@ -1607,15 +1600,15 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "create mongo message",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n//newMsg.payload.radar = {}; // contain all desired radar readings\n//Don't attach radar data here... Just conflates the reporting DB\n\n// Frigate Event info\nnewMsg.payload.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.top_score = msg.payload.frigate_event.after.top_score;\nnewMsg.payload.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.end_time = msg.payload.frigate_event.after.end_time;\nnewMsg.payload.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.direction_calc = msg.direction_match;\nnewMsg.payload.speed_calc = msg.speed_match;\nnewMsg.payload.thumbnail_base64jpg = msg.payload.event_api.thumbnail;\n\n// Attached Radar info\n\n//newMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\n//newMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n//newMsg.payload.radar = {}; // contain all desired radar readings\n//Don't attach radar data here... Just conflates the reporting DB\n\n// Frigate Event info\nnewMsg.payload.id = msg.payload.frigate_event.after.id;\nnewMsg.payload.camera = msg.payload.frigate_event.after.camera;\nnewMsg.payload.label = msg.payload.frigate_event.after.label;\nnewMsg.payload.sub_label = msg.payload.frigate_event.after.sub_label;\nnewMsg.payload.top_score = msg.payload.frigate_event.after.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.payload.frigate_event.after.frame_time;\nnewMsg.payload.start_time = msg.payload.frigate_event.after.start_time;\nnewMsg.payload.end_time = msg.payload.frigate_event.after.end_time;\n\nnewMsg.payload.entered_zones = msg.payload.frigate_event.after.entered_zones; //array\nnewMsg.payload.direction_calc = msg.direction_match;\nnewMsg.payload.speed_calc = msg.speed_match;\nnewMsg.payload.thumbnail_base64jpg = msg.payload.event_api.thumbnail;\n\n// Attached Radar info\n\n//newMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\n//newMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 690,
-        "y": 900,
+        "x": 610,
+        "y": 860,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1630,7 +1623,7 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "composed mongo message",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1638,8 +1631,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1120,
-        "y": 900,
+        "x": 1040,
+        "y": 860,
         "wires": []
     },
     {
@@ -1648,7 +1641,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "event+radar w direction calcs",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1656,8 +1649,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 940,
-        "y": 780,
+        "x": 1080,
+        "y": 700,
         "wires": []
     },
     {
@@ -1673,11 +1666,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 540,
-        "y": 660,
+        "x": 460,
+        "y": 720,
         "wires": [
             [
-                "0f3ff76b20f6fea0"
+                "23df4abbd743c2e1"
             ]
         ]
     },
@@ -1698,8 +1691,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 230,
-        "y": 720,
+        "x": 730,
+        "y": 500,
         "wires": [
             [
                 "be1439498cc44b59"
@@ -1719,8 +1712,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 720,
+        "x": 980,
+        "y": 500,
         "wires": [
             [
                 "0f3ff76b20f6fea0"
@@ -1760,6 +1753,133 @@
         "wires": []
     },
     {
+        "id": "ed3267eeb15ef14e",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
+        "name": "add topic = 'frigate_event'",
+        "func": "msg.topic = \"frigate_event\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 150,
+        "y": 320,
+        "wires": [
+            [
+                "98e23f2c38047c05"
+            ]
+        ]
+    },
+    {
+        "id": "9b02f14fb1d60b89",
+        "type": "switch",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "redirect based on label (car, bicycle, motorcycle)",
+        "property": "payload.after.label",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "car",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "bicycle",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "motorcycle",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 4,
+        "x": 220,
+        "y": 520,
+        "wires": [
+            [
+                "6539eff5f28950e2"
+            ],
+            [
+                "6539eff5f28950e2"
+            ],
+            [
+                "6539eff5f28950e2"
+            ],
+            [
+                "23df4abbd743c2e1"
+            ]
+        ]
+    },
+    {
+        "id": "98e23f2c38047c05",
+        "type": "delay",
+        "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
+        "name": "delay 1 sec, to be sure InfluxDB writes",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 210,
+        "y": 380,
+        "wires": [
+            [
+                "6cfe5662fc478c14"
+            ]
+        ]
+    },
+    {
+        "id": "23df4abbd743c2e1",
+        "type": "function",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "pass query otherwise empty set",
+        "func": "var newMsg = {};\nif (msg.topic == \"query_return_median\") {return msg} \nelse {\n    newMsg.topic = \"query_return_median\";\n    newMsg.payload = {};\n    newMsg.payload.query_return_median = [];\n    return newMsg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 540,
+        "wires": [
+            [
+                "0f3ff76b20f6fea0"
+            ]
+        ]
+    },
+    {
+        "id": "823f58ae26a49321",
+        "type": "comment",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "add Event Zone for \"radar zone\" ",
+        "info": "",
+        "x": 750,
+        "y": 580,
+        "wires": []
+    },
+    {
         "id": "8cee82669b6b8512",
         "type": "comment",
         "z": "90d5c925f9fbf9fd",
@@ -1768,5 +1888,344 @@
         "x": 220,
         "y": 140,
         "wires": []
+    },
+    {
+        "id": "3985037239b671c5",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 100,
+        "wires": [
+            [
+                "1a74cb68f1228a4f"
+            ]
+        ]
+    },
+    {
+        "id": "431a4f7307387f3f",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo query Events, count 5-min",
+        "x": 300,
+        "y": 220,
+        "wires": [
+            [
+                "2958d18a1e112409",
+                "b8b25338f2f57f93"
+            ]
+        ]
+    },
+    {
+        "id": "1a74cb68f1228a4f",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "create payload, 5-min counts",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [{\n    $group: {\n        _id: {label_object: \"$label\",\n            frame_time_trunc: {$dateTrunc: {date: { $toDate: { $multiply: [\"$frame_time\", 1000]}}, unit: \"minute\", binSize: 5}}\n        },\n        count: {$count: {}}\n    }\n}];\n\nconst options = [{\n    $sort: {\n        frame_time_trunc: -1,\n        label_object: 1\n    }\n}];\n\nnewMsg.payload = [query, options]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 260,
+        "y": 160,
+        "wires": [
+            [
+                "431a4f7307387f3f"
+            ]
+        ]
+    },
+    {
+        "id": "2958d18a1e112409",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "08d030ffc3fe6adb",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "name": "7-day summary, objects",
+        "group": "06dde4be9a9a6b27",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "label": "chart",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "7",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "86400",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 810,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b8b25338f2f57f93",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "function 1",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = {};\n\nnewMsg.payload = [{\n    \"series\": [\"car\",\"bicycle\", \"person\"]\n}]\n\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b241a0ef89fd7ce4",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "name": "frigate api/events/summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.223:5000/api/events/summary",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 260,
+        "y": 440,
+        "wires": [
+            [
+                "921bd254e41a46da",
+                "eb140f61419c6a08"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "91d3f8965f62f4b0",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "name": "trigger Event query every 5-min",
+        "props": [],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 200,
+        "y": 380,
+        "wires": [
+            [
+                "b241a0ef89fd7ce4"
+            ]
+        ]
+    },
+    {
+        "id": "921bd254e41a46da",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "4f9eaaedbbe2a45e",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "",
+        "info": "display basics- line:\n1 camera per chart: `camera`\n- series: `label`\n- lables: null\n- x: `day`\n- y: `count`",
+        "x": 300,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "eb140f61419c6a08",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "structure data",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem.camera = env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 540,
+        "wires": [
+            [
+                "08d030ffc3fe6adb",
+                "7d670f6e8d75b305"
+            ]
+        ]
+    },
+    {
+        "id": "4c5033c624e893a0",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "name": "frigate api/events/summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://10.10.10.223:5000/api/events/summary",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 260,
+        "y": 700,
+        "wires": [
+            []
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "7d670f6e8d75b305",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "e9da260ad8a83698",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "name": "",
+        "label": "",
+        "group": "1f15adecfe5a580a",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Location Description",
+                "value": "loc",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar Camera",
+                "value": "camradar",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "InfluxDB Bucket Name",
+                "value": "influxbucket",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "RPi IP Address",
+                "value": "rpiaddress",
+                "type": "text",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "loc": "",
+            "camradar": "",
+            "influxbucket": "",
+            "rpiaddress": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            []
+        ]
     }
 ]
