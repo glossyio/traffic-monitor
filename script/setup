@@ -46,6 +46,9 @@ cp docker-mongodb/docker-compose-mongodb.yaml ~/code/mongodb/docker-compose-mong
 ##-- /mongo
 
 
+#create backup directory
+mkdir -p ~/code/backup
+
 ##--add combined compose file to start all services
 cp compose.yaml ~/code/compose.yaml
 

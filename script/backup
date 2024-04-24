@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# script/backup: Backup databases and/or media. 
+#               Optionally specify which backup.
+#               Optionally specify local, remote, or node-red locations.
+#               Meant to be executed on host system.
+
+cd "$(dirname "$0")/.."
+
+#-- Database backup
+
+#influx creates a directory of zipped files
+docker exec influxdb influx backup /home/influxdb/backup/influxdb_bak
+tar -cvzf ~/code/backup/influxdb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/influxdb_bak
+rm -rf ~/code/backup/influxdb_bak
+
+#mongodb creates a single, proporietary archive file from mongodump
+docker exec mongo sh -c 'exec mongodump --uri="mongodb://mongoadmin:mongodbpass@10.10.10.223:27017/tm-21?directConnection=true&authSource=admin&appName=mongosh+2.2.0" --archive' > ~/code/backup/mongodb_$(date '+%Y-%m-%d_%H-%M').archive
+
+#frigate creates a single archive with good compression
+tar -cvpzf ~/code/backup/frigate_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/frigate/config
+
+
+#-- Images backup
+
+#clips remote backup
+sudo rsync -azvv --progress -e ssh frigate/storage root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/media/bak-2024-04-22/frigate/
+

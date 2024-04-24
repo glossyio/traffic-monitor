@@ -19,6 +19,7 @@ services:
     volumes:
       - ~/code/influxdb/data:/var/lib/influxdb2
       - ~/code/influxdb/config:/etc/influxdb2
+      - ~/code/backup:/home/influxdb/backup
     ports:
       - "8086:8086"
     environment:

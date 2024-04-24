@@ -35,6 +35,8 @@ cameras:
         coordinates: 1248,556,926,497,231,657,477,769
       zone_near:
         coordinates: 1690,695,1355,563,429,754,825,982
+      zone_radar:
+        coordinates: 390,634,1039,464,1891,684,1087,1029
     motion:
       mask:
       - 0,419,0,0,889,0,1083,0,2019,0,1982,270,1094,306
@@ -90,11 +92,11 @@ objects:
 record:
   enabled: true
   retain:
-    days: 3
+    days: 2
     mode: motion
   events:
     retain:
-      default: 21
+      default: 5
       mode: active_objects
 
 snapshots:
@@ -103,4 +105,4 @@ snapshots:
   bounding_box: true
   crop: true
   retain:
-    default: 60
+    default: 15
