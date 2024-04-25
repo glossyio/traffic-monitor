@@ -22,7 +22,7 @@ services:
       - dialout
     environment:
       NODE_RED_ENABLE_PROJECTS: "true"
-      VAR_DEVICE_IP: "10.10.10.223"
+      DOCKER_HOST_NAME: `hostname`
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
       VAR_INFLUXDB_BUCKET: "influxdb_bucket"
