@@ -10,7 +10,7 @@ services:
   node-red:
     container_name: nodered
     restart: unless-stopped
-    image: nodered/node-red:latest
+    build: . 
     ports:
       - "1880:1880"
       - "1883:1883"
@@ -21,7 +21,9 @@ services:
     group_add:
       - dialout
     environment:
-      NODE_RED_ENABLE_PROJECTS: "true"
+      NODE_RED_CREDENTIAL_SECRET: ""
+      NODE_RED_ENABLE_PROJECTS: true
+      NODE_RED_ENABLE_SAFE_MODE: false
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
       VAR_INFLUXDB_BUCKET: "influxdb_bucket"
