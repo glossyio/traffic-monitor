@@ -10,7 +10,7 @@ services:
   node-red:
     container_name: nodered
     restart: unless-stopped
-    build: . 
+    image: nodered/node-red:latest
     ports:
       - "1880:1880"
       - "1883:1883"
@@ -34,3 +34,5 @@ services:
         condition: service_healthy
       mongo:
         condition: service_started
+    command:
+      npm install /data/package.json
