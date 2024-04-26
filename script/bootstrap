@@ -44,13 +44,12 @@ sudo chmod +x /var/lib/go2rtc/go2rtc_linux_arm64
 echo "==> Installing Coral TPU drivers…"
 echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-sudo apt-get update
 
-sudo apt-get install libedgetpu1-std
+sudo apt-get -y install libedgetpu1-std
 ##-- /coral tpu drivers
 
 echo "==> Install screen for radar"
-sudo apt-get install screen
+sudo apt-get -y install screen
 
 echo "==> Rebooting system"
 sudo reboot
