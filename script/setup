@@ -18,18 +18,20 @@ mkdir -p ~/code/frigate  #for files
 mkdir -p ~/code/frigate/config  #for frigate configuration file
 mkdir -p ~/code/frigate/storage  #for media
 cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frigate.yml
-cp docker-frigate/frigate-config.yaml ~/code/frigate/config/config.yml
+
+#create config file, with hostname for rpi for streaming using go2rtc
+#cp docker-frigate/frigate-config.yaml ~/code/frigate/config/config.yml
+# envsubst will replace ${SYSTEM_VAR} in config, only used for HOSTNAME right now
+export HOSTNAME
+envsubst < docker-frigate/frigate-config.yaml >> ~/code/frigate/config/config.yml
+
 ##-- /frigate
 
 
 ##-- Add node-red Dockerfile, settings, and base flows
 mkdir -p ~/code/nodered/data
 cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
-cp -rp node-red-project ~/code/nodered/data/node-red-project
-cp node-red-project/flows.json ~/code/nodered/data
-cp node-red-project/flows_cred.json ~/code/nodered/data
-cp node-red-project/package.json ~/code/nodered/data
-cp node-red-project/settings.js ~/code/nodered/data
+cp -rp node-red-project/* ~/code/nodered/data/
 ##-- /node-red
 
 
@@ -46,12 +48,20 @@ cp docker-mongodb/docker-compose-mongodb.yaml ~/code/mongodb/docker-compose-mong
 ##-- /mongo
 
 
+#create backup directory
+mkdir -p ~/code/backup
+
 ##--add combined compose file to start all services
 cp compose.yaml ~/code/compose.yaml
 
 echo "==> Setting up go2rtc systemd service…"
 
 ##-- set up go2rtc to use the Rpi camera
+#   Doing it here instead of container to utilize rpicam-vid app
+#    in future, consider building container with rpicam-vid
+#    using https://hub.docker.com/r/alexxit/go2rtc 
+#    and/or https://hub.docker.com/r/mpromonet/v4l2rtspserver 
+
 echo \
   "# /etc/systemd/system/go2rtc_server.service
 # to run: sudo systemctl stop/start/restart/enable/disable go2rtc_server

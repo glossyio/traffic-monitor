@@ -21,11 +21,12 @@ services:
     group_add:
       - dialout
     environment:
-      NODE_RED_ENABLE_PROJECTS: "true"
-      VAR_DEVICE_IP: "10.10.10.223"
+      NODE_RED_CREDENTIAL_SECRET: ""
+      NODE_RED_ENABLE_PROJECTS: true
+      NODE_RED_ENABLE_SAFE_MODE: false
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
-      VAR_INFLUXDB_BUCKET: "tm-13"
+      VAR_INFLUXDB_BUCKET: "influxdb_bucket"
     depends_on:
       frigate:
         condition: service_healthy
@@ -33,3 +34,5 @@ services:
         condition: service_healthy
       mongo:
         condition: service_started
+    command:
+      npm install /data/package.json
