@@ -10,7 +10,7 @@ services:
   node-red:
     container_name: nodered
     restart: unless-stopped
-    image: nodered/node-red:latest
+    build: .
     ports:
       - "1880:1880"
       - "1883:1883"
@@ -21,7 +21,7 @@ services:
     group_add:
       - dialout
     environment:
-      NODE_RED_CREDENTIAL_SECRET: ""
+      NODE_RED_CREDENTIAL_SECRET: "myNodeRED1234"
       NODE_RED_ENABLE_PROJECTS: true
       NODE_RED_ENABLE_SAFE_MODE: false
       VAR_LOCATION: "ne26th-wasco-sb-01"
@@ -34,5 +34,3 @@ services:
         condition: service_healthy
       mongo:
         condition: service_started
-    command:
-      npm install /data/package.json
