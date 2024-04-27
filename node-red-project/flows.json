@@ -422,103 +422,6 @@
         "className": ""
     },
     {
-        "id": "d9c88b99.c91ee8",
-        "type": "ui_base",
-        "theme": {
-            "name": "theme-dark",
-            "lightTheme": {
-                "default": "#0094CE",
-                "baseColor": "#0094CE",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": true,
-                "reset": false
-            },
-            "darkTheme": {
-                "default": "#097479",
-                "baseColor": "#097479",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": true,
-                "reset": false
-            },
-            "customTheme": {
-                "name": "Untitled Theme 1",
-                "default": "#4B7930",
-                "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-            },
-            "themeState": {
-                "base-color": {
-                    "default": "#097479",
-                    "value": "#097479",
-                    "edited": false
-                },
-                "page-titlebar-backgroundColor": {
-                    "value": "#097479",
-                    "edited": false
-                },
-                "page-backgroundColor": {
-                    "value": "#111111",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#333333",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#0eb8c0",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#555555",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#333333",
-                    "edited": false
-                },
-                "widget-textColor": {
-                    "value": "#eeeeee",
-                    "edited": false
-                },
-                "widget-backgroundColor": {
-                    "value": "#097479",
-                    "edited": false
-                },
-                "widget-borderColor": {
-                    "value": "#333333",
-                    "edited": false
-                },
-                "base-font": {
-                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-                }
-            },
-            "angularTheme": {
-                "primary": "indigo",
-                "accents": "blue",
-                "warn": "red",
-                "background": "grey"
-            }
-        },
-        "site": {
-            "name": "Node-RED Dashboard",
-            "hideToolbar": "false",
-            "allowSwipe": "false",
-            "lockMenu": "false",
-            "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
-            "sizes": {
-                "sx": 56,
-                "sy": 56,
-                "gx": 6,
-                "gy": 6,
-                "cx": 6,
-                "cy": 6,
-                "px": 0,
-                "py": 0
-            }
-        }
-    },
-    {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
         "name": "Events",
@@ -1125,7 +1028,7 @@
         "z": "94d07e407c25f282",
         "g": "5930ccb76242c558",
         "name": "mongo radar_oc_payload",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1893,7 +1796,7 @@
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
-        "name": "trigger Event query every 5-min",
+        "name": "trigger Event query every 1-hour",
         "props": [
             {
                 "p": "payload"
@@ -1903,7 +1806,7 @@
                 "vt": "str"
             }
         ],
-        "repeat": "300",
+        "repeat": "3600",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
@@ -1929,7 +1832,7 @@
         "output": "toArray",
         "maxTimeMS": "0",
         "handleDocId": false,
-        "name": "mongo query Events, count 5-min",
+        "name": "mongo query Events, count 1-hour",
         "x": 300,
         "y": 220,
         "wires": [
@@ -1943,15 +1846,15 @@
         "id": "1a74cb68f1228a4f",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "create payload, 5-min counts",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [{\n    $group: {\n        _id: {label_object: \"$label\",\n            frame_time_trunc: {$dateTrunc: {date: { $toDate: { $multiply: [\"$frame_time\", 1000]}}, unit: \"minute\", binSize: 5}}\n        },\n        count: {$count: {}}\n    }\n}];\n\nconst options = [{\n    $sort: {\n        frame_time_trunc: -1,\n        label_object: 1\n    }\n}];\n\nnewMsg.payload = [query, options]\n\nreturn newMsg;",
+        "name": "create payload, 1-hour counts",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [{\n    $group: {\n        _id: {label_object: \"$label\",\n            frame_time_trunc: {$dateTrunc: {date: { $toDate: { $multiply: [\"$frame_time\", 1000]}}, unit: \"hour\", binSize: 1}}\n        },\n        count: {$count: {}}\n    }\n}];\n\nconst options = [{\n    $sort: {\n        frame_time_trunc: -1,\n        label_object: 1\n    }\n}];\n\nnewMsg.payload = [query, options]\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 260,
+        "x": 270,
         "y": 160,
         "wires": [
             [
@@ -1984,21 +1887,21 @@
         "order": 0,
         "width": 0,
         "height": 0,
-        "label": "chart",
+        "label": "frigate api/events/summary object count by day",
         "chartType": "line",
         "legend": "false",
-        "xformat": "HH:mm",
+        "xformat": "Y-M-D",
         "interpolate": "linear",
         "nodata": "",
         "dot": true,
         "ymin": "",
         "ymax": "",
-        "removeOlder": "7",
+        "removeOlder": "10",
         "removeOlderPoints": "10000",
         "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
-        "useUTC": false,
+        "useUTC": true,
         "colors": [
             "#1f77b4",
             "#aec7e8",
@@ -2013,8 +1916,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 810,
-        "y": 540,
+        "x": 570,
+        "y": 500,
         "wires": [
             []
         ]
@@ -2067,14 +1970,14 @@
         "id": "91d3f8965f62f4b0",
         "type": "inject",
         "z": "28627559bebdc324",
-        "name": "trigger Event query every 5-min",
+        "name": "trigger summary Event query every 2-hours",
         "props": [],
-        "repeat": "300",
+        "repeat": "7200",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
         "topic": "",
-        "x": 200,
+        "x": 230,
         "y": 380,
         "wires": [
             [
@@ -2099,16 +2002,6 @@
         "wires": []
     },
     {
-        "id": "4f9eaaedbbe2a45e",
-        "type": "comment",
-        "z": "28627559bebdc324",
-        "name": "",
-        "info": "display basics- line:\n1 camera per chart: `camera`\n- series: `label`\n- lables: null\n- x: `day`\n- y: `count`",
-        "x": 300,
-        "y": 560,
-        "wires": []
-    },
-    {
         "id": "eb140f61419c6a08",
         "type": "function",
         "z": "28627559bebdc324",
@@ -2120,37 +2013,14 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
-        "y": 540,
+        "x": 320,
+        "y": 500,
         "wires": [
             [
                 "08d030ffc3fe6adb",
                 "7d670f6e8d75b305"
             ]
         ]
-    },
-    {
-        "id": "4c5033c624e893a0",
-        "type": "http request",
-        "z": "28627559bebdc324",
-        "name": "frigate api/events/summary",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/events/summary",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 260,
-        "y": 700,
-        "wires": [
-            []
-        ],
-        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
     },
     {
         "id": "7d670f6e8d75b305",
@@ -2165,8 +2035,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 770,
-        "y": 660,
+        "x": 760,
+        "y": 560,
         "wires": []
     },
     {
