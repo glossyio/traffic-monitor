@@ -604,7 +604,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-13",
+        "bucket": "${VAR_INFLUXDB_BUCKET}",
         "x": 660,
         "y": 700,
         "wires": []
@@ -623,7 +623,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-13",
+        "bucket": "${VAR_INFLUXDB_BUCKET}",
         "x": 670,
         "y": 540,
         "wires": []
@@ -947,7 +947,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-13",
+        "bucket": "${VAR_INFLUXDB_BUCKET}",
         "x": 660,
         "y": 860,
         "wires": []
@@ -1054,7 +1054,7 @@
         "precisionV18FluxV20": "ms",
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
-        "bucket": "tm-13",
+        "bucket": "${VAR_INFLUXDB_BUCKET}",
         "x": 690,
         "y": 1080,
         "wires": []
@@ -1284,7 +1284,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "create influxdb query, return DetectedObjectVelocity median",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"tm-13\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
+        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"${VAR_INFLUXDB_BUCKET}\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
