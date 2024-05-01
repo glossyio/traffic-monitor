@@ -216,6 +216,50 @@
         "h": 202
     },
     {
+        "id": "0a6e123f5e53c029",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "group mongo summary daily",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "404ac097795a2da0",
+            "7d0ef920e3594875",
+            "ae662d8b51bdd6b4",
+            "2dc07c33aebf63da",
+            "c509b1b731f83dec",
+            "0d82866f7bfcb4e0",
+            "b65e1877b1e04881",
+            "5a74033007fa0242"
+        ],
+        "x": 14,
+        "y": 619,
+        "w": 852,
+        "h": 322
+    },
+    {
+        "id": "5aac1262472b0205",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "group frigate api/events/summary",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "08d030ffc3fe6adb",
+            "b241a0ef89fd7ce4",
+            "91d3f8965f62f4b0",
+            "921bd254e41a46da",
+            "eb140f61419c6a08",
+            "7d670f6e8d75b305"
+        ],
+        "x": 14,
+        "y": 339,
+        "w": 852,
+        "h": 262
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -1809,7 +1853,7 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "5",
+        "onceDelay": "10",
         "topic": "query",
         "payload": "",
         "payloadType": "date",
@@ -1882,7 +1926,8 @@
         "id": "08d030ffc3fe6adb",
         "type": "ui_chart",
         "z": "28627559bebdc324",
-        "name": "7-day summary, objects",
+        "g": "5aac1262472b0205",
+        "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
         "order": 0,
         "width": 0,
@@ -1916,7 +1961,7 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 570,
+        "x": 710,
         "y": 500,
         "wires": [
             []
@@ -1944,7 +1989,8 @@
         "id": "b241a0ef89fd7ce4",
         "type": "http request",
         "z": "28627559bebdc324",
-        "name": "frigate api/events/summary",
+        "g": "5aac1262472b0205",
+        "name": "frigate api/events/summary - Daily summary",
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -1956,7 +2002,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 260,
+        "x": 310,
         "y": 440,
         "wires": [
             [
@@ -1970,6 +2016,7 @@
         "id": "91d3f8965f62f4b0",
         "type": "inject",
         "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
         "name": "trigger summary Event query every 2-hours",
         "props": [],
         "repeat": "7200",
@@ -1989,8 +2036,9 @@
         "id": "921bd254e41a46da",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
         "name": "debug 2",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2005,15 +2053,16 @@
         "id": "eb140f61419c6a08",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "structure data",
-        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem.camera = env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "g": "5aac1262472b0205",
+        "name": "structure frigate api/summary",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
+        "x": 400,
         "y": 500,
         "wires": [
             [
@@ -2026,6 +2075,7 @@
         "id": "7d670f6e8d75b305",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
         "name": "debug 3",
         "active": true,
         "tosidebar": true,
@@ -2037,6 +2087,198 @@
         "statusType": "auto",
         "x": 760,
         "y": 560,
+        "wires": []
+    },
+    {
+        "id": "404ac097795a2da0",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "trigger Event query every 2-hours",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "7200",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 660,
+        "wires": [
+            [
+                "ae662d8b51bdd6b4"
+            ]
+        ]
+    },
+    {
+        "id": "7d0ef920e3594875",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "query mongo events, daily summary",
+        "x": 310,
+        "y": 780,
+        "wires": [
+            [
+                "c509b1b731f83dec",
+                "0d82866f7bfcb4e0"
+            ]
+        ]
+    },
+    {
+        "id": "ae662d8b51bdd6b4",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "create mongo query, daily summary",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 10) / 1000) //change to seconds, 10 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                day: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"day\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n            \"_id.day\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 720,
+        "wires": [
+            [
+                "7d0ef920e3594875",
+                "2dc07c33aebf63da"
+            ]
+        ]
+    },
+    {
+        "id": "2dc07c33aebf63da",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 4",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "c509b1b731f83dec",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "structure mongo summary",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 840,
+        "wires": [
+            [
+                "b65e1877b1e04881",
+                "5a74033007fa0242"
+            ]
+        ]
+    },
+    {
+        "id": "0d82866f7bfcb4e0",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "b65e1877b1e04881",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "mongo summary daily, objects",
+        "group": "06dde4be9a9a6b27",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "label": "frigate api/events/summary object count by day",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "Y-M-D",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "10",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "86400",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": true,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 710,
+        "y": 840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5a74033007fa0242",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 900,
         "wires": []
     },
     {
