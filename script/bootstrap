@@ -14,6 +14,9 @@ cd "$(dirname "$0")/.."
 sudo apt-get update
 sudo apt-get upgrade -y
 
+#set local timezone
+sudo raspi-config nonint do_change_timezone America/Los_Angeles
+
 ##-- install docker / docker compose,
 #alternative docker intall, for dev
 # here https://raspberrytips.com/docker-on-raspberry-pi/
