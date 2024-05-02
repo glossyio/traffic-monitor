@@ -93,7 +93,7 @@
         ],
         "x": 14,
         "y": 199,
-        "w": 772,
+        "w": 1112,
         "h": 222
     },
     {
@@ -153,12 +153,13 @@
             "400aaccc21e5eaf7",
             "078438fe6e931391",
             "b71b0fcb6d1e558c",
-            "466942b727a6409c"
+            "466942b727a6409c",
+            "d9a2cc1e81161549"
         ],
         "x": 474,
-        "y": 819,
+        "y": 779,
         "w": 732,
-        "h": 142
+        "h": 182
     },
     {
         "id": "e138c998bef7d520",
@@ -1310,7 +1311,7 @@
         "z": "49e416bfab1d4055",
         "g": "8dd778b3e5d3a05c",
         "name": "debug: calc direction",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1318,8 +1319,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 240,
+        "x": 980,
+        "y": 380,
         "wires": []
     },
     {
@@ -1328,7 +1329,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "create influxdb query, return DetectedObjectVelocity median",
-        "func": "var query = \"\";\n// query += \"from(bucket: \" + env.get(\"VAR_INFLUXDB_BUCKET\") + \")\"\nquery += \"from(bucket: \\\"${VAR_INFLUXDB_BUCKET}\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
+        "func": "var query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.payload.after.start_time)-2) +\", stop: \" + (Math.ceil(msg.payload.after.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1559,7 +1560,8 @@
         "wires": [
             [
                 "466942b727a6409c",
-                "400aaccc21e5eaf7"
+                "400aaccc21e5eaf7",
+                "d9a2cc1e81161549"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -1827,6 +1829,20 @@
         "wires": []
     },
     {
+        "id": "d9a2cc1e81161549",
+        "type": "link out",
+        "z": "49e416bfab1d4055",
+        "g": "d14033e4e7acdf1b",
+        "name": "to dashboard",
+        "mode": "link",
+        "links": [
+            "c249329109ac17d5"
+        ],
+        "x": 775,
+        "y": 820,
+        "wires": []
+    },
+    {
         "id": "8cee82669b6b8512",
         "type": "comment",
         "z": "90d5c925f9fbf9fd",
@@ -1911,7 +1927,7 @@
         "type": "debug",
         "z": "28627559bebdc324",
         "name": "debug 1",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2077,7 +2093,7 @@
         "z": "28627559bebdc324",
         "g": "5aac1262472b0205",
         "name": "debug 3",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2208,7 +2224,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "debug 5",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2270,7 +2286,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "debug 6",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2280,6 +2296,189 @@
         "x": 740,
         "y": 900,
         "wires": []
+    },
+    {
+        "id": "c249329109ac17d5",
+        "type": "link in",
+        "z": "28627559bebdc324",
+        "name": "from mongo event capture",
+        "links": [
+            "d9a2cc1e81161549"
+        ],
+        "x": 175,
+        "y": 1000,
+        "wires": [
+            [
+                "5ec2d3ba52f944f5"
+            ]
+        ]
+    },
+    {
+        "id": "d66541089b01306e",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "name": "event has speed",
+        "property": "payload.speed",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 1000,
+        "wires": [
+            [
+                "c788d632f5e93a73"
+            ]
+        ]
+    },
+    {
+        "id": "2e680914d7da5c94",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "name": "any radar event",
+        "property": "payload.zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "zone_radar",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 1060,
+        "wires": [
+            [
+                "e5391514131a2b5a"
+            ]
+        ]
+    },
+    {
+        "id": "c788d632f5e93a73",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "store last N radar events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 1000,
+        "wires": [
+            [
+                "a47b9d9801bde446"
+            ]
+        ]
+    },
+    {
+        "id": "e5391514131a2b5a",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "store last N high speeds",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_highspeed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_highspeed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 1060,
+        "wires": [
+            [
+                "6ccef1eff1e3d1ff"
+            ]
+        ]
+    },
+    {
+        "id": "5ec2d3ba52f944f5",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "name": "only use radar cam",
+        "property": "payload.camera",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "\"VAR_RADAR_CAMERA\"",
+                "vt": "env"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 330,
+        "y": 1000,
+        "wires": [
+            [
+                "d66541089b01306e",
+                "2e680914d7da5c94"
+            ]
+        ]
+    },
+    {
+        "id": "a47b9d9801bde446",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "6ccef1eff1e3d1ff",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 1140,
+        "wires": []
+    },
+    {
+        "id": "c36c71706e494b5e",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "group": "06dde4be9a9a6b27",
+        "name": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "<div ng-bind-html=\"msg.payload\"></div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1020,
+        "y": 1000,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "e9da260ad8a83698",
