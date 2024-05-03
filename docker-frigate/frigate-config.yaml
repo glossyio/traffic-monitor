@@ -31,20 +31,14 @@ cameras:
       # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
       fps: 5
     zones:
+      zone_capture:
+        coordinates: 2304,1296,0,1296,0,493,998,268,2304,475
       zone_far:
         coordinates: 1248,556,926,497,231,657,477,769
       zone_near:
         coordinates: 1690,695,1355,563,429,754,825,982
       zone_radar:
         coordinates: 390,634,1039,464,1891,684,1087,1029
-    motion:
-      mask:
-      - 0,419,0,0,889,0,1083,0,2019,0,1982,270,1094,306
-    objects:
-      filters:
-        car:
-          mask:
-          - 0,320,0,0
 
   picam_gs_h264: # <------ Name the camera
     enabled: false
