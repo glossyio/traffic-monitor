@@ -16,13 +16,15 @@ services:
     ports:
       - "1880:1880"
       - "1883:1883"
-    # volumes:
-    #   - ~/code/nodered/data:/data
+    volumes:
+    #  - ~/code/nodered/data:/data      # uncomment for dev deployment 
+      - /etc/localtime:/etc/localtime:ro
     devices:
       - "/dev/ttyACM0"
     group_add:
       - dialout
     environment:
+      TZ: America/Los_Angeles
       NODE_RED_CREDENTIAL_SECRET: "myNodeRED1234"
       NODE_RED_ENABLE_PROJECTS: true
       NODE_RED_ENABLE_SAFE_MODE: false

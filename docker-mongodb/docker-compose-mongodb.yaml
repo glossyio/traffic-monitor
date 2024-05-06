@@ -20,6 +20,7 @@ services:
       - 27017:27017
     volumes:
       - ~/code/mongodb/data:/data/db
+      - /etc/localtime:/etc/localtime:ro
     depends_on:
       frigate:
         condition: service_healthy

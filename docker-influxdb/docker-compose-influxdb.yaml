@@ -20,6 +20,7 @@ services:
       - ~/code/influxdb/data:/var/lib/influxdb2
       - ~/code/influxdb/config:/etc/influxdb2
       - ~/code/backup:/home/influxdb/backup
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "8086:8086"
     environment:
