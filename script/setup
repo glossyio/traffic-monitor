@@ -92,3 +92,16 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 #rpicam-vid settings
 # rpicam-vid --list-cameras for modes available
 
+
+##-- create named pipe for commands from docker
+
+#set up named pipe to accept HOST commands from docker container (nodered for backup)
+# https://stackoverflow.com/questions/32163955/how-to-run-shell-script-on-host-from-docker-container
+mkfifo ~/evalpipe
+#copy backup script for named pipe execution
+mkdir -p ~/code/script
+cp script/execpipe.sh ~/code/script
+cp script/backup ~/code/script
+
+#copy current cron, append new command
+crontab -l | { cat; echo "@reboot ~/code/script/execpipe.sh"; } | crontab -
