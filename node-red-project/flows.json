@@ -16,14 +16,6 @@
         "env": []
     },
     {
-        "id": "90d5c925f9fbf9fd",
-        "type": "tab",
-        "label": "Aux data capture",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
         "id": "28627559bebdc324",
         "type": "tab",
         "label": "Event+Speed Dashboard",
@@ -35,6 +27,14 @@
         "id": "239d7b3ba410ad5e",
         "type": "tab",
         "label": "Env Vars + System",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "90d5c925f9fbf9fd",
+        "type": "tab",
+        "label": "Aux data capture",
         "disabled": false,
         "info": "",
         "env": []
@@ -115,12 +115,13 @@
             "be1439498cc44b59",
             "9b02f14fb1d60b89",
             "23df4abbd743c2e1",
-            "823f58ae26a49321"
+            "823f58ae26a49321",
+            "adfffd73b8a243b8"
         ],
         "x": 14,
         "y": 459,
         "w": 1312,
-        "h": 302
+        "h": 322
     },
     {
         "id": "9ee8ebd820661432",
@@ -137,7 +138,7 @@
             "50574c0e9f62cf10"
         ],
         "x": 474,
-        "y": 979,
+        "y": 1019,
         "w": 692,
         "h": 142
     },
@@ -157,7 +158,7 @@
             "d9a2cc1e81161549"
         ],
         "x": 474,
-        "y": 779,
+        "y": 819,
         "w": 732,
         "h": 182
     },
@@ -259,6 +260,40 @@
         "y": 339,
         "w": 852,
         "h": 262
+    },
+    {
+        "id": "ab5e552a1defabf4",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "b573f57d.6290e8",
+            "1330b995.eb0626",
+            "cc26e2d4.ffd35",
+            "bcad70c7.b9db",
+            "2ffeee02.29d762",
+            "7ba1f4df.b12a7c",
+            "b42b2908.665408",
+            "fe2d6e02.ad949",
+            "db2479e4.104468",
+            "fa23a260.4e161",
+            "eb06ed9d.7f23f",
+            "58d47e08.81ffc",
+            "93b54b1c.311778",
+            "a0241251.a9cc4"
+        ],
+        "x": 14,
+        "y": 519,
+        "w": 962,
+        "h": 242
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -434,7 +469,7 @@
             "allowSwipe": "false",
             "lockMenu": "false",
             "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
+            "dateFormat": "YYYY-MM-DD",
             "sizes": {
                 "sx": 48,
                 "sy": 48,
@@ -450,17 +485,18 @@
     {
         "id": "b6d86231fb09af0f",
         "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
+        "name": "System",
+        "icon": "developer_dashboard",
+        "order": 2,
         "disabled": false,
         "hidden": false
     },
     {
         "id": "1f15adecfe5a580a",
         "type": "ui_group",
-        "name": "Default",
+        "name": "Docker Environment Variables",
         "tab": "b6d86231fb09af0f",
-        "order": 1,
+        "order": 2,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -469,8 +505,9 @@
     {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
-        "name": "Events",
+        "name": "Monitoring",
         "icon": "dashboard",
+        "order": 1,
         "disabled": false,
         "hidden": false
     },
@@ -479,6 +516,17 @@
         "type": "ui_group",
         "name": "Monitor Events Dashboard",
         "tab": "665d947f9a312a33",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "3c375fd89b978620",
+        "type": "ui_group",
+        "name": "System actions",
+        "tab": "b6d86231fb09af0f",
         "order": 1,
         "disp": true,
         "width": "6",
@@ -1216,7 +1264,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "debug: published frigate messages",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1294,7 +1342,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 580,
+        "x": 280,
         "y": 380,
         "wires": [
             [
@@ -1383,7 +1431,7 @@
         "senderr": false,
         "headers": [],
         "x": 660,
-        "y": 1080,
+        "y": 1120,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1457,7 +1505,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 1020,
+        "y": 1060,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1481,7 +1529,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 970,
-        "y": 1020,
+        "y": 1060,
         "wires": []
     },
     {
@@ -1500,7 +1548,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 970,
-        "y": 1080,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1517,7 +1565,7 @@
         "handleDocId": false,
         "name": "mongo insertOne events",
         "x": 750,
-        "y": 920,
+        "y": 960,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1530,7 +1578,7 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "mongo return",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1539,7 +1587,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 990,
-        "y": 920,
+        "y": 960,
         "wires": []
     },
     {
@@ -1556,7 +1604,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 860,
+        "y": 900,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1581,7 +1629,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1040,
-        "y": 860,
+        "y": 900,
         "wires": []
     },
     {
@@ -1590,7 +1638,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "event+radar w direction calcs",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1616,7 +1664,7 @@
         "finalize": "",
         "libs": [],
         "x": 460,
-        "y": 720,
+        "y": 740,
         "wires": [
             [
                 "23df4abbd743c2e1"
@@ -1714,8 +1762,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 150,
-        "y": 320,
+        "x": 210,
+        "y": 280,
         "wires": [
             [
                 "98e23f2c38047c05"
@@ -1788,8 +1836,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 210,
-        "y": 380,
+        "x": 230,
+        "y": 340,
         "wires": [
             [
                 "6cfe5662fc478c14"
@@ -1839,17 +1887,18 @@
             "c249329109ac17d5"
         ],
         "x": 775,
-        "y": 820,
+        "y": 860,
         "wires": []
     },
     {
-        "id": "8cee82669b6b8512",
+        "id": "adfffd73b8a243b8",
         "type": "comment",
-        "z": "90d5c925f9fbf9fd",
-        "name": "capture bluetooth to influxdb",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "FYI: InfluxDB return overrides msg.payload",
         "info": "",
-        "x": 220,
-        "y": 140,
+        "x": 480,
+        "y": 700,
         "wires": []
     },
     {
@@ -1945,9 +1994,9 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 0,
-        "width": 0,
-        "height": 0,
+        "order": 1,
+        "width": 6,
+        "height": 7,
         "label": "frigate api/events/summary object count by day",
         "chartType": "line",
         "legend": "false",
@@ -2242,9 +2291,9 @@
         "g": "0a6e123f5e53c029",
         "name": "mongo summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 0,
-        "width": 0,
-        "height": 0,
+        "order": 2,
+        "width": 6,
+        "height": 7,
         "label": "frigate api/events/summary object count by day",
         "chartType": "line",
         "legend": "false",
@@ -2309,7 +2358,8 @@
         "y": 1000,
         "wires": [
             [
-                "5ec2d3ba52f944f5"
+                "5ec2d3ba52f944f5",
+                "82bc0c11adb825f8"
             ]
         ]
     },
@@ -2318,18 +2368,18 @@
         "type": "switch",
         "z": "28627559bebdc324",
         "name": "event has speed",
-        "property": "payload.speed",
+        "property": "payload.speed_calc",
         "propertyType": "msg",
         "rules": [
             {
-                "t": "nempty"
+                "t": "nnull"
             }
         ],
         "checkall": "true",
         "repair": false,
         "outputs": 1,
         "x": 560,
-        "y": 1000,
+        "y": 1060,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -2341,7 +2391,7 @@
         "type": "switch",
         "z": "28627559bebdc324",
         "name": "any radar event",
-        "property": "payload.zones",
+        "property": "payload.entered_zones",
         "propertyType": "msg",
         "rules": [
             {
@@ -2354,7 +2404,7 @@
         "repair": false,
         "outputs": 1,
         "x": 560,
-        "y": 1060,
+        "y": 1000,
         "wires": [
             [
                 "e5391514131a2b5a"
@@ -2363,6 +2413,26 @@
     },
     {
         "id": "c788d632f5e93a73",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "name": "store last N speed events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_speed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_speed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 1060,
+        "wires": [
+            [
+                "a47b9d9801bde446"
+            ]
+        ]
+    },
+    {
+        "id": "e5391514131a2b5a",
         "type": "function",
         "z": "28627559bebdc324",
         "name": "store last N radar events",
@@ -2375,26 +2445,6 @@
         "libs": [],
         "x": 790,
         "y": 1000,
-        "wires": [
-            [
-                "a47b9d9801bde446"
-            ]
-        ]
-    },
-    {
-        "id": "e5391514131a2b5a",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "name": "store last N high speeds",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_highspeed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_highspeed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
-        "finalize": "",
-        "libs": [],
-        "x": 790,
-        "y": 1060,
         "wires": [
             [
                 "6ccef1eff1e3d1ff"
@@ -2411,7 +2461,7 @@
         "rules": [
             {
                 "t": "eq",
-                "v": "\"VAR_RADAR_CAMERA\"",
+                "v": "VAR_RADAR_CAMERA",
                 "vt": "env"
             }
         ],
@@ -2422,8 +2472,8 @@
         "y": 1000,
         "wires": [
             [
-                "d66541089b01306e",
-                "2e680914d7da5c94"
+                "2e680914d7da5c94",
+                "d66541089b01306e"
             ]
         ]
     },
@@ -2439,8 +2489,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 940,
+        "x": 1040,
+        "y": 1140,
         "wires": []
     },
     {
@@ -2455,8 +2505,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 1140,
+        "x": 1040,
+        "y": 900,
         "wires": []
     },
     {
@@ -2465,7 +2515,7 @@
         "z": "28627559bebdc324",
         "group": "06dde4be9a9a6b27",
         "name": "",
-        "order": 2,
+        "order": 3,
         "width": 0,
         "height": 0,
         "format": "<div ng-bind-html=\"msg.payload\"></div>",
@@ -2474,17 +2524,33 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1020,
+        "x": 1040,
         "y": 1000,
         "wires": [
             []
         ]
     },
     {
+        "id": "82bc0c11adb825f8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 310,
+        "y": 1100,
+        "wires": []
+    },
+    {
         "id": "e9da260ad8a83698",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
-        "name": "",
+        "name": "set docker environment variables",
         "label": "",
         "group": "1f15adecfe5a580a",
         "order": 0,
@@ -2492,51 +2558,483 @@
         "height": 0,
         "options": [
             {
-                "label": "Location Description",
-                "value": "loc",
+                "label": "Deployment location description (Form as scewer case with format streetNS-streetEW-sb/nb/eb/wb-2-digits; e.g. ne26th-wasco-sb-01)",
+                "value": "location",
                 "type": "text",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "Radar Camera",
+                "label": "Radar camera (Name specified for the primary camera that is used to match radar readings to detected objects)",
                 "value": "camradar",
                 "type": "text",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "InfluxDB Bucket Name",
+                "label": "InfluxDB bucket Name",
                 "value": "influxbucket",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "RPi IP Address",
-                "value": "rpiaddress",
                 "type": "text",
                 "required": false,
                 "rows": null
             }
         ],
         "formValue": {
-            "loc": "",
+            "location": "",
             "camradar": "",
-            "influxbucket": "",
-            "rpiaddress": ""
+            "influxbucket": ""
         },
         "payload": "",
         "submit": "submit",
-        "cancel": "cancel",
-        "topic": "topic",
-        "topicType": "msg",
+        "cancel": "clear",
+        "topic": "ui_env_vars",
+        "topicType": "str",
         "splitLayout": "",
         "className": "",
-        "x": 150,
+        "x": 280,
+        "y": 140,
+        "wires": [
+            [
+                "86ba5a0d412318d4"
+            ]
+        ]
+    },
+    {
+        "id": "b573f57d.6290e8",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "group": "",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Do stuff",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "icon": "",
+        "payload": "textInput",
+        "payloadType": "flow",
+        "topic": "",
+        "x": 280,
+        "y": 660,
+        "wires": [
+            [
+                "cc26e2d4.ffd35",
+                "b42b2908.665408"
+            ]
+        ]
+    },
+    {
+        "id": "1330b995.eb0626",
+        "type": "ui_text_input",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "group": "",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "mode": "text",
+        "delay": "100",
+        "topic": "",
+        "x": 260,
+        "y": 600,
+        "wires": [
+            [
+                "7ba1f4df.b12a7c",
+                "2ffeee02.29d762"
+            ]
+        ]
+    },
+    {
+        "id": "cc26e2d4.ffd35",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "my function that does stuff",
+        "func": "msg.payload +=  \" - payload modified in my function\"\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 470,
+        "y": 660,
+        "wires": [
+            [
+                "bcad70c7.b9db",
+                "a0241251.a9cc4"
+            ]
+        ]
+    },
+    {
+        "id": "bcad70c7.b9db",
+        "type": "ui_text",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "group": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Result: ",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "x": 720,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "2ffeee02.29d762",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "textInput",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 450,
+        "y": 600,
+        "wires": [
+            [
+                "fe2d6e02.ad949"
+            ]
+        ]
+    },
+    {
+        "id": "7ba1f4df.b12a7c",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Text entry debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "b42b2908.665408",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Button click debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 470,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "fe2d6e02.ad949",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "is text empty?",
+        "property": "textInput",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "empty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 640,
+        "y": 600,
+        "wires": [
+            [
+                "db2479e4.104468"
+            ],
+            [
+                "fa23a260.4e161"
+            ]
+        ]
+    },
+    {
+        "id": "db2479e4.104468",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "enabled false",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 810,
+        "y": 580,
+        "wires": [
+            [
+                "eb06ed9d.7f23f"
+            ]
+        ]
+    },
+    {
+        "id": "fa23a260.4e161",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "enabled true",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "true",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 810,
+        "y": 620,
+        "wires": [
+            [
+                "eb06ed9d.7f23f"
+            ]
+        ]
+    },
+    {
+        "id": "eb06ed9d.7f23f",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "links": [
+            "58d47e08.81ffc"
+        ],
+        "x": 935,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "58d47e08.81ffc",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "links": [
+            "eb06ed9d.7f23f"
+        ],
+        "x": 195,
+        "y": 660,
+        "wires": [
+            [
+                "b573f57d.6290e8"
+            ]
+        ]
+    },
+    {
+        "id": "93b54b1c.311778",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Init with empty string",
+        "props": [
+            {
+                "p": "payload",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "p": "topic",
+                "v": "",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 160,
+        "y": 560,
+        "wires": [
+            [
+                "1330b995.eb0626"
+            ]
+        ]
+    },
+    {
+        "id": "a0241251.a9cc4",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "After function debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 770,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "53ee230fe049d09e",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "name": "init with empty string",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "userinput",
+        "payload": "",
+        "payloadType": "str",
+        "x": 180,
         "y": 100,
         "wires": [
             []
         ]
+    },
+    {
+        "id": "86ba5a0d412318d4",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 10",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 530,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "3997684d13f325ae",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "name": "backup databases",
+        "group": "3c375fd89b978620",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Backup Databases",
+        "tooltip": "Will run script/backup on host system that will create tar.gzip files for transfer",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "backup",
+        "payload": "run_backup",
+        "payloadType": "str",
+        "topic": "ui_backup",
+        "topicType": "str",
+        "x": 230,
+        "y": 200,
+        "wires": [
+            [
+                "a189210b0b0330d1"
+            ]
+        ]
+    },
+    {
+        "id": "a189210b0b0330d1",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 11",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "764b358e579f76ed",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "name": "execute system script",
+        "info": "",
+        "x": 500,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "8cee82669b6b8512",
+        "type": "comment",
+        "z": "90d5c925f9fbf9fd",
+        "name": "capture bluetooth to influxdb",
+        "info": "",
+        "x": 220,
+        "y": 140,
+        "wires": []
     }
 ]
