@@ -236,7 +236,7 @@
             "5a74033007fa0242"
         ],
         "x": 14,
-        "y": 619,
+        "y": 359,
         "w": 852,
         "h": 322
     },
@@ -257,7 +257,7 @@
             "7d670f6e8d75b305"
         ],
         "x": 14,
-        "y": 339,
+        "y": 79,
         "w": 852,
         "h": 262
     },
@@ -294,6 +294,57 @@
         "y": 519,
         "w": 962,
         "h": 242
+    },
+    {
+        "id": "5173f4b3ac03407a",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "show object counts/speeds last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3985037239b671c5",
+            "431a4f7307387f3f",
+            "1a74cb68f1228a4f",
+            "2958d18a1e112409",
+            "b8b25338f2f57f93",
+            "2d0c73f2533c64b6",
+            "6c6ee2e39d85b9c8",
+            "02469f2425072f7b"
+        ],
+        "x": 14,
+        "y": 699,
+        "w": 872,
+        "h": 322
+    },
+    {
+        "id": "76417db2b472ef4f",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "influxdb TimedSpeedCounts (.counts, .speed_average)",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "15797ab24727f84d",
+            "6a422507b2a5bbca",
+            "e256c1d68cf20f43",
+            "dd294de96fa60d7d",
+            "319859b48b6eebad",
+            "1b7c2967fd6a85a4",
+            "537d771bb5b1eff5",
+            "034479ce181640ea",
+            "b06c5e9c17af5eb2",
+            "b2b5e83db3663f9e",
+            "17a8cb6e886afcee",
+            "a432e760cc77e6cb",
+            "313808f5ac61b7f1"
+        ],
+        "x": 14,
+        "y": 1039,
+        "w": 1232,
+        "h": 502
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1905,7 +1956,8 @@
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
-        "name": "trigger Event query every 1-hour",
+        "g": "5173f4b3ac03407a",
+        "name": "trigger Event query every 60-min",
         "props": [
             {
                 "p": "payload"
@@ -1918,12 +1970,12 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "10",
+        "onceDelay": "2",
         "topic": "query",
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 100,
+        "y": 740,
         "wires": [
             [
                 "1a74cb68f1228a4f"
@@ -1934,6 +1986,7 @@
         "id": "431a4f7307387f3f",
         "type": "mongodb4",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "clientNode": "4b8d22be1aa15cf2",
         "mode": "collection",
         "collection": "events",
@@ -1943,7 +1996,7 @@
         "handleDocId": false,
         "name": "mongo query Events, count 1-hour",
         "x": 300,
-        "y": 220,
+        "y": 860,
         "wires": [
             [
                 "2958d18a1e112409",
@@ -1955,8 +2008,9 @@
         "id": "1a74cb68f1228a4f",
         "type": "function",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "name": "create payload, 1-hour counts",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [{\n    $group: {\n        _id: {label_object: \"$label\",\n            frame_time_trunc: {$dateTrunc: {date: { $toDate: { $multiply: [\"$frame_time\", 1000]}}, unit: \"hour\", binSize: 1}}\n        },\n        count: {$count: {}}\n    }\n}];\n\nconst options = [{\n    $sort: {\n        frame_time_trunc: -1,\n        label_object: 1\n    }\n}];\n\nnewMsg.payload = [query, options]\n\nreturn newMsg;",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 1) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                hour: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"hour\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.hour\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1964,10 +2018,11 @@
         "finalize": "",
         "libs": [],
         "x": 270,
-        "y": 160,
+        "y": 800,
         "wires": [
             [
-                "431a4f7307387f3f"
+                "431a4f7307387f3f",
+                "2d0c73f2533c64b6"
             ]
         ]
     },
@@ -1975,6 +2030,7 @@
         "id": "2958d18a1e112409",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "name": "debug 1",
         "active": false,
         "tosidebar": true,
@@ -1983,8 +2039,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 220,
+        "x": 660,
+        "y": 860,
         "wires": []
     },
     {
@@ -1997,9 +2053,9 @@
         "order": 1,
         "width": 6,
         "height": 7,
-        "label": "frigate api/events/summary object count by day",
+        "label": "frigate api/events/summary daily object count for the last 10-days",
         "chartType": "line",
-        "legend": "false",
+        "legend": "true",
         "xformat": "Y-M-D",
         "interpolate": "linear",
         "nodata": "",
@@ -2011,7 +2067,7 @@
         "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
-        "useUTC": true,
+        "useUTC": false,
         "colors": [
             "#1f77b4",
             "#aec7e8",
@@ -2027,7 +2083,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 500,
+        "y": 240,
         "wires": [
             []
         ]
@@ -2036,18 +2092,22 @@
         "id": "b8b25338f2f57f93",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "function 1",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = {};\n\nnewMsg.payload = [{\n    \"series\": [\"car\",\"bicycle\", \"person\"]\n}]\n\n\nreturn newMsg;",
+        "g": "5173f4b3ac03407a",
+        "name": "structure mongo hourly",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.hour)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.hour);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 400,
-        "y": 280,
+        "x": 380,
+        "y": 920,
         "wires": [
-            []
+            [
+                "6c6ee2e39d85b9c8",
+                "02469f2425072f7b"
+            ]
         ]
     },
     {
@@ -2068,7 +2128,7 @@
         "senderr": false,
         "headers": [],
         "x": 310,
-        "y": 440,
+        "y": 180,
         "wires": [
             [
                 "921bd254e41a46da",
@@ -2090,7 +2150,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 230,
-        "y": 380,
+        "y": 120,
         "wires": [
             [
                 "b241a0ef89fd7ce4"
@@ -2103,7 +2163,7 @@
         "z": "28627559bebdc324",
         "g": "5aac1262472b0205",
         "name": "debug 2",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2111,7 +2171,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 760,
-        "y": 440,
+        "y": 180,
         "wires": []
     },
     {
@@ -2128,7 +2188,7 @@
         "finalize": "",
         "libs": [],
         "x": 400,
-        "y": 500,
+        "y": 240,
         "wires": [
             [
                 "08d030ffc3fe6adb",
@@ -2142,7 +2202,7 @@
         "z": "28627559bebdc324",
         "g": "5aac1262472b0205",
         "name": "debug 3",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2151,7 +2211,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 760,
-        "y": 560,
+        "y": 300,
         "wires": []
     },
     {
@@ -2177,7 +2237,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 660,
+        "y": 400,
         "wires": [
             [
                 "ae662d8b51bdd6b4"
@@ -2198,7 +2258,7 @@
         "handleDocId": false,
         "name": "query mongo events, daily summary",
         "x": 310,
-        "y": 780,
+        "y": 520,
         "wires": [
             [
                 "c509b1b731f83dec",
@@ -2220,7 +2280,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 720,
+        "y": 460,
         "wires": [
             [
                 "7d0ef920e3594875",
@@ -2242,7 +2302,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 720,
+        "y": 460,
         "wires": []
     },
     {
@@ -2259,7 +2319,7 @@
         "finalize": "",
         "libs": [],
         "x": 430,
-        "y": 840,
+        "y": 580,
         "wires": [
             [
                 "b65e1877b1e04881",
@@ -2281,7 +2341,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 780,
+        "y": 520,
         "wires": []
     },
     {
@@ -2294,9 +2354,9 @@
         "order": 2,
         "width": 6,
         "height": 7,
-        "label": "mongodb object count by day",
+        "label": "mongodb daily object count for the last 10-days",
         "chartType": "line",
-        "legend": "false",
+        "legend": "true",
         "xformat": "Y-M-D",
         "interpolate": "linear",
         "nodata": "",
@@ -2308,7 +2368,7 @@
         "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
-        "useUTC": true,
+        "useUTC": false,
         "colors": [
             "#1f77b4",
             "#aec7e8",
@@ -2324,7 +2384,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 840,
+        "y": 580,
         "wires": [
             []
         ]
@@ -2343,7 +2403,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 900,
+        "y": 640,
         "wires": []
     },
     {
@@ -2354,8 +2414,8 @@
         "links": [
             "d9a2cc1e81161549"
         ],
-        "x": 175,
-        "y": 1000,
+        "x": 205,
+        "y": 1760,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -2378,8 +2438,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 560,
-        "y": 1060,
+        "x": 590,
+        "y": 1820,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -2403,8 +2463,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 560,
-        "y": 1000,
+        "x": 590,
+        "y": 1760,
         "wires": [
             [
                 "e5391514131a2b5a"
@@ -2423,8 +2483,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 1060,
+        "x": 820,
+        "y": 1820,
         "wires": [
             [
                 "a47b9d9801bde446"
@@ -2443,8 +2503,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 1000,
+        "x": 820,
+        "y": 1760,
         "wires": [
             [
                 "6ccef1eff1e3d1ff"
@@ -2468,8 +2528,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 330,
-        "y": 1000,
+        "x": 360,
+        "y": 1760,
         "wires": [
             [
                 "2e680914d7da5c94",
@@ -2489,8 +2549,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1040,
-        "y": 1140,
+        "x": 1070,
+        "y": 1900,
         "wires": []
     },
     {
@@ -2505,8 +2565,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1040,
-        "y": 900,
+        "x": 1070,
+        "y": 1660,
         "wires": []
     },
     {
@@ -2524,8 +2584,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1040,
-        "y": 1000,
+        "x": 1070,
+        "y": 1760,
         "wires": [
             []
         ]
@@ -2542,8 +2602,460 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 310,
-        "y": 1100,
+        "x": 340,
+        "y": 1860,
+        "wires": []
+    },
+    {
+        "id": "400cdfb17e7d51db",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "show speed aggregates",
+        "info": "",
+        "x": 140,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "dead75f68cbb66d6",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "influxdb ...",
+        "info": "",
+        "x": 200,
+        "y": 1680,
+        "wires": []
+    },
+    {
+        "id": "2d0c73f2533c64b6",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 12",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "6c6ee2e39d85b9c8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 13",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "4abe0507c83f87a2",
+        "type": "catch",
+        "z": "28627559bebdc324",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "a309589b69eb07e1"
+            ]
+        ]
+    },
+    {
+        "id": "a309589b69eb07e1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "catch: all - dashboard",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 270,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "02469f2425072f7b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "label": "events by object (60-min) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 700,
+        "y": 920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "15797ab24727f84d",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 1080,
+        "wires": [
+            [
+                "6a422507b2a5bbca",
+                "dd294de96fa60d7d"
+            ]
+        ]
+    },
+    {
+        "id": "6a422507b2a5bbca",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "create influxdb query for TimedSpeedCounts.counts (5-min) for last 60-min",
+        "func": "//Want TimedSpeedCounts.counts (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"count\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 1140,
+        "wires": [
+            [
+                "e256c1d68cf20f43"
+            ]
+        ]
+    },
+    {
+        "id": "e256c1d68cf20f43",
+        "type": "influxdb in",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "influxdb": "73598328fc95017b",
+        "name": "query, TimedSpeedCounts.counts",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 440,
+        "y": 1200,
+        "wires": [
+            [
+                "034479ce181640ea",
+                "a432e760cc77e6cb"
+            ]
+        ]
+    },
+    {
+        "id": "dd294de96fa60d7d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "create influxdb query for TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "func": "//Want TimedSpeedCounts.speed_average (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"speed_average\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 1320,
+        "wires": [
+            [
+                "319859b48b6eebad"
+            ]
+        ]
+    },
+    {
+        "id": "319859b48b6eebad",
+        "type": "influxdb in",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "influxdb": "73598328fc95017b",
+        "name": "query, TimedSpeedCounts.speed_average",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 470,
+        "y": 1380,
+        "wires": [
+            [
+                "b06c5e9c17af5eb2",
+                "b2b5e83db3663f9e"
+            ]
+        ]
+    },
+    {
+        "id": "1b7c2967fd6a85a4",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1000,
+        "y": 1440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "537d771bb5b1eff5",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 970,
+        "y": 1260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "034479ce181640ea",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 14",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "b06c5e9c17af5eb2",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 15",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "b2b5e83db3663f9e",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure influx TimedSpeedCounts.speed_average",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of _value, bc speeds outbound will be negative\n   myItem._value = Math.abs(myItem._value)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 1440,
+        "wires": [
+            [
+                "17a8cb6e886afcee",
+                "1b7c2967fd6a85a4"
+            ]
+        ]
+    },
+    {
+        "id": "17a8cb6e886afcee",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 16",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "a432e760cc77e6cb",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure influx TimedSpeedCounts.counts",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 1260,
+        "wires": [
+            [
+                "537d771bb5b1eff5",
+                "313808f5ac61b7f1"
+            ]
+        ]
+    },
+    {
+        "id": "313808f5ac61b7f1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 17",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1200,
         "wires": []
     },
     {
