@@ -339,12 +339,65 @@
             "b2b5e83db3663f9e",
             "17a8cb6e886afcee",
             "a432e760cc77e6cb",
-            "313808f5ac61b7f1"
+            "313808f5ac61b7f1",
+            "0e1614cf2e5f9942"
         ],
         "x": 14,
         "y": 1039,
         "w": 1232,
-        "h": 502
+        "h": 868
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds last 24-hours",
+        "style": {
+            "label": true,
+            "fill": "#ffdf7f"
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "85ee7cd8058ab069",
+            "c4b2be77044989d5",
+            "c32af2158d803cad",
+            "2027a5a754d1d3c4",
+            "73cbcc33b82aa514",
+            "0e48d0088d899e5b"
+        ],
+        "x": 54,
+        "y": 1559,
+        "w": 732,
+        "h": 322
+    },
+    {
+        "id": "9b9e4fc50b744fc3",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "last N events, radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c249329109ac17d5",
+            "d66541089b01306e",
+            "2e680914d7da5c94",
+            "c788d632f5e93a73",
+            "e5391514131a2b5a",
+            "5ec2d3ba52f944f5",
+            "6ccef1eff1e3d1ff",
+            "c36c71706e494b5e",
+            "82bc0c11adb825f8",
+            "736d1e21a49f446b",
+            "5b307e65106f3540",
+            "4c087723a1d698e9"
+        ],
+        "x": 154,
+        "y": 2059,
+        "w": 952,
+        "h": 382
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -565,7 +618,7 @@
     {
         "id": "06dde4be9a9a6b27",
         "type": "ui_group",
-        "name": "Monitor Events Dashboard",
+        "name": "Events aggregates",
         "tab": "665d947f9a312a33",
         "order": 1,
         "disp": true,
@@ -583,6 +636,27 @@
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "7866c2aa313ab8b9",
+        "type": "ui_group",
+        "name": "Live updates",
+        "tab": "665d947f9a312a33",
+        "order": 2,
+        "disp": true,
+        "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "4b9f8ccfaca24707",
+        "type": "ui_spacer",
+        "z": "28627559bebdc324",
+        "name": "spacer",
+        "group": "7866c2aa313ab8b9",
+        "order": 3,
+        "width": 12,
+        "height": 1
     },
     {
         "id": "e43506628b4a1cdb",
@@ -2050,7 +2124,7 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 1,
+        "order": 4,
         "width": 6,
         "height": 7,
         "label": "frigate api/events/summary daily object count for the last 10-days",
@@ -2351,7 +2425,7 @@
         "g": "0a6e123f5e53c029",
         "name": "mongo summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 2,
+        "order": 5,
         "width": 6,
         "height": 7,
         "label": "mongodb daily object count for the last 10-days",
@@ -2410,16 +2484,18 @@
         "id": "c249329109ac17d5",
         "type": "link in",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "from mongo event capture",
         "links": [
             "d9a2cc1e81161549"
         ],
-        "x": 205,
-        "y": 1760,
+        "x": 195,
+        "y": 2140,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
-                "82bc0c11adb825f8"
+                "82bc0c11adb825f8",
+                "736d1e21a49f446b"
             ]
         ]
     },
@@ -2427,19 +2503,22 @@
         "id": "d66541089b01306e",
         "type": "switch",
         "z": "28627559bebdc324",
-        "name": "event has speed",
-        "property": "payload.speed_calc",
-        "propertyType": "msg",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only event with speed",
+        "property": "$abs(payload.speed_calc)",
+        "propertyType": "jsonata",
         "rules": [
             {
-                "t": "nnull"
+                "t": "gt",
+                "v": "20",
+                "vt": "num"
             }
         ],
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 1820,
+        "x": 640,
+        "y": 2260,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -2450,7 +2529,8 @@
         "id": "2e680914d7da5c94",
         "type": "switch",
         "z": "28627559bebdc324",
-        "name": "any radar event",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only zone_radar",
         "property": "payload.entered_zones",
         "propertyType": "msg",
         "rules": [
@@ -2463,11 +2543,12 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 1760,
+        "x": 580,
+        "y": 2140,
         "wires": [
             [
-                "e5391514131a2b5a"
+                "e5391514131a2b5a",
+                "d66541089b01306e"
             ]
         ]
     },
@@ -2475,19 +2556,20 @@
         "id": "c788d632f5e93a73",
         "type": "function",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "store last N speed events",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_speed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_speed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_speed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_speed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 820,
-        "y": 1820,
+        "x": 690,
+        "y": 2320,
         "wires": [
             [
-                "a47b9d9801bde446"
+                "4c087723a1d698e9"
             ]
         ]
     },
@@ -2495,19 +2577,21 @@
         "id": "e5391514131a2b5a",
         "type": "function",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "store last N radar events",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 5;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 820,
-        "y": 1760,
+        "x": 650,
+        "y": 2200,
         "wires": [
             [
-                "6ccef1eff1e3d1ff"
+                "6ccef1eff1e3d1ff",
+                "c36c71706e494b5e"
             ]
         ]
     },
@@ -2515,6 +2599,7 @@
         "id": "5ec2d3ba52f944f5",
         "type": "switch",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "only use radar cam",
         "property": "payload.camera",
         "propertyType": "msg",
@@ -2528,35 +2613,19 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 360,
-        "y": 1760,
+        "x": 350,
+        "y": 2140,
         "wires": [
             [
-                "2e680914d7da5c94",
-                "d66541089b01306e"
+                "2e680914d7da5c94"
             ]
         ]
-    },
-    {
-        "id": "a47b9d9801bde446",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "name": "debug 7",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1070,
-        "y": 1900,
-        "wires": []
     },
     {
         "id": "6ccef1eff1e3d1ff",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "debug 8",
         "active": false,
         "tosidebar": true,
@@ -2565,27 +2634,28 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1070,
-        "y": 1660,
+        "x": 900,
+        "y": 2100,
         "wires": []
     },
     {
         "id": "c36c71706e494b5e",
         "type": "ui_template",
         "z": "28627559bebdc324",
-        "group": "06dde4be9a9a6b27",
-        "name": "",
-        "order": 3,
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "name": "last N radar events",
+        "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<div ng-bind-html=\"msg.payload\"></div>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1070,
-        "y": 1760,
+        "x": 930,
+        "y": 2200,
         "wires": [
             []
         ]
@@ -2594,6 +2664,7 @@
         "id": "82bc0c11adb825f8",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "debug 9",
         "active": true,
         "tosidebar": true,
@@ -2602,8 +2673,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 340,
-        "y": 1860,
+        "x": 330,
+        "y": 2240,
         "wires": []
     },
     {
@@ -2613,7 +2684,7 @@
         "name": "show speed aggregates",
         "info": "",
         "x": 140,
-        "y": 1640,
+        "y": 1960,
         "wires": []
     },
     {
@@ -2623,7 +2694,7 @@
         "name": "influxdb ...",
         "info": "",
         "x": 200,
-        "y": 1680,
+        "y": 2000,
         "wires": []
     },
     {
@@ -2699,7 +2770,7 @@
         "g": "5173f4b3ac03407a",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 4,
+        "order": 3,
         "width": 0,
         "height": 0,
         "label": "events by object (60-min) for last 24-hours",
@@ -2859,7 +2930,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 6,
+        "order": 2,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
@@ -2904,7 +2975,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 5,
+        "order": 1,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
@@ -3057,6 +3128,209 @@
         "x": 780,
         "y": 1200,
         "wires": []
+    },
+    {
+        "id": "be70ebb1a5929433",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo query Events, count 1-hour",
+        "x": 240,
+        "y": 1720,
+        "wires": [
+            [
+                "85ee7cd8058ab069",
+                "c4b2be77044989d5"
+            ]
+        ]
+    },
+    {
+        "id": "18fb76b6818efaf9",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "create payload, 1-hour counts",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 1) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                hour: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"hour\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.hour\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 1660,
+        "wires": [
+            [
+                "be70ebb1a5929433",
+                "c32af2158d803cad"
+            ]
+        ]
+    },
+    {
+        "id": "85ee7cd8058ab069",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 18",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1720,
+        "wires": []
+    },
+    {
+        "id": "c4b2be77044989d5",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "structure mongo hourly",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.hour)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.hour);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 1780,
+        "wires": [
+            [
+                "2027a5a754d1d3c4"
+            ]
+        ]
+    },
+    {
+        "id": "c32af2158d803cad",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 19",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "2027a5a754d1d3c4",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 20",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "73cbcc33b82aa514",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "change this to be 5-min speed,counts for last 60-min",
+        "info": "",
+        "x": 570,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "0e48d0088d899e5b",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "only zone_radar, any object",
+        "info": "",
+        "x": 200,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "736d1e21a49f446b",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N any frigate events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_all\") || [];\n//Keep only last X elements\nvar myArrLength = 10;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//keep only specific elements\nconst newObj = {\n    id: msg.payload.id, \n    label: msg.payload.label,  \n    direction_calc: msg.payload.direction_calc, \n    speed_calc: msg.payload.speed_calc, \n    };\n\n//add current event to end of array\nmyEvents.push(newObj);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_all\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 2400,
+        "wires": [
+            [
+                "5b307e65106f3540"
+            ]
+        ]
+    },
+    {
+        "id": "5b307e65106f3540",
+        "type": "ui_text",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "order": 4,
+        "width": 12,
+        "height": 5,
+        "name": "",
+        "label": "last N events, text output",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": true,
+        "font": "Courier,monospace",
+        "fontSize": "10",
+        "color": "#000000",
+        "x": 710,
+        "y": 2400,
+        "wires": []
+    },
+    {
+        "id": "4c087723a1d698e9",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "name": "last N radar speeding events",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 960,
+        "y": 2320,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "e9da260ad8a83698",
