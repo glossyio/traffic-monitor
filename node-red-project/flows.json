@@ -345,32 +345,7 @@
         "x": 14,
         "y": 1039,
         "w": 1232,
-        "h": 868
-    },
-    {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds last 24-hours",
-        "style": {
-            "label": true,
-            "fill": "#ffdf7f"
-        },
-        "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "85ee7cd8058ab069",
-            "c4b2be77044989d5",
-            "c32af2158d803cad",
-            "2027a5a754d1d3c4",
-            "73cbcc33b82aa514",
-            "0e48d0088d899e5b"
-        ],
-        "x": 54,
-        "y": 1559,
-        "w": 732,
-        "h": 322
+        "h": 808
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -398,6 +373,29 @@
         "y": 2059,
         "w": 952,
         "h": 382
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "85ee7cd8058ab069",
+            "c4b2be77044989d5",
+            "c32af2158d803cad",
+            "2027a5a754d1d3c4",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1559,
+        "w": 1132,
+        "h": 262
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -649,7 +647,7 @@
         "className": ""
     },
     {
-        "id": "4b9f8ccfaca24707",
+        "id": "9249a0dd562f8c62",
         "type": "ui_spacer",
         "z": "28627559bebdc324",
         "name": "spacer",
@@ -2124,7 +2122,7 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 4,
+        "order": 2,
         "width": 6,
         "height": 7,
         "label": "frigate api/events/summary daily object count for the last 10-days",
@@ -2425,7 +2423,7 @@
         "g": "0a6e123f5e53c029",
         "name": "mongo summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 5,
+        "order": 3,
         "width": 6,
         "height": 7,
         "label": "mongodb daily object count for the last 10-days",
@@ -2648,7 +2646,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -2770,7 +2768,7 @@
         "g": "5173f4b3ac03407a",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 3,
+        "order": 1,
         "width": 0,
         "height": 0,
         "label": "events by object (60-min) for last 24-hours",
@@ -2835,7 +2833,8 @@
         "wires": [
             [
                 "6a422507b2a5bbca",
-                "dd294de96fa60d7d"
+                "dd294de96fa60d7d",
+                "18fb76b6818efaf9"
             ]
         ]
     },
@@ -2930,7 +2929,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 2,
+        "order": 5,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
@@ -2975,7 +2974,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 1,
+        "order": 4,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
@@ -3141,9 +3140,9 @@
         "output": "toArray",
         "maxTimeMS": "0",
         "handleDocId": false,
-        "name": "mongo query Events, count 1-hour",
-        "x": 240,
-        "y": 1720,
+        "name": "mongo query Events, count every 5-min last 60 min",
+        "x": 290,
+        "y": 1660,
         "wires": [
             [
                 "85ee7cd8058ab069",
@@ -3156,16 +3155,16 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
-        "name": "create payload, 1-hour counts",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 1) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                hour: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"hour\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.hour\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "name": "create payload, 5-min bins last 60-min",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 60*60 * 1000) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n            entered_zones: {\n                //do it only for zone_radar\n                $in: [\"zone_radar\"]\n            }\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                datetime_bin: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"minute\", binSize: 5 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.datetime_bin\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 210,
-        "y": 1660,
+        "x": 230,
+        "y": 1600,
         "wires": [
             [
                 "be70ebb1a5929433",
@@ -3187,7 +3186,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 600,
-        "y": 1720,
+        "y": 1660,
         "wires": []
     },
     {
@@ -3195,19 +3194,20 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
-        "name": "structure mongo hourly",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.hour)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.hour);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "name": "structure mongo 5-min, last 60-min",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.datetime_bin)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.datetime_bin);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 1780,
+        "x": 360,
+        "y": 1720,
         "wires": [
             [
-                "2027a5a754d1d3c4"
+                "2027a5a754d1d3c4",
+                "11fa2826769befc7"
             ]
         ]
     },
@@ -3225,7 +3225,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 600,
-        "y": 1660,
+        "y": 1600,
         "wires": []
     },
     {
@@ -3242,29 +3242,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 600,
-        "y": 1840,
-        "wires": []
-    },
-    {
-        "id": "73cbcc33b82aa514",
-        "type": "comment",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "change this to be 5-min speed,counts for last 60-min",
-        "info": "",
-        "x": 570,
-        "y": 1600,
-        "wires": []
-    },
-    {
-        "id": "0e48d0088d899e5b",
-        "type": "comment",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "only zone_radar, any object",
-        "info": "",
-        "x": 200,
-        "y": 1620,
+        "y": 1780,
         "wires": []
     },
     {
@@ -3320,7 +3298,7 @@
         "order": 2,
         "width": 0,
         "height": 0,
-        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -3328,6 +3306,51 @@
         "className": "",
         "x": 960,
         "y": 2320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "11fa2826769befc7",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "label": "Mongo Events in zone_radar (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 970,
+        "y": 1720,
         "wires": [
             []
         ]
