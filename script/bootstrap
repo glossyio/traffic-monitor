@@ -54,5 +54,8 @@ sudo apt-get -y install libedgetpu1-std
 echo "==> Install screen for radar"
 sudo apt-get -y install screen
 
+#Mar 2024 - might need this for the RPi Camera GS if image is fipped vertically 180 and blue/red
+#sudo rpi-update pulls/6027
+
 echo "==> Rebooting system"
 sudo reboot
