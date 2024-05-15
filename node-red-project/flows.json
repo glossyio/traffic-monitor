@@ -16,14 +16,6 @@
         "env": []
     },
     {
-        "id": "90d5c925f9fbf9fd",
-        "type": "tab",
-        "label": "Aux data capture",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
         "id": "28627559bebdc324",
         "type": "tab",
         "label": "Event+Speed Dashboard",
@@ -35,6 +27,14 @@
         "id": "239d7b3ba410ad5e",
         "type": "tab",
         "label": "Env Vars + System",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "90d5c925f9fbf9fd",
+        "type": "tab",
+        "label": "Aux data capture",
         "disabled": false,
         "info": "",
         "env": []
@@ -115,12 +115,13 @@
             "be1439498cc44b59",
             "9b02f14fb1d60b89",
             "23df4abbd743c2e1",
-            "823f58ae26a49321"
+            "823f58ae26a49321",
+            "adfffd73b8a243b8"
         ],
         "x": 14,
         "y": 459,
         "w": 1312,
-        "h": 302
+        "h": 322
     },
     {
         "id": "9ee8ebd820661432",
@@ -137,7 +138,7 @@
             "50574c0e9f62cf10"
         ],
         "x": 474,
-        "y": 979,
+        "y": 1019,
         "w": 692,
         "h": 142
     },
@@ -157,7 +158,7 @@
             "d9a2cc1e81161549"
         ],
         "x": 474,
-        "y": 779,
+        "y": 819,
         "w": 732,
         "h": 182
     },
@@ -235,7 +236,7 @@
             "5a74033007fa0242"
         ],
         "x": 14,
-        "y": 619,
+        "y": 359,
         "w": 852,
         "h": 322
     },
@@ -256,8 +257,144 @@
             "7d670f6e8d75b305"
         ],
         "x": 14,
-        "y": 339,
+        "y": 79,
         "w": 852,
+        "h": 262
+    },
+    {
+        "id": "ab5e552a1defabf4",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "b573f57d.6290e8",
+            "1330b995.eb0626",
+            "cc26e2d4.ffd35",
+            "bcad70c7.b9db",
+            "2ffeee02.29d762",
+            "7ba1f4df.b12a7c",
+            "b42b2908.665408",
+            "fe2d6e02.ad949",
+            "db2479e4.104468",
+            "fa23a260.4e161",
+            "eb06ed9d.7f23f",
+            "58d47e08.81ffc",
+            "93b54b1c.311778",
+            "a0241251.a9cc4"
+        ],
+        "x": 14,
+        "y": 519,
+        "w": 962,
+        "h": 242
+    },
+    {
+        "id": "5173f4b3ac03407a",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "show object counts/speeds last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3985037239b671c5",
+            "431a4f7307387f3f",
+            "1a74cb68f1228a4f",
+            "2958d18a1e112409",
+            "b8b25338f2f57f93",
+            "2d0c73f2533c64b6",
+            "6c6ee2e39d85b9c8",
+            "02469f2425072f7b"
+        ],
+        "x": 14,
+        "y": 699,
+        "w": 872,
+        "h": 322
+    },
+    {
+        "id": "76417db2b472ef4f",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "influxdb TimedSpeedCounts (.counts, .speed_average)",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "15797ab24727f84d",
+            "6a422507b2a5bbca",
+            "e256c1d68cf20f43",
+            "dd294de96fa60d7d",
+            "319859b48b6eebad",
+            "1b7c2967fd6a85a4",
+            "537d771bb5b1eff5",
+            "034479ce181640ea",
+            "b06c5e9c17af5eb2",
+            "b2b5e83db3663f9e",
+            "17a8cb6e886afcee",
+            "a432e760cc77e6cb",
+            "313808f5ac61b7f1",
+            "0e1614cf2e5f9942"
+        ],
+        "x": 14,
+        "y": 1039,
+        "w": 1232,
+        "h": 808
+    },
+    {
+        "id": "9b9e4fc50b744fc3",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "last N events, radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c249329109ac17d5",
+            "d66541089b01306e",
+            "2e680914d7da5c94",
+            "c788d632f5e93a73",
+            "e5391514131a2b5a",
+            "5ec2d3ba52f944f5",
+            "6ccef1eff1e3d1ff",
+            "c36c71706e494b5e",
+            "82bc0c11adb825f8",
+            "736d1e21a49f446b",
+            "5b307e65106f3540",
+            "4c087723a1d698e9"
+        ],
+        "x": 154,
+        "y": 2059,
+        "w": 952,
+        "h": 382
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "85ee7cd8058ab069",
+            "c4b2be77044989d5",
+            "c32af2158d803cad",
+            "2027a5a754d1d3c4",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1559,
+        "w": 1132,
         "h": 262
     },
     {
@@ -434,7 +571,7 @@
             "allowSwipe": "false",
             "lockMenu": "false",
             "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
+            "dateFormat": "YYYY-MM-DD",
             "sizes": {
                 "sx": 48,
                 "sy": 48,
@@ -450,17 +587,18 @@
     {
         "id": "b6d86231fb09af0f",
         "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
+        "name": "System",
+        "icon": "developer_dashboard",
+        "order": 2,
         "disabled": false,
         "hidden": false
     },
     {
         "id": "1f15adecfe5a580a",
         "type": "ui_group",
-        "name": "Default",
+        "name": "Docker Environment Variables",
         "tab": "b6d86231fb09af0f",
-        "order": 1,
+        "order": 2,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -469,21 +607,54 @@
     {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
-        "name": "Events",
+        "name": "Monitoring",
         "icon": "dashboard",
+        "order": 1,
         "disabled": false,
         "hidden": false
     },
     {
         "id": "06dde4be9a9a6b27",
         "type": "ui_group",
-        "name": "Monitor Events Dashboard",
+        "name": "Events aggregates",
         "tab": "665d947f9a312a33",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "3c375fd89b978620",
+        "type": "ui_group",
+        "name": "System actions",
+        "tab": "b6d86231fb09af0f",
         "order": 1,
         "disp": true,
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "7866c2aa313ab8b9",
+        "type": "ui_group",
+        "name": "Live updates",
+        "tab": "665d947f9a312a33",
+        "order": 2,
+        "disp": true,
+        "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "9249a0dd562f8c62",
+        "type": "ui_spacer",
+        "z": "28627559bebdc324",
+        "name": "spacer",
+        "group": "7866c2aa313ab8b9",
+        "order": 3,
+        "width": 12,
+        "height": 1
     },
     {
         "id": "e43506628b4a1cdb",
@@ -1216,7 +1387,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "debug: published frigate messages",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1294,7 +1465,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 580,
+        "x": 280,
         "y": 380,
         "wires": [
             [
@@ -1383,7 +1554,7 @@
         "senderr": false,
         "headers": [],
         "x": 660,
-        "y": 1080,
+        "y": 1120,
         "wires": [
             [
                 "50574c0e9f62cf10"
@@ -1457,7 +1628,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 1020,
+        "y": 1060,
         "wires": [
             [
                 "1b0344bd4829de6b",
@@ -1481,7 +1652,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 970,
-        "y": 1020,
+        "y": 1060,
         "wires": []
     },
     {
@@ -1500,7 +1671,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 970,
-        "y": 1080,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1517,7 +1688,7 @@
         "handleDocId": false,
         "name": "mongo insertOne events",
         "x": 750,
-        "y": 920,
+        "y": 960,
         "wires": [
             [
                 "078438fe6e931391"
@@ -1530,7 +1701,7 @@
         "z": "49e416bfab1d4055",
         "g": "d14033e4e7acdf1b",
         "name": "mongo return",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1539,7 +1710,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 990,
-        "y": 920,
+        "y": 960,
         "wires": []
     },
     {
@@ -1556,7 +1727,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 860,
+        "y": 900,
         "wires": [
             [
                 "466942b727a6409c",
@@ -1581,7 +1752,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1040,
-        "y": 860,
+        "y": 900,
         "wires": []
     },
     {
@@ -1590,7 +1761,7 @@
         "z": "49e416bfab1d4055",
         "g": "e7337074cbb5c952",
         "name": "event+radar w direction calcs",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1616,7 +1787,7 @@
         "finalize": "",
         "libs": [],
         "x": 460,
-        "y": 720,
+        "y": 740,
         "wires": [
             [
                 "23df4abbd743c2e1"
@@ -1714,8 +1885,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 150,
-        "y": 320,
+        "x": 210,
+        "y": 280,
         "wires": [
             [
                 "98e23f2c38047c05"
@@ -1788,8 +1959,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 210,
-        "y": 380,
+        "x": 230,
+        "y": 340,
         "wires": [
             [
                 "6cfe5662fc478c14"
@@ -1839,24 +2010,26 @@
             "c249329109ac17d5"
         ],
         "x": 775,
-        "y": 820,
+        "y": 860,
         "wires": []
     },
     {
-        "id": "8cee82669b6b8512",
+        "id": "adfffd73b8a243b8",
         "type": "comment",
-        "z": "90d5c925f9fbf9fd",
-        "name": "capture bluetooth to influxdb",
+        "z": "49e416bfab1d4055",
+        "g": "e7337074cbb5c952",
+        "name": "FYI: InfluxDB return overrides msg.payload",
         "info": "",
-        "x": 220,
-        "y": 140,
+        "x": 480,
+        "y": 700,
         "wires": []
     },
     {
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
-        "name": "trigger Event query every 1-hour",
+        "g": "5173f4b3ac03407a",
+        "name": "trigger Event query every 60-min",
         "props": [
             {
                 "p": "payload"
@@ -1869,12 +2042,12 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "10",
+        "onceDelay": "2",
         "topic": "query",
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 100,
+        "y": 740,
         "wires": [
             [
                 "1a74cb68f1228a4f"
@@ -1885,6 +2058,7 @@
         "id": "431a4f7307387f3f",
         "type": "mongodb4",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "clientNode": "4b8d22be1aa15cf2",
         "mode": "collection",
         "collection": "events",
@@ -1894,7 +2068,7 @@
         "handleDocId": false,
         "name": "mongo query Events, count 1-hour",
         "x": 300,
-        "y": 220,
+        "y": 860,
         "wires": [
             [
                 "2958d18a1e112409",
@@ -1906,8 +2080,9 @@
         "id": "1a74cb68f1228a4f",
         "type": "function",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "name": "create payload, 1-hour counts",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [{\n    $group: {\n        _id: {label_object: \"$label\",\n            frame_time_trunc: {$dateTrunc: {date: { $toDate: { $multiply: [\"$frame_time\", 1000]}}, unit: \"hour\", binSize: 1}}\n        },\n        count: {$count: {}}\n    }\n}];\n\nconst options = [{\n    $sort: {\n        frame_time_trunc: -1,\n        label_object: 1\n    }\n}];\n\nnewMsg.payload = [query, options]\n\nreturn newMsg;",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 1) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                hour: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"hour\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.hour\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1915,10 +2090,11 @@
         "finalize": "",
         "libs": [],
         "x": 270,
-        "y": 160,
+        "y": 800,
         "wires": [
             [
-                "431a4f7307387f3f"
+                "431a4f7307387f3f",
+                "2d0c73f2533c64b6"
             ]
         ]
     },
@@ -1926,6 +2102,7 @@
         "id": "2958d18a1e112409",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
         "name": "debug 1",
         "active": false,
         "tosidebar": true,
@@ -1934,8 +2111,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 220,
+        "x": 660,
+        "y": 860,
         "wires": []
     },
     {
@@ -1945,12 +2122,12 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "label": "frigate api/events/summary object count by day",
+        "order": 2,
+        "width": 6,
+        "height": 7,
+        "label": "frigate api/events/summary daily object count for the last 10-days",
         "chartType": "line",
-        "legend": "false",
+        "legend": "true",
         "xformat": "Y-M-D",
         "interpolate": "linear",
         "nodata": "",
@@ -1962,7 +2139,7 @@
         "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
-        "useUTC": true,
+        "useUTC": false,
         "colors": [
             "#1f77b4",
             "#aec7e8",
@@ -1978,7 +2155,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 500,
+        "y": 240,
         "wires": [
             []
         ]
@@ -1987,18 +2164,22 @@
         "id": "b8b25338f2f57f93",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "function 1",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = {};\n\nnewMsg.payload = [{\n    \"series\": [\"car\",\"bicycle\", \"person\"]\n}]\n\n\nreturn newMsg;",
+        "g": "5173f4b3ac03407a",
+        "name": "structure mongo hourly",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.hour)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.hour);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 400,
-        "y": 280,
+        "x": 380,
+        "y": 920,
         "wires": [
-            []
+            [
+                "6c6ee2e39d85b9c8",
+                "02469f2425072f7b"
+            ]
         ]
     },
     {
@@ -2019,7 +2200,7 @@
         "senderr": false,
         "headers": [],
         "x": 310,
-        "y": 440,
+        "y": 180,
         "wires": [
             [
                 "921bd254e41a46da",
@@ -2041,7 +2222,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 230,
-        "y": 380,
+        "y": 120,
         "wires": [
             [
                 "b241a0ef89fd7ce4"
@@ -2062,7 +2243,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 760,
-        "y": 440,
+        "y": 180,
         "wires": []
     },
     {
@@ -2071,7 +2252,7 @@
         "z": "28627559bebdc324",
         "g": "5aac1262472b0205",
         "name": "structure frigate api/summary",
-        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera and 10 days or less ago\n    if (myItem.camera == env.get(\"VAR_RADAR_CAMERA\") && new Date(myItem.day).getTime() >= Math.floor((Date.now() - 86400000 * 10))) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2079,7 +2260,7 @@
         "finalize": "",
         "libs": [],
         "x": 400,
-        "y": 500,
+        "y": 240,
         "wires": [
             [
                 "08d030ffc3fe6adb",
@@ -2102,7 +2283,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 760,
-        "y": 560,
+        "y": 300,
         "wires": []
     },
     {
@@ -2128,7 +2309,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 660,
+        "y": 400,
         "wires": [
             [
                 "ae662d8b51bdd6b4"
@@ -2149,7 +2330,7 @@
         "handleDocId": false,
         "name": "query mongo events, daily summary",
         "x": 310,
-        "y": 780,
+        "y": 520,
         "wires": [
             [
                 "c509b1b731f83dec",
@@ -2171,7 +2352,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 720,
+        "y": 460,
         "wires": [
             [
                 "7d0ef920e3594875",
@@ -2193,7 +2374,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 720,
+        "y": 460,
         "wires": []
     },
     {
@@ -2210,7 +2391,7 @@
         "finalize": "",
         "libs": [],
         "x": 430,
-        "y": 840,
+        "y": 580,
         "wires": [
             [
                 "b65e1877b1e04881",
@@ -2232,7 +2413,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 780,
+        "y": 520,
         "wires": []
     },
     {
@@ -2242,12 +2423,12 @@
         "g": "0a6e123f5e53c029",
         "name": "mongo summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "label": "frigate api/events/summary object count by day",
+        "order": 3,
+        "width": 6,
+        "height": 7,
+        "label": "mongodb daily object count for the last 10-days",
         "chartType": "line",
-        "legend": "false",
+        "legend": "true",
         "xformat": "Y-M-D",
         "interpolate": "linear",
         "nodata": "",
@@ -2259,7 +2440,7 @@
         "removeOlderUnit": "86400",
         "cutout": 0,
         "useOneColor": false,
-        "useUTC": true,
+        "useUTC": false,
         "colors": [
             "#1f77b4",
             "#aec7e8",
@@ -2275,7 +2456,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 840,
+        "y": 580,
         "wires": [
             []
         ]
@@ -2294,22 +2475,25 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
-        "y": 900,
+        "y": 640,
         "wires": []
     },
     {
         "id": "c249329109ac17d5",
         "type": "link in",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "from mongo event capture",
         "links": [
             "d9a2cc1e81161549"
         ],
-        "x": 175,
-        "y": 1000,
+        "x": 195,
+        "y": 2140,
         "wires": [
             [
-                "5ec2d3ba52f944f5"
+                "5ec2d3ba52f944f5",
+                "82bc0c11adb825f8",
+                "736d1e21a49f446b"
             ]
         ]
     },
@@ -2317,19 +2501,22 @@
         "id": "d66541089b01306e",
         "type": "switch",
         "z": "28627559bebdc324",
-        "name": "event has speed",
-        "property": "payload.speed",
-        "propertyType": "msg",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only event with speed",
+        "property": "$abs(payload.speed_calc)",
+        "propertyType": "jsonata",
         "rules": [
             {
-                "t": "nempty"
+                "t": "gt",
+                "v": "20",
+                "vt": "num"
             }
         ],
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 560,
-        "y": 1000,
+        "x": 640,
+        "y": 2260,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -2340,8 +2527,9 @@
         "id": "2e680914d7da5c94",
         "type": "switch",
         "z": "28627559bebdc324",
-        "name": "any radar event",
-        "property": "payload.zones",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only zone_radar",
+        "property": "payload.entered_zones",
         "propertyType": "msg",
         "rules": [
             {
@@ -2353,11 +2541,12 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 560,
-        "y": 1060,
+        "x": 580,
+        "y": 2140,
         "wires": [
             [
-                "e5391514131a2b5a"
+                "e5391514131a2b5a",
+                "d66541089b01306e"
             ]
         ]
     },
@@ -2365,19 +2554,20 @@
         "id": "c788d632f5e93a73",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "store last N radar events",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N speed events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_speed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_speed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 1000,
+        "x": 690,
+        "y": 2320,
         "wires": [
             [
-                "a47b9d9801bde446"
+                "4c087723a1d698e9"
             ]
         ]
     },
@@ -2385,19 +2575,21 @@
         "id": "e5391514131a2b5a",
         "type": "function",
         "z": "28627559bebdc324",
-        "name": "store last N high speeds",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_highspeed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\nflow.set(\"events_recent_highspeed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N radar events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 5;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 1060,
+        "x": 650,
+        "y": 2200,
         "wires": [
             [
-                "6ccef1eff1e3d1ff"
+                "6ccef1eff1e3d1ff",
+                "c36c71706e494b5e"
             ]
         ]
     },
@@ -2405,77 +2597,760 @@
         "id": "5ec2d3ba52f944f5",
         "type": "switch",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "only use radar cam",
         "property": "payload.camera",
         "propertyType": "msg",
         "rules": [
             {
                 "t": "eq",
-                "v": "\"VAR_RADAR_CAMERA\"",
+                "v": "VAR_RADAR_CAMERA",
                 "vt": "env"
             }
         ],
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 330,
-        "y": 1000,
+        "x": 350,
+        "y": 2140,
         "wires": [
             [
-                "d66541089b01306e",
                 "2e680914d7da5c94"
             ]
         ]
     },
     {
-        "id": "a47b9d9801bde446",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1020,
-        "y": 940,
-        "wires": []
-    },
-    {
         "id": "6ccef1eff1e3d1ff",
         "type": "debug",
         "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
         "name": "debug 8",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 1140,
+        "x": 900,
+        "y": 2100,
         "wires": []
     },
     {
         "id": "c36c71706e494b5e",
         "type": "ui_template",
         "z": "28627559bebdc324",
-        "group": "06dde4be9a9a6b27",
-        "name": "",
-        "order": 2,
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "name": "last N radar events",
+        "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<div ng-bind-html=\"msg.payload\"></div>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1020,
-        "y": 1000,
+        "x": 930,
+        "y": 2200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "82bc0c11adb825f8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 330,
+        "y": 2240,
+        "wires": []
+    },
+    {
+        "id": "400cdfb17e7d51db",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "show speed aggregates",
+        "info": "",
+        "x": 140,
+        "y": 1960,
+        "wires": []
+    },
+    {
+        "id": "dead75f68cbb66d6",
+        "type": "comment",
+        "z": "28627559bebdc324",
+        "name": "influxdb ...",
+        "info": "",
+        "x": 200,
+        "y": 2000,
+        "wires": []
+    },
+    {
+        "id": "2d0c73f2533c64b6",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 12",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "6c6ee2e39d85b9c8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 13",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "4abe0507c83f87a2",
+        "type": "catch",
+        "z": "28627559bebdc324",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "a309589b69eb07e1"
+            ]
+        ]
+    },
+    {
+        "id": "a309589b69eb07e1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "catch: all - dashboard",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 270,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "02469f2425072f7b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "events by object (60-min) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 700,
+        "y": 920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "15797ab24727f84d",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 1080,
+        "wires": [
+            [
+                "6a422507b2a5bbca",
+                "dd294de96fa60d7d",
+                "18fb76b6818efaf9"
+            ]
+        ]
+    },
+    {
+        "id": "6a422507b2a5bbca",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "create influxdb query for TimedSpeedCounts.counts (5-min) for last 60-min",
+        "func": "//Want TimedSpeedCounts.counts (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"count\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 1140,
+        "wires": [
+            [
+                "e256c1d68cf20f43"
+            ]
+        ]
+    },
+    {
+        "id": "e256c1d68cf20f43",
+        "type": "influxdb in",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "influxdb": "73598328fc95017b",
+        "name": "query, TimedSpeedCounts.counts",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 440,
+        "y": 1200,
+        "wires": [
+            [
+                "034479ce181640ea",
+                "a432e760cc77e6cb"
+            ]
+        ]
+    },
+    {
+        "id": "dd294de96fa60d7d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "create influxdb query for TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "func": "//Want TimedSpeedCounts.speed_average (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"speed_average\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 1320,
+        "wires": [
+            [
+                "319859b48b6eebad"
+            ]
+        ]
+    },
+    {
+        "id": "319859b48b6eebad",
+        "type": "influxdb in",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "influxdb": "73598328fc95017b",
+        "name": "query, TimedSpeedCounts.speed_average",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 470,
+        "y": 1380,
+        "wires": [
+            [
+                "b06c5e9c17af5eb2",
+                "b2b5e83db3663f9e"
+            ]
+        ]
+    },
+    {
+        "id": "1b7c2967fd6a85a4",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1000,
+        "y": 1440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "537d771bb5b1eff5",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 970,
+        "y": 1260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "034479ce181640ea",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 14",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "b06c5e9c17af5eb2",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 15",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "b2b5e83db3663f9e",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure influx TimedSpeedCounts.speed_average",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of _value, bc speeds outbound will be negative\n   myItem._value = Math.abs(myItem._value)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 1440,
+        "wires": [
+            [
+                "17a8cb6e886afcee",
+                "1b7c2967fd6a85a4"
+            ]
+        ]
+    },
+    {
+        "id": "17a8cb6e886afcee",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 16",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "a432e760cc77e6cb",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure influx TimedSpeedCounts.counts",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 1260,
+        "wires": [
+            [
+                "537d771bb5b1eff5",
+                "313808f5ac61b7f1"
+            ]
+        ]
+    },
+    {
+        "id": "313808f5ac61b7f1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 17",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "be70ebb1a5929433",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo query Events, count every 5-min last 60 min",
+        "x": 290,
+        "y": 1660,
+        "wires": [
+            [
+                "85ee7cd8058ab069",
+                "c4b2be77044989d5"
+            ]
+        ]
+    },
+    {
+        "id": "18fb76b6818efaf9",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "create payload, 5-min bins last 60-min",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 60*60 * 1000) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n            entered_zones: {\n                //do it only for zone_radar\n                $in: [\"zone_radar\"]\n            }\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                datetime_bin: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"minute\", binSize: 5 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.datetime_bin\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 1600,
+        "wires": [
+            [
+                "be70ebb1a5929433",
+                "c32af2158d803cad"
+            ]
+        ]
+    },
+    {
+        "id": "85ee7cd8058ab069",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 18",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "c4b2be77044989d5",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "structure mongo 5-min, last 60-min",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.datetime_bin)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.datetime_bin);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 1720,
+        "wires": [
+            [
+                "2027a5a754d1d3c4",
+                "11fa2826769befc7"
+            ]
+        ]
+    },
+    {
+        "id": "c32af2158d803cad",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 19",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "2027a5a754d1d3c4",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "debug 20",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "736d1e21a49f446b",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N any frigate events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_all\") || [];\n//Keep only last X elements\nvar myArrLength = 10;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//keep only specific elements\nconst newObj = {\n    id: msg.payload.id, \n    label: msg.payload.label,  \n    direction_calc: msg.payload.direction_calc, \n    speed_calc: msg.payload.speed_calc, \n    };\n\n//add current event to end of array\nmyEvents.push(newObj);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_all\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 2400,
+        "wires": [
+            [
+                "5b307e65106f3540"
+            ]
+        ]
+    },
+    {
+        "id": "5b307e65106f3540",
+        "type": "ui_text",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "order": 4,
+        "width": 12,
+        "height": 5,
+        "name": "",
+        "label": "last N events, text output",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": true,
+        "font": "Courier,monospace",
+        "fontSize": "10",
+        "color": "#000000",
+        "x": 710,
+        "y": 2400,
+        "wires": []
+    },
+    {
+        "id": "4c087723a1d698e9",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "name": "last N radar speeding events",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 960,
+        "y": 2320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "11fa2826769befc7",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "label": "Mongo Events in zone_radar (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 970,
+        "y": 1720,
         "wires": [
             []
         ]
@@ -2484,7 +3359,7 @@
         "id": "e9da260ad8a83698",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
-        "name": "",
+        "name": "set docker environment variables",
         "label": "",
         "group": "1f15adecfe5a580a",
         "order": 0,
@@ -2492,51 +3367,483 @@
         "height": 0,
         "options": [
             {
-                "label": "Location Description",
-                "value": "loc",
+                "label": "Deployment location description (Form as scewer case with format streetNS-streetEW-sb/nb/eb/wb-2-digits; e.g. ne26th-wasco-sb-01)",
+                "value": "location",
                 "type": "text",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "Radar Camera",
+                "label": "Radar camera (Name specified for the primary camera that is used to match radar readings to detected objects)",
                 "value": "camradar",
                 "type": "text",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "InfluxDB Bucket Name",
+                "label": "InfluxDB bucket Name",
                 "value": "influxbucket",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "RPi IP Address",
-                "value": "rpiaddress",
                 "type": "text",
                 "required": false,
                 "rows": null
             }
         ],
         "formValue": {
-            "loc": "",
+            "location": "",
             "camradar": "",
-            "influxbucket": "",
-            "rpiaddress": ""
+            "influxbucket": ""
         },
         "payload": "",
         "submit": "submit",
-        "cancel": "cancel",
-        "topic": "topic",
-        "topicType": "msg",
+        "cancel": "clear",
+        "topic": "ui_env_vars",
+        "topicType": "str",
         "splitLayout": "",
         "className": "",
-        "x": 150,
+        "x": 280,
+        "y": 140,
+        "wires": [
+            [
+                "86ba5a0d412318d4"
+            ]
+        ]
+    },
+    {
+        "id": "b573f57d.6290e8",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "group": "",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Do stuff",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "icon": "",
+        "payload": "textInput",
+        "payloadType": "flow",
+        "topic": "",
+        "x": 280,
+        "y": 660,
+        "wires": [
+            [
+                "cc26e2d4.ffd35",
+                "b42b2908.665408"
+            ]
+        ]
+    },
+    {
+        "id": "1330b995.eb0626",
+        "type": "ui_text_input",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "group": "",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "mode": "text",
+        "delay": "100",
+        "topic": "",
+        "x": 260,
+        "y": 600,
+        "wires": [
+            [
+                "7ba1f4df.b12a7c",
+                "2ffeee02.29d762"
+            ]
+        ]
+    },
+    {
+        "id": "cc26e2d4.ffd35",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "my function that does stuff",
+        "func": "msg.payload +=  \" - payload modified in my function\"\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 470,
+        "y": 660,
+        "wires": [
+            [
+                "bcad70c7.b9db",
+                "a0241251.a9cc4"
+            ]
+        ]
+    },
+    {
+        "id": "bcad70c7.b9db",
+        "type": "ui_text",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "group": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Result: ",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "x": 720,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "2ffeee02.29d762",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "textInput",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 450,
+        "y": 600,
+        "wires": [
+            [
+                "fe2d6e02.ad949"
+            ]
+        ]
+    },
+    {
+        "id": "7ba1f4df.b12a7c",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Text entry debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "b42b2908.665408",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Button click debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 470,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "fe2d6e02.ad949",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "is text empty?",
+        "property": "textInput",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "empty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 640,
+        "y": 600,
+        "wires": [
+            [
+                "db2479e4.104468"
+            ],
+            [
+                "fa23a260.4e161"
+            ]
+        ]
+    },
+    {
+        "id": "db2479e4.104468",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "enabled false",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "false",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 810,
+        "y": 580,
+        "wires": [
+            [
+                "eb06ed9d.7f23f"
+            ]
+        ]
+    },
+    {
+        "id": "fa23a260.4e161",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "enabled true",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "true",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 810,
+        "y": 620,
+        "wires": [
+            [
+                "eb06ed9d.7f23f"
+            ]
+        ]
+    },
+    {
+        "id": "eb06ed9d.7f23f",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "links": [
+            "58d47e08.81ffc"
+        ],
+        "x": 935,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "58d47e08.81ffc",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "",
+        "links": [
+            "eb06ed9d.7f23f"
+        ],
+        "x": 195,
+        "y": 660,
+        "wires": [
+            [
+                "b573f57d.6290e8"
+            ]
+        ]
+    },
+    {
+        "id": "93b54b1c.311778",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "Init with empty string",
+        "props": [
+            {
+                "p": "payload",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "p": "topic",
+                "v": "",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "str",
+        "x": 160,
+        "y": 560,
+        "wires": [
+            [
+                "1330b995.eb0626"
+            ]
+        ]
+    },
+    {
+        "id": "a0241251.a9cc4",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "ab5e552a1defabf4",
+        "name": "After function debug node",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 770,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "53ee230fe049d09e",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "name": "init with empty string",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "userinput",
+        "payload": "",
+        "payloadType": "str",
+        "x": 180,
         "y": 100,
         "wires": [
             []
         ]
+    },
+    {
+        "id": "86ba5a0d412318d4",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 10",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 530,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "3997684d13f325ae",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "name": "backup databases",
+        "group": "3c375fd89b978620",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Backup Databases",
+        "tooltip": "Will run script/backup on host system that will create tar.gzip files for transfer",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "backup",
+        "payload": "run_backup",
+        "payloadType": "str",
+        "topic": "ui_backup",
+        "topicType": "str",
+        "x": 230,
+        "y": 200,
+        "wires": [
+            [
+                "a189210b0b0330d1"
+            ]
+        ]
+    },
+    {
+        "id": "a189210b0b0330d1",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 11",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "764b358e579f76ed",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "name": "execute system script",
+        "info": "",
+        "x": 500,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "8cee82669b6b8512",
+        "type": "comment",
+        "z": "90d5c925f9fbf9fd",
+        "name": "capture bluetooth to influxdb",
+        "info": "",
+        "x": 220,
+        "y": 140,
+        "wires": []
     }
 ]
