@@ -14,8 +14,8 @@ services:
     restart: unless-stopped
     build: .
     ports:
-      - "1880:1880"
-      - "1883:1883"
+      - "1880:1880"                     #node-red flow gui and dashboard ui port
+      - "1883:1883"                     #aedes mqtt broker port 
     volumes:
     #  - ~/code/nodered/data:/data      # uncomment for dev deployment 
       - /etc/localtime:/etc/localtime:ro
@@ -30,7 +30,12 @@ services:
       NODE_RED_ENABLE_SAFE_MODE: false
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
+      VAR_INFLUXDB_ORG: "taffic_monitor_01"
       VAR_INFLUXDB_BUCKET: "influxdb_bucket"
+      VAR_MONGO_DB: "tm-22"
+      VAR_MONGO_COLLECTION: "events"
+      VAR_MQTT_USER: "mqtt_user"        #broker settings
+      VAR_MQTT_PASS: "mqtt_pass"        #broker settings
     depends_on:
       frigate:
         condition: service_healthy
