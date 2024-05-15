@@ -1,5 +1,5 @@
 mqtt:
-  enabled: false
+  enabled: true
   # Required: host name
   host: nodered
   # Optional: port (default: shown below)
