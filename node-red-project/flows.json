@@ -470,7 +470,7 @@
         "protocol": "mongodb",
         "hostname": "mongo",
         "port": "27017",
-        "dbName": "tm-22",
+        "dbName": "${VAR_MONGO_DB}",
         "appName": "",
         "authSource": "",
         "authMechanism": "DEFAULT",
@@ -483,7 +483,7 @@
         "minPoolSize": "0",
         "maxPoolSize": "100",
         "maxIdleTimeMS": "0",
-        "uri": "mongodb://mongoadmin:mongodbpass@mongo:27017/tm-21?directConnection=true&authSource=admin&appName=mongosh+2.2.0",
+        "uri": "mongodb://mongoadmin:mongodbpass@mongo:27017/${VAR_MONGO_DB}?directConnection=true&authSource=admin&appName=mongosh+2.2.0",
         "advanced": "{}",
         "uriTabActive": "tab-uri-simple"
     },

@@ -15,7 +15,7 @@ sudo tar -cvzf ~/code/backup/influxdb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/ba
 && sudo rm -rf ~/code/backup/influxdb_bak
 
 #mongodb creates a single, bson archive file from mongodump
-docker exec mongo sh -c 'exec mongodump --uri="mongodb://mongoadmin:mongodbpass@mongo:27017/tm-22?directConnection=true&authSource=admin&appName=mongosh+2.2.0" --archive' > ~/code/backup/mongodb.archive
+docker exec mongo sh -c 'exec mongodump --uri="mongodb://mongoadmin:mongodbpass@mongo:27017/tm-db?directConnection=true&authSource=admin&appName=mongosh+2.2.0" --archive' > ~/code/backup/mongodb.archive
 sudo tar -cvzf ~/code/backup/mongodb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/mongodb.archive \ 
 && sudo rm -rf ~/code/backup/mongodb.archive
 #to restore: docker exec tm-mongodb sh -c 'exec mongorestore -v --archive=/data/db/backup/mongodb_2024-04-24_17-32.archive'
