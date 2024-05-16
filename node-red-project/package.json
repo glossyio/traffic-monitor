@@ -1,6 +1,6 @@
 {
-    "name": "buster-nodered",
-    "description": "Traffic monitoring solution node-red flow",
+    "name": "rpi-buster",
+    "description": "A Node-RED Project",
     "version": "0.0.1",
     "dependencies": {
         "node-red-contrib-aedes": "~0.13.0",

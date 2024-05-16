@@ -367,12 +367,13 @@
             "82bc0c11adb825f8",
             "736d1e21a49f446b",
             "5b307e65106f3540",
-            "4c087723a1d698e9"
+            "4c087723a1d698e9",
+            "0f65ceafe3f7c069"
         ],
         "x": 154,
-        "y": 2059,
-        "w": 952,
-        "h": 382
+        "y": 2039,
+        "w": 1092,
+        "h": 402
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -396,6 +397,29 @@
         "y": 1559,
         "w": 1132,
         "h": 262
+    },
+    {
+        "id": "453513c49e4b1b60",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "mongo cumulative events today by object",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3dd9503863b58e9c",
+            "f9a7298d2f5f1f99",
+            "1b63b1e9ba6f39d7",
+            "d5cdc59005fe6257",
+            "c7a85cdd5791b7b8",
+            "4f025c48d1e232d0",
+            "6d738ed81fefbedc",
+            "d856c68660eb2202"
+        ],
+        "x": 254,
+        "y": 2559,
+        "w": 912,
+        "h": 322
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -647,16 +671,6 @@
         "className": ""
     },
     {
-        "id": "9249a0dd562f8c62",
-        "type": "ui_spacer",
-        "z": "28627559bebdc324",
-        "name": "spacer",
-        "group": "7866c2aa313ab8b9",
-        "order": 3,
-        "width": 12,
-        "height": 1
-    },
-    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -688,7 +702,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1387,7 +1401,7 @@
         "type": "debug",
         "z": "49e416bfab1d4055",
         "name": "debug: published frigate messages",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2493,7 +2507,8 @@
             [
                 "5ec2d3ba52f944f5",
                 "82bc0c11adb825f8",
-                "736d1e21a49f446b"
+                "736d1e21a49f446b",
+                "f9a7298d2f5f1f99"
             ]
         ]
     },
@@ -2515,7 +2530,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 640,
+        "x": 760,
         "y": 2260,
         "wires": [
             [
@@ -2541,12 +2556,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 580,
-        "y": 2140,
+        "x": 400,
+        "y": 2180,
         "wires": [
             [
-                "e5391514131a2b5a",
-                "d66541089b01306e"
+                "0f65ceafe3f7c069"
             ]
         ]
     },
@@ -2563,8 +2577,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 690,
-        "y": 2320,
+        "x": 810,
+        "y": 2300,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -2584,8 +2598,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 650,
-        "y": 2200,
+        "x": 770,
+        "y": 2220,
         "wires": [
             [
                 "6ccef1eff1e3d1ff",
@@ -2632,8 +2646,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
-        "y": 2100,
+        "x": 1040,
+        "y": 2120,
         "wires": []
     },
     {
@@ -2643,17 +2657,17 @@
         "g": "9b9e4fc50b744fc3",
         "group": "7866c2aa313ab8b9",
         "name": "last N radar events",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
-        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 930,
-        "y": 2200,
+        "x": 1070,
+        "y": 2220,
         "wires": [
             []
         ]
@@ -2671,8 +2685,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 330,
-        "y": 2240,
+        "x": 320,
+        "y": 2080,
         "wires": []
     },
     {
@@ -3295,17 +3309,17 @@
         "g": "9b9e4fc50b744fc3",
         "group": "7866c2aa313ab8b9",
         "name": "last N radar speeding events",
-        "order": 2,
+        "order": 3,
         "width": 0,
         "height": 0,
-        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 960,
-        "y": 2320,
+        "x": 1100,
+        "y": 2300,
         "wires": [
             []
         ]
@@ -3353,6 +3367,210 @@
         "y": 1720,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "3dd9503863b58e9c",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "query mongo events, daily summary",
+        "x": 450,
+        "y": 2660,
+        "wires": [
+            [
+                "c7a85cdd5791b7b8",
+                "d5cdc59005fe6257"
+            ]
+        ]
+    },
+    {
+        "id": "f9a7298d2f5f1f99",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "create mongo query, daily summary",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 2600,
+        "wires": [
+            [
+                "3dd9503863b58e9c",
+                "1b63b1e9ba6f39d7"
+            ]
+        ]
+    },
+    {
+        "id": "1b63b1e9ba6f39d7",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 21",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 2600,
+        "wires": []
+    },
+    {
+        "id": "d5cdc59005fe6257",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "structure mongo cumulative total",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + msg.payload.find(item => item._id.label === 'motorcycle').count],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + msg.payload.find(item => item._id.label === 'motorcycle').count)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 2720,
+        "wires": [
+            [
+                "4f025c48d1e232d0",
+                "6d738ed81fefbedc",
+                "d856c68660eb2202"
+            ]
+        ]
+    },
+    {
+        "id": "c7a85cdd5791b7b8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 22",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 2660,
+        "wires": []
+    },
+    {
+        "id": "4f025c48d1e232d0",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 23",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 2780,
+        "wires": []
+    },
+    {
+        "id": "6d738ed81fefbedc",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "group": "7866c2aa313ab8b9",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "cumulative events by object since 0400",
+        "chartType": "horizontalBar",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 980,
+        "y": 2720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d856c68660eb2202",
+        "type": "mqtt out",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "events_cum_today",
+        "topic": "events_cum_today",
+        "qos": "1",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "a5d65dd0e3566daa",
+        "x": 910,
+        "y": 2840,
+        "wires": []
+    },
+    {
+        "id": "0f65ceafe3f7c069",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "format frame_time as date string",
+        "func": "\nmsg.payload.frame_time_datestring = new Date(msg.payload.frame_time * 1000).toLocaleString();\n \nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 2220,
+        "wires": [
+            [
+                "e5391514131a2b5a",
+                "d66541089b01306e"
+            ]
         ]
     },
     {
