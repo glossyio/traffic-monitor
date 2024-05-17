@@ -422,6 +422,29 @@
         "h": 322
     },
     {
+        "id": "1bd1f21fa0390c69",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "mongo car event speed stats",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2a8fd7446117b042",
+            "2d6a848e9026dcb3",
+            "10f32b81aa98c918",
+            "cd676ca7fcb572d8",
+            "a30ae94b9b4ac1ea",
+            "55586312ada4b099",
+            "c90aed37b7a31d9e",
+            "5417aae0d14fa661"
+        ],
+        "x": 94,
+        "y": 2919,
+        "w": 972,
+        "h": 322
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -2136,7 +2159,7 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 2,
+        "order": 3,
         "width": 6,
         "height": 7,
         "label": "frigate api/events/summary daily object count for the last 10-days",
@@ -2437,7 +2460,7 @@
         "g": "0a6e123f5e53c029",
         "name": "mongo summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 3,
+        "order": 4,
         "width": 6,
         "height": 7,
         "label": "mongodb daily object count for the last 10-days",
@@ -2782,7 +2805,7 @@
         "g": "5173f4b3ac03407a",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "label": "events by object (60-min) for last 24-hours",
@@ -2943,7 +2966,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 5,
+        "order": 6,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
@@ -2988,7 +3011,7 @@
         "g": "76417db2b472ef4f",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 4,
+        "order": 5,
         "width": 0,
         "height": 0,
         "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
@@ -3331,7 +3354,7 @@
         "g": "0e1614cf2e5f9942",
         "name": "",
         "group": "06dde4be9a9a6b27",
-        "order": 6,
+        "order": 7,
         "width": 0,
         "height": 0,
         "label": "Mongo Events in zone_radar (5-min) for last 60-min",
@@ -3537,8 +3560,8 @@
         "type": "mqtt out",
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
-        "name": "events_cum_today",
-        "topic": "events_cum_today",
+        "name": "",
+        "topic": "events_cumulative_today",
         "qos": "1",
         "retain": "true",
         "respTopic": "",
@@ -3547,7 +3570,7 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 910,
+        "x": 930,
         "y": 2840,
         "wires": []
     },
@@ -3571,6 +3594,175 @@
                 "e5391514131a2b5a",
                 "d66541089b01306e"
             ]
+        ]
+    },
+    {
+        "id": "2a8fd7446117b042",
+        "type": "mongodb4",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "aggregate",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "query mongo events, daily summary",
+        "x": 370,
+        "y": 3080,
+        "wires": [
+            [
+                "a30ae94b9b4ac1ea",
+                "cd676ca7fcb572d8"
+            ]
+        ]
+    },
+    {
+        "id": "2d6a848e9026dcb3",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "create mongo query, car event speed stats",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            \"frame_time\": {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            \"label\": \"car\",\n            entered_zones: {\n                $in: [\"zone_radar\", \"zone_capture\"]\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: null,\n            count: { $count: {} },\n            mean_speed: { $avg: { $abs: \"$speed_calc\" } },\n            p25_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.25], method: 'approximate' } },\n            p50_speed: { $median: { input: { $abs: \"$speed_calc\" }, method: 'approximate' } },\n            p75_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.75], method: 'approximate' } },\n            p85_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.85], method: 'approximate' } },\n            max_speed: { $max: { $abs: \"$speed_calc\" } },\n            count_over_25: { $sum: { $cond: [{ $gt: [{ $abs: \"$speed_calc\" }, 25] }, 1, 0] } },\n            speeds: { $push: \"$speed_calc\" },\n       }\n    },\n    {\n        $addFields: {\n            iqr_upper: { $add: [{ $first: \"$p75_speed\" }, ({ $multiply: [1.5, { $subtract: [{ $first: \"$p75_speed\" }, { $first: \"$p25_speed\" }] }] })] }, //Q3 + 1.5*IQR; IQR=Q3-Q1\n            iqr_upper_freq: {\n                $size: {\n                    $filter: {\n                        input: \"$speeds\",\n                        as: \"speed\",\n                        cond: { $gt: [\"$$speed\", { $add: [{ $first: \"$p75_speed\" }, ({ $multiply: [1.5, { $subtract: [{ $first: \"$p75_speed\" }, { $first: \"$p25_speed\" }] }] })] }] }\n                    }\n                }\n            }\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 3020,
+        "wires": [
+            [
+                "2a8fd7446117b042",
+                "10f32b81aa98c918"
+            ]
+        ]
+    },
+    {
+        "id": "10f32b81aa98c918",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "debug 24",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 3020,
+        "wires": []
+    },
+    {
+        "id": "cd676ca7fcb572d8",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "structure mongo car speed stats",
+        "func": "// const formattedData = msg.payload.map(item => ({\n//   _id: item._id,\n//   meanSpeed: item.mean_speed,\n//   p85Speed: item.p85_speed[0],\n//   p75Speed: item.p75_speed[0],\n//   p50Speed: item.p50_speed,\n//   p25Speed: item.p25_speed[0],\n//   countOver25: item.count_over_25,\n//   maxSpeed: item.max_speed,\n//   count: item.count,\n//   iqrUpper: item.iqr_upper,\n//   iqrUpperFreq: item.iqr_upper_freq\n// }));\n\nconst arrayRemoveElements = [\"speeds\", \"_id\"];\n\nconst result = msg.payload.map(item => {\n    const obj = [];\n    for (const [key, value] of Object.entries(item)) {\n        if (!arrayRemoveElements.includes(key)) {\n            if (Array.isArray(value)) {\n                obj.push({ [key]: Math.round(value[0]) });\n            } else {\n                obj.push({ [key]: Math.round(value) });\n            }\n        }\n    }\n    return obj;\n});\n\nmsg.payload = result[0];\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 3140,
+        "wires": [
+            [
+                "55586312ada4b099",
+                "5417aae0d14fa661"
+            ]
+        ]
+    },
+    {
+        "id": "a30ae94b9b4ac1ea",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "debug 25",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 3080,
+        "wires": []
+    },
+    {
+        "id": "55586312ada4b099",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 3200,
+        "wires": []
+    },
+    {
+        "id": "c90aed37b7a31d9e",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 280,
+        "y": 2960,
+        "wires": [
+            [
+                "2d6a848e9026dcb3"
+            ]
+        ]
+    },
+    {
+        "id": "5417aae0d14fa661",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "group": "06dde4be9a9a6b27",
+        "name": "car speed stats for today, since 0400",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">car speed stats for today, since 0400</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td ng-repeat =\"(key,value) in payload\">{{key}}: </td>\n        <td ng-repeat =\"(key,value) in payload\">{{value}}</td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 890,
+        "y": 3140,
+        "wires": [
+            []
         ]
     },
     {
