@@ -376,29 +376,6 @@
         "h": 402
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "85ee7cd8058ab069",
-            "c4b2be77044989d5",
-            "c32af2158d803cad",
-            "2027a5a754d1d3c4",
-            "11fa2826769befc7"
-        ],
-        "x": 54,
-        "y": 1559,
-        "w": 1132,
-        "h": 262
-    },
-    {
         "id": "453513c49e4b1b60",
         "type": "group",
         "z": "28627559bebdc324",
@@ -414,12 +391,13 @@
             "c7a85cdd5791b7b8",
             "4f025c48d1e232d0",
             "6d738ed81fefbedc",
-            "d856c68660eb2202"
+            "d856c68660eb2202",
+            "f57e08e6fb9c0d09"
         ],
-        "x": 254,
-        "y": 2559,
-        "w": 912,
-        "h": 322
+        "x": 194,
+        "y": 2499,
+        "w": 972,
+        "h": 382
     },
     {
         "id": "1bd1f21fa0390c69",
@@ -443,6 +421,29 @@
         "y": 2919,
         "w": 972,
         "h": 322
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "85ee7cd8058ab069",
+            "c4b2be77044989d5",
+            "c32af2158d803cad",
+            "2027a5a754d1d3c4",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1559,
+        "w": 1132,
+        "h": 262
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -2531,7 +2532,7 @@
                 "5ec2d3ba52f944f5",
                 "82bc0c11adb825f8",
                 "736d1e21a49f446b",
-                "f9a7298d2f5f1f99"
+                "f57e08e6fb9c0d09"
             ]
         ]
     },
@@ -3420,7 +3421,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "create mongo query, daily summary",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
+        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n            entered_zones: {\n                $in: [\"zone_capture\"]\n            },\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3459,7 +3460,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo cumulative total",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + msg.payload.find(item => item._id.label === 'motorcycle').count],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + msg.payload.find(item => item._id.label === 'motorcycle').count)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3685,7 +3686,7 @@
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
         "name": "debug 25",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3702,7 +3703,7 @@
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
         "name": "debug 26",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3763,6 +3764,32 @@
         "y": 3140,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "f57e08e6fb9c0d09",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "only for zone_capture",
+        "property": "payload.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "zone_capture",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 320,
+        "y": 2540,
+        "wires": [
+            [
+                "f9a7298d2f5f1f99"
+            ]
         ]
     },
     {
