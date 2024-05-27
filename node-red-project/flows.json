@@ -392,12 +392,15 @@
             "4f025c48d1e232d0",
             "6d738ed81fefbedc",
             "d856c68660eb2202",
-            "f57e08e6fb9c0d09"
+            "f57e08e6fb9c0d09",
+            "f233c0bb67d32534",
+            "0f63163a87f51004",
+            "d23be15251ed6d73"
         ],
-        "x": 194,
+        "x": 154,
         "y": 2499,
-        "w": 972,
-        "h": 382
+        "w": 1072,
+        "h": 502
     },
     {
         "id": "1bd1f21fa0390c69",
@@ -418,7 +421,7 @@
             "5417aae0d14fa661"
         ],
         "x": 94,
-        "y": 2919,
+        "y": 3019,
         "w": 972,
         "h": 322
     },
@@ -3406,12 +3409,13 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "query mongo events, daily summary",
-        "x": 450,
-        "y": 2660,
+        "x": 410,
+        "y": 2720,
         "wires": [
             [
                 "c7a85cdd5791b7b8",
-                "d5cdc59005fe6257"
+                "d5cdc59005fe6257",
+                "f233c0bb67d32534"
             ]
         ]
     },
@@ -3428,8 +3432,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 420,
-        "y": 2600,
+        "x": 380,
+        "y": 2660,
         "wires": [
             [
                 "3dd9503863b58e9c",
@@ -3450,8 +3454,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 880,
-        "y": 2600,
+        "x": 940,
+        "y": 2660,
         "wires": []
     },
     {
@@ -3459,7 +3463,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
-        "name": "structure mongo cumulative total",
+        "name": "structure mongo daily object counts for chart",
         "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -3468,12 +3472,11 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 2720,
+        "y": 2780,
         "wires": [
             [
                 "4f025c48d1e232d0",
-                "6d738ed81fefbedc",
-                "d856c68660eb2202"
+                "6d738ed81fefbedc"
             ]
         ]
     },
@@ -3490,8 +3493,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 880,
-        "y": 2660,
+        "x": 940,
+        "y": 2720,
         "wires": []
     },
     {
@@ -3507,8 +3510,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 880,
-        "y": 2780,
+        "x": 940,
+        "y": 2840,
         "wires": []
     },
     {
@@ -3550,8 +3553,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 980,
-        "y": 2720,
+        "x": 1040,
+        "y": 2780,
         "wires": [
             []
         ]
@@ -3562,7 +3565,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "",
-        "topic": "events_cumulative_today",
+        "topic": "tm/events",
         "qos": "1",
         "retain": "true",
         "respTopic": "",
@@ -3571,8 +3574,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 930,
-        "y": 2840,
+        "x": 940,
+        "y": 2900,
         "wires": []
     },
     {
@@ -3611,7 +3614,7 @@
         "handleDocId": false,
         "name": "query mongo events, daily summary",
         "x": 370,
-        "y": 3080,
+        "y": 3180,
         "wires": [
             [
                 "a30ae94b9b4ac1ea",
@@ -3633,7 +3636,7 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 3020,
+        "y": 3120,
         "wires": [
             [
                 "2a8fd7446117b042",
@@ -3655,7 +3658,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 800,
-        "y": 3020,
+        "y": 3120,
         "wires": []
     },
     {
@@ -3672,7 +3675,7 @@
         "finalize": "",
         "libs": [],
         "x": 510,
-        "y": 3140,
+        "y": 3240,
         "wires": [
             [
                 "55586312ada4b099",
@@ -3694,7 +3697,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 800,
-        "y": 3080,
+        "y": 3180,
         "wires": []
     },
     {
@@ -3711,7 +3714,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 800,
-        "y": 3200,
+        "y": 3300,
         "wires": []
     },
     {
@@ -3737,7 +3740,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 280,
-        "y": 2960,
+        "y": 3060,
         "wires": [
             [
                 "2d6a848e9026dcb3"
@@ -3761,7 +3764,7 @@
         "templateScope": "local",
         "className": "",
         "x": 890,
-        "y": 3140,
+        "y": 3240,
         "wires": [
             []
         ]
@@ -3784,8 +3787,75 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 320,
+        "x": 280,
         "y": 2540,
+        "wires": [
+            [
+                "d23be15251ed6d73"
+            ]
+        ]
+    },
+    {
+        "id": "f233c0bb67d32534",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "structure mongo daily object counts for tm/events",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = curr.count - acc['bicycle_adj'];\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 2840,
+        "wires": [
+            [
+                "0f63163a87f51004",
+                "d856c68660eb2202"
+            ]
+        ]
+    },
+    {
+        "id": "0f63163a87f51004",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 27",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 2960,
+        "wires": []
+    },
+    {
+        "id": "d23be15251ed6d73",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "set flow.event_latest",
+        "rules": [
+            {
+                "t": "set",
+                "p": "event_latest",
+                "pt": "flow",
+                "to": "payload.label",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 2600,
         "wires": [
             [
                 "f9a7298d2f5f1f99"
