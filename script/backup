@@ -11,13 +11,13 @@ cd "$(dirname "$0")/.."
 
 #influx creates a directory of zipped files
 docker exec influxdb influx backup /home/influxdb/backup/influxdb_bak
-sudo tar -cvzf ~/code/backup/influxdb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/influxdb_bak \
-&& sudo rm -rf ~/code/backup/influxdb_bak
+sudo tar -cvzf ~/code/backup/influxdb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/influxdb_bak
+sudo rm -rf ~/code/backup/influxdb_bak
 
 #mongodb creates a single, bson archive file from mongodump
 docker exec mongo sh -c 'exec mongodump --uri="mongodb://mongoadmin:mongodbpass@mongo:27017/tm-db?directConnection=true&authSource=admin&appName=mongosh+2.2.0" --archive' > ~/code/backup/mongodb.archive
-sudo tar -cvzf ~/code/backup/mongodb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/mongodb.archive \ 
-&& sudo rm -rf ~/code/backup/mongodb.archive
+sudo tar -cvzf ~/code/backup/mongodb_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/backup/mongodb.archive
+sudo rm -rf ~/code/backup/mongodb.archive
 #to restore: docker exec tm-mongodb sh -c 'exec mongorestore -v --archive=/data/db/backup/mongodb_2024-04-24_17-32.archive'
 
 #frigate creates a single archive with good compression
@@ -26,8 +26,8 @@ tar -cvpzf ~/code/backup/frigate_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/frigate
 
 # transfer databases to server
 #sudo rsync -azvv --progress -e ssh ~/code/backup/frigate_2024-05-02_20-37.tar.gz root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/databases/
-#sudo rsync -azvv --progress -e ssh ~/code/backup/influxdb_2024-05-02_20-36.tar.gz root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/databases/
-#sudo rsync -azvv --progress -e ssh ~/code/backup/mongodb_2024-05-02_20-37.archive root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/databases/
+#sudo rsync -azvv --progress -e ssh ~/code/backup/influxdb_2024-05-28_07-04.tar.gz root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/databases/
+#sudo rsync -azvv --progress -e ssh ~/code/backup/mongodb_2024-05-28_07-12.tar.gz root@10.10.10.10:/mnt/user/data/traffic-monitor-dumps/databases/
 
 
 #-- Images backup -- only do this attached locally (maximize data transfer)
