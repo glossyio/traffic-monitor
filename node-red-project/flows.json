@@ -378,7 +378,9 @@
             "d856c68660eb2202",
             "f57e08e6fb9c0d09",
             "f233c0bb67d32534",
-            "d23be15251ed6d73"
+            "d23be15251ed6d73",
+            "b2eefe85832691d1",
+            "1c24fc003730c9c4"
         ],
         "x": 134,
         "y": 2179,
@@ -3129,7 +3131,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for chart",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [(msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [(msg.payload.find(item => item._id.label === 'person').count || 0) - ((msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3140,7 +3142,8 @@
         "y": 2460,
         "wires": [
             [
-                "6d738ed81fefbedc"
+                "6d738ed81fefbedc",
+                "1c24fc003730c9c4"
             ]
         ]
     },
@@ -3377,7 +3380,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for tm/events",
-        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = curr.count - acc['bicycle_adj'];\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0) || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (curr.count - acc['bicycle_adj'] || 0);\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3388,7 +3391,8 @@
         "y": 2580,
         "wires": [
             [
-                "d856c68660eb2202"
+                "d856c68660eb2202",
+                "b2eefe85832691d1"
             ]
         ]
     },
@@ -3419,6 +3423,40 @@
                 "f9a7298d2f5f1f99"
             ]
         ]
+    },
+    {
+        "id": "b2eefe85832691d1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 12",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 2520,
+        "wires": []
+    },
+    {
+        "id": "1c24fc003730c9c4",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 13",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 2400,
+        "wires": []
     },
     {
         "id": "e9da260ad8a83698",
