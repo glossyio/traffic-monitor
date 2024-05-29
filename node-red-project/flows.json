@@ -16,6 +16,14 @@
         "env": []
     },
     {
+        "id": "9269520ddb532b00",
+        "type": "tab",
+        "label": "event-speed-assignment",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "28627559bebdc324",
         "type": "tab",
         "label": "Event+Speed Dashboard",
@@ -35,6 +43,14 @@
         "id": "90d5c925f9fbf9fd",
         "type": "tab",
         "label": "Aux data capture",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "5531d071bb6adab0",
+        "type": "tab",
+        "label": "Flow 1",
         "disabled": false,
         "info": "",
         "env": []
@@ -89,7 +105,8 @@
             "9f1012eacf4d076f",
             "ed3267eeb15ef14e",
             "6cfe5662fc478c14",
-            "98e23f2c38047c05"
+            "98e23f2c38047c05",
+            "2d571371a6cbd97b"
         ],
         "x": 14,
         "y": 199,
@@ -408,6 +425,42 @@
         "h": 262
     },
     {
+        "id": "6f671a48c4472129",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c53b389e25178ba3",
+            "b2dc4845a48506b6",
+            "c424ca13d16d49d9",
+            "79edcfba8e924f06"
+        ],
+        "x": 34,
+        "y": 419,
+        "w": 812,
+        "h": 122
+    },
+    {
+        "id": "0a5faeac9fbd6d55",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate event mqtt end",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2deec9d340d5ed26",
+            "76911cc7f28e7da2"
+        ],
+        "x": 34,
+        "y": 219,
+        "w": 372,
+        "h": 122
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -426,6 +479,30 @@
         "y": 1439,
         "w": 1132,
         "h": 202
+    },
+    {
+        "id": "71c085648c20e329",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "calc direction, speed on frigate event",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "7992eb250ae9d20f",
+            "fa368e25bcc325cc",
+            "0bcc4cc5c0656a3b",
+            "4ddff0572e76c3c6",
+            "7f063afdbac396ce",
+            "cbef8a3acc3d1495",
+            "dd3face6611c0380",
+            "ad7393ac18c4083b",
+            "407dbf096111ea43"
+        ],
+        "x": 34,
+        "y": 599,
+        "w": 1052,
+        "h": 402
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1468,7 +1545,8 @@
         "y": 240,
         "wires": [
             [
-                "ed3267eeb15ef14e"
+                "ed3267eeb15ef14e",
+                "2d571371a6cbd97b"
             ]
         ]
     },
@@ -2045,6 +2123,653 @@
         "wires": []
     },
     {
+        "id": "2d571371a6cbd97b",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "481344ed5f4b69d9",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: Broker status events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ec1ea8bc9a502a12",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: broker publish events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "f20c74c0ccfd256c",
+        "type": "mqtt in",
+        "z": "9269520ddb532b00",
+        "name": "",
+        "topic": "frigate/events",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 90,
+        "y": 140,
+        "wires": [
+            [
+                "86c86b0d82d13028",
+                "2deec9d340d5ed26"
+            ]
+        ]
+    },
+    {
+        "id": "86c86b0d82d13028",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: published frigate messages",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "a5ddaaa9ffdc637e",
+        "type": "aedes broker",
+        "z": "9269520ddb532b00",
+        "name": "frigate-local",
+        "mqtt_port": "1883",
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "certname": "",
+        "keyname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 90,
+        "y": 60,
+        "wires": [
+            [
+                "481344ed5f4b69d9"
+            ],
+            [
+                "ec1ea8bc9a502a12"
+            ]
+        ]
+    },
+    {
+        "id": "056bd6503d1c42c6",
+        "type": "catch",
+        "z": "9269520ddb532b00",
+        "name": "catch - flow-mqtt",
+        "scope": null,
+        "uncaught": false,
+        "x": 680,
+        "y": 40,
+        "wires": [
+            [
+                "9fa6890312a00114"
+            ]
+        ]
+    },
+    {
+        "id": "9fa6890312a00114",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "catch - flow-mqtt",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "2deec9d340d5ed26",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "payload.type == \"end\"",
+        "property": "payload.type",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "end",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "76911cc7f28e7da2"
+            ]
+        ]
+    },
+    {
+        "id": "9ace23e5da92a650",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "name": "create final event payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n//newMsg.payload.radar = {}; // contain all desired radar readings\n//Don't attach radar data here... Just conflates the reporting DB\n\n// Frigate Event info\nnewMsg.payload.id = msg.payload.frigate_event_mqtt_end.after.id;\nnewMsg.payload.camera = msg.payload.frigate_event_mqtt_end.after.camera;\nnewMsg.payload.label = msg.payload.frigate_event_mqtt_end.after.label;\nnewMsg.payload.sub_label = msg.payload.frigate_event_mqtt_end.after.sub_label;\nnewMsg.payload.top_score = msg.payload.frigate_event_mqtt_end.after.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.payload.frigate_event_mqtt_end.after.frame_time;\nnewMsg.payload.start_time = msg.payload.frigate_event_mqtt_end.after.start_time;\nnewMsg.payload.end_time = msg.payload.frigate_event_mqtt_end.after.end_time;\n\nnewMsg.payload.entered_zones = msg.payload.frigate_event_mqtt_end.after.entered_zones; //array\nnewMsg.payload.direction_calc = (msg.payload.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.payload.event_direction_speed.calc_event_speed || undefined);\n\nnewMsg.payload.thumbnail_base64jpg = msg.payload.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\n// Attached Radar info\n\n//newMsg.payload.radar.query_return_median = msg.payload.query_return_median[0];\n\n//newMsg.payload.radar.query_return_nonagg = msg.payload.query_return_nonagg;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 360,
+        "wires": [
+            [
+                "5b400756efd4a3bb",
+                "49b113b75ba9255f",
+                "274f87c31437c2d7"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "49b113b75ba9255f",
+        "type": "mongodb4",
+        "z": "9269520ddb532b00",
+        "d": true,
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo insertOne events",
+        "x": 1090,
+        "y": 400,
+        "wires": [
+            [
+                "78806e68d0d4cc10"
+            ]
+        ]
+    },
+    {
+        "id": "274f87c31437c2d7",
+        "type": "link out",
+        "z": "9269520ddb532b00",
+        "d": true,
+        "name": "to dashboard",
+        "mode": "link",
+        "links": [
+            "c249329109ac17d5"
+        ],
+        "x": 995,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "5b400756efd4a3bb",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "NEW composed mongo message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1400,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "78806e68d0d4cc10",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "d": true,
+        "name": "mongo return",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1330,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "76911cc7f28e7da2",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "set topic = frigate_event_mqtt_end",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "frigate_event_mqtt_end",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 240,
+        "y": 300,
+        "wires": [
+            [
+                "7c1772e286c222f2",
+                "c53b389e25178ba3",
+                "fa368e25bcc325cc"
+            ]
+        ]
+    },
+    {
+        "id": "0bcc4cc5c0656a3b",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "create influxdb query, return DetectedObjectVelocity median",
+        "func": "var query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 820,
+        "wires": [
+            [
+                "407dbf096111ea43"
+            ]
+        ]
+    },
+    {
+        "id": "4ddff0572e76c3c6",
+        "type": "influxdb in",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "influxdb": "73598328fc95017b",
+        "name": "query, DetectedObjectVelocity, median",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 430,
+        "y": 900,
+        "wires": [
+            [
+                "dd3face6611c0380"
+            ]
+        ]
+    },
+    {
+        "id": "7992eb250ae9d20f",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "calculate direction based on frigate event zones",
+        "func": "//pass all fields required for speed match to event\n\nvar $myZoneNearIndex = msg.frigate_event.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.frigate_event.entered_zones.indexOf(\"zone_far\");\n\nmsg.frigate_event.calc_zone_direction = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 240,
+        "y": 700,
+        "wires": [
+            [
+                "7f063afdbac396ce"
+            ]
+        ]
+    },
+    {
+        "id": "7f063afdbac396ce",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "object entered ANY zone (include possible misses)",
+        "property": "frigate_event.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 250,
+        "y": 760,
+        "wires": [
+            [
+                "0bcc4cc5c0656a3b"
+            ],
+            [
+                "ad7393ac18c4083b"
+            ]
+        ]
+    },
+    {
+        "id": "cbef8a3acc3d1495",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "set topic = event_direction_speed",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "event_direction_speed",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 920,
+        "y": 760,
+        "wires": [
+            [
+                "7c1772e286c222f2"
+            ]
+        ]
+    },
+    {
+        "id": "dd3face6611c0380",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "match radar speed to event",
+        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (msg.payload.length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.frigate_event.calc_zone_direction == msg.payload[0].direction) {\n        newMsg.status_match_event_radar_direction = \"direction_speed_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"direction_speed_match\";\n        newMsg.calc_event_direction = msg.payload[0].direction;\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    var dirIndex = msg.payload.map((o) => o.direction).indexOf(msg.frigate_event.calc_zone_direction);\n    if (dirIndex >= 0) {\n        newMsg.status_match_event_radar_direction = \"direction_speed_match\";\n        newMsg.calc_event_direction = msg.payload[dirIndex].direction;\n        newMsg.calc_event_speed = msg.payload[dirIndex]._value;\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"direction_speed_no_match\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"direction_speed_no_match\"; \n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 960,
+        "wires": [
+            [
+                "cbef8a3acc3d1495"
+            ]
+        ]
+    },
+    {
+        "id": "c53b389e25178ba3",
+        "type": "http request",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "frigate http api for thumbnail",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000//api/events/{{{payload.after.id}}}/thumbnail.jpg",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 180,
+        "y": 460,
+        "wires": [
+            [
+                "c424ca13d16d49d9",
+                "79edcfba8e924f06"
+            ]
+        ]
+    },
+    {
+        "id": "b2dc4845a48506b6",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "set topic = frigate_event_api_thumbnail",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "frigate_event_api_thumbnail",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 460,
+        "wires": [
+            [
+                "7c1772e286c222f2"
+            ]
+        ]
+    },
+    {
+        "id": "7c1772e286c222f2",
+        "type": "join",
+        "z": "9269520ddb532b00",
+        "name": "combine parts to write event details",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 970,
+        "y": 300,
+        "wires": [
+            [
+                "9ace23e5da92a650",
+                "e09687a454653d65"
+            ]
+        ]
+    },
+    {
+        "id": "ad7393ac18c4083b",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "pass direction, no speed",
+        "func": "//no speed\nconst newMsg = {};\n\nnewMsg.status_match_event_radar_direction = \"direction_speed_no_match\"; \nnewMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\nnewMsg.calc_event_speed = undefined;\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 760,
+        "wires": [
+            [
+                "cbef8a3acc3d1495"
+            ]
+        ]
+    },
+    {
+        "id": "e09687a454653d65",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug 14",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1320,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "407dbf096111ea43",
+        "type": "delay",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "delay 1 sec, to be sure InfluxDB writes",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 430,
+        "y": 860,
+        "wires": [
+            [
+                "4ddff0572e76c3c6"
+            ]
+        ]
+    },
+    {
+        "id": "c424ca13d16d49d9",
+        "type": "image",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "",
+        "width": "175",
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": false,
+        "pass": false,
+        "outputs": 0,
+        "x": 420,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "79edcfba8e924f06",
+        "type": "base64",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 400,
+        "y": 460,
+        "wires": [
+            [
+                "b2dc4845a48506b6"
+            ]
+        ]
+    },
+    {
+        "id": "fa368e25bcc325cc",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event",
+                "pt": "msg",
+                "to": "payload.after",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 160,
+        "y": 640,
+        "wires": [
+            [
+                "7992eb250ae9d20f"
+            ]
+        ]
+    },
+    {
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
@@ -2394,7 +3119,8 @@
         "g": "9b9e4fc50b744fc3",
         "name": "from mongo event capture",
         "links": [
-            "d9a2cc1e81161549"
+            "d9a2cc1e81161549",
+            "274f87c31437c2d7"
         ],
         "x": 175,
         "y": 1760,
@@ -3948,5 +4674,164 @@
         "x": 220,
         "y": 140,
         "wires": []
+    },
+    {
+        "id": "46ffc819.b736f8",
+        "type": "http request",
+        "z": "5531d071bb6adab0",
+        "name": "",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": false,
+        "url": "https://dummyimage.com/200x150/000/fff&text={{{payload}}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 630,
+        "y": 260,
+        "wires": [
+            [
+                "d603e881.2fa1c8"
+            ]
+        ]
+    },
+    {
+        "id": "25d928c1.708098",
+        "type": "inject",
+        "z": "5531d071bb6adab0",
+        "name": "Generate next image",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 220,
+        "y": 260,
+        "wires": [
+            [
+                "878f8ec1.effe4"
+            ]
+        ]
+    },
+    {
+        "id": "878f8ec1.effe4",
+        "type": "function",
+        "z": "5531d071bb6adab0",
+        "name": "image counter",
+        "func": "var count = flow.get(\"count\")||0;\n\ncount++;\n\nnode.status({fill:\"blue\",shape:\"ring\",text:\"Image \" + count});\n\n// Save the new value back to context so it will be available next time\nflow.set('count',count);\n\n// Update the message payload and return - no need to create a new msg\nmsg.payload = \"Image \" + count;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 440,
+        "y": 260,
+        "wires": [
+            [
+                "46ffc819.b736f8"
+            ]
+        ]
+    },
+    {
+        "id": "d603e881.2fa1c8",
+        "type": "image",
+        "z": "5531d071bb6adab0",
+        "name": "",
+        "width": 160,
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": true,
+        "active": true,
+        "outputs": 0,
+        "x": 820,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "5844fe36b273e4bd",
+        "type": "http request",
+        "z": "5531d071bb6adab0",
+        "name": "",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": false,
+        "url": "https://dummyimage.com/200x150/000/fff&text={{{payload}}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 650,
+        "y": 540,
+        "wires": [
+            [
+                "3d3cda5fa306c7fb"
+            ]
+        ]
+    },
+    {
+        "id": "6aed7fd179e68a09",
+        "type": "inject",
+        "z": "5531d071bb6adab0",
+        "name": "Generate next image",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 240,
+        "y": 540,
+        "wires": [
+            [
+                "51286fdcc8153651"
+            ]
+        ]
+    },
+    {
+        "id": "51286fdcc8153651",
+        "type": "function",
+        "z": "5531d071bb6adab0",
+        "name": "image counter",
+        "func": "var count = flow.get(\"count\")||0;\n\ncount++;\n\nnode.status({fill:\"blue\",shape:\"ring\",text:\"Image \" + count});\n\n// Save the new value back to context so it will be available next time\nflow.set('count',count);\n\n// Update the message payload and return - no need to create a new msg\nmsg.payload = \"Image \" + count;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 460,
+        "y": 540,
+        "wires": [
+            [
+                "5844fe36b273e4bd"
+            ]
+        ]
+    },
+    {
+        "id": "a47ce7493ee20744",
+        "type": "image",
+        "z": "5531d071bb6adab0",
+        "name": "",
+        "width": 160,
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": true,
+        "active": true,
+        "outputs": 0,
+        "x": 1000,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "3d3cda5fa306c7fb",
+        "type": "base64",
+        "z": "5531d071bb6adab0",
+        "name": "",
+        "action": "str",
+        "property": "payload",
+        "x": 820,
+        "y": 540,
+        "wires": [
+            [
+                "a47ce7493ee20744"
+            ]
+        ]
     }
 ]
