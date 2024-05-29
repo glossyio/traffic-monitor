@@ -420,13 +420,12 @@
             "c53b389e25178ba3",
             "b2dc4845a48506b6",
             "c424ca13d16d49d9",
-            "79edcfba8e924f06",
-            "c7f55f6cf188a1db"
+            "79edcfba8e924f06"
         ],
         "x": 94,
-        "y": 459,
+        "y": 479,
         "w": 752,
-        "h": 182
+        "h": 122
     },
     {
         "id": "0a5faeac9fbd6d55",
@@ -446,26 +445,6 @@
         "h": 122
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "c4b2be77044989d5",
-            "11fa2826769befc7"
-        ],
-        "x": 54,
-        "y": 1439,
-        "w": 1132,
-        "h": 202
-    },
-    {
         "id": "71c085648c20e329",
         "type": "group",
         "z": "9269520ddb532b00",
@@ -482,11 +461,11 @@
             "dd3face6611c0380",
             "ad7393ac18c4083b",
             "407dbf096111ea43",
-            "b23f8979a5fa4797"
+            "0eb024e820b89864"
         ],
         "x": 94,
         "y": 659,
-        "w": 1002,
+        "w": 1052,
         "h": 342
     },
     {
@@ -508,6 +487,26 @@
         "y": 279,
         "w": 672,
         "h": 162
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "c4b2be77044989d5",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1439,
+        "w": 1132,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -2475,7 +2474,7 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "calculate direction based on frigate event zones",
-        "func": "//pass all fields required for speed match to event\n\nvar $myZoneNearIndex = msg.frigate_event.entered_zones.indexOf(\"zone_near\");\nvar $myZoneFarIndex = msg.frigate_event.entered_zones.indexOf(\"zone_far\");\n\nmsg.frigate_event.calc_zone_direction = ($myZoneNearIndex >= 0 && $myZoneNearIndex >= 0) ? ($myZoneFarIndex < $myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nreturn msg;",
+        "func": "//pass all fields required for speed match to event\n\nconst myZoneNearIndex = msg.frigate_event.entered_zones.indexOf(\"zone_near\");\nconst myZoneFarIndex = msg.frigate_event.entered_zones.indexOf(\"zone_far\");\n\nmsg.frigate_event.calc_zone_direction = (myZoneNearIndex >= 0 && myZoneFarIndex >= 0) ? (myZoneFarIndex < myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2545,7 +2544,7 @@
         "wires": [
             [
                 "9ace23e5da92a650",
-                "b23f8979a5fa4797"
+                "0eb024e820b89864"
             ]
         ]
     },
@@ -2588,12 +2587,11 @@
         "senderr": false,
         "headers": [],
         "x": 240,
-        "y": 560,
+        "y": 520,
         "wires": [
             [
                 "c424ca13d16d49d9",
-                "79edcfba8e924f06",
-                "c7f55f6cf188a1db"
+                "79edcfba8e924f06"
             ]
         ]
     },
@@ -2618,7 +2616,7 @@
         "to": "",
         "reg": false,
         "x": 690,
-        "y": 560,
+        "y": 520,
         "wires": [
             [
                 "7f063afdbac396ce"
@@ -2686,7 +2684,7 @@
         "pass": false,
         "outputs": 0,
         "x": 480,
-        "y": 600,
+        "y": 560,
         "wires": []
     },
     {
@@ -2698,7 +2696,7 @@
         "action": "",
         "property": "payload",
         "x": 460,
-        "y": 560,
+        "y": 520,
         "wires": [
             [
                 "b2dc4845a48506b6"
@@ -2716,10 +2714,10 @@
         "wires": []
     },
     {
-        "id": "c7f55f6cf188a1db",
+        "id": "0eb024e820b89864",
         "type": "debug",
         "z": "9269520ddb532b00",
-        "g": "6f671a48c4472129",
+        "g": "71c085648c20e329",
         "name": "debug 17",
         "active": true,
         "tosidebar": true,
@@ -2729,26 +2727,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 460,
-        "y": 500,
-        "wires": []
-    },
-    {
-        "id": "b23f8979a5fa4797",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 18",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 990,
-        "y": 780,
+        "x": 1040,
+        "y": 800,
         "wires": []
     },
     {
