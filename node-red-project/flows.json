@@ -287,7 +287,7 @@
             "a0241251.a9cc4"
         ],
         "x": 14,
-        "y": 519,
+        "y": 879,
         "w": 962,
         "h": 242
     },
@@ -507,6 +507,27 @@
         "y": 1439,
         "w": 1132,
         "h": 202
+    },
+    {
+        "id": "98a6b2d5979ec44b",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "future implementation",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "e9da260ad8a83698",
+            "53ee230fe049d09e",
+            "86ba5a0d412318d4",
+            "3997684d13f325ae",
+            "a189210b0b0330d1",
+            "764b358e579f76ed"
+        ],
+        "x": 14,
+        "y": 599,
+        "w": 602,
+        "h": 242
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -754,6 +775,25 @@
         "order": 2,
         "disp": true,
         "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "ddb9d86f10b3f6a7",
+        "type": "ui_tab",
+        "name": "Database",
+        "icon": "input",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "c0886ba4111fbfae",
+        "type": "ui_group",
+        "name": "Database Input",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 1,
+        "disp": true,
+        "width": "6",
         "collapse": false,
         "className": ""
     },
@@ -4150,6 +4190,8 @@
         "id": "e9da260ad8a83698",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "set docker environment variables",
         "label": "",
         "group": "1f15adecfe5a580a",
@@ -4191,8 +4233,8 @@
         "topicType": "str",
         "splitLayout": "",
         "className": "",
-        "x": 280,
-        "y": 140,
+        "x": 260,
+        "y": 680,
         "wires": [
             [
                 "86ba5a0d412318d4"
@@ -4220,7 +4262,7 @@
         "payloadType": "flow",
         "topic": "",
         "x": 280,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "cc26e2d4.ffd35",
@@ -4246,7 +4288,7 @@
         "delay": "100",
         "topic": "",
         "x": 260,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "7ba1f4df.b12a7c",
@@ -4265,7 +4307,7 @@
         "outputs": 1,
         "noerr": 0,
         "x": 470,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "bcad70c7.b9db",
@@ -4288,7 +4330,7 @@
         "format": "{{msg.payload}}",
         "layout": "row-left",
         "x": 720,
-        "y": 660,
+        "y": 1020,
         "wires": []
     },
     {
@@ -4313,7 +4355,7 @@
         "to": "",
         "reg": false,
         "x": 450,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "fe2d6e02.ad949"
@@ -4336,7 +4378,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 460,
-        "y": 560,
+        "y": 920,
         "wires": []
     },
     {
@@ -4353,7 +4395,7 @@
         "complete": "true",
         "targetType": "full",
         "x": 470,
-        "y": 720,
+        "y": 1080,
         "wires": []
     },
     {
@@ -4377,7 +4419,7 @@
         "repair": false,
         "outputs": 2,
         "x": 640,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "db2479e4.104468"
@@ -4409,7 +4451,7 @@
         "to": "",
         "reg": false,
         "x": 810,
-        "y": 580,
+        "y": 940,
         "wires": [
             [
                 "eb06ed9d.7f23f"
@@ -4438,7 +4480,7 @@
         "to": "",
         "reg": false,
         "x": 810,
-        "y": 620,
+        "y": 980,
         "wires": [
             [
                 "eb06ed9d.7f23f"
@@ -4456,7 +4498,7 @@
             "58d47e08.81ffc"
         ],
         "x": 935,
-        "y": 600,
+        "y": 960,
         "wires": []
     },
     {
@@ -4470,7 +4512,7 @@
             "eb06ed9d.7f23f"
         ],
         "x": 195,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "b573f57d.6290e8"
@@ -4504,7 +4546,7 @@
         "payload": "",
         "payloadType": "str",
         "x": 160,
-        "y": 560,
+        "y": 920,
         "wires": [
             [
                 "1330b995.eb0626"
@@ -4525,13 +4567,15 @@
         "complete": "true",
         "targetType": "full",
         "x": 770,
-        "y": 720,
+        "y": 1080,
         "wires": []
     },
     {
         "id": "53ee230fe049d09e",
         "type": "inject",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "init with empty string",
         "props": [
             {
@@ -4549,8 +4593,8 @@
         "topic": "userinput",
         "payload": "",
         "payloadType": "str",
-        "x": 180,
-        "y": 100,
+        "x": 160,
+        "y": 640,
         "wires": [
             []
         ]
@@ -4559,6 +4603,8 @@
         "id": "86ba5a0d412318d4",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "debug 10",
         "active": true,
         "tosidebar": true,
@@ -4568,14 +4614,16 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 530,
-        "y": 140,
+        "x": 510,
+        "y": 680,
         "wires": []
     },
     {
         "id": "3997684d13f325ae",
         "type": "ui_button",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "backup databases",
         "group": "3c375fd89b978620",
         "order": 1,
@@ -4592,8 +4640,8 @@
         "payloadType": "str",
         "topic": "ui_backup",
         "topicType": "str",
-        "x": 230,
-        "y": 200,
+        "x": 210,
+        "y": 740,
         "wires": [
             [
                 "a189210b0b0330d1"
@@ -4604,6 +4652,8 @@
         "id": "a189210b0b0330d1",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "debug 11",
         "active": true,
         "tosidebar": true,
@@ -4613,18 +4663,191 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 520,
-        "y": 200,
+        "x": 500,
+        "y": 740,
         "wires": []
     },
     {
         "id": "764b358e579f76ed",
         "type": "comment",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "execute system script",
         "info": "",
-        "x": 500,
+        "x": 480,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "6a05187a692bed7c",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "name": "",
+        "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
+        "group": "c0886ba4111fbfae",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Effective Date (start of comment period)",
+                "value": "effective_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Effective Time",
+                "value": "effective_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Date (end of comment period)",
+                "value": "expiration_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Time",
+                "value": "expiration_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Comment",
+                "value": "comment",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            },
+            {
+                "label": "Commenter Name (or description)",
+                "value": "name",
+                "type": "text",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "effective_date": "",
+            "effective_time": "",
+            "expiration_date": "",
+            "expiration_time": "",
+            "comment": "",
+            "name": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 410,
+        "y": 220,
+        "wires": [
+            [
+                "fee2d22032a11056",
+                "9a866d6ac23e11a0"
+            ]
+        ]
+    },
+    {
+        "id": "fee2d22032a11056",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 18",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9a866d6ac23e11a0",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "name": "create mongo comment payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\nnewMsg.payload.effective_datetime = effectiveDateTime;\nnewMsg.payload.expiration_datetime = expirationDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.name = msg.payload.name;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
         "y": 260,
+        "wires": [
+            [
+                "6e5509e3a8b2cf58",
+                "ff173ea39b4ddc0d"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "ff173ea39b4ddc0d",
+        "type": "mongodb4",
+        "z": "239d7b3ba410ad5e",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "comments",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo insertOne events",
+        "x": 710,
+        "y": 300,
+        "wires": [
+            [
+                "b34657e456806227"
+            ]
+        ]
+    },
+    {
+        "id": "6e5509e3a8b2cf58",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "composed mongo comment",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "b34657e456806227",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "mongo return",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 300,
         "wires": []
     }
 ]
