@@ -16,9 +16,17 @@
         "env": []
     },
     {
+        "id": "9269520ddb532b00",
+        "type": "tab",
+        "label": "event-speed-assignment",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "28627559bebdc324",
         "type": "tab",
-        "label": "Event+Speed Dashboard",
+        "label": "dashboard-monitoring",
         "disabled": false,
         "info": "",
         "env": []
@@ -26,15 +34,7 @@
     {
         "id": "239d7b3ba410ad5e",
         "type": "tab",
-        "label": "Env Vars + System",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "90d5c925f9fbf9fd",
-        "type": "tab",
-        "label": "Aux data capture",
+        "label": "dashboard-system-user-input",
         "disabled": false,
         "info": "",
         "env": []
@@ -89,7 +89,8 @@
             "9f1012eacf4d076f",
             "ed3267eeb15ef14e",
             "6cfe5662fc478c14",
-            "98e23f2c38047c05"
+            "98e23f2c38047c05",
+            "2d571371a6cbd97b"
         ],
         "x": 14,
         "y": 199,
@@ -229,16 +230,13 @@
             "404ac097795a2da0",
             "7d0ef920e3594875",
             "ae662d8b51bdd6b4",
-            "2dc07c33aebf63da",
             "c509b1b731f83dec",
-            "0d82866f7bfcb4e0",
-            "b65e1877b1e04881",
-            "5a74033007fa0242"
+            "b65e1877b1e04881"
         ],
         "x": 14,
-        "y": 359,
+        "y": 319,
         "w": 852,
-        "h": 322
+        "h": 262
     },
     {
         "id": "5aac1262472b0205",
@@ -252,14 +250,12 @@
             "08d030ffc3fe6adb",
             "b241a0ef89fd7ce4",
             "91d3f8965f62f4b0",
-            "921bd254e41a46da",
-            "eb140f61419c6a08",
-            "7d670f6e8d75b305"
+            "eb140f61419c6a08"
         ],
         "x": 14,
         "y": 79,
         "w": 852,
-        "h": 262
+        "h": 202
     },
     {
         "id": "ab5e552a1defabf4",
@@ -291,7 +287,7 @@
             "a0241251.a9cc4"
         ],
         "x": 14,
-        "y": 519,
+        "y": 879,
         "w": 962,
         "h": 242
     },
@@ -307,16 +303,13 @@
             "3985037239b671c5",
             "431a4f7307387f3f",
             "1a74cb68f1228a4f",
-            "2958d18a1e112409",
             "b8b25338f2f57f93",
-            "2d0c73f2533c64b6",
-            "6c6ee2e39d85b9c8",
             "02469f2425072f7b"
         ],
         "x": 14,
-        "y": 699,
+        "y": 619,
         "w": 872,
-        "h": 322
+        "h": 262
     },
     {
         "id": "76417db2b472ef4f",
@@ -334,18 +327,14 @@
             "319859b48b6eebad",
             "1b7c2967fd6a85a4",
             "537d771bb5b1eff5",
-            "034479ce181640ea",
-            "b06c5e9c17af5eb2",
             "b2b5e83db3663f9e",
-            "17a8cb6e886afcee",
             "a432e760cc77e6cb",
-            "313808f5ac61b7f1",
             "0e1614cf2e5f9942"
         ],
         "x": 14,
-        "y": 1039,
+        "y": 919,
         "w": 1232,
-        "h": 808
+        "h": 748
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -362,7 +351,6 @@
             "c788d632f5e93a73",
             "e5391514131a2b5a",
             "5ec2d3ba52f944f5",
-            "6ccef1eff1e3d1ff",
             "c36c71706e494b5e",
             "82bc0c11adb825f8",
             "736d1e21a49f446b",
@@ -370,8 +358,8 @@
             "4c087723a1d698e9",
             "0f65ceafe3f7c069"
         ],
-        "x": 154,
-        "y": 2039,
+        "x": 134,
+        "y": 1719,
         "w": 1092,
         "h": 402
     },
@@ -386,21 +374,19 @@
         "nodes": [
             "3dd9503863b58e9c",
             "f9a7298d2f5f1f99",
-            "1b63b1e9ba6f39d7",
             "d5cdc59005fe6257",
-            "c7a85cdd5791b7b8",
-            "4f025c48d1e232d0",
             "6d738ed81fefbedc",
             "d856c68660eb2202",
             "f57e08e6fb9c0d09",
             "f233c0bb67d32534",
-            "0f63163a87f51004",
-            "d23be15251ed6d73"
+            "d23be15251ed6d73",
+            "b2eefe85832691d1",
+            "1c24fc003730c9c4"
         ],
-        "x": 154,
-        "y": 2499,
+        "x": 134,
+        "y": 2179,
         "w": 1072,
-        "h": 502
+        "h": 442
     },
     {
         "id": "1bd1f21fa0390c69",
@@ -413,17 +399,94 @@
         "nodes": [
             "2a8fd7446117b042",
             "2d6a848e9026dcb3",
-            "10f32b81aa98c918",
             "cd676ca7fcb572d8",
-            "a30ae94b9b4ac1ea",
-            "55586312ada4b099",
             "c90aed37b7a31d9e",
             "5417aae0d14fa661"
         ],
-        "x": 94,
-        "y": 3019,
+        "x": 34,
+        "y": 2719,
         "w": 972,
-        "h": 322
+        "h": 262
+    },
+    {
+        "id": "6f671a48c4472129",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c53b389e25178ba3",
+            "b2dc4845a48506b6",
+            "c424ca13d16d49d9",
+            "79edcfba8e924f06"
+        ],
+        "x": 94,
+        "y": 479,
+        "w": 752,
+        "h": 122
+    },
+    {
+        "id": "0a5faeac9fbd6d55",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate event mqtt end",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2deec9d340d5ed26",
+            "76911cc7f28e7da2"
+        ],
+        "x": 54,
+        "y": 319,
+        "w": 372,
+        "h": 122
+    },
+    {
+        "id": "71c085648c20e329",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "calc direction, speed on frigate event",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "7992eb250ae9d20f",
+            "0bcc4cc5c0656a3b",
+            "4ddff0572e76c3c6",
+            "7f063afdbac396ce",
+            "cbef8a3acc3d1495",
+            "dd3face6611c0380",
+            "ad7393ac18c4083b",
+            "407dbf096111ea43",
+            "0eb024e820b89864"
+        ],
+        "x": 94,
+        "y": 659,
+        "w": 1052,
+        "h": 342
+    },
+    {
+        "id": "b36632a12874b975",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "record event to database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "9ace23e5da92a650",
+            "49b113b75ba9255f",
+            "274f87c31437c2d7",
+            "5b400756efd4a3bb",
+            "78806e68d0d4cc10"
+        ],
+        "x": 774,
+        "y": 279,
+        "w": 672,
+        "h": 162
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -437,16 +500,34 @@
         "nodes": [
             "be70ebb1a5929433",
             "18fb76b6818efaf9",
-            "85ee7cd8058ab069",
             "c4b2be77044989d5",
-            "c32af2158d803cad",
-            "2027a5a754d1d3c4",
             "11fa2826769befc7"
         ],
         "x": 54,
-        "y": 1559,
+        "y": 1439,
         "w": 1132,
-        "h": 262
+        "h": 202
+    },
+    {
+        "id": "98a6b2d5979ec44b",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "future implementation",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "e9da260ad8a83698",
+            "53ee230fe049d09e",
+            "86ba5a0d412318d4",
+            "3997684d13f325ae",
+            "a189210b0b0330d1",
+            "764b358e579f76ed"
+        ],
+        "x": 14,
+        "y": 599,
+        "w": 602,
+        "h": 242
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -617,7 +698,7 @@
             }
         },
         "site": {
-            "name": "Node-RED Dashboard",
+            "name": "Traffic Monitor UI",
             "hideToolbar": "false",
             "allowSwipe": "false",
             "lockMenu": "false",
@@ -694,6 +775,25 @@
         "order": 2,
         "disp": true,
         "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "ddb9d86f10b3f6a7",
+        "type": "ui_tab",
+        "name": "Database",
+        "icon": "input",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "c0886ba4111fbfae",
+        "type": "ui_group",
+        "name": "Database Input",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 1,
+        "disp": true,
+        "width": "6",
         "collapse": false,
         "className": ""
     },
@@ -1371,6 +1471,7 @@
         "id": "6c2d22f0a8cb1fc1",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "name": "debug: Broker status events",
         "active": false,
         "tosidebar": true,
@@ -1388,6 +1489,7 @@
         "id": "fd148029fe6bee47",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "name": "debug: broker publish events",
         "active": false,
         "tosidebar": true,
@@ -1444,6 +1546,7 @@
         "id": "1720d60a87cfb2d7",
         "type": "aedes broker",
         "z": "49e416bfab1d4055",
+        "d": true,
         "name": "frigate-local",
         "mqtt_port": "1883",
         "mqtt_ws_bind": "port",
@@ -1489,7 +1592,8 @@
         "y": 240,
         "wires": [
             [
-                "ed3267eeb15ef14e"
+                "ed3267eeb15ef14e",
+                "2d571371a6cbd97b"
             ]
         ]
     },
@@ -1719,6 +1823,7 @@
         "id": "400aaccc21e5eaf7",
         "type": "mongodb4",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "d14033e4e7acdf1b",
         "clientNode": "4b8d22be1aa15cf2",
         "mode": "collection",
@@ -1740,6 +1845,7 @@
         "id": "078438fe6e931391",
         "type": "debug",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "d14033e4e7acdf1b",
         "name": "mongo return",
         "active": false,
@@ -2044,6 +2150,7 @@
         "id": "d9a2cc1e81161549",
         "type": "link out",
         "z": "49e416bfab1d4055",
+        "d": true,
         "g": "d14033e4e7acdf1b",
         "name": "to dashboard",
         "mode": "link",
@@ -2063,6 +2170,608 @@
         "info": "",
         "x": 480,
         "y": 700,
+        "wires": []
+    },
+    {
+        "id": "2d571371a6cbd97b",
+        "type": "debug",
+        "z": "49e416bfab1d4055",
+        "g": "8dd778b3e5d3a05c",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "481344ed5f4b69d9",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: Broker status events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ec1ea8bc9a502a12",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: broker publish events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "f20c74c0ccfd256c",
+        "type": "mqtt in",
+        "z": "9269520ddb532b00",
+        "name": "",
+        "topic": "frigate/events",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 90,
+        "y": 140,
+        "wires": [
+            [
+                "86c86b0d82d13028",
+                "2deec9d340d5ed26"
+            ]
+        ]
+    },
+    {
+        "id": "86c86b0d82d13028",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug: published frigate messages",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 340,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "a5ddaaa9ffdc637e",
+        "type": "aedes broker",
+        "z": "9269520ddb532b00",
+        "name": "frigate-local",
+        "mqtt_port": "1883",
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "certname": "",
+        "keyname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 90,
+        "y": 60,
+        "wires": [
+            [
+                "481344ed5f4b69d9"
+            ],
+            [
+                "ec1ea8bc9a502a12"
+            ]
+        ]
+    },
+    {
+        "id": "056bd6503d1c42c6",
+        "type": "catch",
+        "z": "9269520ddb532b00",
+        "name": "catch - flow-mqtt",
+        "scope": null,
+        "uncaught": false,
+        "x": 680,
+        "y": 40,
+        "wires": [
+            [
+                "9fa6890312a00114"
+            ]
+        ]
+    },
+    {
+        "id": "9fa6890312a00114",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "catch - flow-mqtt",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "2deec9d340d5ed26",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "payload.type == \"end\"",
+        "property": "payload.type",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "end",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 180,
+        "y": 360,
+        "wires": [
+            [
+                "76911cc7f28e7da2"
+            ]
+        ]
+    },
+    {
+        "id": "9ace23e5da92a650",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b36632a12874b975",
+        "name": "create final event payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 320,
+        "wires": [
+            [
+                "5b400756efd4a3bb",
+                "49b113b75ba9255f",
+                "274f87c31437c2d7"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "49b113b75ba9255f",
+        "type": "mongodb4",
+        "z": "9269520ddb532b00",
+        "g": "b36632a12874b975",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "events",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo insertOne events",
+        "x": 950,
+        "y": 360,
+        "wires": [
+            [
+                "78806e68d0d4cc10"
+            ]
+        ]
+    },
+    {
+        "id": "274f87c31437c2d7",
+        "type": "link out",
+        "z": "9269520ddb532b00",
+        "g": "b36632a12874b975",
+        "name": "to dashboard",
+        "mode": "link",
+        "links": [
+            "c249329109ac17d5"
+        ],
+        "x": 855,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "5b400756efd4a3bb",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "b36632a12874b975",
+        "name": "NEW composed mongo message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1260,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "78806e68d0d4cc10",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "b36632a12874b975",
+        "name": "mongo return",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1190,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "76911cc7f28e7da2",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "set frigate_event from payload.after",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event",
+                "pt": "msg",
+                "to": "payload.after",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 260,
+        "y": 400,
+        "wires": [
+            [
+                "c53b389e25178ba3"
+            ]
+        ]
+    },
+    {
+        "id": "0bcc4cc5c0656a3b",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "create influxdb query, return DetectedObjectVelocity median",
+        "func": "var query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 820,
+        "wires": [
+            [
+                "407dbf096111ea43"
+            ]
+        ]
+    },
+    {
+        "id": "4ddff0572e76c3c6",
+        "type": "influxdb in",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "influxdb": "73598328fc95017b",
+        "name": "query, DetectedObjectVelocity, median",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "taffic_monitor_01",
+        "x": 490,
+        "y": 900,
+        "wires": [
+            [
+                "dd3face6611c0380"
+            ]
+        ]
+    },
+    {
+        "id": "7992eb250ae9d20f",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "calculate direction based on frigate event zones",
+        "func": "//pass all fields required for speed match to event\n\nconst myZoneNearIndex = msg.frigate_event.entered_zones.indexOf(\"zone_near\");\nconst myZoneFarIndex = msg.frigate_event.entered_zones.indexOf(\"zone_far\");\n\nmsg.frigate_event.calc_zone_direction = (myZoneNearIndex >= 0 && myZoneFarIndex >= 0) ? (myZoneFarIndex < myZoneNearIndex ? \"inbound\" : \"outbound\") : undefined;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 760,
+        "wires": [
+            [
+                "0bcc4cc5c0656a3b"
+            ]
+        ]
+    },
+    {
+        "id": "7f063afdbac396ce",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "object entered ANY zone (include possible misses)",
+        "property": "frigate_event.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 310,
+        "y": 700,
+        "wires": [
+            [
+                "7992eb250ae9d20f"
+            ],
+            [
+                "ad7393ac18c4083b"
+            ]
+        ]
+    },
+    {
+        "id": "cbef8a3acc3d1495",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "set event_direction_speed",
+        "rules": [
+            {
+                "t": "set",
+                "p": "event_direction_speed",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 950,
+        "y": 700,
+        "wires": [
+            [
+                "9ace23e5da92a650",
+                "0eb024e820b89864"
+            ]
+        ]
+    },
+    {
+        "id": "dd3face6611c0380",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "match radar speed to event",
+        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (msg.payload.length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.frigate_event.calc_zone_direction == msg.payload[0].direction) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = msg.payload[0].direction;\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    var dirIndex = msg.payload.map((o) => o.direction).indexOf(msg.frigate_event.calc_zone_direction);\n    if (dirIndex >= 0) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.payload[dirIndex].direction;\n        newMsg.calc_event_speed = msg.payload[dirIndex]._value;\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 960,
+        "wires": [
+            [
+                "cbef8a3acc3d1495"
+            ]
+        ]
+    },
+    {
+        "id": "c53b389e25178ba3",
+        "type": "http request",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "frigate http api for thumbnail",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 240,
+        "y": 520,
+        "wires": [
+            [
+                "c424ca13d16d49d9",
+                "79edcfba8e924f06"
+            ]
+        ]
+    },
+    {
+        "id": "b2dc4845a48506b6",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "set frigate_event_api_thumbnail",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event_api_thumbnail",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 690,
+        "y": 520,
+        "wires": [
+            [
+                "7f063afdbac396ce"
+            ]
+        ]
+    },
+    {
+        "id": "ad7393ac18c4083b",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "pass no direction, no speed",
+        "func": "//no speed\nconst newMsg = {};\n\nnewMsg.status_match_event_radar_direction = \"direction_speed_no_zones\"; \nnewMsg.calc_event_direction = undefined;\nnewMsg.calc_event_speed = undefined;\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 700,
+        "wires": [
+            [
+                "cbef8a3acc3d1495"
+            ]
+        ]
+    },
+    {
+        "id": "407dbf096111ea43",
+        "type": "delay",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "delay 1 sec, to be sure InfluxDB writes",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 490,
+        "y": 860,
+        "wires": [
+            [
+                "4ddff0572e76c3c6"
+            ]
+        ]
+    },
+    {
+        "id": "c424ca13d16d49d9",
+        "type": "image",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "",
+        "width": "175",
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": false,
+        "pass": false,
+        "outputs": 0,
+        "x": 480,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "79edcfba8e924f06",
+        "type": "base64",
+        "z": "9269520ddb532b00",
+        "g": "6f671a48c4472129",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 460,
+        "y": 520,
+        "wires": [
+            [
+                "b2dc4845a48506b6"
+            ]
+        ]
+    },
+    {
+        "id": "23f825551d9fe7ee",
+        "type": "comment",
+        "z": "9269520ddb532b00",
+        "name": "do these steps SEQUENTIALLY or they may overlap w a JOIN node",
+        "info": "",
+        "x": 260,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "0eb024e820b89864",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 17",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
+        "y": 800,
         "wires": []
     },
     {
@@ -2088,7 +2797,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 740,
+        "y": 660,
         "wires": [
             [
                 "1a74cb68f1228a4f"
@@ -2109,10 +2818,9 @@
         "handleDocId": false,
         "name": "mongo query Events, count 1-hour",
         "x": 300,
-        "y": 860,
+        "y": 780,
         "wires": [
             [
-                "2958d18a1e112409",
                 "b8b25338f2f57f93"
             ]
         ]
@@ -2131,30 +2839,12 @@
         "finalize": "",
         "libs": [],
         "x": 270,
-        "y": 800,
+        "y": 720,
         "wires": [
             [
-                "431a4f7307387f3f",
-                "2d0c73f2533c64b6"
+                "431a4f7307387f3f"
             ]
         ]
-    },
-    {
-        "id": "2958d18a1e112409",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 860,
-        "wires": []
     },
     {
         "id": "08d030ffc3fe6adb",
@@ -2215,10 +2905,9 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 920,
+        "y": 840,
         "wires": [
             [
-                "6c6ee2e39d85b9c8",
                 "02469f2425072f7b"
             ]
         ]
@@ -2244,7 +2933,6 @@
         "y": 180,
         "wires": [
             [
-                "921bd254e41a46da",
                 "eb140f61419c6a08"
             ]
         ],
@@ -2271,23 +2959,6 @@
         ]
     },
     {
-        "id": "921bd254e41a46da",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5aac1262472b0205",
-        "name": "debug 2",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 180,
-        "wires": []
-    },
-    {
         "id": "eb140f61419c6a08",
         "type": "function",
         "z": "28627559bebdc324",
@@ -2304,28 +2975,9 @@
         "y": 240,
         "wires": [
             [
-                "08d030ffc3fe6adb",
-                "7d670f6e8d75b305"
+                "08d030ffc3fe6adb"
             ]
         ]
-    },
-    {
-        "id": "7d670f6e8d75b305",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5aac1262472b0205",
-        "name": "debug 3",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 300,
-        "wires": []
     },
     {
         "id": "404ac097795a2da0",
@@ -2350,7 +3002,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 400,
+        "y": 360,
         "wires": [
             [
                 "ae662d8b51bdd6b4"
@@ -2371,11 +3023,10 @@
         "handleDocId": false,
         "name": "query mongo events, daily summary",
         "x": 310,
-        "y": 520,
+        "y": 480,
         "wires": [
             [
-                "c509b1b731f83dec",
-                "0d82866f7bfcb4e0"
+                "c509b1b731f83dec"
             ]
         ]
     },
@@ -2393,30 +3044,12 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 460,
+        "y": 420,
         "wires": [
             [
-                "7d0ef920e3594875",
-                "2dc07c33aebf63da"
+                "7d0ef920e3594875"
             ]
         ]
-    },
-    {
-        "id": "2dc07c33aebf63da",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 4",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
-        "y": 460,
-        "wires": []
     },
     {
         "id": "c509b1b731f83dec",
@@ -2432,30 +3065,12 @@
         "finalize": "",
         "libs": [],
         "x": 430,
-        "y": 580,
+        "y": 540,
         "wires": [
             [
-                "b65e1877b1e04881",
-                "5a74033007fa0242"
+                "b65e1877b1e04881"
             ]
         ]
-    },
-    {
-        "id": "0d82866f7bfcb4e0",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 5",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
-        "y": 520,
-        "wires": []
     },
     {
         "id": "b65e1877b1e04881",
@@ -2497,27 +3112,10 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 580,
+        "y": 540,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "5a74033007fa0242",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 6",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
-        "y": 640,
-        "wires": []
     },
     {
         "id": "c249329109ac17d5",
@@ -2526,10 +3124,11 @@
         "g": "9b9e4fc50b744fc3",
         "name": "from mongo event capture",
         "links": [
-            "d9a2cc1e81161549"
+            "d9a2cc1e81161549",
+            "274f87c31437c2d7"
         ],
-        "x": 195,
-        "y": 2140,
+        "x": 175,
+        "y": 1760,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -2557,8 +3156,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 760,
-        "y": 2260,
+        "x": 740,
+        "y": 1960,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -2583,8 +3182,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 400,
-        "y": 2180,
+        "x": 380,
+        "y": 1880,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -2604,8 +3203,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 810,
-        "y": 2300,
+        "x": 790,
+        "y": 2000,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -2625,11 +3224,10 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 770,
-        "y": 2220,
+        "x": 750,
+        "y": 1920,
         "wires": [
             [
-                "6ccef1eff1e3d1ff",
                 "c36c71706e494b5e"
             ]
         ]
@@ -2652,30 +3250,13 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 350,
-        "y": 2140,
+        "x": 330,
+        "y": 1840,
         "wires": [
             [
                 "2e680914d7da5c94"
             ]
         ]
-    },
-    {
-        "id": "6ccef1eff1e3d1ff",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "debug 8",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1040,
-        "y": 2120,
-        "wires": []
     },
     {
         "id": "c36c71706e494b5e",
@@ -2693,8 +3274,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1070,
-        "y": 2220,
+        "x": 1050,
+        "y": 1920,
         "wires": [
             []
         ]
@@ -2712,8 +3293,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 320,
-        "y": 2080,
+        "x": 300,
+        "y": 1760,
         "wires": []
     },
     {
@@ -2723,7 +3304,7 @@
         "name": "show speed aggregates",
         "info": "",
         "x": 140,
-        "y": 1960,
+        "y": 3120,
         "wires": []
     },
     {
@@ -2733,41 +3314,7 @@
         "name": "influxdb ...",
         "info": "",
         "x": 200,
-        "y": 2000,
-        "wires": []
-    },
-    {
-        "id": "2d0c73f2533c64b6",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 12",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 800,
-        "wires": []
-    },
-    {
-        "id": "6c6ee2e39d85b9c8",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 13",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 980,
+        "y": 3160,
         "wires": []
     },
     {
@@ -2842,7 +3389,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 700,
-        "y": 920,
+        "y": 840,
         "wires": [
             []
         ]
@@ -2870,7 +3417,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 1080,
+        "y": 960,
         "wires": [
             [
                 "6a422507b2a5bbca",
@@ -2893,7 +3440,7 @@
         "finalize": "",
         "libs": [],
         "x": 320,
-        "y": 1140,
+        "y": 1020,
         "wires": [
             [
                 "e256c1d68cf20f43"
@@ -2913,10 +3460,9 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 440,
-        "y": 1200,
+        "y": 1080,
         "wires": [
             [
-                "034479ce181640ea",
                 "a432e760cc77e6cb"
             ]
         ]
@@ -2935,7 +3481,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 1320,
+        "y": 1200,
         "wires": [
             [
                 "319859b48b6eebad"
@@ -2955,10 +3501,9 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 470,
-        "y": 1380,
+        "y": 1260,
         "wires": [
             [
-                "b06c5e9c17af5eb2",
                 "b2b5e83db3663f9e"
             ]
         ]
@@ -3003,7 +3548,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 1000,
-        "y": 1440,
+        "y": 1320,
         "wires": [
             []
         ]
@@ -3048,46 +3593,10 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1260,
+        "y": 1140,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "034479ce181640ea",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 14",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 780,
-        "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "b06c5e9c17af5eb2",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 15",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 780,
-        "y": 1320,
-        "wires": []
     },
     {
         "id": "b2b5e83db3663f9e",
@@ -3103,31 +3612,12 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 1440,
+        "y": 1320,
         "wires": [
             [
-                "17a8cb6e886afcee",
                 "1b7c2967fd6a85a4"
             ]
         ]
-    },
-    {
-        "id": "17a8cb6e886afcee",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 16",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 820,
-        "y": 1500,
-        "wires": []
     },
     {
         "id": "a432e760cc77e6cb",
@@ -3143,31 +3633,12 @@
         "finalize": "",
         "libs": [],
         "x": 500,
-        "y": 1260,
+        "y": 1140,
         "wires": [
             [
-                "537d771bb5b1eff5",
-                "313808f5ac61b7f1"
+                "537d771bb5b1eff5"
             ]
         ]
-    },
-    {
-        "id": "313808f5ac61b7f1",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 17",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 780,
-        "y": 1200,
-        "wires": []
     },
     {
         "id": "be70ebb1a5929433",
@@ -3183,10 +3654,9 @@
         "handleDocId": false,
         "name": "mongo query Events, count every 5-min last 60 min",
         "x": 290,
-        "y": 1660,
+        "y": 1540,
         "wires": [
             [
-                "85ee7cd8058ab069",
                 "c4b2be77044989d5"
             ]
         ]
@@ -3205,30 +3675,12 @@
         "finalize": "",
         "libs": [],
         "x": 230,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
-                "be70ebb1a5929433",
-                "c32af2158d803cad"
+                "be70ebb1a5929433"
             ]
         ]
-    },
-    {
-        "id": "85ee7cd8058ab069",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 18",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 1660,
-        "wires": []
     },
     {
         "id": "c4b2be77044989d5",
@@ -3244,47 +3696,12 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 1720,
+        "y": 1600,
         "wires": [
             [
-                "2027a5a754d1d3c4",
                 "11fa2826769befc7"
             ]
         ]
-    },
-    {
-        "id": "c32af2158d803cad",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 19",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 1600,
-        "wires": []
-    },
-    {
-        "id": "2027a5a754d1d3c4",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 20",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 1780,
-        "wires": []
     },
     {
         "id": "736d1e21a49f446b",
@@ -3299,8 +3716,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 410,
-        "y": 2400,
+        "x": 390,
+        "y": 2080,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -3325,8 +3742,8 @@
         "font": "Courier,monospace",
         "fontSize": "10",
         "color": "#000000",
-        "x": 710,
-        "y": 2400,
+        "x": 690,
+        "y": 2080,
         "wires": []
     },
     {
@@ -3345,8 +3762,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1100,
-        "y": 2300,
+        "x": 1080,
+        "y": 2000,
         "wires": [
             []
         ]
@@ -3391,7 +3808,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1720,
+        "y": 1600,
         "wires": [
             []
         ]
@@ -3409,11 +3826,10 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "query mongo events, daily summary",
-        "x": 410,
-        "y": 2720,
+        "x": 390,
+        "y": 2400,
         "wires": [
             [
-                "c7a85cdd5791b7b8",
                 "d5cdc59005fe6257",
                 "f233c0bb67d32534"
             ]
@@ -3432,31 +3848,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 380,
-        "y": 2660,
+        "x": 360,
+        "y": 2340,
         "wires": [
             [
-                "3dd9503863b58e9c",
-                "1b63b1e9ba6f39d7"
+                "3dd9503863b58e9c"
             ]
         ]
-    },
-    {
-        "id": "1b63b1e9ba6f39d7",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 21",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 2660,
-        "wires": []
     },
     {
         "id": "d5cdc59005fe6257",
@@ -3464,55 +3862,21 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for chart",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [msg.payload.find(item => item._id.label === 'person').count - (msg.payload.find(item => item._id.label === 'bicycle').count + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [(msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [(msg.payload.find(item => item._id.label === 'person').count || 0) - ((msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
-        "y": 2780,
+        "x": 570,
+        "y": 2460,
         "wires": [
             [
-                "4f025c48d1e232d0",
-                "6d738ed81fefbedc"
+                "6d738ed81fefbedc",
+                "1c24fc003730c9c4"
             ]
         ]
-    },
-    {
-        "id": "c7a85cdd5791b7b8",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 22",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 2720,
-        "wires": []
-    },
-    {
-        "id": "4f025c48d1e232d0",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 23",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 2840,
-        "wires": []
     },
     {
         "id": "6d738ed81fefbedc",
@@ -3553,8 +3917,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1040,
-        "y": 2780,
+        "x": 1020,
+        "y": 2460,
         "wires": [
             []
         ]
@@ -3574,8 +3938,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 940,
-        "y": 2900,
+        "x": 920,
+        "y": 2580,
         "wires": []
     },
     {
@@ -3591,8 +3955,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 470,
-        "y": 2220,
+        "x": 450,
+        "y": 1920,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -3613,11 +3977,10 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "query mongo events, daily summary",
-        "x": 370,
-        "y": 3180,
+        "x": 310,
+        "y": 2880,
         "wires": [
             [
-                "a30ae94b9b4ac1ea",
                 "cd676ca7fcb572d8"
             ]
         ]
@@ -3635,31 +3998,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 370,
-        "y": 3120,
+        "x": 310,
+        "y": 2820,
         "wires": [
             [
-                "2a8fd7446117b042",
-                "10f32b81aa98c918"
+                "2a8fd7446117b042"
             ]
         ]
-    },
-    {
-        "id": "10f32b81aa98c918",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 24",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 800,
-        "y": 3120,
-        "wires": []
     },
     {
         "id": "cd676ca7fcb572d8",
@@ -3674,48 +4019,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 510,
-        "y": 3240,
+        "x": 450,
+        "y": 2940,
         "wires": [
             [
-                "55586312ada4b099",
                 "5417aae0d14fa661"
             ]
         ]
-    },
-    {
-        "id": "a30ae94b9b4ac1ea",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 25",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 800,
-        "y": 3180,
-        "wires": []
-    },
-    {
-        "id": "55586312ada4b099",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 26",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 800,
-        "y": 3300,
-        "wires": []
     },
     {
         "id": "c90aed37b7a31d9e",
@@ -3739,8 +4049,8 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 280,
-        "y": 3060,
+        "x": 220,
+        "y": 2760,
         "wires": [
             [
                 "2d6a848e9026dcb3"
@@ -3763,8 +4073,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 890,
-        "y": 3240,
+        "x": 830,
+        "y": 2940,
         "wires": [
             []
         ]
@@ -3787,8 +4097,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 280,
-        "y": 2540,
+        "x": 260,
+        "y": 2220,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -3801,38 +4111,21 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for tm/events",
-        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = curr.count - acc['bicycle_adj'];\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0) || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (curr.count - acc['bicycle_adj'] || 0);\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 2840,
+        "x": 590,
+        "y": 2580,
         "wires": [
             [
-                "0f63163a87f51004",
-                "d856c68660eb2202"
+                "d856c68660eb2202",
+                "b2eefe85832691d1"
             ]
         ]
-    },
-    {
-        "id": "0f63163a87f51004",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 27",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 2960,
-        "wires": []
     },
     {
         "id": "d23be15251ed6d73",
@@ -3854,8 +4147,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 340,
-        "y": 2600,
+        "x": 320,
+        "y": 2280,
         "wires": [
             [
                 "f9a7298d2f5f1f99"
@@ -3863,9 +4156,45 @@
         ]
     },
     {
+        "id": "b2eefe85832691d1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 12",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 2520,
+        "wires": []
+    },
+    {
+        "id": "1c24fc003730c9c4",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 13",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 2400,
+        "wires": []
+    },
+    {
         "id": "e9da260ad8a83698",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "set docker environment variables",
         "label": "",
         "group": "1f15adecfe5a580a",
@@ -3907,8 +4236,8 @@
         "topicType": "str",
         "splitLayout": "",
         "className": "",
-        "x": 280,
-        "y": 140,
+        "x": 260,
+        "y": 680,
         "wires": [
             [
                 "86ba5a0d412318d4"
@@ -3936,7 +4265,7 @@
         "payloadType": "flow",
         "topic": "",
         "x": 280,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "cc26e2d4.ffd35",
@@ -3962,7 +4291,7 @@
         "delay": "100",
         "topic": "",
         "x": 260,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "7ba1f4df.b12a7c",
@@ -3981,7 +4310,7 @@
         "outputs": 1,
         "noerr": 0,
         "x": 470,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "bcad70c7.b9db",
@@ -4004,7 +4333,7 @@
         "format": "{{msg.payload}}",
         "layout": "row-left",
         "x": 720,
-        "y": 660,
+        "y": 1020,
         "wires": []
     },
     {
@@ -4029,7 +4358,7 @@
         "to": "",
         "reg": false,
         "x": 450,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "fe2d6e02.ad949"
@@ -4052,7 +4381,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 460,
-        "y": 560,
+        "y": 920,
         "wires": []
     },
     {
@@ -4069,7 +4398,7 @@
         "complete": "true",
         "targetType": "full",
         "x": 470,
-        "y": 720,
+        "y": 1080,
         "wires": []
     },
     {
@@ -4093,7 +4422,7 @@
         "repair": false,
         "outputs": 2,
         "x": 640,
-        "y": 600,
+        "y": 960,
         "wires": [
             [
                 "db2479e4.104468"
@@ -4125,7 +4454,7 @@
         "to": "",
         "reg": false,
         "x": 810,
-        "y": 580,
+        "y": 940,
         "wires": [
             [
                 "eb06ed9d.7f23f"
@@ -4154,7 +4483,7 @@
         "to": "",
         "reg": false,
         "x": 810,
-        "y": 620,
+        "y": 980,
         "wires": [
             [
                 "eb06ed9d.7f23f"
@@ -4172,7 +4501,7 @@
             "58d47e08.81ffc"
         ],
         "x": 935,
-        "y": 600,
+        "y": 960,
         "wires": []
     },
     {
@@ -4186,7 +4515,7 @@
             "eb06ed9d.7f23f"
         ],
         "x": 195,
-        "y": 660,
+        "y": 1020,
         "wires": [
             [
                 "b573f57d.6290e8"
@@ -4220,7 +4549,7 @@
         "payload": "",
         "payloadType": "str",
         "x": 160,
-        "y": 560,
+        "y": 920,
         "wires": [
             [
                 "1330b995.eb0626"
@@ -4241,13 +4570,15 @@
         "complete": "true",
         "targetType": "full",
         "x": 770,
-        "y": 720,
+        "y": 1080,
         "wires": []
     },
     {
         "id": "53ee230fe049d09e",
         "type": "inject",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "init with empty string",
         "props": [
             {
@@ -4265,8 +4596,8 @@
         "topic": "userinput",
         "payload": "",
         "payloadType": "str",
-        "x": 180,
-        "y": 100,
+        "x": 160,
+        "y": 640,
         "wires": [
             []
         ]
@@ -4275,6 +4606,8 @@
         "id": "86ba5a0d412318d4",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "debug 10",
         "active": true,
         "tosidebar": true,
@@ -4284,14 +4617,16 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 530,
-        "y": 140,
+        "x": 510,
+        "y": 680,
         "wires": []
     },
     {
         "id": "3997684d13f325ae",
         "type": "ui_button",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "backup databases",
         "group": "3c375fd89b978620",
         "order": 1,
@@ -4308,8 +4643,8 @@
         "payloadType": "str",
         "topic": "ui_backup",
         "topicType": "str",
-        "x": 230,
-        "y": 200,
+        "x": 210,
+        "y": 740,
         "wires": [
             [
                 "a189210b0b0330d1"
@@ -4320,6 +4655,8 @@
         "id": "a189210b0b0330d1",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "debug 11",
         "active": true,
         "tosidebar": true,
@@ -4329,28 +4666,191 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 520,
-        "y": 200,
+        "x": 500,
+        "y": 740,
         "wires": []
     },
     {
         "id": "764b358e579f76ed",
         "type": "comment",
         "z": "239d7b3ba410ad5e",
+        "d": true,
+        "g": "98a6b2d5979ec44b",
         "name": "execute system script",
         "info": "",
-        "x": 500,
+        "x": 480,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "6a05187a692bed7c",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "name": "",
+        "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
+        "group": "c0886ba4111fbfae",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Effective Date (start of comment period)",
+                "value": "effective_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Effective Time",
+                "value": "effective_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Date (end of comment period)",
+                "value": "expiration_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Time",
+                "value": "expiration_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Comment",
+                "value": "comment",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            },
+            {
+                "label": "Commenter Name (or description)",
+                "value": "name",
+                "type": "text",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "effective_date": "",
+            "effective_time": "",
+            "expiration_date": "",
+            "expiration_time": "",
+            "comment": "",
+            "name": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 410,
+        "y": 220,
+        "wires": [
+            [
+                "fee2d22032a11056",
+                "9a866d6ac23e11a0"
+            ]
+        ]
+    },
+    {
+        "id": "fee2d22032a11056",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 18",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9a866d6ac23e11a0",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "name": "create mongo comment payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\nnewMsg.payload.effective_datetime = effectiveDateTime;\nnewMsg.payload.expiration_datetime = expirationDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.name = msg.payload.name;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 260,
+        "wires": [
+            [
+                "6e5509e3a8b2cf58",
+                "ff173ea39b4ddc0d"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "ff173ea39b4ddc0d",
+        "type": "mongodb4",
+        "z": "239d7b3ba410ad5e",
+        "clientNode": "4b8d22be1aa15cf2",
+        "mode": "collection",
+        "collection": "comments",
+        "operation": "insertOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "name": "mongo insertOne events",
+        "x": 710,
+        "y": 300,
+        "wires": [
+            [
+                "b34657e456806227"
+            ]
+        ]
+    },
+    {
+        "id": "6e5509e3a8b2cf58",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "composed mongo comment",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
         "y": 260,
         "wires": []
     },
     {
-        "id": "8cee82669b6b8512",
-        "type": "comment",
-        "z": "90d5c925f9fbf9fd",
-        "name": "capture bluetooth to influxdb",
-        "info": "",
-        "x": 220,
-        "y": 140,
+        "id": "b34657e456806227",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "mongo return",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 300,
         "wires": []
     }
 ]
