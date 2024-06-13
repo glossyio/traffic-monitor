@@ -11,7 +11,7 @@
         "id": "49e416bfab1d4055",
         "type": "tab",
         "label": "Frigate MQTT",
-        "disabled": false,
+        "disabled": true,
         "info": "",
         "env": []
     },
@@ -53,8 +53,8 @@
             "617c9bb213538929",
             "526eb1967dda78c4"
         ],
-        "x": 394,
-        "y": 599,
+        "x": 534,
+        "y": 699,
         "w": 852,
         "h": 142
     },
@@ -71,8 +71,8 @@
             "b8db51ab64a3d61e",
             "67f64c75edc0ef13"
         ],
-        "x": 394,
-        "y": 399,
+        "x": 534,
+        "y": 499,
         "w": 452,
         "h": 182
     },
@@ -177,8 +177,8 @@
             "d88af763b70480d0",
             "5f62cb744592b108"
         ],
-        "x": 394,
-        "y": 759,
+        "x": 534,
+        "y": 859,
         "w": 752,
         "h": 202
     },
@@ -194,8 +194,8 @@
             "5dda1e574a7acdc9",
             "3fc9a8ed49514be5"
         ],
-        "x": 394,
-        "y": 1199,
+        "x": 534,
+        "y": 1299,
         "w": 332,
         "h": 142
     },
@@ -213,8 +213,8 @@
             "c1c1371cdf7151aa",
             "58e0b10c67841b60"
         ],
-        "x": 394,
-        "y": 979,
+        "x": 534,
+        "y": 1079,
         "w": 792,
         "h": 202
     },
@@ -381,7 +381,8 @@
             "f233c0bb67d32534",
             "d23be15251ed6d73",
             "b2eefe85832691d1",
-            "1c24fc003730c9c4"
+            "1c24fc003730c9c4",
+            "266f0f715a2914b2"
         ],
         "x": 134,
         "y": 2179,
@@ -489,26 +490,6 @@
         "h": 162
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "c4b2be77044989d5",
-            "11fa2826769befc7"
-        ],
-        "x": 54,
-        "y": 1439,
-        "w": 1132,
-        "h": 202
-    },
-    {
         "id": "98a6b2d5979ec44b",
         "type": "group",
         "z": "239d7b3ba410ad5e",
@@ -528,6 +509,26 @@
         "y": 599,
         "w": 602,
         "h": 242
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "c4b2be77044989d5",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1439,
+        "w": 1132,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -855,8 +856,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 640,
+        "x": 1160,
+        "y": 740,
         "wires": []
     },
     {
@@ -872,8 +873,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 580,
-        "y": 640,
+        "x": 720,
+        "y": 740,
         "wires": [
             [
                 "617c9bb213538929",
@@ -898,8 +899,8 @@
         "g": "04cc3b7b3e019683",
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
-        "x": 1020,
-        "y": 700,
+        "x": 1160,
+        "y": 800,
         "wires": []
     },
     {
@@ -915,8 +916,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
-        "y": 480,
+        "x": 730,
+        "y": 580,
         "wires": [
             [
                 "b8db51ab64a3d61e"
@@ -962,8 +963,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 660,
-        "y": 700,
+        "x": 800,
+        "y": 800,
         "wires": []
     },
     {
@@ -981,8 +982,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 670,
-        "y": 540,
+        "x": 810,
+        "y": 640,
         "wires": []
     },
     {
@@ -991,7 +992,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -999,8 +1000,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
-        "y": 440,
+        "x": 720,
+        "y": 540,
         "wires": []
     },
     {
@@ -1057,7 +1058,7 @@
         "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
         "payloadType": "jsonata",
         "x": 200,
-        "y": 320,
+        "y": 400,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -1202,7 +1203,7 @@
         "payload": "\"PA\"",
         "payloadType": "jsonata",
         "x": 260,
-        "y": 360,
+        "y": 440,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -1231,7 +1232,7 @@
         "payload": "\"A!\"",
         "payloadType": "jsonata",
         "x": 170,
-        "y": 280,
+        "y": 360,
         "wires": [
             [
                 "8e8ede8ca221552b"
@@ -1271,7 +1272,7 @@
         "repair": false,
         "outputs": 4,
         "x": 180,
-        "y": 520,
+        "y": 540,
         "wires": [
             [
                 "4681243b9c70e906",
@@ -1305,8 +1306,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 660,
-        "y": 860,
+        "x": 800,
+        "y": 960,
         "wires": []
     },
     {
@@ -1322,8 +1323,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
-        "y": 800,
+        "x": 730,
+        "y": 900,
         "wires": [
             [
                 "d5e5d0f288f9b186",
@@ -1345,8 +1346,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 970,
-        "y": 800,
+        "x": 1110,
+        "y": 900,
         "wires": []
     },
     {
@@ -1356,8 +1357,8 @@
         "g": "e138c998bef7d520",
         "name": "handle O3 speeds by saving array to each _value",
         "info": "",
-        "x": 600,
-        "y": 920,
+        "x": 740,
+        "y": 1020,
         "wires": []
     },
     {
@@ -1373,8 +1374,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "mongo insertOne radar_oc_payload",
-        "x": 560,
-        "y": 1240,
+        "x": 700,
+        "y": 1340,
         "wires": [
             []
         ]
@@ -1393,8 +1394,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 530,
-        "y": 1300,
+        "x": 670,
+        "y": 1400,
         "wires": []
     },
     {
@@ -1412,8 +1413,8 @@
         "retentionPolicyV18Flux": "",
         "org": "taffic_monitor_01",
         "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 690,
-        "y": 1080,
+        "x": 830,
+        "y": 1180,
         "wires": []
     },
     {
@@ -1429,8 +1430,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 1020,
+        "x": 750,
+        "y": 1120,
         "wires": [
             [
                 "da47f12a5e2cd512",
@@ -1452,8 +1453,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 990,
-        "y": 1020,
+        "x": 1130,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1463,9 +1464,67 @@
         "g": "e5b5b46703e248e9",
         "name": "manually take top 1 speed, magnitude (effectively O1)",
         "info": "",
-        "x": 620,
-        "y": 1140,
+        "x": 760,
+        "y": 1240,
         "wires": []
+    },
+    {
+        "id": "9cc39551ab98256a",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "init: turn on OS",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "7200",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.4",
+        "topic": "",
+        "payload": "\"OS\"",
+        "payloadType": "jsonata",
+        "x": 160,
+        "y": 280,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "a3dc8ff6a80ce4c0",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "name": "init: turn on OM",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "7200",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.4",
+        "topic": "",
+        "payload": "\"OM\"",
+        "payloadType": "jsonata",
+        "x": 170,
+        "y": 320,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
     },
     {
         "id": "6c2d22f0a8cb1fc1",
@@ -3831,7 +3890,8 @@
         "wires": [
             [
                 "d5cdc59005fe6257",
-                "f233c0bb67d32534"
+                "f233c0bb67d32534",
+                "266f0f715a2914b2"
             ]
         ]
     },
@@ -3862,7 +3922,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for chart",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count]),\n    [(msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0)],\n    [(msg.payload.find(item => item._id.label === 'person').count || 0) - ((msg.payload.find(item => item._id.label === 'bicycle').count || 0) + (msg.payload.find(item => item._id.label === 'motorcycle').count) || 0)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nlet motorcycle_result = msg.payload.find(item => item._id.label === 'motorcycle').count;\n\nif (isNaN(motorcycle_result)) {\n  motorcycle_result = 0;\n}\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count || 0]),\n    [(msg.payload.find(item => item._id.label === 'bicycle').count || 0) + motorcycle_result],\n    [(msg.payload.find(item => item._id.label === 'person').count || 0) - ((msg.payload.find(item => item._id.label === 'bicycle').count || 0) + motorcycle_result)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4111,7 +4171,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for tm/events",
-        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (curr.count + (msg.payload.find(item => item._id.label === 'motorcycle').count || 0) || 0);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (curr.count - acc['bicycle_adj'] || 0);\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\n\nlet motorcycle_result = msg.payload.find(item => item._id.label === 'motorcycle').count;\n\nif (isNaN(motorcycle_result)) {\n  motorcycle_result = 0;\n}\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (curr.count + motorcycle_result);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (curr.count - acc['bicycle_adj'] || 0);\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4161,7 +4221,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "debug 12",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4178,7 +4238,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "debug 13",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4187,6 +4247,53 @@
         "statusType": "auto",
         "x": 920,
         "y": 2400,
+        "wires": []
+    },
+    {
+        "id": "4760bed60a7f392a",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 2340,
+        "wires": [
+            [
+                "f9a7298d2f5f1f99"
+            ]
+        ]
+    },
+    {
+        "id": "266f0f715a2914b2",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "debug 19",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 2320,
         "wires": []
     },
     {
