@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# script/network-wlan-ap: Turn Traffic Monitor into a wireless access Point 
+#               Turns on/off wireless access point
+#               Allows other devices in remote deployments without a network to connect
+# https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-on-your-raspberry-pi
+
+
+#enable hotspot
+sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
+
+
+#disable hotspot
+#sudo nmcli device disconnect wlan0
+
+#turn on normal network mode
+#sudo nmcli device up wlan0
