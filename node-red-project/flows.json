@@ -191,13 +191,12 @@
             "label": true
         },
         "nodes": [
-            "5dda1e574a7acdc9",
-            "3fc9a8ed49514be5"
+            "5dda1e574a7acdc9"
         ],
         "x": 534,
         "y": 1299,
         "w": 332,
-        "h": 142
+        "h": 82
     },
     {
         "id": "e5b5b46703e248e9",
@@ -484,10 +483,10 @@
             "5b400756efd4a3bb",
             "78806e68d0d4cc10"
         ],
-        "x": 774,
-        "y": 279,
+        "x": 934,
+        "y": 419,
         "w": 672,
-        "h": 162
+        "h": 182
     },
     {
         "id": "98a6b2d5979ec44b",
@@ -544,14 +543,36 @@
             "bfad85a411436e1c",
             "d2b467822152a66e",
             "1a0b6df61dbcb683",
-            "61ee6a376ee7e8db",
             "f444ee737beb9007",
-            "fb8789d65169a36e"
+            "3fc9a8ed49514be5",
+            "069f41d6a4ff8474"
         ],
         "x": 534,
         "y": 1479,
         "w": 772,
-        "h": 222
+        "h": 282
+    },
+    {
+        "id": "53e4faf6d3ece28c",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "record event to database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "510b389597efaf1b",
+            "b77bb1c374a198e4",
+            "61d6a19c99c60e0b",
+            "a96d834e3571c549",
+            "e256d5e89eb39332",
+            "d8786159d48401b9",
+            "7f0ef976c7b79245"
+        ],
+        "x": 694,
+        "y": 99,
+        "w": 812,
+        "h": 262
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1414,7 +1435,7 @@
         "id": "3fc9a8ed49514be5",
         "type": "debug",
         "z": "94d07e407c25f282",
-        "g": "5930ccb76242c558",
+        "g": "35a68b2baec193d2",
         "name": "mongo radar_oc_payload",
         "active": true,
         "tosidebar": true,
@@ -1424,8 +1445,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 670,
-        "y": 1400,
+        "x": 690,
+        "y": 1720,
         "wires": []
     },
     {
@@ -1568,9 +1589,7 @@
         "x": 1030,
         "y": 1600,
         "wires": [
-            [
-                "61ee6a376ee7e8db"
-            ]
+            []
         ]
     },
     {
@@ -1626,7 +1645,7 @@
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
         "name": "debug 20",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1651,27 +1670,9 @@
         "y": 1520,
         "wires": [
             [
-                "fb8789d65169a36e"
+                "069f41d6a4ff8474"
             ]
         ]
-    },
-    {
-        "id": "61ee6a376ee7e8db",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "debug 21",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1200,
-        "y": 1600,
-        "wires": []
     },
     {
         "id": "f444ee737beb9007",
@@ -1699,17 +1700,16 @@
         ]
     },
     {
-        "id": "fb8789d65169a36e",
+        "id": "069f41d6a4ff8474",
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
-        "name": "debug 22",
+        "name": "debug 21",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
+        "complete": "false",
         "statusVal": "",
         "statusType": "auto",
         "x": 1200,
@@ -2609,8 +2609,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 910,
-        "y": 320,
+        "x": 1070,
+        "y": 520,
         "wires": [
             [
                 "5b400756efd4a3bb",
@@ -2633,8 +2633,8 @@
         "maxTimeMS": "0",
         "handleDocId": false,
         "name": "mongo insertOne events",
-        "x": 950,
-        "y": 360,
+        "x": 1110,
+        "y": 560,
         "wires": [
             [
                 "78806e68d0d4cc10"
@@ -2651,8 +2651,8 @@
         "links": [
             "c249329109ac17d5"
         ],
-        "x": 855,
-        "y": 400,
+        "x": 995,
+        "y": 460,
         "wires": []
     },
     {
@@ -2669,8 +2669,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1260,
-        "y": 320,
+        "x": 1420,
+        "y": 520,
         "wires": []
     },
     {
@@ -2687,8 +2687,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1190,
-        "y": 360,
+        "x": 1350,
+        "y": 560,
         "wires": []
     },
     {
@@ -2836,7 +2836,8 @@
         "wires": [
             [
                 "9ace23e5da92a650",
-                "0eb024e820b89864"
+                "0eb024e820b89864",
+                "a96d834e3571c549"
             ]
         ]
     },
@@ -3021,6 +3022,146 @@
         "statusType": "auto",
         "x": 1040,
         "y": 800,
+        "wires": []
+    },
+    {
+        "id": "510b389597efaf1b",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1130,
+        "y": 140,
+        "wires": [
+            [
+                "d8786159d48401b9"
+            ]
+        ]
+    },
+    {
+        "id": "b77bb1c374a198e4",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "create table events",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS events (     id TEXT PRIMARY KEY,     camera TEXT,     label TEXT,     sub_label,     top_score REAL,     frame_time REAL,     start_time REAL,     end_time REAL,     entered_zones,     direction_calc TEXT,     speed_calc REAL,     location TEXT );",
+        "x": 910,
+        "y": 140,
+        "wires": [
+            [
+                "510b389597efaf1b"
+            ]
+        ]
+    },
+    {
+        "id": "61d6a19c99c60e0b",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, direction_calc, speed_calc, location)\nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, $entered_zones, $direction_calc, $speed_calc, $location);\n",
+        "name": "/data/tmdb.events, Prepared Statement",
+        "x": 1220,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a96d834e3571c549",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "write params for events insert",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//newMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 260,
+        "wires": [
+            [
+                "61d6a19c99c60e0b",
+                "7f0ef976c7b79245"
+            ]
+        ]
+    },
+    {
+        "id": "e256d5e89eb39332",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "select latest 5 rows from events",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM events ORDER BY end_time DESC LIMIT 5;",
+        "x": 870,
+        "y": 180,
+        "wires": [
+            [
+                "510b389597efaf1b"
+            ]
+        ]
+    },
+    {
+        "id": "d8786159d48401b9",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "sqlite select last 5 msgs",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1350,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "7f0ef976c7b79245",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "composed tmdb.events message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 320,
         "wires": []
     },
     {
