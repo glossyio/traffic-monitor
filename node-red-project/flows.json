@@ -799,6 +799,12 @@
         "className": ""
     },
     {
+        "id": "2f60c1ab30a6fc8f",
+        "type": "sqlitedb",
+        "db": "/data/tmdb",
+        "mode": "RWC"
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -1524,6 +1530,20 @@
             [
                 "8e8ede8ca221552b"
             ]
+        ]
+    },
+    {
+        "id": "aba78041f885343a",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 630,
+        "y": 1480,
+        "wires": [
+            []
         ]
     },
     {

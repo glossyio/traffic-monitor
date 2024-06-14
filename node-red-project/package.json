@@ -12,7 +12,9 @@
         "node-red-contrib-web-worldmap": "~4.6.5",
         "node-red-dashboard": "~3.6.5",
         "node-red-node-serialport": "~2.0.2",
-        "node-red-node-smooth": "~0.1.2"
+        "node-red-node-smooth": "~0.1.2",
+        "node-red-node-sqlite": "1.1.0",
+        "node-red-node-base64": "0.3.0"
     },
     "node-red": {
         "settings": {
