@@ -531,6 +531,29 @@
         "h": 202
     },
     {
+        "id": "35a68b2baec193d2",
+        "type": "group",
+        "z": "94d07e407c25f282",
+        "name": "OC - payload, object summary+vehicle length",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "aba78041f885343a",
+            "4eaade5db6a7a443",
+            "bfad85a411436e1c",
+            "d2b467822152a66e",
+            "1a0b6df61dbcb683",
+            "61ee6a376ee7e8db",
+            "f444ee737beb9007",
+            "fb8789d65169a36e"
+        ],
+        "x": 534,
+        "y": 1479,
+        "w": 772,
+        "h": 222
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -836,7 +859,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1293,7 +1316,8 @@
             ],
             [
                 "5dda1e574a7acdc9",
-                "3fc9a8ed49514be5"
+                "3fc9a8ed49514be5",
+                "4eaade5db6a7a443"
             ]
         ]
     },
@@ -1536,15 +1560,161 @@
         "id": "aba78041f885343a",
         "type": "sqlite",
         "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
+        "name": "",
+        "x": 1030,
+        "y": 1600,
+        "wires": [
+            [
+                "61ee6a376ee7e8db"
+            ]
+        ]
+    },
+    {
+        "id": "4eaade5db6a7a443",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "write params for radar_oc_payload insert",
+        "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 1660,
+        "wires": [
+            [
+                "aba78041f885343a",
+                "d2b467822152a66e"
+            ]
+        ]
+    },
+    {
+        "id": "bfad85a411436e1c",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "create radar_oc_payload table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
+        "x": 710,
+        "y": 1520,
+        "wires": [
+            [
+                "1a0b6df61dbcb683"
+            ]
+        ]
+    },
+    {
+        "id": "d2b467822152a66e",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "debug 20",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "1a0b6df61dbcb683",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
-        "sql": "",
+        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 630,
-        "y": 1480,
+        "x": 1030,
+        "y": 1520,
         "wires": [
-            []
+            [
+                "fb8789d65169a36e"
+            ]
         ]
+    },
+    {
+        "id": "61ee6a376ee7e8db",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "debug 21",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "f444ee737beb9007",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "select latest 5 rows from radar_oc_payload",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
+        "x": 740,
+        "y": 1560,
+        "wires": [
+            [
+                "1a0b6df61dbcb683"
+            ]
+        ]
+    },
+    {
+        "id": "fb8789d65169a36e",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "debug 22",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 1520,
+        "wires": []
     },
     {
         "id": "6c2d22f0a8cb1fc1",
