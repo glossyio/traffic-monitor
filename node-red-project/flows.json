@@ -510,26 +510,6 @@
         "h": 242
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "c4b2be77044989d5",
-            "11fa2826769befc7"
-        ],
-        "x": 54,
-        "y": 1439,
-        "w": 1132,
-        "h": 202
-    },
-    {
         "id": "35a68b2baec193d2",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -567,12 +547,34 @@
             "a96d834e3571c549",
             "e256d5e89eb39332",
             "d8786159d48401b9",
-            "7f0ef976c7b79245"
+            "7f0ef976c7b79245",
+            "5b78a63cf91572c3",
+            "26f571ac4c78b8ec"
         ],
         "x": 694,
         "y": 99,
-        "w": 812,
+        "w": 872,
         "h": 262
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "be70ebb1a5929433",
+            "18fb76b6818efaf9",
+            "c4b2be77044989d5",
+            "11fa2826769befc7"
+        ],
+        "x": 54,
+        "y": 1439,
+        "w": 1132,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -846,6 +848,12 @@
         "id": "2f60c1ab30a6fc8f",
         "type": "sqlitedb",
         "db": "/data/tmdb",
+        "mode": "RWC"
+    },
+    {
+        "id": "cca00f2a59ca592f",
+        "type": "sqlitedb",
+        "db": "/tmp/sqlite",
         "mode": "RWC"
     },
     {
@@ -3037,7 +3045,8 @@
         "y": 140,
         "wires": [
             [
-                "d8786159d48401b9"
+                "d8786159d48401b9",
+                "5b78a63cf91572c3"
             ]
         ]
     },
@@ -3162,6 +3171,229 @@
         "statusType": "auto",
         "x": 1200,
         "y": 320,
+        "wires": []
+    },
+    {
+        "id": "5b78a63cf91572c3",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "function 1",
+        "func": "for (let i = 0; i < msg.payload.length; i++) {\n  msg.payload[i].fixzones = JSON.stringify(msg.payload[i].entered_zones);\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1300,
+        "y": 200,
+        "wires": [
+            [
+                "26f571ac4c78b8ec"
+            ]
+        ]
+    },
+    {
+        "id": "26f571ac4c78b8ec",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "debug 22",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1460,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "ae0f0f738aa5f111",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "mydb": "cca00f2a59ca592f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 930,
+        "y": 1160,
+        "wires": [
+            [
+                "9a5c139ac9ae4bfd"
+            ]
+        ]
+    },
+    {
+        "id": "393a1798a7bad095",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "name": "json params",
+        "props": [
+            {
+                "p": "params",
+                "v": "{\"$id\":\"1718423193.537038-9qwl6k\",\"$camera\":\"picam_h264\",\"$label\":\"person\",\"$sub_label\":null,\"$top_score\":0.7109375,\"$frame_time\":1718423195.717067,\"$start_time\":1718423193.537038,\"$end_time\":1718423198.53776,\"$entered_zones\":[\"zone_capture\",\"zone_far\",\"zone_radar\",\"zone_near\"],\"$direction_calc\":\"inbound\",\"$speed_calc\":12,\"$location\":\"ne26th-wasco-sb-01\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 450,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8cacf01a4dc74bff",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "name": "json payload",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"id\":\"1718423193.537038-9qwl6k\",\"camera\":\"picam_h264\",\"label\":\"person\",\"sub_label\":null,\"top_score\":0.7109375,\"frame_time\":1718423195.717067,\"start_time\":1718423193.537038,\"end_time\":1718423198.53776,\"entered_zones\":[\"zone_capture\",\"zone_far\",\"zone_radar\",\"zone_near\"],\"direction_calc\":\"inbound\",\"speed_calc\":12,\"location\":\"ne26th-wasco-sb-01\"}",
+        "payloadType": "json",
+        "x": 450,
+        "y": 1160,
+        "wires": [
+            [
+                "cb39e327f25bd5d2"
+            ]
+        ]
+    },
+    {
+        "id": "6dc97244b9fefd28",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "mydb": "cca00f2a59ca592f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, direction_calc, speed_calc, location)\nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, $entered_zones, $direction_calc, $speed_calc, $location);\n",
+        "name": "",
+        "x": 930,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b95e9f5b334ab72c",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "name": "create table events",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS events (     id TEXT PRIMARY KEY,     camera TEXT,     label TEXT,     sub_label,     top_score REAL,     frame_time REAL,     start_time REAL,     end_time REAL,     entered_zones,     direction_calc TEXT,     speed_calc REAL,     location TEXT );",
+        "x": 410,
+        "y": 1280,
+        "wires": [
+            [
+                "ae0f0f738aa5f111"
+            ]
+        ]
+    },
+    {
+        "id": "cb39e327f25bd5d2",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "name": "function 2",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 1160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "15189271555b0c5c",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "name": "",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "INSERT INTO events (id, entered_zones) VALUES ('1718423193.537038-9qwl6k', '[\"zone_capture\",\"zone_far\",\"zone_radar\",\"zone_near\"]');",
+        "x": 450,
+        "y": 1220,
+        "wires": [
+            [
+                "ae0f0f738aa5f111"
+            ]
+        ]
+    },
+    {
+        "id": "3a178da7a78dcd2f",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "name": "select latest 5 rows from events",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM events;",
+        "x": 370,
+        "y": 1340,
+        "wires": [
+            [
+                "ae0f0f738aa5f111"
+            ]
+        ]
+    },
+    {
+        "id": "9a5c139ac9ae4bfd",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "name": "debug 23",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 1160,
         "wires": []
     },
     {
@@ -4253,7 +4485,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for chart",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nlet motorcycle_result = msg.payload.find(item => item._id.label === 'motorcycle').count;\n\nif (isNaN(motorcycle_result)) {\n  motorcycle_result = 0;\n}\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...msg.payload.map(item => [item.count || 0]),\n    [(msg.payload.find(item => item._id.label === 'bicycle').count || 0) + motorcycle_result],\n    [(msg.payload.find(item => item._id.label === 'person').count || 0) - ((msg.payload.find(item => item._id.label === 'bicycle').count || 0) + motorcycle_result)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst motorcycleCount = msg.payload.find(item => item._id.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item._id.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item._id.label === 'person')?.count || 0;\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...(msg.payload.map(item => [item.count])),\n    [bicycleCount + motorcycleCount],\n    [personCount - (bicycleCount + motorcycleCount)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4502,7 +4734,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "structure mongo daily object counts for tm/events",
-        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\n\nlet motorcycle_result = msg.payload.find(item => item._id.label === 'motorcycle').count;\n\nif (isNaN(motorcycle_result)) {\n  motorcycle_result = 0;\n}\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (curr.count + motorcycle_result);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (curr.count - acc['bicycle_adj'] || 0);\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\n\n\nconst motorcycleCount = msg.payload.find(item => item._id.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item._id.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item._id.label === 'person')?.count || 0;\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (bicycleCount + motorcycleCount);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (personCount - (bicycleCount + motorcycleCount));\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
