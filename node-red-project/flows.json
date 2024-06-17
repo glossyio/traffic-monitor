@@ -230,12 +230,19 @@
             "7d0ef920e3594875",
             "ae662d8b51bdd6b4",
             "c509b1b731f83dec",
-            "b65e1877b1e04881"
+            "b65e1877b1e04881",
+            "5f3716d2176c3ab4",
+            "bdb4b259d648b1f0",
+            "25cd837f1dc919fc",
+            "52966c3cd77be32a",
+            "ec7a0e0b1c62e91d",
+            "7eece3cfb27d96a1",
+            "8822c74bee997b6b"
         ],
         "x": 14,
         "y": 319,
-        "w": 852,
-        "h": 262
+        "w": 1022,
+        "h": 302
     },
     {
         "id": "5aac1262472b0205",
@@ -306,7 +313,7 @@
             "02469f2425072f7b"
         ],
         "x": 14,
-        "y": 619,
+        "y": 659,
         "w": 872,
         "h": 262
     },
@@ -331,7 +338,7 @@
             "0e1614cf2e5f9942"
         ],
         "x": 14,
-        "y": 919,
+        "y": 959,
         "w": 1232,
         "h": 748
     },
@@ -361,7 +368,7 @@
             "3214e8cd3ea79630"
         ],
         "x": 134,
-        "y": 1719,
+        "y": 1779,
         "w": 1102,
         "h": 582
     },
@@ -572,7 +579,7 @@
             "11fa2826769befc7"
         ],
         "x": 54,
-        "y": 1439,
+        "y": 1479,
         "w": 1132,
         "h": 202
     },
@@ -592,7 +599,7 @@
             "aa0afb5180297e2b"
         ],
         "x": 294,
-        "y": 1919,
+        "y": 1979,
         "w": 612,
         "h": 122
     },
@@ -3209,7 +3216,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 660,
+        "y": 700,
         "wires": [
             [
                 "1a74cb68f1228a4f"
@@ -3230,7 +3237,7 @@
         "handleDocId": false,
         "name": "mongo query Events, count 1-hour",
         "x": 300,
-        "y": 780,
+        "y": 820,
         "wires": [
             [
                 "b8b25338f2f57f93"
@@ -3251,7 +3258,7 @@
         "finalize": "",
         "libs": [],
         "x": 270,
-        "y": 720,
+        "y": 760,
         "wires": [
             [
                 "431a4f7307387f3f"
@@ -3317,7 +3324,7 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 840,
+        "y": 880,
         "wires": [
             [
                 "02469f2425072f7b"
@@ -3417,7 +3424,8 @@
         "y": 360,
         "wires": [
             [
-                "ae662d8b51bdd6b4"
+                "ae662d8b51bdd6b4",
+                "5f3716d2176c3ab4"
             ]
         ]
     },
@@ -3438,7 +3446,8 @@
         "y": 480,
         "wires": [
             [
-                "c509b1b731f83dec"
+                "c509b1b731f83dec",
+                "52966c3cd77be32a"
             ]
         ]
     },
@@ -3480,7 +3489,8 @@
         "y": 540,
         "wires": [
             [
-                "b65e1877b1e04881"
+                "b65e1877b1e04881",
+                "8822c74bee997b6b"
             ]
         ]
     },
@@ -3540,7 +3550,7 @@
             "274f87c31437c2d7"
         ],
         "x": 175,
-        "y": 1760,
+        "y": 1820,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -3569,7 +3579,7 @@
         "repair": false,
         "outputs": 1,
         "x": 740,
-        "y": 2120,
+        "y": 2180,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -3595,7 +3605,7 @@
         "repair": false,
         "outputs": 1,
         "x": 380,
-        "y": 1840,
+        "y": 1900,
         "wires": [
             [
                 "c2270f3050bf35ab"
@@ -3616,7 +3626,7 @@
         "finalize": "",
         "libs": [],
         "x": 790,
-        "y": 2160,
+        "y": 2220,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -3637,7 +3647,7 @@
         "finalize": "",
         "libs": [],
         "x": 750,
-        "y": 2080,
+        "y": 2140,
         "wires": [
             [
                 "c36c71706e494b5e",
@@ -3664,7 +3674,7 @@
         "repair": false,
         "outputs": 1,
         "x": 330,
-        "y": 1800,
+        "y": 1860,
         "wires": [
             [
                 "2e680914d7da5c94"
@@ -3688,7 +3698,7 @@
         "templateScope": "local",
         "className": "",
         "x": 1050,
-        "y": 2080,
+        "y": 2140,
         "wires": [
             []
         ]
@@ -3699,7 +3709,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "debug: event payload in",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3708,7 +3718,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 350,
-        "y": 1760,
+        "y": 1820,
         "wires": []
     },
     {
@@ -3803,7 +3813,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 700,
-        "y": 840,
+        "y": 880,
         "wires": [
             []
         ]
@@ -3831,7 +3841,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 960,
+        "y": 1000,
         "wires": [
             [
                 "6a422507b2a5bbca",
@@ -3854,7 +3864,7 @@
         "finalize": "",
         "libs": [],
         "x": 320,
-        "y": 1020,
+        "y": 1060,
         "wires": [
             [
                 "e256c1d68cf20f43"
@@ -3874,7 +3884,7 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 440,
-        "y": 1080,
+        "y": 1120,
         "wires": [
             [
                 "a432e760cc77e6cb"
@@ -3895,7 +3905,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 1200,
+        "y": 1240,
         "wires": [
             [
                 "319859b48b6eebad"
@@ -3915,7 +3925,7 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 470,
-        "y": 1260,
+        "y": 1300,
         "wires": [
             [
                 "b2b5e83db3663f9e"
@@ -3962,7 +3972,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 1000,
-        "y": 1320,
+        "y": 1360,
         "wires": [
             []
         ]
@@ -4007,7 +4017,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1140,
+        "y": 1180,
         "wires": [
             []
         ]
@@ -4026,7 +4036,7 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 1320,
+        "y": 1360,
         "wires": [
             [
                 "1b7c2967fd6a85a4"
@@ -4047,7 +4057,7 @@
         "finalize": "",
         "libs": [],
         "x": 500,
-        "y": 1140,
+        "y": 1180,
         "wires": [
             [
                 "537d771bb5b1eff5"
@@ -4068,7 +4078,7 @@
         "handleDocId": false,
         "name": "mongo query Events, count every 5-min last 60 min",
         "x": 290,
-        "y": 1540,
+        "y": 1580,
         "wires": [
             [
                 "c4b2be77044989d5"
@@ -4089,7 +4099,7 @@
         "finalize": "",
         "libs": [],
         "x": 230,
-        "y": 1480,
+        "y": 1520,
         "wires": [
             [
                 "be70ebb1a5929433"
@@ -4110,7 +4120,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 1600,
+        "y": 1640,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -4131,7 +4141,7 @@
         "finalize": "",
         "libs": [],
         "x": 390,
-        "y": 2260,
+        "y": 2320,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -4157,7 +4167,7 @@
         "fontSize": "10",
         "color": "#000000",
         "x": 690,
-        "y": 2260,
+        "y": 2320,
         "wires": []
     },
     {
@@ -4177,7 +4187,7 @@
         "templateScope": "local",
         "className": "",
         "x": 1080,
-        "y": 2160,
+        "y": 2220,
         "wires": [
             []
         ]
@@ -4222,7 +4232,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1600,
+        "y": 1640,
         "wires": [
             []
         ]
@@ -4369,7 +4379,7 @@
         "finalize": "",
         "libs": [],
         "x": 460,
-        "y": 2080,
+        "y": 2140,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -4616,7 +4626,7 @@
         "senderr": false,
         "headers": [],
         "x": 440,
-        "y": 1960,
+        "y": 2020,
         "wires": [
             [
                 "9226865e3385eb56",
@@ -4645,7 +4655,7 @@
         "to": "",
         "reg": false,
         "x": 750,
-        "y": 2000,
+        "y": 2060,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -4666,7 +4676,7 @@
         "pass": false,
         "outputs": 0,
         "x": 700,
-        "y": 1960,
+        "y": 2020,
         "wires": []
     },
     {
@@ -4678,7 +4688,7 @@
         "action": "",
         "property": "payload",
         "x": 540,
-        "y": 2000,
+        "y": 2060,
         "wires": [
             [
                 "08121a31488784bc"
@@ -4706,7 +4716,7 @@
         "to": "",
         "reg": false,
         "x": 430,
-        "y": 1880,
+        "y": 1940,
         "wires": [
             [
                 "09f99c931e5535bf"
@@ -4719,7 +4729,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "debug: last N radar events",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4728,7 +4738,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1070,
-        "y": 2020,
+        "y": 2080,
         "wires": []
     },
     {
@@ -4737,7 +4747,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "debug: tm/events mqtt payload out",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4747,6 +4757,135 @@
         "statusType": "auto",
         "x": 1120,
         "y": 2780,
+        "wires": []
+    },
+    {
+        "id": "5f3716d2176c3ab4",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "create sqlite query, daily summary",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 360,
+        "wires": [
+            [
+                "bdb4b259d648b1f0"
+            ]
+        ]
+    },
+    {
+        "id": "bdb4b259d648b1f0",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 730,
+        "y": 400,
+        "wires": [
+            [
+                "25cd837f1dc919fc",
+                "ec7a0e0b1c62e91d"
+            ]
+        ]
+    },
+    {
+        "id": "25cd837f1dc919fc",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 22",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "52966c3cd77be32a",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 23",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "ec7a0e0b1c62e91d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "structure mongo summary",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.day);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 440,
+        "wires": [
+            [
+                "7eece3cfb27d96a1"
+            ]
+        ]
+    },
+    {
+        "id": "7eece3cfb27d96a1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 24",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "8822c74bee997b6b",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "debug 25",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 580,
         "wires": []
     },
     {
