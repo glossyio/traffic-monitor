@@ -310,12 +310,19 @@
             "431a4f7307387f3f",
             "1a74cb68f1228a4f",
             "b8b25338f2f57f93",
-            "02469f2425072f7b"
+            "02469f2425072f7b",
+            "928b71f25ce6e7b6",
+            "c03516d1eb65598d",
+            "6bf745347eccd2b1",
+            "4f84bcb60e4be762",
+            "b0c6551b2c38f740",
+            "5e8ea93a65a378b7",
+            "f808a6fa994d73a0"
         ],
         "x": 14,
         "y": 659,
-        "w": 872,
-        "h": 262
+        "w": 1022,
+        "h": 302
     },
     {
         "id": "76417db2b472ef4f",
@@ -3219,7 +3226,8 @@
         "y": 700,
         "wires": [
             [
-                "1a74cb68f1228a4f"
+                "1a74cb68f1228a4f",
+                "928b71f25ce6e7b6"
             ]
         ]
     },
@@ -3240,7 +3248,8 @@
         "y": 820,
         "wires": [
             [
-                "b8b25338f2f57f93"
+                "b8b25338f2f57f93",
+                "5e8ea93a65a378b7"
             ]
         ]
     },
@@ -3327,7 +3336,8 @@
         "y": 880,
         "wires": [
             [
-                "02469f2425072f7b"
+                "02469f2425072f7b",
+                "f808a6fa994d73a0"
             ]
         ]
     },
@@ -4838,7 +4848,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
-        "name": "structure mongo summary",
+        "name": "structure daily summary payload",
         "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.day);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -4846,7 +4856,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 850,
+        "x": 870,
         "y": 440,
         "wires": [
             [
@@ -4886,6 +4896,135 @@
         "statusType": "auto",
         "x": 580,
         "y": 580,
+        "wires": []
+    },
+    {
+        "id": "928b71f25ce6e7b6",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "create sqlite query, 1-hour counts last day",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 700,
+        "wires": [
+            [
+                "c03516d1eb65598d"
+            ]
+        ]
+    },
+    {
+        "id": "c03516d1eb65598d",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 730,
+        "y": 740,
+        "wires": [
+            [
+                "6bf745347eccd2b1",
+                "4f84bcb60e4be762"
+            ]
+        ]
+    },
+    {
+        "id": "6bf745347eccd2b1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "4f84bcb60e4be762",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "structure 1-hour counts last day",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.hour)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.hour);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 780,
+        "wires": [
+            [
+                "b0c6551b2c38f740"
+            ]
+        ]
+    },
+    {
+        "id": "b0c6551b2c38f740",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 27",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "5e8ea93a65a378b7",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "f808a6fa994d73a0",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "debug 29",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 920,
         "wires": []
     },
     {
