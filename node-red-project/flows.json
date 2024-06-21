@@ -183,22 +183,6 @@
         "h": 202
     },
     {
-        "id": "5930ccb76242c558",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "OC - payload, object summary+vehicle length",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "5dda1e574a7acdc9"
-        ],
-        "x": 534,
-        "y": 1299,
-        "w": 332,
-        "h": 82
-    },
-    {
         "id": "e5b5b46703e248e9",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -489,7 +473,7 @@
             "069f41d6a4ff8474"
         ],
         "x": 534,
-        "y": 1479,
+        "y": 1319,
         "w": 772,
         "h": 282
     },
@@ -1319,7 +1303,6 @@
                 "ef9cb704c91a3ef6"
             ],
             [
-                "5dda1e574a7acdc9",
                 "3fc9a8ed49514be5",
                 "4eaade5db6a7a443"
             ]
@@ -1396,25 +1379,6 @@
         "wires": []
     },
     {
-        "id": "5dda1e574a7acdc9",
-        "type": "mongodb4",
-        "z": "94d07e407c25f282",
-        "g": "5930ccb76242c558",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "radar_oc_payloads",
-        "operation": "insertOne",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "mongo insertOne radar_oc_payload",
-        "x": 700,
-        "y": 1340,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "3fc9a8ed49514be5",
         "type": "debug",
         "z": "94d07e407c25f282",
@@ -1429,7 +1393,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 690,
-        "y": 1720,
+        "y": 1560,
         "wires": []
     },
     {
@@ -1570,7 +1534,7 @@
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
         "x": 1030,
-        "y": 1600,
+        "y": 1500,
         "wires": [
             []
         ]
@@ -1589,7 +1553,7 @@
         "finalize": "",
         "libs": [],
         "x": 740,
-        "y": 1660,
+        "y": 1500,
         "wires": [
             [
                 "aba78041f885343a",
@@ -1615,7 +1579,7 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
         "x": 710,
-        "y": 1520,
+        "y": 1360,
         "wires": [
             [
                 "1a0b6df61dbcb683"
@@ -1637,7 +1601,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1020,
-        "y": 1660,
+        "y": 1540,
         "wires": []
     },
     {
@@ -1650,7 +1614,7 @@
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
         "x": 1030,
-        "y": 1520,
+        "y": 1360,
         "wires": [
             [
                 "069f41d6a4ff8474"
@@ -1675,7 +1639,7 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
         "x": 740,
-        "y": 1560,
+        "y": 1400,
         "wires": [
             [
                 "1a0b6df61dbcb683"
@@ -1687,16 +1651,17 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
-        "name": "debug 21",
+        "name": "debug: last 5 rows radar_oc_payload",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1200,
-        "y": 1520,
+        "x": 1110,
+        "y": 1400,
         "wires": []
     },
     {
@@ -5052,7 +5017,7 @@
         "wires": [
             [
                 "fee2d22032a11056",
-                "9a866d6ac23e11a0"
+                "8d65b604e8d9e7f9"
             ]
         ]
     },
@@ -5060,7 +5025,7 @@
         "id": "fee2d22032a11056",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
-        "name": "debug 18",
+        "name": "debug: comment form input",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -5069,57 +5034,79 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 940,
+        "x": 1000,
         "y": 220,
         "wires": []
     },
     {
-        "id": "9a866d6ac23e11a0",
-        "type": "function",
+        "id": "f27b6d01ae7836d6",
+        "type": "sqlite",
         "z": "239d7b3ba410ad5e",
-        "name": "create mongo comment payload",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\nnewMsg.payload.effective_datetime = effectiveDateTime;\nnewMsg.payload.expiration_datetime = expirationDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.name = msg.payload.name;\n\nreturn newMsg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 690,
-        "y": 260,
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 570,
+        "y": 400,
         "wires": [
             [
-                "6e5509e3a8b2cf58",
-                "ff173ea39b4ddc0d"
-            ]
-        ],
-        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
-    },
-    {
-        "id": "ff173ea39b4ddc0d",
-        "type": "mongodb4",
-        "z": "239d7b3ba410ad5e",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "comments",
-        "operation": "insertOne",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "mongo insertOne events",
-        "x": 710,
-        "y": 300,
-        "wires": [
-            [
-                "b34657e456806227"
+                "840802d34d143ded"
             ]
         ]
     },
     {
-        "id": "6e5509e3a8b2cf58",
+        "id": "8f0bcaf04756da4f",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "name": "create table comments",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS comments (effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
+        "x": 340,
+        "y": 400,
+        "wires": [
+            [
+                "f27b6d01ae7836d6"
+            ]
+        ]
+    },
+    {
+        "id": "e8b8e45c4bc045d8",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "name": "select latest 5 rows from comments",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
+        "x": 300,
+        "y": 440,
+        "wires": [
+            [
+                "f27b6d01ae7836d6"
+            ]
+        ]
+    },
+    {
+        "id": "840802d34d143ded",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
-        "name": "composed mongo comment",
+        "name": "sqlite select last 5 comments",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -5129,24 +5116,42 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1000,
-        "y": 260,
+        "y": 400,
         "wires": []
     },
     {
-        "id": "b34657e456806227",
-        "type": "debug",
+        "id": "8d65b604e8d9e7f9",
+        "type": "function",
         "z": "239d7b3ba410ad5e",
-        "name": "mongo return",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 300,
-        "wires": []
+        "name": "create comment payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 280,
+        "wires": [
+            [
+                "db1f35650c8d6448"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "db1f35650c8d6448",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO comments (effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
+        "name": "/data/tmdb.events, Prepared Statement",
+        "x": 660,
+        "y": 280,
+        "wires": [
+            []
+        ]
     }
 ]
