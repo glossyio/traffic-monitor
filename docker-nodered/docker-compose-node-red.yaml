@@ -33,8 +33,8 @@ services:
       VAR_RADAR_CAMERA: "picam_h264"
       VAR_INFLUXDB_ORG: "taffic_monitor_01"
       VAR_INFLUXDB_BUCKET: "influxdb_bucket"
-      VAR_MONGO_DB: "tm-db"
-      VAR_MONGO_COLLECTION: "events"
+      VAR_EVENTS_DB: "tmdb"
+      VAR_EVENTS_TABLE: "events"
       VAR_MQTT_USER: "mqtt_user"        #broker settings
       VAR_MQTT_PASS: "mqtt_pass"        #broker settings
     depends_on:
@@ -42,5 +42,3 @@ services:
         condition: service_healthy
       influxdb:
         condition: service_healthy
-      mongo:
-        condition: service_started

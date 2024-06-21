@@ -1,11 +1,10 @@
 ################################################################################
 # common-services configuration file
-# in order:  frigate, (influxdb, mongodb), node-red
+# in order:  frigate, influxdb, node-red
 # this should be located in the ~/code folder, with each container's directory
 ################################################################################
 
 include:
   - frigate/docker-compose-frigate.yml
   - influxdb/docker-compose-influxdb.yml
-  - mongodb/docker-compose-mongodb.yml
   - nodered/docker-compose-node-red.yml

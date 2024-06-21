@@ -43,13 +43,6 @@ mkdir -p ~/code/influxdb/config
 cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
 ##-- /influxdb
 
-
-##-- Add mongo Dockerfile
-mkdir -p ~/code/mongodb/data
-cp docker-mongodb/docker-compose-mongodb.yaml ~/code/mongodb/docker-compose-mongodb.yml
-##-- /mongo
-
-
 #create backup directory
 mkdir -p ~/code/backup
 
