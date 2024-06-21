@@ -18,6 +18,7 @@ services:
       - "1883:1883"                     #aedes mqtt broker port 
     volumes:
     #  - ~/code/nodered/data:/data      # uncomment for dev deployment 
+      - ~/code/nodered/db:/db           # internal sqlite db 
       - /etc/localtime:/etc/localtime:ro
     devices:
       - "/dev/ttyACM0"
