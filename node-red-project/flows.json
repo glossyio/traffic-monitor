@@ -221,28 +221,21 @@
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "group mongo summary daily",
+        "name": "group summary daily",
         "style": {
             "label": true
         },
         "nodes": [
             "404ac097795a2da0",
-            "7d0ef920e3594875",
-            "ae662d8b51bdd6b4",
-            "c509b1b731f83dec",
             "b65e1877b1e04881",
             "5f3716d2176c3ab4",
             "bdb4b259d648b1f0",
-            "25cd837f1dc919fc",
-            "52966c3cd77be32a",
-            "ec7a0e0b1c62e91d",
-            "7eece3cfb27d96a1",
-            "8822c74bee997b6b"
+            "ec7a0e0b1c62e91d"
         ],
         "x": 14,
         "y": 319,
-        "w": 1022,
-        "h": 302
+        "w": 852,
+        "h": 202
     },
     {
         "id": "5aac1262472b0205",
@@ -307,22 +300,15 @@
         },
         "nodes": [
             "3985037239b671c5",
-            "431a4f7307387f3f",
-            "1a74cb68f1228a4f",
-            "b8b25338f2f57f93",
             "02469f2425072f7b",
             "928b71f25ce6e7b6",
             "c03516d1eb65598d",
-            "6bf745347eccd2b1",
-            "4f84bcb60e4be762",
-            "b0c6551b2c38f740",
-            "5e8ea93a65a378b7",
-            "f808a6fa994d73a0"
+            "4f84bcb60e4be762"
         ],
         "x": 14,
-        "y": 659,
-        "w": 1022,
-        "h": 302
+        "y": 559,
+        "w": 1052,
+        "h": 222
     },
     {
         "id": "76417db2b472ef4f",
@@ -345,9 +331,9 @@
             "0e1614cf2e5f9942"
         ],
         "x": 14,
-        "y": 959,
+        "y": 839,
         "w": 1232,
-        "h": 748
+        "h": 648
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -374,69 +360,54 @@
             "c2270f3050bf35ab",
             "3214e8cd3ea79630"
         ],
-        "x": 134,
-        "y": 1779,
+        "x": 144,
+        "y": 1539,
         "w": 1102,
-        "h": 582
+        "h": 542
     },
     {
         "id": "453513c49e4b1b60",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "mongo cumulative events today by object",
+        "name": "cumulative events today by object",
         "style": {
             "label": true
         },
         "nodes": [
-            "3dd9503863b58e9c",
-            "f9a7298d2f5f1f99",
-            "d5cdc59005fe6257",
             "6d738ed81fefbedc",
             "d856c68660eb2202",
             "f57e08e6fb9c0d09",
-            "f233c0bb67d32534",
             "d23be15251ed6d73",
             "4760bed60a7f392a",
-            "997464b2e37775b0",
             "170ddffb726db9e0",
             "befe91e6862c72db",
-            "3351cc2c745c9695",
-            "53c416e97ef337f4",
             "13a061996f9322f3",
-            "98571c77b9801a83",
-            "f2d71be6af60a6bd",
-            "5ec3ea5666f560c4",
-            "45843e52bc718665"
+            "98571c77b9801a83"
         ],
-        "x": 134,
-        "y": 2399,
-        "w": 1372,
-        "h": 522
+        "x": 154,
+        "y": 2139,
+        "w": 1172,
+        "h": 322
     },
     {
         "id": "1bd1f21fa0390c69",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "mongo car event speed stats",
+        "name": "car event speed stats",
         "style": {
             "label": true
         },
         "nodes": [
-            "2a8fd7446117b042",
-            "2d6a848e9026dcb3",
-            "cd676ca7fcb572d8",
             "c90aed37b7a31d9e",
             "5417aae0d14fa661",
             "584504e6c8935eaf",
             "9cf49f0891d25df1",
-            "297c3d65a3aa277f",
-            "47316c04275f5d85",
-            "befb48880a8839f5"
+            "6d81c8e3c89b68f6"
         ],
-        "x": 134,
-        "y": 2939,
-        "w": 1152,
-        "h": 302
+        "x": 54,
+        "y": 2519,
+        "w": 1252,
+        "h": 242
     },
     {
         "id": "6f671a48c4472129",
@@ -594,21 +565,15 @@
             "label": true
         },
         "nodes": [
-            "be70ebb1a5929433",
-            "18fb76b6818efaf9",
-            "c4b2be77044989d5",
             "11fa2826769befc7",
             "158e6edae533bfdc",
             "eff2193c8246a9d2",
-            "8b7f57bb710d28ff",
-            "57fa6ca2b7d290e3",
-            "0dd4a8fa3449638d",
-            "ffa179f56635eda0"
+            "57fa6ca2b7d290e3"
         ],
         "x": 54,
-        "y": 1419,
+        "y": 1299,
         "w": 1132,
-        "h": 262
+        "h": 162
     },
     {
         "id": "f5d2d92d50d18ce2",
@@ -625,8 +590,8 @@
             "9226865e3385eb56",
             "aa0afb5180297e2b"
         ],
-        "x": 294,
-        "y": 1979,
+        "x": 304,
+        "y": 1739,
         "w": 612,
         "h": 122
     },
@@ -3243,54 +3208,10 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 700,
+        "y": 600,
         "wires": [
             [
-                "1a74cb68f1228a4f",
                 "928b71f25ce6e7b6"
-            ]
-        ]
-    },
-    {
-        "id": "431a4f7307387f3f",
-        "type": "mongodb4",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "aggregate",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "mongo query Events, count 1-hour",
-        "x": 300,
-        "y": 820,
-        "wires": [
-            [
-                "b8b25338f2f57f93",
-                "5e8ea93a65a378b7"
-            ]
-        ]
-    },
-    {
-        "id": "1a74cb68f1228a4f",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "create payload, 1-hour counts",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 1) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                hour: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"hour\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.hour\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 270,
-        "y": 760,
-        "wires": [
-            [
-                "431a4f7307387f3f"
             ]
         ]
     },
@@ -3337,28 +3258,6 @@
         "y": 240,
         "wires": [
             []
-        ]
-    },
-    {
-        "id": "b8b25338f2f57f93",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "structure mongo hourly",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.hour)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.hour);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 880,
-        "wires": [
-            [
-                "02469f2425072f7b",
-                "f808a6fa994d73a0"
-            ]
         ]
     },
     {
@@ -3454,73 +3353,7 @@
         "y": 360,
         "wires": [
             [
-                "ae662d8b51bdd6b4",
                 "5f3716d2176c3ab4"
-            ]
-        ]
-    },
-    {
-        "id": "7d0ef920e3594875",
-        "type": "mongodb4",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "aggregate",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "query mongo events, daily summary",
-        "x": 310,
-        "y": 480,
-        "wires": [
-            [
-                "c509b1b731f83dec",
-                "52966c3cd77be32a"
-            ]
-        ]
-    },
-    {
-        "id": "ae662d8b51bdd6b4",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "create mongo query, daily summary",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 86400000 * 10) / 1000) //change to seconds, 10 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\") //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                day: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"day\", binSize: 1 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n            \"_id.day\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 280,
-        "y": 420,
-        "wires": [
-            [
-                "7d0ef920e3594875"
-            ]
-        ]
-    },
-    {
-        "id": "c509b1b731f83dec",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "structure mongo summary",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 540,
-        "wires": [
-            [
-                "b65e1877b1e04881",
-                "8822c74bee997b6b"
             ]
         ]
     },
@@ -3564,7 +3397,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 540,
+        "y": 480,
         "wires": [
             []
         ]
@@ -3579,8 +3412,8 @@
             "d9a2cc1e81161549",
             "274f87c31437c2d7"
         ],
-        "x": 175,
-        "y": 1820,
+        "x": 185,
+        "y": 1580,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -3608,8 +3441,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 740,
-        "y": 2180,
+        "x": 750,
+        "y": 1940,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -3634,8 +3467,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 380,
-        "y": 1900,
+        "x": 390,
+        "y": 1660,
         "wires": [
             [
                 "c2270f3050bf35ab"
@@ -3655,8 +3488,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 2220,
+        "x": 800,
+        "y": 1980,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -3676,8 +3509,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 2140,
+        "x": 760,
+        "y": 1900,
         "wires": [
             [
                 "c36c71706e494b5e",
@@ -3703,8 +3536,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 330,
-        "y": 1860,
+        "x": 340,
+        "y": 1620,
         "wires": [
             [
                 "2e680914d7da5c94"
@@ -3727,8 +3560,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1050,
-        "y": 2140,
+        "x": 1060,
+        "y": 1900,
         "wires": [
             []
         ]
@@ -3747,8 +3580,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 350,
-        "y": 1820,
+        "x": 360,
+        "y": 1580,
         "wires": []
     },
     {
@@ -3822,8 +3655,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 700,
-        "y": 880,
+        "x": 880,
+        "y": 740,
         "wires": [
             []
         ]
@@ -3851,12 +3684,12 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 1000,
+        "y": 880,
         "wires": [
             [
                 "6a422507b2a5bbca",
                 "dd294de96fa60d7d",
-                "18fb76b6818efaf9"
+                "158e6edae533bfdc"
             ]
         ]
     },
@@ -3874,7 +3707,7 @@
         "finalize": "",
         "libs": [],
         "x": 320,
-        "y": 1060,
+        "y": 940,
         "wires": [
             [
                 "e256c1d68cf20f43"
@@ -3894,7 +3727,7 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 440,
-        "y": 1120,
+        "y": 1000,
         "wires": [
             [
                 "a432e760cc77e6cb"
@@ -3915,7 +3748,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 1240,
+        "y": 1120,
         "wires": [
             [
                 "319859b48b6eebad"
@@ -3935,7 +3768,7 @@
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
         "x": 470,
-        "y": 1300,
+        "y": 1180,
         "wires": [
             [
                 "b2b5e83db3663f9e"
@@ -3982,7 +3815,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 1000,
-        "y": 1360,
+        "y": 1240,
         "wires": [
             []
         ]
@@ -4027,7 +3860,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1180,
+        "y": 1060,
         "wires": [
             []
         ]
@@ -4046,7 +3879,7 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 1360,
+        "y": 1240,
         "wires": [
             [
                 "1b7c2967fd6a85a4"
@@ -4067,75 +3900,10 @@
         "finalize": "",
         "libs": [],
         "x": 500,
-        "y": 1180,
+        "y": 1060,
         "wires": [
             [
                 "537d771bb5b1eff5"
-            ]
-        ]
-    },
-    {
-        "id": "be70ebb1a5929433",
-        "type": "mongodb4",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "aggregate",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "mongo query Events, count every 5-min last 60 min",
-        "x": 290,
-        "y": 1580,
-        "wires": [
-            [
-                "c4b2be77044989d5"
-            ]
-        ]
-    },
-    {
-        "id": "18fb76b6818efaf9",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "create payload, 5-min bins last 60-min",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\n//Get hourly label counts for last 24-hours for radar_cam\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((Date.now() - 60*60 * 1000) / 1000) //change to seconds, 1 days ago, e.g. 1713638656\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n            entered_zones: {\n                //do it only for zone_radar\n                $in: [\"zone_radar\"]\n            }\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n                datetime_bin: { $dateTrunc: { date: { $toDate: { $multiply: [\"$frame_time\", 1000] } }, unit: \"minute\", binSize: 5 } },\n                camera: \"$camera\"\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.datetime_bin\": -1,\n            \"_id.label\": 1\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 230,
-        "y": 1520,
-        "wires": [
-            [
-                "be70ebb1a5929433",
-                "158e6edae533bfdc"
-            ]
-        ]
-    },
-    {
-        "id": "c4b2be77044989d5",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "structure mongo 5-min, last 60-min",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera\n    if (myItem._id.camera == env.get(\"VAR_RADAR_CAMERA\")) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem._id.label) < 0) {\n            newMsg[0].series.push(myItem._id.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].findIndex((element) => element.x == String(new Date(myItem._id.datetime_bin)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem._id.datetime_bin);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem._id.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 360,
-        "y": 1640,
-        "wires": [
-            [
-                "11fa2826769befc7",
-                "ffa179f56635eda0"
             ]
         ]
     },
@@ -4152,8 +3920,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 2320,
+        "x": 400,
+        "y": 2040,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -4178,8 +3946,8 @@
         "font": "Courier,monospace",
         "fontSize": "10",
         "color": "#000000",
-        "x": 690,
-        "y": 2320,
+        "x": 1070,
+        "y": 2040,
         "wires": []
     },
     {
@@ -4198,8 +3966,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1080,
-        "y": 2220,
+        "x": 1090,
+        "y": 1980,
         "wires": [
             []
         ]
@@ -4244,75 +4012,9 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1640,
+        "y": 1420,
         "wires": [
             []
-        ]
-    },
-    {
-        "id": "3dd9503863b58e9c",
-        "type": "mongodb4",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "aggregate",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "query mongo events, daily summary",
-        "x": 510,
-        "y": 2720,
-        "wires": [
-            [
-                "d5cdc59005fe6257",
-                "f233c0bb67d32534",
-                "53c416e97ef337f4"
-            ]
-        ]
-    },
-    {
-        "id": "f9a7298d2f5f1f99",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "create mongo query, daily summary",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            frame_time: {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n            entered_zones: {\n                $in: [\"zone_capture\"]\n            },\n        }\n    },\n    {\n        $group: {\n            _id: {\n                label: \"$label\",\n            },\n            count: { $count: {} }\n        }\n    },\n    {\n        $sort: {\n            \"_id.label\": 1,\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 480,
-        "y": 2560,
-        "wires": [
-            [
-                "3dd9503863b58e9c"
-            ]
-        ]
-    },
-    {
-        "id": "d5cdc59005fe6257",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "structure mongo daily object counts for chart",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst motorcycleCount = msg.payload.find(item => item._id.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item._id.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item._id.label === 'person')?.count || 0;\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item._id.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...(msg.payload.map(item => [item.count])),\n    [bicycleCount + motorcycleCount],\n    [personCount - (bicycleCount + motorcycleCount)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 690,
-        "y": 2780,
-        "wires": [
-            [
-                "6d738ed81fefbedc",
-                "45843e52bc718665"
-            ]
         ]
     },
     {
@@ -4355,7 +4057,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 1140,
-        "y": 2780,
+        "y": 2380,
         "wires": [
             []
         ]
@@ -4376,7 +4078,7 @@
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
         "x": 1040,
-        "y": 2820,
+        "y": 2420,
         "wires": []
     },
     {
@@ -4392,77 +4094,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 460,
-        "y": 2140,
+        "x": 470,
+        "y": 1900,
         "wires": [
             [
                 "e5391514131a2b5a",
                 "d66541089b01306e"
-            ]
-        ]
-    },
-    {
-        "id": "2a8fd7446117b042",
-        "type": "mongodb4",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "aggregate",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "query mongo events, daily summary",
-        "x": 410,
-        "y": 3100,
-        "wires": [
-            [
-                "cd676ca7fcb572d8",
-                "47316c04275f5d85"
-            ]
-        ]
-    },
-    {
-        "id": "2d6a848e9026dcb3",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "create mongo query, car event speed stats",
-        "func": "//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\n\nvar newMsg = {};\nconst query = [\n    {\n        $match: {\n            \"frame_time\": {\n                $gte: Math.floor((new Date().setHours(4, 0, 0, 0)) / 1000)\n            },\n            \"label\": \"car\",\n            entered_zones: {\n                $in: [\"zone_radar\", \"zone_capture\"]\n            },\n            camera: env.get(\"VAR_RADAR_CAMERA\"), //only do this for radar camera\n        }\n    },\n    {\n        $group: {\n            _id: null,\n            count: { $count: {} },\n            mean_speed: { $avg: { $abs: \"$speed_calc\" } },\n            p25_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.25], method: 'approximate' } },\n            p50_speed: { $median: { input: { $abs: \"$speed_calc\" }, method: 'approximate' } },\n            p75_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.75], method: 'approximate' } },\n            p85_speed: { $percentile: { input: { $abs: \"$speed_calc\" }, p: [0.85], method: 'approximate' } },\n            max_speed: { $max: { $abs: \"$speed_calc\" } },\n            count_over_25: { $sum: { $cond: [{ $gt: [{ $abs: \"$speed_calc\" }, 25] }, 1, 0] } },\n            speeds: { $push: \"$speed_calc\" },\n       }\n    },\n    {\n        $addFields: {\n            iqr_upper: { $add: [{ $first: \"$p75_speed\" }, ({ $multiply: [1.5, { $subtract: [{ $first: \"$p75_speed\" }, { $first: \"$p25_speed\" }] }] })] }, //Q3 + 1.5*IQR; IQR=Q3-Q1\n            iqr_upper_freq: {\n                $size: {\n                    $filter: {\n                        input: \"$speeds\",\n                        as: \"speed\",\n                        cond: { $gt: [\"$$speed\", { $add: [{ $first: \"$p75_speed\" }, ({ $multiply: [1.5, { $subtract: [{ $first: \"$p75_speed\" }, { $first: \"$p25_speed\" }] }] })] }] }\n                    }\n                }\n            }\n        }\n    }\n];\n\nnewMsg.payload = [query]\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 3040,
-        "wires": [
-            [
-                "2a8fd7446117b042"
-            ]
-        ]
-    },
-    {
-        "id": "cd676ca7fcb572d8",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "structure mongo car speed stats",
-        "func": "// const formattedData = msg.payload.map(item => ({\n//   _id: item._id,\n//   meanSpeed: item.mean_speed,\n//   p85Speed: item.p85_speed[0],\n//   p75Speed: item.p75_speed[0],\n//   p50Speed: item.p50_speed,\n//   p25Speed: item.p25_speed[0],\n//   countOver25: item.count_over_25,\n//   maxSpeed: item.max_speed,\n//   count: item.count,\n//   iqrUpper: item.iqr_upper,\n//   iqrUpperFreq: item.iqr_upper_freq\n// }));\n\nconst arrayRemoveElements = [\"speeds\", \"_id\"];\n\nconst result = msg.payload.map(item => {\n    const obj = [];\n    for (const [key, value] of Object.entries(item)) {\n        if (!arrayRemoveElements.includes(key)) {\n            if (Array.isArray(value)) {\n                obj.push({ [key]: Math.round(value[0]) });\n            } else {\n                obj.push({ [key]: Math.round(value) });\n            }\n        }\n    }\n    return obj;\n});\n\nmsg.payload = result[0];\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 550,
-        "y": 3160,
-        "wires": [
-            [
-                "5417aae0d14fa661",
-                "befb48880a8839f5"
             ]
         ]
     },
@@ -4488,11 +4125,10 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 320,
-        "y": 2980,
+        "x": 240,
+        "y": 2560,
         "wires": [
             [
-                "2d6a848e9026dcb3",
                 "584504e6c8935eaf"
             ]
         ]
@@ -4513,8 +4149,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 930,
-        "y": 3160,
+        "x": 1130,
+        "y": 2720,
         "wires": [
             []
         ]
@@ -4537,33 +4173,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 380,
-        "y": 2440,
+        "x": 400,
+        "y": 2180,
         "wires": [
             [
                 "d23be15251ed6d73"
-            ]
-        ]
-    },
-    {
-        "id": "f233c0bb67d32534",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "structure mongo daily object counts for tm/events",
-        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\n\n\nconst motorcycleCount = msg.payload.find(item => item._id.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item._id.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item._id.label === 'person')?.count || 0;\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr._id.label] = curr.count;\n\n  if (curr._id.label === 'bicycle') {\n    acc['bicycle_adj'] = (bicycleCount + motorcycleCount);\n  }\n\n  if (curr._id.label === 'person') {\n    acc['person_adj'] = (personCount - (bicycleCount + motorcycleCount));\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 710,
-        "y": 2820,
-        "wires": [
-            [
-                "d856c68660eb2202",
-                "997464b2e37775b0"
             ]
         ]
     },
@@ -4587,11 +4201,10 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 440,
-        "y": 2500,
+        "x": 460,
+        "y": 2240,
         "wires": [
             [
-                "f9a7298d2f5f1f99",
                 "170ddffb726db9e0"
             ]
         ]
@@ -4618,11 +4231,10 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 240,
-        "y": 2560,
+        "x": 260,
+        "y": 2300,
         "wires": [
             [
-                "f9a7298d2f5f1f99",
                 "170ddffb726db9e0"
             ]
         ]
@@ -4644,8 +4256,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 440,
-        "y": 2020,
+        "x": 450,
+        "y": 1780,
         "wires": [
             [
                 "9226865e3385eb56",
@@ -4673,8 +4285,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 750,
-        "y": 2060,
+        "x": 760,
+        "y": 1820,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -4694,8 +4306,8 @@
         "active": false,
         "pass": false,
         "outputs": 0,
-        "x": 700,
-        "y": 2020,
+        "x": 710,
+        "y": 1780,
         "wires": []
     },
     {
@@ -4706,8 +4318,8 @@
         "name": "",
         "action": "",
         "property": "payload",
-        "x": 540,
-        "y": 2060,
+        "x": 550,
+        "y": 1820,
         "wires": [
             [
                 "08121a31488784bc"
@@ -4734,8 +4346,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 430,
-        "y": 1940,
+        "x": 440,
+        "y": 1700,
         "wires": [
             [
                 "09f99c931e5535bf"
@@ -4756,26 +4368,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1070,
-        "y": 2080,
-        "wires": []
-    },
-    {
-        "id": "997464b2e37775b0",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug: tm/events mqtt payload out",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1120,
-        "y": 2880,
+        "x": 1080,
+        "y": 1840,
         "wires": []
     },
     {
@@ -4791,8 +4385,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 690,
-        "y": 360,
+        "x": 250,
+        "y": 400,
         "wires": [
             [
                 "bdb4b259d648b1f0"
@@ -4808,49 +4402,13 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 730,
-        "y": 400,
+        "x": 370,
+        "y": 440,
         "wires": [
             [
-                "25cd837f1dc919fc",
                 "ec7a0e0b1c62e91d"
             ]
         ]
-    },
-    {
-        "id": "25cd837f1dc919fc",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 22",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 920,
-        "y": 400,
-        "wires": []
-    },
-    {
-        "id": "52966c3cd77be32a",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 23",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 640,
-        "y": 480,
-        "wires": []
     },
     {
         "id": "ec7a0e0b1c62e91d",
@@ -4865,47 +4423,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 440,
+        "x": 330,
+        "y": 480,
         "wires": [
             [
-                "7eece3cfb27d96a1"
+                "b65e1877b1e04881"
             ]
         ]
-    },
-    {
-        "id": "7eece3cfb27d96a1",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 24",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 930,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "8822c74bee997b6b",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "debug 25",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 580,
-        "y": 580,
-        "wires": []
     },
     {
         "id": "928b71f25ce6e7b6",
@@ -4920,8 +4444,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 670,
-        "y": 700,
+        "x": 290,
+        "y": 660,
         "wires": [
             [
                 "c03516d1eb65598d"
@@ -4937,32 +4461,13 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 730,
-        "y": 740,
+        "x": 430,
+        "y": 700,
         "wires": [
             [
-                "6bf745347eccd2b1",
                 "4f84bcb60e4be762"
             ]
         ]
-    },
-    {
-        "id": "6bf745347eccd2b1",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 26",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 920,
-        "y": 740,
-        "wires": []
     },
     {
         "id": "4f84bcb60e4be762",
@@ -4977,64 +4482,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 780,
+        "x": 410,
+        "y": 740,
         "wires": [
             [
-                "b0c6551b2c38f740"
+                "02469f2425072f7b"
             ]
         ]
-    },
-    {
-        "id": "b0c6551b2c38f740",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 27",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 930,
-        "y": 820,
-        "wires": []
-    },
-    {
-        "id": "5e8ea93a65a378b7",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 28",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 580,
-        "y": 820,
-        "wires": []
-    },
-    {
-        "id": "f808a6fa994d73a0",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "debug 29",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 920,
-        "wires": []
     },
     {
         "id": "158e6edae533bfdc",
@@ -5049,8 +4503,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 1460,
+        "x": 290,
+        "y": 1340,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -5066,32 +4520,13 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 850,
-        "y": 1500,
+        "x": 430,
+        "y": 1380,
         "wires": [
             [
-                "8b7f57bb710d28ff",
                 "57fa6ca2b7d290e3"
             ]
         ]
-    },
-    {
-        "id": "8b7f57bb710d28ff",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 30",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1040,
-        "y": 1500,
-        "wires": []
     },
     {
         "id": "57fa6ca2b7d290e3",
@@ -5106,47 +4541,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 990,
-        "y": 1540,
+        "x": 410,
+        "y": 1420,
         "wires": [
             [
-                "0dd4a8fa3449638d"
+                "11fa2826769befc7"
             ]
         ]
-    },
-    {
-        "id": "0dd4a8fa3449638d",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 31",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1050,
-        "y": 1580,
-        "wires": []
-    },
-    {
-        "id": "ffa179f56635eda0",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "0e1614cf2e5f9942",
-        "name": "debug 32",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 650,
-        "y": 1580,
-        "wires": []
     },
     {
         "id": "170ddffb726db9e0",
@@ -5161,8 +4562,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 940,
-        "y": 2480,
+        "x": 600,
+        "y": 2280,
         "wires": [
             [
                 "befe91e6862c72db"
@@ -5178,50 +4579,14 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 990,
-        "y": 2520,
+        "x": 750,
+        "y": 2320,
         "wires": [
             [
-                "3351cc2c745c9695",
                 "13a061996f9322f3",
                 "98571c77b9801a83"
             ]
         ]
-    },
-    {
-        "id": "3351cc2c745c9695",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 33",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 2520,
-        "wires": []
-    },
-    {
-        "id": "53c416e97ef337f4",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 35",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 800,
-        "y": 2720,
-        "wires": []
     },
     {
         "id": "13a061996f9322f3",
@@ -5236,11 +4601,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1110,
-        "y": 2580,
+        "x": 770,
+        "y": 2380,
         "wires": [
             [
-                "5ec3ea5666f560c4"
+                "6d738ed81fefbedc"
             ]
         ]
     },
@@ -5257,64 +4622,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
-        "y": 2620,
+        "x": 780,
+        "y": 2420,
         "wires": [
             [
-                "f2d71be6af60a6bd"
+                "d856c68660eb2202"
             ]
         ]
-    },
-    {
-        "id": "f2d71be6af60a6bd",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 36",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1210,
-        "y": 2680,
-        "wires": []
-    },
-    {
-        "id": "5ec3ea5666f560c4",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 37",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1400,
-        "y": 2580,
-        "wires": []
-    },
-    {
-        "id": "45843e52bc718665",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "debug 38",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 2880,
-        "wires": []
     },
     {
         "id": "584504e6c8935eaf",
@@ -5329,8 +4643,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 890,
-        "y": 2980,
+        "x": 470,
+        "y": 2620,
         "wires": [
             [
                 "9cf49f0891d25df1"
@@ -5346,65 +4660,13 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 990,
-        "y": 3040,
+        "x": 770,
+        "y": 2660,
         "wires": [
             [
-                "297c3d65a3aa277f"
+                "6d81c8e3c89b68f6"
             ]
         ]
-    },
-    {
-        "id": "297c3d65a3aa277f",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 39",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 3040,
-        "wires": []
-    },
-    {
-        "id": "47316c04275f5d85",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 40",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 690,
-        "y": 3100,
-        "wires": []
-    },
-    {
-        "id": "befb48880a8839f5",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "debug 41",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 3200,
-        "wires": []
     },
     {
         "id": "432a378bcc3e7a73",
@@ -5412,9 +4674,30 @@
         "z": "28627559bebdc324",
         "name": "TODO:  show cars w NULL speed_calc, ...",
         "info": "",
-        "x": 280,
-        "y": 3340,
+        "x": 220,
+        "y": 2900,
         "wires": []
+    },
+    {
+        "id": "6d81c8e3c89b68f6",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "format payload for car speed daily",
+        "func": "\nconst originalPayload = msg.payload;\n\nconst convertedPayload = Object.keys(originalPayload[0])\n  .filter(key => key !== \"speeds\")\n  .map(key => {\n    const value = originalPayload[0][key];\n    return { [key]: typeof value === \"number\" ? Math.round(value) : value };\n  });\n\nmsg.payload = convertedPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 2720,
+        "wires": [
+            [
+                "5417aae0d14fa661"
+            ]
+        ]
     },
     {
         "id": "e9da260ad8a83698",
