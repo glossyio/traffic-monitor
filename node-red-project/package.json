@@ -4,15 +4,12 @@
     "version": "0.0.1",
     "dependencies": {
         "node-red-contrib-aedes": "~0.13.0",
-        "node-red-contrib-dashboard-bar-chart-data": "~0.9.93",
         "node-red-contrib-image-output": "~0.6.4",
         "node-red-contrib-influxdb": "~0.7.0",
-        "node-red-contrib-mongodb4": "~2.5.2",
-        "node-red-contrib-uibuilder": "~6.8.2",
-        "node-red-contrib-web-worldmap": "~4.6.5",
         "node-red-dashboard": "~3.6.5",
         "node-red-node-serialport": "~2.0.2",
-        "node-red-node-smooth": "~0.1.2"
+        "node-red-node-sqlite": "1.1.0",
+        "node-red-node-base64": "0.3.0"
     },
     "node-red": {
         "settings": {
