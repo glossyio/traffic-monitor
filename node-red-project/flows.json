@@ -410,25 +410,6 @@
         "h": 242
     },
     {
-        "id": "6f671a48c4472129",
-        "type": "group",
-        "z": "9269520ddb532b00",
-        "name": "frigate event api for thumbnail",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "c53b389e25178ba3",
-            "b2dc4845a48506b6",
-            "c424ca13d16d49d9",
-            "79edcfba8e924f06"
-        ],
-        "x": 94,
-        "y": 479,
-        "w": 752,
-        "h": 122
-    },
-    {
         "id": "0a5faeac9fbd6d55",
         "type": "group",
         "z": "9269520ddb532b00",
@@ -461,33 +442,12 @@
             "cbef8a3acc3d1495",
             "dd3face6611c0380",
             "ad7393ac18c4083b",
-            "407dbf096111ea43",
-            "0eb024e820b89864"
+            "407dbf096111ea43"
         ],
-        "x": 94,
-        "y": 659,
-        "w": 1052,
+        "x": 54,
+        "y": 479,
+        "w": 992,
         "h": 342
-    },
-    {
-        "id": "b36632a12874b975",
-        "type": "group",
-        "z": "9269520ddb532b00",
-        "name": "record event to database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "9ace23e5da92a650",
-            "49b113b75ba9255f",
-            "274f87c31437c2d7",
-            "5b400756efd4a3bb",
-            "78806e68d0d4cc10"
-        ],
-        "x": 934,
-        "y": 419,
-        "w": 672,
-        "h": 182
     },
     {
         "id": "98a6b2d5979ec44b",
@@ -537,7 +497,7 @@
         "id": "53e4faf6d3ece28c",
         "type": "group",
         "z": "9269520ddb532b00",
-        "name": "record event to database",
+        "name": "record event to database and pass to dashboard",
         "style": {
             "label": true
         },
@@ -548,12 +508,14 @@
             "a96d834e3571c549",
             "e256d5e89eb39332",
             "d8786159d48401b9",
-            "7f0ef976c7b79245"
+            "7f0ef976c7b79245",
+            "59a579e6a1fa9a08",
+            "274f87c31437c2d7"
         ],
-        "x": 694,
-        "y": 99,
-        "w": 812,
-        "h": 262
+        "x": 334,
+        "y": 899,
+        "w": 932,
+        "h": 322
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -2473,7 +2435,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 340,
-        "y": 40,
+        "y": 100,
         "wires": []
     },
     {
@@ -2490,7 +2452,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 340,
-        "y": 80,
+        "y": 140,
         "wires": []
     },
     {
@@ -2507,7 +2469,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 90,
-        "y": 140,
+        "y": 200,
         "wires": [
             [
                 "86c86b0d82d13028",
@@ -2529,7 +2491,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 340,
-        "y": 140,
+        "y": 200,
         "wires": []
     },
     {
@@ -2549,7 +2511,7 @@
         "dburl": "",
         "usetls": false,
         "x": 90,
-        "y": 60,
+        "y": 120,
         "wires": [
             [
                 "481344ed5f4b69d9"
@@ -2566,7 +2528,7 @@
         "name": "catch - flow-mqtt",
         "scope": null,
         "uncaught": false,
-        "x": 680,
+        "x": 100,
         "y": 40,
         "wires": [
             [
@@ -2587,7 +2549,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 900,
+        "x": 320,
         "y": 40,
         "wires": []
     },
@@ -2618,98 +2580,17 @@
         ]
     },
     {
-        "id": "9ace23e5da92a650",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "b36632a12874b975",
-        "name": "create final event payload",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\nreturn newMsg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1070,
-        "y": 520,
-        "wires": [
-            [
-                "5b400756efd4a3bb",
-                "49b113b75ba9255f",
-                "274f87c31437c2d7"
-            ]
-        ],
-        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
-    },
-    {
-        "id": "49b113b75ba9255f",
-        "type": "mongodb4",
-        "z": "9269520ddb532b00",
-        "g": "b36632a12874b975",
-        "clientNode": "4b8d22be1aa15cf2",
-        "mode": "collection",
-        "collection": "events",
-        "operation": "insertOne",
-        "output": "toArray",
-        "maxTimeMS": "0",
-        "handleDocId": false,
-        "name": "mongo insertOne events",
-        "x": 1110,
-        "y": 560,
-        "wires": [
-            [
-                "78806e68d0d4cc10"
-            ]
-        ]
-    },
-    {
         "id": "274f87c31437c2d7",
         "type": "link out",
         "z": "9269520ddb532b00",
-        "g": "b36632a12874b975",
+        "g": "53e4faf6d3ece28c",
         "name": "to dashboard",
         "mode": "link",
         "links": [
             "c249329109ac17d5"
         ],
-        "x": 995,
-        "y": 460,
-        "wires": []
-    },
-    {
-        "id": "5b400756efd4a3bb",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "b36632a12874b975",
-        "name": "NEW composed mongo message",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1420,
-        "y": 520,
-        "wires": []
-    },
-    {
-        "id": "78806e68d0d4cc10",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "b36632a12874b975",
-        "name": "mongo return",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1350,
-        "y": 560,
+        "x": 935,
+        "y": 1000,
         "wires": []
     },
     {
@@ -2736,7 +2617,7 @@
         "y": 400,
         "wires": [
             [
-                "c53b389e25178ba3"
+                "7f063afdbac396ce"
             ]
         ]
     },
@@ -2753,8 +2634,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 360,
-        "y": 820,
+        "x": 320,
+        "y": 640,
         "wires": [
             [
                 "407dbf096111ea43"
@@ -2773,8 +2654,8 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "taffic_monitor_01",
-        "x": 490,
-        "y": 900,
+        "x": 450,
+        "y": 720,
         "wires": [
             [
                 "dd3face6611c0380"
@@ -2794,8 +2675,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 760,
+        "x": 280,
+        "y": 580,
         "wires": [
             [
                 "0bcc4cc5c0656a3b"
@@ -2821,8 +2702,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 310,
-        "y": 700,
+        "x": 270,
+        "y": 520,
         "wires": [
             [
                 "7992eb250ae9d20f"
@@ -2852,12 +2733,10 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 950,
-        "y": 700,
+        "x": 910,
+        "y": 520,
         "wires": [
             [
-                "9ace23e5da92a650",
-                "0eb024e820b89864",
                 "a96d834e3571c549"
             ]
         ]
@@ -2875,65 +2754,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
-        "y": 960,
+        "x": 620,
+        "y": 780,
         "wires": [
             [
                 "cbef8a3acc3d1495"
-            ]
-        ]
-    },
-    {
-        "id": "c53b389e25178ba3",
-        "type": "http request",
-        "z": "9269520ddb532b00",
-        "g": "6f671a48c4472129",
-        "name": "frigate http api for thumbnail",
-        "method": "GET",
-        "ret": "bin",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 240,
-        "y": 520,
-        "wires": [
-            [
-                "c424ca13d16d49d9",
-                "79edcfba8e924f06"
-            ]
-        ]
-    },
-    {
-        "id": "b2dc4845a48506b6",
-        "type": "change",
-        "z": "9269520ddb532b00",
-        "g": "6f671a48c4472129",
-        "name": "set frigate_event_api_thumbnail",
-        "rules": [
-            {
-                "t": "set",
-                "p": "frigate_event_api_thumbnail",
-                "pt": "msg",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 690,
-        "y": 520,
-        "wires": [
-            [
-                "7f063afdbac396ce"
             ]
         ]
     },
@@ -2950,8 +2775,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 680,
-        "y": 700,
+        "x": 640,
+        "y": 520,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -2976,44 +2801,11 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 490,
-        "y": 860,
+        "x": 450,
+        "y": 680,
         "wires": [
             [
                 "4ddff0572e76c3c6"
-            ]
-        ]
-    },
-    {
-        "id": "c424ca13d16d49d9",
-        "type": "image",
-        "z": "9269520ddb532b00",
-        "g": "6f671a48c4472129",
-        "name": "",
-        "width": "175",
-        "data": "payload",
-        "dataType": "msg",
-        "thumbnail": false,
-        "active": false,
-        "pass": false,
-        "outputs": 0,
-        "x": 480,
-        "y": 560,
-        "wires": []
-    },
-    {
-        "id": "79edcfba8e924f06",
-        "type": "base64",
-        "z": "9269520ddb532b00",
-        "g": "6f671a48c4472129",
-        "name": "",
-        "action": "",
-        "property": "payload",
-        "x": 460,
-        "y": 520,
-        "wires": [
-            [
-                "b2dc4845a48506b6"
             ]
         ]
     },
@@ -3024,25 +2816,7 @@
         "name": "do these steps SEQUENTIALLY or they may overlap w a JOIN node",
         "info": "",
         "x": 260,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "0eb024e820b89864",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 17",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1040,
-        "y": 800,
+        "y": 260,
         "wires": []
     },
     {
@@ -3054,8 +2828,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1130,
-        "y": 140,
+        "x": 770,
+        "y": 1140,
         "wires": [
             [
                 "d8786159d48401b9"
@@ -3079,8 +2853,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS events (     id TEXT PRIMARY KEY,     camera TEXT,     label TEXT,     sub_label,     top_score REAL,     frame_time REAL,     start_time REAL,     end_time REAL,     entered_zones,     direction_calc TEXT,     speed_calc REAL,     location TEXT );",
-        "x": 910,
-        "y": 140,
+        "x": 550,
+        "y": 1140,
         "wires": [
             [
                 "510b389597efaf1b"
@@ -3096,8 +2870,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, direction_calc, speed_calc, location)\nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $direction_calc, $speed_calc, $location);\n",
         "name": "/data/tmdb.events, Prepared Statement",
-        "x": 1220,
-        "y": 260,
+        "x": 1080,
+        "y": 940,
         "wires": [
             []
         ]
@@ -3108,19 +2882,19 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "write params for events insert",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//newMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//newMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 260,
+        "x": 490,
+        "y": 940,
         "wires": [
             [
                 "61d6a19c99c60e0b",
-                "7f0ef976c7b79245"
+                "59a579e6a1fa9a08"
             ]
         ]
     },
@@ -3141,8 +2915,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM events ORDER BY end_time DESC LIMIT 5;",
-        "x": 870,
-        "y": 180,
+        "x": 510,
+        "y": 1180,
         "wires": [
             [
                 "510b389597efaf1b"
@@ -3163,8 +2937,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1350,
-        "y": 140,
+        "x": 1030,
+        "y": 1140,
         "wires": []
     },
     {
@@ -3181,9 +2955,31 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1200,
-        "y": 320,
+        "x": 580,
+        "y": 1040,
         "wires": []
+    },
+    {
+        "id": "59a579e6a1fa9a08",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "cleanse final msg.payload to forward along",
+        "func": "let newMsg = {};\n\nnewMsg.topic = \"Dashboard event payload\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 1000,
+        "wires": [
+            [
+                "7f0ef976c7b79245",
+                "274f87c31437c2d7"
+            ]
+        ]
     },
     {
         "id": "3985037239b671c5",
@@ -3572,7 +3368,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "debug: event payload in",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4215,24 +4011,14 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 260,
-        "y": 2300,
+        "x": 250,
+        "y": 2280,
         "wires": [
             [
                 "170ddffb726db9e0"
