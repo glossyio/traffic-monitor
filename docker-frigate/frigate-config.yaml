@@ -1,13 +1,12 @@
+# see https://docs.frigate.video/configuration/reference
 mqtt:
   enabled: true
-  # Required: host name
   host: nodered
-  # Optional: port (default: shown below)
   port: 1883
   user: '{FRIGATE_MQTT_USER}'
   password: '{FRIGATE_MQTT_PASSWORD}'
 
-detectors: # <---- add detectors
+detectors: 
   coral:
     type: edgetpu
     device: usb
@@ -16,7 +15,7 @@ ffmpeg:
   hwaccel_args: preset-rpi-64-h264
 
 cameras:
-  picam_h264: # <------ Name the camera
+  picam_h264:
     enabled: true
     ffmpeg:
       inputs:
@@ -71,17 +70,16 @@ objects:
 record:
   enabled: true
   retain:
-    days: 2
-    mode: motion
+    days: 0
   events:
     retain:
-      default: 5
+      default: 1
       mode: active_objects
 
 snapshots:
   enabled: true
   clean_copy: true
   bounding_box: true
-  crop: true
+  crop: False
   retain:
-    default: 15
+    default: 1
