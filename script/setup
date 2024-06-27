@@ -30,6 +30,7 @@ envsubst < docker-frigate/frigate-config.yaml >> ~/code/frigate/config/config.ym
 
 ##-- Add node-red Dockerfile, settings, and base flows
 mkdir -p ~/code/nodered/data
+mkdir -p ~/code/nodered/db
 cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
 cp docker-nodered/Dockerfile ~/code/nodered/Dockerfile
 cp -rp node-red-project/* ~/code/nodered/data/
@@ -41,13 +42,6 @@ mkdir -p ~/code/influxdb/data
 mkdir -p ~/code/influxdb/config
 cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
 ##-- /influxdb
-
-
-##-- Add mongo Dockerfile
-mkdir -p ~/code/mongodb/data
-cp docker-mongodb/docker-compose-mongodb.yaml ~/code/mongodb/docker-compose-mongodb.yml
-##-- /mongo
-
 
 #create backup directory
 mkdir -p ~/code/backup
