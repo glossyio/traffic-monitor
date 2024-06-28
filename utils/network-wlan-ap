@@ -4,14 +4,22 @@
 #               Turns on/off wireless access point
 #               Allows other devices in remote deployments without a network to connect
 # https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-on-your-raspberry-pi
-
+# See examples: https://networkmanager.dev/docs/api/latest/nmcli-examples.html
 
 #enable hotspot
 sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
 
-
 #disable hotspot
 #sudo nmcli device disconnect wlan0
 
+#list available wifi aps
+#nmcli device wifi list
+
+#connect to a password-protected wifi network
+#nmcli device wifi connect "$SSID" password "$PASSWORD"
+
 #turn on normal network mode
 #sudo nmcli device up wlan0
+
+#convenient field values retrieval for scripting
+#nmcli -g ip4.address connection show my-con-eth0
