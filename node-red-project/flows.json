@@ -32,14 +32,6 @@
         "env": []
     },
     {
-        "id": "487ee19915814960",
-        "type": "tab",
-        "label": "Flow 1",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -410,7 +402,7 @@
         ],
         "x": 334,
         "y": 899,
-        "w": 932,
+        "w": 892,
         "h": 322
     },
     {
@@ -700,7 +692,7 @@
     {
         "id": "2f60c1ab30a6fc8f",
         "type": "sqlitedb",
-        "db": "/data/tmdb",
+        "db": "/db/tmdb",
         "mode": "RWC"
     },
     {
@@ -1421,7 +1413,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 1030,
+        "x": 1020,
         "y": 1500,
         "wires": [
             []
@@ -1489,7 +1481,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1020,
-        "y": 1540,
+        "y": 1560,
         "wires": []
     },
     {
@@ -1501,7 +1493,7 @@
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 1030,
+        "x": 1020,
         "y": 1360,
         "wires": [
             [
@@ -1549,7 +1541,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1110,
-        "y": 1400,
+        "y": 1420,
         "wires": []
     },
     {
@@ -1959,7 +1951,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 770,
+        "x": 760,
         "y": 1140,
         "wires": [
             [
@@ -2000,8 +1992,8 @@
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, direction_calc, speed_calc, location)\nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $direction_calc, $speed_calc, $location);\n",
-        "name": "/data/tmdb.events, Prepared Statement",
-        "x": 1080,
+        "name": "tmdb.events, Prepared Statement",
+        "x": 1060,
         "y": 940,
         "wires": [
             []
@@ -3318,7 +3310,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 370,
+        "x": 360,
         "y": 440,
         "wires": [
             [
@@ -3377,7 +3369,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 430,
+        "x": 420,
         "y": 700,
         "wires": [
             [
@@ -3436,7 +3428,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 430,
+        "x": 420,
         "y": 1380,
         "wires": [
             [
@@ -3495,7 +3487,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 750,
+        "x": 740,
         "y": 2320,
         "wires": [
             [
@@ -3576,7 +3568,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 770,
+        "x": 760,
         "y": 2660,
         "wires": [
             [
@@ -4211,7 +4203,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 570,
+        "x": 560,
         "y": 340,
         "wires": [
             [
@@ -4312,261 +4304,11 @@
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO comments (effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
-        "name": "/data/tmdb.events, Prepared Statement",
-        "x": 660,
+        "name": "tmdb.events, Prepared Statement",
+        "x": 640,
         "y": 280,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "dfb93cdddcfd1ed1",
-        "type": "inject",
-        "z": "487ee19915814960",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 250,
-        "y": 240,
-        "wires": [
-            [
-                "e64b322a8f46b4e5"
-            ]
-        ]
-    },
-    {
-        "id": "e64b322a8f46b4e5",
-        "type": "debug",
-        "z": "487ee19915814960",
-        "name": "debug 21",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 440,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "138d09936c866f19",
-        "type": "function",
-        "z": "487ee19915814960",
-        "name": "create sqlite query, daily cumulative counts in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    *,\n    datetime('now', 'localtime', 'start of day', '+4 hours') as TIMESTRING_AT_LOCAL_SET_TO_MIDNIGHT_plus4hours,\n    datetime('now', 'start of day', '+4 hours') as TIMESTRING_AT_UTC_SET_TO_MIGHTNIGHT_plus4hours,\n    strftime('%Y-%m-%dT04:00','now') as TIMESTRING_AT_UTC_SET_TO_0400,\n    strftime('%s','now','localtime') as SECS_IN_CURRENT_TIMEZONE,\n    unixepoch(datetime('now', 'localtime', 'start of day', '+4 hours')) as SECS_AT_LOCAL_SET_TO_MIDNIGHT_plus4hours,\n    unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') as SECS_AT_LOCAL_0400_SET_TO_UTC_SECS\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(datetime('now', 'localtime', 'start of day', '+4 hours'))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_capture%'\nORDER BY\n    frame_time;\n`;\n\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 420,
-        "y": 360,
-        "wires": [
-            [
-                "362374461d4c9389"
-            ]
-        ]
-    },
-    {
-        "id": "362374461d4c9389",
-        "type": "sqlite",
-        "z": "487ee19915814960",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 570,
-        "y": 400,
-        "wires": [
-            [
-                "772fb69cf7333ed5"
-            ]
-        ]
-    },
-    {
-        "id": "251742945c932610",
-        "type": "inject",
-        "z": "487ee19915814960",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 100,
-        "y": 360,
-        "wires": [
-            [
-                "138d09936c866f19"
-            ]
-        ]
-    },
-    {
-        "id": "772fb69cf7333ed5",
-        "type": "debug",
-        "z": "487ee19915814960",
-        "name": "debug 22",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 770,
-        "y": 400,
-        "wires": []
-    },
-    {
-        "id": "88439bbd6fe4e47c",
-        "type": "inject",
-        "z": "487ee19915814960",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 290,
-        "y": 620,
-        "wires": [
-            [
-                "dfa0c2959b0abfe9"
-            ]
-        ]
-    },
-    {
-        "id": "dfa0c2959b0abfe9",
-        "type": "function",
-        "z": "487ee19915814960",
-        "name": "create sqlite query, daily cumulative counts in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    *\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_capture%'\nORDER BY\n    frame_time;\n`;\n\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 640,
-        "y": 620,
-        "wires": [
-            [
-                "cd064657d51bc53a"
-            ]
-        ]
-    },
-    {
-        "id": "cd064657d51bc53a",
-        "type": "sqlite",
-        "z": "487ee19915814960",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 790,
-        "y": 660,
-        "wires": [
-            [
-                "919d742b264df66c"
-            ]
-        ]
-    },
-    {
-        "id": "e9c5e62122607c5c",
-        "type": "inject",
-        "z": "487ee19915814960",
-        "name": "trigger Event query every 5-min",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1",
-        "topic": "query",
-        "payload": "",
-        "payloadType": "date",
-        "x": 280,
-        "y": 900,
-        "wires": [
-            [
-                "62e4e3afb2c6b7b5"
-            ]
-        ]
-    },
-    {
-        "id": "62e4e3afb2c6b7b5",
-        "type": "function",
-        "z": "487ee19915814960",
-        "name": "create sqlite query, daily cumulative CAR counts in zone_capture + zone_radar that HAVE valid speed_calc",
-        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 510,
-        "y": 960,
-        "wires": [
-            [
-                "2d7ea074534118a1"
-            ]
-        ]
-    },
-    {
-        "id": "2d7ea074534118a1",
-        "type": "sqlite",
-        "z": "487ee19915814960",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 810,
-        "y": 1000,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "919d742b264df66c",
-        "type": "debug",
-        "z": "487ee19915814960",
-        "name": "debug 23",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1000,
-        "y": 660,
-        "wires": []
     }
 ]
