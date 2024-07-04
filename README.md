@@ -41,7 +41,7 @@
 
 All captured images and video will be stored in `~/code/frigate/storage` on the host by default.
 
-## Hardware componets
+## Hardware components
 
 Utilize commidity consumer hardware to enable speed/direction and object detection.
 
