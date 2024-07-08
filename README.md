@@ -28,14 +28,34 @@ Use cases and capabilities:
 1. Once your docker containers start up (check with `docker ps`), access the application at the following URLs:
     1. `http://<rpi_ip_address>:1880/ui` is your primary device dashboard, use it to ensure it is capturing events
     1. `http://<rpi_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
+1. Mount your unit in a place it can capture the entire roadway in the mounting guide (coming soon).
 1. Start capturing roadway usage data!
 
 ## Hardware componets
 This setup uses commidity, consumer hardware to enable object detection and speed/direction measurement:
 
-- [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) 
-    - Note: The RPi 4B does not meet the power requirements on the peripherals (USB) for the TPU and radar, so it is not recommended for this setup.
-- [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - provides accurate radar-based speed/direction detection
-- [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) or [Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for object detection
-- [Google Coral USB Accelerator](https://coral.ai/products/accelerator) TPU - AI/ML co-processor capable of 100+ FPS with millisecond inference time. This is supported natively in [Frigate](https://github.com/blakeblackshear/frigate).
-- Mounting board and external enclosure need to be custom made at the moment, instructions coming soon.
+- Raspberry Pi 5 - The RPi 4B does not have the power requirements on the peripherals (USB) for radar and TPU
+- OmniPreSence OPS-243 Radar - provides accurate radar-based speed/direction detection
+- Google Coral TPU - AI/ML co-processor capable of 100+ FPS with millisecond inference time
+- Raspberry Pi Global Shutter Camera - specialized for ML computer vision tasks
+
+## Installation and Setup Tips
+Install Raspberry Pi OS:
+   - Use the [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+     - You will need a mini-SD card reader
+     - Ignore any error messages about the "drive" from your operating system
+   - "Choose Device": Raspberry Pi 5
+   - "Choose OS": Raspberry Pi OS (64-bit)
+   - "Choose Storage": select your mini-SD card reader
+   - On the next prompt, the first time you setup your TM, select "Edit Settings"
+     - On the "General" tab, set your device name, WIFI parameters, define a username and password for accessing the TM remotely, and set your locale
+     - On the "Services" tab, select "Use password authentication"
+   - Back on the "Use OS Customization?" prompt, hit "Yes" to start writing the image.
+     - If the Imager produces an error message, try a second time.
+     - Imaging takes 5 or more minutes
+
+If the Frigate camera shows nothing, check the configuration:
+   - Review the [Frigate Camera Setup](https://docs.frigate.video/frigate/camera_setup) documentation.
+   - Make sure the camera is enabled
+   - If necessary, edit the Frigate `camera > path` to include your hostname or IP address, for example: `- path: rtsp://<rpi_ip_address>:8554/picam_h264`
+   - Once the camera is working, turn on detection (detect/enabled)
