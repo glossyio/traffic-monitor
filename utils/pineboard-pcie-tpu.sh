@@ -1,0 +1,107 @@
+###########
+# Install the following to use the Pine Board PCIE with Coral TPU
+#  available at https://pineboards.io
+#
+# Cannot run this script unattended since it has reboots and does not continue
+###########
+
+###
+# Ensure RPi firmware is up to date: 
+# https://pineboards.io/blogs/tutorials/how-to-update-the-firmware-on-your-raspberry-pi-5
+# Ensure that it shows the version dated 2023-12-06 or newer
+sudo rpi-eeprom-update
+
+# if it needs updates, uncomment and run the following:
+
+#sudo apt update sudo apt full-upgrade
+#sudo reboot
+
+#sudo raspi-config
+#sudo reboot
+
+#sudo rpi-eeprom-update
+
+####
+
+# Configure Google Coral Edge TPU for RPi 5
+# https://pineboards.io/blogs/tutorials/how-to-configure-the-google-coral-edge-tpu-on-the-raspberry-pi-5
+# Kernel version 6.6.30 or higher is needed for the Pineboards Hat Ai overlay
+####
+
+# append this to end of config.txt, after [all]
+sudo echo "
+# Enable the PCIe External connector.
+dtparam=pciex1
+kernel=kernel8.img
+# Enable Pineboards Hat Ai
+dtoverlay=pineboards-hat-ai
+" >> /boot/firmware/config.txt
+
+sudo reboot
+
+uname -a
+# Expected output:
+# Linux coralpi 6.6.30-v8+ #1761 SMP PREEMPT Thu May  2 16:54:52 BST 2024 aarch64 GNU/Linux
+
+# these should exist from ./script/bootstrap
+#sudo apt update
+#echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+#curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+# may not have these from bootstrap
+sudo apt-get update
+sudo apt-get install cmake libedgetpu1-std devscripts debhelper dkms dh-dkms
+
+# install Gasket Driver
+# Clone the Gasket driver repository:
+
+git clone https://github.com/google/gasket-driver.git
+cd gasket-driver
+sudo debuild -us -uc -tc -b
+
+# Go back to the parent directory and install the built package:
+cd ..
+sudo dpkg -i gasket-dkms_1.0-18_all.deb
+
+# Step 5: Set Up the udev Rule Add a udev rule to manage device permissions:
+sudo sh -c "echo 'SUBSYSTEM==\"apex\", MODE=\"0660\", GROUP=\"apex\"' >> /etc/udev/rules.d/65-apex.rules"
+
+# Create a new group and add your user to it:
+sudo groupadd apex
+sudo adduser $USER apex
+
+sudo reboot
+
+# Verify if the driver is loaded using the following command:
+sudo lspci -v
+
+# Expected output:
+# 0000:01:00.0 System peripheral: Global Unichip Corp. Coral Edge TPU (prog-if ff)
+# Subsystem: Global Unichip Corp. Coral Edge TPU
+# Flags: bus master, fast devsel, latency 0, IRQ 39
+# Memory at 1800100000 (64-bit, prefetchable) [size=16K]
+# Memory at 1800000000 (64-bit, prefetchable) [size=1M]
+# Capabilities: [80] Express Endpoint, MSI 00
+# Capabilities: [d0] MSI-X: Enable+ Count=128 Masked-
+# Capabilities: [e0] MSI: Enable- Count=1/32 Maskable- 64bit+
+# Capabilities: [f8] Power Management version 3
+# Capabilities: [100] Vendor Specific Information: ID=1556 Rev=1 Len=008 <?>
+# Capabilities: [108] Latency Tolerance Reporting
+# Capabilities: [110] L1 PM Substates
+# Capabilities: [200] Advanced Error Reporting
+# Kernel driver in use: apex
+# Kernel modules: apex
+
+###
+# also ref: https://coral.ai/docs/m2/get-started#2a-on-linux
+### 
+
+# Once rebooted, verify that the accelerator module is detected:
+# You should see something like this:
+#  03:00.0 System peripheral: Device 1ac1:089a
+lspci -nn | grep 089a
+
+# Also verify that the PCIe driver is loaded:
+# You should simply see the name repeated back:
+# /dev/apex_0
+ls /dev/apex_0
