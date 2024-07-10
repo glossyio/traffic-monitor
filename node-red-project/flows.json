@@ -414,6 +414,57 @@
         "h": 242
     },
     {
+        "id": "3a9bb6ed1306eb1c",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "create downloadable database output",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f31a598d.9fd2c8",
+            "98261154.3006",
+            "34dc99e5.495466",
+            "38d65d59.1d8aa2",
+            "3b8014a.86ad8ec",
+            "5b18a8e7.fb8da8",
+            "a8c2985e.d23ad8",
+            "5de7cbb4.fa21a4",
+            "67ecfa7f.3f0e24"
+        ],
+        "x": 254,
+        "y": 579,
+        "w": 692,
+        "h": 302
+    },
+    {
+        "id": "0e3b2be7bcc3d3b8",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Events file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f43a276d3a899fe8",
+            "c25ade7ddaeca697",
+            "c45589c369c843a5",
+            "f2bd56710ba03238",
+            "ecb0810a22dc4a5c",
+            "b4e0b45a7bedd728",
+            "ed67dd07804138a2",
+            "7318af62aa1dadcc",
+            "5124f45846b94ef0",
+            "3a9bb6ed1306eb1c",
+            "7050ed881890ce4d"
+        ],
+        "x": 14,
+        "y": 299,
+        "w": 1212,
+        "h": 608
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -577,15 +628,6 @@
         }
     },
     {
-        "id": "b6d86231fb09af0f",
-        "type": "ui_tab",
-        "name": "System",
-        "icon": "developer_dashboard",
-        "order": 2,
-        "disabled": false,
-        "hidden": false
-    },
-    {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
         "name": "Monitoring",
@@ -627,9 +669,9 @@
     {
         "id": "c0886ba4111fbfae",
         "type": "ui_group",
-        "name": "Database Input",
+        "name": "Database Output",
         "tab": "ddb9d86f10b3f6a7",
-        "order": 1,
+        "order": 2,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -640,6 +682,17 @@
         "type": "sqlitedb",
         "db": "/db/tmdb",
         "mode": "RWC"
+    },
+    {
+        "id": "d3f63882e39b03a6",
+        "type": "ui_group",
+        "name": "Database Input",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "e43506628b4a1cdb",
@@ -3560,7 +3613,7 @@
         "g": "541d31d14bcd8b00",
         "name": "",
         "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
-        "group": "c0886ba4111fbfae",
+        "group": "d3f63882e39b03a6",
         "order": 1,
         "width": 0,
         "height": 0,
@@ -3771,5 +3824,404 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "f43a276d3a899fe8",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "",
+        "label": "Export JSON Events date (default 7 days ago)",
+        "group": "c0886ba4111fbfae",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Event start date (attr: start_time)",
+                "value": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Event start time (attr: start_time)",
+                "value": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Event end date (attr: end_time)",
+                "value": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Event end time (attr: end_time)",
+                "value": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 240,
+        "y": 340,
+        "wires": [
+            [
+                "c25ade7ddaeca697",
+                "c45589c369c843a5"
+            ]
+        ]
+    },
+    {
+        "id": "c25ade7ddaeca697",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "debug: JSON events form input",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "c45589c369c843a5",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "create events query",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 380,
+        "wires": [
+            [
+                "f2bd56710ba03238",
+                "7318af62aa1dadcc",
+                "5124f45846b94ef0"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "f31a598d.9fd2c8",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "Set base path",
+        "func": "//restrict to c:\\temp\\\nvar basePath = \"/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 680,
+        "wires": [
+            [
+                "34dc99e5.495466"
+            ],
+            [
+                "98261154.3006"
+            ]
+        ]
+    },
+    {
+        "id": "98261154.3006",
+        "type": "http response",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 870,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "34dc99e5.495466",
+        "type": "file in",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "x": 710,
+        "y": 660,
+        "wires": [
+            [
+                "98261154.3006"
+            ]
+        ]
+    },
+    {
+        "id": "38d65d59.1d8aa2",
+        "type": "catch",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 340,
+        "y": 760,
+        "wires": [
+            [
+                "3b8014a.86ad8ec",
+                "5b18a8e7.fb8da8"
+            ]
+        ]
+    },
+    {
+        "id": "3b8014a.86ad8ec",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "Set 404",
+        "func": "msg.payload = msg.error;\nmsg.statusCode = 404;//resource not found\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 720,
+        "y": 760,
+        "wires": [
+            [
+                "98261154.3006"
+            ]
+        ]
+    },
+    {
+        "id": "5b18a8e7.fb8da8",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 370,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "a8c2985e.d23ad8",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "group": "c0886ba4111fbfae",
+        "name": "ui_temlplate - present download links on dashboard",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "format": "<div >\n    download generated <a href=\"/files/events.json\">events.json</a> (use Submit button above) <br />\n    download entire <a href=\"/files/tmdb\">tmdb.sqlite database</a>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 710,
+        "y": 840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5de7cbb4.fa21a4",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "Create http endpoint <nodered>/files/xxx  where xxx is the file name to download",
+        "info": "",
+        "x": 560,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "67ecfa7f.3f0e24",
+        "type": "http in",
+        "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
+        "name": "",
+        "url": "/files/:fn",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 350,
+        "y": 680,
+        "wires": [
+            [
+                "f31a598d.9fd2c8"
+            ]
+        ]
+    },
+    {
+        "id": "7050ed881890ce4d",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "enable download link",
+        "info": "",
+        "x": 360,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "f2bd56710ba03238",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 600,
+        "y": 380,
+        "wires": [
+            [
+                "b4e0b45a7bedd728"
+            ]
+        ]
+    },
+    {
+        "id": "ecb0810a22dc4a5c",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 380,
+        "wires": [
+            [
+                "c45589c369c843a5"
+            ]
+        ]
+    },
+    {
+        "id": "b4e0b45a7bedd728",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "",
+        "filename": "/db/events.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 800,
+        "y": 380,
+        "wires": [
+            [
+                "ed67dd07804138a2"
+            ]
+        ]
+    },
+    {
+        "id": "ed67dd07804138a2",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "debug 21",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "7318af62aa1dadcc",
+        "type": "ui_text",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "group": "c0886ba4111fbfae",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "events.json created with datetimes:",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 680,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "5124f45846b94ef0",
+        "type": "ui_toast",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": false,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "Events JSON output created (download available)",
+        "name": "",
+        "x": 620,
+        "y": 480,
+        "wires": []
     }
 ]
