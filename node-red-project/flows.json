@@ -146,40 +146,6 @@
         "h": 202
     },
     {
-        "id": "ab5e552a1defabf4",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "b573f57d.6290e8",
-            "1330b995.eb0626",
-            "cc26e2d4.ffd35",
-            "bcad70c7.b9db",
-            "2ffeee02.29d762",
-            "7ba1f4df.b12a7c",
-            "b42b2908.665408",
-            "fe2d6e02.ad949",
-            "db2479e4.104468",
-            "fa23a260.4e161",
-            "eb06ed9d.7f23f",
-            "58d47e08.81ffc",
-            "93b54b1c.311778",
-            "a0241251.a9cc4"
-        ],
-        "x": 14,
-        "y": 879,
-        "w": 962,
-        "h": 242
-    },
-    {
         "id": "5173f4b3ac03407a",
         "type": "group",
         "z": "28627559bebdc324",
@@ -338,27 +304,6 @@
         "h": 342
     },
     {
-        "id": "98a6b2d5979ec44b",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "future implementation",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "e9da260ad8a83698",
-            "53ee230fe049d09e",
-            "86ba5a0d412318d4",
-            "3997684d13f325ae",
-            "a189210b0b0330d1",
-            "764b358e579f76ed"
-        ],
-        "x": 14,
-        "y": 599,
-        "w": 602,
-        "h": 242
-    },
-    {
         "id": "35a68b2baec193d2",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -444,6 +389,29 @@
         "y": 1739,
         "w": 612,
         "h": 122
+    },
+    {
+        "id": "541d31d14bcd8b00",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "comments table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6a05187a692bed7c",
+            "fee2d22032a11056",
+            "f27b6d01ae7836d6",
+            "8f0bcaf04756da4f",
+            "e8b8e45c4bc045d8",
+            "840802d34d143ded",
+            "8d65b604e8d9e7f9",
+            "db1f35650c8d6448"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1172,
+        "h": 242
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -618,17 +586,6 @@
         "hidden": false
     },
     {
-        "id": "1f15adecfe5a580a",
-        "type": "ui_group",
-        "name": "Docker Environment Variables",
-        "tab": "b6d86231fb09af0f",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
         "name": "Monitoring",
@@ -645,17 +602,6 @@
         "order": 1,
         "disp": true,
         "width": "12",
-        "collapse": false,
-        "className": ""
-    },
-    {
-        "id": "3c375fd89b978620",
-        "type": "ui_group",
-        "name": "System actions",
-        "tab": "b6d86231fb09af0f",
-        "order": 1,
-        "disp": true,
-        "width": "6",
         "collapse": false,
         "className": ""
     },
@@ -3608,502 +3554,10 @@
         ]
     },
     {
-        "id": "e9da260ad8a83698",
-        "type": "ui_form",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "set docker environment variables",
-        "label": "",
-        "group": "1f15adecfe5a580a",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "options": [
-            {
-                "label": "Deployment location description (Form as scewer case with format streetNS-streetEW-sb/nb/eb/wb-2-digits; e.g. ne26th-wasco-sb-01)",
-                "value": "location",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Radar camera (Name specified for the primary camera that is used to match radar readings to detected objects)",
-                "value": "camradar",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "InfluxDB bucket Name",
-                "value": "influxbucket",
-                "type": "text",
-                "required": false,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "location": "",
-            "camradar": "",
-            "influxbucket": ""
-        },
-        "payload": "",
-        "submit": "submit",
-        "cancel": "clear",
-        "topic": "ui_env_vars",
-        "topicType": "str",
-        "splitLayout": "",
-        "className": "",
-        "x": 260,
-        "y": 680,
-        "wires": [
-            [
-                "86ba5a0d412318d4"
-            ]
-        ]
-    },
-    {
-        "id": "b573f57d.6290e8",
-        "type": "ui_button",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "",
-        "group": "",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Do stuff",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "icon": "",
-        "payload": "textInput",
-        "payloadType": "flow",
-        "topic": "",
-        "x": 280,
-        "y": 1020,
-        "wires": [
-            [
-                "cc26e2d4.ffd35",
-                "b42b2908.665408"
-            ]
-        ]
-    },
-    {
-        "id": "1330b995.eb0626",
-        "type": "ui_text_input",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "",
-        "label": "",
-        "tooltip": "",
-        "group": "",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "mode": "text",
-        "delay": "100",
-        "topic": "",
-        "x": 260,
-        "y": 960,
-        "wires": [
-            [
-                "7ba1f4df.b12a7c",
-                "2ffeee02.29d762"
-            ]
-        ]
-    },
-    {
-        "id": "cc26e2d4.ffd35",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "my function that does stuff",
-        "func": "msg.payload +=  \" - payload modified in my function\"\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 470,
-        "y": 1020,
-        "wires": [
-            [
-                "bcad70c7.b9db",
-                "a0241251.a9cc4"
-            ]
-        ]
-    },
-    {
-        "id": "bcad70c7.b9db",
-        "type": "ui_text",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "group": "",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Result: ",
-        "format": "{{msg.payload}}",
-        "layout": "row-left",
-        "x": 720,
-        "y": 1020,
-        "wires": []
-    },
-    {
-        "id": "2ffeee02.29d762",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "textInput",
-                "pt": "flow",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 450,
-        "y": 960,
-        "wires": [
-            [
-                "fe2d6e02.ad949"
-            ]
-        ]
-    },
-    {
-        "id": "7ba1f4df.b12a7c",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "Text entry debug node",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 460,
-        "y": 920,
-        "wires": []
-    },
-    {
-        "id": "b42b2908.665408",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "Button click debug node",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "x": 470,
-        "y": 1080,
-        "wires": []
-    },
-    {
-        "id": "fe2d6e02.ad949",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "is text empty?",
-        "property": "textInput",
-        "propertyType": "flow",
-        "rules": [
-            {
-                "t": "empty"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 640,
-        "y": 960,
-        "wires": [
-            [
-                "db2479e4.104468"
-            ],
-            [
-                "fa23a260.4e161"
-            ]
-        ]
-    },
-    {
-        "id": "db2479e4.104468",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "enabled false",
-        "rules": [
-            {
-                "t": "set",
-                "p": "enabled",
-                "pt": "msg",
-                "to": "false",
-                "tot": "bool"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 810,
-        "y": 940,
-        "wires": [
-            [
-                "eb06ed9d.7f23f"
-            ]
-        ]
-    },
-    {
-        "id": "fa23a260.4e161",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "enabled true",
-        "rules": [
-            {
-                "t": "set",
-                "p": "enabled",
-                "pt": "msg",
-                "to": "true",
-                "tot": "bool"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 810,
-        "y": 980,
-        "wires": [
-            [
-                "eb06ed9d.7f23f"
-            ]
-        ]
-    },
-    {
-        "id": "eb06ed9d.7f23f",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "",
-        "links": [
-            "58d47e08.81ffc"
-        ],
-        "x": 935,
-        "y": 960,
-        "wires": []
-    },
-    {
-        "id": "58d47e08.81ffc",
-        "type": "link in",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "",
-        "links": [
-            "eb06ed9d.7f23f"
-        ],
-        "x": 195,
-        "y": 1020,
-        "wires": [
-            [
-                "b573f57d.6290e8"
-            ]
-        ]
-    },
-    {
-        "id": "93b54b1c.311778",
-        "type": "inject",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "Init with empty string",
-        "props": [
-            {
-                "p": "payload",
-                "v": "",
-                "vt": "str"
-            },
-            {
-                "p": "topic",
-                "v": "",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "str",
-        "x": 160,
-        "y": 920,
-        "wires": [
-            [
-                "1330b995.eb0626"
-            ]
-        ]
-    },
-    {
-        "id": "a0241251.a9cc4",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "ab5e552a1defabf4",
-        "name": "After function debug node",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "x": 770,
-        "y": 1080,
-        "wires": []
-    },
-    {
-        "id": "53ee230fe049d09e",
-        "type": "inject",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "init with empty string",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "userinput",
-        "payload": "",
-        "payloadType": "str",
-        "x": 160,
-        "y": 640,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "86ba5a0d412318d4",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "debug 10",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 510,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "3997684d13f325ae",
-        "type": "ui_button",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "backup databases",
-        "group": "3c375fd89b978620",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Backup Databases",
-        "tooltip": "Will run script/backup on host system that will create tar.gzip files for transfer",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "backup",
-        "payload": "run_backup",
-        "payloadType": "str",
-        "topic": "ui_backup",
-        "topicType": "str",
-        "x": 210,
-        "y": 740,
-        "wires": [
-            [
-                "a189210b0b0330d1"
-            ]
-        ]
-    },
-    {
-        "id": "a189210b0b0330d1",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "debug 11",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 500,
-        "y": 740,
-        "wires": []
-    },
-    {
-        "id": "764b358e579f76ed",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "d": true,
-        "g": "98a6b2d5979ec44b",
-        "name": "execute system script",
-        "info": "",
-        "x": 480,
-        "y": 800,
-        "wires": []
-    },
-    {
         "id": "6a05187a692bed7c",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "",
         "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
         "group": "c0886ba4111fbfae",
@@ -4169,8 +3623,8 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 410,
-        "y": 220,
+        "x": 430,
+        "y": 60,
         "wires": [
             [
                 "fee2d22032a11056",
@@ -4182,6 +3636,7 @@
         "id": "fee2d22032a11056",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "debug: comment form input",
         "active": true,
         "tosidebar": true,
@@ -4191,20 +3646,21 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1000,
-        "y": 220,
+        "x": 1020,
+        "y": 60,
         "wires": []
     },
     {
         "id": "f27b6d01ae7836d6",
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 560,
-        "y": 340,
+        "x": 580,
+        "y": 180,
         "wires": [
             [
                 "840802d34d143ded"
@@ -4215,6 +3671,7 @@
         "id": "8f0bcaf04756da4f",
         "type": "inject",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "create table comments",
         "props": [
             {
@@ -4227,8 +3684,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS comments (effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
-        "x": 340,
-        "y": 340,
+        "x": 360,
+        "y": 180,
         "wires": [
             [
                 "f27b6d01ae7836d6"
@@ -4239,6 +3696,7 @@
         "id": "e8b8e45c4bc045d8",
         "type": "inject",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "select latest 5 rows from comments",
         "props": [
             {
@@ -4251,8 +3709,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
-        "x": 300,
-        "y": 380,
+        "x": 320,
+        "y": 220,
         "wires": [
             [
                 "f27b6d01ae7836d6"
@@ -4263,6 +3721,7 @@
         "id": "840802d34d143ded",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "sqlite select last 5 comments",
         "active": true,
         "tosidebar": true,
@@ -4272,14 +3731,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1000,
-        "y": 340,
+        "x": 1020,
+        "y": 180,
         "wires": []
     },
     {
         "id": "8d65b604e8d9e7f9",
         "type": "function",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "name": "create comment payload",
         "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
         "outputs": 1,
@@ -4288,8 +3748,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 330,
-        "y": 280,
+        "x": 350,
+        "y": 120,
         "wires": [
             [
                 "db1f35650c8d6448"
@@ -4301,12 +3761,13 @@
         "id": "db1f35650c8d6448",
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO comments (effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
-        "name": "tmdb.events, Prepared Statement",
-        "x": 640,
-        "y": 280,
+        "name": "tmdb.comments, Prepared Statement",
+        "x": 670,
+        "y": 120,
         "wires": [
             []
         ]
