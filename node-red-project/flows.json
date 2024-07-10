@@ -418,7 +418,7 @@
         "type": "group",
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
-        "name": "create downloadable database output",
+        "name": "create downloadable links",
         "style": {
             "label": true
         },
@@ -453,11 +453,11 @@
             "f2bd56710ba03238",
             "ecb0810a22dc4a5c",
             "b4e0b45a7bedd728",
-            "ed67dd07804138a2",
             "7318af62aa1dadcc",
             "5124f45846b94ef0",
             "3a9bb6ed1306eb1c",
-            "7050ed881890ce4d"
+            "7050ed881890ce4d",
+            "82073a9c3e0f504f"
         ],
         "x": 14,
         "y": 299,
@@ -3831,35 +3831,35 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "",
-        "label": "Export JSON Events date (default 7 days ago)",
+        "label": "Generate Events (as JSON) between dates (default 7 days ago to now)",
         "group": "c0886ba4111fbfae",
         "order": 2,
         "width": 0,
         "height": 0,
         "options": [
             {
-                "label": "Event start date (attr: start_time)",
+                "label": "Event start date",
                 "value": "start_date",
                 "type": "date",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "Event start time (attr: start_time)",
+                "label": "Event start time",
                 "value": "start_time",
                 "type": "time",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "Event end date (attr: end_time)",
+                "label": "Event end date",
                 "value": "end_date",
                 "type": "date",
                 "required": false,
                 "rows": null
             },
             {
-                "label": "Event end time (attr: end_time)",
+                "label": "Event end time",
                 "value": "end_time",
                 "type": "time",
                 "required": false,
@@ -3879,7 +3879,7 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 240,
+        "x": 310,
         "y": 340,
         "wires": [
             [
@@ -3894,7 +3894,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "debug: JSON events form input",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3924,8 +3924,7 @@
         "wires": [
             [
                 "f2bd56710ba03238",
-                "7318af62aa1dadcc",
-                "5124f45846b94ef0"
+                "82073a9c3e0f504f"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -4046,7 +4045,7 @@
         "order": 0,
         "width": 0,
         "height": 0,
-        "format": "<div >\n    download generated <a href=\"/files/events.json\">events.json</a> (use Submit button above) <br />\n    download entire <a href=\"/files/tmdb\">tmdb.sqlite database</a>\n</div>",
+        "format": "<h3>Database Download Links</h3>\n<div >\n    <span><a href=\"/files/events.json\">events.json</a> (use Generate form above) </span> \n    <br />\n    <span><a href=\"/files/tmdb\">tmdb.sqlite</a> (entire database)</span>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": false,
@@ -4160,27 +4159,8 @@
         "x": 800,
         "y": 380,
         "wires": [
-            [
-                "ed67dd07804138a2"
-            ]
+            []
         ]
-    },
-    {
-        "id": "ed67dd07804138a2",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "name": "debug 21",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 980,
-        "y": 380,
-        "wires": []
     },
     {
         "id": "7318af62aa1dadcc",
@@ -4192,7 +4172,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "events.json created with datetimes:",
+        "label": "{{msg.topic}}",
         "format": "{{msg.payload}}",
         "layout": "col-center",
         "className": "",
@@ -4200,7 +4180,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 680,
+        "x": 770,
         "y": 440,
         "wires": []
     },
@@ -4210,18 +4190,40 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "position": "top right",
-        "displayTime": "3",
+        "displayTime": "5",
         "highlight": "",
         "sendall": false,
         "outputs": 0,
         "ok": "OK",
         "cancel": "",
-        "raw": false,
+        "raw": true,
         "className": "",
         "topic": "Events JSON output created (download available)",
         "name": "",
-        "x": 620,
+        "x": 800,
         "y": 480,
         "wires": []
+    },
+    {
+        "id": "82073a9c3e0f504f",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "format events creation notification",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"<div><b>Created events.json withing DateTimes</b></div>\"\nnewMsg.payload = \"<div><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></div>\";\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 440,
+        "wires": [
+            [
+                "7318af62aa1dadcc",
+                "5124f45846b94ef0"
+            ]
+        ]
     }
 ]
