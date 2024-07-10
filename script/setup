@@ -22,8 +22,8 @@ cp docker-frigate/docker-compose-frigate.yaml ~/code/frigate/docker-compose-frig
 #create config file, with hostname for rpi for streaming using go2rtc
 #cp docker-frigate/frigate-config.yaml ~/code/frigate/config/config.yml
 # envsubst will replace ${SYSTEM_VAR} in config, only used for HOSTNAME right now
-export HOSTNAME
-envsubst < docker-frigate/frigate-config.yaml >> ~/code/frigate/config/config.yml
+export HOSTNAME=$HOSTNAME
+envsubst < docker-frigate/frigate-config.yaml > ~/code/frigate/config/config.yml
 
 ##-- /frigate
 

@@ -12,7 +12,8 @@ cd "$(dirname "$0")/.."
 # full install required for camera (lite version does not have H.264 codec for libcamera)
 #update system
 sudo apt-get update
-sudo apt-get upgrade -y
+#rpi recommends full-upgrade: https://www.raspberrypi.com/documentation/computers/os.html#manage-software-packages-with-apt
+sudo apt full-upgrade -y
 
 #set local timezone
 sudo raspi-config nonint do_change_timezone America/Los_Angeles
@@ -48,6 +49,7 @@ echo "==> Installing Coral TPU drivers…"
 echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 
+sudo apt update
 sudo apt-get -y install libedgetpu1-std
 ##-- /coral tpu drivers
 
