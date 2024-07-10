@@ -61,11 +61,17 @@
         "nodes": [
             "4681243b9c70e906",
             "b8db51ab64a3d61e",
-            "67f64c75edc0ef13"
+            "67f64c75edc0ef13",
+            "0749f4279a336caf",
+            "56b9668b4f365f7b",
+            "ef4ad9faa7ec12e7",
+            "81c98c5e01bbfe09",
+            "87412467471d97a6",
+            "8a653740e4fc4f6a"
         ],
         "x": 534,
         "y": 499,
-        "w": 452,
+        "w": 1252,
         "h": 182
     },
     {
@@ -351,6 +357,55 @@
         "h": 322
     },
     {
+        "id": "541d31d14bcd8b00",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "comments table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6a05187a692bed7c",
+            "fee2d22032a11056",
+            "f27b6d01ae7836d6",
+            "8f0bcaf04756da4f",
+            "e8b8e45c4bc045d8",
+            "840802d34d143ded",
+            "8d65b604e8d9e7f9",
+            "db1f35650c8d6448"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1172,
+        "h": 242
+    },
+    {
+        "id": "0e3b2be7bcc3d3b8",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Events file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f43a276d3a899fe8",
+            "c25ade7ddaeca697",
+            "c45589c369c843a5",
+            "f2bd56710ba03238",
+            "ecb0810a22dc4a5c",
+            "b4e0b45a7bedd728",
+            "7318af62aa1dadcc",
+            "5124f45846b94ef0",
+            "3a9bb6ed1306eb1c",
+            "7050ed881890ce4d",
+            "82073a9c3e0f504f"
+        ],
+        "x": 14,
+        "y": 299,
+        "w": 1212,
+        "h": 608
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -391,29 +446,6 @@
         "h": 122
     },
     {
-        "id": "541d31d14bcd8b00",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "comments table",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "6a05187a692bed7c",
-            "fee2d22032a11056",
-            "f27b6d01ae7836d6",
-            "8f0bcaf04756da4f",
-            "e8b8e45c4bc045d8",
-            "840802d34d143ded",
-            "8d65b604e8d9e7f9",
-            "db1f35650c8d6448"
-        ],
-        "x": 14,
-        "y": 19,
-        "w": 1172,
-        "h": 242
-    },
-    {
         "id": "3a9bb6ed1306eb1c",
         "type": "group",
         "z": "239d7b3ba410ad5e",
@@ -437,32 +469,6 @@
         "y": 579,
         "w": 692,
         "h": 302
-    },
-    {
-        "id": "0e3b2be7bcc3d3b8",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "DOWNLOAD tmdb - create JSON Events file from query",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f43a276d3a899fe8",
-            "c25ade7ddaeca697",
-            "c45589c369c843a5",
-            "f2bd56710ba03238",
-            "ecb0810a22dc4a5c",
-            "b4e0b45a7bedd728",
-            "7318af62aa1dadcc",
-            "5124f45846b94ef0",
-            "3a9bb6ed1306eb1c",
-            "7050ed881890ce4d",
-            "82073a9c3e0f504f"
-        ],
-        "x": 14,
-        "y": 299,
-        "w": 1212,
-        "h": 608
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -695,6 +701,12 @@
         "className": ""
     },
     {
+        "id": "1d8d8c9a28569355",
+        "type": "sqlitedb",
+        "db": "/db/radar",
+        "mode": "RWC"
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -888,7 +900,7 @@
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1172,7 +1184,8 @@
         "wires": [
             [
                 "4681243b9c70e906",
-                "67f64c75edc0ef13"
+                "67f64c75edc0ef13",
+                "8a653740e4fc4f6a"
             ],
             [
                 "9496fe7a475726de"
@@ -1542,6 +1555,127 @@
         "x": 1110,
         "y": 1420,
         "wires": []
+    },
+    {
+        "id": "0749f4279a336caf",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1420,
+        "y": 540,
+        "wires": [
+            [
+                "81c98c5e01bbfe09"
+            ]
+        ]
+    },
+    {
+        "id": "56b9668b4f365f7b",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "create radar_dov table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL);",
+        "x": 1160,
+        "y": 540,
+        "wires": [
+            [
+                "0749f4279a336caf"
+            ]
+        ]
+    },
+    {
+        "id": "ef4ad9faa7ec12e7",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "select latest 5 rows from radar_dov",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;",
+        "x": 1120,
+        "y": 580,
+        "wires": [
+            [
+                "0749f4279a336caf"
+            ]
+        ]
+    },
+    {
+        "id": "81c98c5e01bbfe09",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "debug: last 5 rows radar_dov",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1620,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "87412467471d97a6",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "",
+        "name": "",
+        "x": 1420,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8a653740e4fc4f6a",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "write params for radar_dov insert",
+        "func": "const obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 640,
+        "wires": [
+            [
+                "87412467471d97a6"
+            ]
+        ]
     },
     {
         "id": "481344ed5f4b69d9",
