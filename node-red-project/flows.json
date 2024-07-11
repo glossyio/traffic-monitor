@@ -322,11 +322,18 @@
             "ad7393ac18c4083b",
             "407dbf096111ea43",
             "52dd51380fea2c06",
-            "b39062019fac1a66"
+            "b39062019fac1a66",
+            "7f50d9d83bdb7f14",
+            "792582002ff158c7",
+            "c123fc5ed5e14e8a",
+            "5895f0df39bdb0ca",
+            "673e45159a2dfccf",
+            "a6490c17427bf58a",
+            "2b581db5485ab33c"
         ],
         "x": 54,
         "y": 479,
-        "w": 1452,
+        "w": 1632,
         "h": 342
     },
     {
@@ -2510,7 +2517,8 @@
         "y": 780,
         "wires": [
             [
-                "cbef8a3acc3d1495"
+                "cbef8a3acc3d1495",
+                "2b581db5485ab33c"
             ]
         ]
     },
@@ -2757,18 +2765,150 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "pull speed, direction for event period",
-        "func": "\nreturn msg;",
+        "func": "\n//SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;\n\n// var query = \"\";\n\n// query += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\n// query += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\n// query += \"    |> median(column: \\\"_value\\\")\\n\"; \n\n// msg.query = query;\n// return msg;\n\n\nlet query = \"SELECT * FROM radar_dov WHERE time BETWEEN \" + (Math.floor(msg.frigate_event.start_time) - 2) +\" AND \" + (Math.ceil(msg.frigate_event.end_time) + 2) + \";\";\n\nmsg.topic = query;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1330,
+        "x": 1170,
         "y": 640,
         "wires": [
-            []
+            [
+                "7f50d9d83bdb7f14"
+            ]
         ]
+    },
+    {
+        "id": "7f50d9d83bdb7f14",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1260,
+        "y": 680,
+        "wires": [
+            [
+                "792582002ff158c7",
+                "c123fc5ed5e14e8a"
+            ]
+        ]
+    },
+    {
+        "id": "792582002ff158c7",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "rows radar_dov",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1560,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "c123fc5ed5e14e8a",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "calculate median per direction",
+        "func": "const medianVelocityPerDirection = {};\n\n// Group the data by direction\nconst groupedData = msg.payload.reduce((acc, curr) => {\n  if (!acc[curr.direction]) {\n    acc[curr.direction] = [];\n  }\n  acc[curr.direction].push(curr);\n  return acc;\n}, {});\n\n// Calculate the median velocity for each direction\nfor (const direction in groupedData) {\n  if (groupedData.hasOwnProperty(direction)) {\n    const sortedVelocities = groupedData[direction].map(entry => entry.velocity).sort((a, b) => a - b);\n    const medianIndex = Math.floor(sortedVelocities.length / 2);\n    const medianVelocity =\n      sortedVelocities.length % 2 === 0\n        ? (sortedVelocities[medianIndex - 1] + sortedVelocities[medianIndex]) / 2\n        : sortedVelocities[medianIndex];\n    medianVelocityPerDirection[direction] = medianVelocity;\n  }\n}\n\nmsg.payload = medianVelocityPerDirection;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1250,
+        "y": 740,
+        "wires": [
+            [
+                "5895f0df39bdb0ca",
+                "673e45159a2dfccf"
+            ]
+        ]
+    },
+    {
+        "id": "5895f0df39bdb0ca",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1540,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "673e45159a2dfccf",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "match radar speed to event",
+        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1300,
+        "y": 780,
+        "wires": [
+            [
+                "a6490c17427bf58a"
+            ]
+        ]
+    },
+    {
+        "id": "a6490c17427bf58a",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1540,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "2b581db5485ab33c",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 860,
+        "y": 780,
+        "wires": []
     },
     {
         "id": "3985037239b671c5",
