@@ -320,11 +320,13 @@
             "cbef8a3acc3d1495",
             "dd3face6611c0380",
             "ad7393ac18c4083b",
-            "407dbf096111ea43"
+            "407dbf096111ea43",
+            "52dd51380fea2c06",
+            "b39062019fac1a66"
         ],
         "x": 54,
         "y": 479,
-        "w": 992,
+        "w": 1452,
         "h": 342
     },
     {
@@ -2406,7 +2408,8 @@
         "y": 720,
         "wires": [
             [
-                "dd3face6611c0380"
+                "dd3face6611c0380",
+                "52dd51380fea2c06"
             ]
         ]
     },
@@ -2427,7 +2430,8 @@
         "y": 580,
         "wires": [
             [
-                "0bcc4cc5c0656a3b"
+                "0bcc4cc5c0656a3b",
+                "b39062019fac1a66"
             ]
         ]
     },
@@ -2695,7 +2699,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "composed tmdb.events message",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2713,7 +2717,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "cleanse final msg.payload to forward along",
-        "func": "let newMsg = {};\n\nnewMsg.topic = \"Dashboard event payload\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
+        "func": "let newMsg = {};\n\nnewMsg.topic = \"tm/event\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2727,6 +2731,43 @@
                 "7f0ef976c7b79245",
                 "274f87c31437c2d7"
             ]
+        ]
+    },
+    {
+        "id": "52dd51380fea2c06",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 860,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "b39062019fac1a66",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "pull speed, direction for event period",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1330,
+        "y": 640,
+        "wires": [
+            []
         ]
     },
     {
