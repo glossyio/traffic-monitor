@@ -404,7 +404,8 @@
             "e8b8e45c4bc045d8",
             "840802d34d143ded",
             "8d65b604e8d9e7f9",
-            "db1f35650c8d6448"
+            "db1f35650c8d6448",
+            "6e2a152aecd929d3"
         ],
         "x": 14,
         "y": 19,
@@ -426,16 +427,16 @@
             "f2bd56710ba03238",
             "ecb0810a22dc4a5c",
             "b4e0b45a7bedd728",
-            "7318af62aa1dadcc",
             "5124f45846b94ef0",
-            "3a9bb6ed1306eb1c",
             "7050ed881890ce4d",
-            "82073a9c3e0f504f"
+            "82073a9c3e0f504f",
+            "44f3b2f2c2ae88fe",
+            "a3d39046394c9879"
         ],
         "x": 14,
         "y": 299,
-        "w": 1212,
-        "h": 608
+        "w": 1272,
+        "h": 242
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -478,11 +479,10 @@
         "h": 122
     },
     {
-        "id": "3a9bb6ed1306eb1c",
+        "id": "81c973dcdca1a4f0",
         "type": "group",
         "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "name": "create downloadable links",
+        "name": "database download links",
         "style": {
             "label": true
         },
@@ -495,12 +495,52 @@
             "5b18a8e7.fb8da8",
             "a8c2985e.d23ad8",
             "5de7cbb4.fa21a4",
-            "67ecfa7f.3f0e24"
+            "67ecfa7f.3f0e24",
+            "7ec49429a06e3bbf"
         ],
-        "x": 254,
-        "y": 579,
+        "x": 14,
+        "y": 599,
         "w": 692,
-        "h": 302
+        "h": 342
+    },
+    {
+        "id": "1bfaaf118f38aee0",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Radar file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "38b44ecb9288caf2",
+            "55b8ab3b2b7af294",
+            "790a89794204c383",
+            "314a302b5d86fb5a",
+            "b00e6ad2a4612cad",
+            "7dba386e57337c72",
+            "04df9cb8c0753abb",
+            "3557178575375eb6",
+            "29583ca6de66fedf",
+            "91cae91e61fcea38",
+            "68fecdfda8e4e774",
+            "8c660460752a27b2",
+            "d50d86038fe1af32",
+            "b5e099e92ce27bf6",
+            "f77b0f12f5047d25",
+            "fbf290de9b7b858f",
+            "35dd409613d47a60",
+            "729b953264ce47aa",
+            "23b1ba527419b29b",
+            "b519f0927284d44a",
+            "2f3cc99c3c41ab90",
+            "62e90c91d0238273",
+            "c00796fd5642dae0",
+            "671e675db53b8ef9"
+        ],
+        "x": 14,
+        "y": 999,
+        "w": 1392,
+        "h": 462
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -707,7 +747,7 @@
     {
         "id": "c0886ba4111fbfae",
         "type": "ui_group",
-        "name": "Database Output",
+        "name": "Events Database Output",
         "tab": "ddb9d86f10b3f6a7",
         "order": 2,
         "disp": true,
@@ -724,7 +764,7 @@
     {
         "id": "d3f63882e39b03a6",
         "type": "ui_group",
-        "name": "Database Input",
+        "name": "Comments Database Input",
         "tab": "ddb9d86f10b3f6a7",
         "order": 1,
         "disp": true,
@@ -737,6 +777,17 @@
         "type": "sqlitedb",
         "db": "/db/radar",
         "mode": "RWC"
+    },
+    {
+        "id": "15ba1f43554ce3f1",
+        "type": "ui_group",
+        "name": "Radar Database Output",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 3,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "e43506628b4a1cdb",
@@ -4419,9 +4470,9 @@
         "z": "239d7b3ba410ad5e",
         "g": "541d31d14bcd8b00",
         "name": "",
-        "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
+        "label": "Create new Comment",
         "group": "d3f63882e39b03a6",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "options": [
@@ -4483,7 +4534,7 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 430,
+        "x": 140,
         "y": 60,
         "wires": [
             [
@@ -4638,14 +4689,14 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "",
-        "label": "Generate Events (as JSON) between dates (default 7 days ago to now)",
+        "label": "Generate Events JSON",
         "group": "c0886ba4111fbfae",
         "order": 2,
         "width": 0,
         "height": 0,
         "options": [
             {
-                "label": "Event start date",
+                "label": "Event start date (default 7-days ago)",
                 "value": "start_date",
                 "type": "date",
                 "required": false,
@@ -4659,7 +4710,7 @@
                 "rows": null
             },
             {
-                "label": "Event end date",
+                "label": "Event end date (default now)",
                 "value": "end_date",
                 "type": "date",
                 "required": false,
@@ -4686,12 +4737,12 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 310,
+        "x": 170,
         "y": 340,
         "wires": [
             [
-                "c25ade7ddaeca697",
-                "c45589c369c843a5"
+                "c45589c369c843a5",
+                "c25ade7ddaeca697"
             ]
         ]
     },
@@ -4709,7 +4760,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1050,
+        "x": 1090,
         "y": 340,
         "wires": []
     },
@@ -4719,19 +4770,19 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "create events query",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nreturn newMsg;\n",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Events JSON Links</h3>\n    <p>(from above form)</p>\n\n    <div><span>Start: ${formatstartDateTime}</span> <br /> <span>End: ${formatendDateTime}</span></div>\n\n    <div>\n        <ul>\n            <li><a href=\"/files/events.json\">events.json</a></li>\n    </div>\n`;\n\nreturn newMsg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
+        "x": 590,
         "y": 380,
         "wires": [
             [
-                "f2bd56710ba03238",
-                "82073a9c3e0f504f"
+                "44f3b2f2c2ae88fe",
+                "a3d39046394c9879"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -4740,7 +4791,7 @@
         "id": "f31a598d.9fd2c8",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Set base path",
         "func": "//restrict to c:\\temp\\\nvar basePath = \"/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
         "outputs": 2,
@@ -4749,8 +4800,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
-        "y": 680,
+        "x": 280,
+        "y": 700,
         "wires": [
             [
                 "34dc99e5.495466"
@@ -4764,19 +4815,19 @@
         "id": "98261154.3006",
         "type": "http response",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 870,
-        "y": 720,
+        "x": 630,
+        "y": 740,
         "wires": []
     },
     {
         "id": "34dc99e5.495466",
         "type": "file in",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "filename": "filename",
         "filenameType": "msg",
@@ -4784,8 +4835,8 @@
         "chunk": false,
         "sendError": false,
         "encoding": "none",
-        "x": 710,
-        "y": 660,
+        "x": 470,
+        "y": 680,
         "wires": [
             [
                 "98261154.3006"
@@ -4796,12 +4847,12 @@
         "id": "38d65d59.1d8aa2",
         "type": "catch",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "scope": null,
         "uncaught": false,
-        "x": 340,
-        "y": 760,
+        "x": 100,
+        "y": 780,
         "wires": [
             [
                 "3b8014a.86ad8ec",
@@ -4813,13 +4864,13 @@
         "id": "3b8014a.86ad8ec",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Set 404",
         "func": "msg.payload = msg.error;\nmsg.statusCode = 404;//resource not found\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
-        "x": 720,
-        "y": 760,
+        "x": 480,
+        "y": 780,
         "wires": [
             [
                 "98261154.3006"
@@ -4830,7 +4881,7 @@
         "id": "5b18a8e7.fb8da8",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -4838,28 +4889,28 @@
         "tostatus": false,
         "complete": "true",
         "targetType": "full",
-        "x": 370,
-        "y": 800,
+        "x": 130,
+        "y": 820,
         "wires": []
     },
     {
         "id": "a8c2985e.d23ad8",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "group": "c0886ba4111fbfae",
-        "name": "ui_temlplate - present download links on dashboard",
-        "order": 0,
+        "name": "download Events DB",
+        "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<h3>Database Download Links</h3>\n<div >\n    <span><a href=\"/files/events.json\">events.json</a> (use Generate form above) </span> \n    <br />\n    <span><a href=\"/files/tmdb\">tmdb.sqlite</a> (entire database)</span>\n</div>",
+        "format": "<h3>Download whole Events database</h3>\n<div>\n    <p><a href=\"/files/tmdb\">tmdb.sqlite</a> (entire database)</p>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": false,
         "templateScope": "local",
         "className": "",
-        "x": 710,
-        "y": 840,
+        "x": 520,
+        "y": 860,
         "wires": [
             []
         ]
@@ -4868,25 +4919,25 @@
         "id": "5de7cbb4.fa21a4",
         "type": "comment",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Create http endpoint <nodered>/files/xxx  where xxx is the file name to download",
         "info": "",
-        "x": 560,
-        "y": 620,
+        "x": 320,
+        "y": 640,
         "wires": []
     },
     {
         "id": "67ecfa7f.3f0e24",
         "type": "http in",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "url": "/files/:fn",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 350,
-        "y": 680,
+        "x": 110,
+        "y": 700,
         "wires": [
             [
                 "f31a598d.9fd2c8"
@@ -4901,7 +4952,7 @@
         "name": "enable download link",
         "info": "",
         "x": 360,
-        "y": 540,
+        "y": 420,
         "wires": []
     },
     {
@@ -4913,8 +4964,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 600,
-        "y": 380,
+        "x": 860,
+        "y": 480,
         "wires": [
             [
                 "b4e0b45a7bedd728"
@@ -4963,33 +5014,11 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 800,
-        "y": 380,
+        "x": 1020,
+        "y": 480,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "7318af62aa1dadcc",
-        "type": "ui_text",
-        "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "group": "c0886ba4111fbfae",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "{{msg.topic}}",
-        "format": "{{msg.payload}}",
-        "layout": "col-center",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 770,
-        "y": 440,
-        "wires": []
     },
     {
         "id": "5124f45846b94ef0",
@@ -5007,8 +5036,8 @@
         "className": "",
         "topic": "Events JSON output created (download available)",
         "name": "",
-        "x": 800,
-        "y": 480,
+        "x": 1180,
+        "y": 420,
         "wires": []
     },
     {
@@ -5024,13 +5053,617 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 540,
-        "y": 440,
+        "x": 940,
+        "y": 420,
         "wires": [
             [
-                "7318af62aa1dadcc",
                 "5124f45846b94ef0"
             ]
+        ]
+    },
+    {
+        "id": "38b44ecb9288caf2",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "label": "Generate Radar JSON",
+        "group": "15ba1f43554ce3f1",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Radar start date (default 7-days ago)",
+                "value": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar start time",
+                "value": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end date (default now)",
+                "value": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end time",
+                "value": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 160,
+        "y": 1040,
+        "wires": [
+            [
+                "91cae91e61fcea38",
+                "55b8ab3b2b7af294"
+            ]
+        ]
+    },
+    {
+        "id": "55b8ab3b2b7af294",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "debug: JSON radar form input",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "790a89794204c383",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_dov query",
+        "func": "msg.topic = \"SELECT * FROM radar_dov WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 1180,
+        "wires": [
+            [
+                "314a302b5d86fb5a"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "314a302b5d86fb5a",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1180,
+        "wires": [
+            [
+                "7dba386e57337c72"
+            ]
+        ]
+    },
+    {
+        "id": "b00e6ad2a4612cad",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 1080,
+        "wires": [
+            [
+                "91cae91e61fcea38"
+            ]
+        ]
+    },
+    {
+        "id": "7dba386e57337c72",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_dov.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1130,
+        "y": 1180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "04df9cb8c0753abb",
+        "type": "ui_toast",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "position": "top right",
+        "displayTime": "5",
+        "highlight": "",
+        "sendall": false,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": true,
+        "className": "",
+        "topic": "Events JSON output created (download available)",
+        "name": "",
+        "x": 1140,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "3557178575375eb6",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "enable download link when generated",
+        "info": "",
+        "x": 210,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "29583ca6de66fedf",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "format radar creation notification",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"<div><b>Created radar.json withing DateTimes</b></div>\"\nnewMsg.payload = \"<div><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></div>\";\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 1120,
+        "wires": [
+            [
+                "04df9cb8c0753abb"
+            ]
+        ]
+    },
+    {
+        "id": "91cae91e61fcea38",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar dates for query",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime() / 1000;\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Radar JSON Links</h3>\n    <p>(from above form)</p>\n\n    <div><span>Start: ${formatstartDateTime}</span> <br /> <span>End: ${formatendDateTime}</span></div>\n\n    <div> \n        <ul>\n            <li><a href=\"/files/radar_dov.json\">radar_dov.json</a></li> \n            <li><a href=\"/files/radar_timed_speed_counts.json\">radar_timed_speed_counts.json</a> </li>\n            <li><a href=\"/files/radar_raw_speed_magnitude.json\">radar_raw_speed_magnitude.json</a> </li>\n            <li><a href=\"/files/radar_raw_speed_magnitude_single.json\">radar_raw_speed_magnitude_single.json</a> </li>\n            <li><a href=\"/files/radar_oc_payload.json\">radar_oc_payload.json</a> </li>\n        </ul>\n    </div>\n`;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 1080,
+        "wires": [
+            [
+                "c00796fd5642dae0",
+                "671e675db53b8ef9"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "68fecdfda8e4e774",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_timed_speed_counts query",
+        "func": "msg.topic = \"SELECT * FROM radar_timed_speed_counts WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 1240,
+        "wires": [
+            [
+                "8c660460752a27b2"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "8c660460752a27b2",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1240,
+        "wires": [
+            [
+                "d50d86038fe1af32"
+            ]
+        ]
+    },
+    {
+        "id": "d50d86038fe1af32",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_timed_speed_counts.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1180,
+        "y": 1240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b5e099e92ce27bf6",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_raw_speed_magnitude query",
+        "func": "msg.topic = \"SELECT * FROM radar_raw_speed_magnitude WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 1300,
+        "wires": [
+            [
+                "f77b0f12f5047d25"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "f77b0f12f5047d25",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1300,
+        "wires": [
+            [
+                "fbf290de9b7b858f"
+            ]
+        ]
+    },
+    {
+        "id": "fbf290de9b7b858f",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1190,
+        "y": 1300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "35dd409613d47a60",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_raw_speed_magnitude_single query",
+        "func": "msg.topic = \"SELECT * FROM radar_raw_speed_magnitude_single WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 1360,
+        "wires": [
+            [
+                "729b953264ce47aa"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "729b953264ce47aa",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1360,
+        "wires": [
+            [
+                "23b1ba527419b29b"
+            ]
+        ]
+    },
+    {
+        "id": "23b1ba527419b29b",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude_single.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1210,
+        "y": 1360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b519f0927284d44a",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_oc_payload query",
+        "func": "msg.topic = \"SELECT * FROM radar_oc_payload WHERE start_time >= '\"+ msg.payload.startDateTime +\"' AND end_time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 1420,
+        "wires": [
+            [
+                "2f3cc99c3c41ab90"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "2f3cc99c3c41ab90",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1420,
+        "wires": [
+            [
+                "62e90c91d0238273"
+            ]
+        ]
+    },
+    {
+        "id": "62e90c91d0238273",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_oc_payload.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1160,
+        "y": 1420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7ec49429a06e3bbf",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "81c973dcdca1a4f0",
+        "group": "15ba1f43554ce3f1",
+        "name": "download Radar DB",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<h3>Download whole Radar database</h3>\n<div>\n    <p><a href=\"/files/radar\">radar.sqlite</a> (entire database)</p>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 520,
+        "y": 900,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c00796fd5642dae0",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "group": "15ba1f43554ce3f1",
+        "name": "download Radar JSON",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "format": "",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 560,
+        "y": 1120,
+        "wires": [
+            [
+                "790a89794204c383",
+                "68fecdfda8e4e774",
+                "b5e099e92ce27bf6",
+                "35dd409613d47a60",
+                "b519f0927284d44a",
+                "29583ca6de66fedf"
+            ]
+        ]
+    },
+    {
+        "id": "44f3b2f2c2ae88fe",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "group": "c0886ba4111fbfae",
+        "name": "download Events JSON",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "format": "",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 650,
+        "y": 420,
+        "wires": [
+            [
+                "82073a9c3e0f504f",
+                "f2bd56710ba03238"
+            ]
+        ]
+    },
+    {
+        "id": "671e675db53b8ef9",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 130,
+        "y": 1240,
+        "wires": []
+    },
+    {
+        "id": "a3d39046394c9879",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 330,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "6e2a152aecd929d3",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "group": "d3f63882e39b03a6",
+        "name": "comments instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<p>Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.</p>",
+        "storeOutMessages": false,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 380,
+        "y": 80,
+        "wires": [
+            []
         ]
     }
 ]
