@@ -184,7 +184,7 @@
         "id": "76417db2b472ef4f",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "influxdb TimedSpeedCounts (.counts, .speed_average)",
+        "name": "radar TimedSpeedCounts (.counts, .speed_average)",
         "style": {
             "label": true
         },
@@ -309,7 +309,9 @@
             "b39062019fac1a66",
             "7f50d9d83bdb7f14",
             "c123fc5ed5e14e8a",
-            "673e45159a2dfccf"
+            "673e45159a2dfccf",
+            "6c7eefa45db08cbc",
+            "cd72f360292bca50"
         ],
         "x": 54,
         "y": 479,
@@ -412,46 +414,6 @@
         "h": 262
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "11fa2826769befc7",
-            "158e6edae533bfdc",
-            "eff2193c8246a9d2",
-            "57fa6ca2b7d290e3"
-        ],
-        "x": 54,
-        "y": 1159,
-        "w": 1112,
-        "h": 162
-    },
-    {
-        "id": "f5d2d92d50d18ce2",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "frigate event api for thumbnail",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "09f99c931e5535bf",
-            "08121a31488784bc",
-            "9226865e3385eb56",
-            "aa0afb5180297e2b"
-        ],
-        "x": 304,
-        "y": 1739,
-        "w": 612,
-        "h": 122
-    },
-    {
         "id": "81c973dcdca1a4f0",
         "type": "group",
         "z": "239d7b3ba410ad5e",
@@ -511,6 +473,46 @@
         "y": 919,
         "w": 1392,
         "h": 502
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "11fa2826769befc7",
+            "158e6edae533bfdc",
+            "eff2193c8246a9d2",
+            "57fa6ca2b7d290e3"
+        ],
+        "x": 54,
+        "y": 1159,
+        "w": 1112,
+        "h": 162
+    },
+    {
+        "id": "f5d2d92d50d18ce2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "09f99c931e5535bf",
+            "08121a31488784bc",
+            "9226865e3385eb56",
+            "aa0afb5180297e2b"
+        ],
+        "x": 304,
+        "y": 1739,
+        "w": 612,
+        "h": 122
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -815,16 +817,6 @@
         "statusType": "auto",
         "x": 600,
         "y": 800,
-        "wires": []
-    },
-    {
-        "id": "a9d702a51bc8f0c9",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "name": "variables to pass",
-        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)  --- env.get(\"VAR_DEVICE_IP\")\n- `location` string (for influxDB `location` tag)  --- env.get(\"VAR_LOCATION\")\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config  --- env.get(\"VAR_RADAR_CAMERA\")  \n- `influxdb_database`   --- env.get(\"VAR_INFLUXDB_BUCKET\")\n\n",
-        "x": 360,
-        "y": 60,
         "wires": []
     },
     {
@@ -2186,7 +2178,8 @@
         "y": 520,
         "wires": [
             [
-                "cbef8a3acc3d1495"
+                "cbef8a3acc3d1495",
+                "cd72f360292bca50"
             ]
         ]
     },
@@ -2368,7 +2361,7 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "pull speed, direction for event period",
-        "func": "\n//SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;\n\n// var query = \"\";\n\n// query += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\n// query += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\n// query += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\n// query += \"    |> median(column: \\\"_value\\\")\\n\"; \n\n// msg.query = query;\n// return msg;\n\n\nlet query = \"SELECT * FROM radar_dov WHERE time BETWEEN \" + (Math.floor(msg.frigate_event.start_time) - 2) +\" AND \" + (Math.ceil(msg.frigate_event.end_time) + 2) + \";\";\n\nmsg.topic = query;\n\nreturn msg;",
+        "func": "let query = \"SELECT * FROM radar_dov WHERE time BETWEEN \" + (Math.floor(msg.frigate_event.start_time) - 2) +\" AND \" + (Math.ceil(msg.frigate_event.end_time) + 2) + \";\";\n\nmsg.topic = query;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2438,9 +2431,45 @@
         "y": 780,
         "wires": [
             [
-                "cbef8a3acc3d1495"
+                "cbef8a3acc3d1495",
+                "6c7eefa45db08cbc"
             ]
         ]
+    },
+    {
+        "id": "6c7eefa45db08cbc",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "cd72f360292bca50",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 860,
+        "y": 580,
+        "wires": []
     },
     {
         "id": "3985037239b671c5",
