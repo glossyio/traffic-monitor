@@ -41,8 +41,6 @@
         },
         "nodes": [
             "35c0bee67148cfa7",
-            "9496fe7a475726de",
-            "617c9bb213538929",
             "526eb1967dda78c4",
             "e3aa00721bf6faff",
             "54ae78579d38e81b",
@@ -52,9 +50,9 @@
             "477f8523e9784029"
         ],
         "x": 394,
-        "y": 739,
-        "w": 1512,
-        "h": 242
+        "y": 699,
+        "w": 1052,
+        "h": 262
     },
     {
         "id": "1d00b3011a12b204",
@@ -65,8 +63,6 @@
             "label": true
         },
         "nodes": [
-            "4681243b9c70e906",
-            "b8db51ab64a3d61e",
             "67f64c75edc0ef13",
             "0749f4279a336caf",
             "56b9668b4f365f7b",
@@ -77,8 +73,8 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 1312,
-        "h": 182
+        "w": 932,
+        "h": 202
     },
     {
         "id": "e138c998bef7d520",
@@ -89,8 +85,6 @@
             "label": true
         },
         "nodes": [
-            "d5e5d0f288f9b186",
-            "7b220a40adc14e3c",
             "d88af763b70480d0",
             "5f62cb744592b108",
             "dd48c6017098fe1d",
@@ -102,7 +96,7 @@
         ],
         "x": 394,
         "y": 999,
-        "w": 1532,
+        "w": 1072,
         "h": 242
     },
     {
@@ -114,9 +108,6 @@
             "label": true
         },
         "nodes": [
-            "da47f12a5e2cd512",
-            "ef9cb704c91a3ef6",
-            "c1c1371cdf7151aa",
             "58e0b10c67841b60",
             "1d1c479b2567efbd",
             "795c120719c982de",
@@ -127,7 +118,7 @@
         ],
         "x": 394,
         "y": 1259,
-        "w": 1932,
+        "w": 1172,
         "h": 222
     },
     {
@@ -199,29 +190,18 @@
         },
         "nodes": [
             "15797ab24727f84d",
-            "6a422507b2a5bbca",
-            "e256c1d68cf20f43",
-            "dd294de96fa60d7d",
-            "319859b48b6eebad",
-            "1b7c2967fd6a85a4",
-            "537d771bb5b1eff5",
-            "b2b5e83db3663f9e",
-            "a432e760cc77e6cb",
             "0e1614cf2e5f9942",
             "7cc031e5a7d773a4",
-            "0721cd5fd57aca6c",
             "79900a566af02159",
             "39d895a16ca6f6f1",
             "62be7d38b991716c",
             "cbb3b02ca505a55b",
-            "7db4b197df9eb075",
-            "7b7994303279b2b3",
-            "75af556e2deefe76"
+            "7db4b197df9eb075"
         ],
         "x": 14,
         "y": 839,
-        "w": 1842,
-        "h": 648
+        "w": 1178,
+        "h": 508
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -323,26 +303,17 @@
         },
         "nodes": [
             "7992eb250ae9d20f",
-            "0bcc4cc5c0656a3b",
-            "4ddff0572e76c3c6",
             "7f063afdbac396ce",
             "cbef8a3acc3d1495",
-            "dd3face6611c0380",
             "ad7393ac18c4083b",
-            "407dbf096111ea43",
-            "52dd51380fea2c06",
             "b39062019fac1a66",
             "7f50d9d83bdb7f14",
-            "792582002ff158c7",
             "c123fc5ed5e14e8a",
-            "5895f0df39bdb0ca",
-            "673e45159a2dfccf",
-            "a6490c17427bf58a",
-            "2b581db5485ab33c"
+            "673e45159a2dfccf"
         ],
         "x": 54,
         "y": 479,
-        "w": 1632,
+        "w": 992,
         "h": 342
     },
     {
@@ -462,7 +433,7 @@
             "57fa6ca2b7d290e3"
         ],
         "x": 54,
-        "y": 1299,
+        "y": 1159,
         "w": 1112,
         "h": 162
     },
@@ -577,21 +548,6 @@
         "willMsg": {},
         "userProps": "",
         "sessionExpiry": ""
-    },
-    {
-        "id": "73598328fc95017b",
-        "type": "influxdb",
-        "hostname": "127.0.0.1",
-        "port": "8086",
-        "protocol": "http",
-        "database": "database",
-        "name": "influxdb-node-red",
-        "usetls": false,
-        "tls": "",
-        "influxdbVersion": "2.0",
-        "url": "http://influxdb:8086",
-        "timeout": "10",
-        "rejectUnauthorized": true
     },
     {
         "id": "d65c36624d553ee7",
@@ -868,27 +824,6 @@
         "wires": []
     },
     {
-        "id": "9496fe7a475726de",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "name": "format influxdb write TimedSpeedCounts",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        speed_average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: (msg.payload.TimedSpeedCounts.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        speed_units: msg.payload.TimedSpeedCounts.units\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 580,
-        "y": 820,
-        "wires": [
-            [
-                "617c9bb213538929"
-            ]
-        ]
-    },
-    {
         "id": "a9d702a51bc8f0c9",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -906,29 +841,8 @@
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
         "x": 600,
-        "y": 940,
+        "y": 740,
         "wires": []
-    },
-    {
-        "id": "4681243b9c70e906",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "name": "format influxdb write DetectedObjectVelocity",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        velocity_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 590,
-        "y": 580,
-        "wires": [
-            [
-                "b8db51ab64a3d61e"
-            ]
-        ]
     },
     {
         "id": "affe7cfb9861e62d",
@@ -952,44 +866,6 @@
         "serial": "d65c36624d553ee7",
         "x": 680,
         "y": 120,
-        "wires": []
-    },
-    {
-        "id": "617c9bb213538929",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb TimedSpeedCounts",
-        "measurement": "TimedSpeedCounts",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 640,
-        "y": 880,
-        "wires": []
-    },
-    {
-        "id": "b8db51ab64a3d61e",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb DetectedObjectVelocity",
-        "measurement": "DetectedObjectVelocity",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 670,
-        "y": 640,
         "wires": []
     },
     {
@@ -1281,18 +1157,14 @@
         "y": 540,
         "wires": [
             [
-                "4681243b9c70e906",
                 "67f64c75edc0ef13",
                 "8a653740e4fc4f6a"
             ],
             [
-                "9496fe7a475726de",
                 "35c0bee67148cfa7",
                 "585b91535ae4e8a3"
             ],
             [
-                "7b220a40adc14e3c",
-                "ef9cb704c91a3ef6",
                 "d88af763b70480d0",
                 "d7eb8cf6f750f369",
                 "6580ac98734eba2e"
@@ -1301,46 +1173,6 @@
                 "3fc9a8ed49514be5",
                 "4eaade5db6a7a443",
                 "a804f93d06561c17"
-            ]
-        ]
-    },
-    {
-        "id": "d5e5d0f288f9b186",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb RawSpeedMagnitude",
-        "measurement": "RawSpeedMagnitude",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 660,
-        "y": 1140,
-        "wires": []
-    },
-    {
-        "id": "7b220a40adc14e3c",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
-        "name": "format influxdb write raw speed, magnitude",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed),\n        magnitude: String(msg.payload.magnitude),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 590,
-        "y": 1080,
-        "wires": [
-            [
-                "d5e5d0f288f9b186"
             ]
         ]
     },
@@ -1358,8 +1190,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 550,
-        "y": 1040,
+        "x": 570,
+        "y": 1080,
         "wires": []
     },
     {
@@ -1369,8 +1201,8 @@
         "g": "e138c998bef7d520",
         "name": "handle O3 speeds by saving array to each _value",
         "info": "",
-        "x": 600,
-        "y": 1200,
+        "x": 620,
+        "y": 1040,
         "wires": []
     },
     {
@@ -1392,72 +1224,13 @@
         "wires": []
     },
     {
-        "id": "da47f12a5e2cd512",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb RawSpeedMagnitude_single",
-        "measurement": "RawSpeedMagnitude_single",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 690,
-        "y": 1400,
-        "wires": []
-    },
-    {
-        "id": "ef9cb704c91a3ef6",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "name": "format influxdb write raw speed, magnitude single",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed[0]),\n        magnitude: String(msg.payload.magnitude[0]),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 610,
-        "y": 1300,
-        "wires": [
-            [
-                "da47f12a5e2cd512",
-                "c1c1371cdf7151aa"
-            ]
-        ]
-    },
-    {
-        "id": "c1c1371cdf7151aa",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "name": "debug-radar-raws-speeds-write_single",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 710,
-        "y": 1360,
-        "wires": []
-    },
-    {
         "id": "58e0b10c67841b60",
         "type": "comment",
         "z": "94d07e407c25f282",
         "g": "e5b5b46703e248e9",
         "name": "manually take top 1 speed, magnitude (effectively O1)",
         "info": "",
-        "x": 620,
+        "x": 660,
         "y": 1440,
         "wires": []
     },
@@ -1572,7 +1345,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
-        "x": 570,
+        "x": 630,
         "y": 1580,
         "wires": [
             [
@@ -1649,8 +1422,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1320,
-        "y": 540,
+        "x": 940,
+        "y": 580,
         "wires": [
             [
                 "81c98c5e01bbfe09"
@@ -1674,8 +1447,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL);",
-        "x": 1120,
-        "y": 540,
+        "x": 740,
+        "y": 580,
         "wires": [
             [
                 "0749f4279a336caf"
@@ -1699,8 +1472,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;",
-        "x": 1080,
-        "y": 580,
+        "x": 700,
+        "y": 620,
         "wires": [
             [
                 "0749f4279a336caf"
@@ -1721,8 +1494,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1540,
-        "y": 540,
+        "x": 1160,
+        "y": 580,
         "wires": []
     },
     {
@@ -1734,8 +1507,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
         "name": "",
-        "x": 1320,
-        "y": 620,
+        "x": 940,
+        "y": 660,
         "wires": [
             []
         ]
@@ -1753,8 +1526,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1080,
-        "y": 620,
+        "x": 700,
+        "y": 660,
         "wires": [
             [
                 "87412467471d97a6"
@@ -1770,8 +1543,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1420,
-        "y": 780,
+        "x": 940,
+        "y": 840,
         "wires": [
             [
                 "13059459bbc48328"
@@ -1795,8 +1568,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL);",
-        "x": 1170,
-        "y": 780,
+        "x": 690,
+        "y": 840,
         "wires": [
             [
                 "e3aa00721bf6faff"
@@ -1820,8 +1593,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_timed_speed_counts ORDER BY time DESC LIMIT 5;",
-        "x": 1140,
-        "y": 820,
+        "x": 660,
+        "y": 880,
         "wires": [
             [
                 "e3aa00721bf6faff"
@@ -1842,8 +1615,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1690,
-        "y": 780,
+        "x": 1230,
+        "y": 840,
         "wires": []
     },
     {
@@ -1859,8 +1632,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1140,
-        "y": 860,
+        "x": 660,
+        "y": 920,
         "wires": [
             [
                 "477f8523e9784029"
@@ -1876,8 +1649,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
         "name": "",
-        "x": 1420,
-        "y": 860,
+        "x": 940,
+        "y": 920,
         "wires": [
             []
         ]
@@ -1891,8 +1664,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1420,
-        "y": 1040,
+        "x": 940,
+        "y": 1120,
         "wires": [
             [
                 "825ddab22453e37c"
@@ -1916,8 +1689,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT);",
-        "x": 1160,
-        "y": 1040,
+        "x": 680,
+        "y": 1120,
         "wires": [
             [
                 "dd48c6017098fe1d"
@@ -1941,8 +1714,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_raw_speed_magnitude ORDER BY time DESC LIMIT 5;",
-        "x": 1120,
-        "y": 1080,
+        "x": 640,
+        "y": 1160,
         "wires": [
             [
                 "dd48c6017098fe1d"
@@ -1963,8 +1736,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1700,
-        "y": 1040,
+        "x": 1240,
+        "y": 1120,
         "wires": []
     },
     {
@@ -1976,8 +1749,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 1420,
-        "y": 1120,
+        "x": 940,
+        "y": 1200,
         "wires": [
             []
         ]
@@ -1995,8 +1768,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
-        "y": 1120,
+        "x": 640,
+        "y": 1200,
         "wires": [
             [
                 "1ddee1427e02c980"
@@ -2133,7 +1906,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1760,
+        "x": 980,
         "y": 1300,
         "wires": [
             [
@@ -2158,7 +1931,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (time REAL, unit TEXT, magnitude REAL, speed REAL);",
-        "x": 1450,
+        "x": 690,
         "y": 1300,
         "wires": [
             [
@@ -2183,7 +1956,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_raw_speed_magnitude_single ORDER BY time DESC LIMIT 5;",
-        "x": 1400,
+        "x": 660,
         "y": 1340,
         "wires": [
             [
@@ -2205,7 +1978,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2070,
+        "x": 1310,
         "y": 1300,
         "wires": []
     },
@@ -2218,7 +1991,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 1760,
+        "x": 980,
         "y": 1380,
         "wires": [
             []
@@ -2237,7 +2010,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1400,
+        "x": 660,
         "y": 1380,
         "wires": [
             [
@@ -2446,48 +2219,6 @@
         ]
     },
     {
-        "id": "0bcc4cc5c0656a3b",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "create influxdb query, return DetectedObjectVelocity median",
-        "func": "var query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 640,
-        "wires": [
-            [
-                "407dbf096111ea43"
-            ]
-        ]
-    },
-    {
-        "id": "4ddff0572e76c3c6",
-        "type": "influxdb in",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "influxdb": "73598328fc95017b",
-        "name": "query, DetectedObjectVelocity, median",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 450,
-        "y": 720,
-        "wires": [
-            [
-                "dd3face6611c0380",
-                "52dd51380fea2c06"
-            ]
-        ]
-    },
-    {
         "id": "7992eb250ae9d20f",
         "type": "function",
         "z": "9269520ddb532b00",
@@ -2504,7 +2235,6 @@
         "y": 580,
         "wires": [
             [
-                "0bcc4cc5c0656a3b",
                 "b39062019fac1a66"
             ]
         ]
@@ -2568,28 +2298,6 @@
         ]
     },
     {
-        "id": "dd3face6611c0380",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "match radar speed to event",
-        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (msg.payload.length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.frigate_event.calc_zone_direction == msg.payload[0].direction) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = msg.payload[0].direction;\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    var dirIndex = msg.payload.map((o) => o.direction).indexOf(msg.frigate_event.calc_zone_direction);\n    if (dirIndex >= 0) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.payload[dirIndex].direction;\n        newMsg.calc_event_speed = msg.payload[dirIndex]._value;\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 620,
-        "y": 780,
-        "wires": [
-            [
-                "cbef8a3acc3d1495",
-                "2b581db5485ab33c"
-            ]
-        ]
-    },
-    {
         "id": "ad7393ac18c4083b",
         "type": "function",
         "z": "9269520ddb532b00",
@@ -2607,32 +2315,6 @@
         "wires": [
             [
                 "cbef8a3acc3d1495"
-            ]
-        ]
-    },
-    {
-        "id": "407dbf096111ea43",
-        "type": "delay",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "delay 1 sec, to be sure InfluxDB writes",
-        "pauseType": "delay",
-        "timeout": "1",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 450,
-        "y": 680,
-        "wires": [
-            [
-                "4ddff0572e76c3c6"
             ]
         ]
     },
@@ -2809,24 +2491,6 @@
         ]
     },
     {
-        "id": "52dd51380fea2c06",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 860,
-        "y": 720,
-        "wires": []
-    },
-    {
         "id": "b39062019fac1a66",
         "type": "function",
         "z": "9269520ddb532b00",
@@ -2839,7 +2503,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1170,
+        "x": 350,
         "y": 640,
         "wires": [
             [
@@ -2856,32 +2520,13 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1260,
+        "x": 440,
         "y": 680,
         "wires": [
             [
-                "792582002ff158c7",
                 "c123fc5ed5e14e8a"
             ]
         ]
-    },
-    {
-        "id": "792582002ff158c7",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "rows radar_dov",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1560,
-        "y": 680,
-        "wires": []
     },
     {
         "id": "c123fc5ed5e14e8a",
@@ -2896,31 +2541,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1250,
+        "x": 430,
         "y": 740,
         "wires": [
             [
-                "5895f0df39bdb0ca",
                 "673e45159a2dfccf"
             ]
         ]
-    },
-    {
-        "id": "5895f0df39bdb0ca",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1540,
-        "y": 740,
-        "wires": []
     },
     {
         "id": "673e45159a2dfccf",
@@ -2935,47 +2562,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1300,
+        "x": 480,
         "y": 780,
         "wires": [
             [
-                "a6490c17427bf58a"
+                "cbef8a3acc3d1495"
             ]
         ]
-    },
-    {
-        "id": "a6490c17427bf58a",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1540,
-        "y": 780,
-        "wires": []
-    },
-    {
-        "id": "2b581db5485ab33c",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "debug 4",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 860,
-        "y": 780,
-        "wires": []
     },
     {
         "id": "3985037239b671c5",
@@ -3478,224 +3071,8 @@
         "y": 880,
         "wires": [
             [
-                "6a422507b2a5bbca",
-                "dd294de96fa60d7d",
                 "158e6edae533bfdc",
                 "79900a566af02159"
-            ]
-        ]
-    },
-    {
-        "id": "6a422507b2a5bbca",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "create influxdb query for TimedSpeedCounts.counts (5-min) for last 60-min",
-        "func": "//Want TimedSpeedCounts.counts (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"count\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 940,
-        "wires": [
-            [
-                "e256c1d68cf20f43"
-            ]
-        ]
-    },
-    {
-        "id": "e256c1d68cf20f43",
-        "type": "influxdb in",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "influxdb": "73598328fc95017b",
-        "name": "query, TimedSpeedCounts.counts",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 440,
-        "y": 1000,
-        "wires": [
-            [
-                "a432e760cc77e6cb"
-            ]
-        ]
-    },
-    {
-        "id": "dd294de96fa60d7d",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "create influxdb query for TimedSpeedCounts.speed_average (5-min) for last 60-min",
-        "func": "//Want TimedSpeedCounts.speed_average (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"speed_average\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 1120,
-        "wires": [
-            [
-                "319859b48b6eebad"
-            ]
-        ]
-    },
-    {
-        "id": "319859b48b6eebad",
-        "type": "influxdb in",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "influxdb": "73598328fc95017b",
-        "name": "query, TimedSpeedCounts.speed_average",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 470,
-        "y": 1180,
-        "wires": [
-            [
-                "b2b5e83db3663f9e"
-            ]
-        ]
-    },
-    {
-        "id": "1b7c2967fd6a85a4",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 6,
-        "width": 0,
-        "height": 0,
-        "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
-        "chartType": "line",
-        "legend": "true",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "60",
-        "removeOlderPoints": "",
-        "removeOlderUnit": "60",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 1000,
-        "y": 1240,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "537d771bb5b1eff5",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 5,
-        "width": 0,
-        "height": 0,
-        "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
-        "chartType": "line",
-        "legend": "true",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "60",
-        "removeOlderPoints": "",
-        "removeOlderUnit": "60",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 970,
-        "y": 1060,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "b2b5e83db3663f9e",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "structure influx TimedSpeedCounts.speed_average",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of _value, bc speeds outbound will be negative\n   myItem._value = Math.abs(myItem._value)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 1240,
-        "wires": [
-            [
-                "1b7c2967fd6a85a4"
-            ]
-        ]
-    },
-    {
-        "id": "a432e760cc77e6cb",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "structure influx TimedSpeedCounts.counts",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 1060,
-        "wires": [
-            [
-                "537d771bb5b1eff5"
             ]
         ]
     },
@@ -3804,7 +3181,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1420,
+        "y": 1280,
         "wires": [
             []
         ]
@@ -4286,7 +3663,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 1340,
+        "y": 1200,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -4303,7 +3680,7 @@
         "sql": "",
         "name": "",
         "x": 420,
-        "y": 1380,
+        "y": 1240,
         "wires": [
             [
                 "57fa6ca2b7d290e3"
@@ -4324,7 +3701,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 1420,
+        "y": 1280,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -4490,33 +3867,14 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1120,
-        "y": 880,
+        "x": 340,
+        "y": 980,
         "wires": [
             [
-                "0721cd5fd57aca6c",
                 "39d895a16ca6f6f1",
                 "62be7d38b991716c"
             ]
         ]
-    },
-    {
-        "id": "0721cd5fd57aca6c",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug: last 5 rows radar_timedspeedcounts",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1390,
-        "y": 880,
-        "wires": []
     },
     {
         "id": "79900a566af02159",
@@ -4531,8 +3889,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 880,
+        "x": 220,
+        "y": 940,
         "wires": [
             [
                 "7cc031e5a7d773a4"
@@ -4552,12 +3910,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1390,
-        "y": 920,
+        "x": 630,
+        "y": 980,
         "wires": [
             [
-                "cbb3b02ca505a55b",
-                "7b7994303279b2b3"
+                "cbb3b02ca505a55b"
             ]
         ]
     },
@@ -4574,12 +3931,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1410,
-        "y": 1000,
+        "x": 650,
+        "y": 1060,
         "wires": [
             [
-                "7db4b197df9eb075",
-                "75af556e2deefe76"
+                "7db4b197df9eb075"
             ]
         ]
     },
@@ -4622,8 +3978,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1450,
-        "y": 960,
+        "x": 690,
+        "y": 1020,
         "wires": [
             []
         ]
@@ -4667,45 +4023,11 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1480,
-        "y": 1040,
+        "x": 720,
+        "y": 1100,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "7b7994303279b2b3",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 5",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1690,
-        "y": 920,
-        "wires": []
-    },
-    {
-        "id": "75af556e2deefe76",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "debug 6",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1750,
-        "y": 1000,
-        "wires": []
     },
     {
         "id": "6a05187a692bed7c",
