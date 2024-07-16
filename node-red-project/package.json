@@ -5,7 +5,6 @@
     "dependencies": {
         "node-red-contrib-aedes": "~0.13.0",
         "node-red-contrib-image-output": "~0.6.4",
-        "node-red-contrib-influxdb": "~0.7.0",
         "node-red-dashboard": "~3.6.5",
         "node-red-node-serialport": "~2.0.2",
         "node-red-node-sqlite": "1.1.0",

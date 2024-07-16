@@ -50,8 +50,8 @@
             "477f8523e9784029"
         ],
         "x": 394,
-        "y": 699,
-        "w": 1052,
+        "y": 719,
+        "w": 1092,
         "h": 262
     },
     {
@@ -73,7 +73,7 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 932,
+        "w": 992,
         "h": 202
     },
     {
@@ -96,7 +96,7 @@
         ],
         "x": 394,
         "y": 999,
-        "w": 1072,
+        "w": 1092,
         "h": 242
     },
     {
@@ -325,13 +325,7 @@
             "label": true
         },
         "nodes": [
-            "aba78041f885343a",
-            "4eaade5db6a7a443",
-            "bfad85a411436e1c",
-            "1a0b6df61dbcb683",
-            "f444ee737beb9007",
             "3fc9a8ed49514be5",
-            "069f41d6a4ff8474",
             "97a0c601b8918ede",
             "772d6574f4181a44",
             "c768d8ea1b8cf953",
@@ -341,7 +335,7 @@
         ],
         "x": 394,
         "y": 1499,
-        "w": 1692,
+        "w": 1052,
         "h": 222
     },
     {
@@ -820,7 +814,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 600,
-        "y": 780,
+        "y": 800,
         "wires": []
     },
     {
@@ -841,7 +835,7 @@
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
         "x": 600,
-        "y": 740,
+        "y": 760,
         "wires": []
     },
     {
@@ -1171,7 +1165,6 @@
             ],
             [
                 "3fc9a8ed49514be5",
-                "4eaade5db6a7a443",
                 "a804f93d06561c17"
             ]
         ]
@@ -1190,7 +1183,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 570,
+        "x": 550,
         "y": 1080,
         "wires": []
     },
@@ -1201,7 +1194,7 @@
         "g": "e138c998bef7d520",
         "name": "handle O3 speeds by saving array to each _value",
         "info": "",
-        "x": 620,
+        "x": 600,
         "y": 1040,
         "wires": []
     },
@@ -1293,127 +1286,6 @@
         ]
     },
     {
-        "id": "aba78041f885343a",
-        "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
-        "name": "",
-        "x": 880,
-        "y": 1680,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "4eaade5db6a7a443",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "write params for radar_oc_payload insert",
-        "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 600,
-        "y": 1680,
-        "wires": [
-            [
-                "aba78041f885343a"
-            ]
-        ]
-    },
-    {
-        "id": "bfad85a411436e1c",
-        "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "create radar_oc_payload table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
-        "x": 630,
-        "y": 1580,
-        "wires": [
-            [
-                "1a0b6df61dbcb683"
-            ]
-        ]
-    },
-    {
-        "id": "1a0b6df61dbcb683",
-        "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
-        "name": "",
-        "x": 880,
-        "y": 1580,
-        "wires": [
-            [
-                "069f41d6a4ff8474"
-            ]
-        ]
-    },
-    {
-        "id": "f444ee737beb9007",
-        "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "select latest 5 rows from radar_oc_payload",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
-        "x": 600,
-        "y": 1620,
-        "wires": [
-            [
-                "1a0b6df61dbcb683"
-            ]
-        ]
-    },
-    {
-        "id": "069f41d6a4ff8474",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "debug: last 5 rows radar_oc_payload",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 970,
-        "y": 1640,
-        "wires": []
-    },
-    {
         "id": "0749f4279a336caf",
         "type": "sqlite",
         "z": "94d07e407c25f282",
@@ -1494,7 +1366,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1160,
+        "x": 1220,
         "y": 580,
         "wires": []
     },
@@ -1543,8 +1415,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
-        "y": 840,
+        "x": 980,
+        "y": 860,
         "wires": [
             [
                 "13059459bbc48328"
@@ -1568,8 +1440,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL);",
-        "x": 690,
-        "y": 840,
+        "x": 730,
+        "y": 860,
         "wires": [
             [
                 "e3aa00721bf6faff"
@@ -1593,8 +1465,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_timed_speed_counts ORDER BY time DESC LIMIT 5;",
-        "x": 660,
-        "y": 880,
+        "x": 700,
+        "y": 900,
         "wires": [
             [
                 "e3aa00721bf6faff"
@@ -1615,8 +1487,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
-        "y": 840,
+        "x": 1270,
+        "y": 860,
         "wires": []
     },
     {
@@ -1632,8 +1504,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
-        "y": 920,
+        "x": 700,
+        "y": 940,
         "wires": [
             [
                 "477f8523e9784029"
@@ -1649,8 +1521,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
         "name": "",
-        "x": 940,
-        "y": 920,
+        "x": 980,
+        "y": 940,
         "wires": [
             []
         ]
@@ -1664,7 +1536,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
+        "x": 960,
         "y": 1120,
         "wires": [
             [
@@ -1689,7 +1561,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT);",
-        "x": 680,
+        "x": 700,
         "y": 1120,
         "wires": [
             [
@@ -1714,7 +1586,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_raw_speed_magnitude ORDER BY time DESC LIMIT 5;",
-        "x": 640,
+        "x": 660,
         "y": 1160,
         "wires": [
             [
@@ -1736,7 +1608,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1240,
+        "x": 1260,
         "y": 1120,
         "wires": []
     },
@@ -1749,7 +1621,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 940,
+        "x": 960,
         "y": 1200,
         "wires": [
             []
@@ -1768,7 +1640,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 640,
+        "x": 660,
         "y": 1200,
         "wires": [
             [
@@ -1793,8 +1665,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
-        "x": 1330,
-        "y": 1540,
+        "x": 750,
+        "y": 1600,
         "wires": [
             [
                 "772d6574f4181a44"
@@ -1810,8 +1682,8 @@
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 1640,
-        "y": 1540,
+        "x": 980,
+        "y": 1600,
         "wires": [
             [
                 "b277514c42c255e9"
@@ -1835,8 +1707,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
-        "x": 1360,
-        "y": 1580,
+        "x": 720,
+        "y": 1640,
         "wires": [
             [
                 "772d6574f4181a44"
@@ -1857,8 +1729,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1890,
-        "y": 1540,
+        "x": 1250,
+        "y": 1600,
         "wires": []
     },
     {
@@ -1870,8 +1742,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 1640,
-        "y": 1620,
+        "x": 980,
+        "y": 1680,
         "wires": [
             []
         ]
@@ -1889,8 +1761,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1360,
-        "y": 1620,
+        "x": 720,
+        "y": 1680,
         "wires": [
             [
                 "27b2f56921067f35"
