@@ -207,11 +207,20 @@
             "537d771bb5b1eff5",
             "b2b5e83db3663f9e",
             "a432e760cc77e6cb",
-            "0e1614cf2e5f9942"
+            "0e1614cf2e5f9942",
+            "7cc031e5a7d773a4",
+            "0721cd5fd57aca6c",
+            "79900a566af02159",
+            "39d895a16ca6f6f1",
+            "62be7d38b991716c",
+            "cbb3b02ca505a55b",
+            "7db4b197df9eb075",
+            "7b7994303279b2b3",
+            "75af556e2deefe76"
         ],
         "x": 14,
         "y": 839,
-        "w": 1232,
+        "w": 1842,
         "h": 648
     },
     {
@@ -3471,7 +3480,8 @@
             [
                 "6a422507b2a5bbca",
                 "dd294de96fa60d7d",
-                "158e6edae533bfdc"
+                "158e6edae533bfdc",
+                "79900a566af02159"
             ]
         ]
     },
@@ -4470,6 +4480,232 @@
                 "5417aae0d14fa661"
             ]
         ]
+    },
+    {
+        "id": "7cc031e5a7d773a4",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1120,
+        "y": 880,
+        "wires": [
+            [
+                "0721cd5fd57aca6c",
+                "39d895a16ca6f6f1",
+                "62be7d38b991716c"
+            ]
+        ]
+    },
+    {
+        "id": "0721cd5fd57aca6c",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug: last 5 rows radar_timedspeedcounts",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1390,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "79900a566af02159",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "query TimedSpeedCounts for last 60-min",
+        "func": "//time is already in seconds\n//get for last 60-minutes, 3600 seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(time, 'unixepoch', 'localtime'), '+0 minutes') AS time,\n    direction,\n    count,\n    ABS(average) as speed\nFROM\n    radar_timed_speed_counts\nWHERE\n    time > (unixepoch('now') - (3600))\nORDER BY\n    time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 880,
+        "wires": [
+            [
+                "7cc031e5a7d773a4"
+            ]
+        ]
+    },
+    {
+        "id": "39d895a16ca6f6f1",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure SQLite TimedSpeedCounts.counts",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// count\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.count;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1390,
+        "y": 920,
+        "wires": [
+            [
+                "cbb3b02ca505a55b",
+                "7b7994303279b2b3"
+            ]
+        ]
+    },
+    {
+        "id": "62be7d38b991716c",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure sqlite TimedSpeedCounts.speed_average",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// speed\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of speed, bc speeds outbound will be negative\n   myItem.speed = Math.abs(myItem.speed)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.speed;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.speed;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1410,
+        "y": 1000,
+        "wires": [
+            [
+                "7db4b197df9eb075",
+                "75af556e2deefe76"
+            ]
+        ]
+    },
+    {
+        "id": "cbb3b02ca505a55b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.counts (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1450,
+        "y": 960,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7db4b197df9eb075",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1480,
+        "y": 1040,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7b7994303279b2b3",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1690,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "75af556e2deefe76",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1750,
+        "y": 1000,
+        "wires": []
     },
     {
         "id": "6a05187a692bed7c",
