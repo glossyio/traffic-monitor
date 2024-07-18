@@ -41,9 +41,11 @@ Use cases and capabilities:
 ## Hardware Components
 This setup uses commidity, consumer hardware to enable object detection and speed/direction measurement:
 - [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) 
-    - Note: The RPi 4B does not meet the power requirements on the peripherals (USB) for the TPU and radar, so it is not recommended for this setup.
+    - Note: The Raspberry Pi 4B is not recommended as it does not meet the power requirements on the peripherals (USB) for the TPU and radar for this setup.
+    - Consider purchasing the official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
 - [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - provides accurate radar-based speed/direction detection
 - [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) or [Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for object detection
+    - You will also need the [RPi 5 Camera Cable](https://www.pishop.us/product/camera-cable-for-raspberry-pi-5/).
 - [Google Coral USB Accelerator](https://coral.ai/products/accelerator) TPU - AI/ML co-processor capable of 100+ FPS with millisecond inference time. This is supported natively in [Frigate](https://github.com/blakeblackshear/frigate).
 - Mounting board and external enclosure need to be custom made at the moment, instructions coming soon.
 
