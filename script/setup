@@ -37,12 +37,6 @@ cp -rp node-red-project/* ~/code/nodered/data/
 ##-- /node-red
 
 
-##-- Add influxDB Dockerfile
-mkdir -p ~/code/influxdb/data
-mkdir -p ~/code/influxdb/config
-cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
-##-- /influxdb
-
 #create backup directory
 mkdir -p ~/code/backup
 
