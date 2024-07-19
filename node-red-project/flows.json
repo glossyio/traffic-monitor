@@ -758,6 +758,14 @@
         "className": ""
     },
     {
+        "id": "8a89c15ae12a462a",
+        "type": "ui_tab",
+        "name": "ThingsBoard tab",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -1853,7 +1861,7 @@
         "g": "e5b5b46703e248e9",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
+        "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
         "x": 980,
         "y": 1380,
@@ -2321,7 +2329,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "composed tmdb.events message",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
