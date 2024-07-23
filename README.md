@@ -8,7 +8,7 @@ Use cases and capabilities:
 - Permanent, long-term deployment on roadways to monitor roadway usage.
 - Temporary, remote deployments utilizing the low-power footprint and batteries.
 
-## Get Started
+## Getting Started
 1. Assemble your unit (see [hardware components](#hardware-components)).
 1. Install [Raspberry Pi OS](https://www.raspberrypi.com/software/) (Full Install) Bookworm (latest). 
     - Full Install required for all components to run properly. Lite is missing H.264 codec for libcamera.
@@ -28,9 +28,17 @@ Use cases and capabilities:
     1. `http://<rpi_ip_address>:1880/ui` is your primary device dashboard, use it to ensure it is capturing events (Node-Red dashboard)
     1. `http://<rpi_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
 1. Mount your unit in a place it can capture the entire roadway in the mounting guide (coming soon).
+1. Set up [Frigate zones](https://docs.frigate.video/configuration/zones) by entering the Frigate UI at `http://<rpi_ip_address>:5000`, clicking the primary camera, selecting `Debug > Show Options > Mask & Zone creator`. For dashboard and data capture to work properly, you should set up the following 4 named zones:
+    1. `zone_capture` - Set to capture the entire roadway, including sidewalks that are clearly in view for counting objects through them.  Avoid edges where poles and trees may occlude a clear view of objects.
+    1. `zone_far` - Paired with `zone_near`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the further half of the `zone_capture` region.
+    1. `zone_near` - Paired with `zone_far`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the closer half of the `zone_capture` region.
+    1. `zone_radar` - This should correspond to the field of view for the radar (where it can pick up accurate measurements) on the street. It will roughly make a rectangle in the center of the camera field of view from curb to curb.
+1. Set up the environment variables in the device dashboard. (coming soon)
+    1. Device Name
+    1. Location
 1. Start capturing roadway usage data!
 
-## Hardware components
+## Hardware Components
 This setup uses commidity, consumer hardware to enable object detection and speed/direction measurement:
 - [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) 
     - Note: The RPi 4B does not meet the power requirements on the peripherals (USB) for the TPU and radar, so it is not recommended for this setup.
@@ -59,3 +67,8 @@ If the Frigate camera shows nothing, check the configuration:
    - Make sure the camera is enabled
    - If necessary, edit the Frigate `camera > path` to include your hostname or IP address, for example: `- path: rtsp://<rpi_ip_address>:8554/picam_h264`
    - Once the camera is working, turn on detection (detect/enabled)
+
+## User Interfaces (UI) / port numbers references
+- `http://<rpi_ip_address>:1880/ui` is the Node-Red dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
+- `http://<rpi_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
+- `http://<rpi_ip_address>:1984` shows the configured camera settings on the Raspberri Pi. Use this if your cameras are giving errors in Frigate.

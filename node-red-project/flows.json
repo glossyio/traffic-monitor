@@ -515,6 +515,80 @@
         "h": 122
     },
     {
+        "id": "541d31d14bcd8b00",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "comments table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6a05187a692bed7c",
+            "fee2d22032a11056",
+            "f27b6d01ae7836d6",
+            "8f0bcaf04756da4f",
+            "e8b8e45c4bc045d8",
+            "840802d34d143ded",
+            "8d65b604e8d9e7f9",
+            "db1f35650c8d6448"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1172,
+        "h": 242
+    },
+    {
+        "id": "3a9bb6ed1306eb1c",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "create downloadable links",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f31a598d.9fd2c8",
+            "98261154.3006",
+            "34dc99e5.495466",
+            "38d65d59.1d8aa2",
+            "3b8014a.86ad8ec",
+            "5b18a8e7.fb8da8",
+            "a8c2985e.d23ad8",
+            "5de7cbb4.fa21a4",
+            "67ecfa7f.3f0e24"
+        ],
+        "x": 254,
+        "y": 579,
+        "w": 692,
+        "h": 302
+    },
+    {
+        "id": "0e3b2be7bcc3d3b8",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Events file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f43a276d3a899fe8",
+            "c25ade7ddaeca697",
+            "c45589c369c843a5",
+            "f2bd56710ba03238",
+            "ecb0810a22dc4a5c",
+            "b4e0b45a7bedd728",
+            "7318af62aa1dadcc",
+            "5124f45846b94ef0",
+            "3a9bb6ed1306eb1c",
+            "7050ed881890ce4d",
+            "82073a9c3e0f504f"
+        ],
+        "x": 14,
+        "y": 299,
+        "w": 1212,
+        "h": 608
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
@@ -4848,7 +4922,8 @@
             [
                 "fbf290de9b7b858f"
             ]
-        ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
     },
     {
         "id": "fbf290de9b7b858f",
@@ -5142,7 +5217,7 @@
         ],
         "repeat": "",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": 0.1,
         "topic": "",
         "payload": "{\"group\":{\"hide\":[\"Database_Tab_Events_JSON_Generator\",\"Database_Tab_Radar_JSON_Generator\"]}}",
