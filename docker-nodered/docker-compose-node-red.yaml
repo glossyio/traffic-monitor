@@ -31,14 +31,10 @@ services:
       NODE_RED_ENABLE_SAFE_MODE: false
       VAR_LOCATION: "ne26th-wasco-sb-01"
       VAR_RADAR_CAMERA: "picam_h264"
-      VAR_INFLUXDB_ORG: "taffic_monitor_01"
-      VAR_INFLUXDB_BUCKET: "influxdb_bucket"
       VAR_EVENTS_DB: "tmdb"
       VAR_EVENTS_TABLE: "events"
       VAR_MQTT_USER: "mqtt_user"        #broker settings
       VAR_MQTT_PASS: "mqtt_pass"        #broker settings
     depends_on:
       frigate:
-        condition: service_healthy
-      influxdb:
         condition: service_healthy

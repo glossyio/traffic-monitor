@@ -41,14 +41,18 @@
         },
         "nodes": [
             "35c0bee67148cfa7",
-            "9496fe7a475726de",
-            "617c9bb213538929",
-            "526eb1967dda78c4"
+            "526eb1967dda78c4",
+            "e3aa00721bf6faff",
+            "54ae78579d38e81b",
+            "831310a0a0549da3",
+            "13059459bbc48328",
+            "585b91535ae4e8a3",
+            "477f8523e9784029"
         ],
-        "x": 534,
-        "y": 699,
-        "w": 852,
-        "h": 142
+        "x": 394,
+        "y": 719,
+        "w": 1092,
+        "h": 262
     },
     {
         "id": "1d00b3011a12b204",
@@ -59,14 +63,18 @@
             "label": true
         },
         "nodes": [
-            "4681243b9c70e906",
-            "b8db51ab64a3d61e",
-            "67f64c75edc0ef13"
+            "67f64c75edc0ef13",
+            "0749f4279a336caf",
+            "56b9668b4f365f7b",
+            "ef4ad9faa7ec12e7",
+            "81c98c5e01bbfe09",
+            "87412467471d97a6",
+            "8a653740e4fc4f6a"
         ],
-        "x": 534,
+        "x": 394,
         "y": 499,
-        "w": 452,
-        "h": 182
+        "w": 992,
+        "h": 202
     },
     {
         "id": "e138c998bef7d520",
@@ -77,15 +85,19 @@
             "label": true
         },
         "nodes": [
-            "d5e5d0f288f9b186",
-            "7b220a40adc14e3c",
             "d88af763b70480d0",
-            "5f62cb744592b108"
+            "5f62cb744592b108",
+            "dd48c6017098fe1d",
+            "e113c181976ad898",
+            "e1461efd368bbee3",
+            "825ddab22453e37c",
+            "1ddee1427e02c980",
+            "d7eb8cf6f750f369"
         ],
-        "x": 534,
-        "y": 859,
-        "w": 752,
-        "h": 202
+        "x": 394,
+        "y": 999,
+        "w": 1092,
+        "h": 242
     },
     {
         "id": "e5b5b46703e248e9",
@@ -96,15 +108,18 @@
             "label": true
         },
         "nodes": [
-            "da47f12a5e2cd512",
-            "ef9cb704c91a3ef6",
-            "c1c1371cdf7151aa",
-            "58e0b10c67841b60"
+            "58e0b10c67841b60",
+            "1d1c479b2567efbd",
+            "795c120719c982de",
+            "8180a480a85a6636",
+            "a1583c68a1dad33e",
+            "382bf388390f91bd",
+            "6580ac98734eba2e"
         ],
-        "x": 534,
-        "y": 1079,
-        "w": 792,
-        "h": 202
+        "x": 394,
+        "y": 1259,
+        "w": 1172,
+        "h": 222
     },
     {
         "id": "0a6e123f5e53c029",
@@ -169,26 +184,24 @@
         "id": "76417db2b472ef4f",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "influxdb TimedSpeedCounts (.counts, .speed_average)",
+        "name": "radar TimedSpeedCounts (.counts, .speed_average)",
         "style": {
             "label": true
         },
         "nodes": [
             "15797ab24727f84d",
-            "6a422507b2a5bbca",
-            "e256c1d68cf20f43",
-            "dd294de96fa60d7d",
-            "319859b48b6eebad",
-            "1b7c2967fd6a85a4",
-            "537d771bb5b1eff5",
-            "b2b5e83db3663f9e",
-            "a432e760cc77e6cb",
-            "0e1614cf2e5f9942"
+            "0e1614cf2e5f9942",
+            "7cc031e5a7d773a4",
+            "79900a566af02159",
+            "39d895a16ca6f6f1",
+            "62be7d38b991716c",
+            "cbb3b02ca505a55b",
+            "7db4b197df9eb075"
         ],
         "x": 14,
         "y": 839,
-        "w": 1232,
-        "h": 648
+        "w": 1178,
+        "h": 508
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -290,13 +303,15 @@
         },
         "nodes": [
             "7992eb250ae9d20f",
-            "0bcc4cc5c0656a3b",
-            "4ddff0572e76c3c6",
             "7f063afdbac396ce",
             "cbef8a3acc3d1495",
-            "dd3face6611c0380",
             "ad7393ac18c4083b",
-            "407dbf096111ea43"
+            "b39062019fac1a66",
+            "7f50d9d83bdb7f14",
+            "c123fc5ed5e14e8a",
+            "673e45159a2dfccf",
+            "6c7eefa45db08cbc",
+            "cd72f360292bca50"
         ],
         "x": 54,
         "y": 479,
@@ -312,19 +327,18 @@
             "label": true
         },
         "nodes": [
-            "aba78041f885343a",
-            "4eaade5db6a7a443",
-            "bfad85a411436e1c",
-            "d2b467822152a66e",
-            "1a0b6df61dbcb683",
-            "f444ee737beb9007",
             "3fc9a8ed49514be5",
-            "069f41d6a4ff8474"
+            "97a0c601b8918ede",
+            "772d6574f4181a44",
+            "c768d8ea1b8cf953",
+            "b277514c42c255e9",
+            "27b2f56921067f35",
+            "a804f93d06561c17"
         ],
-        "x": 534,
-        "y": 1319,
-        "w": 772,
-        "h": 282
+        "x": 394,
+        "y": 1499,
+        "w": 1052,
+        "h": 222
     },
     {
         "id": "53e4faf6d3ece28c",
@@ -351,6 +365,116 @@
         "h": 322
     },
     {
+        "id": "541d31d14bcd8b00",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "comments table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6a05187a692bed7c",
+            "fee2d22032a11056",
+            "f27b6d01ae7836d6",
+            "8f0bcaf04756da4f",
+            "e8b8e45c4bc045d8",
+            "840802d34d143ded",
+            "8d65b604e8d9e7f9",
+            "db1f35650c8d6448",
+            "6e2a152aecd929d3"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1192,
+        "h": 222
+    },
+    {
+        "id": "0e3b2be7bcc3d3b8",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Events file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f43a276d3a899fe8",
+            "c25ade7ddaeca697",
+            "c45589c369c843a5",
+            "f2bd56710ba03238",
+            "ecb0810a22dc4a5c",
+            "b4e0b45a7bedd728",
+            "5124f45846b94ef0",
+            "7050ed881890ce4d",
+            "82073a9c3e0f504f",
+            "44f3b2f2c2ae88fe"
+        ],
+        "x": 14,
+        "y": 619,
+        "w": 1272,
+        "h": 262
+    },
+    {
+        "id": "81c973dcdca1a4f0",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "database download links",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f31a598d.9fd2c8",
+            "98261154.3006",
+            "34dc99e5.495466",
+            "38d65d59.1d8aa2",
+            "3b8014a.86ad8ec",
+            "5b18a8e7.fb8da8",
+            "5de7cbb4.fa21a4",
+            "67ecfa7f.3f0e24"
+        ],
+        "x": 14,
+        "y": 259,
+        "w": 692,
+        "h": 262
+    },
+    {
+        "id": "1bfaaf118f38aee0",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "DOWNLOAD tmdb - create JSON Radar file from query",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "38b44ecb9288caf2",
+            "55b8ab3b2b7af294",
+            "790a89794204c383",
+            "314a302b5d86fb5a",
+            "b00e6ad2a4612cad",
+            "7dba386e57337c72",
+            "04df9cb8c0753abb",
+            "3557178575375eb6",
+            "29583ca6de66fedf",
+            "91cae91e61fcea38",
+            "68fecdfda8e4e774",
+            "8c660460752a27b2",
+            "d50d86038fe1af32",
+            "b5e099e92ce27bf6",
+            "f77b0f12f5047d25",
+            "fbf290de9b7b858f",
+            "35dd409613d47a60",
+            "729b953264ce47aa",
+            "23b1ba527419b29b",
+            "b519f0927284d44a",
+            "2f3cc99c3c41ab90",
+            "62e90c91d0238273",
+            "c00796fd5642dae0"
+        ],
+        "x": 14,
+        "y": 919,
+        "w": 1392,
+        "h": 502
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -366,7 +490,7 @@
             "57fa6ca2b7d290e3"
         ],
         "x": 54,
-        "y": 1299,
+        "y": 1159,
         "w": 1112,
         "h": 162
     },
@@ -496,21 +620,6 @@
         "sessionExpiry": ""
     },
     {
-        "id": "73598328fc95017b",
-        "type": "influxdb",
-        "hostname": "127.0.0.1",
-        "port": "8086",
-        "protocol": "http",
-        "database": "database",
-        "name": "influxdb-node-red",
-        "usetls": false,
-        "tls": "",
-        "influxdbVersion": "2.0",
-        "url": "http://influxdb:8086",
-        "timeout": "10",
-        "rejectUnauthorized": true
-    },
-    {
         "id": "d65c36624d553ee7",
         "type": "serial-port",
         "name": "",
@@ -630,7 +739,7 @@
     {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
-        "name": "Monitoring",
+        "name": "Monitoring Tab",
         "icon": "dashboard",
         "order": 1,
         "disabled": false,
@@ -661,7 +770,7 @@
     {
         "id": "ddb9d86f10b3f6a7",
         "type": "ui_tab",
-        "name": "Database",
+        "name": "Database Tab",
         "icon": "input",
         "disabled": false,
         "hidden": false
@@ -669,7 +778,7 @@
     {
         "id": "c0886ba4111fbfae",
         "type": "ui_group",
-        "name": "Database Output",
+        "name": "Database Downloads",
         "tab": "ddb9d86f10b3f6a7",
         "order": 2,
         "disp": true,
@@ -686,13 +795,49 @@
     {
         "id": "d3f63882e39b03a6",
         "type": "ui_group",
-        "name": "Database Input",
+        "name": "Comments Input",
         "tab": "ddb9d86f10b3f6a7",
         "order": 1,
         "disp": true,
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "1d8d8c9a28569355",
+        "type": "sqlitedb",
+        "db": "/db/radar",
+        "mode": "RWC"
+    },
+    {
+        "id": "eab37b30ecd3f935",
+        "type": "ui_group",
+        "name": "Events JSON Generator",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 4,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "f0ca9c7dffb5ae3c",
+        "type": "ui_group",
+        "name": "Radar JSON Generator",
+        "tab": "ddb9d86f10b3f6a7",
+        "order": 5,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "8a89c15ae12a462a",
+        "type": "ui_tab",
+        "name": "ThingsBoard tab",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
     },
     {
         "id": "e43506628b4a1cdb",
@@ -752,40 +897,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1160,
-        "y": 740,
-        "wires": []
-    },
-    {
-        "id": "9496fe7a475726de",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "name": "format influxdb write TimedSpeedCounts",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        speed_average: Number(msg.payload.TimedSpeedCounts.average),\n        count: Number(msg.payload.TimedSpeedCounts.count),\n        time: (msg.payload.TimedSpeedCounts.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.TimedSpeedCounts.direction),\n        speed_units: msg.payload.TimedSpeedCounts.units\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 720,
-        "y": 740,
-        "wires": [
-            [
-                "617c9bb213538929",
-                "35c0bee67148cfa7"
-            ]
-        ]
-    },
-    {
-        "id": "a9d702a51bc8f0c9",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "name": "variables to pass",
-        "info": "Via Docker Environment \n- `device_ip` of Pi (for influxDB server)  --- env.get(\"VAR_DEVICE_IP\")\n- `location` string (for influxDB `location` tag)  --- env.get(\"VAR_LOCATION\")\n- `radar_camera` name of camera (for attaching speeds to events) - needs to match Frigate config  --- env.get(\"VAR_RADAR_CAMERA\")  \n- `influxdb_database`   --- env.get(\"VAR_INFLUXDB_BUCKET\")\n\n",
-        "x": 360,
-        "y": 60,
+        "x": 600,
+        "y": 800,
         "wires": []
     },
     {
@@ -795,30 +908,9 @@
         "g": "04cc3b7b3e019683",
         "name": "TimedSpeedCounts are @O and @|300 (5-min)",
         "info": "",
-        "x": 1160,
-        "y": 800,
+        "x": 600,
+        "y": 760,
         "wires": []
-    },
-    {
-        "id": "4681243b9c70e906",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "name": "format influxdb write DetectedObjectVelocity",
-        "func": "\nconst newMsg = {};\n\nnewMsg.payload = [\n    {\n        velocity: Number(msg.payload.DetectedObjectVelocity),\n        time: (msg.payload.time*1000)\n    },\n    {\n        location: env.get(\"VAR_LOCATION\"),\n        direction: String(msg.payload.direction),\n        velocity_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 730,
-        "y": 580,
-        "wires": [
-            [
-                "b8db51ab64a3d61e"
-            ]
-        ]
     },
     {
         "id": "affe7cfb9861e62d",
@@ -845,50 +937,12 @@
         "wires": []
     },
     {
-        "id": "617c9bb213538929",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb TimedSpeedCounts",
-        "measurement": "TimedSpeedCounts",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 800,
-        "y": 800,
-        "wires": []
-    },
-    {
-        "id": "b8db51ab64a3d61e",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb DetectedObjectVelocity",
-        "measurement": "DetectedObjectVelocity",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 810,
-        "y": 640,
-        "wires": []
-    },
-    {
         "id": "67f64c75edc0ef13",
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "1d00b3011a12b204",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -896,7 +950,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 720,
+        "x": 580,
         "y": 540,
         "wires": []
     },
@@ -1171,60 +1225,21 @@
         "y": 540,
         "wires": [
             [
-                "4681243b9c70e906",
-                "67f64c75edc0ef13"
+                "67f64c75edc0ef13",
+                "8a653740e4fc4f6a"
             ],
             [
-                "9496fe7a475726de"
+                "35c0bee67148cfa7",
+                "585b91535ae4e8a3"
             ],
             [
-                "7b220a40adc14e3c",
-                "ef9cb704c91a3ef6"
+                "d88af763b70480d0",
+                "d7eb8cf6f750f369",
+                "6580ac98734eba2e"
             ],
             [
                 "3fc9a8ed49514be5",
-                "4eaade5db6a7a443"
-            ]
-        ]
-    },
-    {
-        "id": "d5e5d0f288f9b186",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb RawSpeedMagnitude",
-        "measurement": "RawSpeedMagnitude",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 800,
-        "y": 960,
-        "wires": []
-    },
-    {
-        "id": "7b220a40adc14e3c",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
-        "name": "format influxdb write raw speed, magnitude",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed),\n        magnitude: String(msg.payload.magnitude),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 730,
-        "y": 900,
-        "wires": [
-            [
-                "d5e5d0f288f9b186",
-                "d88af763b70480d0"
+                "a804f93d06561c17"
             ]
         ]
     },
@@ -1242,8 +1257,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1110,
-        "y": 900,
+        "x": 550,
+        "y": 1080,
         "wires": []
     },
     {
@@ -1253,8 +1268,8 @@
         "g": "e138c998bef7d520",
         "name": "handle O3 speeds by saving array to each _value",
         "info": "",
-        "x": 740,
-        "y": 1020,
+        "x": 600,
+        "y": 1040,
         "wires": []
     },
     {
@@ -1271,67 +1286,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 670,
-        "y": 1560,
-        "wires": []
-    },
-    {
-        "id": "da47f12a5e2cd512",
-        "type": "influxdb out",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "influxdb": "73598328fc95017b",
-        "name": "write influxdb RawSpeedMagnitude_single",
-        "measurement": "RawSpeedMagnitude_single",
-        "precision": "",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "taffic_monitor_01",
-        "bucket": "${VAR_INFLUXDB_BUCKET}",
-        "x": 830,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "ef9cb704c91a3ef6",
-        "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "name": "format influxdb write raw speed, magnitude single",
-        "func": "var thisDirection = msg.payload.speed > 0 ? \"inbound\" : \"outbound\";\n\nconst newMsg = {};\n\nnewMsg.payload = [\n    {  //first object holds _field (speed_unit:value, magnitude:value)\n        speed: String(msg.payload.speed[0]),\n        magnitude: String(msg.payload.magnitude[0]),\n        time: (msg.payload.time*1000)\n    },\n    { //second object holds tags\n        location: env.get(\"VAR_LOCATION\"),\n        direction: thisDirection,\n        speed_units: msg.payload.unit\n    }\n];\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 750,
-        "y": 1120,
-        "wires": [
-            [
-                "da47f12a5e2cd512",
-                "c1c1371cdf7151aa"
-            ]
-        ]
-    },
-    {
-        "id": "c1c1371cdf7151aa",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
-        "name": "debug-radar-raws-speeds-write_single",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1130,
-        "y": 1120,
+        "x": 510,
+        "y": 1540,
         "wires": []
     },
     {
@@ -1341,8 +1297,8 @@
         "g": "e5b5b46703e248e9",
         "name": "manually take top 1 speed, magnitude (effectively O1)",
         "info": "",
-        "x": 760,
-        "y": 1240,
+        "x": 660,
+        "y": 1440,
         "wires": []
     },
     {
@@ -1404,44 +1360,370 @@
         ]
     },
     {
-        "id": "aba78041f885343a",
+        "id": "0749f4279a336caf",
         "type": "sqlite",
         "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
+        "g": "1d00b3011a12b204",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1500,
+        "x": 940,
+        "y": 580,
+        "wires": [
+            [
+                "81c98c5e01bbfe09"
+            ]
+        ]
+    },
+    {
+        "id": "56b9668b4f365f7b",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "create radar_dov table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL);",
+        "x": 740,
+        "y": 580,
+        "wires": [
+            [
+                "0749f4279a336caf"
+            ]
+        ]
+    },
+    {
+        "id": "ef4ad9faa7ec12e7",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "select latest 5 rows from radar_dov",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;",
+        "x": 700,
+        "y": 620,
+        "wires": [
+            [
+                "0749f4279a336caf"
+            ]
+        ]
+    },
+    {
+        "id": "81c98c5e01bbfe09",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "name": "debug: last 5 rows radar_dov",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1220,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "87412467471d97a6",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "1d00b3011a12b204",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
+        "name": "",
+        "x": 940,
+        "y": 660,
         "wires": [
             []
         ]
     },
     {
-        "id": "4eaade5db6a7a443",
+        "id": "8a653740e4fc4f6a",
         "type": "function",
         "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "write params for radar_oc_payload insert",
-        "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "g": "1d00b3011a12b204",
+        "name": "write params for radar_dov insert",
+        "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 1500,
+        "x": 700,
+        "y": 660,
         "wires": [
             [
-                "aba78041f885343a",
-                "d2b467822152a66e"
+                "87412467471d97a6"
             ]
         ]
     },
     {
-        "id": "bfad85a411436e1c",
+        "id": "e3aa00721bf6faff",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 980,
+        "y": 860,
+        "wires": [
+            [
+                "13059459bbc48328"
+            ]
+        ]
+    },
+    {
+        "id": "54ae78579d38e81b",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "name": "create radar_timedspeedcounts table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL);",
+        "x": 730,
+        "y": 860,
+        "wires": [
+            [
+                "e3aa00721bf6faff"
+            ]
+        ]
+    },
+    {
+        "id": "831310a0a0549da3",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "name": "select latest 5 rows from radar_timedspeedcounts",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_timed_speed_counts ORDER BY time DESC LIMIT 5;",
+        "x": 700,
+        "y": 900,
+        "wires": [
+            [
+                "e3aa00721bf6faff"
+            ]
+        ]
+    },
+    {
+        "id": "13059459bbc48328",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "name": "debug: last 5 rows radar_timedspeedcounts",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1270,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "585b91535ae4e8a3",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "name": "write params for radar_timedspeedcounts insert",
+        "func": "//get rid of outer TimedSpeedCounts object\nmsg.payload = msg.payload.TimedSpeedCounts;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 700,
+        "y": 940,
+        "wires": [
+            [
+                "477f8523e9784029"
+            ]
+        ]
+    },
+    {
+        "id": "477f8523e9784029",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "04cc3b7b3e019683",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
+        "name": "",
+        "x": 980,
+        "y": 940,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dd48c6017098fe1d",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1120,
+        "wires": [
+            [
+                "825ddab22453e37c"
+            ]
+        ]
+    },
+    {
+        "id": "e113c181976ad898",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "create radar_raw_speed_magnitude table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT);",
+        "x": 700,
+        "y": 1120,
+        "wires": [
+            [
+                "dd48c6017098fe1d"
+            ]
+        ]
+    },
+    {
+        "id": "e1461efd368bbee3",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "select latest 5 rows from radar_raw_speed_magnitude",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_raw_speed_magnitude ORDER BY time DESC LIMIT 5;",
+        "x": 660,
+        "y": 1160,
+        "wires": [
+            [
+                "dd48c6017098fe1d"
+            ]
+        ]
+    },
+    {
+        "id": "825ddab22453e37c",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "debug: last 5 rows radar_raw_speed_magnitude",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1260,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "1ddee1427e02c980",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
+        "name": "",
+        "x": 960,
+        "y": 1200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d7eb8cf6f750f369",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "e138c998bef7d520",
+        "name": "write params for radar_raw_speed_magnitude insert",
+        "func": "\nmsg.payload.magnitude = `${JSON.stringify(msg.payload.magnitude)}`; //array, wrap in single quote for sqlite insert as text\nmsg.payload.speed = `${JSON.stringify(msg.payload.speed)}`; //array, wrap in single quote for sqlite insert as text\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 1200,
+        "wires": [
+            [
+                "1ddee1427e02c980"
+            ]
+        ]
+    },
+    {
+        "id": "97a0c601b8918ede",
         "type": "inject",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
@@ -1457,51 +1739,33 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
-        "x": 710,
-        "y": 1360,
+        "x": 750,
+        "y": 1600,
         "wires": [
             [
-                "1a0b6df61dbcb683"
+                "772d6574f4181a44"
             ]
         ]
     },
     {
-        "id": "d2b467822152a66e",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
-        "name": "debug 20",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1020,
-        "y": 1560,
-        "wires": []
-    },
-    {
-        "id": "1a0b6df61dbcb683",
+        "id": "772d6574f4181a44",
         "type": "sqlite",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
-        "mydb": "2f60c1ab30a6fc8f",
+        "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 1020,
-        "y": 1360,
+        "x": 980,
+        "y": 1600,
         "wires": [
             [
-                "069f41d6a4ff8474"
+                "b277514c42c255e9"
             ]
         ]
     },
     {
-        "id": "f444ee737beb9007",
+        "id": "c768d8ea1b8cf953",
         "type": "inject",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
@@ -1517,16 +1781,16 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
-        "x": 740,
-        "y": 1400,
+        "x": 720,
+        "y": 1640,
         "wires": [
             [
-                "1a0b6df61dbcb683"
+                "772d6574f4181a44"
             ]
         ]
     },
     {
-        "id": "069f41d6a4ff8474",
+        "id": "b277514c42c255e9",
         "type": "debug",
         "z": "94d07e407c25f282",
         "g": "35a68b2baec193d2",
@@ -1539,9 +1803,166 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1110,
-        "y": 1420,
+        "x": 1250,
+        "y": 1600,
         "wires": []
+    },
+    {
+        "id": "27b2f56921067f35",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
+        "name": "",
+        "x": 980,
+        "y": 1680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a804f93d06561c17",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "35a68b2baec193d2",
+        "name": "write params for radar_oc_payload insert",
+        "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 1680,
+        "wires": [
+            [
+                "27b2f56921067f35"
+            ]
+        ]
+    },
+    {
+        "id": "1d1c479b2567efbd",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 980,
+        "y": 1300,
+        "wires": [
+            [
+                "a1583c68a1dad33e"
+            ]
+        ]
+    },
+    {
+        "id": "795c120719c982de",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "create radar_raw_speed_magnitude_single table",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (time REAL, unit TEXT, magnitude REAL, speed REAL);",
+        "x": 690,
+        "y": 1300,
+        "wires": [
+            [
+                "1d1c479b2567efbd"
+            ]
+        ]
+    },
+    {
+        "id": "8180a480a85a6636",
+        "type": "inject",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "select latest 5 rows from radar_raw_speed_magnitude_single",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM radar_raw_speed_magnitude_single ORDER BY time DESC LIMIT 5;",
+        "x": 660,
+        "y": 1340,
+        "wires": [
+            [
+                "1d1c479b2567efbd"
+            ]
+        ]
+    },
+    {
+        "id": "a1583c68a1dad33e",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "debug: last 5 rows radar_raw_speed_magnitude_single",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1310,
+        "y": 1300,
+        "wires": []
+    },
+    {
+        "id": "382bf388390f91bd",
+        "type": "sqlite",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
+        "name": "",
+        "x": 980,
+        "y": 1380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6580ac98734eba2e",
+        "type": "function",
+        "z": "94d07e407c25f282",
+        "g": "e5b5b46703e248e9",
+        "name": "write params for radar_raw_speed_magnitude_single insert",
+        "func": "\nmsg.payload.magnitude = msg.payload.magnitude[0]; //array, wrap in single quote for sqlite insert as text\nmsg.payload.speed = msg.payload.speed[0]; //array, wrap in single quote for sqlite insert as text\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 1380,
+        "wires": [
+            [
+                "382bf388390f91bd"
+            ]
+        ]
     },
     {
         "id": "481344ed5f4b69d9",
@@ -1744,47 +2165,6 @@
         ]
     },
     {
-        "id": "0bcc4cc5c0656a3b",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "create influxdb query, return DetectedObjectVelocity median",
-        "func": "var query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + (Math.floor(msg.frigate_event.start_time)-2) +\", stop: \" + (Math.ceil(msg.frigate_event.end_time)+2) + \")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"DetectedObjectVelocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"velocity\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> median(column: \\\"_value\\\")\\n\"; \n\nmsg.query = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 640,
-        "wires": [
-            [
-                "407dbf096111ea43"
-            ]
-        ]
-    },
-    {
-        "id": "4ddff0572e76c3c6",
-        "type": "influxdb in",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "influxdb": "73598328fc95017b",
-        "name": "query, DetectedObjectVelocity, median",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 450,
-        "y": 720,
-        "wires": [
-            [
-                "dd3face6611c0380"
-            ]
-        ]
-    },
-    {
         "id": "7992eb250ae9d20f",
         "type": "function",
         "z": "9269520ddb532b00",
@@ -1801,7 +2181,7 @@
         "y": 580,
         "wires": [
             [
-                "0bcc4cc5c0656a3b"
+                "b39062019fac1a66"
             ]
         ]
     },
@@ -1864,27 +2244,6 @@
         ]
     },
     {
-        "id": "dd3face6611c0380",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "match radar speed to event",
-        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (msg.payload.length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.frigate_event.calc_zone_direction == msg.payload[0].direction) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = msg.payload[0].direction;\n        newMsg.calc_event_speed = msg.payload[0]._value;\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((msg.payload.length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    var dirIndex = msg.payload.map((o) => o.direction).indexOf(msg.frigate_event.calc_zone_direction);\n    if (dirIndex >= 0) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.payload[dirIndex].direction;\n        newMsg.calc_event_speed = msg.payload[dirIndex]._value;\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 620,
-        "y": 780,
-        "wires": [
-            [
-                "cbef8a3acc3d1495"
-            ]
-        ]
-    },
-    {
         "id": "ad7393ac18c4083b",
         "type": "function",
         "z": "9269520ddb532b00",
@@ -1901,33 +2260,8 @@
         "y": 520,
         "wires": [
             [
-                "cbef8a3acc3d1495"
-            ]
-        ]
-    },
-    {
-        "id": "407dbf096111ea43",
-        "type": "delay",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "delay 1 sec, to be sure InfluxDB writes",
-        "pauseType": "delay",
-        "timeout": "1",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 450,
-        "y": 680,
-        "wires": [
-            [
-                "4ddff0572e76c3c6"
+                "cbef8a3acc3d1495",
+                "cd72f360292bca50"
             ]
         ]
     },
@@ -2087,7 +2421,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "cleanse final msg.payload to forward along",
-        "func": "let newMsg = {};\n\nnewMsg.topic = \"Dashboard event payload\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
+        "func": "let newMsg = {};\n\nnewMsg.topic = \"tm/event\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2102,6 +2436,122 @@
                 "274f87c31437c2d7"
             ]
         ]
+    },
+    {
+        "id": "b39062019fac1a66",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "pull speed, direction for event period",
+        "func": "let query = \"SELECT * FROM radar_dov WHERE time BETWEEN \" + (Math.floor(msg.frigate_event.start_time) - 2) +\" AND \" + (Math.ceil(msg.frigate_event.end_time) + 2) + \";\";\n\nmsg.topic = query;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 640,
+        "wires": [
+            [
+                "7f50d9d83bdb7f14"
+            ]
+        ]
+    },
+    {
+        "id": "7f50d9d83bdb7f14",
+        "type": "sqlite",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 440,
+        "y": 680,
+        "wires": [
+            [
+                "c123fc5ed5e14e8a"
+            ]
+        ]
+    },
+    {
+        "id": "c123fc5ed5e14e8a",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "calculate median per direction",
+        "func": "const medianVelocityPerDirection = {};\n\n// Group the data by direction\nconst groupedData = msg.payload.reduce((acc, curr) => {\n  if (!acc[curr.direction]) {\n    acc[curr.direction] = [];\n  }\n  acc[curr.direction].push(curr);\n  return acc;\n}, {});\n\n// Calculate the median velocity for each direction\nfor (const direction in groupedData) {\n  if (groupedData.hasOwnProperty(direction)) {\n    const sortedVelocities = groupedData[direction].map(entry => entry.velocity).sort((a, b) => a - b);\n    const medianIndex = Math.floor(sortedVelocities.length / 2);\n    const medianVelocity =\n      sortedVelocities.length % 2 === 0\n        ? (sortedVelocities[medianIndex - 1] + sortedVelocities[medianIndex]) / 2\n        : sortedVelocities[medianIndex];\n    medianVelocityPerDirection[direction] = medianVelocity;\n  }\n}\n\nmsg.payload = medianVelocityPerDirection;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 740,
+        "wires": [
+            [
+                "673e45159a2dfccf"
+            ]
+        ]
+    },
+    {
+        "id": "673e45159a2dfccf",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "match radar speed to event",
+        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 780,
+        "wires": [
+            [
+                "cbef8a3acc3d1495",
+                "6c7eefa45db08cbc"
+            ]
+        ]
+    },
+    {
+        "id": "6c7eefa45db08cbc",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "cd72f360292bca50",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 860,
+        "y": 580,
+        "wires": []
     },
     {
         "id": "3985037239b671c5",
@@ -2604,223 +3054,8 @@
         "y": 880,
         "wires": [
             [
-                "6a422507b2a5bbca",
-                "dd294de96fa60d7d",
-                "158e6edae533bfdc"
-            ]
-        ]
-    },
-    {
-        "id": "6a422507b2a5bbca",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "create influxdb query for TimedSpeedCounts.counts (5-min) for last 60-min",
-        "func": "//Want TimedSpeedCounts.counts (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"count\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 940,
-        "wires": [
-            [
-                "e256c1d68cf20f43"
-            ]
-        ]
-    },
-    {
-        "id": "e256c1d68cf20f43",
-        "type": "influxdb in",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "influxdb": "73598328fc95017b",
-        "name": "query, TimedSpeedCounts.counts",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 440,
-        "y": 1000,
-        "wires": [
-            [
-                "a432e760cc77e6cb"
-            ]
-        ]
-    },
-    {
-        "id": "dd294de96fa60d7d",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "create influxdb query for TimedSpeedCounts.speed_average (5-min) for last 60-min",
-        "func": "//Want TimedSpeedCounts.speed_average (expected every 5-min) for last 1 hour\n\nvar query = \"\";\n\nquery += \"from(bucket: \\\"\" + env.get(\"VAR_INFLUXDB_BUCKET\") +\"\\\")\\n\";\nquery += \"    |> range(start: \" + Math.floor((msg.payload - (60 * 60 * 1000))/1000) +\", stop: \" + Math.ceil((msg.payload)/1000) + \")\\n\";\n// OR         |> range(start:-1h)\nquery += \"    |> filter(fn: (r) => r[\\\"_measurement\\\"] == \\\"TimedSpeedCounts\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"_field\\\"] == \\\"speed_average\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"direction\\\"] == \\\"inbound\\\" or r[\\\"direction\\\"] == \\\"outbound\\\")\";\nquery += \"    |> filter(fn: (r) => r[\\\"location\\\"] == \\\"\" + env.get(\"VAR_LOCATION\") + \"\\\")\\n\";\nquery += \"    |> filter(fn: (r) => r[\\\"speed_units\\\"] == \\\"mph\\\")\"; \nquery += \"    |> sort(columns: [\\\"_time\\\"])\"; \n\nmsg.query = query;\nreturn msg;\n\n\n// from(bucket: \"influxdb_bucket\")\n// \t|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n//   |> filter(fn: (r) => r[\"_measurement\"] == \"TimedSpeedCounts\")\n//   |> filter(fn: (r) => r[\"_field\"] == \"speed_average\" or r[\"_field\"] == \"count\")\n//   |> filter(fn: (r) => r[\"direction\"] == \"inbound\" or r[\"direction\"] == \"outbound\")\n//   |> filter(fn: (r) => r[\"location\"] == \"ne26th-wasco-sb-01\")\n//   |> filter(fn: (r) => r[\"speed_units\"] == \"mph\")",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 1120,
-        "wires": [
-            [
-                "319859b48b6eebad"
-            ]
-        ]
-    },
-    {
-        "id": "319859b48b6eebad",
-        "type": "influxdb in",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "influxdb": "73598328fc95017b",
-        "name": "query, TimedSpeedCounts.speed_average",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "taffic_monitor_01",
-        "x": 470,
-        "y": 1180,
-        "wires": [
-            [
-                "b2b5e83db3663f9e"
-            ]
-        ]
-    },
-    {
-        "id": "1b7c2967fd6a85a4",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 6,
-        "width": 0,
-        "height": 0,
-        "label": "TimedSpeedCounts.speed_average (5-min) for last 60-min",
-        "chartType": "line",
-        "legend": "true",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "60",
-        "removeOlderPoints": "",
-        "removeOlderUnit": "60",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 1000,
-        "y": 1240,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "537d771bb5b1eff5",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 5,
-        "width": 0,
-        "height": 0,
-        "label": "TimedSpeedCounts.counts (5-min) for last 60-min",
-        "chartType": "line",
-        "legend": "true",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "60",
-        "removeOlderPoints": "",
-        "removeOlderUnit": "60",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 970,
-        "y": 1060,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "b2b5e83db3663f9e",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "structure influx TimedSpeedCounts.speed_average",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of _value, bc speeds outbound will be negative\n   myItem._value = Math.abs(myItem._value)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 1240,
-        "wires": [
-            [
-                "1b7c2967fd6a85a4"
-            ]
-        ]
-    },
-    {
-        "id": "a432e760cc77e6cb",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "structure influx TimedSpeedCounts.counts",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// _time\n// _value\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem._time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem._time);\n        thisDataPoint.y = myItem._value;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem._value;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 1060,
-        "wires": [
-            [
-                "537d771bb5b1eff5"
+                "158e6edae533bfdc",
+                "79900a566af02159"
             ]
         ]
     },
@@ -2929,7 +3164,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1420,
+        "y": 1280,
         "wires": [
             []
         ]
@@ -3411,7 +3646,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 1340,
+        "y": 1200,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -3428,7 +3663,7 @@
         "sql": "",
         "name": "",
         "x": 420,
-        "y": 1380,
+        "y": 1240,
         "wires": [
             [
                 "57fa6ca2b7d290e3"
@@ -3449,7 +3684,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 1420,
+        "y": 1280,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -3607,14 +3842,185 @@
         ]
     },
     {
+        "id": "7cc031e5a7d773a4",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 340,
+        "y": 980,
+        "wires": [
+            [
+                "39d895a16ca6f6f1",
+                "62be7d38b991716c"
+            ]
+        ]
+    },
+    {
+        "id": "79900a566af02159",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "query TimedSpeedCounts for last 60-min",
+        "func": "//time is already in seconds\n//get for last 60-minutes, 3600 seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(time, 'unixepoch', 'localtime'), '+0 minutes') AS time,\n    direction,\n    count,\n    ABS(average) as speed\nFROM\n    radar_timed_speed_counts\nWHERE\n    time > (unixepoch('now') - (3600))\nORDER BY\n    time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 220,
+        "y": 940,
+        "wires": [
+            [
+                "7cc031e5a7d773a4"
+            ]
+        ]
+    },
+    {
+        "id": "39d895a16ca6f6f1",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure SQLite TimedSpeedCounts.counts",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// count\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.count;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 980,
+        "wires": [
+            [
+                "cbb3b02ca505a55b"
+            ]
+        ]
+    },
+    {
+        "id": "62be7d38b991716c",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure sqlite TimedSpeedCounts.speed_average",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// speed\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of speed, bc speeds outbound will be negative\n   myItem.speed = Math.abs(myItem.speed)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.speed;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.speed;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 1060,
+        "wires": [
+            [
+                "7db4b197df9eb075"
+            ]
+        ]
+    },
+    {
+        "id": "cbb3b02ca505a55b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.counts (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 690,
+        "y": 1020,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7db4b197df9eb075",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 720,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "6a05187a692bed7c",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
         "g": "541d31d14bcd8b00",
         "name": "",
-        "label": "Create date-sensitive comments about the Traffic Monitor status, deployment, location, conditions, construction, etc.",
+        "label": "Create new Comment",
         "group": "d3f63882e39b03a6",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "options": [
@@ -3676,7 +4082,7 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 430,
+        "x": 140,
         "y": 60,
         "wires": [
             [
@@ -3712,8 +4118,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 580,
-        "y": 180,
+        "x": 600,
+        "y": 160,
         "wires": [
             [
                 "840802d34d143ded"
@@ -3736,9 +4142,9 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS comments (effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
-        "x": 360,
-        "y": 180,
+        "topic": "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
+        "x": 380,
+        "y": 160,
         "wires": [
             [
                 "f27b6d01ae7836d6"
@@ -3762,8 +4168,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
-        "x": 320,
-        "y": 220,
+        "x": 340,
+        "y": 200,
         "wires": [
             [
                 "f27b6d01ae7836d6"
@@ -3784,8 +4190,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 180,
+        "x": 1040,
+        "y": 160,
         "wires": []
     },
     {
@@ -3794,15 +4200,15 @@
         "z": "239d7b3ba410ad5e",
         "g": "541d31d14bcd8b00",
         "name": "create comment payload",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.id = entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0');\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
-        "y": 120,
+        "x": 390,
+        "y": 100,
         "wires": [
             [
                 "db1f35650c8d6448"
@@ -3817,10 +4223,10 @@
         "g": "541d31d14bcd8b00",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO comments (effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
+        "sql": "INSERT INTO comments (id, effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($id, $effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
         "name": "tmdb.comments, Prepared Statement",
-        "x": 670,
-        "y": 120,
+        "x": 710,
+        "y": 100,
         "wires": [
             []
         ]
@@ -3831,14 +4237,14 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "",
-        "label": "Generate Events (as JSON) between dates (default 7 days ago to now)",
-        "group": "c0886ba4111fbfae",
-        "order": 2,
+        "label": "Generate Events JSON",
+        "group": "eab37b30ecd3f935",
+        "order": 1,
         "width": 0,
         "height": 0,
         "options": [
             {
-                "label": "Event start date",
+                "label": "Event start date (default 7-days ago)",
                 "value": "start_date",
                 "type": "date",
                 "required": false,
@@ -3852,7 +4258,7 @@
                 "rows": null
             },
             {
-                "label": "Event end date",
+                "label": "Event end date (default now)",
                 "value": "end_date",
                 "type": "date",
                 "required": false,
@@ -3879,12 +4285,12 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 310,
-        "y": 340,
+        "x": 170,
+        "y": 660,
         "wires": [
             [
-                "c25ade7ddaeca697",
-                "c45589c369c843a5"
+                "c45589c369c843a5",
+                "c25ade7ddaeca697"
             ]
         ]
     },
@@ -3902,8 +4308,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1050,
-        "y": 340,
+        "x": 1090,
+        "y": 660,
         "wires": []
     },
     {
@@ -3912,19 +4318,18 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "create events query",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nreturn newMsg;\n",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Events JSON</h3>\n    Last generated:\n    <table>\n        <tr>\n            <td>Start:</td>\n            <td>${formatstartDateTime}</td>\n        </tr>\n        <tr>\n            <td>End:</td> \n            <td>${formatendDateTime}</td>\n        </tr>\n    </table>\n    <ul>\n        <li><a href=\"/files/events.json\">events.json</a></li>\n    </ul>\n`;\n\nreturn newMsg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 380,
+        "x": 590,
+        "y": 700,
         "wires": [
             [
-                "f2bd56710ba03238",
-                "82073a9c3e0f504f"
+                "44f3b2f2c2ae88fe"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -3933,7 +4338,7 @@
         "id": "f31a598d.9fd2c8",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Set base path",
         "func": "//restrict to c:\\temp\\\nvar basePath = \"/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
         "outputs": 2,
@@ -3942,8 +4347,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
-        "y": 680,
+        "x": 280,
+        "y": 360,
         "wires": [
             [
                 "34dc99e5.495466"
@@ -3957,19 +4362,19 @@
         "id": "98261154.3006",
         "type": "http response",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 870,
-        "y": 720,
+        "x": 630,
+        "y": 400,
         "wires": []
     },
     {
         "id": "34dc99e5.495466",
         "type": "file in",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "filename": "filename",
         "filenameType": "msg",
@@ -3977,8 +4382,8 @@
         "chunk": false,
         "sendError": false,
         "encoding": "none",
-        "x": 710,
-        "y": 660,
+        "x": 470,
+        "y": 340,
         "wires": [
             [
                 "98261154.3006"
@@ -3989,12 +4394,12 @@
         "id": "38d65d59.1d8aa2",
         "type": "catch",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "scope": null,
         "uncaught": false,
-        "x": 340,
-        "y": 760,
+        "x": 100,
+        "y": 440,
         "wires": [
             [
                 "3b8014a.86ad8ec",
@@ -4006,13 +4411,13 @@
         "id": "3b8014a.86ad8ec",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Set 404",
         "func": "msg.payload = msg.error;\nmsg.statusCode = 404;//resource not found\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
-        "x": 720,
-        "y": 760,
+        "x": 480,
+        "y": 440,
         "wires": [
             [
                 "98261154.3006"
@@ -4023,7 +4428,7 @@
         "id": "5b18a8e7.fb8da8",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -4031,55 +4436,33 @@
         "tostatus": false,
         "complete": "true",
         "targetType": "full",
-        "x": 370,
-        "y": 800,
+        "x": 130,
+        "y": 480,
         "wires": []
-    },
-    {
-        "id": "a8c2985e.d23ad8",
-        "type": "ui_template",
-        "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
-        "group": "c0886ba4111fbfae",
-        "name": "ui_temlplate - present download links on dashboard",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "format": "<h3>Database Download Links</h3>\n<div >\n    <span><a href=\"/files/events.json\">events.json</a> (use Generate form above) </span> \n    <br />\n    <span><a href=\"/files/tmdb\">tmdb.sqlite</a> (entire database)</span>\n</div>",
-        "storeOutMessages": true,
-        "fwdInMessages": true,
-        "resendOnRefresh": false,
-        "templateScope": "local",
-        "className": "",
-        "x": 710,
-        "y": 840,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "5de7cbb4.fa21a4",
         "type": "comment",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "Create http endpoint <nodered>/files/xxx  where xxx is the file name to download",
         "info": "",
-        "x": 560,
-        "y": 620,
+        "x": 320,
+        "y": 300,
         "wires": []
     },
     {
         "id": "67ecfa7f.3f0e24",
         "type": "http in",
         "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
+        "g": "81c973dcdca1a4f0",
         "name": "",
         "url": "/files/:fn",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 350,
-        "y": 680,
+        "x": 110,
+        "y": 360,
         "wires": [
             [
                 "f31a598d.9fd2c8"
@@ -4094,7 +4477,7 @@
         "name": "enable download link",
         "info": "",
         "x": 360,
-        "y": 540,
+        "y": 740,
         "wires": []
     },
     {
@@ -4106,8 +4489,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 600,
-        "y": 380,
+        "x": 860,
+        "y": 840,
         "wires": [
             [
                 "b4e0b45a7bedd728"
@@ -4137,7 +4520,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 120,
-        "y": 380,
+        "y": 740,
         "wires": [
             [
                 "c45589c369c843a5"
@@ -4156,33 +4539,11 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 800,
-        "y": 380,
+        "x": 1020,
+        "y": 840,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "7318af62aa1dadcc",
-        "type": "ui_text",
-        "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "group": "c0886ba4111fbfae",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "{{msg.topic}}",
-        "format": "{{msg.payload}}",
-        "layout": "col-center",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 770,
-        "y": 440,
-        "wires": []
     },
     {
         "id": "5124f45846b94ef0",
@@ -4200,8 +4561,8 @@
         "className": "",
         "topic": "Events JSON output created (download available)",
         "name": "",
-        "x": 800,
-        "y": 480,
+        "x": 1180,
+        "y": 780,
         "wires": []
     },
     {
@@ -4217,13 +4578,768 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 540,
-        "y": 440,
+        "x": 940,
+        "y": 780,
         "wires": [
             [
-                "7318af62aa1dadcc",
                 "5124f45846b94ef0"
             ]
+        ]
+    },
+    {
+        "id": "38b44ecb9288caf2",
+        "type": "ui_form",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "label": "Generate Radar JSON",
+        "group": "f0ca9c7dffb5ae3c",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Radar start date (default 7-days ago)",
+                "value": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar start time",
+                "value": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end date (default now)",
+                "value": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end time",
+                "value": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 160,
+        "y": 960,
+        "wires": [
+            [
+                "91cae91e61fcea38",
+                "55b8ab3b2b7af294"
+            ]
+        ]
+    },
+    {
+        "id": "55b8ab3b2b7af294",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "debug: JSON radar form input",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "790a89794204c383",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_dov query",
+        "func": "msg.topic = \"SELECT * FROM radar_dov WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 1140,
+        "wires": [
+            [
+                "314a302b5d86fb5a"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "314a302b5d86fb5a",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1140,
+        "wires": [
+            [
+                "7dba386e57337c72"
+            ]
+        ]
+    },
+    {
+        "id": "b00e6ad2a4612cad",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 1040,
+        "wires": [
+            [
+                "91cae91e61fcea38"
+            ]
+        ]
+    },
+    {
+        "id": "7dba386e57337c72",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_dov.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1130,
+        "y": 1140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "04df9cb8c0753abb",
+        "type": "ui_toast",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "position": "top right",
+        "displayTime": "5",
+        "highlight": "",
+        "sendall": false,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": true,
+        "className": "",
+        "topic": "Events JSON output created (download available)",
+        "name": "",
+        "x": 1140,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "3557178575375eb6",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "enable download link when generated",
+        "info": "",
+        "x": 210,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "29583ca6de66fedf",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "format radar creation notification",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"<div><b>Created radar.json withing DateTimes</b></div>\"\nnewMsg.payload = \"<div><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></div>\";\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 1080,
+        "wires": [
+            [
+                "04df9cb8c0753abb"
+            ]
+        ]
+    },
+    {
+        "id": "91cae91e61fcea38",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar dates for query",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime() / 1000;\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Radar JSON</h3>\n    Last generated:\n    <table>\n        <tr>\n            <td>Start:</td> \n            <td>${formatstartDateTime}</td>\n        </tr>\n        <tr>\n            <td>End:</td> \n            <td>${formatendDateTime}</td>\n        </tr>\n    </table>\n    <ul>\n        <li><a href=\"/files/radar_dov.json\">radar_dov.json</a></li>\n        <li><a href=\"/files/radar_timed_speed_counts.json\">radar_timed_speed_counts.json</a> </li>\n        <li><a href=\"/files/radar_raw_speed_magnitude.json\">radar_raw_speed_magnitude.json</a> </li>\n        <li><a href=\"/files/radar_raw_speed_magnitude_single.json\">radar_raw_speed_magnitude_single.json</a> </li>\n        <li><a href=\"/files/radar_oc_payload.json\">radar_oc_payload.json</a> </li>\n    </ul>\n`;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 1000,
+        "wires": [
+            [
+                "c00796fd5642dae0"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "68fecdfda8e4e774",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_timed_speed_counts query",
+        "func": "msg.topic = \"SELECT * FROM radar_timed_speed_counts WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 1200,
+        "wires": [
+            [
+                "8c660460752a27b2"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "8c660460752a27b2",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1200,
+        "wires": [
+            [
+                "d50d86038fe1af32"
+            ]
+        ]
+    },
+    {
+        "id": "d50d86038fe1af32",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_timed_speed_counts.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1180,
+        "y": 1200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b5e099e92ce27bf6",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_raw_speed_magnitude query",
+        "func": "msg.topic = \"SELECT * FROM radar_raw_speed_magnitude WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 1260,
+        "wires": [
+            [
+                "f77b0f12f5047d25"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "f77b0f12f5047d25",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1260,
+        "wires": [
+            [
+                "fbf290de9b7b858f"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "fbf290de9b7b858f",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1190,
+        "y": 1260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "35dd409613d47a60",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_raw_speed_magnitude_single query",
+        "func": "msg.topic = \"SELECT * FROM radar_raw_speed_magnitude_single WHERE time >= '\"+ msg.payload.startDateTime +\"' AND time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 1320,
+        "wires": [
+            [
+                "729b953264ce47aa"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "729b953264ce47aa",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1320,
+        "wires": [
+            [
+                "23b1ba527419b29b"
+            ]
+        ]
+    },
+    {
+        "id": "23b1ba527419b29b",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude_single.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1210,
+        "y": 1320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b519f0927284d44a",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "create radar_oc_payload query",
+        "func": "msg.topic = \"SELECT * FROM radar_oc_payload WHERE start_time >= '\"+ msg.payload.startDateTime +\"' AND end_time <= '\"+ msg.payload.endDateTime +\"';\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 1380,
+        "wires": [
+            [
+                "2f3cc99c3c41ab90"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "2f3cc99c3c41ab90",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 960,
+        "y": 1380,
+        "wires": [
+            [
+                "62e90c91d0238273"
+            ]
+        ]
+    },
+    {
+        "id": "62e90c91d0238273",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "filename": "/db/radar_oc_payload.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1160,
+        "y": 1380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6e2a152aecd929d3",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "group": "d3f63882e39b03a6",
+        "name": "comments instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<h2> Create Comments</h2>\n<p>Comments are date-sensitive entries about the Traffic Monitor status, deployment, location, conditions, construction, etc.\n    <br />\n    These comments do not directly impact any display or counts but may be used for downstream analysis. Do not include any personally identifiable information.\n</p>",
+        "storeOutMessages": false,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c00796fd5642dae0",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "group": "f0ca9c7dffb5ae3c",
+        "name": "download Radar JSON",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 560,
+        "y": 1080,
+        "wires": [
+            [
+                "29583ca6de66fedf",
+                "790a89794204c383",
+                "68fecdfda8e4e774",
+                "b5e099e92ce27bf6",
+                "35dd409613d47a60",
+                "b519f0927284d44a"
+            ]
+        ]
+    },
+    {
+        "id": "b43ee265985f0f56",
+        "type": "ui_ui_control",
+        "z": "239d7b3ba410ad5e",
+        "name": "control JSON download groups",
+        "events": "change",
+        "x": 1110,
+        "y": 460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "44f3b2f2c2ae88fe",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "group": "eab37b30ecd3f935",
+        "name": "download Events JSON",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 630,
+        "y": 780,
+        "wires": [
+            [
+                "f2bd56710ba03238",
+                "82073a9c3e0f504f"
+            ]
+        ]
+    },
+    {
+        "id": "60bbb02aeab1379c",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "name": "show events_json",
+        "group": "c0886ba4111fbfae",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Generate Events JSON",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "{\"group\":{\"show\":[\"Database_Tab_Events_JSON_Generator\"]}}",
+        "payloadType": "json",
+        "topic": "",
+        "topicType": "str",
+        "x": 830,
+        "y": 460,
+        "wires": [
+            [
+                "b43ee265985f0f56"
+            ]
+        ]
+    },
+    {
+        "id": "0a1c47e427d83c4b",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "name": "show radar_json",
+        "group": "c0886ba4111fbfae",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Generate Radar JSON",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "{\"group\":{\"show\":[\"Database_Tab_Radar_JSON_Generator\"]}}",
+        "payloadType": "json",
+        "topic": "",
+        "topicType": "str",
+        "x": 840,
+        "y": 500,
+        "wires": [
+            [
+                "b43ee265985f0f56"
+            ]
+        ]
+    },
+    {
+        "id": "4611d2864ef75f3c",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"group\":{\"hide\":[\"Database_Tab_Events_JSON_Generator\",\"Database_Tab_Radar_JSON_Generator\"]}}",
+        "payloadType": "json",
+        "x": 870,
+        "y": 420,
+        "wires": [
+            [
+                "b43ee265985f0f56"
+            ]
+        ]
+    },
+    {
+        "id": "9e38989f2e13e4d7",
+        "type": "ui_button",
+        "z": "239d7b3ba410ad5e",
+        "name": "hide JSON",
+        "group": "c0886ba4111fbfae",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Hide JSON generators",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "{\"group\":{\"hide\":[\"Database_Tab_Events_JSON_Generator\",\"Database_Tab_Radar_JSON_Generator\"]}}",
+        "payloadType": "json",
+        "topic": "",
+        "topicType": "str",
+        "x": 850,
+        "y": 540,
+        "wires": [
+            [
+                "b43ee265985f0f56"
+            ]
+        ]
+    },
+    {
+        "id": "7ec49429a06e3bbf",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "group": "c0886ba4111fbfae",
+        "name": "download Radar DB",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "format": "<h3>Radar database and tables</h3>\n<div>\n    <p><a href=\"/files/radar\">radar.sqlite</a> (entire database)</p>\n    <ul>\n        <li>radar_dov</li>\n        <li>radar_timed_speed_counts</li>\n        <li>radar_raw_speed_magnitude</li>\n        <li>radar_raw_speed_magnitude_single</li>\n        <li>radar_oc_payload</li>\n    </ul>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 820,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a8c2985e.d23ad8",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "group": "c0886ba4111fbfae",
+        "name": "download Events DB",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "format": "<h3>Events database and tables</h3>\n<div>\n    <p><a href=\"/files/tmdb\">tmdb.sqlite</a> (entire database)</p>\n    <ul>\n        <li>events</li>\n        <li>comments</li>\n    </ul>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 820,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2b95a63a76f28f09",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "group": "c0886ba4111fbfae",
+        "name": "download DB instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<h2>Download databases</h2>\n<p>The links below will download the entire Traffic Monitor device events and/or radar SQLite database(s) to your current browser. \n    Each database will include events and/or radar readings only from this device while the Traffic Monitor was deployed and running.</p>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 830,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c30220553ae11805",
+        "type": "ui_template",
+        "z": "239d7b3ba410ad5e",
+        "group": "c0886ba4111fbfae",
+        "name": "json button instructions",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "format": "<h2>Generate JSON payloads</h2>\n<p>You may also generate selectable DateTime-constrained JSON payloads from events and/or radar database tables using the respective below buttons.</p>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 1080,
+        "y": 360,
+        "wires": [
+            []
         ]
     }
 ]
