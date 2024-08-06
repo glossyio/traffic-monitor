@@ -1,7 +1,7 @@
 {
     "name": "traffic-monitor",
     "description": "Traffic Monitor built with edge ML for object detection and radar for speed monitoring",
-    "version": "0.2.0-beta2",
+    "version": "0.2.0",
     "dependencies": {
         "node-red-contrib-aedes": "~0.13.0",
         "node-red-contrib-image-output": "~0.6.4",
