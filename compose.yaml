@@ -6,4 +6,3 @@
 
 include:
   - frigate/docker-compose-frigate.yml
-  - nodered/docker-compose-node-red.yml

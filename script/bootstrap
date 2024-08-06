@@ -28,10 +28,10 @@ curl -sSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ##-- /docker
 
-#clone repo to get all the files
-# unncomment this if you run the bootstrap script standalone
-#git clone https://github.com/glossyio/rpi-buster
-#cd rpi-buster/
+##-- install node-red as system service
+curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/rpm/update-nodejs-and-nodered \
+ | bash -s --nodered-user=nodered --open-firewall --confirm-root --confirm-install
+##-- /node-red
 
 #install go2rtc binary
 echo "==> Installing go2rtc…"
