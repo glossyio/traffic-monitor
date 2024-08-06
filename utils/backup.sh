@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 cd ~/code/backup
 
 #backup events database
-tar -cvpzf events_sqlite_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/nodered/data/tmdb
+tar -cvpzf events_sqlite_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/nodered/db/tmdb.sqlite
 
 # transfer databases to server
 # sudo rsync -azvv --progress -e ssh ~/code/backup/events_sqlite_2024-06-03_08-40.tar.gz NAME@SERVER:DB_DUMPS/
