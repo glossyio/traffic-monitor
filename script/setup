@@ -29,8 +29,7 @@ envsubst < docker-frigate/frigate-config.yaml > ~/code/frigate/config/config.yml
 
 
 ##-- set up node-red as service on host OS
-mkdir -p ~/.node-red
-mkdir -p ~/.node-red/db
+mkdir -p ~/code/nodered/db
 sudo cp -rp node-red-project/* ~/.node-red
 ##-- /node-red
 
