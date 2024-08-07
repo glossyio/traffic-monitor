@@ -28,12 +28,9 @@ envsubst < docker-frigate/frigate-config.yaml > ~/code/frigate/config/config.yml
 ##-- /frigate
 
 
-##-- Add node-red Dockerfile, settings, and base flows
-mkdir -p ~/code/nodered/data
+##-- set up node-red as service on host OS
 mkdir -p ~/code/nodered/db
-cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
-cp docker-nodered/Dockerfile ~/code/nodered/Dockerfile
-cp -rp node-red-project/* ~/code/nodered/data/
+sudo cp -rp node-red-project/* ~/.node-red
 ##-- /node-red
 
 

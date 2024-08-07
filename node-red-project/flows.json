@@ -410,7 +410,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1272,
+        "w": 1282,
         "h": 262
     },
     {
@@ -515,29 +515,6 @@
         "h": 122
     },
     {
-        "id": "541d31d14bcd8b00",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "comments table",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "6a05187a692bed7c",
-            "fee2d22032a11056",
-            "f27b6d01ae7836d6",
-            "8f0bcaf04756da4f",
-            "e8b8e45c4bc045d8",
-            "840802d34d143ded",
-            "8d65b604e8d9e7f9",
-            "db1f35650c8d6448"
-        ],
-        "x": 14,
-        "y": 19,
-        "w": 1172,
-        "h": 242
-    },
-    {
         "id": "3a9bb6ed1306eb1c",
         "type": "group",
         "z": "239d7b3ba410ad5e",
@@ -557,42 +534,16 @@
             "5de7cbb4.fa21a4",
             "67ecfa7f.3f0e24"
         ],
-        "x": 254,
-        "y": 579,
-        "w": 692,
-        "h": 302
-    },
-    {
-        "id": "0e3b2be7bcc3d3b8",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "DOWNLOAD tmdb - create JSON Events file from query",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f43a276d3a899fe8",
-            "c25ade7ddaeca697",
-            "c45589c369c843a5",
-            "f2bd56710ba03238",
-            "ecb0810a22dc4a5c",
-            "b4e0b45a7bedd728",
-            "7318af62aa1dadcc",
-            "5124f45846b94ef0",
-            "3a9bb6ed1306eb1c",
-            "7050ed881890ce4d",
-            "82073a9c3e0f504f"
-        ],
         "x": 14,
-        "y": 299,
-        "w": 1212,
-        "h": 608
+        "y": 239,
+        "w": 932,
+        "h": 282
     },
     {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
-        "broker": "nodered",
+        "broker": "localhost",
         "port": "1883",
         "clientid": "",
         "autoConnect": true,
@@ -638,103 +589,6 @@
         "out": "char",
         "addchar": "",
         "responsetimeout": "500"
-    },
-    {
-        "id": "d20486757aef47d3",
-        "type": "ui_base",
-        "theme": {
-            "name": "theme-light",
-            "lightTheme": {
-                "default": "#0094CE",
-                "baseColor": "#0094CE",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": true,
-                "reset": false
-            },
-            "darkTheme": {
-                "default": "#097479",
-                "baseColor": "#097479",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
-            },
-            "customTheme": {
-                "name": "Untitled Theme 1",
-                "default": "#4B7930",
-                "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-            },
-            "themeState": {
-                "base-color": {
-                    "default": "#0094CE",
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-titlebar-backgroundColor": {
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-backgroundColor": {
-                    "value": "#fafafa",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#1bbfff",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "widget-textColor": {
-                    "value": "#111111",
-                    "edited": false
-                },
-                "widget-backgroundColor": {
-                    "value": "#0094ce",
-                    "edited": false
-                },
-                "widget-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "base-font": {
-                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-                }
-            },
-            "angularTheme": {
-                "primary": "indigo",
-                "accents": "blue",
-                "warn": "red",
-                "background": "grey",
-                "palette": "light"
-            }
-        },
-        "site": {
-            "name": "Traffic Monitor UI",
-            "hideToolbar": "false",
-            "allowSwipe": "false",
-            "lockMenu": "false",
-            "allowTempTheme": "true",
-            "dateFormat": "YYYY-MM-DD",
-            "sizes": {
-                "sx": 48,
-                "sy": 48,
-                "gx": 6,
-                "gy": 6,
-                "cx": 6,
-                "cy": 6,
-                "px": 0,
-                "py": 0
-            }
-        }
     },
     {
         "id": "665d947f9a312a33",
@@ -789,7 +643,7 @@
     {
         "id": "2f60c1ab30a6fc8f",
         "type": "sqlitedb",
-        "db": "/db/tmdb",
+        "db": "code/nodered/db/tmdb.sqlite",
         "mode": "RWC"
     },
     {
@@ -806,7 +660,7 @@
     {
         "id": "1d8d8c9a28569355",
         "type": "sqlitedb",
-        "db": "/db/radar",
+        "db": "code/nodered/db/radar.sqlite",
         "mode": "RWC"
     },
     {
@@ -830,14 +684,6 @@
         "width": "6",
         "collapse": false,
         "className": ""
-    },
-    {
-        "id": "8a89c15ae12a462a",
-        "type": "ui_tab",
-        "name": "ThingsBoard tab",
-        "icon": "dashboard",
-        "disabled": false,
-        "hidden": false
     },
     {
         "id": "e43506628b4a1cdb",
@@ -1368,7 +1214,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
+        "x": 990,
         "y": 580,
         "wires": [
             [
@@ -1453,7 +1299,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
         "name": "",
-        "x": 940,
+        "x": 990,
         "y": 660,
         "wires": [
             []
@@ -1489,7 +1335,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 860,
         "wires": [
             [
@@ -1595,7 +1441,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 940,
         "wires": [
             []
@@ -1610,7 +1456,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 1010,
         "y": 1120,
         "wires": [
             [
@@ -1695,7 +1541,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 960,
+        "x": 1010,
         "y": 1200,
         "wires": [
             []
@@ -1756,7 +1602,7 @@
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 1600,
         "wires": [
             [
@@ -1816,7 +1662,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 1680,
         "wires": [
             []
@@ -1852,7 +1698,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 1300,
         "wires": [
             [
@@ -1937,7 +1783,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 980,
+        "x": 1030,
         "y": 1380,
         "wires": [
             []
@@ -2284,7 +2130,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 760,
+        "x": 770,
         "y": 1140,
         "wires": [
             [
@@ -2467,7 +2313,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 440,
+        "x": 450,
         "y": 680,
         "wires": [
             [
@@ -2637,7 +2483,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/events/summary",
+        "url": "http://localhost:5000/api/events/summary",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -3544,7 +3390,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 360,
+        "x": 370,
         "y": 440,
         "wires": [
             [
@@ -3603,7 +3449,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 420,
+        "x": 430,
         "y": 700,
         "wires": [
             [
@@ -3662,7 +3508,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 420,
+        "x": 430,
         "y": 1240,
         "wires": [
             [
@@ -3721,7 +3567,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 740,
+        "x": 750,
         "y": 2320,
         "wires": [
             [
@@ -3802,7 +3648,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 760,
+        "x": 770,
         "y": 2660,
         "wires": [
             [
@@ -3850,7 +3696,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 340,
+        "x": 350,
         "y": 980,
         "wires": [
             [
@@ -4118,7 +3964,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 600,
+        "x": 610,
         "y": 160,
         "wires": [
             [
@@ -4338,7 +4184,7 @@
         "id": "f31a598d.9fd2c8",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "Set base path",
         "func": "//restrict to c:\\temp\\\nvar basePath = \"/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
         "outputs": 2,
@@ -4362,7 +4208,7 @@
         "id": "98261154.3006",
         "type": "http response",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "",
         "statusCode": "",
         "headers": {},
@@ -4374,7 +4220,7 @@
         "id": "34dc99e5.495466",
         "type": "file in",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "",
         "filename": "filename",
         "filenameType": "msg",
@@ -4394,7 +4240,7 @@
         "id": "38d65d59.1d8aa2",
         "type": "catch",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "",
         "scope": null,
         "uncaught": false,
@@ -4411,7 +4257,7 @@
         "id": "3b8014a.86ad8ec",
         "type": "function",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "Set 404",
         "func": "msg.payload = msg.error;\nmsg.statusCode = 404;//resource not found\nreturn msg;",
         "outputs": 1,
@@ -4428,7 +4274,7 @@
         "id": "5b18a8e7.fb8da8",
         "type": "debug",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "",
         "active": true,
         "tosidebar": true,
@@ -4444,7 +4290,7 @@
         "id": "5de7cbb4.fa21a4",
         "type": "comment",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "Create http endpoint <nodered>/files/xxx  where xxx is the file name to download",
         "info": "",
         "x": 320,
@@ -4455,7 +4301,7 @@
         "id": "67ecfa7f.3f0e24",
         "type": "http in",
         "z": "239d7b3ba410ad5e",
-        "g": "81c973dcdca1a4f0",
+        "g": "3a9bb6ed1306eb1c",
         "name": "",
         "url": "/files/:fn",
         "method": "get",
@@ -4489,7 +4335,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 860,
+        "x": 870,
         "y": 840,
         "wires": [
             [
@@ -4698,7 +4544,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 970,
         "y": 1140,
         "wires": [
             [
@@ -4859,7 +4705,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 970,
         "y": 1200,
         "wires": [
             [
@@ -4916,7 +4762,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 970,
         "y": 1260,
         "wires": [
             [
@@ -4974,7 +4820,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 970,
         "y": 1320,
         "wires": [
             [
@@ -5031,7 +4877,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
+        "x": 970,
         "y": 1380,
         "wires": [
             [
@@ -5283,6 +5129,7 @@
         "id": "a8c2985e.d23ad8",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "group": "c0886ba4111fbfae",
         "name": "download Events DB",
         "order": 2,

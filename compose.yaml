@@ -1,9 +1,8 @@
 ################################################################################
 # common-services configuration file
-# in order:  frigate, node-red
+# in order:  frigate
 # this should be located in the ~/code folder, with each container's directory
 ################################################################################
 
 include:
   - frigate/docker-compose-frigate.yml
-  - nodered/docker-compose-node-red.yml

@@ -11,16 +11,18 @@ cd "$(dirname "$0")/.."
 
 echo "==> Restarting go2rtc_server scripts..."
 sudo systemctl stop go2rtc_server
-
 sudo systemctl start go2rtc_server
 sudo systemctl enable go2rtc_server
 
-echo "==> Removing existing docker containers..."
+echo "==> Restarting node-red scripts..."
+sudo systemctl stop nodered.service
+sudo systemctl start nodered.service
+sudo systemctl enable nodered.service
 
+echo "==> Removing existing docker containers..."
 docker compose -f ~/code/compose.yaml down --remove-orphans
 
 echo "==> Updating docker containers…"
-
 # rebuild docker containers
 docker compose -f ~/code/compose.yaml up --detach --force-recreate --build --remove-orphans
 

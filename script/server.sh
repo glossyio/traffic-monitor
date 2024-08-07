@@ -12,7 +12,12 @@ cd "$(dirname "$0")/.."
 
 sudo systemctl start go2rtc_server
 sudo systemctl enable go2rtc_server
-##-- /go2rtc
+
+# node-red nodes install/reinstall
+npm install --unsafe-perm --no-update-notifier --no-fund --only=production --prefix ~/.node-red/
+
+sudo systemctl start nodered.service
+sudo systemctl enable nodered.service
 
 ##-- docker compose build and start containers
 docker compose -f ~/code/compose.yaml up --detach
