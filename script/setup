@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 #uncomment for fresh OS install
 #script/bootstrap
 
-echo "==> Setting up Dockerfiles…"
+echo "==> Setting up Services…"
 ##-- install Frigate
 ## Add Frigate Dockerfile
 #create directories and config.yml
@@ -31,6 +31,10 @@ envsubst < docker-frigate/frigate-config.yaml > ~/code/frigate/config/config.yml
 ##-- set up node-red as service on host OS
 mkdir -p ~/code/nodered/db
 sudo cp -rp node-red-project/* ~/.node-red
+
+# node-red nodes install/reinstall
+npm install --unsafe-perm --no-update-notifier --no-fund --only=production --prefix ~/.node-red/
+
 ##-- /node-red
 
 
