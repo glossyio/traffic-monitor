@@ -1,3 +1,4 @@
+#!/bin/bash
 ###########
 # Install the following to use the Pine Board PCIE with Coral TPU
 #  available at https://pineboards.io
