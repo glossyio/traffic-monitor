@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/server: Launch the application and any extra required processes
 #                locally.
@@ -12,9 +12,6 @@ cd "$(dirname "$0")/.."
 
 sudo systemctl start go2rtc_server
 sudo systemctl enable go2rtc_server
-
-# node-red nodes install/reinstall
-npm install --unsafe-perm --no-update-notifier --no-fund --only=production --prefix ~/.node-red/
 
 sudo systemctl start nodered.service
 sudo systemctl enable nodered.service

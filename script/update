@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/update: Update application to run for its current checkout.
 
@@ -18,6 +18,9 @@ echo "==> Restarting node-red scripts..."
 sudo systemctl stop nodered.service
 sudo systemctl start nodered.service
 sudo systemctl enable nodered.service
+
+# node-red nodes install/reinstall
+npm install --unsafe-perm --no-update-notifier --no-fund --only=production --prefix ~/.node-red/
 
 echo "==> Removing existing docker containers..."
 docker compose -f ~/code/compose.yaml down --remove-orphans

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/network-wlan-ap: Turn Traffic Monitor into a wireless access Point 
 #               Turns on/off wireless access point

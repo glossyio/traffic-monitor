@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/bootstrap: Resolve all dependencies that the application requires to
 #                   run.
@@ -29,8 +29,7 @@ sudo usermod -aG docker $USER
 ##-- /docker
 
 ##-- install node-red as system service
-curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/rpm/update-nodejs-and-nodered \
- | bash -s --nodered-user=nodered --open-firewall --confirm-root --confirm-install
+bash <(curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/deb/update-nodejs-and-nodered) --confirm-install --confirm-pi --no-init
 ##-- /node-red
 
 #install go2rtc binary
