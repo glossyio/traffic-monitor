@@ -32,6 +32,14 @@
         "env": []
     },
     {
+        "id": "05fcb02c571dcfee",
+        "type": "tab",
+        "label": "Configuration Dashboard",
+        "disabled": false,
+        "info": "Enter device configuration data",
+        "env": []
+    },
+    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -73,7 +81,7 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 992,
+        "w": 1002,
         "h": 202
     },
     {
@@ -94,9 +102,9 @@
             "1ddee1427e02c980",
             "d7eb8cf6f750f369"
         ],
-        "x": 394,
+        "x": 384,
         "y": 999,
-        "w": 1092,
+        "w": 1112,
         "h": 242
     },
     {
@@ -290,7 +298,7 @@
         ],
         "x": 54,
         "y": 319,
-        "w": 372,
+        "w": 382,
         "h": 122
     },
     {
@@ -315,7 +323,7 @@
         ],
         "x": 54,
         "y": 479,
-        "w": 992,
+        "w": 1002,
         "h": 342
     },
     {
@@ -471,7 +479,7 @@
         ],
         "x": 14,
         "y": 919,
-        "w": 1392,
+        "w": 1402,
         "h": 502
     },
     {
@@ -684,6 +692,121 @@
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "d6248c5f96ac4b3e",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
+    },
+    {
+        "id": "8570be913d017562",
+        "type": "ui_group",
+        "name": "Configuration",
+        "tab": "0fd9a947334c7d0f",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "0fd9a947334c7d0f",
+        "type": "ui_tab",
+        "name": " Configuration",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
     },
     {
         "id": "e43506628b4a1cdb",
@@ -5188,5 +5311,341 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "e6461a7fdeef48a2",
+        "type": "ui_form",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "label": "Enter Configuration Details",
+        "group": "8570be913d017562",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Name",
+                "value": "deviceName",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Server Url",
+                "value": "serverUrl",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Server Port",
+                "value": "serverPort",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Access Token",
+                "value": "accessToken",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Location",
+                "value": "location",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Orientation",
+                "value": "orientation",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Latitude",
+                "value": "latitude",
+                "type": "number",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Longitude",
+                "value": "longitude",
+                "type": "number",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Contact Name",
+                "value": "contactName",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Contact Phone Number",
+                "value": "contactPhone",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Contact Email",
+                "value": "contactEmail",
+                "type": "email",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "deviceName": "",
+            "serverUrl": "",
+            "serverPort": "",
+            "accessToken": "",
+            "location": "",
+            "orientation": "",
+            "latitude": "",
+            "longitude": "",
+            "contactName": "",
+            "contactPhone": "",
+            "contactEmail": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 640,
+        "y": 240,
+        "wires": [
+            [
+                "5b21e7857009c4da",
+                "7fcf6ae1a2e9ca00",
+                "ac10d4e38e95fa26"
+            ]
+        ]
+    },
+    {
+        "id": "5b21e7857009c4da",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug config form input",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "4e88fb55e2c7b7b8",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug prefilled values",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "7fcf6ae1a2e9ca00",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "save configuration",
+        "func": "flow.set(\"deviceName\", msg.payload.deviceName, \"config\")\nflow.set(\"serverUrl\", msg.payload.serverUrl, \"config\")\nflow.set(\"serverPort\", msg.payload.serverPort, \"config\")\nflow.set(\"accessToken\", msg.payload.accessToken, \"config\")\nflow.set(\"location\", msg.payload.location, \"config\")\nflow.set(\"orientation\", msg.payload.orientation, \"config\")\nflow.set(\"latitude\", msg.payload.latitude, \"config\")\nflow.set(\"longitude\", msg.payload.longitude, \"config\")\nflow.set(\"contactName\", msg.payload.contactName, \"config\")\nflow.set(\"contactPhone\", msg.payload.contactPhone, \"config\")\nflow.set(\"contactEmail\", msg.payload.contactEmail, \"config\")\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 360,
+        "wires": [
+            [
+                "f39673b54301cbb7"
+            ]
+        ]
+    },
+    {
+        "id": "f39673b54301cbb7",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "read configuration",
+        "func": "let storedServerUrl = flow.get(\"serverUrl\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"https://tb.untower.online\"\n\nlet storedServerPort = flow.get(\"serverPort\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    \"deviceName\": flow.get(\"deviceName\", \"config\"),\n    \"serverUrl\" : tbUrl,\n    \"serverPort\": tbPort,\n    \"accessToken\": flow.get(\"accessToken\", \"config\"),\n    \"location\": flow.get(\"location\", \"config\"),\n    \"orientation\": flow.get(\"orientation\", \"config\"),\n    \"latitude\": flow.get(\"latitude\", \"config\"),\n    \"longitude\": flow.get(\"longitude\", \"config\"),\n    \"contactName\": flow.get(\"contactName\", \"config\"),\n    \"contactPhone\": flow.get(\"contactPhone\", \"config\"),\n    \"contactEmail\": flow.get(\"contactEmail\", \"config\") \n} }\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\nvar newMsg = { payload: { \"deviceName\": flow.get(\"deviceName\") } }\nreturn newMsg;",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 240,
+        "wires": [
+            [
+                "e6461a7fdeef48a2",
+                "4e88fb55e2c7b7b8"
+            ]
+        ]
+    },
+    {
+        "id": "9fe1b87c70ae182d",
+        "type": "catch",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 580,
+        "y": 40,
+        "wires": [
+            [
+                "070133633f340279"
+            ]
+        ]
+    },
+    {
+        "id": "070133633f340279",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "0a28f82092611160",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "name": "Send provisioning data",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 960,
+        "y": 360,
+        "wires": [
+            [
+                "542b3b8720733a01"
+            ]
+        ]
+    },
+    {
+        "id": "542b3b8720733a01",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "HTTP response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "c8caaeb7095ee1a9",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "URL",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "url",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "ac10d4e38e95fa26",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "Setup URL",
+        "func": "msg.url = `${msg.payload.serverUrl}:${msg.payload.serverPort}/api/v1/${msg.payload.accessToken}/attributes`\nmsg.method = \"POST\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 360,
+        "wires": [
+            [
+                "0a28f82092611160",
+                "c8caaeb7095ee1a9"
+            ]
+        ]
+    },
+    {
+        "id": "b9331c0751fea046",
+        "type": "ui_ui_control",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "events": "all",
+        "x": 80,
+        "y": 200,
+        "wires": [
+            [
+                "f39673b54301cbb7"
+            ]
+        ]
+    },
+    {
+        "id": "d4884c8a706fb0bb",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "Enables user-entry of configuration properties",
+        "info": "",
+        "x": 250,
+        "y": 40,
+        "wires": []
     }
 ]
