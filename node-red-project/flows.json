@@ -81,7 +81,7 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 1002,
+        "w": 992,
         "h": 202
     },
     {
@@ -102,9 +102,9 @@
             "1ddee1427e02c980",
             "d7eb8cf6f750f369"
         ],
-        "x": 384,
+        "x": 394,
         "y": 999,
-        "w": 1112,
+        "w": 1092,
         "h": 242
     },
     {
@@ -185,7 +185,7 @@
         ],
         "x": 14,
         "y": 559,
-        "w": 1062,
+        "w": 1052,
         "h": 222
     },
     {
@@ -298,7 +298,7 @@
         ],
         "x": 54,
         "y": 319,
-        "w": 382,
+        "w": 372,
         "h": 122
     },
     {
@@ -323,7 +323,7 @@
         ],
         "x": 54,
         "y": 479,
-        "w": 1002,
+        "w": 992,
         "h": 342
     },
     {
@@ -418,7 +418,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1282,
+        "w": 1272,
         "h": 262
     },
     {
@@ -479,7 +479,7 @@
         ],
         "x": 14,
         "y": 919,
-        "w": 1402,
+        "w": 1392,
         "h": 502
     },
     {
@@ -565,6 +565,39 @@
         "y": 239,
         "w": 932,
         "h": 282
+    },
+    {
+        "id": "b196e2c041c5a7f8",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "e6461a7fdeef48a2",
+            "5b21e7857009c4da",
+            "4e88fb55e2c7b7b8",
+            "7fcf6ae1a2e9ca00",
+            "f39673b54301cbb7",
+            "9fe1b87c70ae182d",
+            "070133633f340279",
+            "0a28f82092611160",
+            "542b3b8720733a01",
+            "c8caaeb7095ee1a9",
+            "ac10d4e38e95fa26",
+            "b9331c0751fea046",
+            "d4884c8a706fb0bb"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1332,
+        "h": 502
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -834,7 +867,7 @@
         "name": "AN-10 API Interface",
         "info": "https://omnipresense.com/wp-content/uploads/2023/11/AN-010-Z_API_Interface.pdf",
         "x": 170,
-        "y": 60,
+        "y": 40,
         "wires": []
     },
     {
@@ -850,7 +883,8 @@
         "wires": [
             [
                 "36b68e0861cc5fc4",
-                "830348149cb405ae"
+                "830348149cb405ae",
+                "3bf70e1d7ad2d43b"
             ]
         ]
     },
@@ -1951,6 +1985,35 @@
                 "382bf388390f91bd"
             ]
         ]
+    },
+    {
+        "id": "6106b11d56c22e4a",
+        "type": "link in",
+        "z": "94d07e407c25f282",
+        "name": "query OPS",
+        "links": [
+            "a385b9186009250e"
+        ],
+        "x": 335,
+        "y": 80,
+        "wires": [
+            [
+                "8e8ede8ca221552b"
+            ]
+        ]
+    },
+    {
+        "id": "3bf70e1d7ad2d43b",
+        "type": "link out",
+        "z": "94d07e407c25f282",
+        "name": "OPS json output",
+        "mode": "link",
+        "links": [
+            "2f0f10b6553e5840"
+        ],
+        "x": 995,
+        "y": 340,
+        "wires": []
     },
     {
         "id": "481344ed5f4b69d9",
@@ -5419,6 +5482,7 @@
         "id": "e6461a7fdeef48a2",
         "type": "ui_form",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "",
         "label": "Enter Configuration Details",
         "group": "8570be913d017562",
@@ -5524,8 +5588,8 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 640,
-        "y": 240,
+        "x": 660,
+        "y": 260,
         "wires": [
             [
                 "5b21e7857009c4da",
@@ -5538,6 +5602,7 @@
         "id": "5b21e7857009c4da",
         "type": "debug",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "debug config form input",
         "active": true,
         "tosidebar": true,
@@ -5547,14 +5612,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 930,
-        "y": 240,
+        "x": 950,
+        "y": 260,
         "wires": []
     },
     {
         "id": "4e88fb55e2c7b7b8",
         "type": "debug",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "debug prefilled values",
         "active": true,
         "tosidebar": true,
@@ -5564,14 +5630,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 720,
-        "y": 180,
+        "x": 740,
+        "y": 200,
         "wires": []
     },
     {
         "id": "7fcf6ae1a2e9ca00",
         "type": "function",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "save configuration",
         "func": "global.set(\"deviceName\", msg.payload.deviceName, \"config\")\nglobal.set(\"serverUrl\", msg.payload.serverUrl, \"config\")\nglobal.set(\"serverPort\", msg.payload.serverPort, \"config\")\nglobal.set(\"accessToken\", msg.payload.accessToken, \"config\")\nglobal.set(\"location\", msg.payload.location, \"config\")\nglobal.set(\"orientation\", msg.payload.orientation, \"config\")\nglobal.set(\"latitude\", msg.payload.latitude, \"config\")\nglobal.set(\"longitude\", msg.payload.longitude, \"config\")\nglobal.set(\"contactName\", msg.payload.contactName, \"config\")\nglobal.set(\"contactPhone\", msg.payload.contactPhone, \"config\")\nglobal.set(\"contactEmail\", msg.payload.contactEmail, \"config\")\nreturn msg;",
         "outputs": 1,
@@ -5580,8 +5647,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 330,
-        "y": 360,
+        "x": 350,
+        "y": 380,
         "wires": [
             [
                 "f39673b54301cbb7"
@@ -5592,6 +5659,7 @@
         "id": "f39673b54301cbb7",
         "type": "function",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "read configuration",
         "func": "let storedServerUrl = global.get(\"serverUrl\", \"config\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = global.get(\"serverPort\", \"config\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    \"deviceName\": global.get(\"deviceName\", \"config\"),\n    // \"serverUrl\" : tbUrl,\n    // \"serverPort\": tbPort,\n    \"serverUrl\" : storedServerUrl,\n    \"serverPort\": storedServerPort,\n    \"accessToken\": global.get(\"accessToken\", \"config\"),\n    \"location\": global.get(\"location\", \"config\"),\n    \"orientation\": global.get(\"orientation\", \"config\"),\n    \"latitude\": global.get(\"latitude\", \"config\"),\n    \"longitude\": global.get(\"longitude\", \"config\"),\n    \"contactName\": global.get(\"contactName\", \"config\"),\n    \"contactPhone\": global.get(\"contactPhone\", \"config\"),\n    \"contactEmail\": global.get(\"contactEmail\", \"config\") \n} }\nreturn newMsg;",
         "outputs": 1,
@@ -5600,8 +5668,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\nvar newMsg = { payload: { \"deviceName\": flow.get(\"deviceName\") } }\nreturn newMsg;",
         "finalize": "",
         "libs": [],
-        "x": 330,
-        "y": 240,
+        "x": 350,
+        "y": 260,
         "wires": [
             [
                 "e6461a7fdeef48a2",
@@ -5613,11 +5681,12 @@
         "id": "9fe1b87c70ae182d",
         "type": "catch",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "",
         "scope": null,
         "uncaught": false,
-        "x": 580,
-        "y": 40,
+        "x": 600,
+        "y": 60,
         "wires": [
             [
                 "070133633f340279"
@@ -5628,6 +5697,7 @@
         "id": "070133633f340279",
         "type": "debug",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "debug error",
         "active": true,
         "tosidebar": true,
@@ -5637,14 +5707,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
-        "y": 40,
+        "x": 910,
+        "y": 60,
         "wires": []
     },
     {
         "id": "0a28f82092611160",
         "type": "http request",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "Send provisioning data",
         "method": "use",
         "ret": "txt",
@@ -5664,8 +5735,8 @@
                 "valueValue": ""
             }
         ],
-        "x": 960,
-        "y": 360,
+        "x": 980,
+        "y": 380,
         "wires": [
             [
                 "542b3b8720733a01"
@@ -5676,6 +5747,7 @@
         "id": "542b3b8720733a01",
         "type": "debug",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "HTTP response",
         "active": true,
         "tosidebar": true,
@@ -5685,14 +5757,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1200,
-        "y": 360,
+        "x": 1220,
+        "y": 380,
         "wires": []
     },
     {
         "id": "c8caaeb7095ee1a9",
         "type": "debug",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "URL",
         "active": true,
         "tosidebar": true,
@@ -5702,14 +5775,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
-        "y": 460,
+        "x": 910,
+        "y": 480,
         "wires": []
     },
     {
         "id": "ac10d4e38e95fa26",
         "type": "function",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "Setup URL",
         "func": "msg.url = `${msg.payload.serverUrl}:${msg.payload.serverPort}/api/v1/${msg.payload.accessToken}/attributes`\nmsg.method = \"POST\";\nreturn msg;",
         "outputs": 1,
@@ -5718,8 +5792,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 650,
-        "y": 360,
+        "x": 670,
+        "y": 380,
         "wires": [
             [
                 "0a28f82092611160",
@@ -5731,10 +5805,11 @@
         "id": "b9331c0751fea046",
         "type": "ui_ui_control",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "",
         "events": "all",
-        "x": 80,
-        "y": 200,
+        "x": 100,
+        "y": 220,
         "wires": [
             [
                 "f39673b54301cbb7"
@@ -5745,10 +5820,785 @@
         "id": "d4884c8a706fb0bb",
         "type": "comment",
         "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
         "name": "Enables user-entry of configuration properties",
         "info": "",
-        "x": 250,
-        "y": 40,
+        "x": 270,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "64c998a572e86dce",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "command": "cat /sys/firmware/devicetree/base/serial-number",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 380,
+        "y": 640,
+        "wires": [
+            [
+                "34cd1d6150711cdb"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "34cd1d6150711cdb",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 3",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "4d67617dadcb9ede",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 640,
+        "wires": [
+            [
+                "64c998a572e86dce"
+            ]
+        ]
+    },
+    {
+        "id": "41284990ce7dbf69",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "RPi serial number, for deviceName",
+        "info": "",
+        "x": 200,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "28063911d2bbf57e",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "Firmware (TM Repo release)",
+        "info": "",
+        "x": 180,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "185f835e89c9acf9",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "other Client attributes (system)",
+        "info": "",
+        "x": 190,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "099df29d699f405e",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 980,
+        "wires": [
+            [
+                "feba76606996723c",
+                "416d4b4451795bfe",
+                "4d37c161816bd3a2",
+                "5bb734f0283c5112",
+                "4a28823b499c04e0",
+                "9912f0375ba8d68e",
+                "5235db548e7aaef3",
+                "f832223f1fa90baa"
+            ]
+        ]
+    },
+    {
+        "id": "feba76606996723c",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.homedir()",
+        "func": "msg.payload = `${os.homedir()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1140,
+        "wires": [
+            [
+                "286111ef795fef7d"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "416d4b4451795bfe",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.hostname()",
+        "func": "msg.payload = `${os.hostname()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 280,
+        "y": 980,
+        "wires": [
+            [
+                "6e2ce53df610ac60"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "4d37c161816bd3a2",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.platform()",
+        "func": "msg.payload = `${os.platform()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1180,
+        "wires": [
+            [
+                "71f3319038a364a6"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "5bb734f0283c5112",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.release()",
+        "func": "msg.payload = `${os.release()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1020,
+        "wires": [
+            [
+                "fc3a1bad7ca386c3"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "4a28823b499c04e0",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.version()",
+        "func": "msg.payload = `${os.version()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1060,
+        "wires": [
+            [
+                "8fad3b88988c804e"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "9912f0375ba8d68e",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "os.uptime()",
+        "func": "msg.payload = `${os.uptime()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1100,
+        "wires": [
+            [
+                "5078814ebd7ec7f2"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "5235db548e7aaef3",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "Date.now()",
+        "func": "msg.payload = Date.now();\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 270,
+        "y": 1220,
+        "wires": [
+            [
+                "1cc15be50ae5e049"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "04e1eeacc898a859",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "get Frigate version, config settings",
+        "info": "",
+        "x": 220,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "772eec7408fe83a7",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "name": "get OPS firmware, config settings",
+        "info": "",
+        "x": 210,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "a385b9186009250e",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "name": "out query OPS",
+        "mode": "link",
+        "links": [
+            "6106b11d56c22e4a"
+        ],
+        "x": 305,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "7d28172c4ed9e31b",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "query all settings",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
+        "payloadType": "jsonata",
+        "x": 170,
+        "y": 1540,
+        "wires": [
+            [
+                "a385b9186009250e"
+            ]
+        ]
+    },
+    {
+        "id": "2f0f10b6553e5840",
+        "type": "link in",
+        "z": "05fcb02c571dcfee",
+        "name": "link in 1",
+        "links": [
+            "3bf70e1d7ad2d43b"
+        ],
+        "x": 325,
+        "y": 1580,
+        "wires": [
+            [
+                "8d209b47f10933fb"
+            ]
+        ]
+    },
+    {
+        "id": "41d1b47da00573bb",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 6",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 1580,
+        "wires": []
+    },
+    {
+        "id": "8d209b47f10933fb",
+        "type": "join",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "mode": "custom",
+        "build": "merged",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": true,
+        "timeout": "2",
+        "count": "",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 420,
+        "y": 1580,
+        "wires": [
+            [
+                "41d1b47da00573bb"
+            ]
+        ]
+    },
+    {
+        "id": "a9c83f35c32eb917",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "get Frigate config",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 170,
+        "y": 1400,
+        "wires": [
+            [
+                "afdd83e46ca13149",
+                "9dc62a7e0c39ac0e"
+            ]
+        ]
+    },
+    {
+        "id": "afdd83e46ca13149",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "name": "frigate api/config",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 380,
+        "y": 1400,
+        "wires": [
+            [
+                "d574eb703f3067f5"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "d574eb703f3067f5",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 7",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 560,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "9dc62a7e0c39ac0e",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "name": "frigate api/version",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/api/version",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 390,
+        "y": 1440,
+        "wires": [
+            [
+                "6f5448bd57d7081d"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "6f5448bd57d7081d",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 8",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 560,
+        "y": 1440,
+        "wires": []
+    },
+    {
+        "id": "6e2ce53df610ac60",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 9",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "fc3a1bad7ca386c3",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 10",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "8fad3b88988c804e",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 11",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "5078814ebd7ec7f2",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 12",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "286111ef795fef7d",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 13",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1140,
+        "wires": []
+    },
+    {
+        "id": "71f3319038a364a6",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 14",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "1cc15be50ae5e049",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 15",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1220,
+        "wires": []
+    },
+    {
+        "id": "f832223f1fa90baa",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "Date.getTimeZoneOffset()",
+        "func": "msg.payload = Date.now().getTimeZoneOffset();\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 310,
+        "y": 1260,
+        "wires": [
+            [
+                "5c21b4f460e571af"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "5c21b4f460e571af",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1260,
+        "wires": []
+    },
+    {
+        "id": "10b176495132c277",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "command": "cat /etc/timezone",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 290,
+        "y": 720,
+        "wires": [
+            [
+                "4850ae16f4a2bc26"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "4850ae16f4a2bc26",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 17",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "4c41e4cb0b5d442a",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 720,
+        "wires": [
+            [
+                "10b176495132c277"
+            ]
+        ]
+    },
+    {
+        "id": "e8b82ec0591a08b2",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "process.env.TM_VERSION",
+        "payloadType": "env",
+        "x": 130,
+        "y": 840,
+        "wires": [
+            [
+                "c6218cac1ab433f0"
+            ]
+        ]
+    },
+    {
+        "id": "c6218cac1ab433f0",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 18",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 840,
         "wires": []
     }
 ]
