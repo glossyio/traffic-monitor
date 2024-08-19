@@ -185,7 +185,7 @@
         ],
         "x": 14,
         "y": 559,
-        "w": 1052,
+        "w": 1062,
         "h": 222
     },
     {
@@ -481,6 +481,25 @@
         "y": 919,
         "w": 1402,
         "h": 502
+    },
+    {
+        "id": "b334a2375eb8cb42",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "Send telemetry to ThingsBoard server",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "4bec488857c0553f",
+            "8b2ed6c0df264089"
+        ],
+        "x": 294,
+        "y": 1299,
+        "w": 1032,
+        "h": 142
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -2402,7 +2421,8 @@
         "wires": [
             [
                 "7f0ef976c7b79245",
-                "274f87c31437c2d7"
+                "274f87c31437c2d7",
+                "4bec488857c0553f"
             ]
         ]
     },
@@ -2520,6 +2540,89 @@
         "statusType": "auto",
         "x": 860,
         "y": 580,
+        "wires": []
+    },
+    {
+        "id": "677a57bbf3619854",
+        "type": "http request",
+        "z": "9269520ddb532b00",
+        "g": "b334a2375eb8cb42",
+        "name": "Send event to TB server",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 850,
+        "y": 1340,
+        "wires": [
+            [
+                "df6ac2f42ac6d8c7"
+            ]
+        ]
+    },
+    {
+        "id": "df6ac2f42ac6d8c7",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "b334a2375eb8cb42",
+        "name": "send telemetry event response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1150,
+        "y": 1340,
+        "wires": []
+    },
+    {
+        "id": "4bec488857c0553f",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b334a2375eb8cb42",
+        "name": "setup telemetry payload & URL",
+        "func": "// format the payload with a timestamp\nlet values = { ...msg.payload }\nmsg.payload = { \n    ts: Date.now(),\n    values: values\n    }\n\n// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 1340,
+        "wires": [
+            [
+                "677a57bbf3619854",
+                "8b2ed6c0df264089"
+            ]
+        ]
+    },
+    {
+        "id": "8b2ed6c0df264089",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "b334a2375eb8cb42",
+        "name": "debug payload sent to TB",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 1400,
         "wires": []
     },
     {
@@ -5470,7 +5573,7 @@
         "type": "function",
         "z": "05fcb02c571dcfee",
         "name": "save configuration",
-        "func": "flow.set(\"deviceName\", msg.payload.deviceName, \"config\")\nflow.set(\"serverUrl\", msg.payload.serverUrl, \"config\")\nflow.set(\"serverPort\", msg.payload.serverPort, \"config\")\nflow.set(\"accessToken\", msg.payload.accessToken, \"config\")\nflow.set(\"location\", msg.payload.location, \"config\")\nflow.set(\"orientation\", msg.payload.orientation, \"config\")\nflow.set(\"latitude\", msg.payload.latitude, \"config\")\nflow.set(\"longitude\", msg.payload.longitude, \"config\")\nflow.set(\"contactName\", msg.payload.contactName, \"config\")\nflow.set(\"contactPhone\", msg.payload.contactPhone, \"config\")\nflow.set(\"contactEmail\", msg.payload.contactEmail, \"config\")\nreturn msg;",
+        "func": "global.set(\"deviceName\", msg.payload.deviceName, \"config\")\nglobal.set(\"serverUrl\", msg.payload.serverUrl, \"config\")\nglobal.set(\"serverPort\", msg.payload.serverPort, \"config\")\nglobal.set(\"accessToken\", msg.payload.accessToken, \"config\")\nglobal.set(\"location\", msg.payload.location, \"config\")\nglobal.set(\"orientation\", msg.payload.orientation, \"config\")\nglobal.set(\"latitude\", msg.payload.latitude, \"config\")\nglobal.set(\"longitude\", msg.payload.longitude, \"config\")\nglobal.set(\"contactName\", msg.payload.contactName, \"config\")\nglobal.set(\"contactPhone\", msg.payload.contactPhone, \"config\")\nglobal.set(\"contactEmail\", msg.payload.contactEmail, \"config\")\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5490,7 +5593,7 @@
         "type": "function",
         "z": "05fcb02c571dcfee",
         "name": "read configuration",
-        "func": "let storedServerUrl = flow.get(\"serverUrl\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = flow.get(\"serverPort\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    \"deviceName\": flow.get(\"deviceName\", \"config\"),\n    \"serverUrl\" : tbUrl,\n    \"serverPort\": tbPort,\n    \"accessToken\": flow.get(\"accessToken\", \"config\"),\n    \"location\": flow.get(\"location\", \"config\"),\n    \"orientation\": flow.get(\"orientation\", \"config\"),\n    \"latitude\": flow.get(\"latitude\", \"config\"),\n    \"longitude\": flow.get(\"longitude\", \"config\"),\n    \"contactName\": flow.get(\"contactName\", \"config\"),\n    \"contactPhone\": flow.get(\"contactPhone\", \"config\"),\n    \"contactEmail\": flow.get(\"contactEmail\", \"config\") \n} }\nreturn newMsg;",
+        "func": "let storedServerUrl = global.get(\"serverUrl\", \"config\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = global.get(\"serverPort\", \"config\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    \"deviceName\": global.get(\"deviceName\", \"config\"),\n    // \"serverUrl\" : tbUrl,\n    // \"serverPort\": tbPort,\n    \"serverUrl\" : storedServerUrl,\n    \"serverPort\": storedServerPort,\n    \"accessToken\": global.get(\"accessToken\", \"config\"),\n    \"location\": global.get(\"location\", \"config\"),\n    \"orientation\": global.get(\"orientation\", \"config\"),\n    \"latitude\": global.get(\"latitude\", \"config\"),\n    \"longitude\": global.get(\"longitude\", \"config\"),\n    \"contactName\": global.get(\"contactName\", \"config\"),\n    \"contactPhone\": global.get(\"contactPhone\", \"config\"),\n    \"contactEmail\": global.get(\"contactEmail\", \"config\") \n} }\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
