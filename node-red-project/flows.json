@@ -2591,7 +2591,7 @@
         "z": "9269520ddb532b00",
         "g": "b334a2375eb8cb42",
         "name": "setup telemetry payload & URL",
-        "func": "// format the payload with a timestamp\nlet values = { ...msg.payload }\nmsg.payload = { \n    ts: Date.now(),\n    values: values\n    }\n\n// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n    deviceName: global.get(\"deviceName\", \"config\"),\n    location: global.get(\"location\", \"config\"),\n    latitude: global.get(\"latitude\", \"config\"),\n    longtitude: global.get(\"longtitude\", \"config\")\n    }\nmsg.payload = { \n    ts: values.frame_time,\n    values: values\n    }\n\n// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
