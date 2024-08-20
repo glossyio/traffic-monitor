@@ -9,3 +9,7 @@ VAR_RADAR_CAMERA='picam_h264'
 VAR_LOCATION='tm-location-001'
 
 TM_VERSION='0.2.0-beta.3'
+# Default Thingsboard server URL and port
+
+VAR_DEFAULT_TB_SERVER = "http://tb.untower.online/home"
+VAR_DEFAULT_TB_PORT = "80"
