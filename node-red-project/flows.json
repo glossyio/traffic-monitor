@@ -516,23 +516,84 @@
         },
         "nodes": [
             "e6461a7fdeef48a2",
-            "5b21e7857009c4da",
-            "4e88fb55e2c7b7b8",
-            "7fcf6ae1a2e9ca00",
             "f39673b54301cbb7",
-            "9fe1b87c70ae182d",
-            "070133633f340279",
             "0a28f82092611160",
             "542b3b8720733a01",
-            "c8caaeb7095ee1a9",
             "ac10d4e38e95fa26",
             "b9331c0751fea046",
-            "d4884c8a706fb0bb"
+            "d4884c8a706fb0bb",
+            "f3b683b4b8176420",
+            "f5797fb02606eda0",
+            "cdc9b204ff81145c",
+            "eade31a8864e53ee"
         ],
         "x": 14,
-        "y": 19,
-        "w": 1332,
-        "h": 502
+        "y": 99,
+        "w": 1312,
+        "h": 282
+    },
+    {
+        "id": "0738651c4995a1d7",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "64c998a572e86dce",
+            "4d67617dadcb9ede",
+            "41284990ce7dbf69",
+            "28063911d2bbf57e",
+            "185f835e89c9acf9",
+            "099df29d699f405e",
+            "feba76606996723c",
+            "416d4b4451795bfe",
+            "4d37c161816bd3a2",
+            "5bb734f0283c5112",
+            "4a28823b499c04e0",
+            "9912f0375ba8d68e",
+            "5235db548e7aaef3",
+            "04e1eeacc898a859",
+            "772eec7408fe83a7",
+            "a385b9186009250e",
+            "7d28172c4ed9e31b",
+            "2f0f10b6553e5840",
+            "41d1b47da00573bb",
+            "8d209b47f10933fb",
+            "a9c83f35c32eb917",
+            "afdd83e46ca13149",
+            "9dc62a7e0c39ac0e",
+            "10b176495132c277",
+            "4c41e4cb0b5d442a",
+            "e8b82ec0591a08b2",
+            "8fd2b9ab457b5065",
+            "fe2e9d1af38b2ca8",
+            "ab89cf1a793d2be5",
+            "b6bb1e836852dc04",
+            "c0a27f9a895a1a94",
+            "0dccfc4a6467f7f4",
+            "eb3b3c5230e3dd32",
+            "611949e637ab7173",
+            "bcd4c7df6b6f93d3",
+            "f2885df5fb61fa3f",
+            "60fb5d8b6644ef02",
+            "02470b22b2f6893c",
+            "aaba861811975692",
+            "41e6810f869d1552",
+            "4af4cb47fdd97610",
+            "2f43413dfaba508a",
+            "040751d9061fe787"
+        ],
+        "x": 14,
+        "y": 379,
+        "w": 1032,
+        "h": 1062
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -598,69 +659,6 @@
         "y": 239,
         "w": 932,
         "h": 282
-    },
-    {
-        "id": "0738651c4995a1d7",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "64c998a572e86dce",
-            "4d67617dadcb9ede",
-            "41284990ce7dbf69",
-            "28063911d2bbf57e",
-            "185f835e89c9acf9",
-            "099df29d699f405e",
-            "feba76606996723c",
-            "416d4b4451795bfe",
-            "4d37c161816bd3a2",
-            "5bb734f0283c5112",
-            "4a28823b499c04e0",
-            "9912f0375ba8d68e",
-            "5235db548e7aaef3",
-            "04e1eeacc898a859",
-            "772eec7408fe83a7",
-            "a385b9186009250e",
-            "7d28172c4ed9e31b",
-            "2f0f10b6553e5840",
-            "41d1b47da00573bb",
-            "8d209b47f10933fb",
-            "a9c83f35c32eb917",
-            "afdd83e46ca13149",
-            "9dc62a7e0c39ac0e",
-            "10b176495132c277",
-            "4c41e4cb0b5d442a",
-            "e8b82ec0591a08b2",
-            "8fd2b9ab457b5065",
-            "fe2e9d1af38b2ca8",
-            "ab89cf1a793d2be5",
-            "b6bb1e836852dc04",
-            "c0a27f9a895a1a94",
-            "0dccfc4a6467f7f4",
-            "eb3b3c5230e3dd32",
-            "611949e637ab7173",
-            "bcd4c7df6b6f93d3",
-            "f2885df5fb61fa3f",
-            "60fb5d8b6644ef02",
-            "02470b22b2f6893c",
-            "aaba861811975692",
-            "41e6810f869d1552",
-            "4af4cb47fdd97610",
-            "2f43413dfaba508a",
-            "040751d9061fe787"
-        ],
-        "x": 14,
-        "y": 539,
-        "w": 1032,
-        "h": 1062
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -5559,19 +5557,12 @@
         "z": "05fcb02c571dcfee",
         "g": "b196e2c041c5a7f8",
         "name": "",
-        "label": "Enter Configuration Details",
+        "label": "Enter ThingsBoard Parameters",
         "group": "8570be913d017562",
-        "order": 0,
+        "order": 1,
         "width": 0,
         "height": 0,
         "options": [
-            {
-                "label": "Name",
-                "value": "deviceName",
-                "type": "text",
-                "required": true,
-                "rows": null
-            },
             {
                 "label": "Server Url",
                 "value": "serverUrl",
@@ -5592,69 +5583,12 @@
                 "type": "text",
                 "required": true,
                 "rows": null
-            },
-            {
-                "label": "Location",
-                "value": "location",
-                "type": "text",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Orientation",
-                "value": "orientation",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Latitude",
-                "value": "latitude",
-                "type": "number",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Longitude",
-                "value": "longitude",
-                "type": "number",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Contact Name",
-                "value": "contactName",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Contact Phone Number",
-                "value": "contactPhone",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Contact Email",
-                "value": "contactEmail",
-                "type": "email",
-                "required": false,
-                "rows": null
             }
         ],
         "formValue": {
-            "deviceName": "",
             "serverUrl": "",
             "serverPort": "",
-            "accessToken": "",
-            "location": "",
-            "orientation": "",
-            "latitude": "",
-            "longitude": "",
-            "contactName": "",
-            "contactPhone": "",
-            "contactEmail": ""
+            "accessToken": ""
         },
         "payload": "",
         "submit": "submit",
@@ -5663,70 +5597,14 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 660,
-        "y": 260,
-        "wires": [
-            [
-                "5b21e7857009c4da",
-                "7fcf6ae1a2e9ca00",
-                "ac10d4e38e95fa26"
-            ]
-        ]
-    },
-    {
-        "id": "5b21e7857009c4da",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
-        "name": "debug config form input",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "4e88fb55e2c7b7b8",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
-        "name": "debug prefilled values",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
+        "x": 610,
         "y": 200,
-        "wires": []
-    },
-    {
-        "id": "7fcf6ae1a2e9ca00",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
-        "name": "save configuration",
-        "func": "global.set(\"deviceName\", msg.payload.deviceName, \"config\")\nglobal.set(\"serverUrl\", msg.payload.serverUrl, \"config\")\nglobal.set(\"serverPort\", msg.payload.serverPort, \"config\")\nglobal.set(\"accessToken\", msg.payload.accessToken, \"config\")\nglobal.set(\"location\", msg.payload.location, \"config\")\nglobal.set(\"orientation\", msg.payload.orientation, \"config\")\nglobal.set(\"latitude\", msg.payload.latitude, \"config\")\nglobal.set(\"longitude\", msg.payload.longitude, \"config\")\nglobal.set(\"contactName\", msg.payload.contactName, \"config\")\nglobal.set(\"contactPhone\", msg.payload.contactPhone, \"config\")\nglobal.set(\"contactEmail\", msg.payload.contactEmail, \"config\")\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 380,
         "wires": [
             [
-                "f39673b54301cbb7"
+                "ac10d4e38e95fa26",
+                "f3b683b4b8176420",
+                "f5797fb02606eda0",
+                "cdc9b204ff81145c"
             ]
         ]
     },
@@ -5735,20 +5613,20 @@
         "type": "function",
         "z": "05fcb02c571dcfee",
         "g": "b196e2c041c5a7f8",
-        "name": "read configuration",
-        "func": "let storedServerUrl = global.get(\"serverUrl\", \"config\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = global.get(\"serverPort\", \"config\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    \"deviceName\": global.get(\"deviceName\", \"config\"),\n    // \"serverUrl\" : tbUrl,\n    // \"serverPort\": tbPort,\n    \"serverUrl\" : storedServerUrl,\n    \"serverPort\": storedServerPort,\n    \"accessToken\": global.get(\"accessToken\", \"config\"),\n    \"location\": global.get(\"location\", \"config\"),\n    \"orientation\": global.get(\"orientation\", \"config\"),\n    \"latitude\": global.get(\"latitude\", \"config\"),\n    \"longitude\": global.get(\"longitude\", \"config\"),\n    \"contactName\": global.get(\"contactName\", \"config\"),\n    \"contactPhone\": global.get(\"contactPhone\", \"config\"),\n    \"contactEmail\": global.get(\"contactEmail\", \"config\") \n} }\nreturn newMsg;",
+        "name": "read stored configuration",
+        "func": "let storedServerUrl = global.get(\"serverUrl\", \"config\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = global.get(\"serverPort\", \"config\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    // \"serverUrl\" : tbUrl,\n    // \"serverPort\": tbPort,\n    \"serverUrl\" : storedServerUrl,\n    \"serverPort\": storedServerPort,\n    \"accessToken\": global.get(\"accessToken\", \"config\"),\n} }\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "// Code added here will be run once\n// whenever the node is started.\nvar newMsg = { payload: { \"deviceName\": flow.get(\"deviceName\") } }\nreturn newMsg;",
         "finalize": "",
         "libs": [],
-        "x": 350,
-        "y": 260,
+        "x": 310,
+        "y": 200,
         "wires": [
             [
                 "e6461a7fdeef48a2",
-                "4e88fb55e2c7b7b8"
+                "eade31a8864e53ee"
             ]
         ]
     },
@@ -5756,11 +5634,10 @@
         "id": "9fe1b87c70ae182d",
         "type": "catch",
         "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
         "name": "",
         "scope": null,
         "uncaught": false,
-        "x": 600,
+        "x": 80,
         "y": 60,
         "wires": [
             [
@@ -5772,9 +5649,8 @@
         "id": "070133633f340279",
         "type": "debug",
         "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
-        "name": "debug error",
-        "active": true,
+        "name": "debug error, config tab",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5782,7 +5658,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 910,
+        "x": 300,
         "y": 60,
         "wires": []
     },
@@ -5811,7 +5687,7 @@
             }
         ],
         "x": 980,
-        "y": 380,
+        "y": 340,
         "wires": [
             [
                 "542b3b8720733a01"
@@ -5824,7 +5700,7 @@
         "z": "05fcb02c571dcfee",
         "g": "b196e2c041c5a7f8",
         "name": "HTTP response",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5832,26 +5708,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1220,
-        "y": 380,
-        "wires": []
-    },
-    {
-        "id": "c8caaeb7095ee1a9",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "b196e2c041c5a7f8",
-        "name": "URL",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "url",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 910,
-        "y": 480,
+        "x": 1200,
+        "y": 340,
         "wires": []
     },
     {
@@ -5867,12 +5725,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 670,
-        "y": 380,
+        "x": 930,
+        "y": 300,
         "wires": [
             [
-                "0a28f82092611160",
-                "c8caaeb7095ee1a9"
+                "0a28f82092611160"
             ]
         ]
     },
@@ -5884,7 +5741,7 @@
         "name": "",
         "events": "all",
         "x": 100,
-        "y": 220,
+        "y": 200,
         "wires": [
             [
                 "f39673b54301cbb7"
@@ -5898,8 +5755,8 @@
         "g": "b196e2c041c5a7f8",
         "name": "Enables user-entry of configuration properties",
         "info": "",
-        "x": 270,
-        "y": 60,
+        "x": 210,
+        "y": 140,
         "wires": []
     },
     {
@@ -5916,7 +5773,7 @@
         "oldrc": false,
         "name": "",
         "x": 380,
-        "y": 640,
+        "y": 480,
         "wires": [
             [
                 "0dccfc4a6467f7f4"
@@ -5938,7 +5795,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 640,
+        "y": 480,
         "wires": [
             [
                 "64c998a572e86dce"
@@ -5953,7 +5810,7 @@
         "name": "RPi serial number, for deviceName",
         "info": "",
         "x": 200,
-        "y": 580,
+        "y": 420,
         "wires": []
     },
     {
@@ -5964,7 +5821,7 @@
         "name": "Firmware (TM Repo release)",
         "info": "",
         "x": 180,
-        "y": 800,
+        "y": 640,
         "wires": []
     },
     {
@@ -5975,7 +5832,7 @@
         "name": "other Client attributes (system)",
         "info": "",
         "x": 190,
-        "y": 920,
+        "y": 760,
         "wires": []
     },
     {
@@ -5991,7 +5848,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 980,
+        "y": 820,
         "wires": [
             [
                 "feba76606996723c",
@@ -6022,7 +5879,7 @@
             }
         ],
         "x": 270,
-        "y": 1140,
+        "y": 980,
         "wires": [
             []
         ],
@@ -6047,7 +5904,7 @@
             }
         ],
         "x": 280,
-        "y": 980,
+        "y": 820,
         "wires": [
             [
                 "8fd2b9ab457b5065"
@@ -6074,7 +5931,7 @@
             }
         ],
         "x": 270,
-        "y": 1180,
+        "y": 1020,
         "wires": [
             []
         ],
@@ -6099,7 +5956,7 @@
             }
         ],
         "x": 270,
-        "y": 1020,
+        "y": 860,
         "wires": [
             [
                 "fe2e9d1af38b2ca8"
@@ -6126,7 +5983,7 @@
             }
         ],
         "x": 270,
-        "y": 1060,
+        "y": 900,
         "wires": [
             []
         ],
@@ -6151,7 +6008,7 @@
             }
         ],
         "x": 270,
-        "y": 1100,
+        "y": 940,
         "wires": [
             []
         ],
@@ -6176,7 +6033,7 @@
             }
         ],
         "x": 260,
-        "y": 1220,
+        "y": 1060,
         "wires": [
             [
                 "41e6810f869d1552"
@@ -6192,7 +6049,7 @@
         "name": "get Frigate version, config settings",
         "info": "",
         "x": 200,
-        "y": 1340,
+        "y": 1180,
         "wires": []
     },
     {
@@ -6203,7 +6060,7 @@
         "name": "get OPS firmware, config settings",
         "info": "",
         "x": 190,
-        "y": 1480,
+        "y": 1320,
         "wires": []
     },
     {
@@ -6217,7 +6074,7 @@
             "6106b11d56c22e4a"
         ],
         "x": 285,
-        "y": 1520,
+        "y": 1360,
         "wires": []
     },
     {
@@ -6243,7 +6100,7 @@
         "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
         "payloadType": "jsonata",
         "x": 150,
-        "y": 1520,
+        "y": 1360,
         "wires": [
             [
                 "a385b9186009250e"
@@ -6260,7 +6117,7 @@
             "3bf70e1d7ad2d43b"
         ],
         "x": 305,
-        "y": 1560,
+        "y": 1400,
         "wires": [
             [
                 "8d209b47f10933fb"
@@ -6281,7 +6138,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 560,
-        "y": 1560,
+        "y": 1400,
         "wires": []
     },
     {
@@ -6307,7 +6164,7 @@
         "reduceInitType": "",
         "reduceFixup": "",
         "x": 400,
-        "y": 1560,
+        "y": 1400,
         "wires": [
             [
                 "41d1b47da00573bb"
@@ -6327,7 +6184,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 150,
-        "y": 1380,
+        "y": 1220,
         "wires": [
             [
                 "afdd83e46ca13149",
@@ -6353,7 +6210,7 @@
         "senderr": false,
         "headers": [],
         "x": 360,
-        "y": 1380,
+        "y": 1220,
         "wires": [
             [
                 "aaba861811975692"
@@ -6379,7 +6236,7 @@
         "senderr": false,
         "headers": [],
         "x": 370,
-        "y": 1420,
+        "y": 1260,
         "wires": [
             [
                 "ab89cf1a793d2be5"
@@ -6401,7 +6258,7 @@
         "oldrc": false,
         "name": "",
         "x": 290,
-        "y": 720,
+        "y": 560,
         "wires": [
             [
                 "c0a27f9a895a1a94"
@@ -6423,7 +6280,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 720,
+        "y": 560,
         "wires": [
             [
                 "10b176495132c277"
@@ -6449,7 +6306,7 @@
         "payload": "TM_VERSION",
         "payloadType": "env",
         "x": 130,
-        "y": 840,
+        "y": 680,
         "wires": [
             [
                 "b6bb1e836852dc04"
@@ -6477,7 +6334,7 @@
         "to": "",
         "reg": false,
         "x": 500,
-        "y": 980,
+        "y": 820,
         "wires": [
             [
                 "f2885df5fb61fa3f"
@@ -6505,7 +6362,7 @@
         "to": "",
         "reg": false,
         "x": 500,
-        "y": 1020,
+        "y": 860,
         "wires": [
             [
                 "60fb5d8b6644ef02"
@@ -6533,7 +6390,7 @@
         "to": "",
         "reg": false,
         "x": 610,
-        "y": 1420,
+        "y": 1260,
         "wires": [
             [
                 "02470b22b2f6893c"
@@ -6561,7 +6418,7 @@
         "to": "",
         "reg": false,
         "x": 500,
-        "y": 840,
+        "y": 680,
         "wires": [
             [
                 "bcd4c7df6b6f93d3"
@@ -6589,7 +6446,7 @@
         "to": "",
         "reg": false,
         "x": 700,
-        "y": 700,
+        "y": 540,
         "wires": [
             [
                 "611949e637ab7173"
@@ -6617,7 +6474,7 @@
         "to": "",
         "reg": false,
         "x": 680,
-        "y": 620,
+        "y": 460,
         "wires": [
             [
                 "eb3b3c5230e3dd32"
@@ -6643,7 +6500,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 910,
-        "y": 620,
+        "y": 460,
         "wires": []
     },
     {
@@ -6665,7 +6522,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 930,
-        "y": 700,
+        "y": 540,
         "wires": []
     },
     {
@@ -6687,7 +6544,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 730,
-        "y": 840,
+        "y": 680,
         "wires": []
     },
     {
@@ -6709,7 +6566,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 730,
-        "y": 980,
+        "y": 820,
         "wires": []
     },
     {
@@ -6731,7 +6588,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 730,
-        "y": 1020,
+        "y": 860,
         "wires": []
     },
     {
@@ -6753,7 +6610,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 860,
-        "y": 1420,
+        "y": 1260,
         "wires": []
     },
     {
@@ -6770,7 +6627,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 560,
-        "y": 1380,
+        "y": 1220,
         "wires": []
     },
     {
@@ -6792,7 +6649,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 760,
-        "y": 1220,
+        "y": 1060,
         "wires": []
     },
     {
@@ -6808,7 +6665,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 1220,
+        "y": 1060,
         "wires": [
             [
                 "5235db548e7aaef3",
@@ -6835,7 +6692,7 @@
             }
         ],
         "x": 260,
-        "y": 1260,
+        "y": 1100,
         "wires": [
             [
                 "040751d9061fe787"
@@ -6862,7 +6719,107 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 750,
-        "y": 1260,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "f3b683b4b8176420",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "serverUrl",
+                "pt": "global",
+                "to": "payload.serverUrl",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 950,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f5797fb02606eda0",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "serverPort",
+                "pt": "global",
+                "to": "payload.serverPort",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 960,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "cdc9b204ff81145c",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "accessToken",
+                "pt": "global",
+                "to": "payload.accessToken",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 970,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "eade31a8864e53ee",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "b196e2c041c5a7f8",
+        "group": "8570be913d017562",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Customer/Contact Info may be updated at:",
+        "format": "<a href=\"{{msg.payload.serverUrl}}/login\">{{msg.payload.serverUrl}}/login</a>",
+        "layout": "row-left",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 650,
+        "y": 240,
         "wires": []
     }
 ]
