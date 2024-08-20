@@ -14,5 +14,5 @@ VAR_LOCATION='tm-location-001'
 
 # Default Thingsboard server URL and port
 
-VAR_DEFAULT_TB_SERVER: "http://tb.untower.online/home"
-VAR_DEFAULT_TB_PORT: "80"
+VAR_DEFAULT_TB_SERVER = "http://tb.untower.online/home"
+VAR_DEFAULT_TB_PORT = "80"
