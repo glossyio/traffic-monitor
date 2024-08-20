@@ -493,13 +493,12 @@
         "nodes": [
             "677a57bbf3619854",
             "df6ac2f42ac6d8c7",
-            "4bec488857c0553f",
-            "8b2ed6c0df264089"
+            "4bec488857c0553f"
         ],
-        "x": 294,
-        "y": 1299,
-        "w": 1032,
-        "h": 142
+        "x": 334,
+        "y": 1239,
+        "w": 692,
+        "h": 122
     },
     {
         "id": "b196e2c041c5a7f8",
@@ -2695,8 +2694,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 850,
-        "y": 1340,
+        "x": 590,
+        "y": 1320,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -2717,8 +2716,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1150,
-        "y": 1340,
+        "x": 850,
+        "y": 1320,
         "wires": []
     },
     {
@@ -2726,40 +2725,21 @@
         "type": "function",
         "z": "9269520ddb532b00",
         "g": "b334a2375eb8cb42",
-        "name": "setup telemetry payload & URL",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n    deviceName: global.get(\"deviceName\", \"config\"),\n    location: global.get(\"location\", \"config\"),\n    latitude: global.get(\"latitude\", \"config\"),\n    longtitude: global.get(\"longtitude\", \"config\")\n    }\nmsg.payload = { \n    ts: values.frame_time * 1000,\n    values: values\n    }\n\n// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
+        "name": "setup event telemetry payload & URL",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\nmsg.payload = {\n    ts: values.frame_time * 1000,\n    values: {\n        event: values\n    }\n}\n\n// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 450,
-        "y": 1340,
+        "x": 510,
+        "y": 1280,
         "wires": [
             [
-                "677a57bbf3619854",
-                "8b2ed6c0df264089"
+                "677a57bbf3619854"
             ]
         ]
-    },
-    {
-        "id": "8b2ed6c0df264089",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "b334a2375eb8cb42",
-        "name": "debug payload sent to TB",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 730,
-        "y": 1400,
-        "wires": []
     },
     {
         "id": "3985037239b671c5",
