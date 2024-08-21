@@ -587,6 +587,63 @@
         "h": 1062
     },
     {
+        "id": "b334a2375eb8cb42",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "event",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4bec488857c0553f",
+            "ed447e5f8becbfad",
+            "cc84d34370b6feb3"
+        ],
+        "x": 134,
+        "y": 99,
+        "w": 392,
+        "h": 142
+    },
+    {
+        "id": "694f0242d0985c69",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "TB HTTP API",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "a960ef97c77a540b"
+        ],
+        "x": 954,
+        "y": 159,
+        "w": 552,
+        "h": 122
+    },
+    {
+        "id": "1819134eccdf2660",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "fee85b1886270ac6",
+            "087588593911f398",
+            "fc5e2cd719fa680a",
+            "0124afc74d86b533",
+            "e05e91362c933e94",
+            "e88f5e9924fa1924"
+        ],
+        "x": 184,
+        "y": 319,
+        "w": 722,
+        "h": 602
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -650,63 +707,6 @@
         "y": 239,
         "w": 932,
         "h": 282
-    },
-    {
-        "id": "b334a2375eb8cb42",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "event",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "4bec488857c0553f",
-            "ed447e5f8becbfad",
-            "cc84d34370b6feb3"
-        ],
-        "x": 134,
-        "y": 99,
-        "w": 392,
-        "h": 142
-    },
-    {
-        "id": "694f0242d0985c69",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "TB HTTP API",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "677a57bbf3619854",
-            "df6ac2f42ac6d8c7",
-            "a960ef97c77a540b"
-        ],
-        "x": 954,
-        "y": 159,
-        "w": 552,
-        "h": 122
-    },
-    {
-        "id": "1819134eccdf2660",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "fee85b1886270ac6",
-            "087588593911f398",
-            "fc5e2cd719fa680a",
-            "0124afc74d86b533",
-            "e05e91362c933e94",
-            "e88f5e9924fa1924"
-        ],
-        "x": 184,
-        "y": 319,
-        "w": 722,
-        "h": 602
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -6547,7 +6547,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "osHostname",
+                "p": "#:(config)::osHostname",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6575,7 +6575,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "osRelease",
+                "p": "#:(config)::osRelease",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6603,7 +6603,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "frigateVersion",
+                "p": "#:(config)::frigateVersion",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6631,7 +6631,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "tmVersion",
+                "p": "#:(config)::tmVersion",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6659,7 +6659,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "osTimeZone",
+                "p": "#:(config)::osTimeZone",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6687,7 +6687,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "rpiSN",
+                "p": "#:(config)::rpiSN",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6956,7 +6956,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "serverUrl",
+                "p": "#:(config)::serverUrl",
                 "pt": "global",
                 "to": "payload.serverUrl",
                 "tot": "msg"
@@ -6982,7 +6982,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "serverPort",
+                "p": "#:(config)::serverPort",
                 "pt": "global",
                 "to": "payload.serverPort",
                 "tot": "msg"
@@ -7008,7 +7008,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "accessToken",
+                "p": "#:(config)::accessToken",
                 "pt": "global",
                 "to": "payload.accessToken",
                 "tot": "msg"
