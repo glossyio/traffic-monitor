@@ -341,12 +341,9 @@ module.exports = {
    * Refer to the documentation for further options: https://nodered.org/docs/api/context/
    */
   contextStorage: {
-    // default: {
-    //   module: "localfilesystem",
-    // },
-    config: {
-      module: "localfilesystem",
-    },
+    default: "memoryOnly",
+    memoryOnly: { module: 'memory' },
+    config: { module: "localfilesystem" },
   },
 
   /** `global.keys()` returns a list of all properties set in global context.
