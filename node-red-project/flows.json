@@ -6848,7 +6848,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::currentFirmwareVersion",
+                "p": "#:(config)::tmVersion",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -6859,7 +6859,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 540,
+        "x": 500,
         "y": 540,
         "wires": [
             [
@@ -6906,10 +6906,10 @@
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::deviceName",
+                "p": "#:(config)::rpiSN",
                 "pt": "global",
-                "to": "payload",
-                "tot": "msg"
+                "to": "$string(payload)\t",
+                "tot": "jsonata"
             }
         ],
         "action": "",
@@ -6917,7 +6917,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 700,
+        "x": 680,
         "y": 320,
         "wires": [
             [
@@ -6936,7 +6936,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.deviceName (rpiSN)",
+        "label": "global.rpiSN",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -6944,7 +6944,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 740,
+        "x": 730,
         "y": 360,
         "wires": []
     },
@@ -6980,7 +6980,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.currentFirmwareVersion (tmVersion)",
+        "label": "global.tmVersion",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -6988,7 +6988,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 590,
+        "x": 550,
         "y": 580,
         "wires": []
     },
