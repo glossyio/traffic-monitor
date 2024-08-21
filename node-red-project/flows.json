@@ -615,12 +615,13 @@
         "nodes": [
             "677a57bbf3619854",
             "df6ac2f42ac6d8c7",
-            "a960ef97c77a540b"
+            "a960ef97c77a540b",
+            "21944450ecc08385"
         ],
-        "x": 954,
-        "y": 159,
-        "w": 552,
-        "h": 122
+        "x": 814,
+        "y": 99,
+        "w": 572,
+        "h": 162
     },
     {
         "id": "1819134eccdf2660",
@@ -636,12 +637,20 @@
             "fc5e2cd719fa680a",
             "0124afc74d86b533",
             "e05e91362c933e94",
-            "e88f5e9924fa1924"
+            "9f5540b6beae8e73",
+            "3fb645608f34cc0c",
+            "2a979d76853ee0ab",
+            "cc21b9e657cba081",
+            "ff1719e60656a2e6",
+            "d3f14c01ec3c7250",
+            "5d3596375bd695c0",
+            "4796b517d7d045a7",
+            "9a894f4bd304f5a9"
         ],
-        "x": 184,
-        "y": 319,
-        "w": 722,
-        "h": 602
+        "x": 134,
+        "y": 299,
+        "w": 872,
+        "h": 342
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -2136,7 +2145,9 @@
         "g": "1d00b3011a12b204",
         "name": "radar_dov link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "fee85b1886270ac6"
+        ],
         "x": 475,
         "y": 700,
         "wires": []
@@ -2190,7 +2201,9 @@
         "g": "04cc3b7b3e019683",
         "name": "radar_timedspeedcounts link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "087588593911f398"
+        ],
         "x": 475,
         "y": 1020,
         "wires": []
@@ -2775,7 +2788,7 @@
         "type": "http request",
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
-        "name": "Send event to TB server",
+        "name": "tb telemetry http api",
         "method": "use",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -2787,8 +2800,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1270,
-        "y": 200,
+        "x": 1130,
+        "y": 180,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -2809,8 +2822,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1330,
-        "y": 240,
+        "x": 1210,
+        "y": 220,
         "wires": []
     },
     {
@@ -2818,15 +2831,15 @@
         "type": "function",
         "z": "f7932be9acc7391c",
         "g": "b334a2375eb8cb42",
-        "name": "create event telemetry payload",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\nmsg.payload = {\n    ts: values.frame_time * 1000,\n    values: {\n        event: values\n    }\n}\n\nreturn msg;",
+        "name": "format event telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.frame_time * 1000,\n    values: {\n        event: values\n    }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 370,
+        "x": 340,
         "y": 200,
         "wires": [
             [
@@ -2908,11 +2921,15 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_dov link in",
-        "links": [],
-        "x": 235,
-        "y": 360,
+        "links": [
+            "313905edff24218d"
+        ],
+        "x": 175,
+        "y": 440,
         "wires": [
-            []
+            [
+                "5d3596375bd695c0"
+            ]
         ]
     },
     {
@@ -2921,11 +2938,15 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_timedspeedcounts link in",
-        "links": [],
-        "x": 235,
-        "y": 420,
+        "links": [
+            "5c4e5a6064580e23"
+        ],
+        "x": 175,
+        "y": 340,
         "wires": [
-            []
+            [
+                "2a979d76853ee0ab"
+            ]
         ]
     },
     {
@@ -2937,10 +2958,12 @@
         "links": [
             "62f7d1214aa96cc0"
         ],
-        "x": 235,
-        "y": 580,
+        "x": 175,
+        "y": 480,
         "wires": [
-            []
+            [
+                "4796b517d7d045a7"
+            ]
         ]
     },
     {
@@ -2952,10 +2975,12 @@
         "links": [
             "56ce714b7a23585b"
         ],
-        "x": 235,
-        "y": 640,
+        "x": 175,
+        "y": 520,
         "wires": [
-            []
+            [
+                "9a894f4bd304f5a9"
+            ]
         ]
     },
     {
@@ -2967,22 +2992,13 @@
         "links": [
             "cceefa4b9aa98acc"
         ],
-        "x": 225,
-        "y": 880,
+        "x": 175,
+        "y": 560,
         "wires": [
-            []
+            [
+                "cc21b9e657cba081"
+            ]
         ]
-    },
-    {
-        "id": "e88f5e9924fa1924",
-        "type": "comment",
-        "z": "f7932be9acc7391c",
-        "g": "1819134eccdf2660",
-        "name": "for raw_speed_magnitude, collect an array of them, send when event is over (no more readings)",
-        "info": "",
-        "x": 550,
-        "y": 500,
-        "wires": []
     },
     {
         "id": "a960ef97c77a540b",
@@ -2997,11 +3013,223 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1060,
-        "y": 200,
+        "x": 920,
+        "y": 140,
+        "wires": [
+            [
+                "21944450ecc08385"
+            ]
+        ]
+    },
+    {
+        "id": "9f5540b6beae8e73",
+        "type": "comment",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "send immediately",
+        "info": "",
+        "x": 240,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "3fb645608f34cc0c",
+        "type": "comment",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "send radar_oc_payload w others to avoid hundreds of messages per object (oc = radar object detection end)",
+        "info": "",
+        "x": 530,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "2a979d76853ee0ab",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_timedspeedcounts telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_timedspeedcounts: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 340,
+        "wires": [
+            [
+                "a960ef97c77a540b"
+            ]
+        ]
+    },
+    {
+        "id": "cc21b9e657cba081",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_oc_payload telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.start_time * 1000,\n    values: {\n        radar_oc_payload: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 560,
+        "wires": [
+            [
+                "d3f14c01ec3c7250"
+            ]
+        ]
+    },
+    {
+        "id": "21944450ecc08385",
+        "type": "delay",
+        "z": "f7932be9acc7391c",
+        "g": "694f0242d0985c69",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1000",
+        "nbRateUnits": "1",
+        "rateUnits": "minute",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 2,
+        "x": 1110,
+        "y": 140,
         "wires": [
             [
                 "677a57bbf3619854"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "ff1719e60656a2e6",
+        "type": "join",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "create radar array, wait for msg.complete",
+        "mode": "custom",
+        "build": "array",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 820,
+        "y": 440,
+        "wires": [
+            [
+                "a960ef97c77a540b"
+            ]
+        ]
+    },
+    {
+        "id": "d3f14c01ec3c7250",
+        "type": "change",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "complete",
+                "pt": "msg",
+                "to": "true",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 560,
+        "wires": [
+            [
+                "ff1719e60656a2e6"
+            ]
+        ]
+    },
+    {
+        "id": "5d3596375bd695c0",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_dov telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_dov: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 440,
+        "wires": [
+            [
+                "ff1719e60656a2e6"
+            ]
+        ]
+    },
+    {
+        "id": "4796b517d7d045a7",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_raw_speed_magnitude telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_raw_speed_magnitude: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 480,
+        "wires": [
+            [
+                "ff1719e60656a2e6"
+            ]
+        ]
+    },
+    {
+        "id": "9a894f4bd304f5a9",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_raw_speed_magnitude_single telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_raw_speed_magnitude_single: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 520,
+        "wires": [
+            [
+                "ff1719e60656a2e6"
             ]
         ]
     },
