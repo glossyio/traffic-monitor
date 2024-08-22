@@ -218,9 +218,9 @@
             "cbb3b02ca505a55b",
             "7db4b197df9eb075"
         ],
-        "x": 14,
+        "x": 24,
         "y": 839,
-        "w": 1178,
+        "w": 1168,
         "h": 508
     },
     {
@@ -291,9 +291,9 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 54,
+        "x": 64,
         "y": 2519,
-        "w": 1252,
+        "w": 1242,
         "h": 242
     },
     {
@@ -428,7 +428,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1272,
+        "w": 1282,
         "h": 262
     },
     {
@@ -568,12 +568,11 @@
             "ac10d4e38e95fa26",
             "0a28f82092611160",
             "542b3b8720733a01",
-            "d046a343ebc5fe81",
-            "45c7a98080ace657"
+            "d046a343ebc5fe81"
         ],
         "x": 14,
         "y": 279,
-        "w": 1372,
+        "w": 1472,
         "h": 1022
     },
     {
@@ -610,7 +609,7 @@
         ],
         "x": 814,
         "y": 99,
-        "w": 652,
+        "w": 612,
         "h": 162
     },
     {
@@ -635,12 +634,11 @@
             "d3f14c01ec3c7250",
             "5d3596375bd695c0",
             "4796b517d7d045a7",
-            "9a894f4bd304f5a9",
-            "fbd0bbf9b25ab939"
+            "9a894f4bd304f5a9"
         ],
         "x": 134,
         "y": 299,
-        "w": 882,
+        "w": 872,
         "h": 342
     },
     {
@@ -2804,16 +2802,16 @@
         "type": "debug",
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
-        "name": "send telemetry event response",
-        "active": true,
+        "name": "event telemetry response",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1290,
+        "x": 1270,
         "y": 220,
         "wires": []
     },
@@ -3129,8 +3127,7 @@
         "y": 440,
         "wires": [
             [
-                "a960ef97c77a540b",
-                "fbd0bbf9b25ab939"
+                "a960ef97c77a540b"
             ]
         ]
     },
@@ -3224,23 +3221,6 @@
                 "ff1719e60656a2e6"
             ]
         ]
-    },
-    {
-        "id": "fbd0bbf9b25ab939",
-        "type": "debug",
-        "z": "f7932be9acc7391c",
-        "g": "1819134eccdf2660",
-        "name": "debug 9",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 910,
-        "y": 500,
-        "wires": []
     },
     {
         "id": "3985037239b671c5",
@@ -4079,7 +4059,7 @@
         "method": "GET",
         "ret": "bin",
         "paytoqs": "ignore",
-        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
+        "url": "http://localhost:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -6111,7 +6091,7 @@
         "type": "debug",
         "z": "05fcb02c571dcfee",
         "name": "debug error, config tab",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -6160,16 +6140,16 @@
         "type": "debug",
         "z": "05fcb02c571dcfee",
         "g": "0738651c4995a1d7",
-        "name": "HTTP response",
-        "active": true,
+        "name": "client-side attributes response",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1260,
+        "x": 1310,
         "y": 480,
         "wires": []
     },
@@ -7293,26 +7273,8 @@
         "y": 320,
         "wires": [
             [
-                "ac10d4e38e95fa26",
-                "45c7a98080ace657"
+                "ac10d4e38e95fa26"
             ]
         ]
-    },
-    {
-        "id": "45c7a98080ace657",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "debug 8",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1220,
-        "y": 320,
-        "wires": []
     }
 ]
