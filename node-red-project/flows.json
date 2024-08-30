@@ -218,9 +218,9 @@
             "cbb3b02ca505a55b",
             "7db4b197df9eb075"
         ],
-        "x": 24,
+        "x": 14,
         "y": 839,
-        "w": 1168,
+        "w": 1178,
         "h": 508
     },
     {
@@ -291,9 +291,9 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 64,
+        "x": 54,
         "y": 2519,
-        "w": 1242,
+        "w": 1252,
         "h": 242
     },
     {
@@ -428,7 +428,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1282,
+        "w": 1272,
         "h": 262
     },
     {
@@ -510,70 +510,9 @@
             "eade31a8864e53ee"
         ],
         "x": 14,
-        "y": 99,
+        "y": 79,
         "w": 1092,
         "h": 162
-    },
-    {
-        "id": "0738651c4995a1d7",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "client-side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "64c998a572e86dce",
-            "4d67617dadcb9ede",
-            "28063911d2bbf57e",
-            "185f835e89c9acf9",
-            "099df29d699f405e",
-            "feba76606996723c",
-            "416d4b4451795bfe",
-            "4d37c161816bd3a2",
-            "5bb734f0283c5112",
-            "4a28823b499c04e0",
-            "9912f0375ba8d68e",
-            "5235db548e7aaef3",
-            "04e1eeacc898a859",
-            "772eec7408fe83a7",
-            "a385b9186009250e",
-            "7d28172c4ed9e31b",
-            "2f0f10b6553e5840",
-            "41d1b47da00573bb",
-            "8d209b47f10933fb",
-            "a9c83f35c32eb917",
-            "afdd83e46ca13149",
-            "9dc62a7e0c39ac0e",
-            "10b176495132c277",
-            "4c41e4cb0b5d442a",
-            "e8b82ec0591a08b2",
-            "8fd2b9ab457b5065",
-            "fe2e9d1af38b2ca8",
-            "ab89cf1a793d2be5",
-            "b6bb1e836852dc04",
-            "c0a27f9a895a1a94",
-            "0dccfc4a6467f7f4",
-            "eb3b3c5230e3dd32",
-            "611949e637ab7173",
-            "bcd4c7df6b6f93d3",
-            "f2885df5fb61fa3f",
-            "60fb5d8b6644ef02",
-            "02470b22b2f6893c",
-            "aaba861811975692",
-            "41e6810f869d1552",
-            "4af4cb47fdd97610",
-            "2f43413dfaba508a",
-            "040751d9061fe787",
-            "ac10d4e38e95fa26",
-            "0a28f82092611160",
-            "542b3b8720733a01",
-            "d046a343ebc5fe81"
-        ],
-        "x": 14,
-        "y": 279,
-        "w": 1472,
-        "h": 1022
     },
     {
         "id": "b334a2375eb8cb42",
@@ -640,6 +579,48 @@
         "y": 299,
         "w": 872,
         "h": 342
+    },
+    {
+        "id": "4fc7b275d828a5d7",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "deployment / location info",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0efbf0059084d8d0",
+            "2c2b844e454aa609",
+            "0e0d95ff3c4aa7d1",
+            "32ac6cf42cd8c106",
+            "8606059dd2f94a75",
+            "e2378a8740a99fdf"
+        ],
+        "x": 14,
+        "y": 1539,
+        "w": 912,
+        "h": 162
+    },
+    {
+        "id": "dd29df4e644425b0",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "deployment / location info",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "dbc594623a97700f",
+            "cfaca843d1fc4679",
+            "8173247be30b656e",
+            "2d36fe127efba457",
+            "80d2ef499f6612a6",
+            "83de55ae8c9f54c1"
+        ],
+        "x": 14,
+        "y": 1811.5,
+        "w": 1092,
+        "h": 209.5
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -974,6 +955,28 @@
         "name": "Client-Side Attributes",
         "tab": "0fd9a947334c7d0f",
         "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "77966ee928726fbf",
+        "type": "ui_group",
+        "name": "Deployment Location",
+        "tab": "0fd9a947334c7d0f",
+        "order": 3,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "f61a29742f312bb9",
+        "type": "ui_group",
+        "name": "WiFi Settings",
+        "tab": "0fd9a947334c7d0f",
+        "order": 4,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -6022,7 +6025,7 @@
             {
                 "label": "Access Token",
                 "value": "accessToken",
-                "type": "text",
+                "type": "password",
                 "required": true,
                 "rows": null
             }
@@ -6040,7 +6043,7 @@
         "splitLayout": "",
         "className": "",
         "x": 610,
-        "y": 180,
+        "y": 160,
         "wires": [
             [
                 "f3b683b4b8176420",
@@ -6063,7 +6066,7 @@
         "finalize": "",
         "libs": [],
         "x": 310,
-        "y": 180,
+        "y": 160,
         "wires": [
             [
                 "e6461a7fdeef48a2",
@@ -6079,7 +6082,7 @@
         "scope": null,
         "uncaught": false,
         "x": 80,
-        "y": 60,
+        "y": 40,
         "wires": [
             [
                 "070133633f340279"
@@ -6100,14 +6103,13 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 300,
-        "y": 60,
+        "y": 40,
         "wires": []
     },
     {
         "id": "0a28f82092611160",
         "type": "http request",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "send client-side attributes",
         "method": "use",
         "ret": "txt",
@@ -6127,7 +6129,7 @@
                 "valueValue": ""
             }
         ],
-        "x": 1210,
+        "x": 1290,
         "y": 440,
         "wires": [
             [
@@ -6139,7 +6141,6 @@
         "id": "542b3b8720733a01",
         "type": "debug",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "client-side attributes response",
         "active": false,
         "tosidebar": true,
@@ -6149,7 +6150,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1310,
+        "x": 1390,
         "y": 480,
         "wires": []
     },
@@ -6157,7 +6158,6 @@
         "id": "ac10d4e38e95fa26",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "set up tb client-side attributes post ",
         "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
         "outputs": 1,
@@ -6166,7 +6166,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
+        "x": 1200,
         "y": 400,
         "wires": [
             [
@@ -6182,7 +6182,7 @@
         "name": "",
         "events": "all",
         "x": 100,
-        "y": 180,
+        "y": 160,
         "wires": [
             [
                 "f39673b54301cbb7"
@@ -6193,7 +6193,6 @@
         "id": "64c998a572e86dce",
         "type": "exec",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "command": "cat /sys/firmware/devicetree/base/serial-number",
         "addpay": "",
         "append": "",
@@ -6206,7 +6205,7 @@
         "y": 340,
         "wires": [
             [
-                "0dccfc4a6467f7f4"
+                "6d99762995fa853e"
             ],
             [],
             []
@@ -6216,7 +6215,6 @@
         "id": "4d67617dadcb9ede",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "props": [],
         "repeat": "",
@@ -6236,7 +6234,6 @@
         "id": "28063911d2bbf57e",
         "type": "comment",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "Firmware (TM Repo release)",
         "info": "",
         "x": 180,
@@ -6247,7 +6244,6 @@
         "id": "185f835e89c9acf9",
         "type": "comment",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "other Client attributes (system)",
         "info": "",
         "x": 190,
@@ -6258,7 +6254,6 @@
         "id": "099df29d699f405e",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "props": [],
         "repeat": "",
@@ -6283,7 +6278,6 @@
         "id": "feba76606996723c",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.homedir()",
         "func": "msg.payload = `${os.homedir()}`;\nreturn msg;",
         "outputs": 1,
@@ -6308,7 +6302,6 @@
         "id": "416d4b4451795bfe",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.hostname()",
         "func": "msg.payload = `${os.hostname()}`;\nreturn msg;",
         "outputs": 1,
@@ -6335,7 +6328,6 @@
         "id": "4d37c161816bd3a2",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.platform()",
         "func": "msg.payload = `${os.platform()}`;\nreturn msg;",
         "outputs": 1,
@@ -6360,7 +6352,6 @@
         "id": "5bb734f0283c5112",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.release()",
         "func": "msg.payload = `${os.release()}`;\nreturn msg;",
         "outputs": 1,
@@ -6387,7 +6378,6 @@
         "id": "4a28823b499c04e0",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.version()",
         "func": "msg.payload = `${os.version()}`;\nreturn msg;",
         "outputs": 1,
@@ -6412,7 +6402,6 @@
         "id": "9912f0375ba8d68e",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "os.uptime()",
         "func": "msg.payload = `${os.uptime()}`;\nreturn msg;",
         "outputs": 1,
@@ -6437,7 +6426,6 @@
         "id": "5235db548e7aaef3",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "DateTime",
         "func": "msg.payload = new Date().toString();\nreturn msg;",
         "outputs": 1,
@@ -6464,7 +6452,6 @@
         "id": "04e1eeacc898a859",
         "type": "comment",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "get Frigate version, config settings",
         "info": "",
         "x": 200,
@@ -6475,7 +6462,6 @@
         "id": "772eec7408fe83a7",
         "type": "comment",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "get OPS firmware, config settings",
         "info": "",
         "x": 190,
@@ -6486,7 +6472,6 @@
         "id": "a385b9186009250e",
         "type": "link out",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "out query OPS",
         "mode": "link",
         "links": [
@@ -6500,7 +6485,6 @@
         "id": "7d28172c4ed9e31b",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "query all settings",
         "props": [
             {
@@ -6530,7 +6514,6 @@
         "id": "2f0f10b6553e5840",
         "type": "link in",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "link in 1",
         "links": [
             "3bf70e1d7ad2d43b"
@@ -6547,7 +6530,6 @@
         "id": "41d1b47da00573bb",
         "type": "debug",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "debug 6",
         "active": false,
         "tosidebar": true,
@@ -6564,7 +6546,6 @@
         "id": "8d209b47f10933fb",
         "type": "join",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "mode": "custom",
         "build": "merged",
@@ -6594,7 +6575,6 @@
         "id": "a9c83f35c32eb917",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "get Frigate config",
         "props": [],
         "repeat": "",
@@ -6615,7 +6595,6 @@
         "id": "afdd83e46ca13149",
         "type": "http request",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "frigate api/config",
         "method": "GET",
         "ret": "obj",
@@ -6641,7 +6620,6 @@
         "id": "9dc62a7e0c39ac0e",
         "type": "http request",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "frigate api/version",
         "method": "GET",
         "ret": "txt",
@@ -6667,7 +6645,6 @@
         "id": "10b176495132c277",
         "type": "exec",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "command": "cat /etc/timezone",
         "addpay": "",
         "append": "",
@@ -6690,7 +6667,6 @@
         "id": "4c41e4cb0b5d442a",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "props": [],
         "repeat": "",
@@ -6710,7 +6686,6 @@
         "id": "e8b82ec0591a08b2",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "props": [
             {
@@ -6736,8 +6711,7 @@
         "id": "8fd2b9ab457b5065",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.osHostname",
         "rules": [
             {
                 "t": "set",
@@ -6745,6 +6719,13 @@
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osHostname",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -6765,8 +6746,7 @@
         "id": "fe2e9d1af38b2ca8",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.osRelease",
         "rules": [
             {
                 "t": "set",
@@ -6774,6 +6754,13 @@
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osRelease",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -6794,8 +6781,7 @@
         "id": "ab89cf1a793d2be5",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.frigateVersion",
         "rules": [
             {
                 "t": "set",
@@ -6803,6 +6789,13 @@
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "frigateVersion",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -6823,8 +6816,7 @@
         "id": "b6bb1e836852dc04",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.tmVersion",
         "rules": [
             {
                 "t": "set",
@@ -6832,6 +6824,13 @@
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "tmVersion",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -6852,15 +6851,28 @@
         "id": "c0a27f9a895a1a94",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.osTimeZone",
         "rules": [
             {
                 "t": "set",
                 "p": "#:(config)::osTimeZone",
                 "pt": "global",
-                "to": "payload",
-                "tot": "msg"
+                "to": "$trim(payload)",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osTimeZone",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$trim(payload)",
+                "tot": "jsonata"
             }
         ],
         "action": "",
@@ -6869,7 +6881,7 @@
         "to": "",
         "reg": false,
         "x": 700,
-        "y": 420,
+        "y": 400,
         "wires": [
             [
                 "611949e637ab7173",
@@ -6881,15 +6893,21 @@
         "id": "0dccfc4a6467f7f4",
         "type": "change",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
-        "name": "",
+        "name": "set global.rpiSN",
         "rules": [
             {
                 "t": "set",
                 "p": "#:(config)::rpiSN",
                 "pt": "global",
-                "to": "$string(payload)\t",
-                "tot": "jsonata"
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "rpiSN",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -6897,7 +6915,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 680,
+        "x": 700,
         "y": 320,
         "wires": [
             [
@@ -6910,9 +6928,8 @@
         "id": "eb3b3c5230e3dd32",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
-        "order": 2,
+        "order": 1,
         "width": 0,
         "height": 0,
         "name": "",
@@ -6932,9 +6949,8 @@
         "id": "611949e637ab7173",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
-        "order": 7,
+        "order": 10,
         "width": 0,
         "height": 0,
         "name": "",
@@ -6947,14 +6963,13 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 730,
-        "y": 460,
+        "y": 440,
         "wires": []
     },
     {
         "id": "bcd4c7df6b6f93d3",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
         "order": 3,
         "width": 0,
@@ -6976,9 +6991,8 @@
         "id": "f2885df5fb61fa3f",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "name": "",
@@ -6998,7 +7012,6 @@
         "id": "60fb5d8b6644ef02",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
         "order": 5,
         "width": 0,
@@ -7020,7 +7033,6 @@
         "id": "02470b22b2f6893c",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
         "order": 4,
         "width": 0,
@@ -7042,7 +7054,6 @@
         "id": "aaba861811975692",
         "type": "debug",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "debug 7",
         "active": false,
         "tosidebar": true,
@@ -7059,9 +7070,8 @@
         "id": "41e6810f869d1552",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
-        "order": 6,
+        "order": 8,
         "width": 0,
         "height": 0,
         "name": "",
@@ -7081,7 +7091,6 @@
         "id": "4af4cb47fdd97610",
         "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "props": [],
         "repeat": "60",
@@ -7102,7 +7111,6 @@
         "id": "2f43413dfaba508a",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "UTC-ms",
         "func": "msg.payload = new Date().getTime();\nreturn msg;",
         "outputs": 1,
@@ -7129,9 +7137,8 @@
         "id": "040751d9061fe787",
         "type": "ui_text",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "group": "55acf8751a68ec74",
-        "order": 6,
+        "order": 9,
         "width": 0,
         "height": 0,
         "name": "",
@@ -7168,7 +7175,7 @@
         "to": "",
         "reg": false,
         "x": 950,
-        "y": 140,
+        "y": 120,
         "wires": [
             []
         ]
@@ -7194,7 +7201,7 @@
         "to": "",
         "reg": false,
         "x": 960,
-        "y": 180,
+        "y": 160,
         "wires": [
             []
         ]
@@ -7220,7 +7227,7 @@
         "to": "",
         "reg": false,
         "x": 970,
-        "y": 220,
+        "y": 200,
         "wires": [
             []
         ]
@@ -7244,17 +7251,16 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 650,
-        "y": 220,
+        "y": 200,
         "wires": []
     },
     {
         "id": "d046a343ebc5fe81",
         "type": "join",
         "z": "05fcb02c571dcfee",
-        "g": "0738651c4995a1d7",
         "name": "",
         "mode": "custom",
-        "build": "merged",
+        "build": "object",
         "property": "payload",
         "propertyType": "msg",
         "key": "topic",
@@ -7263,17 +7269,519 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "6",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 1030,
+        "x": 1110,
         "y": 320,
         "wires": [
             [
                 "ac10d4e38e95fa26"
+            ]
+        ]
+    },
+    {
+        "id": "0efbf0059084d8d0",
+        "type": "ui_form",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "",
+        "label": "Location",
+        "group": "77966ee928726fbf",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Orientation",
+                "value": "orientation",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Longtitude",
+                "value": "lon",
+                "type": "number",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Latitude",
+                "value": "lat",
+                "type": "number",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Street Address",
+                "value": "address",
+                "type": "text",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Description / Conditions",
+                "value": "description",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            }
+        ],
+        "formValue": {
+            "orientation": "",
+            "lon": "",
+            "lat": "",
+            "address": "",
+            "description": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 440,
+        "y": 1580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2c2b844e454aa609",
+        "type": "ui_ui_control",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "",
+        "events": "all",
+        "x": 100,
+        "y": 1580,
+        "wires": [
+            [
+                "0efbf0059084d8d0"
+            ]
+        ]
+    },
+    {
+        "id": "0e0d95ff3c4aa7d1",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "function 1",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 260,
+        "y": 1580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f216858954e6862d",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "command": "nmcli -g ip4.address connection show preconfigured",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 390,
+        "y": 1340,
+        "wires": [
+            [
+                "8a7e7a97fd87ea18"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "aafc20b552a8d5dd",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 1340,
+        "wires": [
+            [
+                "f216858954e6862d"
+            ]
+        ]
+    },
+    {
+        "id": "614c44640342d24f",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "command": "nmcli -g 802-11-wireless.ssid connection show preconfigured",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 420,
+        "y": 1420,
+        "wires": [
+            [
+                "9beaf948294acd98"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "28e48a6d1ba99fc3",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 1420,
+        "wires": [
+            [
+                "614c44640342d24f"
+            ]
+        ]
+    },
+    {
+        "id": "8a7e7a97fd87ea18",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "name": "set global.ip4Address",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::ip4Address",
+                "pt": "global",
+                "to": "$trim(payload)",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "ip4Address",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$trim(payload)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 800,
+        "y": 1320,
+        "wires": [
+            [
+                "33dd63cc1dfb53c4",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "33dd63cc1dfb53c4",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "group": "55acf8751a68ec74",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "global.ip4Address",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 850,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "9beaf948294acd98",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "name": "set global.ssid",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::ssid",
+                "pt": "global",
+                "to": "$trim(payload)",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "ssid",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$trim(payload)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 1400,
+        "wires": [
+            [
+                "2b82d4b028657058",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "2b82d4b028657058",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "group": "55acf8751a68ec74",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "global.ssid",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 830,
+        "y": 1440,
+        "wires": []
+    },
+    {
+        "id": "dbc594623a97700f",
+        "type": "ui_form",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "name": "",
+        "label": "WiFi SSID Connection",
+        "group": "f61a29742f312bb9",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "SSID",
+                "value": "ssid",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Password",
+                "value": "password",
+                "type": "password",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "ssid": "",
+            "password": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 480,
+        "y": 1860,
+        "wires": [
+            [
+                "2d36fe127efba457"
+            ]
+        ]
+    },
+    {
+        "id": "cfaca843d1fc4679",
+        "type": "ui_ui_control",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "name": "",
+        "events": "all",
+        "x": 100,
+        "y": 1860,
+        "wires": [
+            [
+                "dbc594623a97700f"
+            ]
+        ]
+    },
+    {
+        "id": "8173247be30b656e",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "name": "function 2",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 260,
+        "y": 1860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2d36fe127efba457",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "command": "nmcli device wifi connect \"$SSID\" password \"$PASSWORD\"",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 860,
+        "y": 1860,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "80d2ef499f6612a6",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "command": "nmcli connection add type wifi autoconnect yes ifname wlan1",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 860,
+        "y": 1920,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "83de55ae8c9f54c1",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "d": true,
+        "g": "dd29df4e644425b0",
+        "name": "1) create network connect 2) modify for autoconnect yes",
+        "info": "",
+        "x": 840,
+        "y": 1980,
+        "wires": []
+    },
+    {
+        "id": "32ac6cf42cd8c106",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "upload to TB client-side attributes, separately",
+        "info": "",
+        "x": 730,
+        "y": 1580,
+        "wires": []
+    },
+    {
+        "id": "8606059dd2f94a75",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "upload to TB as telemetry 'deployment'",
+        "info": "",
+        "x": 710,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "e2378a8740a99fdf",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "g": "4fc7b275d828a5d7",
+        "name": "save locally to tmdb",
+        "info": "",
+        "x": 650,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "6d99762995fa853e",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "name": "buffer to string",
+        "func": "msg.payload = msg.payload.toString();\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 280,
+        "wires": [
+            [
+                "0dccfc4a6467f7f4"
             ]
         ]
     }
