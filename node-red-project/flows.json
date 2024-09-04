@@ -56,13 +56,6 @@
         "env": []
     },
     {
-        "id": "4ff48984.4f9cb",
-        "type": "tab",
-        "label": "Form 2",
-        "disabled": false,
-        "info": ""
-    },
-    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -661,71 +654,6 @@
         "h": 1242
     },
     {
-        "id": "0e1614cf2e5f9942",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "11fa2826769befc7",
-            "158e6edae533bfdc",
-            "eff2193c8246a9d2",
-            "57fa6ca2b7d290e3"
-        ],
-        "x": 54,
-        "y": 1159,
-        "w": 1112,
-        "h": 162
-    },
-    {
-        "id": "f5d2d92d50d18ce2",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "frigate event api for thumbnail",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "09f99c931e5535bf",
-            "08121a31488784bc",
-            "9226865e3385eb56",
-            "aa0afb5180297e2b"
-        ],
-        "x": 304,
-        "y": 1739,
-        "w": 612,
-        "h": 122
-    },
-    {
-        "id": "3a9bb6ed1306eb1c",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "name": "create downloadable links",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f31a598d.9fd2c8",
-            "98261154.3006",
-            "34dc99e5.495466",
-            "38d65d59.1d8aa2",
-            "3b8014a.86ad8ec",
-            "5b18a8e7.fb8da8",
-            "a8c2985e.d23ad8",
-            "5de7cbb4.fa21a4",
-            "67ecfa7f.3f0e24"
-        ],
-        "x": 14,
-        "y": 239,
-        "w": 932,
-        "h": 282
-    },
-    {
         "id": "9939766b62072f52",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -807,12 +735,85 @@
             "0d5da21c913e2636",
             "77d228818b3d23cc",
             "abaf9c5d1eecfdf5",
-            "bf7d55674655862b"
+            "bf7d55674655862b",
+            "577fc698383ac8e7",
+            "e55592bc8b3e387e",
+            "e78d213e0b842313",
+            "c8a47a03b429f40d",
+            "ef3b81c15fe4b3fc",
+            "8d6c2ce9ca6c354e",
+            "600cb98db358dc07",
+            "2ce3c5bb0b42f8e3"
         ],
         "x": 34,
         "y": 319,
-        "w": 1342,
-        "h": 422
+        "w": 1352,
+        "h": 502
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "11fa2826769befc7",
+            "158e6edae533bfdc",
+            "eff2193c8246a9d2",
+            "57fa6ca2b7d290e3"
+        ],
+        "x": 54,
+        "y": 1159,
+        "w": 1112,
+        "h": 162
+    },
+    {
+        "id": "f5d2d92d50d18ce2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "09f99c931e5535bf",
+            "08121a31488784bc",
+            "9226865e3385eb56",
+            "aa0afb5180297e2b"
+        ],
+        "x": 304,
+        "y": 1739,
+        "w": 612,
+        "h": 122
+    },
+    {
+        "id": "3a9bb6ed1306eb1c",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "create downloadable links",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f31a598d.9fd2c8",
+            "98261154.3006",
+            "34dc99e5.495466",
+            "38d65d59.1d8aa2",
+            "3b8014a.86ad8ec",
+            "5b18a8e7.fb8da8",
+            "a8c2985e.d23ad8",
+            "5de7cbb4.fa21a4",
+            "67ecfa7f.3f0e24"
+        ],
+        "x": 14,
+        "y": 239,
+        "w": 932,
+        "h": 282
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1126,46 +1127,6 @@
         "name": "Configuration / Setup Tab",
         "icon": "settings_remote",
         "order": 4,
-        "disabled": false,
-        "hidden": false
-    },
-    {
-        "id": "d68e7be3.88f088",
-        "type": "ui_group",
-        "name": "Forms Example",
-        "tab": "67ff17e9.83751",
-        "order": 1,
-        "disp": true,
-        "width": "8",
-        "collapse": false
-    },
-    {
-        "id": "54bca71e.4287f",
-        "type": "ui_group",
-        "name": "Form",
-        "tab": "67ff17e9.83751",
-        "order": 2,
-        "disp": true,
-        "width": "8",
-        "collapse": false
-    },
-    {
-        "id": "6d4b6f37.3f68b",
-        "type": "ui_group",
-        "z": "4ff48984.4f9cb",
-        "name": "Dashboard Event Log",
-        "tab": "67ff17e9.83751",
-        "order": 3,
-        "disp": true,
-        "width": "8",
-        "collapse": false
-    },
-    {
-        "id": "67ff17e9.83751",
-        "type": "ui_tab",
-        "name": "Forms Example ",
-        "icon": "home",
-        "order": 2,
         "disabled": false,
         "hidden": false
     },
@@ -8334,7 +8295,7 @@
                 "rows": null
             },
             {
-                "label": "Orientation",
+                "label": "Orientation (cardinal direction)",
                 "value": "orientation",
                 "type": "text",
                 "required": true,
@@ -8536,7 +8497,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<h3>Location Entry Details</h3>\n<p><em>Map will update the form and vice versa.</em><br/>\nOnly the latest deployment location entry will be used for this device.\n</p>",
+        "format": "<h3>Location Entry Details</h3>\n<p><em>Map will update the form and vice versa.</em></p>\n<p>Only the latest deployment location entry will be used for this device.</p>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -8587,7 +8548,8 @@
         "wires": [
             [
                 "f56633a89481439a",
-                "0efbf0059084d8d0"
+                "600cb98db358dc07",
+                "2ce3c5bb0b42f8e3"
             ]
         ]
     },
@@ -8678,10 +8640,12 @@
         "y": 540,
         "wires": [
             [
-                "83df59e62c9ebe4f"
+                "83df59e62c9ebe4f",
+                "577fc698383ac8e7"
             ],
             [
-                "b149610d4d0d1153"
+                "b149610d4d0d1153",
+                "e55592bc8b3e387e"
             ]
         ]
     },
@@ -8725,10 +8689,12 @@
         "y": 540,
         "wires": [
             [
-                "0d5da21c913e2636"
+                "0d5da21c913e2636",
+                "e78d213e0b842313"
             ],
             [
-                "bf7d55674655862b"
+                "bf7d55674655862b",
+                "c8a47a03b429f40d"
             ]
         ]
     },
@@ -8761,360 +8727,151 @@
         ]
     },
     {
-        "id": "60ca4e1f.58d9a8",
-        "type": "ui_button",
-        "z": "4ff48984.4f9cb",
-        "name": "Button",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Button",
-        "tooltip": "",
-        "color": "#fffff",
-        "bgcolor": "",
-        "icon": "fa-star",
-        "payload": "true",
-        "payloadType": "bool",
-        "topic": "Button",
-        "x": 150,
-        "y": 100,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "c5c459e7.f4a85",
-        "type": "ui_dropdown",
-        "z": "4ff48984.4f9cb",
-        "name": "Choice",
-        "label": "Choose what you want ",
-        "tooltip": "",
-        "place": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "options": [
-            {
-                "label": "Choice 1 : String",
-                "value": "String",
-                "type": "str"
-            },
-            {
-                "label": "Choice 2 : Number",
-                "value": 4,
-                "type": "num"
-            },
-            {
-                "label": "Choice 3 :Boolean",
-                "value": true,
-                "type": "bool"
-            }
-        ],
-        "payload": "",
-        "topic": "Choice ",
-        "x": 160,
-        "y": 140,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "5402bb8a.bff144",
+        "id": "577fc698383ac8e7",
         "type": "debug",
-        "z": "4ff48984.4f9cb",
-        "name": "Dashboard Log",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 12",
         "active": true,
-        "console": "false",
-        "complete": "payload",
-        "x": 760,
-        "y": 200,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1270,
+        "y": 420,
         "wires": []
     },
     {
-        "id": "2aa8229.cf9265e",
-        "type": "ui_switch",
-        "z": "4ff48984.4f9cb",
-        "name": "Light Switch",
-        "label": "switch",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "decouple": "false",
-        "topic": "Light Switch ",
-        "style": "",
-        "onvalue": "true",
-        "onvalueType": "bool",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "false",
-        "offvalueType": "bool",
-        "officon": "",
-        "offcolor": "",
-        "x": 150,
-        "y": 180,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
+        "id": "e55592bc8b3e387e",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 13",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1260,
+        "y": 500,
+        "wires": []
     },
     {
-        "id": "f559c07a.8ac77",
-        "type": "ui_slider",
-        "z": "4ff48984.4f9cb",
-        "name": "Slider",
-        "label": "slider",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "outs": "all",
-        "topic": "Slider",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-        "x": 170,
-        "y": 220,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
+        "id": "e78d213e0b842313",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 14",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 630,
+        "y": 380,
+        "wires": []
     },
     {
-        "id": "4a336fc.fd0001",
-        "type": "ui_numeric",
-        "z": "4ff48984.4f9cb",
+        "id": "c8a47a03b429f40d",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 15",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "ef3b81c15fe4b3fc",
+        "type": "inject",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
         "name": "",
-        "label": "numeric",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "topic": "Numérique",
-        "format": "{{value}}",
-        "min": 0,
-        "max": 10,
-        "step": "",
-        "x": 160,
-        "y": 260,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "dc7a2e3e.65436",
-        "type": "ui_text_input",
-        "z": "4ff48984.4f9cb",
-        "name": "",
-        "label": "Text Entry Field ",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "mode": "text",
-        "delay": "0",
-        "topic": "Text Entry Feild",
-        "sendOnBlur": true,
-        "className": "",
-        "topicType": "str",
-        "x": 140,
-        "y": 300,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "76836903.e5e028",
-        "type": "ui_form",
-        "z": "4ff48984.4f9cb",
-        "name": "",
-        "label": "Form in Node-RED ",
-        "group": "54bca71e.4287f",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "options": [
+        "props": [
             {
-                "label": "Name",
-                "value": "Name",
-                "type": "text",
-                "required": true
-            },
-            {
-                "label": "Number",
-                "value": "Number",
-                "type": "number",
-                "required": false
-            },
-            {
-                "label": "Email",
-                "value": "Email",
-                "type": "email",
-                "required": false
-            },
-            {
-                "label": "Password",
-                "value": "Password",
-                "type": "password",
-                "required": false
-            },
-            {
-                "label": "Check Box",
-                "value": "Check Box",
-                "type": "checkbox",
-                "required": false
-            },
-            {
-                "label": "Light Switch",
-                "value": "Light Switch",
-                "type": "switch",
-                "required": false
+                "p": "payload"
             }
         ],
-        "formValue": {
-            "Name": "",
-            "Number": "",
-            "Email": "",
-            "Password": "",
-            "Check Box": false,
-            "Light Switch": false
-        },
-        "payload": "",
-        "submit": "Submit",
-        "cancel": "Cancle",
-        "topic": "Form",
-        "x": 130,
-        "y": 460,
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "latestMarkerAllInfo",
+        "payloadType": "flow",
+        "x": 1000,
+        "y": 780,
         "wires": [
             [
-                "36cff23e.eb790e"
+                "8d6c2ce9ca6c354e"
             ]
         ]
     },
     {
-        "id": "36cff23e.eb790e",
+        "id": "8d6c2ce9ca6c354e",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1210,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "600cb98db358dc07",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "debug 17",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1280,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "2ce3c5bb0b42f8e3",
         "type": "function",
-        "z": "4ff48984.4f9cb",
-        "name": "Save Events",
-        "func": "\n// initialise the counter to 0 if it doesn't exist already\nvar dashboardLog = context.get('dashboardLog')|| [];\n\ndashboardLog.push(msg);\nif (dashboardLog.length > 20){\n    // Delete oldest message if > 20\n    dashboardLog.shift();\n    dashboardLog.length = 20;\n} \n\n\n// store the value back\ncontext.set('dashboardLog',dashboardLog);\n\n// make it part of the outgoing msg object\nmsg = {};\nmsg.payload = dashboardLog;\nreturn msg;\n",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "reset location form",
+        "func": "msg.payload = flow.get(\"latestMarkerAllInfo.name\");\nreturn msg;",
         "outputs": 1,
+        "timeout": 0,
         "noerr": 0,
-        "x": 450,
-        "y": 260,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 680,
         "wires": [
             [
-                "5402bb8a.bff144",
-                "4ebedf10.25873"
-            ]
-        ]
-    },
-    {
-        "id": "4ebedf10.25873",
-        "type": "ui_template",
-        "z": "4ff48984.4f9cb",
-        "group": "6d4b6f37.3f68b",
-        "name": "Dashboard Event Log ",
-        "order": 1,
-        "width": "8",
-        "height": "10",
-        "format": "<ul>\n <li ng-repeat=\"x in msg.payload\">\n <font color=\"red\">{{x.topic}}</font>\n    <ul>\n        <li>{{x.payload}}</li>\n    </ul>\n </li>\n</ul>",
-        "storeOutMessages": true,
-        "fwdInMessages": true,
-        "templateScope": "local",
-        "x": 780,
-        "y": 320,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "f91cf7ee.1cbde8",
-        "type": "ui_text_input",
-        "z": "4ff48984.4f9cb",
-        "name": "",
-        "label": "Email Field",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "mode": "email",
-        "delay": 300,
-        "topic": "Email Field",
-        "x": 150,
-        "y": 340,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "2fcb4353.31090c",
-        "type": "ui_text_input",
-        "z": "4ff48984.4f9cb",
-        "name": "",
-        "label": "Password Field",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "mode": "password",
-        "delay": 300,
-        "topic": "Password ",
-        "x": 140,
-        "y": 380,
-        "wires": [
-            [
-                "36cff23e.eb790e"
-            ]
-        ]
-    },
-    {
-        "id": "5f88c615.20452",
-        "type": "ui_text_input",
-        "z": "4ff48984.4f9cb",
-        "name": "",
-        "label": "Select a color",
-        "tooltip": "",
-        "group": "d68e7be3.88f088",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "mode": "color",
-        "delay": 300,
-        "topic": "Select a color",
-        "x": 140,
-        "y": 420,
-        "wires": [
-            [
-                "36cff23e.eb790e"
+                "0efbf0059084d8d0"
             ]
         ]
     }
