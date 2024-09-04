@@ -583,7 +583,7 @@
             "83de55ae8c9f54c1"
         ],
         "x": 14,
-        "y": 1731.5,
+        "y": 1871.5,
         "w": 1092,
         "h": 209.5
     },
@@ -682,7 +682,7 @@
             "7a5b893839c9c1dd"
         ],
         "x": 14,
-        "y": 1379,
+        "y": 1519,
         "w": 1352,
         "h": 322
     },
@@ -795,7 +795,7 @@
             "6f700f9167d834ca"
         ],
         "x": 74,
-        "y": 719,
+        "y": 639,
         "w": 952,
         "h": 262
     },
@@ -822,12 +822,50 @@
             "581373a3d9ca8bbf",
             "5c2714054adf2be7",
             "b4935c0d86d87137",
-            "6aafbb121cb8890b"
+            "6aafbb121cb8890b",
+            "5181051bdcb0b370",
+            "2adb206d0c356f8d"
         ],
         "x": 34,
-        "y": 359,
-        "w": 1352,
-        "h": 648
+        "y": 319,
+        "w": 1332,
+        "h": 608
+    },
+    {
+        "id": "55a1af374cc8ecb9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "deployment",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a83d59ee0db1198",
+            "8606059dd2f94a75",
+            "c6ff73faf6fa9e98"
+        ],
+        "x": 134,
+        "y": 659,
+        "w": 872,
+        "h": 122
+    },
+    {
+        "id": "fe1b9f6f9d89d353",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "deployment client side attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "32ac6cf42cd8c106",
+            "8768b75dbfee3973",
+            "f453ff6136f95abe"
+        ],
+        "x": 164,
+        "y": 1359,
+        "w": 1202,
+        "h": 102
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -3392,35 +3430,50 @@
         "id": "8a83d59ee0db1198",
         "type": "link in",
         "z": "f7932be9acc7391c",
-        "name": "deployment submit link in",
+        "g": "55a1af374cc8ecb9",
+        "name": "deployment submit telemetry link in",
         "links": [
             "b4935c0d86d87137"
         ],
         "x": 175,
         "y": 740,
         "wires": [
-            []
+            [
+                "c6ff73faf6fa9e98"
+            ]
         ]
     },
     {
         "id": "8606059dd2f94a75",
         "type": "comment",
         "z": "f7932be9acc7391c",
+        "g": "55a1af374cc8ecb9",
         "name": "upload to TB as telemetry 'deployment'",
         "info": "",
-        "x": 410,
-        "y": 760,
+        "x": 830,
+        "y": 700,
         "wires": []
     },
     {
-        "id": "32ac6cf42cd8c106",
-        "type": "comment",
+        "id": "c6ff73faf6fa9e98",
+        "type": "function",
         "z": "f7932be9acc7391c",
-        "name": "upload to TB client-side attributes, separately",
-        "info": "",
-        "x": 430,
-        "y": 720,
-        "wires": []
+        "g": "55a1af374cc8ecb9",
+        "name": "format deployment telemetry",
+        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date(values.entryDateTime).getTime(),\n    values: {\n        deployment: values\n    }\n}\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 740,
+        "wires": [
+            [
+                "a960ef97c77a540b"
+            ]
+        ]
     },
     {
         "id": "3985037239b671c5",
@@ -6266,7 +6319,7 @@
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
         "name": "client-side attributes response",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -7496,7 +7549,7 @@
         "splitLayout": "",
         "className": "",
         "x": 480,
-        "y": 1780,
+        "y": 1920,
         "wires": [
             [
                 "2d36fe127efba457"
@@ -7512,7 +7565,7 @@
         "name": "",
         "events": "all",
         "x": 100,
-        "y": 1780,
+        "y": 1920,
         "wires": [
             [
                 "dbc594623a97700f"
@@ -7534,7 +7587,7 @@
         "finalize": "",
         "libs": [],
         "x": 260,
-        "y": 1780,
+        "y": 1920,
         "wires": [
             []
         ]
@@ -7554,7 +7607,7 @@
         "oldrc": false,
         "name": "",
         "x": 860,
-        "y": 1780,
+        "y": 1920,
         "wires": [
             [],
             [],
@@ -7576,7 +7629,7 @@
         "oldrc": false,
         "name": "",
         "x": 860,
-        "y": 1840,
+        "y": 1980,
         "wires": [
             [],
             [],
@@ -7592,7 +7645,7 @@
         "name": "1) create network connect 2) modify for autoconnect yes",
         "info": "",
         "x": 840,
-        "y": 1900,
+        "y": 2040,
         "wires": []
     },
     {
@@ -7635,7 +7688,7 @@
         "payload": "object",
         "payloadType": "date",
         "x": 130,
-        "y": 1420,
+        "y": 1560,
         "wires": [
             [
                 "da2aba0214bac68a"
@@ -7656,7 +7709,7 @@
         "finalize": "",
         "libs": [],
         "x": 470,
-        "y": 1420,
+        "y": 1560,
         "wires": [
             [
                 "a5f008d4f3598f93"
@@ -7682,7 +7735,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 750,
-        "y": 1420,
+        "y": 1560,
         "wires": []
     },
     {
@@ -7704,7 +7757,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 750,
-        "y": 1460,
+        "y": 1600,
         "wires": []
     },
     {
@@ -7726,7 +7779,7 @@
         "payload": "#:(config)::osTimeZone",
         "payloadType": "global",
         "x": 150,
-        "y": 1460,
+        "y": 1600,
         "wires": [
             [
                 "07ccf8536e2b455f"
@@ -7753,7 +7806,7 @@
         "className": "",
         "topicType": "msg",
         "x": 600,
-        "y": 1600,
+        "y": 1740,
         "wires": [
             [
                 "f78709164f3981d7"
@@ -7788,7 +7841,7 @@
         "animate": false,
         "className": "",
         "x": 160,
-        "y": 1560,
+        "y": 1700,
         "wires": [
             [
                 "659387e87a479c9d",
@@ -7819,7 +7872,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 630,
-        "y": 1640,
+        "y": 1780,
         "wires": [
             []
         ]
@@ -7852,7 +7905,7 @@
         "to": "",
         "reg": false,
         "x": 230,
-        "y": 1600,
+        "y": 1740,
         "wires": [
             [
                 "e5e3317f136d4174",
@@ -7881,7 +7934,7 @@
         "className": "",
         "topicType": "msg",
         "x": 600,
-        "y": 1560,
+        "y": 1700,
         "wires": [
             [
                 "150b8ccb2761d41d"
@@ -7907,7 +7960,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 1520,
+        "y": 1660,
         "wires": [
             [
                 "659387e87a479c9d"
@@ -7928,7 +7981,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1600,
+        "y": 1740,
         "wires": [
             [
                 "9639fe8379b46f52",
@@ -7951,7 +8004,7 @@
         "oldrc": false,
         "name": "",
         "x": 1030,
-        "y": 1620,
+        "y": 1760,
         "wires": [
             [],
             [],
@@ -7972,7 +8025,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1560,
+        "y": 1700,
         "wires": [
             [
                 "4a3f399a4293acc6",
@@ -7995,7 +8048,7 @@
         "oldrc": false,
         "name": "",
         "x": 1160,
-        "y": 1560,
+        "y": 1700,
         "wires": [
             [],
             [],
@@ -8019,7 +8072,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1520,
+        "y": 1660,
         "wires": []
     },
     {
@@ -8039,7 +8092,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1660,
+        "y": 1800,
         "wires": []
     },
     {
@@ -8086,10 +8139,59 @@
         "to": "",
         "reg": false,
         "x": 400,
-        "y": 1560,
+        "y": 1700,
         "wires": [
             [
                 "8e9a70c0016cf407"
+            ]
+        ]
+    },
+    {
+        "id": "32ac6cf42cd8c106",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "g": "fe1b9f6f9d89d353",
+        "name": "upload to TB client-side attributes, separately",
+        "info": "",
+        "x": 1170,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "8768b75dbfee3973",
+        "type": "link in",
+        "z": "05fcb02c571dcfee",
+        "g": "fe1b9f6f9d89d353",
+        "name": "deployment submit system link in",
+        "links": [
+            "b4935c0d86d87137"
+        ],
+        "x": 205,
+        "y": 1420,
+        "wires": [
+            [
+                "f453ff6136f95abe"
+            ]
+        ]
+    },
+    {
+        "id": "f453ff6136f95abe",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "fe1b9f6f9d89d353",
+        "name": "set deployment client side attribute payload",
+        "func": "var newMsg = {};\nnewMsg.payload = {};\n\nnewMsg.payload.deploymentID = msg.payload.id;\nnewMsg.payload.deploymentEntryDateTime = msg.payload.entryDateTime;\nnewMsg.payload.deploymentName = msg.payload.name;\nnewMsg.payload.deploymentLat = msg.payload.lat;\nnewMsg.payload.deploymentLon = msg.payload.lon;\nnewMsg.payload.deploymentOrientation = msg.payload.orientation;\nnewMsg.payload.deploymentAddress = msg.payload.address;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 1420,
+        "wires": [
+            [
+                "ac10d4e38e95fa26"
             ]
         ]
     },
@@ -8388,14 +8490,11 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 640,
-        "y": 520,
+        "x": 540,
+        "y": 460,
         "wires": [
             [
-                "abaf9c5d1eecfdf5",
-                "e8e148afd22b2619",
-                "5c2714054adf2be7",
-                "b4935c0d86d87137"
+                "2adb206d0c356f8d"
             ]
         ]
     },
@@ -8408,7 +8507,7 @@
         "path": "/worldmap",
         "events": "connect,disconnect,point,draw,layer,bounds,files,other",
         "x": 150,
-        "y": 440,
+        "y": 400,
         "wires": [
             [
                 "c3629e05aa43359d"
@@ -8448,8 +8547,8 @@
         "mapurl": "",
         "mapopt": "",
         "mapwms": false,
-        "x": 1300,
-        "y": 640,
+        "x": 1200,
+        "y": 560,
         "wires": []
     },
     {
@@ -8480,8 +8579,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 3,
-        "x": 360,
-        "y": 440,
+        "x": 200,
+        "y": 460,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -8512,7 +8611,7 @@
         "templateScope": "local",
         "className": "",
         "x": 130,
-        "y": 400,
+        "y": 360,
         "wires": [
             []
         ]
@@ -8522,7 +8621,7 @@
         "type": "function",
         "z": "fa9f914901f79645",
         "g": "f431ed51eb2b2a49",
-        "name": "remove previous marker(s)",
+        "name": "remove previous marker",
         "func": "//if payload marker is different from previous one, delete previous one\nconst newMarker = msg.payload;\n\n//delete the previous marker\nmsg.payload = {\n    name: flow.get(\"latestMarkerAllInfo.name\"),\n    deleted:true\n};\n\nflow.set(\"latestMarkerAllInfo\",newMarker);\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -8530,8 +8629,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 980,
-        "y": 640,
+        "x": 950,
+        "y": 500,
         "wires": [
             [
                 "f56633a89481439a",
@@ -8552,8 +8651,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 980,
-        "y": 600,
+        "x": 960,
+        "y": 460,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -8566,7 +8665,7 @@
         "type": "switch",
         "z": "fa9f914901f79645",
         "g": "f431ed51eb2b2a49",
-        "name": "check if payload.name marker exists",
+        "name": "check for previous marker match",
         "property": "payload.name",
         "propertyType": "msg",
         "rules": [
@@ -8582,8 +8681,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 1050,
-        "y": 420,
+        "x": 930,
+        "y": 380,
         "wires": [
             [
                 "83df59e62c9ebe4f"
@@ -8598,7 +8697,7 @@
         "type": "switch",
         "z": "fa9f914901f79645",
         "g": "f431ed51eb2b2a49",
-        "name": "check for previous marker",
+        "name": "check for existing marker",
         "property": "latestMarkerAllInfo.name",
         "propertyType": "flow",
         "rules": [
@@ -8612,8 +8711,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 730,
-        "y": 440,
+        "x": 630,
+        "y": 400,
         "wires": [
             [
                 "0d5da21c913e2636"
@@ -8643,8 +8742,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1020,
-        "y": 460,
+        "x": 920,
+        "y": 420,
         "wires": [
             [
                 "83df59e62c9ebe4f"
@@ -8656,7 +8755,7 @@
         "type": "function",
         "z": "fa9f914901f79645",
         "g": "f431ed51eb2b2a49",
-        "name": "reset location form",
+        "name": "reset form",
         "func": "msg.payload = flow.get(\"latestMarkerAllInfo\");\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -8664,8 +8763,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1010,
-        "y": 680,
+        "x": 1020,
+        "y": 540,
         "wires": [
             [
                 "0efbf0059084d8d0"
@@ -8699,8 +8798,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 380,
-        "y": 500,
+        "x": 260,
+        "y": 520,
         "wires": [
             [
                 "0efbf0059084d8d0"
@@ -8717,7 +8816,7 @@
         "sql": "",
         "name": "",
         "x": 560,
-        "y": 860,
+        "y": 780,
         "wires": [
             [
                 "9e029001fe1461ec"
@@ -8742,7 +8841,7 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
         "x": 290,
-        "y": 860,
+        "y": 780,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -8759,7 +8858,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "tmdb.deployment, Prepared Statement",
         "x": 850,
-        "y": 800,
+        "y": 720,
         "wires": [
             []
         ]
@@ -8770,7 +8869,7 @@
         "z": "fa9f914901f79645",
         "g": "6aafbb121cb8890b",
         "name": "write params for deployment insert",
-        "func": "//VALUES ($id, $entryDateTime, $name, $orientation, $latitude, $longitude, $address, $description, $deviceName)\n\nvar newPayload = {};\n\nnewPayload.entryDateTime = new Date();\n\nnewPayload.name = msg.payload.name;\nnewPayload.orientation = msg.payload.orientation;\nnewPayload.lat = msg.payload.lat;\nnewPayload.lon = msg.payload.lon;\nnewPayload.address = msg.payload.address;\nnewPayload.description = msg.payload.description;\n\nnewPayload.deviceName = global.get(\"rpiSN\", \"config\");\n\nnewPayload.id = newPayload.entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n\nconst obj = newPayload;\n\nmsg.payload = newPayload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "//VALUES ($id, $entryDateTime, $name, $orientation, $latitude, $longitude, $address, $description, $deviceName)\n\nvar newMsg = {}\n\nnewMsg.id = msg.payload.id;\nnewMsg.entryDateTime = msg.payload.entryDateTime;\nnewMsg.name = msg.payload.name;\nnewMsg.lat = msg.payload.lat;\nnewMsg.lon = msg.payload.lon;\nnewMsg.orientation = msg.payload.orientation;\nnewMsg.address = msg.payload.address;\nnewMsg.description = msg.payload.description;\nnewMsg.deviceName = msg.payload.deviceName;\n\nconst obj = newMsg;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -8778,7 +8877,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 800,
+        "y": 720,
         "wires": [
             [
                 "8add1e75d35b3706"
@@ -8803,7 +8902,7 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
         "x": 260,
-        "y": 900,
+        "y": 820,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -8825,7 +8924,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 820,
-        "y": 860,
+        "y": 780,
         "wires": []
     },
     {
@@ -8838,7 +8937,7 @@
         "sql": "",
         "name": "",
         "x": 560,
-        "y": 760,
+        "y": 680,
         "wires": [
             [
                 "b87d36e05fb323bf"
@@ -8863,7 +8962,7 @@
         "onceDelay": "5",
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 1;",
         "x": 270,
-        "y": 760,
+        "y": 680,
         "wires": [
             [
                 "b7103dfabfa35f67"
@@ -8875,7 +8974,7 @@
         "type": "change",
         "z": "fa9f914901f79645",
         "g": "6aafbb121cb8890b",
-        "name": "initialize deployment info",
+        "name": "init deployment info",
         "rules": [
             {
                 "t": "set",
@@ -8904,8 +9003,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 810,
-        "y": 760,
+        "x": 790,
+        "y": 680,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -8932,7 +9031,7 @@
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
         "x": 300,
-        "y": 940,
+        "y": 860,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -8959,8 +9058,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 200,
-        "y": 640,
+        "x": 1240,
+        "y": 620,
         "wires": [
             []
         ]
@@ -8973,10 +9072,56 @@
         "name": "deployment submit link out",
         "mode": "link",
         "links": [
-            "8a83d59ee0db1198"
+            "8a83d59ee0db1198",
+            "8768b75dbfee3973"
         ],
-        "x": 115,
-        "y": 680,
+        "x": 1155,
+        "y": 660,
         "wires": []
+    },
+    {
+        "id": "5181051bdcb0b370",
+        "type": "ui_toast",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "",
+        "x": 1220,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "2adb206d0c356f8d",
+        "type": "function",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "name": "create full deployment payload",
+        "func": "msg.topic = 'tm/deployment'\n\nmsg.payload.entryDateTime = new Date();\nmsg.payload.id = msg.payload.entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n\nmsg.payload.deviceName = global.get(\"rpiSN\", \"config\");\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 540,
+        "wires": [
+            [
+                "e8e148afd22b2619",
+                "5181051bdcb0b370",
+                "b4935c0d86d87137",
+                "5c2714054adf2be7",
+                "abaf9c5d1eecfdf5"
+            ]
+        ]
     }
 ]
