@@ -726,7 +726,6 @@
             "f56633a89481439a",
             "c3629e05aa43359d",
             "b1c37cc7992ec0b1",
-            "a49f7e1f7e7bd1b7",
             "b149610d4d0d1153",
             "7dcf3140c18d4956",
             "83df59e62c9ebe4f",
@@ -743,12 +742,14 @@
             "ef3b81c15fe4b3fc",
             "8d6c2ce9ca6c354e",
             "600cb98db358dc07",
-            "2ce3c5bb0b42f8e3"
+            "2ce3c5bb0b42f8e3",
+            "581373a3d9ca8bbf",
+            "00123285df5bb347"
         ],
         "x": 34,
         "y": 319,
         "w": 1352,
-        "h": 502
+        "h": 748
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -814,6 +815,28 @@
         "y": 239,
         "w": 932,
         "h": 282
+    },
+    {
+        "id": "00123285df5bb347",
+        "type": "group",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "record deployment to database and pass to dashboard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4a34bf5fa29ebc93",
+            "401038caabc5e91c",
+            "8add1e75d35b3706",
+            "e8e148afd22b2619",
+            "31abfc5bcc49bb09",
+            "9e029001fe1461ec"
+        ],
+        "x": 74,
+        "y": 859,
+        "w": 952,
+        "h": 182
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -2994,7 +3017,8 @@
         "g": "b334a2375eb8cb42",
         "name": "event link in",
         "links": [
-            "274f87c31437c2d7"
+            "274f87c31437c2d7",
+            "944b8754ad5c8e6c"
         ],
         "x": 175,
         "y": 140,
@@ -3597,7 +3621,8 @@
         "name": "from mongo event capture",
         "links": [
             "d9a2cc1e81161549",
-            "274f87c31437c2d7"
+            "274f87c31437c2d7",
+            "944b8754ad5c8e6c"
         ],
         "x": 165,
         "y": 1580,
@@ -8331,8 +8356,8 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 520,
-        "y": 700,
+        "x": 640,
+        "y": 460,
         "wires": [
             [
                 "7dcf3140c18d4956",
@@ -8483,7 +8508,7 @@
                 "abaf9c5d1eecfdf5"
             ],
             [
-                "a49f7e1f7e7bd1b7"
+                "581373a3d9ca8bbf"
             ]
         ]
     },
@@ -8507,27 +8532,6 @@
         "y": 480,
         "wires": [
             []
-        ]
-    },
-    {
-        "id": "a49f7e1f7e7bd1b7",
-        "type": "function",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "clear fields",
-        "func": "msg.payload.name = \"\";\nmsg.payload.lat = \"\";\nmsg.payload.lon = \"\";\nmsg.payload.address = \"\";\nmsg.payload.description = \"\";\nmsg.payload.orientation = \"\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 290,
-        "y": 700,
-        "wires": [
-            [
-                "0efbf0059084d8d0"
-            ]
         ]
     },
     {
@@ -8566,8 +8570,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 700,
+        "x": 680,
+        "y": 420,
         "wires": []
     },
     {
@@ -8773,8 +8777,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 630,
-        "y": 380,
+        "x": 740,
+        "y": 640,
         "wires": []
     },
     {
@@ -8790,8 +8794,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 760,
-        "y": 620,
+        "x": 740,
+        "y": 680,
         "wires": []
     },
     {
@@ -8874,5 +8878,161 @@
                 "0efbf0059084d8d0"
             ]
         ]
+    },
+    {
+        "id": "581373a3d9ca8bbf",
+        "type": "change",
+        "z": "fa9f914901f79645",
+        "g": "4fc7b275d828a5d7",
+        "name": "clear fields and flow.latestMarkerAllInfo",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "latestMarkerAllInfo",
+                "pt": "flow",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 430,
+        "y": 660,
+        "wires": [
+            [
+                "0efbf0059084d8d0"
+            ]
+        ]
+    },
+    {
+        "id": "4a34bf5fa29ebc93",
+        "type": "sqlite",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 560,
+        "y": 960,
+        "wires": [
+            [
+                "9e029001fe1461ec"
+            ]
+        ]
+    },
+    {
+        "id": "401038caabc5e91c",
+        "type": "inject",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "name": "create table deployment",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, latitude REAL, longitude REAL, address TEXT, description TEXT, deviceName TEXT);",
+        "x": 290,
+        "y": 960,
+        "wires": [
+            [
+                "4a34bf5fa29ebc93"
+            ]
+        ]
+    },
+    {
+        "id": "8add1e75d35b3706",
+        "type": "sqlite",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, latitude, longitude, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $latitude, $longitude, $address, $description, $deviceName);",
+        "name": "tmdb.deployment, Prepared Statement",
+        "x": 850,
+        "y": 900,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e8e148afd22b2619",
+        "type": "function",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "name": "write params for deployment insert",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 900,
+        "wires": [
+            [
+                "8add1e75d35b3706"
+            ]
+        ]
+    },
+    {
+        "id": "31abfc5bcc49bb09",
+        "type": "inject",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "name": "select latest 5 rows from deployment",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
+        "x": 260,
+        "y": 1000,
+        "wires": [
+            [
+                "4a34bf5fa29ebc93"
+            ]
+        ]
+    },
+    {
+        "id": "9e029001fe1461ec",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "00123285df5bb347",
+        "name": "sqlite select last 5 msgs",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 960,
+        "wires": []
     }
 ]
