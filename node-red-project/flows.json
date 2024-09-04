@@ -709,52 +709,6 @@
         "h": 162
     },
     {
-        "id": "4fc7b275d828a5d7",
-        "type": "group",
-        "z": "fa9f914901f79645",
-        "name": "deployment / location info",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0efbf0059084d8d0",
-            "32ac6cf42cd8c106",
-            "8606059dd2f94a75",
-            "e2378a8740a99fdf",
-            "ce889b12a83c1fc2",
-            "f60cc4f411a2f961",
-            "f56633a89481439a",
-            "c3629e05aa43359d",
-            "b1c37cc7992ec0b1",
-            "b149610d4d0d1153",
-            "7dcf3140c18d4956",
-            "83df59e62c9ebe4f",
-            "898ebaca7622d080",
-            "dad338a295b08c5b",
-            "0d5da21c913e2636",
-            "77d228818b3d23cc",
-            "abaf9c5d1eecfdf5",
-            "bf7d55674655862b",
-            "577fc698383ac8e7",
-            "e55592bc8b3e387e",
-            "e78d213e0b842313",
-            "c8a47a03b429f40d",
-            "ef3b81c15fe4b3fc",
-            "8d6c2ce9ca6c354e",
-            "600cb98db358dc07",
-            "2ce3c5bb0b42f8e3",
-            "581373a3d9ca8bbf",
-            "00123285df5bb347",
-            "524035558a672435",
-            "2a16793c98b81a09",
-            "138c7cbfd4140de9"
-        ],
-        "x": 34,
-        "y": 319,
-        "w": 1352,
-        "h": 748
-    },
-    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -820,11 +774,11 @@
         "h": 282
     },
     {
-        "id": "00123285df5bb347",
+        "id": "6aafbb121cb8890b",
         "type": "group",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "record deployment to database and pass to dashboard",
+        "g": "f431ed51eb2b2a49",
+        "name": "deployment tmdb",
         "style": {
             "label": true
         },
@@ -836,14 +790,44 @@
             "31abfc5bcc49bb09",
             "9e029001fe1461ec",
             "b7103dfabfa35f67",
-            "75542d9a81fd46f4",
             "ae506b2fc999b8da",
-            "b87d36e05fb323bf"
+            "b87d36e05fb323bf",
+            "6f700f9167d834ca"
         ],
         "x": 74,
-        "y": 819,
+        "y": 719,
         "w": 952,
-        "h": 222
+        "h": 262
+    },
+    {
+        "id": "f431ed51eb2b2a49",
+        "type": "group",
+        "z": "fa9f914901f79645",
+        "name": "deployment location form",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0efbf0059084d8d0",
+            "ce889b12a83c1fc2",
+            "f56633a89481439a",
+            "c3629e05aa43359d",
+            "b1c37cc7992ec0b1",
+            "b149610d4d0d1153",
+            "83df59e62c9ebe4f",
+            "0d5da21c913e2636",
+            "abaf9c5d1eecfdf5",
+            "bf7d55674655862b",
+            "2ce3c5bb0b42f8e3",
+            "581373a3d9ca8bbf",
+            "5c2714054adf2be7",
+            "b4935c0d86d87137",
+            "6aafbb121cb8890b"
+        ],
+        "x": 34,
+        "y": 359,
+        "w": 1352,
+        "h": 648
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -3403,6 +3387,40 @@
                 "ff1719e60656a2e6"
             ]
         ]
+    },
+    {
+        "id": "8a83d59ee0db1198",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "name": "deployment submit link in",
+        "links": [
+            "b4935c0d86d87137"
+        ],
+        "x": 175,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8606059dd2f94a75",
+        "type": "comment",
+        "z": "f7932be9acc7391c",
+        "name": "upload to TB as telemetry 'deployment'",
+        "info": "",
+        "x": 410,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "32ac6cf42cd8c106",
+        "type": "comment",
+        "z": "f7932be9acc7391c",
+        "name": "upload to TB client-side attributes, separately",
+        "info": "",
+        "x": 430,
+        "y": 720,
+        "wires": []
     },
     {
         "id": "3985037239b671c5",
@@ -6889,6 +6907,13 @@
                 "pt": "msg",
                 "to": "tmVersion",
                 "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "TM_VERSION",
+                "tot": "env"
             }
         ],
         "action": "",
@@ -8297,7 +8322,7 @@
         "id": "0efbf0059084d8d0",
         "type": "ui_form",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "location-form-details",
         "label": "",
         "group": "77966ee928726fbf",
@@ -8364,87 +8389,37 @@
         "splitLayout": "",
         "className": "",
         "x": 640,
-        "y": 460,
+        "y": 520,
         "wires": [
             [
-                "7dcf3140c18d4956",
                 "abaf9c5d1eecfdf5",
-                "e8e148afd22b2619"
+                "e8e148afd22b2619",
+                "5c2714054adf2be7",
+                "b4935c0d86d87137"
             ]
         ]
-    },
-    {
-        "id": "32ac6cf42cd8c106",
-        "type": "comment",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "upload to TB client-side attributes, separately",
-        "info": "",
-        "x": 1050,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "8606059dd2f94a75",
-        "type": "comment",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "upload to TB as telemetry 'deployment'",
-        "info": "",
-        "x": 1030,
-        "y": 400,
-        "wires": []
-    },
-    {
-        "id": "e2378a8740a99fdf",
-        "type": "comment",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "save locally to tmdb",
-        "info": "",
-        "x": 970,
-        "y": 440,
-        "wires": []
     },
     {
         "id": "ce889b12a83c1fc2",
         "type": "worldmap in",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "location-deployment",
         "path": "/worldmap",
         "events": "connect,disconnect,point,draw,layer,bounds,files,other",
         "x": 150,
-        "y": 560,
+        "y": 440,
         "wires": [
             [
-                "f60cc4f411a2f961",
                 "c3629e05aa43359d"
             ]
         ]
     },
     {
-        "id": "f60cc4f411a2f961",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 8",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 340,
-        "y": 620,
-        "wires": []
-    },
-    {
         "id": "f56633a89481439a",
         "type": "ui_worldmap",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "group": "77966ee928726fbf",
         "order": 2,
         "width": 0,
@@ -8473,15 +8448,15 @@
         "mapurl": "",
         "mapopt": "",
         "mapwms": false,
-        "x": 1280,
-        "y": 600,
+        "x": 1300,
+        "y": 640,
         "wires": []
     },
     {
         "id": "c3629e05aa43359d",
         "type": "switch",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "payload.action",
         "property": "payload.action",
         "propertyType": "msg",
@@ -8506,7 +8481,7 @@
         "repair": false,
         "outputs": 3,
         "x": 360,
-        "y": 560,
+        "y": 440,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -8524,7 +8499,7 @@
         "id": "b1c37cc7992ec0b1",
         "type": "ui_template",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "group": "77966ee928726fbf",
         "name": "location-title",
         "order": 1,
@@ -8537,7 +8512,7 @@
         "templateScope": "local",
         "className": "",
         "x": 130,
-        "y": 480,
+        "y": 400,
         "wires": [
             []
         ]
@@ -8546,7 +8521,7 @@
         "id": "b149610d4d0d1153",
         "type": "function",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "remove previous marker(s)",
         "func": "//if payload marker is different from previous one, delete previous one\nconst newMarker = msg.payload;\n\n//delete the previous marker\nmsg.payload = {\n    name: flow.get(\"latestMarkerAllInfo.name\"),\n    deleted:true\n};\n\nflow.set(\"latestMarkerAllInfo\",newMarker);\n\nreturn msg;",
         "outputs": 1,
@@ -8555,38 +8530,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1020,
+        "x": 980,
         "y": 640,
         "wires": [
             [
                 "f56633a89481439a",
-                "600cb98db358dc07",
                 "2ce3c5bb0b42f8e3"
             ]
         ]
     },
     {
-        "id": "7dcf3140c18d4956",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 9",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 680,
-        "y": 420,
-        "wires": []
-    },
-    {
         "id": "83df59e62c9ebe4f",
         "type": "function",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "save flow.latestMarkerAllInfo",
         "func": "//combine all properties, as long as it's for the same marker\n// assume any input into here (payload) is the latest\n\nconst previousMarkerInfo = flow.get(\"latestMarkerAllInfo\");\n\n//update and override from payload\nvar newMarkerInfo = { ...previousMarkerInfo, ...msg.payload, draggable:true};\n\nflow.set(\"latestMarkerAllInfo\", newMarkerInfo)\n\nmsg.payload = newMarkerInfo;\n\nreturn msg;",
         "outputs": 1,
@@ -8595,43 +8552,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1020,
+        "x": 980,
         "y": 600,
         "wires": [
             [
                 "0efbf0059084d8d0",
-                "f56633a89481439a",
-                "77d228818b3d23cc"
+                "f56633a89481439a"
             ]
         ]
-    },
-    {
-        "id": "898ebaca7622d080",
-        "type": "comment",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "latest entry is always used; by entryDate",
-        "info": "",
-        "x": 210,
-        "y": 380,
-        "wires": []
-    },
-    {
-        "id": "dad338a295b08c5b",
-        "type": "comment",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "map updates form and vice versa",
-        "info": "",
-        "x": 190,
-        "y": 420,
-        "wires": []
     },
     {
         "id": "0d5da21c913e2636",
         "type": "switch",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "check if payload.name marker exists",
         "property": "payload.name",
         "propertyType": "msg",
@@ -8648,41 +8582,22 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 990,
-        "y": 540,
+        "x": 1050,
+        "y": 420,
         "wires": [
             [
-                "83df59e62c9ebe4f",
-                "577fc698383ac8e7"
+                "83df59e62c9ebe4f"
             ],
             [
-                "b149610d4d0d1153",
-                "e55592bc8b3e387e"
+                "b149610d4d0d1153"
             ]
         ]
-    },
-    {
-        "id": "77d228818b3d23cc",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 11",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1280,
-        "y": 540,
-        "wires": []
     },
     {
         "id": "abaf9c5d1eecfdf5",
         "type": "switch",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "check for previous marker",
         "property": "latestMarkerAllInfo.name",
         "propertyType": "flow",
@@ -8697,16 +8612,14 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 650,
-        "y": 540,
+        "x": 730,
+        "y": 440,
         "wires": [
             [
-                "0d5da21c913e2636",
-                "e78d213e0b842313"
+                "0d5da21c913e2636"
             ],
             [
-                "bf7d55674655862b",
-                "c8a47a03b429f40d"
+                "bf7d55674655862b"
             ]
         ]
     },
@@ -8714,7 +8627,7 @@
         "id": "bf7d55674655862b",
         "type": "change",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "",
         "rules": [
             {
@@ -8730,8 +8643,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 680,
-        "y": 580,
+        "x": 1020,
+        "y": 460,
         "wires": [
             [
                 "83df59e62c9ebe4f"
@@ -8739,138 +8652,10 @@
         ]
     },
     {
-        "id": "577fc698383ac8e7",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 12",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1280,
-        "y": 420,
-        "wires": []
-    },
-    {
-        "id": "e55592bc8b3e387e",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 13",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1280,
-        "y": 500,
-        "wires": []
-    },
-    {
-        "id": "e78d213e0b842313",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 14",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
-        "y": 640,
-        "wires": []
-    },
-    {
-        "id": "c8a47a03b429f40d",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 15",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 740,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "ef3b81c15fe4b3fc",
-        "type": "inject",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "latestMarkerAllInfo",
-        "payloadType": "flow",
-        "x": 1000,
-        "y": 780,
-        "wires": [
-            [
-                "8d6c2ce9ca6c354e"
-            ]
-        ]
-    },
-    {
-        "id": "8d6c2ce9ca6c354e",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 16",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1210,
-        "y": 780,
-        "wires": []
-    },
-    {
-        "id": "600cb98db358dc07",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 17",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1280,
-        "y": 720,
-        "wires": []
-    },
-    {
         "id": "2ce3c5bb0b42f8e3",
         "type": "function",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
+        "g": "f431ed51eb2b2a49",
         "name": "reset location form",
         "func": "msg.payload = flow.get(\"latestMarkerAllInfo\");\nreturn msg;",
         "outputs": 1,
@@ -8879,7 +8664,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1050,
+        "x": 1010,
         "y": 680,
         "wires": [
             [
@@ -8891,8 +8676,8 @@
         "id": "581373a3d9ca8bbf",
         "type": "change",
         "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "clear fields and flow.latestMarkerAllInfo",
+        "g": "f431ed51eb2b2a49",
+        "name": "clear markers",
         "rules": [
             {
                 "t": "set",
@@ -8914,8 +8699,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 430,
-        "y": 660,
+        "x": 380,
+        "y": 500,
         "wires": [
             [
                 "0efbf0059084d8d0"
@@ -8926,13 +8711,13 @@
         "id": "4a34bf5fa29ebc93",
         "type": "sqlite",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
         "x": 560,
-        "y": 960,
+        "y": 860,
         "wires": [
             [
                 "9e029001fe1461ec"
@@ -8943,7 +8728,7 @@
         "id": "401038caabc5e91c",
         "type": "inject",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "name": "create table deployment",
         "props": [
             {
@@ -8957,7 +8742,7 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
         "x": 290,
-        "y": 960,
+        "y": 860,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -8968,24 +8753,22 @@
         "id": "8add1e75d35b3706",
         "type": "sqlite",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "tmdb.deployment, Prepared Statement",
         "x": 850,
-        "y": 900,
+        "y": 800,
         "wires": [
-            [
-                "524035558a672435"
-            ]
+            []
         ]
     },
     {
         "id": "e8e148afd22b2619",
         "type": "function",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "name": "write params for deployment insert",
         "func": "//VALUES ($id, $entryDateTime, $name, $orientation, $latitude, $longitude, $address, $description, $deviceName)\n\nvar newPayload = {};\n\nnewPayload.entryDateTime = new Date();\n\nnewPayload.name = msg.payload.name;\nnewPayload.orientation = msg.payload.orientation;\nnewPayload.lat = msg.payload.lat;\nnewPayload.lon = msg.payload.lon;\nnewPayload.address = msg.payload.address;\nnewPayload.description = msg.payload.description;\n\nnewPayload.deviceName = global.get(\"rpiSN\", \"config\");\n\nnewPayload.id = newPayload.entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n\nconst obj = newPayload;\n\nmsg.payload = newPayload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -8995,11 +8778,10 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 900,
+        "y": 800,
         "wires": [
             [
-                "8add1e75d35b3706",
-                "75542d9a81fd46f4"
+                "8add1e75d35b3706"
             ]
         ]
     },
@@ -9007,7 +8789,7 @@
         "id": "31abfc5bcc49bb09",
         "type": "inject",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "name": "select latest 5 rows from deployment",
         "props": [
             {
@@ -9021,7 +8803,7 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
         "x": 260,
-        "y": 1000,
+        "y": 900,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -9032,7 +8814,7 @@
         "id": "9e029001fe1461ec",
         "type": "debug",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "name": "sqlite select last 5 msgs",
         "active": true,
         "tosidebar": true,
@@ -9043,120 +8825,23 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 820,
-        "y": 960,
-        "wires": []
-    },
-    {
-        "id": "524035558a672435",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 18",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1150,
-        "y": 900,
-        "wires": []
-    },
-    {
-        "id": "75542d9a81fd46f4",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
-        "name": "debug 19",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 540,
-        "y": 920,
-        "wires": []
-    },
-    {
-        "id": "4c8e27185bf21d35",
-        "type": "inject",
-        "z": "fa9f914901f79645",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 140,
-        "y": 1180,
-        "wires": [
-            [
-                "787a94b9fdc24184"
-            ]
-        ]
-    },
-    {
-        "id": "787a94b9fdc24184",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "name": "debug 20",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 340,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "2a16793c98b81a09",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 21",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1090,
-        "y": 480,
+        "y": 860,
         "wires": []
     },
     {
         "id": "b7103dfabfa35f67",
         "type": "sqlite",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
         "x": 560,
-        "y": 860,
+        "y": 760,
         "wires": [
             [
-                "b87d36e05fb323bf",
-                "138c7cbfd4140de9"
+                "b87d36e05fb323bf"
             ]
         ]
     },
@@ -9164,7 +8849,7 @@
         "id": "ae506b2fc999b8da",
         "type": "inject",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
+        "g": "6aafbb121cb8890b",
         "name": "select latest record from deployment",
         "props": [
             {
@@ -9178,7 +8863,7 @@
         "onceDelay": "5",
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 1;",
         "x": 270,
-        "y": 860,
+        "y": 760,
         "wires": [
             [
                 "b7103dfabfa35f67"
@@ -9189,8 +8874,8 @@
         "id": "b87d36e05fb323bf",
         "type": "change",
         "z": "fa9f914901f79645",
-        "g": "00123285df5bb347",
-        "name": "",
+        "g": "6aafbb121cb8890b",
+        "name": "initialize deployment info",
         "rules": [
             {
                 "t": "set",
@@ -9205,6 +8890,13 @@
                 "pt": "msg",
                 "to": "payload[0]",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "#:(config)::deployment",
+                "pt": "global",
+                "to": "payload[0]",
+                "tot": "msg"
             }
         ],
         "action": "",
@@ -9212,35 +8904,21 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 780,
-        "y": 860,
+        "x": 810,
+        "y": 760,
         "wires": [
             [
-                "0efbf0059084d8d0"
+                "0efbf0059084d8d0",
+                "f56633a89481439a"
             ]
         ]
-    },
-    {
-        "id": "138c7cbfd4140de9",
-        "type": "debug",
-        "z": "fa9f914901f79645",
-        "g": "4fc7b275d828a5d7",
-        "name": "debug 22",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 570,
-        "y": 760,
-        "wires": []
     },
     {
         "id": "6f700f9167d834ca",
         "type": "inject",
         "z": "fa9f914901f79645",
+        "d": true,
+        "g": "6aafbb121cb8890b",
         "name": "drop table deployment",
         "props": [
             {
@@ -9253,12 +8931,52 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 520,
-        "y": 1120,
+        "x": 300,
+        "y": 940,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
             ]
         ]
+    },
+    {
+        "id": "5c2714054adf2be7",
+        "type": "change",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::deployment",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 200,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4935c0d86d87137",
+        "type": "link out",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "name": "deployment submit link out",
+        "mode": "link",
+        "links": [
+            "8a83d59ee0db1198"
+        ],
+        "x": 115,
+        "y": 680,
+        "wires": []
     }
 ]
