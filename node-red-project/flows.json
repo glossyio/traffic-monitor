@@ -314,12 +314,11 @@
         },
         "nodes": [
             "2deec9d340d5ed26",
-            "76911cc7f28e7da2",
-            "034462611de0d3cf"
+            "76911cc7f28e7da2"
         ],
         "x": 54,
         "y": 319,
-        "w": 622,
+        "w": 372,
         "h": 122
     },
     {
@@ -385,13 +384,12 @@
             "d8786159d48401b9",
             "7f0ef976c7b79245",
             "59a579e6a1fa9a08",
-            "274f87c31437c2d7",
-            "5527ab499c045956"
+            "274f87c31437c2d7"
         ],
         "x": 334,
-        "y": 859,
+        "y": 899,
         "w": 892,
-        "h": 362
+        "h": 322
     },
     {
         "id": "541d31d14bcd8b00",
@@ -744,7 +742,7 @@
         "x": 34,
         "y": 319,
         "w": 1332,
-        "h": 608
+        "h": 648
     },
     {
         "id": "55a1af374cc8ecb9",
@@ -871,12 +869,16 @@
             "b7103dfabfa35f67",
             "ae506b2fc999b8da",
             "b87d36e05fb323bf",
-            "6f700f9167d834ca"
+            "6f700f9167d834ca",
+            "9da183e98b5eef83",
+            "6e00fe840927061b",
+            "1257b05ec67b5a3e",
+            "c12aee3936f24599"
         ],
         "x": 74,
-        "y": 639,
+        "y": 599,
         "w": 952,
-        "h": 262
+        "h": 342
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -2630,8 +2632,7 @@
         "y": 400,
         "wires": [
             [
-                "7f063afdbac396ce",
-                "034462611de0d3cf"
+                "7f063afdbac396ce"
             ]
         ]
     },
@@ -2820,8 +2821,7 @@
         "wires": [
             [
                 "61d6a19c99c60e0b",
-                "59a579e6a1fa9a08",
-                "5527ab499c045956"
+                "59a579e6a1fa9a08"
             ]
         ]
     },
@@ -2874,7 +2874,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "composed tmdb.events message",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2987,42 +2987,6 @@
                 "cbef8a3acc3d1495"
             ]
         ]
-    },
-    {
-        "id": "034462611de0d3cf",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "0a5faeac9fbd6d55",
-        "name": "debug 8",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 570,
-        "y": 400,
-        "wires": []
-    },
-    {
-        "id": "5527ab499c045956",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
-        "name": "debug 9",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 980,
-        "y": 900,
-        "wires": []
     },
     {
         "id": "677a57bbf3619854",
@@ -8905,8 +8869,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 560,
-        "y": 780,
+        "x": 580,
+        "y": 820,
         "wires": [
             [
                 "9e029001fe1461ec"
@@ -8931,10 +8895,11 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
         "x": 290,
-        "y": 780,
+        "y": 820,
         "wires": [
             [
-                "4a34bf5fa29ebc93"
+                "4a34bf5fa29ebc93",
+                "9da183e98b5eef83"
             ]
         ]
     },
@@ -8970,7 +8935,8 @@
         "y": 720,
         "wires": [
             [
-                "8add1e75d35b3706"
+                "8add1e75d35b3706",
+                "1257b05ec67b5a3e"
             ]
         ]
     },
@@ -8992,10 +8958,11 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
         "x": 260,
-        "y": 820,
+        "y": 860,
         "wires": [
             [
-                "4a34bf5fa29ebc93"
+                "4a34bf5fa29ebc93",
+                "9da183e98b5eef83"
             ]
         ]
     },
@@ -9013,8 +8980,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 820,
-        "y": 780,
+        "x": 830,
+        "y": 820,
         "wires": []
     },
     {
@@ -9030,7 +8997,8 @@
         "y": 680,
         "wires": [
             [
-                "b87d36e05fb323bf"
+                "b87d36e05fb323bf",
+                "c12aee3936f24599"
             ]
         ]
     },
@@ -9094,7 +9062,7 @@
         "to": "",
         "reg": false,
         "x": 790,
-        "y": 680,
+        "y": 640,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9121,7 +9089,7 @@
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
         "x": 300,
-        "y": 860,
+        "y": 900,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -9257,5 +9225,73 @@
                 "f56633a89481439a"
             ]
         ]
+    },
+    {
+        "id": "9da183e98b5eef83",
+        "type": "sqlite",
+        "z": "fa9f914901f79645",
+        "g": "6aafbb121cb8890b",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 580,
+        "y": 860,
+        "wires": [
+            [
+                "6e00fe840927061b"
+            ]
+        ]
+    },
+    {
+        "id": "6e00fe840927061b",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "6aafbb121cb8890b",
+        "name": "sqlite select last 5 msgs radar",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "1257b05ec67b5a3e",
+        "type": "sqlite",
+        "z": "fa9f914901f79645",
+        "g": "6aafbb121cb8890b",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
+        "name": "radar.deployment, Prepared Statement",
+        "x": 850,
+        "y": 760,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c12aee3936f24599",
+        "type": "debug",
+        "z": "fa9f914901f79645",
+        "g": "6aafbb121cb8890b",
+        "name": "deployment latest record",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 680,
+        "wires": []
     }
 ]
