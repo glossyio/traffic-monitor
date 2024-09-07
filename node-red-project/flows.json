@@ -314,11 +314,12 @@
         },
         "nodes": [
             "2deec9d340d5ed26",
-            "76911cc7f28e7da2"
+            "76911cc7f28e7da2",
+            "034462611de0d3cf"
         ],
         "x": 54,
         "y": 319,
-        "w": 372,
+        "w": 622,
         "h": 122
     },
     {
@@ -384,12 +385,13 @@
             "d8786159d48401b9",
             "7f0ef976c7b79245",
             "59a579e6a1fa9a08",
-            "274f87c31437c2d7"
+            "274f87c31437c2d7",
+            "5527ab499c045956"
         ],
         "x": 334,
-        "y": 899,
+        "y": 859,
         "w": 892,
-        "h": 322
+        "h": 362
     },
     {
         "id": "541d31d14bcd8b00",
@@ -458,7 +460,7 @@
             "67ecfa7f.3f0e24"
         ],
         "x": 14,
-        "y": 259,
+        "y": 299,
         "w": 692,
         "h": 262
     },
@@ -497,7 +499,7 @@
         ],
         "x": 14,
         "y": 919,
-        "w": 1392,
+        "w": 1502,
         "h": 502
     },
     {
@@ -582,8 +584,8 @@
             "80d2ef499f6612a6",
             "83de55ae8c9f54c1"
         ],
-        "x": 14,
-        "y": 1871.5,
+        "x": 34,
+        "y": 1951.5,
         "w": 1092,
         "h": 209.5
     },
@@ -679,12 +681,14 @@
             "4a3f399a4293acc6",
             "d4e54a36b9236cd5",
             "563f2766d1bf7872",
-            "7a5b893839c9c1dd"
+            "7a5b893839c9c1dd",
+            "bca5cb03f18f085e",
+            "1ccc3ba7fbea536f"
         ],
         "x": 14,
         "y": 1519,
         "w": 1352,
-        "h": 322
+        "h": 382
     },
     {
         "id": "b196e2c041c5a7f8",
@@ -707,6 +711,76 @@
         "y": 119,
         "w": 1092,
         "h": 162
+    },
+    {
+        "id": "f431ed51eb2b2a49",
+        "type": "group",
+        "z": "fa9f914901f79645",
+        "name": "deployment location form",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0efbf0059084d8d0",
+            "ce889b12a83c1fc2",
+            "f56633a89481439a",
+            "c3629e05aa43359d",
+            "b1c37cc7992ec0b1",
+            "b149610d4d0d1153",
+            "83df59e62c9ebe4f",
+            "0d5da21c913e2636",
+            "abaf9c5d1eecfdf5",
+            "bf7d55674655862b",
+            "2ce3c5bb0b42f8e3",
+            "581373a3d9ca8bbf",
+            "5c2714054adf2be7",
+            "b4935c0d86d87137",
+            "6aafbb121cb8890b",
+            "5181051bdcb0b370",
+            "2adb206d0c356f8d",
+            "66594bbc3f3afe7d",
+            "2dc53362436f912e"
+        ],
+        "x": 34,
+        "y": 319,
+        "w": 1332,
+        "h": 608
+    },
+    {
+        "id": "55a1af374cc8ecb9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "deployment",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a83d59ee0db1198",
+            "8606059dd2f94a75",
+            "c6ff73faf6fa9e98"
+        ],
+        "x": 134,
+        "y": 659,
+        "w": 872,
+        "h": 122
+    },
+    {
+        "id": "fe1b9f6f9d89d353",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "deployment client side attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "32ac6cf42cd8c106",
+            "8768b75dbfee3973",
+            "f453ff6136f95abe"
+        ],
+        "x": 164,
+        "y": 1359,
+        "w": 1202,
+        "h": 102
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -766,12 +840,17 @@
             "5b18a8e7.fb8da8",
             "a8c2985e.d23ad8",
             "5de7cbb4.fa21a4",
-            "67ecfa7f.3f0e24"
+            "67ecfa7f.3f0e24",
+            "9e38989f2e13e4d7",
+            "c30220553ae11805",
+            "2b95a63a76f28f09",
+            "7ec49429a06e3bbf",
+            "b43ee265985f0f56"
         ],
         "x": 14,
-        "y": 239,
-        "w": 932,
-        "h": 282
+        "y": 259,
+        "w": 1252,
+        "h": 342
     },
     {
         "id": "6aafbb121cb8890b",
@@ -798,74 +877,6 @@
         "y": 639,
         "w": 952,
         "h": 262
-    },
-    {
-        "id": "f431ed51eb2b2a49",
-        "type": "group",
-        "z": "fa9f914901f79645",
-        "name": "deployment location form",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0efbf0059084d8d0",
-            "ce889b12a83c1fc2",
-            "f56633a89481439a",
-            "c3629e05aa43359d",
-            "b1c37cc7992ec0b1",
-            "b149610d4d0d1153",
-            "83df59e62c9ebe4f",
-            "0d5da21c913e2636",
-            "abaf9c5d1eecfdf5",
-            "bf7d55674655862b",
-            "2ce3c5bb0b42f8e3",
-            "581373a3d9ca8bbf",
-            "5c2714054adf2be7",
-            "b4935c0d86d87137",
-            "6aafbb121cb8890b",
-            "5181051bdcb0b370",
-            "2adb206d0c356f8d"
-        ],
-        "x": 34,
-        "y": 319,
-        "w": 1332,
-        "h": 608
-    },
-    {
-        "id": "55a1af374cc8ecb9",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "deployment",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "8a83d59ee0db1198",
-            "8606059dd2f94a75",
-            "c6ff73faf6fa9e98"
-        ],
-        "x": 134,
-        "y": 659,
-        "w": 872,
-        "h": 122
-    },
-    {
-        "id": "fe1b9f6f9d89d353",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "deployment client side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "32ac6cf42cd8c106",
-            "8768b75dbfee3973",
-            "f453ff6136f95abe"
-        ],
-        "x": 164,
-        "y": 1359,
-        "w": 1202,
-        "h": 102
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -2619,7 +2630,8 @@
         "y": 400,
         "wires": [
             [
-                "7f063afdbac396ce"
+                "7f063afdbac396ce",
+                "034462611de0d3cf"
             ]
         ]
     },
@@ -2742,7 +2754,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 770,
+        "x": 800,
         "y": 1140,
         "wires": [
             [
@@ -2766,7 +2778,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS events (     id TEXT PRIMARY KEY,     camera TEXT,     label TEXT,     sub_label,     top_score REAL,     frame_time REAL,     start_time REAL,     end_time REAL,     entered_zones,     direction_calc TEXT,     speed_calc REAL,     location TEXT );",
+        "topic": "CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY,camera TEXT,label TEXT,sub_label TEXT,top_score REAL,frame_time REAL,start_time REAL,end_time REAL,entered_zones TEXT,score REAL,area REAL,ratio REAL,motionless_count REAL,position_changes REAL,attributes TEXT,direction_calc TEXT,speed_calc REAL,source TEXT,deployment_id TEXT DEFAULT NULL,FOREIGN KEY (deployment_id) REFERENCES deployment(id));",
         "x": 550,
         "y": 1140,
         "wires": [
@@ -2782,7 +2794,7 @@
         "g": "53e4faf6d3ece28c",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, direction_calc, speed_calc, location)\nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $direction_calc, $speed_calc, $location);\n",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, source, deployment_id) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $source, $deployment_id);",
         "name": "tmdb.events, Prepared Statement",
         "x": 1060,
         "y": 940,
@@ -2796,7 +2808,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "write params for events insert",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\nnewMsg.payload = {}; // single collection of strings\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\n//for Timestamp, Mongo prefers MILLISECONDS (frigate event and radar uses seconds)\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//newMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = env.get(\"VAR_LOCATION\");\n\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n//for Timestamp, frigate event and radar use seconds\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\n\nnewMsg.payload.score = msg.frigate_event.score;\nnewMsg.payload.area = msg.frigate_event.area;\nnewMsg.payload.ratio = msg.frigate_event.ratio;\nnewMsg.payload.motionless_count = msg.frigate_event.motionless_count;\nnewMsg.payload.position_changes = msg.frigate_event.position_changes;\nnewMsg.payload.attributes = `${JSON.stringify(msg.frigate_event.attributes)}`; //array, wrap in single quote for sqlite insert as text\n\n\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\nnewMsg.payload.deployment_id = global.get(\"deployment.id\",\"config\");\nnewMsg.payload.source = \"frigate\";\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2808,7 +2820,8 @@
         "wires": [
             [
                 "61d6a19c99c60e0b",
-                "59a579e6a1fa9a08"
+                "59a579e6a1fa9a08",
+                "5527ab499c045956"
             ]
         ]
     },
@@ -2851,7 +2864,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1030,
+        "x": 1060,
         "y": 1140,
         "wires": []
     },
@@ -2861,7 +2874,7 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "composed tmdb.events message",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2974,6 +2987,42 @@
                 "cbef8a3acc3d1495"
             ]
         ]
+    },
+    {
+        "id": "034462611de0d3cf",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "5527ab499c045956",
+        "type": "debug",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 900,
+        "wires": []
     },
     {
         "id": "677a57bbf3619854",
@@ -5252,7 +5301,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 360,
+        "y": 400,
         "wires": [
             [
                 "34dc99e5.495466"
@@ -5271,7 +5320,7 @@
         "statusCode": "",
         "headers": {},
         "x": 630,
-        "y": 400,
+        "y": 440,
         "wires": []
     },
     {
@@ -5287,7 +5336,7 @@
         "sendError": false,
         "encoding": "none",
         "x": 470,
-        "y": 340,
+        "y": 380,
         "wires": [
             [
                 "98261154.3006"
@@ -5303,7 +5352,7 @@
         "scope": null,
         "uncaught": false,
         "x": 100,
-        "y": 440,
+        "y": 480,
         "wires": [
             [
                 "3b8014a.86ad8ec",
@@ -5321,7 +5370,7 @@
         "outputs": 1,
         "noerr": 0,
         "x": 480,
-        "y": 440,
+        "y": 480,
         "wires": [
             [
                 "98261154.3006"
@@ -5343,7 +5392,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 130,
-        "y": 480,
+        "y": 520,
         "wires": []
     },
     {
@@ -5354,7 +5403,7 @@
         "name": "Create http endpoint <nodered>/files/xxx  where xxx is the file name to download",
         "info": "",
         "x": 320,
-        "y": 300,
+        "y": 340,
         "wires": []
     },
     {
@@ -5368,7 +5417,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 110,
-        "y": 360,
+        "y": 400,
         "wires": [
             [
                 "f31a598d.9fd2c8"
@@ -5445,7 +5494,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1020,
+        "x": 1180,
         "y": 840,
         "wires": [
             []
@@ -5604,7 +5653,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 1000,
         "y": 1140,
         "wires": [
             [
@@ -5654,7 +5703,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1130,
+        "x": 1240,
         "y": 1140,
         "wires": [
             []
@@ -5765,7 +5814,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 1000,
         "y": 1200,
         "wires": [
             [
@@ -5785,7 +5834,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1180,
+        "x": 1290,
         "y": 1200,
         "wires": [
             []
@@ -5822,7 +5871,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 1000,
         "y": 1260,
         "wires": [
             [
@@ -5843,7 +5892,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1190,
+        "x": 1300,
         "y": 1260,
         "wires": [
             []
@@ -5880,7 +5929,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 1000,
         "y": 1320,
         "wires": [
             [
@@ -5900,7 +5949,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1210,
+        "x": 1320,
         "y": 1320,
         "wires": [
             []
@@ -5937,7 +5986,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 1000,
         "y": 1380,
         "wires": [
             [
@@ -5957,7 +6006,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1160,
+        "x": 1270,
         "y": 1380,
         "wires": [
             []
@@ -6018,6 +6067,7 @@
         "id": "b43ee265985f0f56",
         "type": "ui_ui_control",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "name": "control JSON download groups",
         "events": "change",
         "x": 1110,
@@ -6140,6 +6190,7 @@
         "id": "9e38989f2e13e4d7",
         "type": "ui_button",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "name": "hide JSON",
         "group": "c0886ba4111fbfae",
         "order": 7,
@@ -6157,7 +6208,7 @@
         "topic": "",
         "topicType": "str",
         "x": 850,
-        "y": 540,
+        "y": 560,
         "wires": [
             [
                 "b43ee265985f0f56"
@@ -6168,6 +6219,7 @@
         "id": "7ec49429a06e3bbf",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "group": "c0886ba4111fbfae",
         "name": "download Radar DB",
         "order": 3,
@@ -6180,7 +6232,7 @@
         "templateScope": "local",
         "className": "",
         "x": 820,
-        "y": 320,
+        "y": 340,
         "wires": [
             []
         ]
@@ -6202,7 +6254,7 @@
         "templateScope": "local",
         "className": "",
         "x": 820,
-        "y": 280,
+        "y": 300,
         "wires": [
             []
         ]
@@ -6211,6 +6263,7 @@
         "id": "2b95a63a76f28f09",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "group": "c0886ba4111fbfae",
         "name": "download DB instructions",
         "order": 1,
@@ -6223,7 +6276,7 @@
         "templateScope": "local",
         "className": "",
         "x": 830,
-        "y": 360,
+        "y": 380,
         "wires": [
             []
         ]
@@ -6232,6 +6285,7 @@
         "id": "c30220553ae11805",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
+        "g": "3a9bb6ed1306eb1c",
         "group": "c0886ba4111fbfae",
         "name": "json button instructions",
         "order": 4,
@@ -6244,7 +6298,7 @@
         "templateScope": "local",
         "className": "",
         "x": 1080,
-        "y": 360,
+        "y": 300,
         "wires": [
             []
         ]
@@ -6319,7 +6373,7 @@
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
         "name": "client-side attributes response",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -6385,7 +6439,7 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "5",
+        "onceDelay": "180",
         "topic": "",
         "x": 110,
         "y": 200,
@@ -7548,8 +7602,8 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 480,
-        "y": 1920,
+        "x": 500,
+        "y": 2000,
         "wires": [
             [
                 "2d36fe127efba457"
@@ -7564,8 +7618,8 @@
         "g": "dd29df4e644425b0",
         "name": "",
         "events": "all",
-        "x": 100,
-        "y": 1920,
+        "x": 120,
+        "y": 2000,
         "wires": [
             [
                 "dbc594623a97700f"
@@ -7586,8 +7640,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 260,
-        "y": 1920,
+        "x": 280,
+        "y": 2000,
         "wires": [
             []
         ]
@@ -7606,8 +7660,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 860,
-        "y": 1920,
+        "x": 880,
+        "y": 2000,
         "wires": [
             [],
             [],
@@ -7628,8 +7682,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 860,
-        "y": 1980,
+        "x": 880,
+        "y": 2060,
         "wires": [
             [],
             [],
@@ -7644,8 +7698,8 @@
         "g": "dd29df4e644425b0",
         "name": "1) create network connect 2) modify for autoconnect yes",
         "info": "",
-        "x": 840,
-        "y": 2040,
+        "x": 860,
+        "y": 2120,
         "wires": []
     },
     {
@@ -7806,7 +7860,7 @@
         "className": "",
         "topicType": "msg",
         "x": 600,
-        "y": 1740,
+        "y": 1800,
         "wires": [
             [
                 "f78709164f3981d7"
@@ -7840,8 +7894,8 @@
         "offcolor": "",
         "animate": false,
         "className": "",
-        "x": 160,
-        "y": 1700,
+        "x": 180,
+        "y": 1760,
         "wires": [
             [
                 "659387e87a479c9d",
@@ -7872,7 +7926,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 630,
-        "y": 1780,
+        "y": 1840,
         "wires": [
             []
         ]
@@ -7905,7 +7959,7 @@
         "to": "",
         "reg": false,
         "x": 230,
-        "y": 1740,
+        "y": 1820,
         "wires": [
             [
                 "e5e3317f136d4174",
@@ -7934,7 +7988,7 @@
         "className": "",
         "topicType": "msg",
         "x": 600,
-        "y": 1700,
+        "y": 1760,
         "wires": [
             [
                 "150b8ccb2761d41d"
@@ -7959,8 +8013,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 110,
-        "y": 1660,
+        "x": 130,
+        "y": 1720,
         "wires": [
             [
                 "659387e87a479c9d"
@@ -7981,7 +8035,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1740,
+        "y": 1800,
         "wires": [
             [
                 "9639fe8379b46f52",
@@ -8004,7 +8058,7 @@
         "oldrc": false,
         "name": "",
         "x": 1030,
-        "y": 1760,
+        "y": 1820,
         "wires": [
             [],
             [],
@@ -8025,7 +8079,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1700,
+        "y": 1760,
         "wires": [
             [
                 "4a3f399a4293acc6",
@@ -8048,7 +8102,7 @@
         "oldrc": false,
         "name": "",
         "x": 1160,
-        "y": 1700,
+        "y": 1760,
         "wires": [
             [],
             [],
@@ -8072,7 +8126,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1660,
+        "y": 1720,
         "wires": []
     },
     {
@@ -8092,7 +8146,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1800,
+        "y": 1860,
         "wires": []
     },
     {
@@ -8138,8 +8192,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 400,
-        "y": 1700,
+        "x": 420,
+        "y": 1760,
         "wires": [
             [
                 "8e9a70c0016cf407"
@@ -8192,6 +8246,42 @@
         "wires": [
             [
                 "ac10d4e38e95fa26"
+            ]
+        ]
+    },
+    {
+        "id": "bca5cb03f18f085e",
+        "type": "ui_ui_control",
+        "z": "05fcb02c571dcfee",
+        "g": "9939766b62072f52",
+        "name": "",
+        "events": "all",
+        "x": 100,
+        "y": 1660,
+        "wires": [
+            [
+                "1ccc3ba7fbea536f"
+            ]
+        ]
+    },
+    {
+        "id": "1ccc3ba7fbea536f",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "9939766b62072f52",
+        "name": "clear msg",
+        "func": "msg = {};\n//initialize time fields as disabled\nmsg.payload = false;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 240,
+        "y": 1660,
+        "wires": [
+            [
+                "659387e87a479c9d"
             ]
         ]
     },
@@ -8985,15 +9075,15 @@
             },
             {
                 "t": "set",
-                "p": "payload",
-                "pt": "msg",
+                "p": "#:(config)::deployment",
+                "pt": "global",
                 "to": "payload[0]",
                 "tot": "msg"
             },
             {
                 "t": "set",
-                "p": "#:(config)::deployment",
-                "pt": "global",
+                "p": "payload",
+                "pt": "msg",
                 "to": "payload[0]",
                 "tot": "msg"
             }
@@ -9121,6 +9211,50 @@
                 "b4935c0d86d87137",
                 "5c2714054adf2be7",
                 "abaf9c5d1eecfdf5"
+            ]
+        ]
+    },
+    {
+        "id": "66594bbc3f3afe7d",
+        "type": "ui_ui_control",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "name": "",
+        "events": "all",
+        "x": 120,
+        "y": 600,
+        "wires": [
+            [
+                "2dc53362436f912e"
+            ]
+        ]
+    },
+    {
+        "id": "2dc53362436f912e",
+        "type": "change",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "#:(config)::deployment",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 290,
+        "y": 600,
+        "wires": [
+            [
+                "0efbf0059084d8d0",
+                "f56633a89481439a"
             ]
         ]
     }
