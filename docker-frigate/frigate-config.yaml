@@ -9,7 +9,7 @@ mqtt:
 detectors: 
   coral:
     type: edgetpu
-    device: usb
+    device: usb # change to pci for a pcie coral
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264

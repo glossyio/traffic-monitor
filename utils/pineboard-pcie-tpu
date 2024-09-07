@@ -12,9 +12,12 @@
 # Ensure that it shows the version dated 2023-12-06 or newer
 sudo rpi-eeprom-update
 
+sudo raspi-config nonint do_update
+
 # if it needs updates, uncomment and run the following:
 
-#sudo apt update sudo apt full-upgrade
+#sudo apt update 
+#sudo apt full-upgrade
 #sudo reboot
 
 #sudo raspi-config
@@ -51,7 +54,7 @@ uname -a
 
 # may not have these from bootstrap
 sudo apt-get update
-sudo apt-get install cmake libedgetpu1-std devscripts debhelper dkms dh-dkms
+sudo apt-get -y install cmake libedgetpu1-std devscripts debhelper dkms dh-dkms
 
 # install Gasket Driver
 # Clone the Gasket driver repository:
