@@ -582,8 +582,8 @@
             "80d2ef499f6612a6",
             "83de55ae8c9f54c1"
         ],
-        "x": 34,
-        "y": 1951.5,
+        "x": 14,
+        "y": 2051.5,
         "w": 1092,
         "h": 209.5
     },
@@ -654,41 +654,6 @@
         "h": 1242
     },
     {
-        "id": "9939766b62072f52",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "time settings",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0e066a559f97fad0",
-            "da2aba0214bac68a",
-            "a5f008d4f3598f93",
-            "07ccf8536e2b455f",
-            "39d5b7dce5935fe9",
-            "e5e3317f136d4174",
-            "74143719cf9166e6",
-            "ab5fb47a57acc4f1",
-            "659387e87a479c9d",
-            "8e9a70c0016cf407",
-            "1cc39937656e3f67",
-            "f78709164f3981d7",
-            "9639fe8379b46f52",
-            "150b8ccb2761d41d",
-            "4a3f399a4293acc6",
-            "d4e54a36b9236cd5",
-            "563f2766d1bf7872",
-            "7a5b893839c9c1dd",
-            "bca5cb03f18f085e",
-            "1ccc3ba7fbea536f"
-        ],
-        "x": 14,
-        "y": 1519,
-        "w": 1352,
-        "h": 382
-    },
-    {
         "id": "b196e2c041c5a7f8",
         "type": "group",
         "z": "fa9f914901f79645",
@@ -742,7 +707,7 @@
         "x": 34,
         "y": 319,
         "w": 1332,
-        "h": 648
+        "h": 728
     },
     {
         "id": "55a1af374cc8ecb9",
@@ -876,9 +841,46 @@
             "c12aee3936f24599"
         ],
         "x": 74,
-        "y": 599,
+        "y": 679,
         "w": 952,
         "h": 342
+    },
+    {
+        "id": "64c3f8c396d4445c",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "time settings",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "d541ace7a209a1d7",
+            "a411516e46bf7fd6",
+            "865fd78705194730",
+            "497d7e2831eb983b",
+            "efa31fae9a8d79f5",
+            "fe941a906b772e44",
+            "c9bec37bcbc11ccd",
+            "c524d79accb49648",
+            "1f33180305d5e203",
+            "7f09ed91e3dfbe2f",
+            "801f5adc07bfe7e8",
+            "3fb79b44d4787b15",
+            "fbb1ec4d830de603",
+            "a035b3ce9edec363",
+            "504aa2fe928643b3",
+            "c589aa9260a5f3a7",
+            "33f201622a5a02cd",
+            "ec0affbeb3a3cdb8",
+            "32581c3d7d35b439",
+            "5e61626ef0f824f5",
+            "b395ee7aa9dc2a44",
+            "cf4a0c52e8465948"
+        ],
+        "x": 14,
+        "y": 1499,
+        "w": 1352,
+        "h": 389.5
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -7566,8 +7568,8 @@
         "topicType": "msg",
         "splitLayout": "",
         "className": "",
-        "x": 500,
-        "y": 2000,
+        "x": 480,
+        "y": 2100,
         "wires": [
             [
                 "2d36fe127efba457"
@@ -7582,8 +7584,8 @@
         "g": "dd29df4e644425b0",
         "name": "",
         "events": "all",
-        "x": 120,
-        "y": 2000,
+        "x": 100,
+        "y": 2100,
         "wires": [
             [
                 "dbc594623a97700f"
@@ -7604,8 +7606,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 280,
-        "y": 2000,
+        "x": 260,
+        "y": 2100,
         "wires": [
             []
         ]
@@ -7624,8 +7626,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 880,
-        "y": 2000,
+        "x": 860,
+        "y": 2100,
         "wires": [
             [],
             [],
@@ -7646,8 +7648,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 880,
-        "y": 2060,
+        "x": 860,
+        "y": 2160,
         "wires": [
             [],
             [],
@@ -7662,8 +7664,8 @@
         "g": "dd29df4e644425b0",
         "name": "1) create network connect 2) modify for autoconnect yes",
         "info": "",
-        "x": 860,
-        "y": 2120,
+        "x": 840,
+        "y": 2220,
         "wires": []
     },
     {
@@ -7688,432 +7690,6 @@
         ]
     },
     {
-        "id": "0e066a559f97fad0",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "60",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "object",
-        "payloadType": "date",
-        "x": 130,
-        "y": 1560,
-        "wires": [
-            [
-                "da2aba0214bac68a"
-            ]
-        ]
-    },
-    {
-        "id": "da2aba0214bac68a",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "format timestamp for current time zone",
-        "func": "msg.payload = msg.payload.toString();\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 470,
-        "y": 1560,
-        "wires": [
-            [
-                "a5f008d4f3598f93"
-            ]
-        ]
-    },
-    {
-        "id": "a5f008d4f3598f93",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "group": "f60635dac92356fd",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "currentTimestamp",
-        "label": "Current Timestamp",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 750,
-        "y": 1560,
-        "wires": []
-    },
-    {
-        "id": "07ccf8536e2b455f",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "group": "f60635dac92356fd",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "name": "currentTimezone",
-        "label": "Current Timezone",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 750,
-        "y": 1600,
-        "wires": []
-    },
-    {
-        "id": "39d5b7dce5935fe9",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "2",
-        "topic": "",
-        "payload": "#:(config)::osTimeZone",
-        "payloadType": "global",
-        "x": 150,
-        "y": 1600,
-        "wires": [
-            [
-                "07ccf8536e2b455f"
-            ]
-        ]
-    },
-    {
-        "id": "e5e3317f136d4174",
-        "type": "ui_text_input",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "dateTimePicker",
-        "label": "Date Time Picker",
-        "tooltip": "Set Date and Time",
-        "group": "f60635dac92356fd",
-        "order": 5,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "mode": "datetime-local",
-        "delay": "0",
-        "topic": "topic",
-        "sendOnBlur": true,
-        "className": "",
-        "topicType": "msg",
-        "x": 600,
-        "y": 1800,
-        "wires": [
-            [
-                "f78709164f3981d7"
-            ]
-        ]
-    },
-    {
-        "id": "74143719cf9166e6",
-        "type": "ui_switch",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "label": "Set System Date and Time",
-        "tooltip": "",
-        "group": "f60635dac92356fd",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "decouple": "false",
-        "topic": "topic",
-        "topicType": "msg",
-        "style": "",
-        "onvalue": "true",
-        "onvalueType": "bool",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "false",
-        "offvalueType": "bool",
-        "officon": "",
-        "offcolor": "",
-        "animate": false,
-        "className": "",
-        "x": 180,
-        "y": 1760,
-        "wires": [
-            [
-                "659387e87a479c9d",
-                "7a5b893839c9c1dd",
-                "e5e3317f136d4174"
-            ]
-        ]
-    },
-    {
-        "id": "ab5fb47a57acc4f1",
-        "type": "ui_button",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "group": "f60635dac92356fd",
-        "order": 6,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Set System Time Button",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 630,
-        "y": 1840,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "659387e87a479c9d",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "msg.enabled",
-        "rules": [
-            {
-                "t": "set",
-                "p": "enabled",
-                "pt": "msg",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 230,
-        "y": 1820,
-        "wires": [
-            [
-                "e5e3317f136d4174",
-                "8e9a70c0016cf407",
-                "ab5fb47a57acc4f1"
-            ]
-        ]
-    },
-    {
-        "id": "8e9a70c0016cf407",
-        "type": "ui_text_input",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "TimezonePicker",
-        "label": "Time Zone (unix tz format)",
-        "tooltip": "Shall be in Unix TZ format",
-        "group": "f60635dac92356fd",
-        "order": 4,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "mode": "text",
-        "delay": "0",
-        "topic": "topic",
-        "sendOnBlur": true,
-        "className": "",
-        "topicType": "msg",
-        "x": 600,
-        "y": 1760,
-        "wires": [
-            [
-                "150b8ccb2761d41d"
-            ]
-        ]
-    },
-    {
-        "id": "1cc39937656e3f67",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "props": [
-            {
-                "p": "enabled",
-                "v": "false",
-                "vt": "bool"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 130,
-        "y": 1720,
-        "wires": [
-            [
-                "659387e87a479c9d"
-            ]
-        ]
-    },
-    {
-        "id": "f78709164f3981d7",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "format datetime for set",
-        "func": "//format datetimestamp for `sudo date -s '@EPOCHTIMESTAMP'`\n\nvar dateMS = Date.now();\n\nif (msg.payload) {\n    //sends back entered time as UTC, user should enter their local time\n    // break apart timestamp as a string and reassemble in local time\n\n    const dateTimeObj = new Date(msg.payload);\n\n    const dateString = dateTimeObj.toISOString();\n\n    const year = dateString.split('-')[0];\n    const month = Number(dateString.split('-')[1]) - 1;\n    const datePart = dateString.split('T')[0].split('-')[2];\n    const hours = dateString.split('T')[1].split(':')[0];\n    const minutes = dateString.split('T')[1].split(':')[1];\n\n    const dateObject = new Date(year, month, datePart, hours, minutes);\n\n    var dateMS = dateObject.getTime();\n}\n\nmsg.payload = `@${dateMS}`;\nmsg.topic = 'Set system date/time'\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 840,
-        "y": 1800,
-        "wires": [
-            [
-                "9639fe8379b46f52",
-                "d4e54a36b9236cd5"
-            ]
-        ]
-    },
-    {
-        "id": "9639fe8379b46f52",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "9939766b62072f52",
-        "command": "date -s ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1030,
-        "y": 1820,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "150b8ccb2761d41d",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "format timezone for set",
-        "func": "//format timezone for `sudo raspi-config nonint do_change_timezone <timezone>`\n//if timezone is null or empty string, use global.osTimeZone\n\nif (flow.get(\"setTimeZone\")) {\n    var thisTimezone = flow.get(\"setTimeZone\");\n    global.set(\"osTimeZone\", thisTimezone, \"config\");\n    console.log(\"Set osTimeZone from flow\");\n}\nelse {\n    var thisTimezone = global.get(\"osTimeZone\", \"config\");\n    console.log(\"Set osTimeZone from existing global\");\n}\n\nmsg.payload = thisTimezone;\nmsg.topic = 'Set system time zone';\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 840,
-        "y": 1760,
-        "wires": [
-            [
-                "4a3f399a4293acc6",
-                "563f2766d1bf7872"
-            ]
-        ]
-    },
-    {
-        "id": "4a3f399a4293acc6",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "9939766b62072f52",
-        "command": "sudo raspi-config nonint do_change_timezone ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1160,
-        "y": 1760,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "d4e54a36b9236cd5",
-        "type": "ui_toast",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "",
-        "name": "",
-        "x": 1060,
-        "y": 1720,
-        "wires": []
-    },
-    {
-        "id": "563f2766d1bf7872",
-        "type": "ui_toast",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "",
-        "name": "",
-        "x": 1060,
-        "y": 1860,
-        "wires": []
-    },
-    {
         "id": "099df29d699f405e",
         "type": "inject",
         "z": "05fcb02c571dcfee",
@@ -8133,34 +7709,6 @@
                 "9912f0375ba8d68e",
                 "feba76606996723c",
                 "4d37c161816bd3a2"
-            ]
-        ]
-    },
-    {
-        "id": "7a5b893839c9c1dd",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "#:(config)::osTimeZone",
-                "tot": "global"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 420,
-        "y": 1760,
-        "wires": [
-            [
-                "8e9a70c0016cf407"
             ]
         ]
     },
@@ -8214,25 +7762,477 @@
         ]
     },
     {
-        "id": "bca5cb03f18f085e",
-        "type": "ui_ui_control",
+        "id": "d541ace7a209a1d7",
+        "type": "inject",
         "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
+        "g": "64c3f8c396d4445c",
         "name": "",
-        "events": "all",
-        "x": 100,
-        "y": 1660,
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "object",
+        "payloadType": "date",
+        "x": 130,
+        "y": 1540,
         "wires": [
             [
-                "1ccc3ba7fbea536f"
+                "a411516e46bf7fd6"
             ]
         ]
     },
     {
-        "id": "1ccc3ba7fbea536f",
+        "id": "a411516e46bf7fd6",
         "type": "function",
         "z": "05fcb02c571dcfee",
-        "g": "9939766b62072f52",
+        "g": "64c3f8c396d4445c",
+        "name": "format timestamp for current time zone",
+        "func": "msg.payload = msg.payload.toString();\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 1540,
+        "wires": [
+            [
+                "865fd78705194730"
+            ]
+        ]
+    },
+    {
+        "id": "865fd78705194730",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "group": "f60635dac92356fd",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "currentTimestamp",
+        "label": "Current Timestamp",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 750,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "497d7e2831eb983b",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "group": "f60635dac92356fd",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "currentTimezone",
+        "label": "Current Timezone",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 750,
+        "y": 1580,
+        "wires": []
+    },
+    {
+        "id": "efa31fae9a8d79f5",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "2",
+        "topic": "",
+        "payload": "#:(config)::osTimeZone",
+        "payloadType": "global",
+        "x": 150,
+        "y": 1580,
+        "wires": [
+            [
+                "497d7e2831eb983b"
+            ]
+        ]
+    },
+    {
+        "id": "fe941a906b772e44",
+        "type": "ui_text_input",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "dateTimePicker",
+        "label": "Date Time Picker",
+        "tooltip": "Set Date and Time",
+        "group": "f60635dac92356fd",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "mode": "datetime-local",
+        "delay": "0",
+        "topic": "topic",
+        "sendOnBlur": true,
+        "className": "",
+        "topicType": "msg",
+        "x": 620,
+        "y": 1780,
+        "wires": [
+            [
+                "3fb79b44d4787b15"
+            ]
+        ]
+    },
+    {
+        "id": "c9bec37bcbc11ccd",
+        "type": "ui_switch",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "label": "Set System Date and Time",
+        "tooltip": "",
+        "group": "f60635dac92356fd",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 180,
+        "y": 1740,
+        "wires": [
+            [
+                "1f33180305d5e203",
+                "ec0affbeb3a3cdb8"
+            ]
+        ]
+    },
+    {
+        "id": "c524d79accb49648",
+        "type": "ui_button",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "group": "f60635dac92356fd",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Set System Time Button",
+        "tooltip": "DateTime and TZ trigger when input loses focus",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 650,
+        "y": 1700,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1f33180305d5e203",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "msg.enabled",
+        "rules": [
+            {
+                "t": "set",
+                "p": "enabled",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 230,
+        "y": 1780,
+        "wires": [
+            [
+                "fe941a906b772e44",
+                "7f09ed91e3dfbe2f",
+                "c524d79accb49648",
+                "cf4a0c52e8465948"
+            ]
+        ]
+    },
+    {
+        "id": "7f09ed91e3dfbe2f",
+        "type": "ui_text_input",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "TimezonePicker",
+        "label": "Time Zone (unix tz format)",
+        "tooltip": "Shall be in Unix TZ format",
+        "group": "f60635dac92356fd",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "mode": "text",
+        "delay": "0",
+        "topic": "topic",
+        "sendOnBlur": true,
+        "className": "",
+        "topicType": "msg",
+        "x": 620,
+        "y": 1740,
+        "wires": [
+            [
+                "a035b3ce9edec363"
+            ]
+        ]
+    },
+    {
+        "id": "801f5adc07bfe7e8",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "props": [
+            {
+                "p": "enabled",
+                "v": "false",
+                "vt": "bool"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 1700,
+        "wires": [
+            [
+                "1f33180305d5e203"
+            ]
+        ]
+    },
+    {
+        "id": "3fb79b44d4787b15",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "format datetime for set",
+        "func": "//format datetimestamp for `sudo date -s '@EPOCHTIMESTAMP'`\n\nvar dateMS = Date.now();\n\nif (msg.payload) {\n    //sends back entered time as UTC, user should enter their local time\n    // break apart timestamp as a string and reassemble in local time\n\n    const dateTimeObj = new Date(msg.payload);\n\n    const dateString = dateTimeObj.toISOString();\n\n    const year = dateString.split('-')[0];\n    const month = Number(dateString.split('-')[1]) - 1;\n    const datePart = dateString.split('T')[0].split('-')[2];\n    const hours = dateString.split('T')[1].split(':')[0];\n    const minutes = dateString.split('T')[1].split(':')[1];\n\n    dateMS = new Date(year, month, datePart, hours, minutes);\n\n}\n\n//convert to seconds for command\nvar dateS = Math.ceil(dateMS / 1000)\n\nmsg.payload = `'@${dateS}'`;\nmsg.topic = 'Set system date/time'\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 1780,
+        "wires": [
+            [
+                "fbb1ec4d830de603",
+                "c589aa9260a5f3a7"
+            ]
+        ]
+    },
+    {
+        "id": "fbb1ec4d830de603",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "command": "sudo date -s ",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 1050,
+        "y": 1740,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "a035b3ce9edec363",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "format timezone for set",
+        "func": "//format timezone for `sudo raspi-config nonint do_change_timezone <timezone>`\n//if timezone is null or empty string, use global.osTimeZone\n\nif (flow.get(\"setTimeZone\")) {\n    var thisTimezone = flow.get(\"setTimeZone\");\n    global.set(\"osTimeZone\", thisTimezone, \"config\");\n    console.log(\"Set osTimeZone from flow\");\n}\nelse {\n    var thisTimezone = global.get(\"osTimeZone\", \"config\");\n    console.log(\"Set osTimeZone from existing global\");\n}\n\nmsg.payload = thisTimezone;\nmsg.topic = 'Set system time zone';\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 1740,
+        "wires": [
+            [
+                "504aa2fe928643b3",
+                "33f201622a5a02cd"
+            ]
+        ]
+    },
+    {
+        "id": "504aa2fe928643b3",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "command": "sudo raspi-config nonint do_change_timezone ",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 1160,
+        "y": 1680,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "c589aa9260a5f3a7",
+        "type": "ui_toast",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "",
+        "x": 1060,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "33f201622a5a02cd",
+        "type": "ui_toast",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "",
+        "x": 1060,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "ec0affbeb3a3cdb8",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "#:(config)::osTimeZone",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 420,
+        "y": 1740,
+        "wires": [
+            [
+                "7f09ed91e3dfbe2f"
+            ]
+        ]
+    },
+    {
+        "id": "32581c3d7d35b439",
+        "type": "ui_ui_control",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "events": "all",
+        "x": 100,
+        "y": 1640,
+        "wires": [
+            [
+                "5e61626ef0f824f5"
+            ]
+        ]
+    },
+    {
+        "id": "5e61626ef0f824f5",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
         "name": "clear msg",
         "func": "msg = {};\n//initialize time fields as disabled\nmsg.payload = false;\nreturn msg;",
         "outputs": 1,
@@ -8242,10 +8242,66 @@
         "finalize": "",
         "libs": [],
         "x": 240,
-        "y": 1660,
+        "y": 1640,
         "wires": [
             [
-                "659387e87a479c9d"
+                "1f33180305d5e203"
+            ]
+        ]
+    },
+    {
+        "id": "b395ee7aa9dc2a44",
+        "type": "exec",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "command": "sudo timedatectl set-ntp ",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 1090,
+        "y": 1840,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "cf4a0c52e8465948",
+        "type": "ui_switch",
+        "z": "05fcb02c571dcfee",
+        "g": "64c3f8c396d4445c",
+        "name": "",
+        "label": "Set NTP",
+        "tooltip": "Enable/Disable Network Time Protocol (internet time sync)",
+        "group": "f60635dac92356fd",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 600,
+        "y": 1840,
+        "wires": [
+            [
+                "b395ee7aa9dc2a44"
             ]
         ]
     },
@@ -8870,7 +8926,7 @@
         "sql": "",
         "name": "",
         "x": 580,
-        "y": 820,
+        "y": 900,
         "wires": [
             [
                 "9e029001fe1461ec"
@@ -8895,7 +8951,7 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
         "x": 290,
-        "y": 820,
+        "y": 900,
         "wires": [
             [
                 "4a34bf5fa29ebc93",
@@ -8913,7 +8969,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "tmdb.deployment, Prepared Statement",
         "x": 850,
-        "y": 720,
+        "y": 800,
         "wires": [
             []
         ]
@@ -8932,7 +8988,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 720,
+        "y": 800,
         "wires": [
             [
                 "8add1e75d35b3706",
@@ -8958,7 +9014,7 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
         "x": 260,
-        "y": 860,
+        "y": 940,
         "wires": [
             [
                 "4a34bf5fa29ebc93",
@@ -8981,7 +9037,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 830,
-        "y": 820,
+        "y": 900,
         "wires": []
     },
     {
@@ -8994,7 +9050,7 @@
         "sql": "",
         "name": "",
         "x": 560,
-        "y": 680,
+        "y": 760,
         "wires": [
             [
                 "b87d36e05fb323bf",
@@ -9020,7 +9076,7 @@
         "onceDelay": "5",
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 1;",
         "x": 270,
-        "y": 680,
+        "y": 760,
         "wires": [
             [
                 "b7103dfabfa35f67"
@@ -9062,7 +9118,7 @@
         "to": "",
         "reg": false,
         "x": 790,
-        "y": 640,
+        "y": 720,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9089,7 +9145,7 @@
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
         "x": 300,
-        "y": 900,
+        "y": 980,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -9236,7 +9292,7 @@
         "sql": "",
         "name": "",
         "x": 580,
-        "y": 860,
+        "y": 940,
         "wires": [
             [
                 "6e00fe840927061b"
@@ -9258,7 +9314,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 850,
-        "y": 860,
+        "y": 940,
         "wires": []
     },
     {
@@ -9271,7 +9327,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "radar.deployment, Prepared Statement",
         "x": 850,
-        "y": 760,
+        "y": 840,
         "wires": [
             []
         ]
@@ -9291,7 +9347,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 810,
-        "y": 680,
+        "y": 760,
         "wires": []
     }
 ]
