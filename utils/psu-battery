@@ -8,18 +8,20 @@
 
 # Both of the following should appear in /boot/config.txt (/boot/firmware/config.txt)
 
-# Enable maximum current on USB (to override protection??) to set usb_max_current_enable=1
+# Enable maximum current on USB (to override protection??) 
+#  To set: `sudo nano /boot/firmware/config.txt` at end, after [all] add line `usb_max_current_enable=1`
 #  The usb_max_current_enable option prevents the limit on USB, but the Pi still assumes a 3A PSU
 #  The downside of setting the MAX_CURRENT flag is power brownouts
 #  `vcgencmd get_throttled` --  which will tell you if you were running low on power at any point.
+# check with following command
 vcgencmd get_config usb_max_current_enable
 
 
 # Tell the RPi to accept the full current (5A)
 #  tell the Pi that your PSU is capable of 5A, so the USB current will get the full 1.6A
 sudo rpi-eeprom-config --edit
-# add `PSU_MAX_CURRENT=5000`
-
+# add line `PSU_MAX_CURRENT=5000`
+# reboot system to take effect
 
 # RPi5 wattage note for powered down mode:
 #  https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#decrease-raspberry-pi-5-wattage-when-turned-off
