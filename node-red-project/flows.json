@@ -702,7 +702,8 @@
             "5181051bdcb0b370",
             "2adb206d0c356f8d",
             "66594bbc3f3afe7d",
-            "2dc53362436f912e"
+            "2dc53362436f912e",
+            "3d22adf20ea1089f"
         ],
         "x": 34,
         "y": 319,
@@ -744,6 +745,43 @@
         "y": 1359,
         "w": 1202,
         "h": 102
+    },
+    {
+        "id": "64c3f8c396d4445c",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "time settings",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "d541ace7a209a1d7",
+            "a411516e46bf7fd6",
+            "865fd78705194730",
+            "497d7e2831eb983b",
+            "efa31fae9a8d79f5",
+            "fe941a906b772e44",
+            "c9bec37bcbc11ccd",
+            "c524d79accb49648",
+            "1f33180305d5e203",
+            "7f09ed91e3dfbe2f",
+            "801f5adc07bfe7e8",
+            "3fb79b44d4787b15",
+            "fbb1ec4d830de603",
+            "a035b3ce9edec363",
+            "504aa2fe928643b3",
+            "c589aa9260a5f3a7",
+            "33f201622a5a02cd",
+            "ec0affbeb3a3cdb8",
+            "32581c3d7d35b439",
+            "5e61626ef0f824f5",
+            "b395ee7aa9dc2a44",
+            "cf4a0c52e8465948"
+        ],
+        "x": 14,
+        "y": 1499,
+        "w": 1352,
+        "h": 389.5
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -844,43 +882,6 @@
         "y": 679,
         "w": 952,
         "h": 342
-    },
-    {
-        "id": "64c3f8c396d4445c",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "time settings",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "d541ace7a209a1d7",
-            "a411516e46bf7fd6",
-            "865fd78705194730",
-            "497d7e2831eb983b",
-            "efa31fae9a8d79f5",
-            "fe941a906b772e44",
-            "c9bec37bcbc11ccd",
-            "c524d79accb49648",
-            "1f33180305d5e203",
-            "7f09ed91e3dfbe2f",
-            "801f5adc07bfe7e8",
-            "3fb79b44d4787b15",
-            "fbb1ec4d830de603",
-            "a035b3ce9edec363",
-            "504aa2fe928643b3",
-            "c589aa9260a5f3a7",
-            "33f201622a5a02cd",
-            "ec0affbeb3a3cdb8",
-            "32581c3d7d35b439",
-            "5e61626ef0f824f5",
-            "b395ee7aa9dc2a44",
-            "cf4a0c52e8465948"
-        ],
-        "x": 14,
-        "y": 1499,
-        "w": 1352,
-        "h": 389.5
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -8538,7 +8539,7 @@
         "name": "location-form-details",
         "label": "",
         "group": "77966ee928726fbf",
-        "order": 3,
+        "order": 4,
         "width": 0,
         "height": 0,
         "options": [
@@ -8636,7 +8637,7 @@
         "name": "",
         "lat": "45.52",
         "lon": "-122.681944",
-        "zoom": "12",
+        "zoom": "11",
         "layer": "OSMG",
         "cluster": "",
         "maxage": "",
@@ -9349,5 +9350,27 @@
         "x": 810,
         "y": 760,
         "wires": []
+    },
+    {
+        "id": "3d22adf20ea1089f",
+        "type": "ui_template",
+        "z": "fa9f914901f79645",
+        "g": "f431ed51eb2b2a49",
+        "group": "77966ee928726fbf",
+        "name": "location-note-form",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "format": "<p><em>If form doesn't populate with most recent deployment, hit Refresh on your browser.</em></p>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 310,
+        "y": 360,
+        "wires": [
+            []
+        ]
     }
 ]
