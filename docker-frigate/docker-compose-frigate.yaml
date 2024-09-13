@@ -7,10 +7,10 @@ services:
     container_name: frigate
     privileged: false # this may not be necessary for all setups
     restart: unless-stopped
-    image: ghcr.io/blakeblackshear/frigate:0.13.2
+    image: ghcr.io/blakeblackshear/frigate:0.14.0
     shm_size: "128mb" # update for your cameras based on calculation https://docs.frigate.video/frigate/installation#calculating-required-shm-size
     devices:
-      - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, needs to be modified for other versions
+      - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, /dev/apex_0:/dev/apex_0 for pcie coral
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ~/code/frigate/config:/config

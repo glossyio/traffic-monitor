@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/setup: Set up application for the first time after cloning, or set it
 #               back to the initial first unused state.
@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 #uncomment for fresh OS install
 #script/bootstrap
 
-echo "==> Setting up Dockerfiles…"
+echo "==> Setting up Services…"
 ##-- install Frigate
 ## Add Frigate Dockerfile
 #create directories and config.yml
@@ -28,20 +28,15 @@ envsubst < docker-frigate/frigate-config.yaml > ~/code/frigate/config/config.yml
 ##-- /frigate
 
 
-##-- Add node-red Dockerfile, settings, and base flows
-mkdir -p ~/code/nodered/data
+##-- set up node-red as service on host OS
 mkdir -p ~/code/nodered/db
-cp docker-nodered/docker-compose-node-red.yaml ~/code/nodered/docker-compose-node-red.yml
-cp docker-nodered/Dockerfile ~/code/nodered/Dockerfile
-cp -rp node-red-project/* ~/code/nodered/data/
+sudo cp -rp node-red-project/* ~/.node-red
+
+# node-red nodes install/reinstall
+npm install --unsafe-perm --no-update-notifier --no-fund --only=production --prefix ~/.node-red/
+
 ##-- /node-red
 
-
-##-- Add influxDB Dockerfile
-mkdir -p ~/code/influxdb/data
-mkdir -p ~/code/influxdb/config
-cp docker-influxdb/docker-compose-influxdb.yaml ~/code/influxdb/docker-compose-influxdb.yml
-##-- /influxdb
 
 #create backup directory
 mkdir -p ~/code/backup

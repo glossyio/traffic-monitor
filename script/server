@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # script/server: Launch the application and any extra required processes
 #                locally.
@@ -12,11 +12,12 @@ cd "$(dirname "$0")/.."
 
 sudo systemctl start go2rtc_server
 sudo systemctl enable go2rtc_server
-##-- /go2rtc
+
+sudo systemctl start nodered.service
+sudo systemctl enable nodered.service
 
 ##-- docker compose build and start containers
 docker compose -f ~/code/compose.yaml up --detach
 
 # access frigate via http://[IP]:5000
-# access to influxdb via http://[IP]:8086
 # access node-red via http://[IP]:1880

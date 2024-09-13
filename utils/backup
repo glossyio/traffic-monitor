@@ -11,16 +11,10 @@ cd "$(dirname "$0")/.."
 
 cd ~/code/backup
 
-#influx creates a directory of zipped files
-docker exec influxdb influx backup /home/influxdb/backup/influxdb_bak
-sudo tar -cvzf influxdb_$(date '+%Y-%m-%d_%H-%M').tar.gz influxdb_bak
-sudo rm -rf influxdb_bak
-
 #backup events database
-tar -cvpzf events_sqlite_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/nodered/data/tmdb
+tar -cvpzf events_sqlite_$(date '+%Y-%m-%d_%H-%M').tar.gz ~/code/nodered/db/tmdb.sqlite
 
 # transfer databases to server
-# sudo rsync -azvv --progress -e ssh ~/code/backup/influxdb_2024-06-21_11-29.tar.gz NAME@SERVER:DB_DUMPS/
 # sudo rsync -azvv --progress -e ssh ~/code/backup/events_sqlite_2024-06-03_08-40.tar.gz NAME@SERVER:DB_DUMPS/
 
 #-- Images backup -- only do this attached locally (maximize data transfer)

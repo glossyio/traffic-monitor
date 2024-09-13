@@ -74,3 +74,4 @@ If the Frigate camera shows nothing, check the configuration:
 - `http://<rpi_ip_address>:1880/ui` is the Node-Red dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
 - `http://<rpi_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
 - `http://<rpi_ip_address>:1984` shows the configured camera settings on the Raspberri Pi. Use this if your cameras are giving errors in Frigate.
+- `http://<rpi_ip_address>:1880` is the Node-Red flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
