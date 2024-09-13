@@ -1,17 +1,14 @@
 ########
-
 # This file contains node-red environment variables loaded by node-red.service
-
 # see info at https://nodered.org/docs/user-guide/environment-variables
-
 # variables can be used in settings.js by calling `process.env.ENV_VARIABLE`
-
 ########
 
 NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
 VAR_RADAR_CAMERA='picam_h264'
 VAR_LOCATION='tm-location-001'
 
+TM_VERSION='0.2.0-beta.3'
 # Default Thingsboard server URL and port
 
 VAR_DEFAULT_TB_SERVER = "http://tb.untower.online/home"
