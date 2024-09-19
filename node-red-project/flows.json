@@ -9412,7 +9412,8 @@
                 "7b406e86282cd677",
                 "674f21d2e645cc18",
                 "ab9d774782f92e88",
-                "720ee19c705f37d9"
+                "720ee19c705f37d9",
+                "c0078fa5b3946c05"
             ]
         ]
     },
@@ -9478,7 +9479,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 410,
+        "x": 470,
         "y": 60,
         "wires": [
             [
@@ -9505,7 +9506,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 410,
+        "x": 470,
         "y": 140,
         "wires": [
             [
@@ -9528,13 +9529,13 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "7",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 630,
+        "x": 850,
         "y": 240,
         "wires": [
             [
@@ -9627,7 +9628,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 420,
+        "x": 470,
         "y": 200,
         "wires": [
             [
@@ -9654,7 +9655,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 410,
+        "x": 470,
         "y": 260,
         "wires": [
             [
@@ -9681,7 +9682,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 420,
+        "x": 480,
         "y": 320,
         "wires": [
             [
@@ -9708,7 +9709,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 420,
+        "x": 480,
         "y": 380,
         "wires": [
             [
@@ -9735,7 +9736,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 430,
+        "x": 490,
         "y": 440,
         "wires": [
             [
@@ -9824,5 +9825,57 @@
                 "e33728beb3e15199"
             ]
         ]
+    },
+    {
+        "id": "c0078fa5b3946c05",
+        "type": "exec",
+        "z": "f410f6aac9d1a3fc",
+        "command": "python3 ./traffic-monitor/utils/rpi5-nodered-telemetry.py",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "true",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Hardware metrics",
+        "x": 290,
+        "y": 500,
+        "wires": [
+            [
+                "35a886e73a73f32e"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "35a886e73a73f32e",
+        "type": "function",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Vgencmd",
+        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"metrics_Hardware\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 500,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "6e88f30f09b49d22",
+        "type": "comment",
+        "z": "f410f6aac9d1a3fc",
+        "name": "OS and Hardware Metrics Documentation",
+        "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/) .",
+        "x": 920,
+        "y": 60,
+        "wires": []
     }
 ]
