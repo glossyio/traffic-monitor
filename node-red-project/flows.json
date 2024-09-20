@@ -9844,7 +9844,9 @@
             [
                 "35a886e73a73f32e"
             ],
-            [],
+            [
+                "cc4ab72bfb50feca"
+            ],
             []
         ]
     },
@@ -9876,6 +9878,22 @@
         "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/) .",
         "x": 920,
         "y": 60,
+        "wires": []
+    },
+    {
+        "id": "cc4ab72bfb50feca",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 540,
         "wires": []
     }
 ]
