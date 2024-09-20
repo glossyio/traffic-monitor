@@ -16,6 +16,8 @@ import time
 import fcntl
 import struct
 import json
+import subprocess
+import sys
 
 class Measure:
     def __init__(self, command, value=""):
@@ -295,6 +297,16 @@ def main():
     memory_split_arm = get_vcgencmd_output(mb, "get_mem arm").split('=')[1]
     memory_split_gpu = get_vcgencmd_output(mb, "get_mem gpu").split('=')[1]
 
+    # Get memory stats from /proc/meminfo
+    meminfo_result = subprocess.run(["cat", "/proc/meminfo"], text=True, stdout=subprocess.PIPE)
+    meminfo_values = meminfo_result.stdout.split('\n')
+    meminfo = {}
+    for meminfo_value in meminfo_values:
+        meminfo_parts = meminfo_value.split(':')
+        if len(meminfo_parts) > 1:
+            label = meminfo_parts[0]
+            value = meminfo_parts[1].strip()
+            meminfo[label] = value
 
     result = {
         "timestamp": timestamp,
@@ -309,7 +321,8 @@ def main():
         "pmic_read_adc": pmic_read_values,
         "config": config,
         "memory_split_arm": memory_split_arm,
-        "memory_split_gpu": memory_split_gpu
+        "memory_split_gpu": memory_split_gpu,
+        "meminfo": meminfo
     }
 
     print(json.dumps(result))
