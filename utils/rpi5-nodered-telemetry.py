@@ -7,7 +7,7 @@
 # Output is printed in JSON format, with keys named after the various vcgencmd options.
 #
 # Adapted by MHL, September 2024.
-##################
+###################
 
 import csv
 import os
