@@ -1,10 +1,13 @@
 ##################
-# from https://github.com/SkatterBencher/rpi5-telemetry-python
-# to run `sudo python3 .`
-#  - Logging to .csv will start immediately and file is stored in same folder as the script.
+# Adapted from https://github.com/SkatterBencher/rpi5-telemetry-python,
+# with additional ideas from https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd
 #
-# Modified: 2024-07-08, modified line 345, sleep time to 60-seconds from 1-second
-##################
+# To run `python3 utils\rpi5-nodered-telemetry.py` after cd'ing to your traffic-monitor location.
+#
+# Output is printed in JSON format, with keys named after the various vcgencmd options.
+#
+# Adapted by MHL, September 2024.
+###################
 
 import csv
 import os
@@ -12,6 +15,9 @@ import psutil
 import time
 import fcntl
 import struct
+import json
+import subprocess
+import sys
 
 class Measure:
     def __init__(self, command, value=""):
@@ -96,15 +102,14 @@ def decode_throttling(throttle_hex_value):
     # Pad binary string with leading zeros to ensure consistent length
     binary_value = binary_value.zfill(20)
 
-    # Initialize empty list for results
-    results = []
+    # Initialize empty dictionary for results
+    results = {}
     for i, message in error_messages.items():
         # Check if index is within binary string length (avoid out-of-range access)
         if i < len(binary_value):
-            result = (message, "Yes" if binary_value[i] == "1" else "No")
+            results[message] = "Yes" if binary_value[i] == "1" else "No"
         else:
-            result = (message, "No (bit out of range)")  # Indicate missing bit
-        results.append(result)
+            results[message] = "No (bit out of range)"  # Indicate missing bit
 
     return results
 
@@ -115,22 +120,50 @@ def pmic_read_adc(mb):
     parts = output.strip().split()
     return [(parts[i], parts[i + 1]) for i in range(0, len(parts), 2)]
 
+# Decode the results of "get_config"
+def decode_config(config_values):
+    config = {}
+    for config_value in config_values.split('\n'):
+        # distinguish between two formats, based on whether the config_value
+        # contains a colon
+        if ":" in config_value:
+            # example: hdmi_force_cec_address:0=65535
+            # example: hdmi_force_cec_address:1=65535
+            # these are mapped to:
+            # hdmi_force_cec_address: {0:65535, 1: 65535}
+            parts = config_value.split(':')
+            label = parts[0]
+            value_parts = parts[1].split('=')
+            index = value_parts[0]
+            value = int(value_parts[1])
+            if label in config:
+                config[label][index] = value
+            else:
+                config[label] = {}
+                config[label][index] = value
+        else:
+            # example: arm_64bit=1 is mapped to: arm_64bit:1
+            # but if the string after the equal sign is not numeric
+            # then it is kept as a string
+            # for example, init_uart_clock=0x2dc6c00 is mapped to init_uart_clock: "0x2dc6c00"
+            config_components = config_value.split('=')
+            label = config_components[0]
+            value = config_components[1]
+            # convert numeric (including negative) string to int
+            try:
+                final_value = int(value)
+            except:
+                final_value = value
+            config[label] = final_value
+    return config
+
 def main():
     try:
         mb = os.open("/dev/vcio", os.O_RDWR)
     except OSError as e:
         print(f"Can't open device file you need to run this script as root. Error: {e}")
         exit(-1)
-
-    filename = "rpi5_telemetry.csv"
-    
-    # Generate a timestamp
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    
-    # Append the timestamp to the filename
-    base_filename, file_extension = os.path.splitext(filename)
-    filename_with_timestamp = f"{base_filename}_{timestamp}{file_extension}"
-
+       
     fieldnames = [
         "timestamp",
         "cpu_percent",
@@ -192,11 +225,6 @@ def main():
         "SoftTempLimit_occured",
     ]
 
-    # Open the file with the new filename
-    with open(filename_with_timestamp, "a", newline="") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-
     clocks = {
         "arm": Measure("measure_clock arm"),
         "core": Measure("measure_clock core"),
@@ -226,133 +254,80 @@ def main():
         "readmr_8": Measure("readmr 8"),
     }
 
-    while True:
 
-        ### GET ALL DATA BEFORE PRINTING ###
+    # Get status information
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    fw_version = get_vcgencmd_output(mb, "version")
 
-        # Get status information
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        fw_version = get_vcgencmd_output(mb, "version")
+    # Get processor usage information
+    cpu_percent = psutil.cpu_percent(interval=1)
 
-        # Get processor usage information
+    # Get Vcgencmd metrics
+    measure_clock = {}
+    for key, command in clocks.items():
+        value = get_vcgencmd_output(mb, command.command).split('=')[1]
+        measure_clock[key] = value
 
-        cpu_percent = psutil.cpu_percent(interval=1)
+    arm_temp = get_vcgencmd_output(mb, "measure_temp").split('=')[1]
 
-        # Get Vcgencmd metrics
-        for _, command in clocks.items():
-            command.value = get_vcgencmd_output(mb, command.command).split('=')[1]
+    measure_volts = {}
+    for key, command in volts.items():
+        value = get_vcgencmd_output(mb, command.command).split('=')[1]
+        measure_volts[key] = value
 
-        arm_temp = get_vcgencmd_output(mb, "measure_temp").split('=')[1]
+    read_mr = {}    
+    for key, command in mr.items():
+        value = get_vcgencmd_output(mb, command.command).split(':')[5]
+        read_mr[key] = value
 
-        for _, command in volts.items():
-            command.value = get_vcgencmd_output(mb, command.command).split('=')[1]
-            
-        for _, command in mr.items():
-            command.value = get_vcgencmd_output(mb, command.command).split(':')[5]
+    # Check for throttling
+    throttle_hex_value = get_vcgencmd_output(mb, "get_throttled").split('=')[1]
+    throttle_status = decode_throttling(throttle_hex_value)
 
-        # Check for throttling
-        throttle_hex_value = get_vcgencmd_output(mb, "get_throttled").split('=')[1]
-        throttling_status = decode_throttling(throttle_hex_value)
+    # Measure PMIC telemetry
+    adc_values = pmic_read_adc(mb)
+    pmic_read_values = {}
+    for label, value in adc_values:
+        pmic_read_values[label] = value
 
-        # Measure PMIC telemetry
-        adc_values = pmic_read_adc(mb)
+    # Get system configuration
+    config = decode_config(get_vcgencmd_output(mb, "get_config int"))
 
-        ### CLEAR THE TERMINAL BEFORE PRINTING ###
-        os.system("clear")  # Use "cls" for Windows
+    # Get memory splits
+    memory_split_arm = get_vcgencmd_output(mb, "get_mem arm").split('=')[1]
+    memory_split_gpu = get_vcgencmd_output(mb, "get_mem gpu").split('=')[1]
 
-        ### PRINT ALL THE DATA ###
-        print("## System Info ##")
-        print(f"timestamp: \t\t{timestamp}")
-        print(f"FW Version: {fw_version}")
-        print("")
+    # Get memory stats from /proc/meminfo
+    meminfo_result = subprocess.run(["cat", "/proc/meminfo"], text=True, stdout=subprocess.PIPE)
+    meminfo_values = meminfo_result.stdout.split('\n')
+    meminfo = {}
+    for meminfo_value in meminfo_values:
+        meminfo_parts = meminfo_value.split(':')
+        if len(meminfo_parts) > 1:
+            label = meminfo_parts[0]
+            value = meminfo_parts[1].strip()
+            meminfo[label] = value
 
-        #print("## Usage ##")
-        #cpu_usage = get_cpu_usage()
-        #for core, usage in enumerate(cpu_usage):
-        #    print(f"Core {core}: {usage:.2f}%")
-        #print("")
+    result = {
+        "timestamp": timestamp,
+        "version": fw_version,
+        "cpu_percent": cpu_percent,
+        "measure_clock": measure_clock,
+        "arm_temp": arm_temp,
+        "measure_volts": measure_volts,
+        "read_mr": read_mr,
+        "throttle_hex": throttle_hex_value,
+        "throttle_status": throttle_status,
+        "pmic_read_adc": pmic_read_values,
+        "config": config,
+        "memory_split_arm": memory_split_arm,
+        "memory_split_gpu": memory_split_gpu,
+        "meminfo": meminfo
+    }
 
-        print("## Frequencies ##")
-        for name, command in clocks.items():
-            print(f"{name}: \t\t{command.value[:-6]} MHz")
-        print("")
+    print(json.dumps(result))
 
-        print("## Temperature ##")
-        print(f"arm: \t\t{arm_temp[:-2]}")
-        print("")
 
-        print("## Voltages ##")
-        for name, command in volts.items():
-            if len(name) < 7:
-                print(f"{name}: \t\t{command.value}")
-            else:
-                print(f"{name}: \t{command.value}")
-        print("")
-        
-        print("## Read MR ##")
-        for name, command in mr.items():
-            print(f"{name}: \t{command.value[1:]}")
-        # decode readmr 4
-        for name, command in mr.items():
-            if command.command == "readmr 4":
-                output = get_vcgencmd_output(mb, command.command).split(':')[5]
-                value = int(output[1:])
-                decoded_message = decode_readmr_4(value)
-                print(f"readmr_4_msg: \t\"{decoded_message}\"")
-        print("")
-        
-        print("## Throttle Info ##")
-        print(f"Throttle Hex: {throttle_hex_value}")
-        for message, status in throttling_status:
-            print(f"{message}: {status}")
-        print("")
-
-        print("## PMIC Telemetry ##")
-        for label, value in adc_values:
-            value = value.split('=')[-1][:-1]
-            print(f"{label}: {value}")
-
-        with open(filename_with_timestamp, "a", newline="") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-            # Create a dictionary for the row data
-            row_data = {
-                "timestamp": timestamp,
-                "cpu_percent": cpu_percent,
-                "arm_temp": arm_temp[:-2],
-                "throttle_hex": throttle_hex_value,
-                "UV": "No",
-                "ArmFreqCap": "No",
-                "CurThrottle": "No",
-                "SoftTempLimit": "No",
-                "UV_occured": "No",
-                "ArmFreqCap_occured": "No",
-                "Throttle_occured": "No",
-                "SoftTempLimit_occured": "No",
-            }
-
-            for clock_name, command in clocks.items():
-                row_data[clock_name + "_mhz"] = command.value[:-6]
-
-            for volt_name, command in volts.items():
-                row_data[volt_name + "_volt"] = command.value[:-1]
-                
-            for mr_name, command in mr.items():
-                row_data[mr_name] = command.value
-            
-            # Add pmic_read_adc() data dynamically to row_data
-            for label, value in adc_values:
-                row_data[label] = value.split('=')[-1][:-1]
-
-            # Update row_data with decode_throttling() results
-            for message, status in throttling_status:
-                row_data[message] = status
-            
-            writer.writerow(row_data)
-
-            time.sleep(60)  # Wait for 1 second
-            
-    #os.close(mb)
 
 if __name__ == "__main__":
     main()

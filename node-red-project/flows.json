@@ -56,6 +56,14 @@
         "env": []
     },
     {
+        "id": "f410f6aac9d1a3fc",
+        "type": "tab",
+        "label": "Metrics",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -99,7 +107,7 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 972,
+        "w": 982,
         "h": 242
     },
     {
@@ -121,9 +129,9 @@
             "d7eb8cf6f750f369",
             "62f7d1214aa96cc0"
         ],
-        "x": 394,
+        "x": 384,
         "y": 1079,
-        "w": 1192,
+        "w": 1212,
         "h": 282
     },
     {
@@ -9372,5 +9380,521 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "9f2c4f1852402eb8",
+        "type": "inject",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/5 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 90,
+        "y": 20,
+        "wires": [
+            [
+                "040a9f02853598aa",
+                "8c8c487fbf8e11a1",
+                "ae7325dd07b1f3ba",
+                "7b406e86282cd677",
+                "674f21d2e645cc18",
+                "ab9d774782f92e88",
+                "720ee19c705f37d9",
+                "c0078fa5b3946c05"
+            ]
+        ]
+    },
+    {
+        "id": "040a9f02853598aa",
+        "type": "OS",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 250,
+        "y": 60,
+        "wires": [
+            [
+                "e1d39852db4af08c"
+            ]
+        ]
+    },
+    {
+        "id": "452b53218521f20f",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "metrics",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "8c8c487fbf8e11a1",
+        "type": "Drives",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 250,
+        "y": 140,
+        "wires": [
+            [
+                "65e30edd475cad64"
+            ]
+        ]
+    },
+    {
+        "id": "e1d39852db4af08c",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "OS",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_OS",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 60,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "65e30edd475cad64",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Drives",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Drives",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 140,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "c497cfedf6aed533",
+        "type": "join",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Compose Metrics Msg",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "8",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 850,
+        "y": 240,
+        "wires": [
+            [
+                "521115ddd5741eea"
+            ]
+        ]
+    },
+    {
+        "id": "ae7325dd07b1f3ba",
+        "type": "Uptime",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 260,
+        "y": 200,
+        "wires": [
+            [
+                "398089ca4a10bdc5"
+            ]
+        ]
+    },
+    {
+        "id": "7b406e86282cd677",
+        "type": "CPUs",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 250,
+        "y": 260,
+        "wires": [
+            [
+                "882369d2082717a5"
+            ]
+        ]
+    },
+    {
+        "id": "674f21d2e645cc18",
+        "type": "Loadavg",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 260,
+        "y": 320,
+        "wires": [
+            [
+                "b6b8a1a7c08eb0ac"
+            ]
+        ]
+    },
+    {
+        "id": "ab9d774782f92e88",
+        "type": "Memory",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "scale": "Byte",
+        "x": 260,
+        "y": 380,
+        "wires": [
+            [
+                "976ec527b724bd3d"
+            ]
+        ]
+    },
+    {
+        "id": "720ee19c705f37d9",
+        "type": "NetworkIntf",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "x": 270,
+        "y": 440,
+        "wires": [
+            [
+                "6881f1dd8a4805af"
+            ]
+        ]
+    },
+    {
+        "id": "398089ca4a10bdc5",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Uptime",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Uptime",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 200,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "882369d2082717a5",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "CPUs",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_CPUx",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 260,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "b6b8a1a7c08eb0ac",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Loadavg",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Loadavg",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 480,
+        "y": 320,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "976ec527b724bd3d",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Memory",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Memory",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 480,
+        "y": 380,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "6881f1dd8a4805af",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "NetworkIntf",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_NetworkIntf",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 440,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "f894a3a8017a7de4",
+        "type": "function",
+        "z": "f410f6aac9d1a3fc",
+        "name": "set up tb metrics post",
+        "func": "// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 600,
+        "wires": [
+            [
+                "634f581fd150b60c"
+            ]
+        ]
+    },
+    {
+        "id": "521115ddd5741eea",
+        "type": "function",
+        "z": "f410f6aac9d1a3fc",
+        "name": "format metrics payload",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: Date.now(),\n    values\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 260,
+        "y": 600,
+        "wires": [
+            [
+                "452b53218521f20f",
+                "f894a3a8017a7de4"
+            ]
+        ]
+    },
+    {
+        "id": "e33728beb3e15199",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "metrics post response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "634f581fd150b60c",
+        "type": "http request",
+        "z": "f410f6aac9d1a3fc",
+        "name": "tb telemetry metrics http api",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 760,
+        "y": 600,
+        "wires": [
+            [
+                "e33728beb3e15199"
+            ]
+        ]
+    },
+    {
+        "id": "c0078fa5b3946c05",
+        "type": "exec",
+        "z": "f410f6aac9d1a3fc",
+        "command": "python3 ./traffic-monitor/utils/rpi5-nodered-telemetry.py",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "true",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Hardware metrics",
+        "x": 290,
+        "y": 500,
+        "wires": [
+            [
+                "35a886e73a73f32e"
+            ],
+            [
+                "cc4ab72bfb50feca"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "35a886e73a73f32e",
+        "type": "function",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Hardware",
+        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"metrics_Hardware\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 500,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "6e88f30f09b49d22",
+        "type": "comment",
+        "z": "f410f6aac9d1a3fc",
+        "name": "OS and Hardware Metrics Documentation",
+        "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - hardware cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/).\n - hardware meminfo comes from 'cat /proc/meminfo'.",
+        "x": 920,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "cc4ab72bfb50feca",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Errors that occurred while getting Hardware metrics",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 610,
+        "y": 540,
+        "wires": []
     }
 ]
