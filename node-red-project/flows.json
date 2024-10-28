@@ -58,7 +58,7 @@
     {
         "id": "f410f6aac9d1a3fc",
         "type": "tab",
-        "label": "Metrics",
+        "label": "system-metrics",
         "disabled": false,
         "info": "",
         "env": []
@@ -890,6 +890,23 @@
         "y": 679,
         "w": 952,
         "h": 342
+    },
+    {
+        "id": "99dfff63ac837bc8",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "system-metrics",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "521115ddd5741eea",
+            "24c1b5f3bff3834c"
+        ],
+        "x": 134,
+        "y": 799,
+        "w": 392,
+        "h": 82
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -3499,18 +3516,40 @@
         ]
     },
     {
+        "id": "521115ddd5741eea",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "99dfff63ac837bc8",
+        "name": "format system metrics payload",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: Date.now(),\n    values: {\n        system_metrics: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 840,
+        "wires": [
+            [
+                "a960ef97c77a540b"
+            ]
+        ]
+    },
+    {
         "id": "24c1b5f3bff3834c",
         "type": "link in",
         "z": "f7932be9acc7391c",
+        "g": "99dfff63ac837bc8",
         "name": "connect from other flows to send telemetry",
         "links": [
             "6dca925fad91c100"
         ],
-        "x": 775,
-        "y": 40,
+        "x": 175,
+        "y": 840,
         "wires": [
             [
-                "a960ef97c77a540b"
+                "521115ddd5741eea"
             ]
         ]
     },
@@ -9444,23 +9483,6 @@
         ]
     },
     {
-        "id": "452b53218521f20f",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "metrics",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1320,
-        "y": 420,
-        "wires": []
-    },
-    {
         "id": "8c8c487fbf8e11a1",
         "type": "Drives",
         "z": "f410f6aac9d1a3fc",
@@ -9552,7 +9574,7 @@
         "y": 340,
         "wires": [
             [
-                "521115ddd5741eea"
+                "6dca925fad91c100"
             ]
         ]
     },
@@ -9758,27 +9780,6 @@
         ]
     },
     {
-        "id": "521115ddd5741eea",
-        "type": "function",
-        "z": "f410f6aac9d1a3fc",
-        "name": "format metrics payload",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: Date.now(),\n    values\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1140,
-        "y": 340,
-        "wires": [
-            [
-                "452b53218521f20f",
-                "6dca925fad91c100"
-            ]
-        ]
-    },
-    {
         "id": "c0078fa5b3946c05",
         "type": "exec",
         "z": "f410f6aac9d1a3fc",
@@ -9853,12 +9854,12 @@
         "id": "6dca925fad91c100",
         "type": "link out",
         "z": "f410f6aac9d1a3fc",
-        "name": "send telemetry msg",
+        "name": "system_metrics",
         "mode": "link",
         "links": [
             "24c1b5f3bff3834c"
         ],
-        "x": 1345,
+        "x": 1085,
         "y": 340,
         "wires": []
     },
