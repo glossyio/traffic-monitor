@@ -107,7 +107,7 @@
         ],
         "x": 394,
         "y": 499,
-        "w": 982,
+        "w": 972,
         "h": 242
     },
     {
@@ -129,9 +129,9 @@
             "d7eb8cf6f750f369",
             "62f7d1214aa96cc0"
         ],
-        "x": 384,
+        "x": 394,
         "y": 1079,
-        "w": 1212,
+        "w": 1192,
         "h": 282
     },
     {
@@ -3070,8 +3070,7 @@
         "g": "b334a2375eb8cb42",
         "name": "event link in",
         "links": [
-            "274f87c31437c2d7",
-            "944b8754ad5c8e6c"
+            "274f87c31437c2d7"
         ],
         "x": 175,
         "y": 140,
@@ -3120,7 +3119,7 @@
         "type": "debug",
         "z": "f7932be9acc7391c",
         "name": "tb-telemetry debug: catch",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3500,6 +3499,22 @@
         ]
     },
     {
+        "id": "24c1b5f3bff3834c",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "name": "connect from other flows to send telemetry",
+        "links": [
+            "6dca925fad91c100"
+        ],
+        "x": 775,
+        "y": 40,
+        "wires": [
+            [
+                "a960ef97c77a540b"
+            ]
+        ]
+    },
+    {
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
@@ -3722,9 +3737,7 @@
         "z": "28627559bebdc324",
         "name": "from mongo event capture",
         "links": [
-            "d9a2cc1e81161549",
-            "274f87c31437c2d7",
-            "944b8754ad5c8e6c"
+            "274f87c31437c2d7"
         ],
         "x": 165,
         "y": 1580,
@@ -9402,8 +9415,8 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 90,
-        "y": 20,
+        "x": 110,
+        "y": 120,
         "wires": [
             [
                 "040a9f02853598aa",
@@ -9422,8 +9435,8 @@
         "type": "OS",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 250,
-        "y": 60,
+        "x": 270,
+        "y": 160,
         "wires": [
             [
                 "e1d39852db4af08c"
@@ -9443,8 +9456,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 460,
-        "y": 680,
+        "x": 1320,
+        "y": 420,
         "wires": []
     },
     {
@@ -9452,8 +9465,8 @@
         "type": "Drives",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 250,
-        "y": 140,
+        "x": 270,
+        "y": 240,
         "wires": [
             [
                 "65e30edd475cad64"
@@ -9479,8 +9492,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 470,
-        "y": 60,
+        "x": 490,
+        "y": 160,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9506,8 +9519,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 470,
-        "y": 140,
+        "x": 490,
+        "y": 240,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9535,8 +9548,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 850,
-        "y": 240,
+        "x": 870,
+        "y": 340,
         "wires": [
             [
                 "521115ddd5741eea"
@@ -9548,8 +9561,8 @@
         "type": "Uptime",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 260,
-        "y": 200,
+        "x": 280,
+        "y": 300,
         "wires": [
             [
                 "398089ca4a10bdc5"
@@ -9561,8 +9574,8 @@
         "type": "CPUs",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 250,
-        "y": 260,
+        "x": 270,
+        "y": 360,
         "wires": [
             [
                 "882369d2082717a5"
@@ -9574,8 +9587,8 @@
         "type": "Loadavg",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 260,
-        "y": 320,
+        "x": 280,
+        "y": 420,
         "wires": [
             [
                 "b6b8a1a7c08eb0ac"
@@ -9588,8 +9601,8 @@
         "z": "f410f6aac9d1a3fc",
         "name": "",
         "scale": "Byte",
-        "x": 260,
-        "y": 380,
+        "x": 280,
+        "y": 480,
         "wires": [
             [
                 "976ec527b724bd3d"
@@ -9601,8 +9614,8 @@
         "type": "NetworkIntf",
         "z": "f410f6aac9d1a3fc",
         "name": "",
-        "x": 270,
-        "y": 440,
+        "x": 290,
+        "y": 540,
         "wires": [
             [
                 "6881f1dd8a4805af"
@@ -9628,8 +9641,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 470,
-        "y": 200,
+        "x": 490,
+        "y": 300,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9655,8 +9668,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 470,
-        "y": 260,
+        "x": 490,
+        "y": 360,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9682,8 +9695,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 480,
-        "y": 320,
+        "x": 500,
+        "y": 420,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9709,8 +9722,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 480,
-        "y": 380,
+        "x": 500,
+        "y": 480,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9736,31 +9749,11 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 490,
-        "y": 440,
+        "x": 510,
+        "y": 540,
         "wires": [
             [
                 "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "f894a3a8017a7de4",
-        "type": "function",
-        "z": "f410f6aac9d1a3fc",
-        "name": "set up tb metrics post",
-        "func": "// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 600,
-        "wires": [
-            [
-                "634f581fd150b60c"
             ]
         ]
     },
@@ -9776,53 +9769,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 260,
-        "y": 600,
+        "x": 1140,
+        "y": 340,
         "wires": [
             [
                 "452b53218521f20f",
-                "f894a3a8017a7de4"
-            ]
-        ]
-    },
-    {
-        "id": "e33728beb3e15199",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "metrics post response",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1020,
-        "y": 600,
-        "wires": []
-    },
-    {
-        "id": "634f581fd150b60c",
-        "type": "http request",
-        "z": "f410f6aac9d1a3fc",
-        "name": "tb telemetry metrics http api",
-        "method": "use",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 760,
-        "y": 600,
-        "wires": [
-            [
-                "e33728beb3e15199"
+                "6dca925fad91c100"
             ]
         ]
     },
@@ -9838,8 +9790,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "Hardware metrics",
-        "x": 290,
-        "y": 500,
+        "x": 310,
+        "y": 600,
         "wires": [
             [
                 "35a886e73a73f32e"
@@ -9862,8 +9814,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 500,
+        "x": 500,
+        "y": 600,
         "wires": [
             [
                 "c497cfedf6aed533"
@@ -9876,8 +9828,8 @@
         "z": "f410f6aac9d1a3fc",
         "name": "OS and Hardware Metrics Documentation",
         "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - hardware cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/).\n - hardware meminfo comes from 'cat /proc/meminfo'.",
-        "x": 920,
-        "y": 60,
+        "x": 940,
+        "y": 160,
         "wires": []
     },
     {
@@ -9893,8 +9845,53 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 610,
-        "y": 540,
+        "x": 630,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "6dca925fad91c100",
+        "type": "link out",
+        "z": "f410f6aac9d1a3fc",
+        "name": "send telemetry msg",
+        "mode": "link",
+        "links": [
+            "24c1b5f3bff3834c"
+        ],
+        "x": 1345,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "36703c045ec3d26f",
+        "type": "catch",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 100,
+        "y": 40,
+        "wires": [
+            [
+                "f68bd35ce57e8af8"
+            ]
+        ]
+    },
+    {
+        "id": "f68bd35ce57e8af8",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "metrics flow error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 40,
         "wires": []
     }
 ]
