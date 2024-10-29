@@ -792,6 +792,23 @@
         "h": 389.5
     },
     {
+        "id": "99dfff63ac837bc8",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "system-metrics",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "521115ddd5741eea",
+            "24c1b5f3bff3834c"
+        ],
+        "x": 134,
+        "y": 799,
+        "w": 392,
+        "h": 82
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -890,23 +907,6 @@
         "y": 679,
         "w": 952,
         "h": 342
-    },
-    {
-        "id": "99dfff63ac837bc8",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "system-metrics",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "521115ddd5741eea",
-            "24c1b5f3bff3834c"
-        ],
-        "x": 134,
-        "y": 799,
-        "w": 392,
-        "h": 82
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -3521,7 +3521,7 @@
         "z": "f7932be9acc7391c",
         "g": "99dfff63ac837bc8",
         "name": "format system metrics payload",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: Date.now(),\n    values: {\n        system_metrics: values\n    }\n}\n\nreturn msg;",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time_ms_utc,\n    values: {\n        system_metrics: values\n    }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9451,10 +9451,10 @@
         "crontab": "*/5 0-23 * * *",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "",
+        "topic": "time_ms_utc",
         "payload": "",
         "payloadType": "date",
-        "x": 110,
+        "x": 150,
         "y": 120,
         "wires": [
             [
@@ -9465,7 +9465,8 @@
                 "674f21d2e645cc18",
                 "ab9d774782f92e88",
                 "720ee19c705f37d9",
-                "c0078fa5b3946c05"
+                "c0078fa5b3946c05",
+                "c497cfedf6aed533"
             ]
         ]
     },
@@ -9564,7 +9565,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "8",
+        "count": "9",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
