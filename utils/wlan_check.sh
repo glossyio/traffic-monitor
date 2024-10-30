@@ -6,8 +6,7 @@ LOGFILE=/var/log/wlan_check.log
 DOMAINADDR='duckduckgo.com'
 GWADDR=$(ip route show | grep "^default" | cut -d\  -f3)
 PUBNSADDRS=("8.8.8.8","1.1.1.1","9.9.9.9")
-NETRESTARTCMD="sudo systemctl restart networking"
-
+NETRESTARTCMD="systemctl restart NetworkManager"
 
 _logoutput(){
   echo "$(date +%D_%T): $*" >> $LOGFILE 2>&1
