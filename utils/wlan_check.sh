@@ -18,7 +18,7 @@ _logonerror(){
 	ES=$?
 	if ((ES))
 	then
-		echo "$(date +%D_%T): ERROR: $OUTPUT" >> $LOGFILE
+		_logoutput "ERROR: $OUTPUT"
 		ERROR=true
 	fi
 	
@@ -47,6 +47,11 @@ done
 
 if [[ $ERROR != "false" ]]
 then
+	#before network reset, log link status
+	_logoutput "$('ip link show')"
+	_logoutput "$('nmcli device status')"
+	_logoutput "$('iwconfig wlan0')"
+	
 	_logoutput "$($NETRESTARTCMD)"
 	exit 1
 else
