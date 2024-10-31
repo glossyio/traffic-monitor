@@ -47,9 +47,9 @@ done
 if [[ $ERROR != "false" ]]
 then
 	#before network reset, log link status
-	_logoutput "$('ip link show')"
-	_logoutput "$('nmcli device status')"
-	_logoutput "$('iwconfig wlan0')"
+	_logoutput "$(ip link show)"
+	_logoutput "$(nmcli device status)"
+	_logoutput "$(iwconfig wlan0)"
 	
 	_logoutput "$($NETRESTARTCMD)"
 	exit 1
