@@ -15,3 +15,7 @@
 ## Help & FAQ
 
 * [FAQ](help-and-faq/faq.md)
+
+## Sensors and Payloads
+
+* [Air Quality (AQ) Sensor](sensors-and-payloads/air-quality-aq-sensor.md)
