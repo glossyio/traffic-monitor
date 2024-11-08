@@ -39,7 +39,7 @@ do
 	_logonerror "ping -c2 $ns"
 done
 
-for pubns in ${PBNSADDRS[@]}
+for pubns in ${PUBNSADDRS[@]}
 do
 	_logoutput "Nameserver: $pubns"
 	_logonerror "ping -c2 $pubns"
