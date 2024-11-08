@@ -82,7 +82,6 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 # rpicam-vid --list-cameras for modes available
 
 ##-- set up wifi reconnect script
-sudo apt install host
 sudo iwconfig wlan0 power off   #no reason to have it on when fully powered; seems to cause failures
 mkdir -p ~/code/utils
 cp -p utils/wlan_check.sh ~/code/utils
