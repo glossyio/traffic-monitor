@@ -17,6 +17,7 @@ _logonerror(){
 	ES=$?
 	if ((ES))
 	then
+		_logoutput "------------- $CMD"
 		_logoutput "ERROR: $OUTPUT"
 		ERROR=true
 	fi
@@ -47,6 +48,7 @@ done
 if [[ $ERROR != "false" ]]
 then
 	#before network reset, log link status
+	_logoutput "***** restarting network"
 	_logoutput "$(ip link show)"
 	_logoutput "$(nmcli device status)"
 	_logoutput "$(iwconfig wlan0)"
