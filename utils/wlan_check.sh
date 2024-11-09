@@ -5,7 +5,7 @@ ERROR=false
 LOGFILE=/var/log/wlan_check.log
 DOMAINADDR='duckduckgo.com'
 GWADDR=$(ip route show | grep "^default" | cut -d\  -f3)
-PUBNSADDRS=("8.8.8.8","1.1.1.1","9.9.9.9")
+PUBNSADDRS=("8.8.8.8" "1.1.1.1" "9.9.9.9")
 NETRESTARTCMD="systemctl restart NetworkManager"
 
 _logoutput(){
