@@ -3,9 +3,14 @@
 * [Welcome](README.md)
 * [Getting Started](getting-started.md)
 * [Recommended Hardware](recommended-hardware.md)
-* [Build your own device (DIY)](build-your-own-device-diy.md)
-* [Installation](installation.md)
-* [Configuration](configuration.md)
+* [Build Your Own Device (DIY)](build-your-own-device-diy.md)
+* [Software Installation](software-installation.md)
+* [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
+
+## Configuration
+
+* [Traffic Monitor Configuration](configuration/traffic-monitor-configuration.md)
+* [Full Reference Config](configuration/full-reference-config.md)
 
 ## Development
 

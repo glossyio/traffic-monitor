@@ -1,16 +1,25 @@
 ---
-description: >-
-  The traffic monitor is built from commodity hardware to enable object
-  detection and speed/direction measurement.
+description: Commodity hardware to enable object detection and speed/direction measurement.
 ---
 
 # Recommended Hardware
 
-Customize the hardware to fit your needs.  The core components include the computing device, storage, camera, and co-processor.&#x20;
+Customize the hardware to fit your needs.  The core components include the computing device, storage, camera, and co-processor. Feel free to mix-and-match components but most of the documentation and default configuration assumes using the hardware recommended below.
 
 {% hint style="info" %}
 We are not affiliated with any of the stores or companies linked in this section. These are suggestions that have been used or tested by contributors. If you have used or tested more, submit a PR to add them!
 {% endhint %}
+
+## Hardware Check List
+
+Use the following checklist as a quick guide to components you need to purchase
+
+* [ ] Computing Device:   [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB
+* [ ] Storage: microSD card (≥32GB), [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA)
+* [ ] Power: official RPi [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
+* [ ] Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) plus [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
+* [ ] AI co-processor: [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/)
+* [ ] Radar (optional): [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
 
 ## Computing Device
 
@@ -20,9 +29,18 @@ We are not affiliated with any of the stores or companies linked in this section
 The Raspberry Pi 4B and earlier units are not recommended as they have experienced detrimental performance due to not meeting the power requirements on the peripherals (USB) for the TPU and radar for this setup.
 {% endhint %}
 
-(Required) A high-quality microSD card (>= 32GB with minimal snapshot and video capture). Recommend a high performance card, even when configuring for minimal recording. Setup has been tested and works well with the [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA).
+### Storage
+
+(Required) A high-quality microSD card. Recommend at least 32GB capacity for system files with minimal (or no) snapshot and video capture. Recommend purchasing a high performance card, even when configuring for minimal recording.&#x20;
+
+* Setup has been tested and works well with the [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA).
+* [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) should perform particularly well, but sizes only range up to 128GB.
+
+### Power&#x20;
 
 (Recommended) The official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
+
+Although the Raspberry Pi 5 is rated for 27-watts (5V at 5A draw) and less power will often cause resets or throttling,the Traffic Monitor typically consumes between 6-14-watts of energy  when it is fully operational and inferencing, depending on number of components in use and how much motion is detected.
 
 ## Camera(s)
 

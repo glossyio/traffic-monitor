@@ -1,6 +1,10 @@
-# Build your own device (DIY)
+---
+description: Traffic Monitor assembly instructions
+---
 
-The following&#x20;
+# Build Your Own Device (DIY)
+
+Start by purchasing the [recommended-hardware.md](recommended-hardware.md "mention").
 
 ## Software Setup
 
