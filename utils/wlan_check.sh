@@ -1,6 +1,19 @@
 #!/bin/bash
 # Script will check if wlan0 is operating nominally and if not, reset the device
 
+# -q option runs this script without output unless there's an error
+QUIET="no"
+while getopts "q" opt; do
+	case $opt in
+		q)
+			QUIET="yes"
+			;;
+		\?)
+			echo "Invalid option -$OPTARG"
+			;;
+	esac
+done
+
 ERROR=false
 LOGFILE=/var/log/wlan_check.log
 DOMAINADDR='duckduckgo.com'
@@ -8,8 +21,15 @@ GWADDR=$(ip route show | grep "^default" | cut -d\  -f3)
 PUBNSADDRS=("8.8.8.8" "1.1.1.1" "9.9.9.9")
 NETRESTARTCMD="systemctl restart NetworkManager"
 
+
+_logallways() {
+	echo "$(date +%D_%T): $*" >> $LOGFILE 2>&1
+}
 _logoutput(){
-  echo "$(date +%D_%T): $*" >> $LOGFILE 2>&1
+	if [ "$QUIET" != "yes" ]
+	then
+  		_logallways "$*"
+	fi
 }
 _logonerror(){
 	CMD="$*"
@@ -17,8 +37,8 @@ _logonerror(){
 	ES=$?
 	if ((ES))
 	then
-		_logoutput "------------- $CMD"
-		_logoutput "ERROR: $OUTPUT"
+		_logallways "------------- $CMD"
+		_logallways "ERROR: $OUTPUT"
 		ERROR=true
 	fi
 }
@@ -31,8 +51,8 @@ _repeat_command() {
 		# Check if the command failed (non-zero exit status)
 		if [ $? -ne 0 ]
 		then
-			_logoutput "------------- $CMD"
-			_logoutput "ERROR on iteration $((i + 1)): $OUTPUT"
+			_logallways "------------- $CMD"
+			_logallways "ERROR on iteration $((i + 1)): $OUTPUT"
 		else
 			return 0
 		fi
@@ -51,11 +71,6 @@ _repeat_command "ping -c1 $DOMAINADDR" 3
 _logoutput "Gateway: $GWADDR"
 _repeat_command "ping -c1 $GWADDR" 3
 
-_IP=$(hostname -I) || true
-if [ "$_IP" ]; then
-  _logoutput "IP addresses: $_IP"
-fi
-
 for ns in $(grep "^nameserver" /etc/resolv.conf|tr -s " " | cut -d\  -f2 | tr "\n" " ")
 do
 	_logoutput "Nameserver: $ns"
@@ -71,12 +86,16 @@ done
 if [[ $ERROR != "false" ]]
 then
 	#before network reset, log link status
-	_logoutput "***** restarting network"
-	_logoutput "$(ip link show)"
-	_logoutput "$(nmcli device status)"
-	_logoutput "$(iwconfig wlan0)"
+	_logallways "***** restarting network"
+	_IP=$(hostname -I) || true
+	if [ "$_IP" ]; then
+	_logallways "IP addresses: $_IP"
+	fi
+	_logallways "$(ip link show)"
+	_logallways "$(nmcli device status)"
+	_logallways "$(iwconfig wlan0)"
 	
-	_logoutput "$($NETRESTARTCMD)"
+	_logallways "$($NETRESTARTCMD)"
 	exit 1
 else
 	_logoutput "No Network Issues Detected"
