@@ -82,10 +82,11 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 # rpicam-vid --list-cameras for modes available
 
 ##-- set up wifi reconnect script
-sudo iwconfig wlan0 power off   #no reason to have it on when fully powered; seems to cause failures
+sudo iwconfig wlan0 power off    #turn off wlan0 power management immediately
+
 mkdir -p ~/code/utils
 cp -p utils/wlan_check.sh ~/code/utils
 chmod +x ~/code/utils/wlan_check.sh
 
-# Add the cronjob to run the script every 5 minutes
-echo "*/5 * * * * sudo /bin/bash ${PWD}/code/utils/wlan_check.sh" | crontab -
+# Setup chronjobs to turn off wlan0 power management and regularly run wlan_check script
+crontab script/crontab.jobs
