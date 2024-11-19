@@ -21,17 +21,35 @@ _logonerror(){
 		_logoutput "ERROR: $OUTPUT"
 		ERROR=true
 	fi
-	
 }
+# try a command N times before declaring that it has failed
+_repeat_command() {
+	local CMD="$1"
+  	local times="$2"
+	for ((i = 0; i < times; i++)); do
+		OUTPUT=$($CMD 2>&1)
+		# Check if the command failed (non-zero exit status)
+		if [ $? -ne 0 ]
+		then
+			_logoutput "------------- $CMD"
+			_logoutput "ERROR on iteration $((i + 1)): $OUTPUT"
+		else
+			return 0
+		fi
+	done
+	ERROR=true
+}
+
+
 _logoutput "==============================================================================="
 _logoutput "Starting wlan_check"
 
 _logoutput "ThingsBoard: $DOMAINADDR"
 _logonerror "host $DOMAINADDR"
-_logonerror "ping -c2 $DOMAINADDR"
+_repeat_command "ping -c1 $DOMAINADDR" 3
 
 _logoutput "Gateway: $GWADDR"
-_logonerror "ping -c2 $GWADDR"
+_repeat_command "ping -c1 $GWADDR" 3
 
 _IP=$(hostname -I) || true
 if [ "$_IP" ]; then
@@ -41,13 +59,13 @@ fi
 for ns in $(grep "^nameserver" /etc/resolv.conf|tr -s " " | cut -d\  -f2 | tr "\n" " ")
 do
 	_logoutput "Nameserver: $ns"
-	_logonerror "ping -c2 $ns"
+	_repeat_command "ping -c1 $ns" 3
 done
 
 for pubns in ${PUBNSADDRS[@]}
 do
 	_logoutput "Nameserver: $pubns"
-	_logonerror "ping -c2 $pubns"
+	_repeat_command "ping -c1 $pubns" 3
 done
 
 if [[ $ERROR != "false" ]]
