@@ -1,5 +1,13 @@
 [
     {
+        "id": "3dae026ab340962a",
+        "type": "tab",
+        "label": "init",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "94d07e407c25f282",
         "type": "tab",
         "label": "flow-radar-01",
@@ -18,7 +26,7 @@
     {
         "id": "f7932be9acc7391c",
         "type": "tab",
-        "label": "thingsboard-telemetry",
+        "label": "thingsboard",
         "disabled": false,
         "info": "",
         "env": []
@@ -512,6 +520,7 @@
         "id": "b334a2375eb8cb42",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
         "name": "event",
         "style": {
             "label": true
@@ -523,14 +532,15 @@
         ],
         "x": 134,
         "y": 99,
-        "w": 392,
+        "w": 352,
         "h": 142
     },
     {
         "id": "694f0242d0985c69",
         "type": "group",
         "z": "f7932be9acc7391c",
-        "name": "TB HTTP API",
+        "g": "2f27e270200485b9",
+        "name": "TB HTTP API / telemetry",
         "style": {
             "label": true
         },
@@ -542,13 +552,14 @@
         ],
         "x": 814,
         "y": 99,
-        "w": 612,
+        "w": 592,
         "h": 162
     },
     {
         "id": "1819134eccdf2660",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
         "name": "radar",
         "style": {
             "label": true
@@ -604,9 +615,6 @@
             "label": true
         },
         "nodes": [
-            "0a28f82092611160",
-            "542b3b8720733a01",
-            "ac10d4e38e95fa26",
             "64c998a572e86dce",
             "4d67617dadcb9ede",
             "28063911d2bbf57e",
@@ -654,11 +662,13 @@
             "33dd63cc1dfb53c4",
             "9beaf948294acd98",
             "2b82d4b028657058",
-            "099df29d699f405e"
+            "099df29d699f405e",
+            "0312bb5c0734c168",
+            "486556a1e7fce8cf"
         ],
         "x": 14,
         "y": 99,
-        "w": 1352,
+        "w": 1172,
         "h": 1242
     },
     {
@@ -722,6 +732,7 @@
         "id": "55a1af374cc8ecb9",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
         "name": "deployment",
         "style": {
             "label": true
@@ -735,24 +746,6 @@
         "y": 659,
         "w": 872,
         "h": 122
-    },
-    {
-        "id": "fe1b9f6f9d89d353",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "deployment client side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "32ac6cf42cd8c106",
-            "8768b75dbfee3973",
-            "f453ff6136f95abe"
-        ],
-        "x": 164,
-        "y": 1359,
-        "w": 1202,
-        "h": 102
     },
     {
         "id": "64c3f8c396d4445c",
@@ -787,7 +780,7 @@
             "cf4a0c52e8465948"
         ],
         "x": 14,
-        "y": 1499,
+        "y": 1379,
         "w": 1352,
         "h": 389.5
     },
@@ -795,6 +788,7 @@
         "id": "99dfff63ac837bc8",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
         "name": "system-metrics",
         "style": {
             "label": true
@@ -907,6 +901,64 @@
         "y": 679,
         "w": 952,
         "h": 342
+    },
+    {
+        "id": "2f27e270200485b9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "thingsboard telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "b334a2375eb8cb42",
+            "694f0242d0985c69",
+            "1819134eccdf2660",
+            "55a1af374cc8ecb9",
+            "99dfff63ac837bc8"
+        ],
+        "x": 108,
+        "y": 73,
+        "w": 1324,
+        "h": 834
+    },
+    {
+        "id": "fe1b9f6f9d89d353",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "thingsboard client side attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f453ff6136f95abe",
+            "8768b75dbfee3973",
+            "d367cb76b239682f",
+            "8d3fe796e032166c"
+        ],
+        "x": 114,
+        "y": 933,
+        "w": 1138,
+        "h": 214
+    },
+    {
+        "id": "8d3fe796e032166c",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "tb HTTP API / attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "542b3b8720733a01",
+            "0a28f82092611160",
+            "ac10d4e38e95fa26"
+        ],
+        "x": 834,
+        "y": 959,
+        "w": 392,
+        "h": 162
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1224,6 +1276,136 @@
         "hidden": false
     },
     {
+        "id": "a328d3aa7640102a",
+        "type": "yaml",
+        "z": "3dae026ab340962a",
+        "property": "payload",
+        "name": "",
+        "x": 590,
+        "y": 180,
+        "wires": [
+            [
+                "94136e5a6f092bb6"
+            ]
+        ]
+    },
+    {
+        "id": "7e988d24a7912d71",
+        "type": "file in",
+        "z": "3dae026ab340962a",
+        "name": "",
+        "filename": ".node-red/projects/traffic-monitor/node-red-project/config.yml",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 400,
+        "y": 140,
+        "wires": [
+            [
+                "a328d3aa7640102a"
+            ]
+        ]
+    },
+    {
+        "id": "ecc317fcd059b4c3",
+        "type": "inject",
+        "z": "3dae026ab340962a",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 90,
+        "y": 140,
+        "wires": [
+            [
+                "7e988d24a7912d71"
+            ]
+        ]
+    },
+    {
+        "id": "b0252bd49dc8e61d",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::config",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 680,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "94136e5a6f092bb6",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "name": "init config defaults",
+        "func": "\n//thingsboard\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//databases\nmsg.payload.database.tmdb_path = msg.payload.database.tmdb_path ? msg.payload.database.tmdb_path : \"code/nodered/db/tmdb.sqlite\";\nmsg.payload.database.radar_path = msg.payload.database.radar_path ? msg.payload.database.tmdb_path : \"code/nodered/db/radar.sqlite\";\n\n//mqtt_broker \nif (msg.payload.mqtt_broker.enabled_server === true && msg.payload.mqtt_broker.host === null) {\n    msg.payload.mqtt_broker.host = \"localhost\";\n}\nif (msg.payload.mqtt_broker.enabled_server === true && msg.payload.mqtt_broker.port === null) {\n    msg.payload.mqtt_broker.port = \"1883\";\n}\n\n//radar\nmsg.payload.radar.enabled = msg.payload.radar.enabled === true ? true : false;\n\nif (msg.payload.radar.enabled === true && msg.payload.radar.serial_port === null) {\n    msg.payload.radar.serial_port = \"/dev/ttyACM0\";\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each camera to init values\nmsg.payload.cameras.forEach(function(camera) {\n    camera.enabled = camera.enabled === false ? false : true;\n    camera.radar_camera = camera.enabled === false ? false : true;\n});\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 220,
+        "wires": [
+            [
+                "b0252bd49dc8e61d"
+            ]
+        ]
+    },
+    {
+        "id": "9d0f912cc84546dd",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "name": "catch - init error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 300,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "63b2b42491150896",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "name": "catch - init",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "9d0f912cc84546dd"
+            ]
+        ]
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -1256,7 +1438,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "debug-radar-all-output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -1375,7 +1557,7 @@
         "id": "114c038c504f9f87",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "query all settings, after 0.5",
+        "name": "query all settings, after 1.7",
         "props": [
             {
                 "p": "payload"
@@ -1388,7 +1570,7 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.5",
+        "onceDelay": "1.7",
         "topic": "",
         "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
         "payloadType": "jsonata",
@@ -1404,7 +1586,7 @@
         "id": "d30801432e1972b3",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: set radar time (in seconds), after 0.2",
+        "name": "init: set radar time (in seconds), after 1.2",
         "props": [
             {
                 "p": "payload"
@@ -1417,7 +1599,7 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.2",
+        "onceDelay": "1.2",
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
@@ -1433,7 +1615,7 @@
         "id": "93dfd24a4e45dbb9",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: set radar timezone, after 0.3",
+        "name": "init: set radar timezone, after 1.3",
         "props": [
             {
                 "p": "payload"
@@ -1446,7 +1628,7 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.3",
+        "onceDelay": "1.3",
         "topic": "",
         "payload": "\"CZ\" & \"PST-7\" & \"\\n\"",
         "payloadType": "jsonata",
@@ -1462,7 +1644,7 @@
         "id": "b965ece6f3bd3377",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: base settings and filters, after 0.1",
+        "name": "init: base settings and filters, after 1.1",
         "props": [
             {
                 "p": "payload"
@@ -1475,7 +1657,7 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": 0.1,
+        "onceDelay": "1.1",
         "topic": "",
         "payload": "\"OJUSF2S2K+IGONO3OUOTOhOC\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
         "payloadType": "jsonata",
@@ -1520,7 +1702,7 @@
         "id": "efddf78e690358fc",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: PA, active power mode after settings, after 1",
+        "name": "init: PA, active power mode after settings, after 2",
         "props": [
             {
                 "p": "payload"
@@ -1533,7 +1715,7 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "1",
+        "onceDelay": "2",
         "topic": "",
         "payload": "\"PA\"",
         "payloadType": "jsonata",
@@ -1549,7 +1731,7 @@
         "id": "78f9e09b02db0b2c",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: save settings",
+        "name": "init: save settings, after 1.6",
         "props": [
             {
                 "p": "payload"
@@ -1562,11 +1744,11 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.4",
+        "onceDelay": "1.6",
         "topic": "",
         "payload": "\"A!\"",
         "payloadType": "jsonata",
-        "x": 170,
+        "x": 200,
         "y": 360,
         "wires": [
             [
@@ -1683,7 +1865,7 @@
         "id": "9cc39551ab98256a",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: turn on OS",
+        "name": "init: turn on OS, after 1.4",
         "props": [
             {
                 "p": "payload"
@@ -1696,11 +1878,11 @@
         "repeat": "7200",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.4",
+        "onceDelay": "1.4",
         "topic": "",
         "payload": "\"OS\"",
         "payloadType": "jsonata",
-        "x": 160,
+        "x": 190,
         "y": 280,
         "wires": [
             [
@@ -1712,7 +1894,7 @@
         "id": "a3dc8ff6a80ce4c0",
         "type": "inject",
         "z": "94d07e407c25f282",
-        "name": "init: turn on OM",
+        "name": "init: turn on OM, after 1.5",
         "props": [
             {
                 "p": "payload"
@@ -1725,11 +1907,11 @@
         "repeat": "7200",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.4",
+        "onceDelay": "1.5",
         "topic": "",
         "payload": "\"OM\"",
         "payloadType": "jsonata",
-        "x": 170,
+        "x": 190,
         "y": 320,
         "wires": [
             [
@@ -3046,7 +3228,7 @@
         "type": "debug",
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
-        "name": "event telemetry response",
+        "name": "tb telemetry response",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -3055,7 +3237,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1270,
+        "x": 1260,
         "y": 220,
         "wires": []
     },
@@ -3112,7 +3294,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 410,
+        "x": 370,
         "y": 140,
         "wires": []
     },
@@ -3135,7 +3317,7 @@
         "id": "5fc376fb123914c0",
         "type": "debug",
         "z": "f7932be9acc7391c",
-        "name": "tb-telemetry debug: catch",
+        "name": "thingsboard debug: catch",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -3550,6 +3732,132 @@
         "wires": [
             [
                 "521115ddd5741eea"
+            ]
+        ]
+    },
+    {
+        "id": "542b3b8720733a01",
+        "type": "debug",
+        "z": "f7932be9acc7391c",
+        "g": "8d3fe796e032166c",
+        "name": "tb attributes response",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1080,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "0a28f82092611160",
+        "type": "http request",
+        "z": "f7932be9acc7391c",
+        "g": "8d3fe796e032166c",
+        "name": "send client-side attributes",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 1090,
+        "y": 1040,
+        "wires": [
+            [
+                "542b3b8720733a01"
+            ]
+        ]
+    },
+    {
+        "id": "ac10d4e38e95fa26",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "8d3fe796e032166c",
+        "name": "set up tb client-side attributes post ",
+        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1000,
+        "y": 1000,
+        "wires": [
+            [
+                "0a28f82092611160"
+            ]
+        ]
+    },
+    {
+        "id": "f453ff6136f95abe",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "set deployment client side attribute payload",
+        "func": "var newMsg = {};\nnewMsg.payload = {};\n\nnewMsg.payload.deploymentID = msg.payload.id;\nnewMsg.payload.deploymentEntryDateTime = msg.payload.entryDateTime;\nnewMsg.payload.deploymentName = msg.payload.name;\nnewMsg.payload.deploymentLat = msg.payload.lat;\nnewMsg.payload.deploymentLon = msg.payload.lon;\nnewMsg.payload.deploymentOrientation = msg.payload.orientation;\nnewMsg.payload.deploymentAddress = msg.payload.address;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1060,
+        "wires": [
+            [
+                "ac10d4e38e95fa26"
+            ]
+        ]
+    },
+    {
+        "id": "8768b75dbfee3973",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "deployment location link in",
+        "links": [
+            "b4935c0d86d87137"
+        ],
+        "x": 155,
+        "y": 1060,
+        "wires": [
+            [
+                "f453ff6136f95abe"
+            ]
+        ]
+    },
+    {
+        "id": "d367cb76b239682f",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "system_metrics link in",
+        "links": [
+            "486556a1e7fce8cf"
+        ],
+        "x": 155,
+        "y": 1000,
+        "wires": [
+            [
+                "ac10d4e38e95fa26"
             ]
         ]
     },
@@ -6363,77 +6671,6 @@
         "wires": []
     },
     {
-        "id": "0a28f82092611160",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "send client-side attributes",
-        "method": "use",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "application/json",
-                "valueValue": ""
-            }
-        ],
-        "x": 1170,
-        "y": 300,
-        "wires": [
-            [
-                "542b3b8720733a01"
-            ]
-        ]
-    },
-    {
-        "id": "542b3b8720733a01",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "client-side attributes response",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1190,
-        "y": 340,
-        "wires": []
-    },
-    {
-        "id": "ac10d4e38e95fa26",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set up tb client-side attributes post ",
-        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1080,
-        "y": 260,
-        "wires": [
-            [
-                "0a28f82092611160"
-            ]
-        ]
-    },
-    {
         "id": "64c998a572e86dce",
         "type": "exec",
         "z": "05fcb02c571dcfee",
@@ -6526,7 +6763,9 @@
         "x": 270,
         "y": 700,
         "wires": [
-            []
+            [
+                "0312bb5c0734c168"
+            ]
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -6718,7 +6957,7 @@
         "links": [
             "6106b11d56c22e4a"
         ],
-        "x": 285,
+        "x": 345,
         "y": 1080,
         "wires": []
     },
@@ -6727,7 +6966,7 @@
         "type": "inject",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "query all settings",
+        "name": "query all settings, after 5",
         "props": [
             {
                 "p": "payload"
@@ -6744,7 +6983,7 @@
         "topic": "",
         "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
         "payloadType": "jsonata",
-        "x": 150,
+        "x": 170,
         "y": 1080,
         "wires": [
             [
@@ -6761,7 +7000,7 @@
         "links": [
             "3bf70e1d7ad2d43b"
         ],
-        "x": 305,
+        "x": 365,
         "y": 1120,
         "wires": [
             [
@@ -6782,7 +7021,7 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 560,
+        "x": 620,
         "y": 1120,
         "wires": []
     },
@@ -6808,7 +7047,7 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 400,
+        "x": 460,
         "y": 1120,
         "wires": [
             [
@@ -7410,7 +7649,7 @@
         "y": 180,
         "wires": [
             [
-                "ac10d4e38e95fa26"
+                "486556a1e7fce8cf"
             ]
         ]
     },
@@ -7774,55 +8013,6 @@
         ]
     },
     {
-        "id": "32ac6cf42cd8c106",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "fe1b9f6f9d89d353",
-        "name": "upload to TB client-side attributes, separately",
-        "info": "",
-        "x": 1170,
-        "y": 1400,
-        "wires": []
-    },
-    {
-        "id": "8768b75dbfee3973",
-        "type": "link in",
-        "z": "05fcb02c571dcfee",
-        "g": "fe1b9f6f9d89d353",
-        "name": "deployment submit system link in",
-        "links": [
-            "b4935c0d86d87137"
-        ],
-        "x": 205,
-        "y": 1420,
-        "wires": [
-            [
-                "f453ff6136f95abe"
-            ]
-        ]
-    },
-    {
-        "id": "f453ff6136f95abe",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "fe1b9f6f9d89d353",
-        "name": "set deployment client side attribute payload",
-        "func": "var newMsg = {};\nnewMsg.payload = {};\n\nnewMsg.payload.deploymentID = msg.payload.id;\nnewMsg.payload.deploymentEntryDateTime = msg.payload.entryDateTime;\nnewMsg.payload.deploymentName = msg.payload.name;\nnewMsg.payload.deploymentLat = msg.payload.lat;\nnewMsg.payload.deploymentLon = msg.payload.lon;\nnewMsg.payload.deploymentOrientation = msg.payload.orientation;\nnewMsg.payload.deploymentAddress = msg.payload.address;\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 460,
-        "y": 1420,
-        "wires": [
-            [
-                "ac10d4e38e95fa26"
-            ]
-        ]
-    },
-    {
         "id": "d541ace7a209a1d7",
         "type": "inject",
         "z": "05fcb02c571dcfee",
@@ -7841,7 +8031,7 @@
         "payload": "object",
         "payloadType": "date",
         "x": 130,
-        "y": 1540,
+        "y": 1420,
         "wires": [
             [
                 "a411516e46bf7fd6"
@@ -7862,7 +8052,7 @@
         "finalize": "",
         "libs": [],
         "x": 470,
-        "y": 1540,
+        "y": 1420,
         "wires": [
             [
                 "865fd78705194730"
@@ -7888,7 +8078,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 750,
-        "y": 1540,
+        "y": 1420,
         "wires": []
     },
     {
@@ -7910,7 +8100,7 @@
         "fontSize": 16,
         "color": "#000000",
         "x": 750,
-        "y": 1580,
+        "y": 1460,
         "wires": []
     },
     {
@@ -7932,7 +8122,7 @@
         "payload": "#:(config)::osTimeZone",
         "payloadType": "global",
         "x": 150,
-        "y": 1580,
+        "y": 1460,
         "wires": [
             [
                 "497d7e2831eb983b"
@@ -7959,7 +8149,7 @@
         "className": "",
         "topicType": "msg",
         "x": 620,
-        "y": 1780,
+        "y": 1660,
         "wires": [
             [
                 "3fb79b44d4787b15"
@@ -7994,7 +8184,7 @@
         "animate": false,
         "className": "",
         "x": 180,
-        "y": 1740,
+        "y": 1620,
         "wires": [
             [
                 "1f33180305d5e203",
@@ -8024,7 +8214,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 650,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             []
         ]
@@ -8057,7 +8247,7 @@
         "to": "",
         "reg": false,
         "x": 230,
-        "y": 1780,
+        "y": 1660,
         "wires": [
             [
                 "fe941a906b772e44",
@@ -8087,7 +8277,7 @@
         "className": "",
         "topicType": "msg",
         "x": 620,
-        "y": 1740,
+        "y": 1620,
         "wires": [
             [
                 "a035b3ce9edec363"
@@ -8113,7 +8303,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [
                 "1f33180305d5e203"
@@ -8134,7 +8324,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1780,
+        "y": 1660,
         "wires": [
             [
                 "fbb1ec4d830de603",
@@ -8156,7 +8346,7 @@
         "oldrc": false,
         "name": "",
         "x": 1050,
-        "y": 1740,
+        "y": 1620,
         "wires": [
             [],
             [],
@@ -8177,7 +8367,7 @@
         "finalize": "",
         "libs": [],
         "x": 840,
-        "y": 1740,
+        "y": 1620,
         "wires": [
             [
                 "504aa2fe928643b3",
@@ -8199,7 +8389,7 @@
         "oldrc": false,
         "name": "",
         "x": 1160,
-        "y": 1680,
+        "y": 1560,
         "wires": [
             [],
             [],
@@ -8223,7 +8413,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1780,
+        "y": 1660,
         "wires": []
     },
     {
@@ -8243,7 +8433,7 @@
         "topic": "",
         "name": "",
         "x": 1060,
-        "y": 1640,
+        "y": 1520,
         "wires": []
     },
     {
@@ -8267,7 +8457,7 @@
         "to": "",
         "reg": false,
         "x": 420,
-        "y": 1740,
+        "y": 1620,
         "wires": [
             [
                 "7f09ed91e3dfbe2f"
@@ -8282,7 +8472,7 @@
         "name": "",
         "events": "all",
         "x": 100,
-        "y": 1640,
+        "y": 1520,
         "wires": [
             [
                 "5e61626ef0f824f5"
@@ -8303,7 +8493,7 @@
         "finalize": "",
         "libs": [],
         "x": 240,
-        "y": 1640,
+        "y": 1520,
         "wires": [
             [
                 "1f33180305d5e203"
@@ -8324,7 +8514,7 @@
         "oldrc": false,
         "name": "",
         "x": 1090,
-        "y": 1840,
+        "y": 1720,
         "wires": [
             [],
             [],
@@ -8359,12 +8549,43 @@
         "animate": false,
         "className": "",
         "x": 600,
-        "y": 1840,
+        "y": 1720,
         "wires": [
             [
                 "b395ee7aa9dc2a44"
             ]
         ]
+    },
+    {
+        "id": "0312bb5c0734c168",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "debug 11",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 530,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "486556a1e7fce8cf",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "system_metrics link out",
+        "mode": "link",
+        "links": [
+            "d367cb76b239682f"
+        ],
+        "x": 1145,
+        "y": 180,
+        "wires": []
     },
     {
         "id": "e6461a7fdeef48a2",
@@ -9234,7 +9455,7 @@
         "to": "",
         "reg": false,
         "x": 1240,
-        "y": 620,
+        "y": 680,
         "wires": [
             []
         ]
@@ -9244,14 +9465,14 @@
         "type": "link out",
         "z": "fa9f914901f79645",
         "g": "f431ed51eb2b2a49",
-        "name": "deployment submit link out",
+        "name": "deployment location link out",
         "mode": "link",
         "links": [
-            "8a83d59ee0db1198",
-            "8768b75dbfee3973"
+            "8768b75dbfee3973",
+            "8a83d59ee0db1198"
         ],
         "x": 1155,
-        "y": 660,
+        "y": 720,
         "wires": []
     },
     {
@@ -9271,7 +9492,7 @@
         "topic": "",
         "name": "",
         "x": 1220,
-        "y": 700,
+        "y": 640,
         "wires": []
     },
     {
