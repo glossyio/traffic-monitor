@@ -33,6 +33,11 @@ _logonerror "ping -c2 $DOMAINADDR"
 _logoutput "Gateway: $GWADDR"
 _logonerror "ping -c2 $GWADDR"
 
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  _logoutput "IP addresses: $_IP"
+fi
+
 for ns in $(grep "^nameserver" /etc/resolv.conf|tr -s " " | cut -d\  -f2 | tr "\n" " ")
 do
 	_logoutput "Nameserver: $ns"
