@@ -1,4 +1,5 @@
 # Optional: IoT hub backend integration
+# Optional: IoT hub backend integration
 thingsboard:
     # Optional: enable connection to backend thingsboard server (default: shown below)
     enabled: False

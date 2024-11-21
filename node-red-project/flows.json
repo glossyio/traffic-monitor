@@ -10,7 +10,7 @@
     {
         "id": "94d07e407c25f282",
         "type": "tab",
-        "label": "flow-radar-01",
+        "label": "radar",
         "disabled": false,
         "info": "",
         "env": []
@@ -18,7 +18,7 @@
     {
         "id": "9269520ddb532b00",
         "type": "tab",
-        "label": "event-speed-assignment",
+        "label": "event-radar-assignment",
         "disabled": false,
         "info": "",
         "env": []
@@ -34,7 +34,7 @@
     {
         "id": "28627559bebdc324",
         "type": "tab",
-        "label": "dashboard-monitoring",
+        "label": "ui-monitoring",
         "disabled": false,
         "info": "",
         "env": []
@@ -42,7 +42,7 @@
     {
         "id": "239d7b3ba410ad5e",
         "type": "tab",
-        "label": "dashboard-database",
+        "label": "ui-database",
         "disabled": false,
         "info": "",
         "env": []
@@ -50,7 +50,7 @@
     {
         "id": "05fcb02c571dcfee",
         "type": "tab",
-        "label": "dashboard-system",
+        "label": "ui-system",
         "disabled": false,
         "info": "",
         "env": []
@@ -58,7 +58,7 @@
     {
         "id": "fa9f914901f79645",
         "type": "tab",
-        "label": "dashboard-config",
+        "label": "ui-setup",
         "disabled": false,
         "info": "",
         "env": []
@@ -92,7 +92,7 @@
         ],
         "x": 394,
         "y": 759,
-        "w": 1112,
+        "w": 1152,
         "h": 302
     },
     {
@@ -139,7 +139,7 @@
         ],
         "x": 394,
         "y": 1079,
-        "w": 1192,
+        "w": 1212,
         "h": 282
     },
     {
@@ -162,7 +162,7 @@
         ],
         "x": 394,
         "y": 1379,
-        "w": 1252,
+        "w": 1292,
         "h": 262
     },
     {
@@ -380,7 +380,7 @@
         ],
         "x": 394,
         "y": 1659,
-        "w": 1032,
+        "w": 1072,
         "h": 262
     },
     {
@@ -404,7 +404,7 @@
         ],
         "x": 334,
         "y": 899,
-        "w": 892,
+        "w": 912,
         "h": 322
     },
     {
@@ -513,77 +513,8 @@
         ],
         "x": 14,
         "y": 919,
-        "w": 1502,
+        "w": 1552,
         "h": 502
-    },
-    {
-        "id": "b334a2375eb8cb42",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "2f27e270200485b9",
-        "name": "event",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "4bec488857c0553f",
-            "ed447e5f8becbfad",
-            "cc84d34370b6feb3"
-        ],
-        "x": 134,
-        "y": 99,
-        "w": 352,
-        "h": 142
-    },
-    {
-        "id": "694f0242d0985c69",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "2f27e270200485b9",
-        "name": "TB HTTP API / telemetry",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "677a57bbf3619854",
-            "df6ac2f42ac6d8c7",
-            "a960ef97c77a540b",
-            "21944450ecc08385"
-        ],
-        "x": 814,
-        "y": 99,
-        "w": 592,
-        "h": 162
-    },
-    {
-        "id": "1819134eccdf2660",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "2f27e270200485b9",
-        "name": "radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "fee85b1886270ac6",
-            "087588593911f398",
-            "fc5e2cd719fa680a",
-            "0124afc74d86b533",
-            "e05e91362c933e94",
-            "9f5540b6beae8e73",
-            "3fb645608f34cc0c",
-            "2a979d76853ee0ab",
-            "cc21b9e657cba081",
-            "ff1719e60656a2e6",
-            "d3f14c01ec3c7250",
-            "5d3596375bd695c0",
-            "4796b517d7d045a7",
-            "9a894f4bd304f5a9"
-        ],
-        "x": 134,
-        "y": 299,
-        "w": 872,
-        "h": 342
     },
     {
         "id": "dd29df4e644425b0",
@@ -672,28 +603,6 @@
         "h": 1242
     },
     {
-        "id": "b196e2c041c5a7f8",
-        "type": "group",
-        "z": "fa9f914901f79645",
-        "name": "tb config",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "e6461a7fdeef48a2",
-            "f39673b54301cbb7",
-            "b9331c0751fea046",
-            "f3b683b4b8176420",
-            "f5797fb02606eda0",
-            "cdc9b204ff81145c",
-            "eade31a8864e53ee"
-        ],
-        "x": 34,
-        "y": 119,
-        "w": 1092,
-        "h": 162
-    },
-    {
         "id": "f431ed51eb2b2a49",
         "type": "group",
         "z": "fa9f914901f79645",
@@ -724,28 +633,9 @@
             "3d22adf20ea1089f"
         ],
         "x": 34,
-        "y": 319,
+        "y": 79,
         "w": 1332,
         "h": 728
-    },
-    {
-        "id": "55a1af374cc8ecb9",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "2f27e270200485b9",
-        "name": "deployment",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "8a83d59ee0db1198",
-            "8606059dd2f94a75",
-            "c6ff73faf6fa9e98"
-        ],
-        "x": 134,
-        "y": 659,
-        "w": 872,
-        "h": 122
     },
     {
         "id": "64c3f8c396d4445c",
@@ -783,6 +673,133 @@
         "y": 1379,
         "w": 1352,
         "h": 389.5
+    },
+    {
+        "id": "2f27e270200485b9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "thingsboard telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "b334a2375eb8cb42",
+            "694f0242d0985c69",
+            "1819134eccdf2660",
+            "55a1af374cc8ecb9",
+            "99dfff63ac837bc8"
+        ],
+        "x": 108,
+        "y": 73,
+        "w": 1324,
+        "h": 834
+    },
+    {
+        "id": "fe1b9f6f9d89d353",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "thingsboard client side attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f453ff6136f95abe",
+            "8768b75dbfee3973",
+            "d367cb76b239682f",
+            "8d3fe796e032166c"
+        ],
+        "x": 114,
+        "y": 933,
+        "w": 1138,
+        "h": 214
+    },
+    {
+        "id": "b334a2375eb8cb42",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "event",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4bec488857c0553f",
+            "ed447e5f8becbfad",
+            "cc84d34370b6feb3"
+        ],
+        "x": 134,
+        "y": 99,
+        "w": 352,
+        "h": 142
+    },
+    {
+        "id": "694f0242d0985c69",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "TB HTTP API / telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "a960ef97c77a540b",
+            "21944450ecc08385"
+        ],
+        "x": 814,
+        "y": 99,
+        "w": 592,
+        "h": 162
+    },
+    {
+        "id": "1819134eccdf2660",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "fee85b1886270ac6",
+            "087588593911f398",
+            "fc5e2cd719fa680a",
+            "0124afc74d86b533",
+            "e05e91362c933e94",
+            "9f5540b6beae8e73",
+            "3fb645608f34cc0c",
+            "2a979d76853ee0ab",
+            "cc21b9e657cba081",
+            "ff1719e60656a2e6",
+            "d3f14c01ec3c7250",
+            "5d3596375bd695c0",
+            "4796b517d7d045a7",
+            "9a894f4bd304f5a9"
+        ],
+        "x": 134,
+        "y": 299,
+        "w": 872,
+        "h": 342
+    },
+    {
+        "id": "55a1af374cc8ecb9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "deployment",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a83d59ee0db1198",
+            "8606059dd2f94a75",
+            "c6ff73faf6fa9e98"
+        ],
+        "x": 134,
+        "y": 659,
+        "w": 872,
+        "h": 122
     },
     {
         "id": "99dfff63ac837bc8",
@@ -898,48 +915,9 @@
             "c12aee3936f24599"
         ],
         "x": 74,
-        "y": 679,
-        "w": 952,
+        "y": 439,
+        "w": 1012,
         "h": 342
-    },
-    {
-        "id": "2f27e270200485b9",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "thingsboard telemetry",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "b334a2375eb8cb42",
-            "694f0242d0985c69",
-            "1819134eccdf2660",
-            "55a1af374cc8ecb9",
-            "99dfff63ac837bc8"
-        ],
-        "x": 108,
-        "y": 73,
-        "w": 1324,
-        "h": 834
-    },
-    {
-        "id": "fe1b9f6f9d89d353",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "thingsboard client side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f453ff6136f95abe",
-            "8768b75dbfee3973",
-            "d367cb76b239682f",
-            "8d3fe796e032166c"
-        ],
-        "x": 114,
-        "y": 933,
-        "w": 1138,
-        "h": 214
     },
     {
         "id": "8d3fe796e032166c",
@@ -964,8 +942,8 @@
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-frigate",
-        "broker": "localhost",
-        "port": "1883",
+        "broker": "${TM_MQTT_BROKER_HOST}",
+        "port": "${TM_MQTT_BROKER_PORT}",
         "clientid": "",
         "autoConnect": true,
         "usetls": false,
@@ -995,7 +973,7 @@
         "id": "d65c36624d553ee7",
         "type": "serial-port",
         "name": "",
-        "serialport": "/dev/ttyACM0",
+        "serialport": "${TM_RADAR_SERIAL_PORT}",
         "serialbaud": "19200",
         "databits": "8",
         "parity": "none",
@@ -1064,7 +1042,7 @@
     {
         "id": "2f60c1ab30a6fc8f",
         "type": "sqlitedb",
-        "db": "code/nodered/db/tmdb.sqlite",
+        "db": "${TM_DATABASE_PATH_TMDB}",
         "mode": "RWC"
     },
     {
@@ -1081,7 +1059,7 @@
     {
         "id": "1d8d8c9a28569355",
         "type": "sqlitedb",
-        "db": "code/nodered/db/radar.sqlite",
+        "db": "${TM_DATABASE_PATH_RADAR}",
         "mode": "RWC"
     },
     {
@@ -1204,17 +1182,6 @@
         }
     },
     {
-        "id": "8570be913d017562",
-        "type": "ui_group",
-        "name": "IoT Hub (ThingsBoard)",
-        "tab": "b749f5c4a9a4fbf2",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "0fd9a947334c7d0f",
         "type": "ui_tab",
         "name": "System Settings Tab",
@@ -1237,7 +1204,7 @@
         "id": "77966ee928726fbf",
         "type": "ui_group",
         "name": "Deployment Location",
-        "tab": "b749f5c4a9a4fbf2",
+        "tab": "8edc39241634f1de",
         "order": 1,
         "disp": true,
         "width": "6",
@@ -1267,11 +1234,10 @@
         "className": ""
     },
     {
-        "id": "b749f5c4a9a4fbf2",
+        "id": "8edc39241634f1de",
         "type": "ui_tab",
         "name": "Configuration / Setup Tab",
-        "icon": "settings_remote",
-        "order": 4,
+        "icon": "setup",
         "disabled": false,
         "hidden": false
     },
@@ -1350,7 +1316,9 @@
         "x": 680,
         "y": 260,
         "wires": [
-            []
+            [
+                "9d7f5eede861553e"
+            ]
         ]
     },
     {
@@ -1358,7 +1326,7 @@
         "type": "function",
         "z": "3dae026ab340962a",
         "name": "init config defaults",
-        "func": "\n//thingsboard\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//databases\nmsg.payload.database.tmdb_path = msg.payload.database.tmdb_path ? msg.payload.database.tmdb_path : \"code/nodered/db/tmdb.sqlite\";\nmsg.payload.database.radar_path = msg.payload.database.radar_path ? msg.payload.database.tmdb_path : \"code/nodered/db/radar.sqlite\";\n\n//mqtt_broker \nif (msg.payload.mqtt_broker.enabled_server === true && msg.payload.mqtt_broker.host === null) {\n    msg.payload.mqtt_broker.host = \"localhost\";\n}\nif (msg.payload.mqtt_broker.enabled_server === true && msg.payload.mqtt_broker.port === null) {\n    msg.payload.mqtt_broker.port = \"1883\";\n}\n\n//radar\nmsg.payload.radar.enabled = msg.payload.radar.enabled === true ? true : false;\n\nif (msg.payload.radar.enabled === true && msg.payload.radar.serial_port === null) {\n    msg.payload.radar.serial_port = \"/dev/ttyACM0\";\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each camera to init values\nmsg.payload.cameras.forEach(function(camera) {\n    camera.enabled = camera.enabled === false ? false : true;\n    camera.radar_camera = camera.enabled === false ? false : true;\n});\n\nreturn msg;",
+        "func": "\n//thingsboard\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each camera to init values\nfor (let camera in msg.payload.cameras) {\n    camera.enabled = camera.enabled === false ? false : true;\n    camera.radar_camera = camera.enabled === false ? false : true;\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1406,6 +1374,63 @@
         ]
     },
     {
+        "id": "9d7f5eede861553e",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "name": "debug 13",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 870,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "f047864a9ec9d7d3",
+        "type": "inject",
+        "z": "3dae026ab340962a",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "TM_DATABASE_PATH_TMDB",
+        "payloadType": "env",
+        "x": 250,
+        "y": 460,
+        "wires": [
+            [
+                "a7c604af34c02a3e"
+            ]
+        ]
+    },
+    {
+        "id": "a7c604af34c02a3e",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "name": "debug 14",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 460,
+        "wires": []
+    },
+    {
         "id": "e43506628b4a1cdb",
         "type": "comment",
         "z": "94d07e407c25f282",
@@ -1423,8 +1448,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 850,
-        "y": 280,
+        "x": 890,
+        "y": 220,
         "wires": [
             [
                 "36b68e0861cc5fc4",
@@ -1446,8 +1471,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1080,
-        "y": 280,
+        "x": 1100,
+        "y": 220,
         "wires": []
     },
     {
@@ -1483,13 +1508,14 @@
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive OPS243 serial (USB - /dev/ttyACM0)",
+        "name": "receive OPS243 serial (USB)",
         "serial": "d65c36624d553ee7",
-        "x": 730,
+        "x": 680,
         "y": 220,
         "wires": [
             [
-                "bb2b78040385d37e"
+                "bb2b78040385d37e",
+                "fc5608d13cb6083f"
             ]
         ]
     },
@@ -1928,7 +1954,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 890,
+        "x": 910,
         "y": 580,
         "wires": [
             [
@@ -2013,7 +2039,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
         "name": "",
-        "x": 890,
+        "x": 910,
         "y": 660,
         "wires": [
             []
@@ -2049,7 +2075,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 970,
+        "x": 990,
         "y": 900,
         "wires": [
             [
@@ -2121,7 +2147,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1290,
+        "x": 1330,
         "y": 900,
         "wires": []
     },
@@ -2155,7 +2181,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
         "name": "",
-        "x": 970,
+        "x": 990,
         "y": 980,
         "wires": [
             []
@@ -2170,7 +2196,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1010,
+        "x": 1030,
         "y": 1200,
         "wires": [
             [
@@ -2242,7 +2268,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1360,
+        "x": 1380,
         "y": 1200,
         "wires": []
     },
@@ -2255,7 +2281,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 1010,
+        "x": 1030,
         "y": 1280,
         "wires": [
             []
@@ -2316,7 +2342,7 @@
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 930,
+        "x": 950,
         "y": 1760,
         "wires": [
             [
@@ -2363,7 +2389,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
+        "x": 1270,
         "y": 1760,
         "wires": []
     },
@@ -2376,7 +2402,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 930,
+        "x": 950,
         "y": 1840,
         "wires": [
             []
@@ -2412,7 +2438,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1030,
+        "x": 1050,
         "y": 1420,
         "wires": [
             [
@@ -2484,7 +2510,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1390,
+        "x": 1430,
         "y": 1420,
         "wires": []
     },
@@ -2497,7 +2523,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 1160,
+        "x": 1180,
         "y": 1560,
         "wires": [
             []
@@ -2549,8 +2575,8 @@
         "links": [
             "2f0f10b6553e5840"
         ],
-        "x": 995,
-        "y": 340,
+        "x": 1025,
+        "y": 280,
         "wires": []
     },
     {
@@ -2646,6 +2672,22 @@
         ]
     },
     {
+        "id": "fc5608d13cb6083f",
+        "type": "debug",
+        "z": "94d07e407c25f282",
+        "name": "debug 12",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 160,
+        "wires": []
+    },
+    {
         "id": "481344ed5f4b69d9",
         "type": "debug",
         "z": "9269520ddb532b00",
@@ -2723,7 +2765,7 @@
         "type": "aedes broker",
         "z": "9269520ddb532b00",
         "name": "frigate-local",
-        "mqtt_port": "1883",
+        "mqtt_port": "${TM_MQTT_BROKER_PORT}",
         "mqtt_ws_bind": "port",
         "mqtt_ws_port": "",
         "mqtt_ws_path": "",
@@ -2965,7 +3007,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 800,
+        "x": 820,
         "y": 1140,
         "wires": [
             [
@@ -3074,7 +3116,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1060,
+        "x": 1090,
         "y": 1140,
         "wires": []
     },
@@ -3147,8 +3189,8 @@
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "",
-        "name": "",
-        "x": 450,
+        "name": "query radar readings around event time",
+        "x": 490,
         "y": 680,
         "wires": [
             [
@@ -4851,7 +4893,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 370,
+        "x": 390,
         "y": 440,
         "wires": [
             [
@@ -4910,7 +4952,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 430,
+        "x": 450,
         "y": 700,
         "wires": [
             [
@@ -4969,7 +5011,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 430,
+        "x": 450,
         "y": 1240,
         "wires": [
             [
@@ -5028,7 +5070,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 750,
+        "x": 770,
         "y": 2320,
         "wires": [
             [
@@ -5109,7 +5151,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 770,
+        "x": 790,
         "y": 2660,
         "wires": [
             [
@@ -5157,7 +5199,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 350,
+        "x": 370,
         "y": 980,
         "wires": [
             [
@@ -5406,7 +5448,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 610,
+        "x": 700,
         "y": 160,
         "wires": [
             [
@@ -5779,7 +5821,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 870,
+        "x": 890,
         "y": 840,
         "wires": [
             [
@@ -5988,7 +6030,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1000,
+        "x": 1020,
         "y": 1140,
         "wires": [
             [
@@ -6038,7 +6080,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1240,
+        "x": 1290,
         "y": 1140,
         "wires": [
             []
@@ -6149,7 +6191,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1000,
+        "x": 1020,
         "y": 1200,
         "wires": [
             [
@@ -6169,7 +6211,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1290,
+        "x": 1340,
         "y": 1200,
         "wires": [
             []
@@ -6206,7 +6248,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1000,
+        "x": 1020,
         "y": 1260,
         "wires": [
             [
@@ -6227,7 +6269,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1300,
+        "x": 1350,
         "y": 1260,
         "wires": [
             []
@@ -6264,7 +6306,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1000,
+        "x": 1020,
         "y": 1320,
         "wires": [
             [
@@ -6284,7 +6326,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1320,
+        "x": 1370,
         "y": 1320,
         "wires": [
             []
@@ -6321,7 +6363,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1000,
+        "x": 1020,
         "y": 1380,
         "wires": [
             [
@@ -6341,7 +6383,7 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1270,
+        "x": 1320,
         "y": 1380,
         "wires": [
             []
@@ -8588,199 +8630,6 @@
         "wires": []
     },
     {
-        "id": "e6461a7fdeef48a2",
-        "type": "ui_form",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "",
-        "label": "Enter ThingsBoard Parameters",
-        "group": "8570be913d017562",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "options": [
-            {
-                "label": "Server Url",
-                "value": "serverUrl",
-                "type": "text",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Server Port",
-                "value": "serverPort",
-                "type": "text",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Access Token",
-                "value": "accessToken",
-                "type": "password",
-                "required": true,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "serverUrl": "",
-            "serverPort": "",
-            "accessToken": ""
-        },
-        "payload": "",
-        "submit": "submit",
-        "cancel": "",
-        "topic": "topic",
-        "topicType": "msg",
-        "splitLayout": "",
-        "className": "",
-        "x": 630,
-        "y": 200,
-        "wires": [
-            [
-                "f3b683b4b8176420",
-                "f5797fb02606eda0",
-                "cdc9b204ff81145c"
-            ]
-        ]
-    },
-    {
-        "id": "f39673b54301cbb7",
-        "type": "function",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "read stored configuration",
-        "func": "let storedServerUrl = global.get(\"serverUrl\", \"config\")\nlet serverUrl = storedServerUrl ? storedServerUrl : env.get(\"VAR_DEFAULT_TB_SERVER\");\nlet tbUrl = serverUrl ? serverUrl : \"http://tb.untower.online\"\n\nlet storedServerPort = global.get(\"serverPort\", \"config\")\nlet serverPort = storedServerPort ? storedServerPort : env.get(\"VAR_DEFAULT_TB_PORT\")\nlet tbPort = serverPort ? serverPort : \"80\";\n\nvar newMsg = { payload: { \n    // \"serverUrl\" : tbUrl,\n    // \"serverPort\": tbPort,\n    \"serverUrl\" : storedServerUrl,\n    \"serverPort\": storedServerPort,\n    \"accessToken\": global.get(\"accessToken\", \"config\"),\n} }\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "// Code added here will be run once\n// whenever the node is started.\nvar newMsg = { payload: { \"deviceName\": flow.get(\"deviceName\") } }\nreturn newMsg;",
-        "finalize": "",
-        "libs": [],
-        "x": 330,
-        "y": 200,
-        "wires": [
-            [
-                "e6461a7fdeef48a2",
-                "eade31a8864e53ee"
-            ]
-        ]
-    },
-    {
-        "id": "b9331c0751fea046",
-        "type": "ui_ui_control",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "",
-        "events": "all",
-        "x": 120,
-        "y": 200,
-        "wires": [
-            [
-                "f39673b54301cbb7"
-            ]
-        ]
-    },
-    {
-        "id": "f3b683b4b8176420",
-        "type": "change",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::serverUrl",
-                "pt": "global",
-                "to": "payload.serverUrl",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 970,
-        "y": 160,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "f5797fb02606eda0",
-        "type": "change",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::serverPort",
-                "pt": "global",
-                "to": "payload.serverPort",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 980,
-        "y": 200,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "cdc9b204ff81145c",
-        "type": "change",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::accessToken",
-                "pt": "global",
-                "to": "payload.accessToken",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 990,
-        "y": 240,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "eade31a8864e53ee",
-        "type": "ui_text",
-        "z": "fa9f914901f79645",
-        "g": "b196e2c041c5a7f8",
-        "group": "8570be913d017562",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Customer/Contact Info may be updated at:",
-        "format": "<a href=\"{{msg.payload.serverUrl}}/login\">{{msg.payload.serverUrl}}/login</a>",
-        "layout": "row-left",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 670,
-        "y": 240,
-        "wires": []
-    },
-    {
         "id": "a3be4e82e9888ae7",
         "type": "catch",
         "z": "fa9f914901f79645",
@@ -8883,7 +8732,7 @@
         "splitLayout": "",
         "className": "",
         "x": 540,
-        "y": 460,
+        "y": 220,
         "wires": [
             [
                 "2adb206d0c356f8d"
@@ -8899,7 +8748,7 @@
         "path": "/worldmap",
         "events": "connect,disconnect,point,draw,layer,bounds,files,other",
         "x": 150,
-        "y": 400,
+        "y": 160,
         "wires": [
             [
                 "c3629e05aa43359d"
@@ -8940,7 +8789,7 @@
         "mapopt": "",
         "mapwms": false,
         "x": 1200,
-        "y": 560,
+        "y": 320,
         "wires": []
     },
     {
@@ -8972,7 +8821,7 @@
         "repair": false,
         "outputs": 3,
         "x": 200,
-        "y": 460,
+        "y": 220,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9003,7 +8852,7 @@
         "templateScope": "local",
         "className": "",
         "x": 130,
-        "y": 360,
+        "y": 120,
         "wires": [
             []
         ]
@@ -9022,7 +8871,7 @@
         "finalize": "",
         "libs": [],
         "x": 950,
-        "y": 500,
+        "y": 260,
         "wires": [
             [
                 "f56633a89481439a",
@@ -9044,7 +8893,7 @@
         "finalize": "",
         "libs": [],
         "x": 960,
-        "y": 460,
+        "y": 220,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9074,7 +8923,7 @@
         "repair": false,
         "outputs": 2,
         "x": 930,
-        "y": 380,
+        "y": 140,
         "wires": [
             [
                 "83df59e62c9ebe4f"
@@ -9104,7 +8953,7 @@
         "repair": false,
         "outputs": 2,
         "x": 630,
-        "y": 400,
+        "y": 160,
         "wires": [
             [
                 "0d5da21c913e2636"
@@ -9135,7 +8984,7 @@
         "to": "",
         "reg": false,
         "x": 920,
-        "y": 420,
+        "y": 180,
         "wires": [
             [
                 "83df59e62c9ebe4f"
@@ -9156,7 +9005,7 @@
         "finalize": "",
         "libs": [],
         "x": 1020,
-        "y": 540,
+        "y": 300,
         "wires": [
             [
                 "0efbf0059084d8d0"
@@ -9191,7 +9040,7 @@
         "to": "",
         "reg": false,
         "x": 260,
-        "y": 520,
+        "y": 280,
         "wires": [
             [
                 "0efbf0059084d8d0"
@@ -9207,8 +9056,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 580,
-        "y": 900,
+        "x": 600,
+        "y": 660,
         "wires": [
             [
                 "9e029001fe1461ec"
@@ -9233,7 +9082,7 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
         "x": 290,
-        "y": 900,
+        "y": 660,
         "wires": [
             [
                 "4a34bf5fa29ebc93",
@@ -9251,7 +9100,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "tmdb.deployment, Prepared Statement",
         "x": 850,
-        "y": 800,
+        "y": 560,
         "wires": [
             []
         ]
@@ -9270,7 +9119,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 800,
+        "y": 560,
         "wires": [
             [
                 "8add1e75d35b3706",
@@ -9296,7 +9145,7 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
         "x": 260,
-        "y": 940,
+        "y": 700,
         "wires": [
             [
                 "4a34bf5fa29ebc93",
@@ -9318,8 +9167,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 830,
-        "y": 900,
+        "x": 890,
+        "y": 660,
         "wires": []
     },
     {
@@ -9331,8 +9180,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 560,
-        "y": 760,
+        "x": 580,
+        "y": 520,
         "wires": [
             [
                 "b87d36e05fb323bf",
@@ -9358,7 +9207,7 @@
         "onceDelay": "5",
         "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 1;",
         "x": 270,
-        "y": 760,
+        "y": 520,
         "wires": [
             [
                 "b7103dfabfa35f67"
@@ -9400,7 +9249,7 @@
         "to": "",
         "reg": false,
         "x": 790,
-        "y": 720,
+        "y": 480,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9427,7 +9276,7 @@
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
         "x": 300,
-        "y": 980,
+        "y": 740,
         "wires": [
             [
                 "4a34bf5fa29ebc93"
@@ -9455,7 +9304,7 @@
         "to": "",
         "reg": false,
         "x": 1240,
-        "y": 680,
+        "y": 440,
         "wires": [
             []
         ]
@@ -9472,7 +9321,7 @@
             "8a83d59ee0db1198"
         ],
         "x": 1155,
-        "y": 720,
+        "y": 480,
         "wires": []
     },
     {
@@ -9492,7 +9341,7 @@
         "topic": "",
         "name": "",
         "x": 1220,
-        "y": 640,
+        "y": 400,
         "wires": []
     },
     {
@@ -9509,7 +9358,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 540,
+        "y": 300,
         "wires": [
             [
                 "e8e148afd22b2619",
@@ -9528,7 +9377,7 @@
         "name": "",
         "events": "all",
         "x": 120,
-        "y": 600,
+        "y": 360,
         "wires": [
             [
                 "2dc53362436f912e"
@@ -9556,7 +9405,7 @@
         "to": "",
         "reg": false,
         "x": 290,
-        "y": 600,
+        "y": 360,
         "wires": [
             [
                 "0efbf0059084d8d0",
@@ -9573,8 +9422,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 580,
-        "y": 940,
+        "x": 600,
+        "y": 700,
         "wires": [
             [
                 "6e00fe840927061b"
@@ -9595,8 +9444,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 850,
-        "y": 940,
+        "x": 910,
+        "y": 700,
         "wires": []
     },
     {
@@ -9609,7 +9458,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "radar.deployment, Prepared Statement",
         "x": 850,
-        "y": 840,
+        "y": 600,
         "wires": [
             []
         ]
@@ -9628,8 +9477,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 810,
-        "y": 760,
+        "x": 870,
+        "y": 520,
         "wires": []
     },
     {
@@ -9649,7 +9498,7 @@
         "templateScope": "local",
         "className": "",
         "x": 310,
-        "y": 360,
+        "y": 120,
         "wires": [
             []
         ]
@@ -10005,7 +9854,7 @@
         "id": "c0078fa5b3946c05",
         "type": "exec",
         "z": "f410f6aac9d1a3fc",
-        "command": "python3 ./traffic-monitor/utils/rpi5-nodered-telemetry.py",
+        "command": "python3 .node-red/projects/traffic-monitor/utils/rpi5-nodered-telemetry.py",
         "addpay": "",
         "append": "",
         "useSpawn": "true",
