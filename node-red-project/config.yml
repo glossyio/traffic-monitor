@@ -1,54 +1,22 @@
+# Optional: IoT hub backend integration
 thingsboard:
-    enabled: True
+    # Optional: enable connection to backend thingsboard server (default: shown below)
+    enabled: False
+    # Required: host name
     host: tb.server.com
-    # Required: http (default: shown below), mqtt (coming soon)
-    # NOTE: see https://thingsboard.io/docs/reference/protocols/
-    protocol: http
-    port: 80
-    # Optional: 
+    # Required: thingsboard telemetry protocol (default: shown below), 
+    # NOTE: only http(s) currently supported, mqtt coming soon
+    #  see https://thingsboard.io/docs/reference/protocols/
+    protocol: https
+    # Optional: port
+    port: 443
+    # Optional: API key for device 
     # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey
     api_key:
     # Optional: future use for auto-provisioning (RPiSN)
     # provisionDeviceKey: 
     # Optional: future use for auto-provisioning (manual)
     # provisionDeviceSecret: 
-
- #Optional: Database configuration
-database:
-    # the path to store the SQLite DB (default: shown below)
-    # tmdb contains events (object detection), deployment (location), other core tables
-    tmdb_path: code/nodered/db/tmdb.sqlite
-    # radar contains all radar-based detections
-    radar_path: code/nodered/db/radar.sqlite
-
-# Optional: (Required for object detection) node-RED mqtt broker for incoming Frigate events 
-# Note: Settings below set up the aedes broker node (if enabled) AND subscriber/publisher nodes
-mqtt_broker:
-    # Optional: (default: shown below)
-    # enabled_server: True
-    # Required: MQTT server address
-    # NOTE: if enabled_server is false, this shall point to external broker
-    host: localhost
-    # Optional: MQTT server port
-    port: 1883
-    # Optional: user, leave blank for no authentication
-    # NOTE: MQTT user can be specified with an environment variable.
-    username:
-    # Optional: password, leave blank for no authentication
-    # NOTE: MQTT password can be specified with an environment variable.
-    password:
-
-# Optional: Doppler radar config    
-radar:
-    # Required: system USB serial port for radar (default: shown below)
-    serial_port: /dev/ttyACM0
-
-time:
-    # Optional: Set a timezone to use in the UI (default: use browser local time)
-    # timezone: America/Los_Angeles
-    # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
-    # Note: for offline deployments, time will stop whenever power is disconnected
-    npt_set: True
 
 # Optional: deployment location details
 # Note: May be used to determine device placement on maps when no GPS is present
@@ -80,7 +48,10 @@ cameras:
         # Optional: define if radar readings are attached to camera (default: shown below)
         # camera and radar direction and field of view (FOV) should match
         radar_camera: True
-    mycam2:
-        enabled: False
-        radar_camera: False
 
+time:
+    # Optional: Set a timezone to use in the UI (default: use browser local time)
+    timezone: America/Los_Angeles
+    # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
+    # Note: for offline deployments, time will stop whenever power is disconnected
+    npt_set: True
