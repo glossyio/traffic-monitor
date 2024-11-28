@@ -2,6 +2,8 @@
 # Script will check if wlan0 is operating nominally and if not, reset the device
 
 # -q option runs this script without output unless there's an error
+
+# use "journald -r -t wlan_check_log" to see output
 QUIET="no"
 while getopts "q" opt; do
 	case $opt in
@@ -15,7 +17,6 @@ while getopts "q" opt; do
 done
 
 ERROR=false
-LOGFILE=/var/log/wlan_check.log
 DOMAINADDR='duckduckgo.com'
 GWADDR=$(ip route show | grep "^default" | cut -d\  -f3)
 PUBNSADDRS=("8.8.8.8" "1.1.1.1" "9.9.9.9")
@@ -23,7 +24,7 @@ NETRESTARTCMD="systemctl restart NetworkManager"
 
 
 _logallways() {
-	echo "$(date +%D_%T): $*" >> $LOGFILE 2>&1
+	logger -t wlan_check_log -- "$*"
 }
 _logoutput(){
 	if [ "$QUIET" != "yes" ]
@@ -53,11 +54,11 @@ _repeat_command() {
 		then
 			_logallways "------------- $CMD"
 			_logallways "ERROR on iteration $((i + 1)): $OUTPUT"
+			ERROR=true
 		else
 			return 0
 		fi
 	done
-	ERROR=true
 }
 
 
@@ -98,6 +99,6 @@ then
 	_logallways "$($NETRESTARTCMD)"
 	exit 1
 else
-	_logoutput "No Network Issues Detected"
+	_logallways "No Network Issues Detected"
 	exit 0
 fi
