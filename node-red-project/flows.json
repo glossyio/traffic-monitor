@@ -82,9 +82,9 @@
             "477f8523e9784029",
             "5c4e5a6064580e23"
         ],
-        "x": 394,
+        "x": 384,
         "y": 759,
-        "w": 1112,
+        "w": 1122,
         "h": 302
     },
     {
@@ -9466,7 +9466,8 @@
                 "ab9d774782f92e88",
                 "720ee19c705f37d9",
                 "c0078fa5b3946c05",
-                "c497cfedf6aed533"
+                "c497cfedf6aed533",
+                "dbf0b15048a2a4f8"
             ]
         ]
     },
@@ -9888,12 +9889,220 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 350,
         "y": 40,
+        "wires": []
+    },
+    {
+        "id": "cdae22fb9adb7b85",
+        "type": "exec",
+        "z": "f410f6aac9d1a3fc",
+        "command": "pwd",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 550,
+        "y": 880,
+        "wires": [
+            [
+                "4f49ad09da35c459"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "46659c16e63d9e19",
+        "type": "inject",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 300,
+        "y": 880,
+        "wires": [
+            [
+                "cdae22fb9adb7b85"
+            ]
+        ]
+    },
+    {
+        "id": "e4535138a931dad6",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "90ec4da57d5e81dc",
+        "type": "file in",
+        "z": "f410f6aac9d1a3fc",
+        "name": "read Frigate config file",
+        "filename": "payload",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 720,
+        "y": 720,
+        "wires": [
+            [
+                "090af8decaa1e8ce"
+            ]
+        ]
+    },
+    {
+        "id": "090af8decaa1e8ce",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "FrigateConfig",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_FrigateConfig",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 960,
+        "y": 720,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "dbf0b15048a2a4f8",
+        "type": "exec",
+        "z": "f410f6aac9d1a3fc",
+        "command": "pwd",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 290,
+        "y": 720,
+        "wires": [
+            [
+                "1d24a7b3d5e4ac83"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "4f49ad09da35c459",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$substring(msg.payload,0, $length(msg.payload)-1) & \"/code/frigate/config/config.yml\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 740,
+        "y": 880,
+        "wires": [
+            [
+                "e4535138a931dad6"
+            ]
+        ]
+    },
+    {
+        "id": "1d24a7b3d5e4ac83",
+        "type": "change",
+        "z": "f410f6aac9d1a3fc",
+        "name": "set Frigate config file path",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$substring(msg.payload,0, $length(msg.payload)-1) & \"/code/frigate/config/config.yml\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 720,
+        "wires": [
+            [
+                "90ec4da57d5e81dc",
+                "d98c8fe90fd09d8f"
+            ]
+        ]
+    },
+    {
+        "id": "d98c8fe90fd09d8f",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "Frigate config file path",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 780,
         "wires": []
     }
 ]
