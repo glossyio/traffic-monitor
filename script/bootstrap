@@ -41,6 +41,8 @@ sudo chmod 755 /var/lib/go2rtc/go2rtc_linux_arm64
 sudo chmod +x /var/lib/go2rtc/go2rtc_linux_arm64
 ##-- /go2rtc
 
+#for wifi drop script
+sudo apt-get -y install host
 
 ##-- install coral tpu drivers
 #install EdgeTPU runtime library (??) https://coral.ai/docs/accelerator/get-started/#1-install-the-edge-tpu-runtime

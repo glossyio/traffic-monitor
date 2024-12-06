@@ -7,7 +7,7 @@
 # See examples: https://networkmanager.dev/docs/api/latest/nmcli-examples.html
 
 #enable hotspot
-sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
+# sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
 
 #disable hotspot
 #sudo nmcli device disconnect wlan0
@@ -23,3 +23,17 @@ sudo nmcli device wifi hotspot ssid <example-network-name> password <example-pas
 
 #convenient field values retrieval for scripting
 #nmcli -g ip4.address connection show my-con-eth0
+
+#logs for diagnosing
+# journalctl -u NetworkManager
+# dmesg | grep wlan0
+
+#link status
+# ip link show
+# nmcli device status
+# iwconfig wlan0
+
+#restart network
+# sudo systemctl restart NetworkManager
+# nmcli device down wlan0
+# nmcli device up wlan0

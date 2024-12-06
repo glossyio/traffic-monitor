@@ -81,3 +81,11 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 #rpicam-vid settings
 # rpicam-vid --list-cameras for modes available
 
+##-- set up wifi reconnect script
+sudo iwconfig wlan0 power off   #turn off wlan0 power management immediately
+mkdir -p ~/code/utils
+cp -p utils/wlan_check.sh ~/code/utils
+chmod +x ~/code/utils/wlan_check.sh
+
+# Setup chronjobs to turn off wlan0 power management and regularly run wlan_check script
+crontab script/crontab.jobs
