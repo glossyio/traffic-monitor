@@ -38,7 +38,6 @@ _logonerror(){
 	ES=$?
 	if ((ES))
 	then
-		_logallways "------------- $CMD"
 		_logallways "ERROR: $OUTPUT"
 		ERROR=true
 	fi
@@ -52,7 +51,6 @@ _repeat_command() {
 		# Check if the command failed (non-zero exit status)
 		if [ $? -ne 0 ]
 		then
-			_logallways "------------- $CMD"
 			_logallways "ERROR on iteration $((i + 1)): $OUTPUT"
 			ERROR=true
 		else
@@ -62,10 +60,9 @@ _repeat_command() {
 }
 
 
-_logoutput "==============================================================================="
 _logoutput "Starting wlan_check"
 
-_logoutput "ThingsBoard: $DOMAINADDR"
+_logoutput "External DNS name: $DOMAINADDR"
 _logonerror "host $DOMAINADDR"
 _repeat_command "ping -c1 $DOMAINADDR" 3
 
@@ -87,10 +84,10 @@ done
 if [[ $ERROR != "false" ]]
 then
 	#before network reset, log link status
-	_logallways "***** restarting network"
+	_logallways "***** Repeated connectivity errors occurred, dumping link status and restarting network interface *****"
 	_IP=$(hostname -I) || true
 	if [ "$_IP" ]; then
-	_logallways "IP addresses: $_IP"
+		_logallways "IP addresses: $_IP"
 	fi
 	_logallways "$(ip link show)"
 	_logallways "$(nmcli device status)"
@@ -99,6 +96,6 @@ then
 	_logallways "$($NETRESTARTCMD)"
 	exit 1
 else
-	_logallways "No Network Issues Detected"
+	_logallways "No network connectivity issues detected"
 	exit 0
 fi
