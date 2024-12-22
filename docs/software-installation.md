@@ -2,9 +2,9 @@
 description: Software installation for the Traffic Monitor
 ---
 
-# Installation
+# Software Installation
 
-Whether you [build-your-own-device-diy.md](build-your-own-device-diy.md "mention") or buy a pre-made unit, these are the instructions to start from scratch with the open source Traffic Monitor:
+Whether you [build-your-own-device-diy](build-your-own-device-diy/ "mention") or buy a pre-made unit, these are the instructions to start from scratch with the open source Traffic Monitor:
 
 1. Assemble your device (see [recommended hardware](recommended-hardware.md) ⚒️).
 2. Install [Raspberry Pi OS](https://www.raspberrypi.com/software/) (Full Install) Bookworm (latest).

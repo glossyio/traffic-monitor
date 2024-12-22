@@ -20,6 +20,7 @@ Use the following checklist as a quick guide to components you need to purchase
 * [ ] Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) plus [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
 * [ ] AI co-processor: [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/)
 * [ ] Radar (optional): [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
+* [ ] Enclosure:  [Traffic Monitor Enclosure 3D Print Model](https://github.com/greendormer/tm-enclosure-3d)
 
 ## Computing Device
 
@@ -40,23 +41,26 @@ The Raspberry Pi 4B and earlier units are not recommended as they have experienc
 
 (Recommended) The official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
 
-Although the Raspberry Pi 5 is rated for 27-watts (5V at 5A draw) and less power will often cause resets or throttling,the Traffic Monitor typically consumes between 6-14-watts of energy  when it is fully operational and inferencing, depending on number of components in use and how much motion is detected.
+Although the Raspberry Pi 5 is rated for 27-watts (5V at 5A) and less power will often cause resets or throttling,the Traffic Monitor typically consumes between 6-14-watts of energy  when it is fully operational and inferencing, depending on number of components in use and how much motion is detected.
 
 ## Camera(s)
 
 The Raspberry Pi 5 has 2 camera transceiver slots, so you can easily attach 2 native Raspberry Pi cameras to the board.&#x20;
 
-In fact, any camera that can output H.264 is conceivably compatible with the traffic monitor, so you may also attach USB or even networked cameras for object detection. &#x20;
+In fact, any camera that can output H.264 is conceivably compatible with the traffic monitor, so you may also attach USB or even networked cameras to work with object detection. &#x20;
 
 {% hint style="info" %}
-See the [Frigate Camera setup](https://docs.frigate.video/frigate/camera\_setup) for more information on goals for tuning stream configurations for cameras.
+See the [Frigate Camera setup](https://docs.frigate.video/frigate/camera_setup) for more information on goals for tuning stream configurations for cameras.
 {% endhint %}
 
-(Required) [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) or [Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for object detection (requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)).
+(Required) [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) or [Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for object detection (requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is not included).
 
 ## AI Co-processor (TPU)
 
-(Required with camera) [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/). The [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor and capable of 100+ FPS with millisecond inference time. Other co-processors may work, but this is supported with [Frigate](https://github.com/blakeblackshear/frigate) for object detectionn.
+(Required with camera) [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/). The Coral TPU is capable of 100+ FPS with millisecond inference time. Other co-processors may work, but the Coral TPU is fully supported with [Frigate object detectors](https://docs.frigate.video/configuration/object_detectors) out of the box. &#x20;
+
+* [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor that you can connect to any computing device with a USB interface.
+* PineBoards offers the [Hat AI! Coral TPU bundle](https://pineboards.io/products/hat-ai-coral-edge-tpu-bundle-for-raspberry-pi-5) that connects via PCIe that offers a sleek way to add the Coral capabilities.
 
 ## Radar
 
@@ -68,4 +72,4 @@ See the [Frigate Camera setup](https://docs.frigate.video/frigate/camera\_setup)
 
 ## Enclosure
 
-External enclosure and internal mounting board need to be custom made at the moment, instructions coming soon.
+External enclosure and internal mounting board need to be custom made at the moment, instructions and 3D printing model coming soon.

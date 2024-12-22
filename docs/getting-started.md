@@ -4,5 +4,5 @@ The traffic monitor requires the [Recommended Hardware](recommended-hardware.md)
 
 There are two ways to get started:
 
-<table data-card-size="large" data-view="cards"><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td></td><td><p></p><p></p></td><td>Build It - <a href="build-your-own-device-diy.md">Build your own device (DIY)</a></td></tr><tr><td></td><td></td><td>Buy It - Purchase a pre-built traffic monitor or kit from the Roadway Biome Project (<em>coming soon</em>).</td></tr></tbody></table>
+<table data-card-size="large" data-view="cards"><thead><tr><th></th><th></th><th></th><th data-hidden data-card-cover data-type="files"></th></tr></thead><tbody><tr><td><p><strong>Build It!</strong>  </p><p>See our <a href="build-your-own-device-diy/">Build your own device (DIY)</a> guide. Everything is open source and available retail. Customize to your heart's content.</p></td><td></td><td></td><td><a href=".gitbook/assets/tools.svg">tools.svg</a></td></tr><tr><td><strong>Buy It!</strong></td><td>Purchase a pre-built traffic monitor or kit from the Roadway Biome Project (<em>coming soon</em>).</td><td><p></p><p></p></td><td><a href=".gitbook/assets/store.svg">store.svg</a></td></tr></tbody></table>
 
