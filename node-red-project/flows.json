@@ -2,7 +2,7 @@
     {
         "id": "3dae026ab340962a",
         "type": "tab",
-        "label": "init",
+        "label": "init-config",
         "disabled": false,
         "info": "",
         "env": []
@@ -595,12 +595,13 @@
             "2b82d4b028657058",
             "099df29d699f405e",
             "0312bb5c0734c168",
-            "486556a1e7fce8cf"
+            "486556a1e7fce8cf",
+            "4bd9da11f63e508c"
         ],
         "x": 14,
-        "y": 99,
-        "w": 1172,
-        "h": 1242
+        "y": 139,
+        "w": 1312,
+        "h": 1189.5
     },
     {
         "id": "f431ed51eb2b2a49",
@@ -691,8 +692,8 @@
         ],
         "x": 108,
         "y": 73,
-        "w": 1324,
-        "h": 834
+        "w": 1364,
+        "h": 854
     },
     {
         "id": "fe1b9f6f9d89d353",
@@ -709,9 +710,52 @@
             "8d3fe796e032166c"
         ],
         "x": 114,
-        "y": 933,
-        "w": 1138,
-        "h": 214
+        "y": 953,
+        "w": 1218,
+        "h": 254
+    },
+    {
+        "id": "4bbb9e24b5507a00",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "name": "read config file",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a328d3aa7640102a",
+            "7e988d24a7912d71",
+            "ecc317fcd059b4c3",
+            "b0252bd49dc8e61d",
+            "94136e5a6f092bb6",
+            "9d7f5eede861553e",
+            "828d2b22b1cb00c2",
+            "5ffb7c9c38b8c5b0"
+        ],
+        "x": 94,
+        "y": 99,
+        "w": 1032,
+        "h": 302
+    },
+    {
+        "id": "4f240c3c73d9a73f",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "name": "write config file",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6d1083e26ae2dea1",
+            "42a1a291f7d8006b",
+            "a3c5767fda5250f0",
+            "f4a626a3a3ab3d39",
+            "b2d374d1168973c7"
+        ],
+        "x": 94,
+        "y": 499,
+        "w": 992,
+        "h": 142
     },
     {
         "id": "b334a2375eb8cb42",
@@ -728,7 +772,7 @@
             "cc84d34370b6feb3"
         ],
         "x": 134,
-        "y": 99,
+        "y": 119,
         "w": 352,
         "h": 142
     },
@@ -745,12 +789,13 @@
             "677a57bbf3619854",
             "df6ac2f42ac6d8c7",
             "a960ef97c77a540b",
-            "21944450ecc08385"
+            "21944450ecc08385",
+            "93aa421659d2c20b"
         ],
         "x": 814,
         "y": 99,
-        "w": 592,
-        "h": 162
+        "w": 632,
+        "h": 202
     },
     {
         "id": "1819134eccdf2660",
@@ -778,7 +823,7 @@
             "9a894f4bd304f5a9"
         ],
         "x": 134,
-        "y": 299,
+        "y": 319,
         "w": 872,
         "h": 342
     },
@@ -797,7 +842,7 @@
             "c6ff73faf6fa9e98"
         ],
         "x": 134,
-        "y": 659,
+        "y": 679,
         "w": 872,
         "h": 122
     },
@@ -815,7 +860,7 @@
             "24c1b5f3bff3834c"
         ],
         "x": 134,
-        "y": 799,
+        "y": 819,
         "w": 392,
         "h": 82
     },
@@ -931,12 +976,13 @@
         "nodes": [
             "542b3b8720733a01",
             "0a28f82092611160",
-            "ac10d4e38e95fa26"
+            "ac10d4e38e95fa26",
+            "878ebf44fe5b5adf"
         ],
         "x": 834,
-        "y": 959,
-        "w": 392,
-        "h": 162
+        "y": 979,
+        "w": 472,
+        "h": 202
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1245,9 +1291,10 @@
         "id": "a328d3aa7640102a",
         "type": "yaml",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "property": "payload",
         "name": "",
-        "x": 590,
+        "x": 690,
         "y": 180,
         "wires": [
             [
@@ -1259,6 +1306,7 @@
         "id": "7e988d24a7912d71",
         "type": "file in",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "name": "",
         "filename": ".node-red/projects/traffic-monitor/node-red-project/config.yml",
         "filenameType": "str",
@@ -1267,7 +1315,7 @@
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 400,
+        "x": 500,
         "y": 140,
         "wires": [
             [
@@ -1279,6 +1327,7 @@
         "id": "ecc317fcd059b4c3",
         "type": "inject",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "name": "",
         "props": [],
         "repeat": "",
@@ -1286,7 +1335,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 90,
+        "x": 190,
         "y": 140,
         "wires": [
             [
@@ -1298,6 +1347,7 @@
         "id": "b0252bd49dc8e61d",
         "type": "change",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "name": "",
         "rules": [
             {
@@ -1313,11 +1363,12 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 680,
+        "x": 780,
         "y": 260,
         "wires": [
             [
-                "9d7f5eede861553e"
+                "9d7f5eede861553e",
+                "828d2b22b1cb00c2"
             ]
         ]
     },
@@ -1325,15 +1376,16 @@
         "id": "94136e5a6f092bb6",
         "type": "function",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "\n//thingsboard\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each camera to init values\nfor (let camera in msg.payload.cameras) {\n    camera.enabled = camera.enabled === false ? false : true;\n    camera.radar_camera = camera.enabled === false ? false : true;\n};\n\nreturn msg;",
+        "func": "\n//thingsboard\n// default to enabled: true\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === false ? false : true;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each camera to init values\nfor (let camera in msg.payload.cameras) {\n    camera.enabled = camera.enabled === false ? false : true;\n    camera.radar_camera = camera.enabled === false ? false : true;\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 650,
+        "x": 750,
         "y": 220,
         "wires": [
             [
@@ -1377,6 +1429,7 @@
         "id": "9d7f5eede861553e",
         "type": "debug",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
         "name": "debug 13",
         "active": true,
         "tosidebar": true,
@@ -1385,50 +1438,140 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 870,
+        "x": 970,
         "y": 260,
         "wires": []
     },
     {
-        "id": "f047864a9ec9d7d3",
-        "type": "inject",
+        "id": "828d2b22b1cb00c2",
+        "type": "template",
         "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "set up thingsboard server URL (global.tbURL)",
+        "field": "tbURL",
+        "fieldType": "global",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{{{payload.thingsboard.host}}}{{#payload.thingsboard.port}}:{{payload.thingsboard.port}}{{/payload.thingsboard.port}}/api/v1/{{{payload.thingsboard.api_key}}}",
+        "output": "str",
+        "x": 920,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6d1083e26ae2dea1",
+        "type": "link in",
+        "z": "3dae026ab340962a",
+        "g": "4f240c3c73d9a73f",
+        "name": "link in 2",
+        "links": [],
+        "x": 145,
+        "y": 540,
+        "wires": [
+            [
+                "f4a626a3a3ab3d39"
+            ]
+        ]
+    },
+    {
+        "id": "42a1a291f7d8006b",
+        "type": "file",
+        "z": "3dae026ab340962a",
+        "g": "4f240c3c73d9a73f",
         "name": "",
-        "props": [
+        "filename": ".node-red/projects/traffic-monitor/node-red-project/config-write.yml",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 820,
+        "y": 580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a3c5767fda5250f0",
+        "type": "yaml",
+        "z": "3dae026ab340962a",
+        "g": "4f240c3c73d9a73f",
+        "property": "payload",
+        "name": "",
+        "x": 470,
+        "y": 580,
+        "wires": [
+            [
+                "42a1a291f7d8006b"
+            ]
+        ]
+    },
+    {
+        "id": "f4a626a3a3ab3d39",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "g": "4f240c3c73d9a73f",
+        "name": "set msg.payload from global.config",
+        "rules": [
             {
-                "p": "payload"
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "#:(config)::config",
+                "tot": "global"
             }
         ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 540,
+        "wires": [
+            [
+                "a3c5767fda5250f0"
+            ]
+        ]
+    },
+    {
+        "id": "b2d374d1168973c7",
+        "type": "inject",
+        "z": "3dae026ab340962a",
+        "d": true,
+        "g": "4f240c3c73d9a73f",
+        "name": "",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "TM_DATABASE_PATH_TMDB",
-        "payloadType": "env",
-        "x": 250,
-        "y": 460,
+        "x": 190,
+        "y": 600,
         "wires": [
             [
-                "a7c604af34c02a3e"
+                "f4a626a3a3ab3d39"
             ]
         ]
     },
     {
-        "id": "a7c604af34c02a3e",
-        "type": "debug",
+        "id": "5ffb7c9c38b8c5b0",
+        "type": "watch",
         "z": "3dae026ab340962a",
-        "name": "debug 14",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 450,
-        "y": 460,
-        "wires": []
+        "g": "4bbb9e24b5507a00",
+        "name": "",
+        "files": ".node-red/projects/traffic-monitor/node-red-project/config.yml",
+        "recursive": "",
+        "x": 340,
+        "y": 200,
+        "wires": [
+            [
+                "7e988d24a7912d71"
+            ]
+        ]
     },
     {
         "id": "e43506628b4a1cdb",
@@ -3257,8 +3400,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1210,
-        "y": 180,
+        "x": 1250,
+        "y": 220,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -3271,7 +3414,7 @@
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
         "name": "tb telemetry response",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3279,8 +3422,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1260,
-        "y": 220,
+        "x": 1300,
+        "y": 260,
         "wires": []
     },
     {
@@ -3297,7 +3440,7 @@
         "finalize": "",
         "libs": [],
         "x": 340,
-        "y": 200,
+        "y": 220,
         "wires": [
             [
                 "a960ef97c77a540b"
@@ -3314,7 +3457,7 @@
             "274f87c31437c2d7"
         ],
         "x": 175,
-        "y": 140,
+        "y": 160,
         "wires": [
             [
                 "4bec488857c0553f",
@@ -3337,7 +3480,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 370,
-        "y": 140,
+        "y": 160,
         "wires": []
     },
     {
@@ -3359,7 +3502,7 @@
         "id": "5fc376fb123914c0",
         "type": "debug",
         "z": "f7932be9acc7391c",
-        "name": "thingsboard debug: catch",
+        "name": "catch - thingsboard error",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -3382,7 +3525,7 @@
             "313905edff24218d"
         ],
         "x": 175,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "5d3596375bd695c0"
@@ -3399,7 +3542,7 @@
             "5c4e5a6064580e23"
         ],
         "x": 175,
-        "y": 340,
+        "y": 360,
         "wires": [
             [
                 "2a979d76853ee0ab"
@@ -3416,7 +3559,7 @@
             "62f7d1214aa96cc0"
         ],
         "x": 175,
-        "y": 480,
+        "y": 500,
         "wires": [
             [
                 "4796b517d7d045a7"
@@ -3433,7 +3576,7 @@
             "56ce714b7a23585b"
         ],
         "x": 175,
-        "y": 520,
+        "y": 540,
         "wires": [
             [
                 "9a894f4bd304f5a9"
@@ -3450,7 +3593,7 @@
             "cceefa4b9aa98acc"
         ],
         "x": 175,
-        "y": 560,
+        "y": 580,
         "wires": [
             [
                 "cc21b9e657cba081"
@@ -3463,7 +3606,7 @@
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
         "name": "set up tb telemetry post",
-        "func": "// The server URL, port, and device access token must be stored in the config context\n// before this will work\nlet serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
+        "func": "msg.url = `${global.get(\"tbURL\")}/telemetry`\nmsg.method = \"POST\";\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3474,7 +3617,7 @@
         "y": 140,
         "wires": [
             [
-                "21944450ecc08385"
+                "93aa421659d2c20b"
             ]
         ]
     },
@@ -3486,7 +3629,7 @@
         "name": "send immediately",
         "info": "",
         "x": 240,
-        "y": 380,
+        "y": 400,
         "wires": []
     },
     {
@@ -3497,7 +3640,7 @@
         "name": "send radar_oc_payload w others to avoid hundreds of messages per object (oc = radar object detection end)",
         "info": "",
         "x": 530,
-        "y": 600,
+        "y": 620,
         "wires": []
     },
     {
@@ -3514,7 +3657,7 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 340,
+        "y": 360,
         "wires": [
             [
                 "a960ef97c77a540b"
@@ -3535,7 +3678,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 560,
+        "y": 580,
         "wires": [
             [
                 "d3f14c01ec3c7250"
@@ -3557,16 +3700,15 @@
         "randomFirst": "1",
         "randomLast": "5",
         "randomUnits": "seconds",
-        "drop": true,
+        "drop": false,
         "allowrate": false,
-        "outputs": 2,
-        "x": 1170,
-        "y": 140,
+        "outputs": 1,
+        "x": 1210,
+        "y": 180,
         "wires": [
             [
                 "677a57bbf3619854"
-            ],
-            []
+            ]
         ]
     },
     {
@@ -3592,7 +3734,7 @@
         "reduceInitType": "",
         "reduceFixup": "",
         "x": 820,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "a960ef97c77a540b"
@@ -3620,7 +3762,7 @@
         "to": "",
         "reg": false,
         "x": 610,
-        "y": 560,
+        "y": 580,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -3641,7 +3783,7 @@
         "finalize": "",
         "libs": [],
         "x": 340,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -3662,7 +3804,7 @@
         "finalize": "",
         "libs": [],
         "x": 400,
-        "y": 480,
+        "y": 500,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -3683,7 +3825,7 @@
         "finalize": "",
         "libs": [],
         "x": 420,
-        "y": 520,
+        "y": 540,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -3700,7 +3842,7 @@
             "b4935c0d86d87137"
         ],
         "x": 175,
-        "y": 740,
+        "y": 760,
         "wires": [
             [
                 "c6ff73faf6fa9e98"
@@ -3715,7 +3857,7 @@
         "name": "upload to TB as telemetry 'deployment'",
         "info": "",
         "x": 830,
-        "y": 700,
+        "y": 720,
         "wires": []
     },
     {
@@ -3732,7 +3874,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 740,
+        "y": 760,
         "wires": [
             [
                 "a960ef97c77a540b"
@@ -3753,7 +3895,7 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 840,
+        "y": 860,
         "wires": [
             [
                 "a960ef97c77a540b"
@@ -3770,7 +3912,7 @@
             "6dca925fad91c100"
         ],
         "x": 175,
-        "y": 840,
+        "y": 860,
         "wires": [
             [
                 "521115ddd5741eea"
@@ -3783,7 +3925,7 @@
         "z": "f7932be9acc7391c",
         "g": "8d3fe796e032166c",
         "name": "tb attributes response",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3791,8 +3933,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1080,
-        "y": 1080,
+        "x": 1160,
+        "y": 1140,
         "wires": []
     },
     {
@@ -3819,8 +3961,8 @@
                 "valueValue": ""
             }
         ],
-        "x": 1090,
-        "y": 1040,
+        "x": 1130,
+        "y": 1100,
         "wires": [
             [
                 "542b3b8720733a01"
@@ -3833,7 +3975,7 @@
         "z": "f7932be9acc7391c",
         "g": "8d3fe796e032166c",
         "name": "set up tb client-side attributes post ",
-        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
+        "func": "msg.url = `${global.get(\"tbURL\")}/attributes`\nmsg.method = \"POST\";\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3841,10 +3983,10 @@
         "finalize": "",
         "libs": [],
         "x": 1000,
-        "y": 1000,
+        "y": 1020,
         "wires": [
             [
-                "0a28f82092611160"
+                "878ebf44fe5b5adf"
             ]
         ]
     },
@@ -3862,7 +4004,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 1060,
+        "y": 1080,
         "wires": [
             [
                 "ac10d4e38e95fa26"
@@ -3879,7 +4021,7 @@
             "b4935c0d86d87137"
         ],
         "x": 155,
-        "y": 1060,
+        "y": 1080,
         "wires": [
             [
                 "f453ff6136f95abe"
@@ -3896,10 +4038,58 @@
             "486556a1e7fce8cf"
         ],
         "x": 155,
-        "y": 1000,
+        "y": 1020,
         "wires": [
             [
                 "ac10d4e38e95fa26"
+            ]
+        ]
+    },
+    {
+        "id": "93aa421659d2c20b",
+        "type": "switch",
+        "z": "f7932be9acc7391c",
+        "g": "694f0242d0985c69",
+        "name": "thingsboard.enabled",
+        "property": "#:(config)::thingsboard.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1180,
+        "y": 140,
+        "wires": [
+            [
+                "21944450ecc08385"
+            ]
+        ]
+    },
+    {
+        "id": "878ebf44fe5b5adf",
+        "type": "switch",
+        "z": "f7932be9acc7391c",
+        "g": "8d3fe796e032166c",
+        "name": "thingsboard.enabled",
+        "property": "#:(config)::thingsboard.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1080,
+        "y": 1060,
+        "wires": [
+            [
+                "0a28f82092611160"
             ]
         ]
     },
@@ -7199,11 +7389,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.osHostname",
+        "name": "set global.deviceAttributes.osHostname",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::osHostname",
+                "p": "#:(config)::deviceAttributes.osHostname",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -7221,7 +7411,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 500,
+        "x": 620,
         "y": 540,
         "wires": [
             [
@@ -7235,11 +7425,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.osRelease",
+        "name": "set global.deviceAttributes.osRelease",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::osRelease",
+                "p": "#:(config)::deviceAttributes.osRelease",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -7257,7 +7447,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 500,
+        "x": 610,
         "y": 580,
         "wires": [
             [
@@ -7271,11 +7461,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.frigateVersion",
+        "name": "set global.deviceAttributes.frigateVersion",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::frigateVersion",
+                "p": "#:(config)::deviceAttributes.frigateVersion",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -7293,7 +7483,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 660,
         "y": 980,
         "wires": [
             [
@@ -7307,11 +7497,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.tmVersion",
+        "name": "set global.deviceAttributes.tmVersion",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::tmVersion",
+                "p": "#:(config)::deviceAttributes.tmVersion",
                 "pt": "global",
                 "to": "TM_VERSION",
                 "tot": "env"
@@ -7336,12 +7526,13 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 500,
+        "x": 610,
         "y": 400,
         "wires": [
             [
                 "bcd4c7df6b6f93d3",
-                "d046a343ebc5fe81"
+                "d046a343ebc5fe81",
+                "4bd9da11f63e508c"
             ]
         ]
     },
@@ -7350,11 +7541,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.osTimeZone",
+        "name": "set global.deviceAttributes.osTimeZone",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::osTimeZone",
+                "p": "#:(config)::deviceAttributes.osTimeZone",
                 "pt": "global",
                 "to": "$trim(payload)",
                 "tot": "jsonata"
@@ -7379,7 +7570,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 700,
+        "x": 780,
         "y": 260,
         "wires": [
             [
@@ -7393,11 +7584,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.rpiSN",
+        "name": "set global.deviceAttributes.deviceName",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::rpiSN",
+                "p": "#:(config)::deviceAttributes.deviceName",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -7406,7 +7597,7 @@
                 "t": "set",
                 "p": "topic",
                 "pt": "msg",
-                "to": "rpiSN",
+                "to": "deviceName",
                 "tot": "str"
             }
         ],
@@ -7415,8 +7606,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 700,
-        "y": 180,
+        "x": 780,
+        "y": 220,
         "wires": [
             [
                 "eb3b3c5230e3dd32",
@@ -7434,7 +7625,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.rpiSN",
+        "label": "deviceName",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7442,7 +7633,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 730,
+        "x": 1070,
         "y": 220,
         "wires": []
     },
@@ -7456,7 +7647,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.osTimeZone",
+        "label": "osTimeZone",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7464,8 +7655,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 730,
-        "y": 300,
+        "x": 1070,
+        "y": 260,
         "wires": []
     },
     {
@@ -7478,7 +7669,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.tmVersion",
+        "label": "tmVersion",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7486,8 +7677,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 550,
-        "y": 440,
+        "x": 880,
+        "y": 400,
         "wires": []
     },
     {
@@ -7500,7 +7691,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.osHostname",
+        "label": "osHostname",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7508,7 +7699,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 710,
+        "x": 890,
         "y": 540,
         "wires": []
     },
@@ -7522,7 +7713,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.osRelease",
+        "label": "osRelease",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7530,7 +7721,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 710,
+        "x": 890,
         "y": 580,
         "wires": []
     },
@@ -7544,7 +7735,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.frigateVersion",
+        "label": "frigateVersion",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7552,7 +7743,7 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 680,
+        "x": 840,
         "y": 1020,
         "wires": []
     },
@@ -7687,8 +7878,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 990,
-        "y": 180,
+        "x": 1130,
+        "y": 360,
         "wires": [
             [
                 "486556a1e7fce8cf"
@@ -7746,11 +7937,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.ip4Address",
+        "name": "set global.deviceAttributes.ipv4Address",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::ip4Address",
+                "p": "#:(config)::deviceAttributes.ipv4Address",
                 "pt": "global",
                 "to": "$trim(payload)",
                 "tot": "msg"
@@ -7759,7 +7950,7 @@
                 "t": "set",
                 "p": "topic",
                 "pt": "msg",
-                "to": "ip4Address",
+                "to": "ipv4Address",
                 "tot": "str"
             },
             {
@@ -7775,7 +7966,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 800,
+        "x": 860,
         "y": 1180,
         "wires": [
             [
@@ -7794,7 +7985,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.ip4Address",
+        "label": "ipv4Address",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7802,8 +7993,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 850,
-        "y": 1220,
+        "x": 1130,
+        "y": 1180,
         "wires": []
     },
     {
@@ -7811,11 +8002,11 @@
         "type": "change",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "set global.ssid",
+        "name": "set global.deviceAttributes.ssid",
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::ssid",
+                "p": "#:(config)::deviceAttributes.ssid",
                 "pt": "global",
                 "to": "$trim(payload)",
                 "tot": "msg"
@@ -7840,7 +8031,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 780,
+        "x": 870,
         "y": 1260,
         "wires": [
             [
@@ -7859,7 +8050,7 @@
         "width": 0,
         "height": 0,
         "name": "",
-        "label": "global.ssid",
+        "label": "ssid",
         "format": "{{msg.payload}}",
         "layout": "row-spread",
         "className": "",
@@ -7867,8 +8058,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 830,
-        "y": 1300,
+        "x": 1110,
+        "y": 1260,
         "wires": []
     },
     {
@@ -8024,7 +8215,7 @@
         "finalize": "",
         "libs": [],
         "x": 680,
-        "y": 140,
+        "y": 180,
         "wires": [
             [
                 "0dccfc4a6467f7f4"
@@ -8604,7 +8795,7 @@
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
         "name": "debug 11",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -8625,8 +8816,25 @@
         "links": [
             "d367cb76b239682f"
         ],
-        "x": 1145,
-        "y": 180,
+        "x": 1285,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "4bd9da11f63e508c",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "debug 14",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 670,
+        "y": 480,
         "wires": []
     },
     {
