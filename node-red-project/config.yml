@@ -1,11 +1,12 @@
 # Optional: IoT hub backend integration
+# Optional: IoT hub backend integration
 thingsboard:
     # Optional: enable connection to backend thingsboard server (default: shown below)
     enabled: False
     # Required: host name
-    host: https://tb.untower.online
+    host: tb.server.com
     # Required: thingsboard telemetry protocol (default: shown below), 
-    # NOTE: only http currently supported, mqtt coming soon
+    # NOTE: only http(s) currently supported, mqtt coming soon
     #  see https://thingsboard.io/docs/reference/protocols/
     protocol: https
     # Optional: port
@@ -51,7 +52,7 @@ cameras:
 
 time:
     # Optional: Set a timezone to use in the UI (default: use browser local time)
-    # timezone: America/Los_Angeles
+    timezone: America/Los_Angeles
     # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
     # Note: for offline deployments, time will stop whenever power is disconnected
     npt_set: True
