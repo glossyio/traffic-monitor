@@ -873,32 +873,34 @@
             "01dff3893eb39da1",
             "4e8936db02bb178f",
             "19436a7a52d909d9",
-            "2e68cd37817b2daf",
             "e324cdf01167b6b4",
             "31bacedd56738550",
             "d8f03f03f310add8",
             "29a676d1bd02f536",
-            "8f25eb46491c2ba8",
-            "c57a418904e7a3ad",
-            "31ac40076e215cc4",
-            "f4e111698e2eab17",
             "cb044bcc7761877e",
             "bd1fd07675061bc2",
-            "ea92823893e73755",
-            "d2517d4449d0f68b",
-            "36b8b6784ea2a6ed",
-            "43edb7d86d284c6f",
-            "4a55556eab0ae7a8",
-            "802edd652bd58f44",
-            "1de236791f36ba7d",
-            "8388c9d4b581c31f",
-            "62f975f6e1b6ab30",
-            "9db1e644acd86582"
+            "da7f36e9a5928977",
+            "13395b5909a63e3c",
+            "cb52210b00dca61d",
+            "9278adb1ef92bb02",
+            "09658d6c6e8e65cc",
+            "3146435b51b57036",
+            "1cd09de4ae651c87",
+            "f5bdcb22651184a6",
+            "3f95ff9f7d51b28d",
+            "8d1cea31ecc5505f",
+            "3a9976a42e040827",
+            "b0661dcf1869265d",
+            "7d85d4124ac35321",
+            "4cabf52349ebd694",
+            "43092f22b971c203",
+            "0fc0afa3cbbde9da",
+            "b6073793c9d88df9"
         ],
         "x": 154,
         "y": 659,
-        "w": 1072,
-        "h": 722
+        "w": 1152,
+        "h": 702
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -9561,7 +9563,8 @@
         "name": "link out 2",
         "mode": "link",
         "links": [
-            "e9545b23f4e4cd35"
+            "e9545b23f4e4cd35",
+            "10d9ada5e1363236"
         ],
         "x": 455,
         "y": 1220,
@@ -10628,28 +10631,7 @@
         "y": 880,
         "wires": [
             [
-                "c57a418904e7a3ad"
-            ]
-        ]
-    },
-    {
-        "id": "2e68cd37817b2daf",
-        "type": "file",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "replace Frigate config file",
-        "filename": "filename",
-        "filenameType": "msg",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 730,
-        "y": 1060,
-        "wires": [
-            [
-                "31ac40076e215cc4",
-                "62f975f6e1b6ab30"
+                "da7f36e9a5928977"
             ]
         ]
     },
@@ -10709,7 +10691,7 @@
         "type": "change",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "set up cp parameters",
+        "name": "set up cp arguments",
         "rules": [
             {
                 "t": "set",
@@ -10756,120 +10738,6 @@
         ]
     },
     {
-        "id": "8f25eb46491c2ba8",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "set config filename",
-        "rules": [
-            {
-                "t": "set",
-                "p": "filename",
-                "pt": "msg",
-                "to": "$flowContext('pwd') & \"/code/frigate/config/config.yml\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 490,
-        "y": 1060,
-        "wires": [
-            [
-                "d2517d4449d0f68b",
-                "2e68cd37817b2daf"
-            ]
-        ]
-    },
-    {
-        "id": "d2517d4449d0f68b",
-        "type": "debug",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "print filename",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "filename",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1000,
-        "y": 1000,
-        "wires": []
-    },
-    {
-        "id": "c57a418904e7a3ad",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "extract config string",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "payload.client.backup.Frigate",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 280,
-        "y": 1060,
-        "wires": [
-            [
-                "8f25eb46491c2ba8"
-            ]
-        ]
-    },
-    {
-        "id": "31ac40076e215cc4",
-        "type": "debug",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "print file contents",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1010,
-        "y": 1060,
-        "wires": []
-    },
-    {
-        "id": "f4e111698e2eab17",
-        "type": "exec",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "command": "docker restart frigate",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 880,
-        "y": 1280,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
         "id": "cb044bcc7761877e",
         "type": "comment",
         "z": "791e8b1f84050e40",
@@ -10892,29 +10760,144 @@
         "wires": []
     },
     {
-        "id": "ea92823893e73755",
+        "id": "da7f36e9a5928977",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "extract config string",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.client.backup.Frigate",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 1000,
+        "wires": [
+            [
+                "13395b5909a63e3c"
+            ]
+        ]
+    },
+    {
+        "id": "13395b5909a63e3c",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "set temp filename",
+        "rules": [
+            {
+                "t": "set",
+                "p": "filename",
+                "pt": "msg",
+                "to": "$flowContext('pwd') & \"/code/frigate/config/temp.yml\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 570,
+        "y": 1000,
+        "wires": [
+            [
+                "cb52210b00dca61d"
+            ]
+        ]
+    },
+    {
+        "id": "cb52210b00dca61d",
+        "type": "file",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "store temporary file",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 790,
+        "y": 1000,
+        "wires": [
+            [
+                "1cd09de4ae651c87",
+                "3146435b51b57036"
+            ]
+        ]
+    },
+    {
+        "id": "9278adb1ef92bb02",
         "type": "comment",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "overwrite existing config file",
+        "name": "store in temporary file",
         "info": "",
-        "x": 620,
-        "y": 960,
+        "x": 600,
+        "y": 940,
         "wires": []
     },
     {
-        "id": "36b8b6784ea2a6ed",
+        "id": "09658d6c6e8e65cc",
         "type": "comment",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "validate Fridate config",
+        "name": "validate config in temporary file",
         "info": "",
-        "x": 320,
+        "x": 610,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "3146435b51b57036",
+        "type": "template",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "Setup arguments for docker run command",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "-v {{{flow.pwd}}}/code/frigate/config/temp.yml:/config/config.yml --env-file {{{flow.pwd}}}/code/frigate/frigate.env  --entrypoint python3 ghcr.io/blakeblackshear/frigate:0.14.0 -u -m frigate --validate-config",
+        "output": "str",
+        "x": 390,
         "y": 1120,
+        "wires": [
+            [
+                "f5bdcb22651184a6"
+            ]
+        ]
+    },
+    {
+        "id": "1cd09de4ae651c87",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "print file contents",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1030,
+        "y": 1000,
         "wires": []
     },
     {
-        "id": "43edb7d86d284c6f",
+        "id": "f5bdcb22651184a6",
         "type": "exec",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
@@ -10926,33 +10909,68 @@
         "winHide": false,
         "oldrc": false,
         "name": "validate Frigate config file",
-        "x": 730,
-        "y": 1180,
+        "x": 750,
+        "y": 1120,
         "wires": [
             [
-                "802edd652bd58f44",
-                "9db1e644acd86582"
+                "3f95ff9f7d51b28d",
+                "b0661dcf1869265d"
             ],
             [
-                "8388c9d4b581c31f",
-                "9db1e644acd86582"
+                "8d1cea31ecc5505f"
             ],
             []
         ]
     },
     {
-        "id": "4a55556eab0ae7a8",
-        "type": "comment",
+        "id": "3f95ff9f7d51b28d",
+        "type": "debug",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "check result & restart Frigate",
-        "info": "",
-        "x": 340,
-        "y": 1240,
+        "name": "show iniital rc",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "rc",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 1080,
         "wires": []
     },
     {
-        "id": "802edd652bd58f44",
+        "id": "8d1cea31ecc5505f",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "show validation error messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "3a9976a42e040827",
+        "type": "comment",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "check result, replace real config file, and restart Frigate",
+        "info": "",
+        "x": 680,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "b0661dcf1869265d",
         "type": "switch",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
@@ -10974,89 +10992,125 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 490,
-        "y": 1320,
+        "x": 350,
+        "y": 1260,
         "wires": [
             [
-                "f4e111698e2eab17"
+                "7d85d4124ac35321"
             ],
             [
-                "1de236791f36ba7d"
+                "0fc0afa3cbbde9da"
             ]
         ]
     },
     {
-        "id": "1de236791f36ba7d",
-        "type": "debug",
+        "id": "7d85d4124ac35321",
+        "type": "change",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "show rc",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 840,
-        "y": 1340,
-        "wires": []
-    },
-    {
-        "id": "8388c9d4b581c31f",
-        "type": "debug",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "show validation error messages",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1050,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "62f975f6e1b6ab30",
-        "type": "template",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "Setup arguments for docker run command",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "-v {{{flow.pwd}}}/code/frigate/config/config.yml:/config/config.yml --env-file {{{flow.pwd}}}/code/frigate/frigate.env  --entrypoint python3 ghcr.io/blakeblackshear/frigate:0.14.0 -u -m frigate --validate-config",
-        "output": "str",
-        "x": 390,
-        "y": 1180,
+        "name": "set up cp arguments",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$flowContext('pwd') & \"/code/frigate/config/temp.yml \" & $flowContext('pwd') &\t \"/code/frigate/config/config.yml\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 1260,
         "wires": [
             [
-                "43edb7d86d284c6f"
+                "4cabf52349ebd694"
             ]
         ]
     },
     {
-        "id": "9db1e644acd86582",
+        "id": "4cabf52349ebd694",
+        "type": "exec",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "command": "/bin/cp ",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "replace existing config file",
+        "x": 930,
+        "y": 1260,
+        "wires": [
+            [
+                "43092f22b971c203"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "43092f22b971c203",
+        "type": "exec",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "command": "docker restart frigate",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 1180,
+        "y": 1260,
+        "wires": [
+            [
+                "b6073793c9d88df9"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "0fc0afa3cbbde9da",
         "type": "debug",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "show iniital rc",
+        "name": "Print failure msg",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "rc",
-        "targetType": "msg",
+        "complete": "\"Config file not replaced and Frigate not restarted\"",
+        "targetType": "jsonata",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1040,
-        "y": 1120,
+        "x": 640,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "b6073793c9d88df9",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "Print success msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "\"Config file restored and Frigate restarted\"",
+        "targetType": "jsonata",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1150,
+        "y": 1320,
         "wires": []
     }
 ]
