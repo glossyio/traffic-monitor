@@ -886,12 +886,19 @@
             "bd1fd07675061bc2",
             "ea92823893e73755",
             "d2517d4449d0f68b",
-            "36b8b6784ea2a6ed"
+            "36b8b6784ea2a6ed",
+            "43edb7d86d284c6f",
+            "4a55556eab0ae7a8",
+            "802edd652bd58f44",
+            "1de236791f36ba7d",
+            "8388c9d4b581c31f",
+            "62f975f6e1b6ab30",
+            "9db1e644acd86582"
         ],
         "x": 154,
         "y": 659,
         "w": 1072,
-        "h": 569.5
+        "h": 722
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -10642,7 +10649,7 @@
         "wires": [
             [
                 "31ac40076e215cc4",
-                "f4e111698e2eab17"
+                "62f975f6e1b6ab30"
             ]
         ]
     },
@@ -10854,8 +10861,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 400,
-        "y": 1180,
+        "x": 880,
+        "y": 1280,
         "wires": [
             [],
             [],
@@ -10900,9 +10907,155 @@
         "type": "comment",
         "z": "791e8b1f84050e40",
         "g": "906735606a5ebdd5",
-        "name": "restart Frigate",
+        "name": "validate Fridate config",
         "info": "",
-        "x": 370,
+        "x": 320,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "43edb7d86d284c6f",
+        "type": "exec",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "command": "docker run",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "validate Frigate config file",
+        "x": 730,
+        "y": 1180,
+        "wires": [
+            [
+                "802edd652bd58f44",
+                "9db1e644acd86582"
+            ],
+            [
+                "8388c9d4b581c31f",
+                "9db1e644acd86582"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "4a55556eab0ae7a8",
+        "type": "comment",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "check result & restart Frigate",
+        "info": "",
+        "x": 340,
+        "y": 1240,
+        "wires": []
+    },
+    {
+        "id": "802edd652bd58f44",
+        "type": "switch",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "test rc from validation of Frigate config",
+        "property": "rc.code",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "t": "neq",
+                "v": "0",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 490,
+        "y": 1320,
+        "wires": [
+            [
+                "f4e111698e2eab17"
+            ],
+            [
+                "1de236791f36ba7d"
+            ]
+        ]
+    },
+    {
+        "id": "1de236791f36ba7d",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "show rc",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 1340,
+        "wires": []
+    },
+    {
+        "id": "8388c9d4b581c31f",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "show validation error messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "62f975f6e1b6ab30",
+        "type": "template",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "Setup arguments for docker run command",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "-v {{{flow.pwd}}}/code/frigate/config/config.yml:/config/config.yml --env-file {{{flow.pwd}}}/code/frigate/frigate.env  --entrypoint python3 ghcr.io/blakeblackshear/frigate:0.14.0 -u -m frigate --validate-config",
+        "output": "str",
+        "x": 390,
+        "y": 1180,
+        "wires": [
+            [
+                "43edb7d86d284c6f"
+            ]
+        ]
+    },
+    {
+        "id": "9db1e644acd86582",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "906735606a5ebdd5",
+        "name": "show iniital rc",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "rc",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
         "y": 1120,
         "wires": []
     }
