@@ -15,7 +15,7 @@
 ########
 
 # traffic monitor open source software release version
-TM_VERSION=0.3.0
+TM_VERSION='0.3.0'
 
 # used in settings.js for credentialSecret 
 NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
