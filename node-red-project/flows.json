@@ -734,8 +734,8 @@
         ],
         "x": 94,
         "y": 259,
-        "w": 982,
-        "h": 202
+        "w": 842,
+        "h": 162
     },
     {
         "id": "4f240c3c73d9a73f",
@@ -1089,26 +1089,6 @@
         "sessionExpiry": ""
     },
     {
-        "id": "d65c36624d553ee7",
-        "type": "serial-port",
-        "name": "",
-        "serialport": "${TM_RADAR_SERIAL_PORT}",
-        "serialbaud": "19200",
-        "databits": "8",
-        "parity": "none",
-        "stopbits": "1",
-        "waitfor": "",
-        "dtr": "none",
-        "rts": "none",
-        "cts": "none",
-        "dsr": "none",
-        "newline": "\\n",
-        "bin": "false",
-        "out": "char",
-        "addchar": "",
-        "responsetimeout": "500"
-    },
-    {
         "id": "665d947f9a312a33",
         "type": "ui_tab",
         "name": "Monitoring Tab",
@@ -1447,8 +1427,8 @@
         "g": "4bbb9e24b5507a00",
         "property": "payload",
         "name": "",
-        "x": 690,
-        "y": 340,
+        "x": 550,
+        "y": 300,
         "wires": [
             [
                 "94136e5a6f092bb6"
@@ -1461,14 +1441,14 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "",
-        "filename": ".node-red/projects/traffic-monitor/node-red-project/config.yml",
+        "filename": ".node-red/config.yml",
         "filenameType": "str",
         "format": "utf8",
         "chunk": false,
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 500,
+        "x": 380,
         "y": 300,
         "wires": [
             [
@@ -1516,8 +1496,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 780,
-        "y": 420,
+        "x": 640,
+        "y": 380,
         "wires": [
             [
                 "9d7f5eede861553e"
@@ -1537,8 +1517,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 380,
+        "x": 610,
+        "y": 340,
         "wires": [
             [
                 "b0252bd49dc8e61d"
@@ -1590,8 +1570,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 970,
-        "y": 420,
+        "x": 830,
+        "y": 380,
         "wires": []
     },
     {
@@ -1701,9 +1681,9 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "",
-        "files": ".node-red/projects/traffic-monitor/node-red-project/config.yml",
+        "files": ".node-red/config.yml",
         "recursive": "",
-        "x": 340,
+        "x": 210,
         "y": 360,
         "wires": [
             [
@@ -2064,7 +2044,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1670,
+        "x": 1230,
         "y": 120,
         "wires": [
             [
@@ -2085,7 +2065,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2110,
+        "x": 1670,
         "y": 120,
         "wires": []
     },
@@ -2122,9 +2102,9 @@
         "id": "affe7cfb9861e62d",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive OPS243 (TM_RADAR_SERIAL_PORT_00)",
+        "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 1250,
+        "x": 930,
         "y": 120,
         "wires": [
             [
@@ -2137,9 +2117,9 @@
         "id": "8e8ede8ca221552b",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS243 (TM_RADAR_SERIAL_PORT_00)",
+        "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 830,
+        "x": 730,
         "y": 120,
         "wires": []
     },
@@ -3202,7 +3182,9 @@
         "x": 335,
         "y": 80,
         "wires": [
-            []
+            [
+                "85058171e2678c73"
+            ]
         ]
     },
     {
@@ -3214,7 +3196,7 @@
         "links": [
             "2f0f10b6553e5840"
         ],
-        "x": 2025,
+        "x": 1585,
         "y": 80,
         "wires": []
     },
@@ -3329,7 +3311,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1850,
+        "x": 1410,
         "y": 120,
         "wires": [
             [
@@ -3343,9 +3325,9 @@
         "id": "362df7566f3bb69a",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS243 (TM_RADAR_SERIAL_PORT_01)",
+        "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 830,
+        "x": 730,
         "y": 180,
         "wires": []
     },
@@ -3353,9 +3335,9 @@
         "id": "41fa99eb3d3329da",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS243 (TM_RADAR_SERIAL_PORT_02)",
+        "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 830,
+        "x": 730,
         "y": 240,
         "wires": []
     },
@@ -3363,9 +3345,9 @@
         "id": "c7c72cf3bbc69523",
         "type": "serial out",
         "z": "94d07e407c25f282",
-        "name": "send to OPS243 (TM_RADAR_SERIAL_PORT_03)",
+        "name": "send to RADAR_03",
         "serial": "9436149d39191450",
-        "x": 830,
+        "x": 730,
         "y": 300,
         "wires": []
     },
@@ -3381,7 +3363,7 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1540,
+        "x": 1100,
         "y": 60,
         "wires": []
     },
@@ -3389,9 +3371,9 @@
         "id": "35ae94807983e646",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive OPS243 (TM_RADAR_SERIAL_PORT_01)",
+        "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 1250,
+        "x": 930,
         "y": 180,
         "wires": [
             [
@@ -3407,7 +3389,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1670,
+        "x": 1230,
         "y": 180,
         "wires": [
             [
@@ -3434,7 +3416,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1850,
+        "x": 1410,
         "y": 180,
         "wires": [
             [
@@ -3456,7 +3438,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2110,
+        "x": 1670,
         "y": 180,
         "wires": []
     },
@@ -3464,9 +3446,9 @@
         "id": "1f4ca7845f5a9fac",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive OPS243 (TM_RADAR_SERIAL_PORT_02)",
+        "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 1250,
+        "x": 930,
         "y": 240,
         "wires": [
             [
@@ -3482,7 +3464,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1670,
+        "x": 1230,
         "y": 240,
         "wires": [
             [
@@ -3509,7 +3491,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1850,
+        "x": 1410,
         "y": 240,
         "wires": [
             [
@@ -3531,7 +3513,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2110,
+        "x": 1670,
         "y": 240,
         "wires": []
     },
@@ -3539,9 +3521,9 @@
         "id": "f8fb1df7d1bc774d",
         "type": "serial in",
         "z": "94d07e407c25f282",
-        "name": "receive OPS243 (TM_RADAR_SERIAL_PORT_03)",
+        "name": "receive RADAR_03",
         "serial": "9436149d39191450",
-        "x": 1250,
+        "x": 930,
         "y": 300,
         "wires": [
             [
@@ -3557,7 +3539,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1670,
+        "x": 1230,
         "y": 300,
         "wires": [
             [
@@ -3584,7 +3566,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1850,
+        "x": 1410,
         "y": 300,
         "wires": [
             [
@@ -3606,7 +3588,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2110,
+        "x": 1670,
         "y": 300,
         "wires": []
     },
@@ -3625,7 +3607,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1540,
+        "x": 1100,
         "y": 120,
         "wires": [
             [
@@ -3648,7 +3630,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1540,
+        "x": 1100,
         "y": 180,
         "wires": [
             [
@@ -3671,7 +3653,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1540,
+        "x": 1100,
         "y": 240,
         "wires": [
             [
@@ -3694,7 +3676,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1540,
+        "x": 1100,
         "y": 300,
         "wires": [
             [
