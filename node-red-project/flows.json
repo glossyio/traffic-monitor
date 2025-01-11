@@ -8,7 +8,7 @@
         "env": []
     },
     {
-        "id": "94d07e407c25f282",
+        "id": "1c71c8f26f5b7b19",
         "type": "tab",
         "label": "capture-radar",
         "disabled": false,
@@ -70,100 +70,6 @@
         "disabled": false,
         "info": "",
         "env": []
-    },
-    {
-        "id": "04cc3b7b3e019683",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "@O - TimedSpeedCounts",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "35c0bee67148cfa7",
-            "526eb1967dda78c4",
-            "e3aa00721bf6faff",
-            "54ae78579d38e81b",
-            "831310a0a0549da3",
-            "13059459bbc48328",
-            "585b91535ae4e8a3",
-            "477f8523e9784029",
-            "5c4e5a6064580e23"
-        ],
-        "x": 394,
-        "y": 759,
-        "w": 1152,
-        "h": 302
-    },
-    {
-        "id": "1d00b3011a12b204",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "ON - DetectedObjectVelocity, for single object",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "67f64c75edc0ef13",
-            "0749f4279a336caf",
-            "56b9668b4f365f7b",
-            "ef4ad9faa7ec12e7",
-            "81c98c5e01bbfe09",
-            "87412467471d97a6",
-            "8a653740e4fc4f6a",
-            "313905edff24218d"
-        ],
-        "x": 394,
-        "y": 499,
-        "w": 972,
-        "h": 242
-    },
-    {
-        "id": "e138c998bef7d520",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "OS O3 - payload, raw speed+magnitude",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "d88af763b70480d0",
-            "5f62cb744592b108",
-            "dd48c6017098fe1d",
-            "e113c181976ad898",
-            "e1461efd368bbee3",
-            "825ddab22453e37c",
-            "1ddee1427e02c980",
-            "d7eb8cf6f750f369",
-            "62f7d1214aa96cc0"
-        ],
-        "x": 394,
-        "y": 1079,
-        "w": 1212,
-        "h": 282
-    },
-    {
-        "id": "e5b5b46703e248e9",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "OS O1 (equivalent) - payload, raw speed+magnitude",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "1d1c479b2567efbd",
-            "795c120719c982de",
-            "8180a480a85a6636",
-            "a1583c68a1dad33e",
-            "382bf388390f91bd",
-            "6580ac98734eba2e",
-            "56ce714b7a23585b",
-            "c198bb9e360d93ef"
-        ],
-        "x": 394,
-        "y": 1379,
-        "w": 1292,
-        "h": 262
     },
     {
         "id": "0a6e123f5e53c029",
@@ -361,29 +267,6 @@
         "y": 439,
         "w": 1092,
         "h": 342
-    },
-    {
-        "id": "35a68b2baec193d2",
-        "type": "group",
-        "z": "94d07e407c25f282",
-        "name": "OC - payload, object summary+vehicle length",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "3fc9a8ed49514be5",
-            "97a0c601b8918ede",
-            "772d6574f4181a44",
-            "c768d8ea1b8cf953",
-            "b277514c42c255e9",
-            "27b2f56921067f35",
-            "a804f93d06561c17",
-            "cceefa4b9aa98acc"
-        ],
-        "x": 394,
-        "y": 1659,
-        "w": 1072,
-        "h": 262
     },
     {
         "id": "53e4faf6d3ece28c",
@@ -715,6 +598,89 @@
         "h": 142
     },
     {
+        "id": "8d3fe796e032166c",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "send tb client-side attributes",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "542b3b8720733a01",
+            "0a28f82092611160",
+            "ac10d4e38e95fa26",
+            "058c390e87e3c283",
+            "9c111c8d0f212bf8",
+            "8ad71425a71a860e"
+        ],
+        "x": 1114,
+        "y": 299,
+        "w": 672,
+        "h": 162
+    },
+    {
+        "id": "9e0b1edd49eb4244",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "name": "mqtt broker",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "22a2431d179ee8db",
+            "e0525a29b485694f",
+            "9ca3b6ed1a6334c0"
+        ],
+        "x": 74,
+        "y": 79,
+        "w": 512,
+        "h": 122
+    },
+    {
+        "id": "694f0242d0985c69",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "send tb telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "21944450ecc08385",
+            "93aa421659d2c20b",
+            "9b8c2bcc16a637fd",
+            "4b78cce3e6147ec5"
+        ],
+        "x": 1114,
+        "y": 99,
+        "w": 712,
+        "h": 162
+    },
+    {
+        "id": "791a8c44b7f98d1b",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "4bbb9e24b5507a00",
+            "4f240c3c73d9a73f",
+            "8004ba7ad5a9bd83"
+        ],
+        "x": 68,
+        "y": 233,
+        "w": 1064,
+        "h": 994
+    },
+    {
         "id": "4bbb9e24b5507a00",
         "type": "group",
         "z": "3dae026ab340962a",
@@ -753,8 +719,8 @@
             "f4a626a3a3ab3d39",
             "b2d374d1168973c7"
         ],
-        "x": 94,
-        "y": 939,
+        "x": 104,
+        "y": 1059,
         "w": 992,
         "h": 142
     },
@@ -945,89 +911,6 @@
         "h": 342
     },
     {
-        "id": "8d3fe796e032166c",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "send tb client-side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "542b3b8720733a01",
-            "0a28f82092611160",
-            "ac10d4e38e95fa26",
-            "058c390e87e3c283",
-            "9c111c8d0f212bf8",
-            "8ad71425a71a860e"
-        ],
-        "x": 1114,
-        "y": 299,
-        "w": 672,
-        "h": 162
-    },
-    {
-        "id": "9e0b1edd49eb4244",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "name": "mqtt broker",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "22a2431d179ee8db",
-            "e0525a29b485694f",
-            "9ca3b6ed1a6334c0"
-        ],
-        "x": 74,
-        "y": 79,
-        "w": 512,
-        "h": 122
-    },
-    {
-        "id": "694f0242d0985c69",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "send tb telemetry",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "677a57bbf3619854",
-            "df6ac2f42ac6d8c7",
-            "21944450ecc08385",
-            "93aa421659d2c20b",
-            "9b8c2bcc16a637fd",
-            "4b78cce3e6147ec5"
-        ],
-        "x": 1114,
-        "y": 99,
-        "w": 712,
-        "h": 162
-    },
-    {
-        "id": "791a8c44b7f98d1b",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "4bbb9e24b5507a00",
-            "4f240c3c73d9a73f",
-            "8004ba7ad5a9bd83"
-        ],
-        "x": 68,
-        "y": 233,
-        "w": 1064,
-        "h": 874
-    },
-    {
         "id": "8004ba7ad5a9bd83",
         "type": "group",
         "z": "3dae026ab340962a",
@@ -1050,12 +933,240 @@
             "5186b0bd778ef3e3",
             "f7c775c4892abed6",
             "9d90fca30cf97264",
-            "817c8ed87909b864"
+            "817c8ed87909b864",
+            "8f4e9d81288d5abd"
         ],
         "x": 94,
         "y": 539,
         "w": 1012,
-        "h": 362
+        "h": 402
+    },
+    {
+        "id": "dea1b8828f8e501f",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "@O - TimedSpeedCounts",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f04e243ae46cc4c3",
+            "50dcead7cf35b74f",
+            "c44b652eda2b8a8c",
+            "a198505b2b0fd7c1",
+            "866e0c814ea2b4da",
+            "cbe24d38e9f03394",
+            "22234193104332f6",
+            "4094c101f6b59d95",
+            "de7bc8103f7ca3c6",
+            "ef75320f6a5f0382"
+        ],
+        "x": 354,
+        "y": 799,
+        "w": 1192,
+        "h": 282
+    },
+    {
+        "id": "1eebfe6a2eca8ad4",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "ON - DetectedObjectVelocity, for single object",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "7139490bca7e56ca",
+            "ca182659939320ce",
+            "7c9292601a625445",
+            "1867db9744bd3c1f",
+            "5514c5ab4bed552c",
+            "c6fcbfb9341f189b",
+            "1acba66197b7b0fa",
+            "01307f2f13f465f2",
+            "3faf0dcbc24ef11c",
+            "2479e1e747a9c6ec"
+        ],
+        "x": 354,
+        "y": 499,
+        "w": 1012,
+        "h": 282
+    },
+    {
+        "id": "047f05d7650ba3cc",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OS O3 - payload, raw speed+magnitude",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "16572734c7e02e30",
+            "a3dddf65b65ca371",
+            "9ba47db34d626ef9",
+            "74df2509f68a2d6e",
+            "9de4885ad8ef8485",
+            "81522ee190374834",
+            "7e4a607265a272c2",
+            "080fd00489701aa1",
+            "a489601d43802b82",
+            "fe45aef575ccab71"
+        ],
+        "x": 354,
+        "y": 1079,
+        "w": 1252,
+        "h": 282
+    },
+    {
+        "id": "fcbf8999ca05a371",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OS O1 (equivalent) - payload, raw speed+magnitude",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a3924864154eaefb",
+            "a8dff32b84fbd72a",
+            "8773b251c9ee9539",
+            "cdc947bb9cd47c63",
+            "252e2f5b95aeb8da",
+            "83065a55697cc160",
+            "95186b0fee06a3f5",
+            "07cdbeafa34a565e",
+            "8658a5e1847ea59b",
+            "c61ef5ee09cb5c93"
+        ],
+        "x": 354,
+        "y": 1379,
+        "w": 1332,
+        "h": 302
+    },
+    {
+        "id": "da1c8c74261a93a4",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OC - payload, object summary+vehicle length",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "ca4ed8761a4ded27",
+            "fbde266909bc0ca7",
+            "09369d5e4816364f",
+            "4ffa919935494b14",
+            "45801cdcc5094abc",
+            "6e30f911242c5595",
+            "edcc237df962c31a",
+            "59a9c9a7ba535641",
+            "0ba6c9b3eb3d521d",
+            "fb89305143faab57"
+        ],
+        "x": 354,
+        "y": 1699,
+        "w": 1112,
+        "h": 282
+    },
+    {
+        "id": "05a58d9ee463c696",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "x": 440,
+        "y": 120,
+        "wires": [
+            [
+                "998194b1b9bc29ba",
+                "6603f07036f13602",
+                "99c67a76992c8de8",
+                "2ea13e7fb927749d"
+            ]
+        ]
+    },
+    {
+        "id": "3faf0dcbc24ef11c",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
+        "x": 380,
+        "y": 580,
+        "wires": [
+            [
+                "7139490bca7e56ca",
+                "1acba66197b7b0fa",
+                "01307f2f13f465f2"
+            ]
+        ]
+    },
+    {
+        "id": "de7bc8103f7ca3c6",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
+        "x": 380,
+        "y": 840,
+        "wires": [
+            [
+                "4094c101f6b59d95",
+                "cbe24d38e9f03394",
+                "f04e243ae46cc4c3"
+            ]
+        ]
+    },
+    {
+        "id": "a489601d43802b82",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
+        "x": 380,
+        "y": 1120,
+        "wires": [
+            [
+                "080fd00489701aa1",
+                "16572734c7e02e30",
+                "7e4a607265a272c2"
+            ]
+        ]
+    },
+    {
+        "id": "8658a5e1847ea59b",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
+        "x": 380,
+        "y": 1500,
+        "wires": [
+            [
+                "07cdbeafa34a565e",
+                "0ba6c9b3eb3d521d"
+            ]
+        ]
+    },
+    {
+        "id": "0ba6c9b3eb3d521d",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "x": 380,
+        "y": 1740,
+        "wires": [
+            [
+                "ca4ed8761a4ded27",
+                "59a9c9a7ba535641",
+                "edcc237df962c31a"
+            ]
+        ]
+    },
+    {
+        "id": "05e485cfcada03a3",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "x": 1620,
+        "y": 300,
+        "wires": [
+            [
+                "314e74cc3f8d050c",
+                "7d83424b6bf3a7a7"
+            ]
+        ]
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1582,8 +1693,8 @@
         "g": "4f240c3c73d9a73f",
         "name": "link in 2",
         "links": [],
-        "x": 145,
-        "y": 980,
+        "x": 155,
+        "y": 1100,
         "wires": [
             [
                 "f4a626a3a3ab3d39"
@@ -1603,8 +1714,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 820,
-        "y": 1020,
+        "x": 830,
+        "y": 1140,
         "wires": [
             []
         ]
@@ -1617,8 +1728,8 @@
         "g": "4f240c3c73d9a73f",
         "property": "payload",
         "name": "",
-        "x": 470,
-        "y": 1020,
+        "x": 480,
+        "y": 1140,
         "wires": [
             [
                 "42a1a291f7d8006b"
@@ -1646,8 +1757,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 340,
-        "y": 980,
+        "x": 350,
+        "y": 1100,
         "wires": [
             [
                 "a3c5767fda5250f0"
@@ -1667,8 +1778,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 190,
-        "y": 1040,
+        "x": 200,
+        "y": 1160,
         "wires": [
             [
                 "f4a626a3a3ab3d39"
@@ -2027,9 +2138,35 @@
         "wires": []
     },
     {
-        "id": "e43506628b4a1cdb",
+        "id": "8f4e9d81288d5abd",
+        "type": "inject",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "alter table deployment",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 320,
+        "y": 900,
+        "wires": [
+            [
+                "6b96fe301f9b6145",
+                "8a6d4593a661c3df"
+            ]
+        ]
+    },
+    {
+        "id": "0612ca7936dee14a",
         "type": "comment",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "AN-10 API Interface",
         "info": "https://omnipresense.com/wp-content/uploads/2023/11/AN-010-Z_API_Interface.pdf",
         "x": 170,
@@ -2037,9 +2174,9 @@
         "wires": []
     },
     {
-        "id": "bb2b78040385d37e",
+        "id": "31581da0d3b6358a",
         "type": "json",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "property": "payload",
         "action": "",
@@ -2048,15 +2185,15 @@
         "y": 120,
         "wires": [
             [
-                "bcfe4c09a2502454"
+                "fbf61ec935e282ae"
             ]
         ]
     },
     {
-        "id": "36b68e0861cc5fc4",
+        "id": "7d83424b6bf3a7a7",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug-radar_00-all-output",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug-radar-all-output",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -2065,15 +2202,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1670,
-        "y": 120,
+        "x": 1780,
+        "y": 300,
         "wires": []
     },
     {
-        "id": "35c0bee67148cfa7",
+        "id": "f04e243ae46cc4c3",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "debug-write-radar-key-valid-TimedSpeedCounts",
         "active": false,
         "tosidebar": true,
@@ -2083,40 +2220,29 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 600,
+        "x": 640,
         "y": 840,
         "wires": []
     },
     {
-        "id": "526eb1967dda78c4",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
-        "name": "TimedSpeedCounts are @O and @|300 (5-min)",
-        "info": "",
-        "x": 600,
-        "y": 800,
-        "wires": []
-    },
-    {
-        "id": "affe7cfb9861e62d",
+        "id": "926ac6db07adc540",
         "type": "serial in",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
         "x": 930,
         "y": 120,
         "wires": [
             [
-                "fc5608d13cb6083f",
-                "acd3c5deda356178"
+                "c744236bdcd86cf3",
+                "82d67136bd681ac7"
             ]
         ]
     },
     {
-        "id": "8e8ede8ca221552b",
+        "id": "7c7577ee1b447bf6",
         "type": "serial out",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
         "x": 730,
@@ -2124,10 +2250,10 @@
         "wires": []
     },
     {
-        "id": "67f64c75edc0ef13",
+        "id": "7139490bca7e56ca",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "debug-radar-write-DetectObjectVelocity",
         "active": false,
         "tosidebar": true,
@@ -2137,14 +2263,14 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
+        "x": 620,
         "y": 540,
         "wires": []
     },
     {
-        "id": "5ba75f5c9e2a85da",
+        "id": "73557c788f221c0c",
         "type": "catch",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "catch - flow-radar",
         "scope": null,
         "uncaught": false,
@@ -2152,14 +2278,14 @@
         "y": 40,
         "wires": [
             [
-                "84f8c1cca4483e4c"
+                "b4a2dfa4fb680a57"
             ]
         ]
     },
     {
-        "id": "84f8c1cca4483e4c",
+        "id": "b4a2dfa4fb680a57",
         "type": "debug",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "catch - flow-radar",
         "active": true,
         "tosidebar": true,
@@ -2174,9 +2300,9 @@
         "wires": []
     },
     {
-        "id": "114c038c504f9f87",
+        "id": "6a21bd2e9204bac0",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "query all settings, after 1.7",
         "props": [
             {
@@ -2198,17 +2324,14 @@
         "y": 400,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "d30801432e1972b3",
+        "id": "0cdaafdd0b8921be",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: set radar time (in seconds), after 1.2",
         "props": [
             {
@@ -2230,17 +2353,14 @@
         "y": 200,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "93dfd24a4e45dbb9",
+        "id": "b6a08c3a8951d79f",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: set radar timezone, after 1.3",
         "props": [
             {
@@ -2262,17 +2382,14 @@
         "y": 240,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "b965ece6f3bd3377",
+        "id": "6b8d8a5677b9c558",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: base settings and filters, after 1.1",
         "props": [
             {
@@ -2294,17 +2411,14 @@
         "y": 160,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "73c028a0006c9cd9",
+        "id": "561dcf614bf5d56a",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: PI, idle power mode for settings",
         "props": [
             {
@@ -2326,17 +2440,14 @@
         "y": 120,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "efddf78e690358fc",
+        "id": "7c8d64d25c65f351",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: PA, active power mode after settings, after 2",
         "props": [
             {
@@ -2358,17 +2469,14 @@
         "y": 440,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "78f9e09b02db0b2c",
+        "id": "a3a84b97fafede04",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: save settings, after 1.6",
         "props": [
             {
@@ -2390,17 +2498,14 @@
         "y": 360,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "830348149cb405ae",
+        "id": "314e74cc3f8d050c",
         "type": "switch",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "radar payload key type",
         "property": "payload",
         "propertyType": "msg",
@@ -2433,33 +2538,24 @@
         "y": 540,
         "wires": [
             [
-                "67f64c75edc0ef13",
-                "8a653740e4fc4f6a",
-                "313905edff24218d"
+                "3faf0dcbc24ef11c"
             ],
             [
-                "35c0bee67148cfa7",
-                "585b91535ae4e8a3",
-                "5c4e5a6064580e23"
+                "de7bc8103f7ca3c6"
             ],
             [
-                "d88af763b70480d0",
-                "d7eb8cf6f750f369",
-                "62f7d1214aa96cc0",
-                "c198bb9e360d93ef"
+                "a489601d43802b82"
             ],
             [
-                "3fc9a8ed49514be5",
-                "a804f93d06561c17",
-                "cceefa4b9aa98acc"
+                "8658a5e1847ea59b"
             ]
         ]
     },
     {
-        "id": "d88af763b70480d0",
+        "id": "16572734c7e02e30",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "debug-radar-raws-speeds-write",
         "active": false,
         "tosidebar": true,
@@ -2469,26 +2565,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 550,
-        "y": 1160,
-        "wires": []
-    },
-    {
-        "id": "5f62cb744592b108",
-        "type": "comment",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
-        "name": "handle O3 speeds by saving array to each _value",
-        "info": "",
-        "x": 600,
+        "x": 590,
         "y": 1120,
         "wires": []
     },
     {
-        "id": "3fc9a8ed49514be5",
+        "id": "ca4ed8761a4ded27",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload",
         "active": false,
         "tosidebar": true,
@@ -2498,14 +2583,14 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 510,
-        "y": 1700,
+        "x": 550,
+        "y": 1740,
         "wires": []
     },
     {
-        "id": "9cc39551ab98256a",
+        "id": "d764d1165570c18b",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: turn on OS, after 1.4",
         "props": [
             {
@@ -2527,17 +2612,14 @@
         "y": 280,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "a3dc8ff6a80ce4c0",
+        "id": "06c0cf29349aefe0",
         "type": "inject",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "init: turn on OM, after 1.5",
         "props": [
             {
@@ -2559,35 +2641,32 @@
         "y": 320,
         "wires": [
             [
-                "85058171e2678c73",
-                "25c9b07624fa2db5",
-                "3fcc645fb81a0858",
-                "ff9e3909ecc2c19f"
+                "05a58d9ee463c696"
             ]
         ]
     },
     {
-        "id": "0749f4279a336caf",
+        "id": "ca182659939320ce",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
         "x": 910,
-        "y": 580,
+        "y": 620,
         "wires": [
             [
-                "81c98c5e01bbfe09"
+                "5514c5ab4bed552c"
             ]
         ]
     },
     {
-        "id": "56b9668b4f365f7b",
+        "id": "7c9292601a625445",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "create radar_dov table",
         "props": [
             {
@@ -2601,18 +2680,18 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL);",
         "x": 640,
-        "y": 580,
+        "y": 620,
         "wires": [
             [
-                "0749f4279a336caf"
+                "ca182659939320ce"
             ]
         ]
     },
     {
-        "id": "ef4ad9faa7ec12e7",
+        "id": "1867db9744bd3c1f",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "select latest 5 rows from radar_dov",
         "props": [
             {
@@ -2626,18 +2705,18 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;",
         "x": 600,
-        "y": 620,
+        "y": 660,
         "wires": [
             [
-                "0749f4279a336caf"
+                "ca182659939320ce"
             ]
         ]
     },
     {
-        "id": "81c98c5e01bbfe09",
+        "id": "5514c5ab4bed552c",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "debug: last 5 rows radar_dov",
         "active": true,
         "tosidebar": true,
@@ -2648,29 +2727,29 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1200,
-        "y": 580,
+        "y": 620,
         "wires": []
     },
     {
-        "id": "87412467471d97a6",
+        "id": "c6fcbfb9341f189b",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
         "name": "",
-        "x": 910,
-        "y": 660,
+        "x": 920,
+        "y": 740,
         "wires": [
             []
         ]
     },
     {
-        "id": "8a653740e4fc4f6a",
+        "id": "1acba66197b7b0fa",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "write params for radar_dov insert",
         "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -2679,36 +2758,36 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 660,
+        "x": 610,
+        "y": 740,
         "wires": [
             [
-                "87412467471d97a6"
+                "c6fcbfb9341f189b"
             ]
         ]
     },
     {
-        "id": "e3aa00721bf6faff",
+        "id": "50dcead7cf35b74f",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
         "x": 990,
-        "y": 900,
+        "y": 920,
         "wires": [
             [
-                "13059459bbc48328"
+                "866e0c814ea2b4da"
             ]
         ]
     },
     {
-        "id": "54ae78579d38e81b",
+        "id": "c44b652eda2b8a8c",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "create radar_timedspeedcounts table",
         "props": [
             {
@@ -2722,18 +2801,18 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL);",
         "x": 670,
-        "y": 900,
+        "y": 920,
         "wires": [
             [
-                "e3aa00721bf6faff"
+                "50dcead7cf35b74f"
             ]
         ]
     },
     {
-        "id": "831310a0a0549da3",
+        "id": "a198505b2b0fd7c1",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "select latest 5 rows from radar_timedspeedcounts",
         "props": [
             {
@@ -2747,18 +2826,18 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_timed_speed_counts ORDER BY time DESC LIMIT 5;",
         "x": 640,
-        "y": 940,
+        "y": 960,
         "wires": [
             [
-                "e3aa00721bf6faff"
+                "50dcead7cf35b74f"
             ]
         ]
     },
     {
-        "id": "13059459bbc48328",
+        "id": "866e0c814ea2b4da",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "debug: last 5 rows radar_timedspeedcounts",
         "active": true,
         "tosidebar": true,
@@ -2769,14 +2848,14 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1330,
-        "y": 900,
+        "y": 920,
         "wires": []
     },
     {
-        "id": "585b91535ae4e8a3",
+        "id": "cbe24d38e9f03394",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "write params for radar_timedspeedcounts insert",
         "func": "//get rid of outer TimedSpeedCounts object\nmsg.payload = msg.payload.TimedSpeedCounts;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -2786,33 +2865,33 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 980,
+        "y": 1040,
         "wires": [
             [
-                "477f8523e9784029"
+                "22234193104332f6"
             ]
         ]
     },
     {
-        "id": "477f8523e9784029",
+        "id": "22234193104332f6",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
         "name": "",
         "x": 990,
-        "y": 980,
+        "y": 1040,
         "wires": [
             []
         ]
     },
     {
-        "id": "dd48c6017098fe1d",
+        "id": "a3dddf65b65ca371",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "",
@@ -2821,15 +2900,15 @@
         "y": 1200,
         "wires": [
             [
-                "825ddab22453e37c"
+                "9de4885ad8ef8485"
             ]
         ]
     },
     {
-        "id": "e113c181976ad898",
+        "id": "9ba47db34d626ef9",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "create radar_raw_speed_magnitude table",
         "props": [
             {
@@ -2846,15 +2925,15 @@
         "y": 1200,
         "wires": [
             [
-                "dd48c6017098fe1d"
+                "a3dddf65b65ca371"
             ]
         ]
     },
     {
-        "id": "e1461efd368bbee3",
+        "id": "74df2509f68a2d6e",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "select latest 5 rows from radar_raw_speed_magnitude",
         "props": [
             {
@@ -2871,15 +2950,15 @@
         "y": 1240,
         "wires": [
             [
-                "dd48c6017098fe1d"
+                "a3dddf65b65ca371"
             ]
         ]
     },
     {
-        "id": "825ddab22453e37c",
+        "id": "9de4885ad8ef8485",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "debug: last 5 rows radar_raw_speed_magnitude",
         "active": true,
         "tosidebar": true,
@@ -2894,25 +2973,25 @@
         "wires": []
     },
     {
-        "id": "1ddee1427e02c980",
+        "id": "81522ee190374834",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
         "x": 1030,
-        "y": 1280,
+        "y": 1320,
         "wires": [
             []
         ]
     },
     {
-        "id": "d7eb8cf6f750f369",
+        "id": "7e4a607265a272c2",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "write params for radar_raw_speed_magnitude insert",
         "func": "\nmsg.payload.magnitude = `${JSON.stringify(msg.payload.magnitude)}`; //array, wrap in single quote for sqlite insert as text\nmsg.payload.speed = `${JSON.stringify(msg.payload.speed)}`; //array, wrap in single quote for sqlite insert as text\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -2922,18 +3001,18 @@
         "finalize": "",
         "libs": [],
         "x": 660,
-        "y": 1280,
+        "y": 1320,
         "wires": [
             [
-                "1ddee1427e02c980"
+                "81522ee190374834"
             ]
         ]
     },
     {
-        "id": "97a0c601b8918ede",
+        "id": "fbde266909bc0ca7",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "create radar_oc_payload table",
         "props": [
             {
@@ -2947,35 +3026,35 @@
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
         "x": 650,
-        "y": 1760,
+        "y": 1820,
         "wires": [
             [
-                "772d6574f4181a44"
+                "09369d5e4816364f"
             ]
         ]
     },
     {
-        "id": "772d6574f4181a44",
+        "id": "09369d5e4816364f",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
         "x": 950,
-        "y": 1760,
+        "y": 1820,
         "wires": [
             [
-                "b277514c42c255e9"
+                "45801cdcc5094abc"
             ]
         ]
     },
     {
-        "id": "c768d8ea1b8cf953",
+        "id": "4ffa919935494b14",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "select latest 5 rows from radar_oc_payload",
         "props": [
             {
@@ -2989,18 +3068,18 @@
         "onceDelay": 0.1,
         "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
         "x": 620,
-        "y": 1800,
+        "y": 1860,
         "wires": [
             [
-                "772d6574f4181a44"
+                "09369d5e4816364f"
             ]
         ]
     },
     {
-        "id": "b277514c42c255e9",
+        "id": "45801cdcc5094abc",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "debug: last 5 rows radar_oc_payload",
         "active": true,
         "tosidebar": true,
@@ -3011,29 +3090,29 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1270,
-        "y": 1760,
+        "y": 1820,
         "wires": []
     },
     {
-        "id": "27b2f56921067f35",
+        "id": "6e30f911242c5595",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
         "x": 950,
-        "y": 1840,
+        "y": 1940,
         "wires": [
             []
         ]
     },
     {
-        "id": "a804f93d06561c17",
+        "id": "edcc237df962c31a",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "write params for radar_oc_payload insert",
         "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -3043,18 +3122,18 @@
         "finalize": "",
         "libs": [],
         "x": 620,
-        "y": 1840,
+        "y": 1940,
         "wires": [
             [
-                "27b2f56921067f35"
+                "6e30f911242c5595"
             ]
         ]
     },
     {
-        "id": "1d1c479b2567efbd",
+        "id": "a3924864154eaefb",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "msg.topic",
         "sql": "",
@@ -3063,15 +3142,15 @@
         "y": 1420,
         "wires": [
             [
-                "a1583c68a1dad33e"
+                "cdc947bb9cd47c63"
             ]
         ]
     },
     {
-        "id": "795c120719c982de",
+        "id": "a8dff32b84fbd72a",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "create radar_raw_speed_magnitude_single table",
         "props": [
             {
@@ -3088,15 +3167,15 @@
         "y": 1420,
         "wires": [
             [
-                "1d1c479b2567efbd"
+                "a3924864154eaefb"
             ]
         ]
     },
     {
-        "id": "8180a480a85a6636",
+        "id": "8773b251c9ee9539",
         "type": "inject",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "select latest 5 rows from radar_raw_speed_magnitude_single",
         "props": [
             {
@@ -3113,15 +3192,15 @@
         "y": 1460,
         "wires": [
             [
-                "1d1c479b2567efbd"
+                "a3924864154eaefb"
             ]
         ]
     },
     {
-        "id": "a1583c68a1dad33e",
+        "id": "cdc947bb9cd47c63",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "debug: last 5 rows radar_raw_speed_magnitude_single",
         "active": true,
         "tosidebar": true,
@@ -3136,25 +3215,25 @@
         "wires": []
     },
     {
-        "id": "382bf388390f91bd",
+        "id": "252e2f5b95aeb8da",
         "type": "sqlite",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
         "name": "",
-        "x": 1180,
-        "y": 1560,
+        "x": 1120,
+        "y": 1600,
         "wires": [
             []
         ]
     },
     {
-        "id": "6580ac98734eba2e",
+        "id": "83065a55697cc160",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "write params for radar_raw_speed_magnitude_single insert",
         "func": "\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -3163,118 +3242,118 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 800,
-        "y": 1560,
+        "x": 740,
+        "y": 1600,
         "wires": [
             [
-                "382bf388390f91bd"
+                "252e2f5b95aeb8da"
             ]
         ]
     },
     {
-        "id": "6106b11d56c22e4a",
+        "id": "fb779ea25c6cdfb5",
         "type": "link in",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "query OPS",
         "links": [
-            "a385b9186009250e"
+            "18c715a31b57c39b"
         ],
         "x": 335,
         "y": 80,
         "wires": [
             [
-                "85058171e2678c73"
+                "998194b1b9bc29ba"
             ]
         ]
     },
     {
-        "id": "3bf70e1d7ad2d43b",
+        "id": "59fc16ddf03b8d95",
         "type": "link out",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "link out json TM_RADAR_SERIAL_PORT_00",
         "mode": "link",
         "links": [
-            "2f0f10b6553e5840"
+            "3acf2a65109b60d4"
         ],
         "x": 1585,
         "y": 80,
         "wires": []
     },
     {
-        "id": "313905edff24218d",
+        "id": "01307f2f13f465f2",
         "type": "link out",
-        "z": "94d07e407c25f282",
-        "g": "1d00b3011a12b204",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
         "name": "radar_dov link out",
         "mode": "link",
         "links": [
-            "fee85b1886270ac6"
+            "8d0d212f1bfa2353"
         ],
         "x": 475,
-        "y": 700,
+        "y": 580,
         "wires": []
     },
     {
-        "id": "cceefa4b9aa98acc",
+        "id": "59a9c9a7ba535641",
         "type": "link out",
-        "z": "94d07e407c25f282",
-        "g": "35a68b2baec193d2",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload link out",
         "mode": "link",
         "links": [
-            "e05e91362c933e94"
+            "b0fe9247d98780b8"
         ],
         "x": 475,
-        "y": 1880,
+        "y": 1780,
         "wires": []
     },
     {
-        "id": "56ce714b7a23585b",
+        "id": "95186b0fee06a3f5",
         "type": "link out",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "radar_raw_speed_magnitude_single link out",
         "mode": "link",
         "links": [
-            "0124afc74d86b533"
+            "5de57ad4e97defd9"
         ],
-        "x": 595,
-        "y": 1600,
+        "x": 485,
+        "y": 1640,
         "wires": []
     },
     {
-        "id": "62f7d1214aa96cc0",
+        "id": "080fd00489701aa1",
         "type": "link out",
-        "z": "94d07e407c25f282",
-        "g": "e138c998bef7d520",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
         "name": "radar_raw_speed_magnitude link out",
         "mode": "link",
         "links": [
-            "fc5e2cd719fa680a"
+            "87786c6304c30e3d"
         ],
         "x": 475,
-        "y": 1320,
+        "y": 1160,
         "wires": []
     },
     {
-        "id": "5c4e5a6064580e23",
+        "id": "4094c101f6b59d95",
         "type": "link out",
-        "z": "94d07e407c25f282",
-        "g": "04cc3b7b3e019683",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
         "name": "radar_timedspeedcounts link out",
         "mode": "link",
         "links": [
-            "087588593911f398"
+            "a2dd5049420cca33"
         ],
         "x": 475,
-        "y": 1020,
+        "y": 880,
         "wires": []
     },
     {
-        "id": "c198bb9e360d93ef",
+        "id": "07cdbeafa34a565e",
         "type": "function",
-        "z": "94d07e407c25f282",
-        "g": "e5b5b46703e248e9",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
         "name": "manually take top 1 speed, magnitude (effectively O1)",
         "func": "\nmsg.payload.magnitude = msg.payload.magnitude[0]; //array, wrap in single quote for sqlite insert as text\nmsg.payload.speed = msg.payload.speed[0]; //array, wrap in single quote for sqlite insert as text\n\nreturn msg;",
         "outputs": 1,
@@ -3284,18 +3363,18 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 1500,
+        "y": 1540,
         "wires": [
             [
-                "6580ac98734eba2e",
-                "56ce714b7a23585b"
+                "83065a55697cc160",
+                "95186b0fee06a3f5"
             ]
         ]
     },
     {
-        "id": "bcfe4c09a2502454",
+        "id": "fbf61ec935e282ae",
         "type": "change",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "rules": [
             {
@@ -3315,16 +3394,15 @@
         "y": 120,
         "wires": [
             [
-                "3bf70e1d7ad2d43b",
-                "36b68e0861cc5fc4",
-                "830348149cb405ae"
+                "59fc16ddf03b8d95",
+                "05e485cfcada03a3"
             ]
         ]
     },
     {
-        "id": "362df7566f3bb69a",
+        "id": "97c84e89eb5bd113",
         "type": "serial out",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
         "x": 730,
@@ -3332,9 +3410,9 @@
         "wires": []
     },
     {
-        "id": "41fa99eb3d3329da",
+        "id": "3b4f896b6f34c759",
         "type": "serial out",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
         "x": 730,
@@ -3342,9 +3420,9 @@
         "wires": []
     },
     {
-        "id": "c7c72cf3bbc69523",
+        "id": "1ad62db35274c50d",
         "type": "serial out",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_03",
         "serial": "9436149d39191450",
         "x": 730,
@@ -3352,39 +3430,23 @@
         "wires": []
     },
     {
-        "id": "fc5608d13cb6083f",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug 12",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1100,
-        "y": 60,
-        "wires": []
-    },
-    {
-        "id": "35ae94807983e646",
+        "id": "917b8f4b46895cee",
         "type": "serial in",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
         "x": 930,
         "y": 180,
         "wires": [
             [
-                "5afb4059fb1949a4"
+                "b9d0ad874b671281"
             ]
         ]
     },
     {
-        "id": "4d531d7c70e302fc",
+        "id": "0d53bc6696f96c48",
         "type": "json",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "property": "payload",
         "action": "",
@@ -3393,14 +3455,14 @@
         "y": 180,
         "wires": [
             [
-                "68fbebe9a88cbdf4"
+                "5ca9d7d0dac757f4"
             ]
         ]
     },
     {
-        "id": "68fbebe9a88cbdf4",
+        "id": "5ca9d7d0dac757f4",
         "type": "change",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "rules": [
             {
@@ -3420,46 +3482,28 @@
         "y": 180,
         "wires": [
             [
-                "48ddac711187733f",
-                "830348149cb405ae"
+                "05e485cfcada03a3"
             ]
         ]
     },
     {
-        "id": "48ddac711187733f",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug-radar_01-all-output",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1670,
-        "y": 180,
-        "wires": []
-    },
-    {
-        "id": "1f4ca7845f5a9fac",
+        "id": "9353b933e36e8b9e",
         "type": "serial in",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
         "x": 930,
         "y": 240,
         "wires": [
             [
-                "86ae52d3f8639500"
+                "c733b3b6871f335b"
             ]
         ]
     },
     {
-        "id": "6dcb35620e1e4177",
+        "id": "9e504ae365417be4",
         "type": "json",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "property": "payload",
         "action": "",
@@ -3468,14 +3512,14 @@
         "y": 240,
         "wires": [
             [
-                "82b71d8baafa1092"
+                "787b21d91c5a25b1"
             ]
         ]
     },
     {
-        "id": "82b71d8baafa1092",
+        "id": "787b21d91c5a25b1",
         "type": "change",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "rules": [
             {
@@ -3495,46 +3539,28 @@
         "y": 240,
         "wires": [
             [
-                "940d63c36fa43eb2",
-                "830348149cb405ae"
+                "05e485cfcada03a3"
             ]
         ]
     },
     {
-        "id": "940d63c36fa43eb2",
-        "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug-radar_02-all-output",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1670,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "f8fb1df7d1bc774d",
+        "id": "e221212a505a78ac",
         "type": "serial in",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_03",
         "serial": "9436149d39191450",
         "x": 930,
         "y": 300,
         "wires": [
             [
-                "9505ccf3a4707370"
+                "be612a06e6fce8b1"
             ]
         ]
     },
     {
-        "id": "277250064b5d46c4",
+        "id": "1d905e0c54b723b5",
         "type": "json",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "property": "payload",
         "action": "",
@@ -3543,14 +3569,14 @@
         "y": 300,
         "wires": [
             [
-                "359a11081d8f6f2f"
+                "9c5feff0083f6fef"
             ]
         ]
     },
     {
-        "id": "359a11081d8f6f2f",
+        "id": "9c5feff0083f6fef",
         "type": "change",
-        "z": "94d07e407c25f282",
+        "z": "1c71c8f26f5b7b19",
         "name": "",
         "rules": [
             {
@@ -3570,211 +3596,334 @@
         "y": 300,
         "wires": [
             [
-                "f3035771dc884fcb",
-                "830348149cb405ae"
+                "05e485cfcada03a3"
             ]
         ]
     },
     {
-        "id": "f3035771dc884fcb",
+        "id": "c744236bdcd86cf3",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1100,
+        "y": 120,
+        "wires": [
+            [
+                "31581da0d3b6358a"
+            ]
+        ]
+    },
+    {
+        "id": "b9d0ad874b671281",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1100,
+        "y": 180,
+        "wires": [
+            [
+                "0d53bc6696f96c48"
+            ]
+        ]
+    },
+    {
+        "id": "c733b3b6871f335b",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1100,
+        "y": 240,
+        "wires": [
+            [
+                "9e504ae365417be4"
+            ]
+        ]
+    },
+    {
+        "id": "be612a06e6fce8b1",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1100,
+        "y": 300,
+        "wires": [
+            [
+                "1d905e0c54b723b5"
+            ]
+        ]
+    },
+    {
+        "id": "998194b1b9bc29ba",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 120,
+        "wires": [
+            [
+                "7c7577ee1b447bf6"
+            ]
+        ]
+    },
+    {
+        "id": "6603f07036f13602",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 180,
+        "wires": [
+            [
+                "97c84e89eb5bd113"
+            ]
+        ]
+    },
+    {
+        "id": "99c67a76992c8de8",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 240,
+        "wires": [
+            [
+                "3b4f896b6f34c759"
+            ]
+        ]
+    },
+    {
+        "id": "2ea13e7fb927749d",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "enabled?",
+        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "1ad62db35274c50d"
+            ]
+        ]
+    },
+    {
+        "id": "2479e1e747a9c6ec",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
+        "name": "alter table radar_dov",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 650,
+        "y": 700,
+        "wires": [
+            [
+                "ca182659939320ce"
+            ]
+        ]
+    },
+    {
+        "id": "ef75320f6a5f0382",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
+        "name": "alter table radar_timedspeedcounts",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 680,
+        "y": 1000,
+        "wires": [
+            [
+                "50dcead7cf35b74f"
+            ]
+        ]
+    },
+    {
+        "id": "fe45aef575ccab71",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
+        "name": "alter table radar_raw_speed_magnitude",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 710,
+        "y": 1280,
+        "wires": [
+            [
+                "a3dddf65b65ca371"
+            ]
+        ]
+    },
+    {
+        "id": "c61ef5ee09cb5c93",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
+        "name": "alter table radar_raw_speed_magnitude_single",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 700,
+        "y": 1500,
+        "wires": [
+            [
+                "a3924864154eaefb"
+            ]
+        ]
+    },
+    {
+        "id": "fb89305143faab57",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "name": "alter table radar_oc_payload",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 660,
+        "y": 1900,
+        "wires": [
+            [
+                "09369d5e4816364f"
+            ]
+        ]
+    },
+    {
+        "id": "82d67136bd681ac7",
         "type": "debug",
-        "z": "94d07e407c25f282",
-        "name": "debug-radar_03-all-output",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 12",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1670,
-        "y": 300,
+        "x": 1100,
+        "y": 60,
         "wires": []
-    },
-    {
-        "id": "acd3c5deda356178",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1100,
-        "y": 120,
-        "wires": [
-            [
-                "bb2b78040385d37e"
-            ]
-        ]
-    },
-    {
-        "id": "5afb4059fb1949a4",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1100,
-        "y": 180,
-        "wires": [
-            [
-                "4d531d7c70e302fc"
-            ]
-        ]
-    },
-    {
-        "id": "86ae52d3f8639500",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1100,
-        "y": 240,
-        "wires": [
-            [
-                "6dcb35620e1e4177"
-            ]
-        ]
-    },
-    {
-        "id": "9505ccf3a4707370",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1100,
-        "y": 300,
-        "wires": [
-            [
-                "277250064b5d46c4"
-            ]
-        ]
-    },
-    {
-        "id": "85058171e2678c73",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 560,
-        "y": 120,
-        "wires": [
-            [
-                "8e8ede8ca221552b"
-            ]
-        ]
-    },
-    {
-        "id": "25c9b07624fa2db5",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 560,
-        "y": 180,
-        "wires": [
-            [
-                "362df7566f3bb69a"
-            ]
-        ]
-    },
-    {
-        "id": "3fcc645fb81a0858",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 560,
-        "y": 240,
-        "wires": [
-            [
-                "41fa99eb3d3329da"
-            ]
-        ]
-    },
-    {
-        "id": "ff9e3909ecc2c19f",
-        "type": "switch",
-        "z": "94d07e407c25f282",
-        "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 560,
-        "y": 300,
-        "wires": [
-            [
-                "c7c72cf3bbc69523"
-            ]
-        ]
     },
     {
         "id": "f20c74c0ccfd256c",
