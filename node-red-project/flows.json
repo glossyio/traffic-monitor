@@ -231,7 +231,7 @@
             "76911cc7f28e7da2"
         ],
         "x": 54,
-        "y": 319,
+        "y": 159,
         "w": 372,
         "h": 122
     },
@@ -252,13 +252,12 @@
             "7f50d9d83bdb7f14",
             "c123fc5ed5e14e8a",
             "673e45159a2dfccf",
-            "f2c393fa98053601",
-            "89027ade0b2d55b5"
+            "23f825551d9fe7ee"
         ],
         "x": 54,
-        "y": 439,
-        "w": 1092,
-        "h": 342
+        "y": 399,
+        "w": 1032,
+        "h": 402
     },
     {
         "id": "53e4faf6d3ece28c",
@@ -279,8 +278,8 @@
             "59a579e6a1fa9a08",
             "274f87c31437c2d7"
         ],
-        "x": 334,
-        "y": 899,
+        "x": 54,
+        "y": 839,
         "w": 912,
         "h": 322
     },
@@ -4008,7 +4007,7 @@
         "repair": false,
         "outputs": 1,
         "x": 180,
-        "y": 360,
+        "y": 200,
         "wires": [
             [
                 "76911cc7f28e7da2"
@@ -4026,8 +4025,8 @@
             "c249329109ac17d5",
             "ed447e5f8becbfad"
         ],
-        "x": 935,
-        "y": 1000,
+        "x": 655,
+        "y": 940,
         "wires": []
     },
     {
@@ -4051,10 +4050,10 @@
         "to": "",
         "reg": false,
         "x": 260,
-        "y": 400,
+        "y": 240,
         "wires": [
             [
-                "7f063afdbac396ce"
+                "8eaa1d06a29a5d2b"
             ]
         ]
     },
@@ -4071,8 +4070,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 280,
-        "y": 580,
+        "x": 680,
+        "y": 500,
         "wires": [
             [
                 "b39062019fac1a66"
@@ -4099,7 +4098,7 @@
         "repair": false,
         "outputs": 2,
         "x": 270,
-        "y": 520,
+        "y": 500,
         "wires": [
             [
                 "7992eb250ae9d20f"
@@ -4129,8 +4128,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1010,
-        "y": 740,
+        "x": 950,
+        "y": 760,
         "wires": [
             [
                 "a96d834e3571c549"
@@ -4142,16 +4141,16 @@
         "type": "function",
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
-        "name": "pass no direction, no speed",
-        "func": "//no speed\nconst newMsg = {};\n\nnewMsg.status_match_event_radar_direction = \"direction_speed_no_zones\"; \nnewMsg.calc_event_direction = undefined;\nnewMsg.calc_event_speed = undefined;\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "name": "no zone for radar lookup",
+        "func": "//no speed\nconst newMsg = {};\n\nnewMsg.status_match_event_radar_direction = \"direction_speed_no_zones\"; \nnewMsg.status_radarMatch = false;\nnewMsg.calc_event_direction = undefined;\nnewMsg.calc_event_speed = undefined;\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 720,
-        "y": 540,
+        "x": 390,
+        "y": 560,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -4162,10 +4161,11 @@
         "id": "23f825551d9fe7ee",
         "type": "comment",
         "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
         "name": "do these steps SEQUENTIALLY or they may overlap w a JOIN node",
         "info": "",
-        "x": 260,
-        "y": 160,
+        "x": 740,
+        "y": 440,
         "wires": []
     },
     {
@@ -4177,8 +4177,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 820,
-        "y": 1140,
+        "x": 540,
+        "y": 1080,
         "wires": [
             [
                 "d8786159d48401b9"
@@ -4202,8 +4202,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY,camera TEXT,label TEXT,sub_label TEXT,top_score REAL,frame_time REAL,start_time REAL,end_time REAL,entered_zones TEXT,score REAL,area REAL,ratio REAL,motionless_count REAL,position_changes REAL,attributes TEXT,direction_calc TEXT,speed_calc REAL,source TEXT,deployment_id TEXT DEFAULT NULL,FOREIGN KEY (deployment_id) REFERENCES deployment(id));",
-        "x": 550,
-        "y": 1140,
+        "x": 270,
+        "y": 1080,
         "wires": [
             [
                 "510b389597efaf1b"
@@ -4217,10 +4217,10 @@
         "g": "53e4faf6d3ece28c",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, source, deployment_id) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $source, $deployment_id);",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, radarName);",
         "name": "tmdb.events, Prepared Statement",
-        "x": 1060,
-        "y": 940,
+        "x": 780,
+        "y": 880,
         "wires": [
             []
         ]
@@ -4231,15 +4231,15 @@
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
         "name": "write params for events insert",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n//for Timestamp, frigate event and radar use seconds\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\n\nnewMsg.payload.score = msg.frigate_event.score;\nnewMsg.payload.area = msg.frigate_event.area;\nnewMsg.payload.ratio = msg.frigate_event.ratio;\nnewMsg.payload.motionless_count = msg.frigate_event.motionless_count;\nnewMsg.payload.position_changes = msg.frigate_event.position_changes;\nnewMsg.payload.attributes = `${JSON.stringify(msg.frigate_event.attributes)}`; //array, wrap in single quote for sqlite insert as text\n\n\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\nnewMsg.payload.deployment_id = global.get(\"deployment.id\",\"config\");\nnewMsg.payload.source = \"frigate\";\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n//for Timestamp, frigate event and radar use seconds\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\n\nnewMsg.payload.score = msg.frigate_event.score;\nnewMsg.payload.area = msg.frigate_event.area;\nnewMsg.payload.ratio = msg.frigate_event.ratio;\nnewMsg.payload.motionless_count = msg.frigate_event.motionless_count;\nnewMsg.payload.position_changes = msg.frigate_event.position_changes;\nnewMsg.payload.attributes = `${JSON.stringify(msg.frigate_event.attributes)}`; //array, wrap in single quote for sqlite insert as text\n\n\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//provenance, frigate first, then radar, if it matched\nnewMsg.payload.provenance = [];\nnewMsg.payload.provenance.push(\"frigate\");\nif (msg.status_radarMatch === true) {\n    newMsg.payload.provenance.push(\"radar\");\n}\n\nnewMsg.payload.deployment_id = msg.frigate_event.deployment_id;\nnewMsg.payload.radarName = msg.frigate_event.radarName;\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 490,
-        "y": 940,
+        "x": 210,
+        "y": 880,
         "wires": [
             [
                 "61d6a19c99c60e0b",
@@ -4264,8 +4264,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM events ORDER BY end_time DESC LIMIT 5;",
-        "x": 510,
-        "y": 1180,
+        "x": 230,
+        "y": 1120,
         "wires": [
             [
                 "510b389597efaf1b"
@@ -4286,8 +4286,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1090,
-        "y": 1140,
+        "x": 810,
+        "y": 1080,
         "wires": []
     },
     {
@@ -4304,8 +4304,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
-        "y": 1040,
+        "x": 300,
+        "y": 980,
         "wires": []
     },
     {
@@ -4321,8 +4321,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 570,
-        "y": 1000,
+        "x": 290,
+        "y": 940,
         "wires": [
             [
                 "7f0ef976c7b79245",
@@ -4336,15 +4336,15 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "pull speed, direction for event period",
-        "func": "let query = \"SELECT * FROM radar_dov WHERE time BETWEEN \" + (Math.floor(msg.frigate_event.start_time) - 2) +\" AND \" + (Math.ceil(msg.frigate_event.end_time) + 2) + \";\";\n\nmsg.topic = query;\n\nreturn msg;",
+        "func": "let query = `SELECT * \nFROM radar_dov \nWHERE time BETWEEN ${(Math.floor(msg.frigate_event.start_time) - 2)} AND ${(Math.ceil(msg.frigate_event.end_time) + 2)} \nAND radarName=\"${msg.frigate_event.radarName}\"\n;`;\n\nmsg.topic = query;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
-        "y": 640,
+        "x": 750,
+        "y": 560,
         "wires": [
             [
                 "7f50d9d83bdb7f14"
@@ -4360,8 +4360,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "query radar readings around event time",
-        "x": 490,
-        "y": 680,
+        "x": 800,
+        "y": 600,
         "wires": [
             [
                 "c123fc5ed5e14e8a"
@@ -4381,8 +4381,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 430,
-        "y": 740,
+        "x": 850,
+        "y": 640,
         "wires": [
             [
                 "673e45159a2dfccf"
@@ -4395,15 +4395,15 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "match radar speed to event",
-        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\nnewMsg.status_radarMatch = false;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 720,
-        "y": 740,
+        "x": 900,
+        "y": 680,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -4411,33 +4411,46 @@
         ]
     },
     {
-        "id": "f2c393fa98053601",
-        "type": "comment",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "match radar to camera",
-        "info": "",
-        "x": 660,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "89027ade0b2d55b5",
+        "id": "8eaa1d06a29a5d2b",
         "type": "function",
         "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "match radar to port",
-        "func": "\n// check hard-coded env port against radar names list\n// this sensor is env.get(\"TM_RADAR_SERIAL_PORT\")\n\n// for (const camera in global.get(\"config.sensors.cameras\",\"config\"))\n//     thisRadar = global.get(\"config.sensors.radars\",\"config\");\n//     if (camera.radar_camera == env.get(\"TM_RADAR_SERIAL_PORT\")) {\n\n//     }\n\n//attach radar name to all radar payloads, for use in matching camera and deployment\n\nreturn msg;",
+        "name": "append config, deployment properties",
+        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`, 'config');\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    msg.frigate_event.radarName = sensor.camera_radar;\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
-        "y": 480,
+        "x": 290,
+        "y": 320,
         "wires": [
-            []
+            [
+                "627ba0f672680054"
+            ]
+        ]
+    },
+    {
+        "id": "627ba0f672680054",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "name": "camera enabled?",
+        "property": "enabled",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 390,
+        "y": 360,
+        "wires": [
+            [
+                "7f063afdbac396ce"
+            ]
         ]
     },
     {
