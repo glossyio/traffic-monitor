@@ -23,7 +23,6 @@ NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
 # database locations, relative to user directory defined in settings.js
 #  will be relative path to store SQLite databases
 TM_DATABASE_PATH_TMDB='code/nodered/db/tmdb.sqlite'
-TM_DATABASE_PATH_RADAR='code/nodered/db/radar.sqlite'
 
 # mqtt broker for incoming Frigate events 
 #  Settings below set up the aedes broker node
@@ -35,4 +34,8 @@ TM_MQTT_BROKER_USERNAME=''
 TM_MQTT_BROKER_PASSWORD=''
 
 # defines system USB serial port for radar
-TM_RADAR_SERIAL_PORT='/dev/ttyACM0'
+# run `ls -lat /sys/class/tty/ttyACM*` to list devices
+TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
+TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
+TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
+TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
