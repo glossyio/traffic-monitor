@@ -628,14 +628,13 @@
         },
         "nodes": [
             "4bbb9e24b5507a00",
-            "4f240c3c73d9a73f",
             "8004ba7ad5a9bd83",
             "941376ca65d0b412"
         ],
         "x": 48,
         "y": 233,
         "w": 1224,
-        "h": 1094
+        "h": 714
     },
     {
         "id": "4bbb9e24b5507a00",
@@ -658,27 +657,6 @@
         "y": 259,
         "w": 652,
         "h": 162
-    },
-    {
-        "id": "4f240c3c73d9a73f",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "g": "791a8c44b7f98d1b",
-        "name": "write config file",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "6d1083e26ae2dea1",
-            "42a1a291f7d8006b",
-            "a3c5767fda5250f0",
-            "f4a626a3a3ab3d39",
-            "b2d374d1168973c7"
-        ],
-        "x": 74,
-        "y": 1159,
-        "w": 992,
-        "h": 142
     },
     {
         "id": "b334a2375eb8cb42",
@@ -828,7 +806,6 @@
             "9e38989f2e13e4d7",
             "c30220553ae11805",
             "2b95a63a76f28f09",
-            "7ec49429a06e3bbf",
             "b43ee265985f0f56"
         ],
         "x": 14,
@@ -853,21 +830,18 @@
             "f6ecdd18d8e03f91",
             "f9a2f4f97e3ba1cf",
             "928d7cafdc1ab7fa",
-            "6b96fe301f9b6145",
-            "5186b0bd778ef3e3",
             "9d90fca30cf97264",
             "8f4e9d81288d5abd",
             "689b64c16a889e0a",
             "95f86a8a5653698f",
             "bc398ad5de3bd112",
             "6d2f607b324415b4",
-            "27e1c4f173ec412e",
             "24efdc7f1231f7f0"
         ],
         "x": 74,
         "y": 479,
         "w": 1172,
-        "h": 462
+        "h": 442
     },
     {
         "id": "dea1b8828f8e501f",
@@ -1193,12 +1167,6 @@
         "width": "6",
         "collapse": false,
         "className": ""
-    },
-    {
-        "id": "1d8d8c9a28569355",
-        "type": "sqlitedb",
-        "db": "${TM_DATABASE_PATH_RADAR}",
-        "mode": "RWC"
     },
     {
         "id": "eab37b30ecd3f935",
@@ -1586,107 +1554,6 @@
         ]
     },
     {
-        "id": "6d1083e26ae2dea1",
-        "type": "link in",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4f240c3c73d9a73f",
-        "name": "link in 2",
-        "links": [],
-        "x": 125,
-        "y": 1200,
-        "wires": [
-            [
-                "f4a626a3a3ab3d39"
-            ]
-        ]
-    },
-    {
-        "id": "42a1a291f7d8006b",
-        "type": "file",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4f240c3c73d9a73f",
-        "name": "",
-        "filename": ".node-red/projects/traffic-monitor/node-red-project/config-write.yml",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 800,
-        "y": 1240,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "a3c5767fda5250f0",
-        "type": "yaml",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4f240c3c73d9a73f",
-        "property": "payload",
-        "name": "",
-        "x": 450,
-        "y": 1240,
-        "wires": [
-            [
-                "42a1a291f7d8006b"
-            ]
-        ]
-    },
-    {
-        "id": "f4a626a3a3ab3d39",
-        "type": "change",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4f240c3c73d9a73f",
-        "name": "set msg.payload from global.config",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "#:(config)::config",
-                "tot": "global"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 320,
-        "y": 1200,
-        "wires": [
-            [
-                "a3c5767fda5250f0"
-            ]
-        ]
-    },
-    {
-        "id": "b2d374d1168973c7",
-        "type": "inject",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4f240c3c73d9a73f",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 170,
-        "y": 1260,
-        "wires": [
-            [
-                "f4a626a3a3ab3d39"
-            ]
-        ]
-    },
-    {
         "id": "5ffb7c9c38b8c5b0",
         "type": "watch",
         "z": "3dae026ab340962a",
@@ -1775,8 +1642,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 640,
-        "y": 780,
+        "x": 600,
+        "y": 760,
         "wires": [
             [
                 "3cdbccf5dbcb1c4e"
@@ -1800,12 +1667,11 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryStartDateTime REAL, entryEndDateTime REAL, lat REAL, lon REAL, bearing TEXT, sensorName TEXT, deviceName TEXT);",
-        "x": 330,
-        "y": 780,
+        "x": 290,
+        "y": 760,
         "wires": [
             [
-                "8a6d4593a661c3df",
-                "6b96fe301f9b6145"
+                "8a6d4593a661c3df"
             ]
         ]
     },
@@ -1826,12 +1692,11 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryStartDateTime DESC LIMIT 5;",
-        "x": 300,
-        "y": 820,
+        "x": 260,
+        "y": 800,
         "wires": [
             [
-                "8a6d4593a661c3df",
-                "6b96fe301f9b6145"
+                "8a6d4593a661c3df"
             ]
         ]
     },
@@ -1849,8 +1714,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 930,
-        "y": 780,
+        "x": 890,
+        "y": 760,
         "wires": []
     },
     {
@@ -1913,49 +1778,13 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 340,
-        "y": 860,
+        "x": 300,
+        "y": 840,
         "wires": [
             [
-                "8a6d4593a661c3df",
-                "6b96fe301f9b6145"
+                "8a6d4593a661c3df"
             ]
         ]
-    },
-    {
-        "id": "6b96fe301f9b6145",
-        "type": "sqlite",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "mydb": "1d8d8c9a28569355",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 640,
-        "y": 820,
-        "wires": [
-            [
-                "5186b0bd778ef3e3"
-            ]
-        ]
-    },
-    {
-        "id": "5186b0bd778ef3e3",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "sqlite select last 5 msgs radar",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 820,
-        "wires": []
     },
     {
         "id": "9d90fca30cf97264",
@@ -1993,11 +1822,10 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 320,
-        "y": 900,
+        "x": 280,
+        "y": 880,
         "wires": [
             [
-                "6b96fe301f9b6145",
                 "8a6d4593a661c3df"
             ]
         ]
@@ -2088,21 +1916,6 @@
         ]
     },
     {
-        "id": "27e1c4f173ec412e",
-        "type": "sqlite",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "mydb": "1d8d8c9a28569355",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 1080,
-        "y": 720,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "24efdc7f1231f7f0",
         "type": "switch",
         "z": "3dae026ab340962a",
@@ -2122,8 +1935,7 @@
         "y": 660,
         "wires": [
             [
-                "bc398ad5de3bd112",
-                "27e1c4f173ec412e"
+                "bc398ad5de3bd112"
             ]
         ]
     },
@@ -2614,7 +2426,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -2699,7 +2511,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity, radarName, deployment_id) \nVALUES ($time, $unit, $direction, $velocity, $radarName, $deployment_id);\n",
         "name": "",
@@ -2735,7 +2547,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -2841,7 +2653,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average, radarName, deployment_id)\nVALUES ($time, $direction, $units, $count, $average, $radarName, $deployment_id);\n",
         "name": "",
@@ -2856,7 +2668,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -2941,7 +2753,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
@@ -3002,7 +2814,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
@@ -3062,7 +2874,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft, radarName, deployment_id)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft, $radarName, $deployment_id);",
         "name": "",
@@ -3098,7 +2910,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "fcbf8999ca05a371",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -3183,7 +2995,7 @@
         "type": "sqlite",
         "z": "1c71c8f26f5b7b19",
         "g": "fcbf8999ca05a371",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
@@ -4356,7 +4168,7 @@
         "type": "sqlite",
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "query radar readings around event time",
@@ -6547,7 +6359,7 @@
         "type": "sqlite",
         "z": "28627559bebdc324",
         "g": "76417db2b472ef4f",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7378,7 +7190,7 @@
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7539,7 +7351,7 @@
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7596,7 +7408,7 @@
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7654,7 +7466,7 @@
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7711,7 +7523,7 @@
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
-        "mydb": "1d8d8c9a28569355",
+        "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
@@ -7945,28 +7757,6 @@
         ]
     },
     {
-        "id": "7ec49429a06e3bbf",
-        "type": "ui_template",
-        "z": "239d7b3ba410ad5e",
-        "g": "3a9bb6ed1306eb1c",
-        "group": "c0886ba4111fbfae",
-        "name": "download Radar DB",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "format": "<h3>Radar database and tables</h3>\n<div>\n    <p><a href=\"/files/radar.sqlite\">radar.sqlite</a> (entire database)</p>\n    <ul>\n        <li>radar_dov</li>\n        <li>radar_timed_speed_counts</li>\n        <li>radar_raw_speed_magnitude</li>\n        <li>radar_raw_speed_magnitude_single</li>\n        <li>radar_oc_payload</li>\n    </ul>\n</div>",
-        "storeOutMessages": true,
-        "fwdInMessages": true,
-        "resendOnRefresh": false,
-        "templateScope": "local",
-        "className": "",
-        "x": 820,
-        "y": 340,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "a8c2985e.d23ad8",
         "type": "ui_template",
         "z": "239d7b3ba410ad5e",
@@ -7998,7 +7788,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<h2>Download databases</h2>\n<p>The links below will download the entire Traffic Monitor device events and/or radar SQLite database(s) to your current browser. \n    Each database will include events and/or radar readings only from this device while the Traffic Monitor was deployed and running.</p>",
+        "format": "<h2>Download databases</h2>\n<p>The links below will download the entire Traffic Monitor device events and/or sensor SQLite database(s) to your current browser. \n    Database will include events and/or sensor readings only from this device while the Traffic Monitor was deployed and running.</p>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": false,
