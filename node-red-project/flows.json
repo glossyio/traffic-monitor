@@ -252,12 +252,12 @@
             "7f50d9d83bdb7f14",
             "c123fc5ed5e14e8a",
             "673e45159a2dfccf",
-            "23f825551d9fe7ee"
+            "2c7c7df250289562"
         ],
         "x": 54,
         "y": 399,
-        "w": 1032,
-        "h": 402
+        "w": 1272,
+        "h": 302
     },
     {
         "id": "53e4faf6d3ece28c",
@@ -628,13 +628,137 @@
         },
         "nodes": [
             "4bbb9e24b5507a00",
-            "8004ba7ad5a9bd83",
-            "941376ca65d0b412"
+            "8004ba7ad5a9bd83"
         ],
         "x": 48,
         "y": 233,
         "w": 1224,
         "h": 714
+    },
+    {
+        "id": "dea1b8828f8e501f",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "@O - TimedSpeedCounts",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f04e243ae46cc4c3",
+            "50dcead7cf35b74f",
+            "c44b652eda2b8a8c",
+            "a198505b2b0fd7c1",
+            "866e0c814ea2b4da",
+            "cbe24d38e9f03394",
+            "22234193104332f6",
+            "4094c101f6b59d95",
+            "de7bc8103f7ca3c6",
+            "ef75320f6a5f0382"
+        ],
+        "x": 354,
+        "y": 799,
+        "w": 1192,
+        "h": 282
+    },
+    {
+        "id": "1eebfe6a2eca8ad4",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "ON - DetectedObjectVelocity, for single object",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "7139490bca7e56ca",
+            "ca182659939320ce",
+            "7c9292601a625445",
+            "1867db9744bd3c1f",
+            "5514c5ab4bed552c",
+            "c6fcbfb9341f189b",
+            "1acba66197b7b0fa",
+            "01307f2f13f465f2",
+            "3faf0dcbc24ef11c",
+            "2479e1e747a9c6ec"
+        ],
+        "x": 354,
+        "y": 499,
+        "w": 1012,
+        "h": 282
+    },
+    {
+        "id": "047f05d7650ba3cc",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OS O3 - payload, raw speed+magnitude",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "16572734c7e02e30",
+            "a3dddf65b65ca371",
+            "9ba47db34d626ef9",
+            "74df2509f68a2d6e",
+            "9de4885ad8ef8485",
+            "81522ee190374834",
+            "7e4a607265a272c2",
+            "080fd00489701aa1",
+            "a489601d43802b82",
+            "fe45aef575ccab71"
+        ],
+        "x": 354,
+        "y": 1079,
+        "w": 1252,
+        "h": 282
+    },
+    {
+        "id": "fcbf8999ca05a371",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OS O1 (equivalent) - payload, raw speed+magnitude",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a3924864154eaefb",
+            "a8dff32b84fbd72a",
+            "8773b251c9ee9539",
+            "cdc947bb9cd47c63",
+            "252e2f5b95aeb8da",
+            "83065a55697cc160",
+            "95186b0fee06a3f5",
+            "07cdbeafa34a565e",
+            "8658a5e1847ea59b",
+            "c61ef5ee09cb5c93"
+        ],
+        "x": 354,
+        "y": 1379,
+        "w": 1332,
+        "h": 302
+    },
+    {
+        "id": "da1c8c74261a93a4",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "OC - payload, object summary+vehicle length",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "ca4ed8761a4ded27",
+            "fbde266909bc0ca7",
+            "09369d5e4816364f",
+            "4ffa919935494b14",
+            "45801cdcc5094abc",
+            "6e30f911242c5595",
+            "edcc237df962c31a",
+            "59a9c9a7ba535641",
+            "0ba6c9b3eb3d521d",
+            "fb89305143faab57"
+        ],
+        "x": 354,
+        "y": 1699,
+        "w": 1112,
+        "h": 282
     },
     {
         "id": "4bbb9e24b5507a00",
@@ -842,131 +966,6 @@
         "y": 479,
         "w": 1172,
         "h": 442
-    },
-    {
-        "id": "dea1b8828f8e501f",
-        "type": "group",
-        "z": "1c71c8f26f5b7b19",
-        "name": "@O - TimedSpeedCounts",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f04e243ae46cc4c3",
-            "50dcead7cf35b74f",
-            "c44b652eda2b8a8c",
-            "a198505b2b0fd7c1",
-            "866e0c814ea2b4da",
-            "cbe24d38e9f03394",
-            "22234193104332f6",
-            "4094c101f6b59d95",
-            "de7bc8103f7ca3c6",
-            "ef75320f6a5f0382"
-        ],
-        "x": 354,
-        "y": 799,
-        "w": 1192,
-        "h": 282
-    },
-    {
-        "id": "1eebfe6a2eca8ad4",
-        "type": "group",
-        "z": "1c71c8f26f5b7b19",
-        "name": "ON - DetectedObjectVelocity, for single object",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "7139490bca7e56ca",
-            "ca182659939320ce",
-            "7c9292601a625445",
-            "1867db9744bd3c1f",
-            "5514c5ab4bed552c",
-            "c6fcbfb9341f189b",
-            "1acba66197b7b0fa",
-            "01307f2f13f465f2",
-            "3faf0dcbc24ef11c",
-            "2479e1e747a9c6ec"
-        ],
-        "x": 354,
-        "y": 499,
-        "w": 1012,
-        "h": 282
-    },
-    {
-        "id": "047f05d7650ba3cc",
-        "type": "group",
-        "z": "1c71c8f26f5b7b19",
-        "name": "OS O3 - payload, raw speed+magnitude",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "16572734c7e02e30",
-            "a3dddf65b65ca371",
-            "9ba47db34d626ef9",
-            "74df2509f68a2d6e",
-            "9de4885ad8ef8485",
-            "81522ee190374834",
-            "7e4a607265a272c2",
-            "080fd00489701aa1",
-            "a489601d43802b82",
-            "fe45aef575ccab71"
-        ],
-        "x": 354,
-        "y": 1079,
-        "w": 1252,
-        "h": 282
-    },
-    {
-        "id": "fcbf8999ca05a371",
-        "type": "group",
-        "z": "1c71c8f26f5b7b19",
-        "name": "OS O1 (equivalent) - payload, raw speed+magnitude",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "a3924864154eaefb",
-            "a8dff32b84fbd72a",
-            "8773b251c9ee9539",
-            "cdc947bb9cd47c63",
-            "252e2f5b95aeb8da",
-            "83065a55697cc160",
-            "95186b0fee06a3f5",
-            "07cdbeafa34a565e",
-            "8658a5e1847ea59b",
-            "c61ef5ee09cb5c93"
-        ],
-        "x": 354,
-        "y": 1379,
-        "w": 1332,
-        "h": 302
-    },
-    {
-        "id": "da1c8c74261a93a4",
-        "type": "group",
-        "z": "1c71c8f26f5b7b19",
-        "name": "OC - payload, object summary+vehicle length",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "ca4ed8761a4ded27",
-            "fbde266909bc0ca7",
-            "09369d5e4816364f",
-            "4ffa919935494b14",
-            "45801cdcc5094abc",
-            "6e30f911242c5595",
-            "edcc237df962c31a",
-            "59a9c9a7ba535641",
-            "0ba6c9b3eb3d521d",
-            "fb89305143faab57"
-        ],
-        "x": 354,
-        "y": 1699,
-        "w": 1112,
-        "h": 282
     },
     {
         "id": "05a58d9ee463c696",
@@ -1327,14 +1326,6 @@
         "width": "6",
         "collapse": false,
         "className": ""
-    },
-    {
-        "id": "8edc39241634f1de",
-        "type": "ui_tab",
-        "name": "Configuration / Setup Tab",
-        "icon": "setup",
-        "disabled": false,
-        "hidden": false
     },
     {
         "id": "6739e78652771a41",
@@ -3031,9 +3022,7 @@
         "type": "link in",
         "z": "1c71c8f26f5b7b19",
         "name": "query OPS",
-        "links": [
-            "18c715a31b57c39b"
-        ],
+        "links": [],
         "x": 335,
         "y": 80,
         "wires": [
@@ -3048,9 +3037,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "link out json TM_RADAR_SERIAL_PORT_00",
         "mode": "link",
-        "links": [
-            "3acf2a65109b60d4"
-        ],
+        "links": [],
         "x": 1585,
         "y": 80,
         "wires": []
@@ -3062,9 +3049,7 @@
         "g": "1eebfe6a2eca8ad4",
         "name": "radar_dov link out",
         "mode": "link",
-        "links": [
-            "8d0d212f1bfa2353"
-        ],
+        "links": [],
         "x": 475,
         "y": 580,
         "wires": []
@@ -3076,9 +3061,7 @@
         "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload link out",
         "mode": "link",
-        "links": [
-            "b0fe9247d98780b8"
-        ],
+        "links": [],
         "x": 475,
         "y": 1780,
         "wires": []
@@ -3090,9 +3073,7 @@
         "g": "fcbf8999ca05a371",
         "name": "radar_raw_speed_magnitude_single link out",
         "mode": "link",
-        "links": [
-            "5de57ad4e97defd9"
-        ],
+        "links": [],
         "x": 485,
         "y": 1640,
         "wires": []
@@ -3104,9 +3085,7 @@
         "g": "047f05d7650ba3cc",
         "name": "radar_raw_speed_magnitude link out",
         "mode": "link",
-        "links": [
-            "87786c6304c30e3d"
-        ],
+        "links": [],
         "x": 475,
         "y": 1160,
         "wires": []
@@ -3118,9 +3097,7 @@
         "g": "dea1b8828f8e501f",
         "name": "radar_timedspeedcounts link out",
         "mode": "link",
-        "links": [
-            "a2dd5049420cca33"
-        ],
+        "links": [],
         "x": 475,
         "y": 880,
         "wires": []
@@ -3882,11 +3859,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 680,
-        "y": 500,
+        "x": 620,
+        "y": 440,
         "wires": [
             [
-                "b39062019fac1a66"
+                "2c7c7df250289562"
             ]
         ]
     },
@@ -3895,7 +3872,7 @@
         "type": "switch",
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
-        "name": "object entered ANY zone (include possible misses)",
+        "name": "check if object entered ANY zone for radar",
         "property": "frigate_event.entered_zones",
         "propertyType": "msg",
         "rules": [
@@ -3909,8 +3886,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 270,
-        "y": 500,
+        "x": 240,
+        "y": 440,
         "wires": [
             [
                 "7992eb250ae9d20f"
@@ -3940,8 +3917,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 950,
-        "y": 760,
+        "x": 1190,
+        "y": 660,
         "wires": [
             [
                 "a96d834e3571c549"
@@ -3953,7 +3930,7 @@
         "type": "function",
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
-        "name": "no zone for radar lookup",
+        "name": "skip camera direction calc AND radar lookup",
         "func": "//no speed\nconst newMsg = {};\n\nnewMsg.status_match_event_radar_direction = \"direction_speed_no_zones\"; \nnewMsg.status_radarMatch = false;\nnewMsg.calc_event_direction = undefined;\nnewMsg.calc_event_speed = undefined;\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -3961,24 +3938,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 560,
+        "x": 610,
+        "y": 660,
         "wires": [
             [
                 "cbef8a3acc3d1495"
             ]
         ]
-    },
-    {
-        "id": "23f825551d9fe7ee",
-        "type": "comment",
-        "z": "9269520ddb532b00",
-        "g": "71c085648c20e329",
-        "name": "do these steps SEQUENTIALLY or they may overlap w a JOIN node",
-        "info": "",
-        "x": 740,
-        "y": 440,
-        "wires": []
     },
     {
         "id": "510b389597efaf1b",
@@ -4155,8 +4121,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 560,
+        "x": 1030,
+        "y": 480,
         "wires": [
             [
                 "7f50d9d83bdb7f14"
@@ -4172,8 +4138,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "query radar readings around event time",
-        "x": 800,
-        "y": 600,
+        "x": 1080,
+        "y": 520,
         "wires": [
             [
                 "c123fc5ed5e14e8a"
@@ -4193,8 +4159,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 850,
-        "y": 640,
+        "x": 1130,
+        "y": 560,
         "wires": [
             [
                 "673e45159a2dfccf"
@@ -4206,7 +4172,7 @@
         "type": "function",
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
-        "name": "match radar speed to event",
+        "name": "match radar speed to event, assign direction",
         "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\nnewMsg.status_radarMatch = false;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -4214,8 +4180,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
-        "y": 680,
+        "x": 1090,
+        "y": 600,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -4227,7 +4193,7 @@
         "type": "function",
         "z": "9269520ddb532b00",
         "name": "append config, deployment properties",
-        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`, 'config');\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    msg.frigate_event.radarName = sensor.camera_radar;\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
+        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`, 'config');\n\nmsg.radarEnabled = false;\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    //get radar settings\n    const radar = global.get(`config.sensors.radars.${msg.frigate_event.camera}`, 'config');\n    if (radar.hasOwnProperty('enabled')) {\n        if (radar.enabled === true) {\n            msg.frigate_event.radarName = sensor.camera_radar;\n            msg.radarEnabled = true;\n        }\n    }\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n//indicate if camera is enabled in TM for capture (may still be on in Frigate)\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4262,6 +4228,36 @@
         "wires": [
             [
                 "7f063afdbac396ce"
+            ]
+        ]
+    },
+    {
+        "id": "2c7c7df250289562",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "radar enabled?",
+        "property": "radarEnabled",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 740,
+        "y": 480,
+        "wires": [
+            [
+                "b39062019fac1a66"
+            ],
+            [
+                "673e45159a2dfccf"
             ]
         ]
     },
@@ -4403,9 +4399,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_dov link in",
-        "links": [
-            "313905edff24218d"
-        ],
+        "links": [],
         "x": 175,
         "y": 460,
         "wires": [
@@ -4420,9 +4414,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_timedspeedcounts link in",
-        "links": [
-            "5c4e5a6064580e23"
-        ],
+        "links": [],
         "x": 175,
         "y": 360,
         "wires": [
@@ -4437,9 +4429,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_raw_speed_magnitude link in",
-        "links": [
-            "62f7d1214aa96cc0"
-        ],
+        "links": [],
         "x": 175,
         "y": 500,
         "wires": [
@@ -4454,9 +4444,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_raw_speed_magnitude_single link in",
-        "links": [
-            "56ce714b7a23585b"
-        ],
+        "links": [],
         "x": 175,
         "y": 540,
         "wires": [
@@ -4471,9 +4459,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_oc_payload link in",
-        "links": [
-            "cceefa4b9aa98acc"
-        ],
+        "links": [],
         "x": 175,
         "y": 580,
         "wires": [
@@ -4699,9 +4685,7 @@
         "z": "f7932be9acc7391c",
         "g": "55a1af374cc8ecb9",
         "name": "deployment submit telemetry link in",
-        "links": [
-            "b4935c0d86d87137"
-        ],
+        "links": [],
         "x": 175,
         "y": 760,
         "wires": [
@@ -4857,9 +4841,7 @@
         "z": "f7932be9acc7391c",
         "g": "fe1b9f6f9d89d353",
         "name": "deployment location link in",
-        "links": [
-            "b4935c0d86d87137"
-        ],
+        "links": [],
         "x": 155,
         "y": 1080,
         "wires": [
@@ -5288,7 +5270,7 @@
         "id": "c249329109ac17d5",
         "type": "link in",
         "z": "28627559bebdc324",
-        "name": "from mongo event capture",
+        "name": "link in event capture",
         "links": [
             "274f87c31437c2d7"
         ],
@@ -6322,16 +6304,6 @@
                 "6d81c8e3c89b68f6"
             ]
         ]
-    },
-    {
-        "id": "432a378bcc3e7a73",
-        "type": "comment",
-        "z": "28627559bebdc324",
-        "name": "TODO:  show cars w NULL speed_calc, ...",
-        "info": "",
-        "x": 220,
-        "y": 2900,
-        "wires": []
     },
     {
         "id": "6d81c8e3c89b68f6",
@@ -8138,9 +8110,7 @@
         "g": "dc2934def36c6285",
         "name": "out query TM_RADAR_SERIAL_PORT_00",
         "mode": "link",
-        "links": [
-            "6106b11d56c22e4a"
-        ],
+        "links": [],
         "x": 345,
         "y": 1080,
         "wires": []
@@ -8181,9 +8151,7 @@
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
         "name": "in return TM_RADAR_SERIAL_PORT_00",
-        "links": [
-            "3bf70e1d7ad2d43b"
-        ],
+        "links": [],
         "x": 365,
         "y": 1120,
         "wires": [
