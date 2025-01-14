@@ -630,11 +630,12 @@
         "nodes": [
             "4bbb9e24b5507a00",
             "4f240c3c73d9a73f",
-            "8004ba7ad5a9bd83"
+            "8004ba7ad5a9bd83",
+            "941376ca65d0b412"
         ],
         "x": 48,
         "y": 233,
-        "w": 1364,
+        "w": 1224,
         "h": 1094
     },
     {
@@ -841,15 +842,13 @@
         "type": "group",
         "z": "3dae026ab340962a",
         "g": "791a8c44b7f98d1b",
-        "name": "deployment tmdb",
+        "name": "deployment checks and setup",
         "style": {
             "label": true
         },
         "nodes": [
             "8a6d4593a661c3df",
             "ff28acdecfc4ebb1",
-            "da69f7db98ea04c0",
-            "21acade6736f77dd",
             "751ff2049a663e9c",
             "3cdbccf5dbcb1c4e",
             "f6ecdd18d8e03f91",
@@ -857,22 +856,19 @@
             "928d7cafdc1ab7fa",
             "6b96fe301f9b6145",
             "5186b0bd778ef3e3",
-            "f7c775c4892abed6",
             "9d90fca30cf97264",
             "8f4e9d81288d5abd",
             "689b64c16a889e0a",
             "95f86a8a5653698f",
             "bc398ad5de3bd112",
-            "2e455012b6e74253",
             "6d2f607b324415b4",
-            "c64671559898b0b7",
             "27e1c4f173ec412e",
-            "c6e84f7f6d82f353"
+            "24efdc7f1231f7f0"
         ],
         "x": 74,
         "y": 479,
-        "w": 1312,
-        "h": 582
+        "w": 1172,
+        "h": 462
     },
     {
         "id": "dea1b8828f8e501f",
@@ -1780,8 +1776,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 620,
-        "y": 900,
+        "x": 640,
+        "y": 780,
         "wires": [
             [
                 "3cdbccf5dbcb1c4e"
@@ -1804,50 +1800,13 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryStartDateTime REAL, entryEndDateTime REAL, lat REAL, lon REAL, bearing TEXT, sensor TEXT, deviceName TEXT);",
-        "x": 310,
-        "y": 900,
+        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryStartDateTime REAL, entryEndDateTime REAL, lat REAL, lon REAL, bearing TEXT, sensorName TEXT, deviceName TEXT);",
+        "x": 330,
+        "y": 780,
         "wires": [
             [
                 "8a6d4593a661c3df",
                 "6b96fe301f9b6145"
-            ]
-        ]
-    },
-    {
-        "id": "da69f7db98ea04c0",
-        "type": "sqlite",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
-        "name": "tmdb.deployment, Prepared Statement",
-        "x": 870,
-        "y": 800,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "21acade6736f77dd",
-        "type": "function",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "write params for deployment insert",
-        "func": "//VALUES ($id, $entryStartDateTime, $entryEndDateTime, $lat, $lon, $bearing, $sensor, $deviceName)\n\nvar newMsg = {}\n\nnewMsg.id = msg.payload.id;\nnewMsg.entryStartDateTime = msg.payload.entryStartDateTime;\nnewMsg.entryEndDateTime = msg.payload.entryEndDateTime;\nnewMsg.lat = msg.payload.lat;\nnewMsg.lon = msg.payload.lon;\nnewMsg.bearing = msg.payload.bearing;\nnewMsg.sensor = msg.payload.sensor;\nnewMsg.deviceName = msg.payload.deviceName;\n\nconst obj = newMsg;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 300,
-        "y": 800,
-        "wires": [
-            [
-                "da69f7db98ea04c0",
-                "f7c775c4892abed6"
             ]
         ]
     },
@@ -1868,8 +1827,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM deployment ORDER BY entryStartDateTime DESC LIMIT 5;",
-        "x": 280,
-        "y": 940,
+        "x": 300,
+        "y": 820,
         "wires": [
             [
                 "8a6d4593a661c3df",
@@ -1891,8 +1850,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 910,
-        "y": 900,
+        "x": 930,
+        "y": 780,
         "wires": []
     },
     {
@@ -1942,7 +1901,6 @@
         "id": "928d7cafdc1ab7fa",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "d": true,
         "g": "8004ba7ad5a9bd83",
         "name": "drop table deployment",
         "props": [
@@ -1956,11 +1914,12 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 320,
-        "y": 980,
+        "x": 340,
+        "y": 860,
         "wires": [
             [
-                "8a6d4593a661c3df"
+                "8a6d4593a661c3df",
+                "6b96fe301f9b6145"
             ]
         ]
     },
@@ -1973,8 +1932,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 620,
-        "y": 940,
+        "x": 640,
+        "y": 820,
         "wires": [
             [
                 "5186b0bd778ef3e3"
@@ -1995,24 +1954,9 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 930,
-        "y": 940,
+        "x": 950,
+        "y": 820,
         "wires": []
-    },
-    {
-        "id": "f7c775c4892abed6",
-        "type": "sqlite",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "mydb": "1d8d8c9a28569355",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
-        "name": "radar.deployment, Prepared Statement",
-        "x": 870,
-        "y": 840,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "9d90fca30cf97264",
@@ -2028,7 +1972,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
+        "x": 970,
         "y": 560,
         "wires": []
     },
@@ -2050,8 +1994,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 300,
-        "y": 1020,
+        "x": 320,
+        "y": 900,
         "wires": [
             [
                 "6b96fe301f9b6145",
@@ -2065,7 +2009,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "check for deployment diff",
-        "func": "\nlet newMsg = {};\nnewMsg.payload = [];\nlet newPayload = {};\nlet updatePayload = {};\n// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let hasDifference = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updatePayload.id = sqlMatchObj.id;\n                    updatePayload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updatePayload\n                    updatePayload.topic = `UPDATE deployment SET entryEndDateTime = '${updatePayload.entryEndDateTime}' WHERE id = '${updatePayload.id}'`;\n                    node.send(updatePayload);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newPayload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newPayload.entryStartDateTime = newDateTime.getTime();\n                    newPayload.entryEndDateTime = '';\n                    newPayload.lat = sensorDeployment[\"lat\"];\n                    newPayload.lon = sensorDeployment[\"lon\"];\n                    newPayload.bearing = sensorDeployment[\"bearing\"];\n                    newPayload.sensorName = sensorName;\n                    newPayload.deviceName = global.get(\"deviceAttributes.deviceName\", 'config');\n                    //send add record query, newPayload\n                    newPayload.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName) VALUES ('${newPayload.id}', ${newPayload.entryStartDateTime}, ${newPayload.lat}, ${newPayload.lon}, '${newPayload.bearing}', '${newPayload.sensorName}', '${newPayload.deviceName}')`;\n                    node.send(newPayload);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newPayload.id, 'config');\n\n                    //add payload to output\n                    newMsg.payload.push(newPayload);\n                }\n            }\n        }\n    }\n}\n\nnode.done();\nreturn msg;",
+        "func": "\nlet newMsg = {};\nnewMsg.payload = [];\nlet newPayload = {};\nlet updatePayload = {};\n// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nconst sqlresults = msg.sqlActiveDeployments;\nnewPayload.sqlSend = false;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let hasDifference = false;\n                newPayload.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updatePayload.id = sqlMatchObj.id;\n                    updatePayload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updatePayload\n                    updatePayload.topic = `UPDATE deployment SET entryEndDateTime = ${updatePayload.entryEndDateTime} WHERE id = '${updatePayload.id}'`;\n                    updatePayload.sqlSend = true;\n                    node.send(updatePayload);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newPayload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newPayload.entryStartDateTime = newDateTime.getTime();\n                    newPayload.entryEndDateTime = '';\n                    newPayload.lat = sensorDeployment[\"lat\"];\n                    newPayload.lon = sensorDeployment[\"lon\"];\n                    newPayload.bearing = sensorDeployment[\"bearing\"];\n                    newPayload.sensorName = sensorName;\n                    newPayload.deviceName = global.get(\"deviceAttributes.deviceName\", 'config');\n                    //send add record query, newPayload\n                    newPayload.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName) VALUES ('${newPayload.id}', ${newPayload.entryStartDateTime}, ${newPayload.lat}, ${newPayload.lon}, '${newPayload.bearing}', '${newPayload.sensorName}', '${newPayload.deviceName}')`;\n                    newPayload.sqlSend = true;\n                    node.send(newPayload);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newPayload.id, 'config');\n\n                    //add payload to output\n                    newMsg.payload.push(newPayload);\n                }\n            }\n        }\n    }\n}\n\nnode.done();\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2076,9 +2020,7 @@
         "y": 600,
         "wires": [
             [
-                "bc398ad5de3bd112",
-                "c64671559898b0b7",
-                "27e1c4f173ec412e"
+                "24efdc7f1231f7f0"
             ]
         ]
     },
@@ -2088,7 +2030,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "save sensors, query latest active deployments",
-        "func": "msg.sensors = msg.payload.sensors;\n\nmsg.topic = \n`\nSELECT id, entryStartDateTime, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n    SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n`\n\nreturn msg;",
+        "func": "msg.sensors = msg.payload.sensors;\n\nmsg.topic = \n`\nSELECT id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n    SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n`\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2112,30 +2054,11 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
+        "x": 1080,
         "y": 660,
         "wires": [
-            [
-                "2e455012b6e74253"
-            ]
+            []
         ]
-    },
-    {
-        "id": "2e455012b6e74253",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "debug 15",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 640,
-        "wires": []
     },
     {
         "id": "6d2f607b324415b4",
@@ -2166,24 +2089,6 @@
         ]
     },
     {
-        "id": "c64671559898b0b7",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "debug 16",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 600,
-        "wires": []
-    },
-    {
         "id": "27e1c4f173ec412e",
         "type": "sqlite",
         "z": "3dae026ab340962a",
@@ -2192,30 +2097,36 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
-        "y": 700,
+        "x": 1080,
+        "y": 720,
         "wires": [
-            [
-                "c6e84f7f6d82f353"
-            ]
+            []
         ]
     },
     {
-        "id": "c6e84f7f6d82f353",
-        "type": "debug",
+        "id": "24efdc7f1231f7f0",
+        "type": "switch",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "debug 17",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 700,
-        "wires": []
+        "name": "sql send?",
+        "property": "sqlSend",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 820,
+        "y": 660,
+        "wires": [
+            [
+                "bc398ad5de3bd112",
+                "27e1c4f173ec412e"
+            ]
+        ]
     },
     {
         "id": "0612ca7936dee14a",
@@ -2732,7 +2643,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL);",
+        "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL, radarName TEXT, deployment_id TEXT);",
         "x": 640,
         "y": 620,
         "wires": [
@@ -2791,7 +2702,7 @@
         "g": "1eebfe6a2eca8ad4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_dov (time, unit, direction, velocity) \nVALUES ($time, $unit, $direction, $velocity);\n",
+        "sql": "INSERT INTO radar_dov (time, unit, direction, velocity, radarName, deployment_id) \nVALUES ($time, $unit, $direction, $velocity, $radarName, $deployment_id);\n",
         "name": "",
         "x": 920,
         "y": 740,
@@ -2805,7 +2716,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
         "name": "write params for radar_dov insert",
-        "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\n//add deployment_id, no, change in previous node\n//msg.payload.deployment_id = global.get(`config.radars.${msg.payload.radarName}.deployment.id`, \"config\");\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2853,7 +2764,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL);",
+        "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL, radarName TEXT, deployment_id TEXT);",
         "x": 670,
         "y": 920,
         "wires": [
@@ -2933,7 +2844,7 @@
         "g": "dea1b8828f8e501f",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average)\nVALUES ($time, $direction, $units, $count, $average);\n",
+        "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average, radarName, deployment_id)\nVALUES ($time, $direction, $units, $count, $average, $radarName, $deployment_id);\n",
         "name": "",
         "x": 990,
         "y": 1040,
@@ -2974,7 +2885,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT);",
+        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT, radarName TEXT, deployment_id TEXT);",
         "x": 700,
         "y": 1200,
         "wires": [
@@ -3033,7 +2944,7 @@
         "g": "047f05d7650ba3cc",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
+        "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
         "x": 1030,
         "y": 1320,
@@ -3078,7 +2989,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL );",
+        "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL, radarName TEXT, deployment_id TEXT);",
         "x": 650,
         "y": 1820,
         "wires": [
@@ -3154,7 +3065,7 @@
         "g": "da1c8c74261a93a4",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
+        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft, radarName, deployment_id)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft, $radarName, $deployment_id);",
         "name": "",
         "x": 950,
         "y": 1940,
@@ -3216,7 +3127,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (time REAL, unit TEXT, magnitude REAL, speed REAL);",
+        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (time REAL, unit TEXT, magnitude REAL, speed REAL, radarName TEXT, deployment_id TEXT);",
         "x": 690,
         "y": 1420,
         "wires": [
@@ -3275,7 +3186,7 @@
         "g": "fcbf8999ca05a371",
         "mydb": "1d8d8c9a28569355",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed) \nVALUES ($time, $unit, $magnitude, $speed);",
+        "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
         "x": 1120,
         "y": 1600,
@@ -3433,10 +3344,17 @@
         "rules": [
             {
                 "t": "set",
-                "p": "payload.sensor",
+                "p": "payload.radarName",
                 "pt": "msg",
                 "to": "TM_RADAR_SERIAL_PORT_00",
                 "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.deployment_id",
+                "pt": "msg",
+                "to": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment.id",
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3444,7 +3362,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1410,
+        "x": 1380,
         "y": 120,
         "wires": [
             [
@@ -3521,9 +3439,16 @@
         "rules": [
             {
                 "t": "set",
-                "p": "payload.sensor",
+                "p": "payload.radarName",
                 "pt": "msg",
                 "to": "TM_RADAR_SERIAL_PORT_01",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.deployment_id",
+                "pt": "msg",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_01.deployment.id",
                 "tot": "str"
             }
         ],
@@ -3532,7 +3457,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1410,
+        "x": 1380,
         "y": 180,
         "wires": [
             [
@@ -3578,9 +3503,16 @@
         "rules": [
             {
                 "t": "set",
-                "p": "payload.sensor",
+                "p": "payload.radarName",
                 "pt": "msg",
                 "to": "TM_RADAR_SERIAL_PORT_02",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.deployment_id",
+                "pt": "msg",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_02.deployment.id",
                 "tot": "str"
             }
         ],
@@ -3589,7 +3521,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1410,
+        "x": 1380,
         "y": 240,
         "wires": [
             [
@@ -3635,9 +3567,16 @@
         "rules": [
             {
                 "t": "set",
-                "p": "payload.sensor",
+                "p": "payload.radarName",
                 "pt": "msg",
                 "to": "TM_RADAR_SERIAL_PORT_03",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.deployment_id",
+                "pt": "msg",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_03.deployment.id",
                 "tot": "str"
             }
         ],
@@ -3646,7 +3585,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1410,
+        "x": 1380,
         "y": 300,
         "wires": [
             [
