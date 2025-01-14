@@ -675,10 +675,10 @@
             "4f240c3c73d9a73f",
             "8004ba7ad5a9bd83"
         ],
-        "x": 68,
+        "x": 48,
         "y": 233,
-        "w": 1064,
-        "h": 994
+        "w": 1364,
+        "h": 1094
     },
     {
         "id": "4bbb9e24b5507a00",
@@ -695,12 +695,11 @@
             "ecc317fcd059b4c3",
             "b0252bd49dc8e61d",
             "94136e5a6f092bb6",
-            "9d7f5eede861553e",
             "5ffb7c9c38b8c5b0"
         ],
-        "x": 94,
+        "x": 74,
         "y": 259,
-        "w": 842,
+        "w": 652,
         "h": 162
     },
     {
@@ -719,8 +718,8 @@
             "f4a626a3a3ab3d39",
             "b2d374d1168973c7"
         ],
-        "x": 104,
-        "y": 1059,
+        "x": 74,
+        "y": 1159,
         "w": 992,
         "h": 142
     },
@@ -933,13 +932,20 @@
             "5186b0bd778ef3e3",
             "f7c775c4892abed6",
             "9d90fca30cf97264",
-            "817c8ed87909b864",
-            "8f4e9d81288d5abd"
+            "8f4e9d81288d5abd",
+            "689b64c16a889e0a",
+            "95f86a8a5653698f",
+            "bc398ad5de3bd112",
+            "2e455012b6e74253",
+            "6d2f607b324415b4",
+            "c64671559898b0b7",
+            "27e1c4f173ec412e",
+            "c6e84f7f6d82f353"
         ],
-        "x": 94,
-        "y": 539,
-        "w": 1012,
-        "h": 402
+        "x": 74,
+        "y": 479,
+        "w": 1312,
+        "h": 582
     },
     {
         "id": "dea1b8828f8e501f",
@@ -1538,7 +1544,7 @@
         "g": "4bbb9e24b5507a00",
         "property": "payload",
         "name": "",
-        "x": 550,
+        "x": 530,
         "y": 300,
         "wires": [
             [
@@ -1559,7 +1565,7 @@
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 380,
+        "x": 360,
         "y": 300,
         "wires": [
             [
@@ -1579,7 +1585,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 190,
+        "x": 170,
         "y": 300,
         "wires": [
             [
@@ -1607,11 +1613,11 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 640,
+        "x": 620,
         "y": 380,
         "wires": [
             [
-                "9d7f5eede861553e"
+                "95f86a8a5653698f"
             ]
         ]
     },
@@ -1621,14 +1627,14 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "\n//thingsboard\n// default to enabled: true\nmsg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === false ? false : true;\n\nif (msg.payload.thingsboard.enabled === true && msg.payload.thingsboard.host === null) {\n    node.error(`msg.payload.thingsboard.host needs to be populated if thingsboard is enabled`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\n//go through each sensor to init values\nfor (let camera in msg.payload.sensors.cameras) {\n    camera.enabled = camera.enabled === true ? true : false;\n};\nfor (let radar in msg.payload.sensors.radars) {\n    radar.enabled = radar.enabled === true ? true : false;\n};\nfor (let aq in msg.payload.sensors.aq_monitor) {\n    aq.enabled = aq.enabled === true ? true : false;\n};\n\nreturn msg;",
+        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true && typeof msg.payload.thingsboard.host === \"undefined\") {\n  node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n  // and disable thingsboard\n  msg.payload.thingsboard.enabled = false;\n}\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? \"\" : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? \"\" : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? \"\" : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (typeof msg.payload.deployment.lat !== \"undefined\") {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (typeof msg.payload.deployment.lon !== \"undefined\") {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (typeof msg.payload.deployment.bearing !== \"undefined\") {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
+        "x": 590,
         "y": 340,
         "wires": [
             [
@@ -1669,23 +1675,6 @@
         ]
     },
     {
-        "id": "9d7f5eede861553e",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "name": "debug 13",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 830,
-        "y": 380,
-        "wires": []
-    },
-    {
         "id": "6d1083e26ae2dea1",
         "type": "link in",
         "z": "3dae026ab340962a",
@@ -1693,8 +1682,8 @@
         "g": "4f240c3c73d9a73f",
         "name": "link in 2",
         "links": [],
-        "x": 155,
-        "y": 1100,
+        "x": 125,
+        "y": 1200,
         "wires": [
             [
                 "f4a626a3a3ab3d39"
@@ -1714,8 +1703,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 830,
-        "y": 1140,
+        "x": 800,
+        "y": 1240,
         "wires": [
             []
         ]
@@ -1728,8 +1717,8 @@
         "g": "4f240c3c73d9a73f",
         "property": "payload",
         "name": "",
-        "x": 480,
-        "y": 1140,
+        "x": 450,
+        "y": 1240,
         "wires": [
             [
                 "42a1a291f7d8006b"
@@ -1757,8 +1746,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 350,
-        "y": 1100,
+        "x": 320,
+        "y": 1200,
         "wires": [
             [
                 "a3c5767fda5250f0"
@@ -1778,8 +1767,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 200,
-        "y": 1160,
+        "x": 170,
+        "y": 1260,
         "wires": [
             [
                 "f4a626a3a3ab3d39"
@@ -1794,7 +1783,7 @@
         "name": "",
         "files": ".node-red/config.yml",
         "recursive": "",
-        "x": 210,
+        "x": 190,
         "y": 360,
         "wires": [
             [
@@ -1867,17 +1856,6 @@
         ]
     },
     {
-        "id": "817c8ed87909b864",
-        "type": "comment",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "init Deployment database(s)",
-        "info": "",
-        "x": 260,
-        "y": 580,
-        "wires": []
-    },
-    {
         "id": "8a6d4593a661c3df",
         "type": "sqlite",
         "z": "3dae026ab340962a",
@@ -1887,7 +1865,7 @@
         "sql": "",
         "name": "",
         "x": 620,
-        "y": 780,
+        "y": 900,
         "wires": [
             [
                 "3cdbccf5dbcb1c4e"
@@ -1910,9 +1888,9 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryDateTime REAL, name TEXT, orientation TEXT, lat REAL, lon REAL, address TEXT, description TEXT, deviceName TEXT);",
+        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryStartDateTime REAL, entryEndDateTime REAL, lat REAL, lon REAL, bearing TEXT, sensor TEXT, deviceName TEXT);",
         "x": 310,
-        "y": 780,
+        "y": 900,
         "wires": [
             [
                 "8a6d4593a661c3df",
@@ -1930,7 +1908,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "tmdb.deployment, Prepared Statement",
         "x": 870,
-        "y": 680,
+        "y": 800,
         "wires": [
             []
         ]
@@ -1941,7 +1919,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "write params for deployment insert",
-        "func": "//VALUES ($id, $entryDateTime, $name, $orientation, $latitude, $longitude, $address, $description, $deviceName)\n\nvar newMsg = {}\n\nnewMsg.id = msg.payload.id;\nnewMsg.entryDateTime = msg.payload.entryDateTime;\nnewMsg.name = msg.payload.name;\nnewMsg.lat = msg.payload.lat;\nnewMsg.lon = msg.payload.lon;\nnewMsg.orientation = msg.payload.orientation;\nnewMsg.address = msg.payload.address;\nnewMsg.description = msg.payload.description;\nnewMsg.deviceName = msg.payload.deviceName;\n\nconst obj = newMsg;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "//VALUES ($id, $entryStartDateTime, $entryEndDateTime, $lat, $lon, $bearing, $sensor, $deviceName)\n\nvar newMsg = {}\n\nnewMsg.id = msg.payload.id;\nnewMsg.entryStartDateTime = msg.payload.entryStartDateTime;\nnewMsg.entryEndDateTime = msg.payload.entryEndDateTime;\nnewMsg.lat = msg.payload.lat;\nnewMsg.lon = msg.payload.lon;\nnewMsg.bearing = msg.payload.bearing;\nnewMsg.sensor = msg.payload.sensor;\nnewMsg.deviceName = msg.payload.deviceName;\n\nconst obj = newMsg;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1949,7 +1927,7 @@
         "finalize": "",
         "libs": [],
         "x": 300,
-        "y": 680,
+        "y": 800,
         "wires": [
             [
                 "da69f7db98ea04c0",
@@ -1973,9 +1951,9 @@
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 5;",
+        "topic": "SELECT * FROM deployment ORDER BY entryStartDateTime DESC LIMIT 5;",
         "x": 280,
-        "y": 820,
+        "y": 940,
         "wires": [
             [
                 "8a6d4593a661c3df",
@@ -1998,7 +1976,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 910,
-        "y": 780,
+        "y": 900,
         "wires": []
     },
     {
@@ -2010,11 +1988,12 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 600,
-        "y": 640,
+        "x": 560,
+        "y": 560,
         "wires": [
             [
-                "9d90fca30cf97264"
+                "9d90fca30cf97264",
+                "6d2f607b324415b4"
             ]
         ]
     },
@@ -2023,7 +2002,7 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "select latest record from deployment",
+        "name": "select latest active deployments",
         "props": [
             {
                 "p": "topic",
@@ -2034,9 +2013,9 @@
         "crontab": "",
         "once": true,
         "onceDelay": "5",
-        "topic": "SELECT * FROM deployment ORDER BY entryDateTime DESC LIMIT 1;",
-        "x": 290,
-        "y": 640,
+        "topic": "SELECT id, entryStartDateTime, sensorName, deviceName FROM deployment WHERE entryStartDateTime IN (   SELECT MAX(entryStartDateTime)   FROM deployment   WHERE entryEndDateTime IS NULL   GROUP BY sensorName, deviceName ) ORDER BY sensorName, deviceName;",
+        "x": 250,
+        "y": 560,
         "wires": [
             [
                 "f6ecdd18d8e03f91"
@@ -2062,7 +2041,7 @@
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
         "x": 320,
-        "y": 860,
+        "y": 980,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2079,7 +2058,7 @@
         "sql": "",
         "name": "",
         "x": 620,
-        "y": 820,
+        "y": 940,
         "wires": [
             [
                 "5186b0bd778ef3e3"
@@ -2101,7 +2080,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 930,
-        "y": 820,
+        "y": 940,
         "wires": []
     },
     {
@@ -2114,7 +2093,7 @@
         "sql": "INSERT INTO deployment (id, entryDateTime, name, orientation, lat, lon, address, description, deviceName) \nVALUES ($id, $entryDateTime, $name, $orientation, $lat, $lon, $address, $description, $deviceName);",
         "name": "radar.deployment, Prepared Statement",
         "x": 870,
-        "y": 720,
+        "y": 840,
         "wires": [
             []
         ]
@@ -2133,16 +2112,17 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
-        "y": 640,
+        "x": 1230,
+        "y": 560,
         "wires": []
     },
     {
         "id": "8f4e9d81288d5abd",
         "type": "inject",
         "z": "3dae026ab340962a",
+        "d": true,
         "g": "8004ba7ad5a9bd83",
-        "name": "alter table deployment",
+        "name": "alter table deployment from 0.2.0 to 0.3.0",
         "props": [
             {
                 "p": "topic",
@@ -2153,15 +2133,173 @@
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "",
-        "x": 320,
-        "y": 900,
+        "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
+        "x": 300,
+        "y": 1020,
         "wires": [
             [
                 "6b96fe301f9b6145",
                 "8a6d4593a661c3df"
             ]
         ]
+    },
+    {
+        "id": "689b64c16a889e0a",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "check for deployment diff",
+        "func": "\nlet newMsg = {};\nnewMsg.payload = [];\nlet newPayload = {};\nlet updatePayload = {};\n// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let hasDifference = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updatePayload.id = sqlMatchObj.id;\n                    updatePayload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updatePayload\n                    updatePayload.topic = `UPDATE deployment SET entryEndDateTime = '${updatePayload.entryEndDateTime}' WHERE id = '${updatePayload.id}'`;\n                    node.send(updatePayload);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newPayload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newPayload.entryStartDateTime = newDateTime.getTime();\n                    newPayload.entryEndDateTime = '';\n                    newPayload.lat = sensorDeployment[\"lat\"];\n                    newPayload.lon = sensorDeployment[\"lon\"];\n                    newPayload.bearing = sensorDeployment[\"bearing\"];\n                    newPayload.sensorName = sensorName;\n                    newPayload.deviceName = env.get(\"TM_SERIAL_NUMBER\");\n                    //send add record query, newPayload\n                    newPayload.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName) VALUES ('${newPayload.id}', ${newPayload.entryStartDateTime}, ${newPayload.lat}, ${newPayload.lon}, '${newPayload.bearing}', '${newPayload.sensorName}', '${newPayload.deviceName}')`;\n                    node.send(newPayload);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newPayload.id, 'config');\n\n                    //add payload to output\n                    newMsg.payload.push(newPayload);\n                }\n            }\n        }\n    }\n}\n\nnode.done();\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 600,
+        "wires": [
+            [
+                "bc398ad5de3bd112",
+                "c64671559898b0b7",
+                "27e1c4f173ec412e"
+            ]
+        ]
+    },
+    {
+        "id": "95f86a8a5653698f",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "save sensors, query latest active deployments",
+        "func": "msg.sensors = msg.payload.sensors;\n\nmsg.topic = \n`\nSELECT id, entryStartDateTime, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n    SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n`\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 520,
+        "wires": [
+            [
+                "f6ecdd18d8e03f91"
+            ]
+        ]
+    },
+    {
+        "id": "bc398ad5de3bd112",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 940,
+        "y": 660,
+        "wires": [
+            [
+                "2e455012b6e74253"
+            ]
+        ]
+    },
+    {
+        "id": "2e455012b6e74253",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "debug 15",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "6d2f607b324415b4",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "sqlActiveDeployments",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 600,
+        "wires": [
+            [
+                "689b64c16a889e0a"
+            ]
+        ]
+    },
+    {
+        "id": "c64671559898b0b7",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "27e1c4f173ec412e",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "1d8d8c9a28569355",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 940,
+        "y": 700,
+        "wires": [
+            [
+                "c6e84f7f6d82f353"
+            ]
+        ]
+    },
+    {
+        "id": "c6e84f7f6d82f353",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "debug 17",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 700,
+        "wires": []
     },
     {
         "id": "0612ca7936dee14a",
