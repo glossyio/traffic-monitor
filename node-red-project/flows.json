@@ -221,7 +221,7 @@
         ],
         "x": 14,
         "y": 559,
-        "w": 1062,
+        "w": 1052,
         "h": 222
     },
     {
@@ -242,9 +242,9 @@
             "cbb3b02ca505a55b",
             "7db4b197df9eb075"
         ],
-        "x": 24,
+        "x": 14,
         "y": 839,
-        "w": 1168,
+        "w": 1178,
         "h": 508
     },
     {
@@ -315,9 +315,9 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 64,
+        "x": 54,
         "y": 2519,
-        "w": 1242,
+        "w": 1252,
         "h": 242
     },
     {
@@ -660,7 +660,9 @@
             "9beaf948294acd98",
             "2b82d4b028657058",
             "099df29d699f405e",
-            "8fa3692b8c3f14a5"
+            "8fa3692b8c3f14a5",
+            "11b875e91b3d32a6",
+            "18b0dfda0489c5b4"
         ],
         "x": 14,
         "y": 99,
@@ -824,21 +826,16 @@
         },
         "nodes": [
             "371b831295a65179",
-            "1fdb03a6035a494c",
-            "2b8c15613685457b",
             "f2256e28de366878",
-            "bd75a8b7203331a0",
-            "0b6c06cde710a592",
             "f49c1d345cdfef57",
-            "8bc712d2bf7d7608",
             "c503122374a2fd6b",
             "bd0b99f0ea3996bf",
             "c5f739aac1d9e9a3"
         ],
         "x": 124,
-        "y": 131.5,
+        "y": 139,
         "w": 1168,
-        "h": 475.5
+        "h": 468
     },
     {
         "id": "dff0470b2ba97020",
@@ -873,14 +870,9 @@
             "01dff3893eb39da1",
             "4e8936db02bb178f",
             "19436a7a52d909d9",
-            "e324cdf01167b6b4",
-            "31bacedd56738550",
-            "d8f03f03f310add8",
-            "29a676d1bd02f536",
             "cb044bcc7761877e",
             "bd1fd07675061bc2",
             "da7f36e9a5928977",
-            "13395b5909a63e3c",
             "cb52210b00dca61d",
             "9278adb1ef92bb02",
             "09658d6c6e8e65cc",
@@ -891,16 +883,18 @@
             "8d1cea31ecc5505f",
             "3a9976a42e040827",
             "b0661dcf1869265d",
-            "7d85d4124ac35321",
-            "4cabf52349ebd694",
             "43092f22b971c203",
             "0fc0afa3cbbde9da",
-            "b6073793c9d88df9"
+            "b6073793c9d88df9",
+            "15cafffd34946386",
+            "bc68fe5b7f067110",
+            "2a45286ac680158f",
+            "d79a1bccb7cda804"
         ],
         "x": 154,
         "y": 659,
-        "w": 1152,
-        "h": 702
+        "w": 1992,
+        "h": 602
     },
     {
         "id": "0e1614cf2e5f9942",
@@ -1021,6 +1015,28 @@
         "x": 744,
         "y": 339,
         "w": 522,
+        "h": 242
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "9aa93ed98869015b",
+            "9ea228bc25d4e59b",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "3c02407020db3c4a",
+            "65a881b4715da5ef"
+        ],
+        "x": 154,
+        "y": 1299,
+        "w": 892,
         "h": 242
     },
     {
@@ -6570,7 +6586,9 @@
         "x": 270,
         "y": 700,
         "wires": [
-            []
+            [
+                "11b875e91b3d32a6"
+            ]
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -8425,6 +8443,51 @@
         "wires": []
     },
     {
+        "id": "11b875e91b3d32a6",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::homeDir",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 700,
+        "wires": [
+            [
+                "18b0dfda0489c5b4"
+            ]
+        ]
+    },
+    {
+        "id": "18b0dfda0489c5b4",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 700,
+        "wires": []
+    },
+    {
         "id": "e6461a7fdeef48a2",
         "type": "ui_form",
         "z": "fa9f914901f79645",
@@ -9564,7 +9627,8 @@
         "name": "link out 2",
         "mode": "link",
         "links": [
-            "e9545b23f4e4cd35"
+            "e9545b23f4e4cd35",
+            "65a881b4715da5ef"
         ],
         "x": 455,
         "y": 1220,
@@ -10075,58 +10139,6 @@
         "y": 180,
         "wires": [
             [
-                "1fdb03a6035a494c",
-                "8bc712d2bf7d7608"
-            ]
-        ]
-    },
-    {
-        "id": "1fdb03a6035a494c",
-        "type": "exec",
-        "z": "791e8b1f84050e40",
-        "g": "b781cb3d6df38fed",
-        "command": "pwd",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 280,
-        "y": 180,
-        "wires": [
-            [
-                "2b8c15613685457b"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "2b8c15613685457b",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "b781cb3d6df38fed",
-        "name": "set Frigate config file path",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$substring(msg.payload,0, $length(msg.payload)-1) & \"/code/frigate/config/config.yml\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 500,
-        "y": 180,
-        "wires": [
-            [
                 "f2256e28de366878"
             ]
         ]
@@ -10137,46 +10149,18 @@
         "z": "791e8b1f84050e40",
         "g": "b781cb3d6df38fed",
         "name": "read Frigate config file",
-        "filename": "payload",
-        "filenameType": "msg",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"\t",
+        "filenameType": "jsonata",
         "format": "utf8",
         "chunk": false,
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 810,
+        "x": 320,
         "y": 180,
         "wires": [
             [
-                "bd75a8b7203331a0"
-            ]
-        ]
-    },
-    {
-        "id": "bd75a8b7203331a0",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "b781cb3d6df38fed",
-        "name": "set Frigate config payload",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "Frigate",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1060,
-        "y": 180,
-        "wires": [
-            [
-                "0b6c06cde710a592"
+                "f49c1d345cdfef57"
             ]
         ]
     },
@@ -10211,36 +10195,6 @@
         "x": 500,
         "y": 40,
         "wires": []
-    },
-    {
-        "id": "0b6c06cde710a592",
-        "type": "join",
-        "z": "791e8b1f84050e40",
-        "g": "b781cb3d6df38fed",
-        "name": "",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "",
-        "count": "2",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 340,
-        "y": 340,
-        "wires": [
-            [
-                "f49c1d345cdfef57"
-            ]
-        ]
     },
     {
         "id": "f64e7801aa071234",
@@ -10346,14 +10300,21 @@
         "type": "change",
         "z": "791e8b1f84050e40",
         "g": "b781cb3d6df38fed",
-        "name": "",
+        "name": "set up backup payload for TB",
         "rules": [
             {
                 "t": "set",
-                "p": "payload",
+                "p": "payload.backup.frigate",
                 "pt": "msg",
-                "to": "{    \"backup\": payload}",
-                "tot": "jsonata"
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.backup.dateTime",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
             }
         ],
         "action": "",
@@ -10361,47 +10322,12 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 510,
-        "y": 340,
+        "x": 380,
+        "y": 220,
         "wires": [
             [
                 "f64e7801aa071234",
                 "c503122374a2fd6b"
-            ]
-        ]
-    },
-    {
-        "id": "8bc712d2bf7d7608",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "b781cb3d6df38fed",
-        "name": "set timestamp",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "\"date\"",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 310,
-        "y": 260,
-        "wires": [
-            [
-                "0b6c06cde710a592"
             ]
         ]
     },
@@ -10419,8 +10345,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 850,
-        "y": 300,
+        "x": 680,
+        "y": 220,
         "wires": []
     },
     {
@@ -10445,6 +10371,7 @@
         "id": "e9545b23f4e4cd35",
         "type": "link in",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "start restore",
         "links": [
@@ -10454,7 +10381,7 @@
         "y": 740,
         "wires": [
             [
-                "e324cdf01167b6b4"
+                "bc68fe5b7f067110"
             ]
         ]
     },
@@ -10462,6 +10389,7 @@
         "id": "01dff3893eb39da1",
         "type": "http request",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "read config file from ThingsBoard",
         "method": "use",
@@ -10475,8 +10403,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 740,
-        "y": 880,
+        "x": 760,
+        "y": 780,
         "wires": [
             [
                 "19436a7a52d909d9"
@@ -10487,6 +10415,7 @@
         "id": "4e8936db02bb178f",
         "type": "function",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "set up tb client-side attributes for GET ",
         "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes?clientKeys=backup`\n\nmsg.method = \"GET\";\nreturn msg;",
@@ -10496,8 +10425,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 880,
+        "x": 710,
+        "y": 740,
         "wires": [
             [
                 "01dff3893eb39da1"
@@ -10508,13 +10437,14 @@
         "id": "19436a7a52d909d9",
         "type": "json",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "Convert string to JSON object",
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1070,
-        "y": 880,
+        "x": 790,
+        "y": 820,
         "wires": [
             [
                 "da7f36e9a5928977"
@@ -10522,115 +10452,14 @@
         ]
     },
     {
-        "id": "e324cdf01167b6b4",
-        "type": "exec",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "command": "pwd",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 290,
-        "y": 740,
-        "wires": [
-            [
-                "31bacedd56738550"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "31bacedd56738550",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "pwd",
-                "pt": "flow",
-                "to": "$substring(msg.payload,0, $length(msg.payload)-1)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 430,
-        "y": 740,
-        "wires": [
-            [
-                "d8f03f03f310add8"
-            ]
-        ]
-    },
-    {
-        "id": "d8f03f03f310add8",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "set up cp arguments",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$flowContext('pwd') & \"/code/frigate/config/config.yml \" & $flowContext('pwd') & \"/code/frigate/config/config.yml.backup\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 640,
-        "y": 740,
-        "wires": [
-            [
-                "29a676d1bd02f536"
-            ]
-        ]
-    },
-    {
-        "id": "29a676d1bd02f536",
-        "type": "exec",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "command": "/bin/cp ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "make local backup of existing config file",
-        "x": 1000,
-        "y": 740,
-        "wires": [
-            [
-                "4e8936db02bb178f"
-            ],
-            [],
-            []
-        ]
-    },
-    {
         "id": "cb044bcc7761877e",
         "type": "comment",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "backup existing config file",
         "info": "",
-        "x": 650,
+        "x": 350,
         "y": 700,
         "wires": []
     },
@@ -10638,10 +10467,11 @@
         "id": "bd1fd07675061bc2",
         "type": "comment",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "read config text from ThingsBoard",
         "info": "",
-        "x": 600,
+        "x": 360,
         "y": 820,
         "wires": []
     },
@@ -10649,42 +10479,22 @@
         "id": "da7f36e9a5928977",
         "type": "change",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
-        "name": "extract config string",
+        "name": "set up temp file params",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "payload.client.backup.Frigate",
+                "to": "payload.client.backup.frigate",
                 "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 340,
-        "y": 1000,
-        "wires": [
-            [
-                "13395b5909a63e3c"
-            ]
-        ]
-    },
-    {
-        "id": "13395b5909a63e3c",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "set temp filename",
-        "rules": [
+            },
             {
                 "t": "set",
                 "p": "filename",
                 "pt": "msg",
-                "to": "$flowContext('pwd') & \"/code/frigate/config/temp.yml\"",
+                "to": "$flowContext(\"frigateConfigDir\") & \"/code/frigate/config/config.temp.yml\"",
                 "tot": "jsonata"
             }
         ],
@@ -10693,8 +10503,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 570,
-        "y": 1000,
+        "x": 830,
+        "y": 860,
         "wires": [
             [
                 "cb52210b00dca61d"
@@ -10705,6 +10515,7 @@
         "id": "cb52210b00dca61d",
         "type": "file",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "store temporary file",
         "filename": "filename",
@@ -10713,8 +10524,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 790,
-        "y": 1000,
+        "x": 890,
+        "y": 900,
         "wires": [
             [
                 "1cd09de4ae651c87",
@@ -10726,38 +10537,41 @@
         "id": "9278adb1ef92bb02",
         "type": "comment",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
-        "name": "store in temporary file",
+        "name": "get Frigate config.yml, store in temporary file",
         "info": "",
-        "x": 600,
-        "y": 940,
+        "x": 730,
+        "y": 700,
         "wires": []
     },
     {
         "id": "09658d6c6e8e65cc",
         "type": "comment",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
-        "name": "validate config in temporary file",
+        "name": "validate Frigate config with temporary file",
         "info": "",
-        "x": 610,
-        "y": 1060,
+        "x": 980,
+        "y": 940,
         "wires": []
     },
     {
         "id": "3146435b51b57036",
         "type": "template",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "Setup arguments for docker run command",
         "field": "payload",
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "-v {{{flow.pwd}}}/code/frigate/config/temp.yml:/config/config.yml --env-file {{{flow.pwd}}}/code/frigate/frigate.env  --entrypoint python3 ghcr.io/blakeblackshear/frigate:0.14.0 -u -m frigate --validate-config",
+        "template": "-v {{{flow.frigateConfigDir}}}/config.temp.yml:/config/config.yml --env-file {{{flow.frigateConfigDir}}}/frigate.env  --entrypoint python3 ghcr.io/blakeblackshear/frigate:0.14.0 -u -m frigate --validate-config",
         "output": "str",
-        "x": 390,
-        "y": 1120,
+        "x": 1000,
+        "y": 1000,
         "wires": [
             [
                 "f5bdcb22651184a6"
@@ -10768,6 +10582,7 @@
         "id": "1cd09de4ae651c87",
         "type": "debug",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "print file contents",
         "active": true,
@@ -10778,14 +10593,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1030,
-        "y": 1000,
+        "x": 1330,
+        "y": 960,
         "wires": []
     },
     {
         "id": "f5bdcb22651184a6",
         "type": "exec",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "command": "docker run",
         "addpay": "payload",
@@ -10795,8 +10611,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "validate Frigate config file",
-        "x": 750,
-        "y": 1120,
+        "x": 1070,
+        "y": 1060,
         "wires": [
             [
                 "3f95ff9f7d51b28d",
@@ -10812,6 +10628,7 @@
         "id": "3f95ff9f7d51b28d",
         "type": "debug",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "show iniital rc",
         "active": true,
@@ -10822,14 +10639,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 1080,
+        "x": 1320,
+        "y": 1040,
         "wires": []
     },
     {
         "id": "8d1cea31ecc5505f",
         "type": "debug",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "show validation error messages",
         "active": true,
@@ -10840,25 +10658,27 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1070,
-        "y": 1120,
+        "x": 1370,
+        "y": 1080,
         "wires": []
     },
     {
         "id": "3a9976a42e040827",
         "type": "comment",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "check result, replace real config file, and restart Frigate",
         "info": "",
-        "x": 680,
-        "y": 1200,
+        "x": 1720,
+        "y": 1060,
         "wires": []
     },
     {
         "id": "b0661dcf1869265d",
         "type": "switch",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "test rc from validation of Frigate config",
         "property": "rc.code",
@@ -10878,11 +10698,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 350,
-        "y": 1260,
+        "x": 1390,
+        "y": 1120,
         "wires": [
             [
-                "7d85d4124ac35321"
+                "2a45286ac680158f"
             ],
             [
                 "0fc0afa3cbbde9da"
@@ -10890,60 +10710,10 @@
         ]
     },
     {
-        "id": "7d85d4124ac35321",
-        "type": "change",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "name": "set up cp arguments",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$flowContext('pwd') & \"/code/frigate/config/temp.yml \" & $flowContext('pwd') &\t \"/code/frigate/config/config.yml\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 660,
-        "y": 1260,
-        "wires": [
-            [
-                "4cabf52349ebd694"
-            ]
-        ]
-    },
-    {
-        "id": "4cabf52349ebd694",
-        "type": "exec",
-        "z": "791e8b1f84050e40",
-        "g": "906735606a5ebdd5",
-        "command": "/bin/cp ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "replace existing config file",
-        "x": 930,
-        "y": 1260,
-        "wires": [
-            [
-                "43092f22b971c203"
-            ],
-            [],
-            []
-        ]
-    },
-    {
         "id": "43092f22b971c203",
         "type": "exec",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "command": "docker restart frigate",
         "addpay": "",
@@ -10953,8 +10723,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 1180,
-        "y": 1260,
+        "x": 1960,
+        "y": 1160,
         "wires": [
             [
                 "b6073793c9d88df9"
@@ -10967,6 +10737,7 @@
         "id": "0fc0afa3cbbde9da",
         "type": "debug",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "Print failure msg",
         "active": true,
@@ -10977,14 +10748,15 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "auto",
-        "x": 640,
-        "y": 1320,
+        "x": 1680,
+        "y": 1220,
         "wires": []
     },
     {
         "id": "b6073793c9d88df9",
         "type": "debug",
         "z": "791e8b1f84050e40",
+        "d": true,
         "g": "906735606a5ebdd5",
         "name": "Print success msg",
         "active": true,
@@ -10995,8 +10767,8 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1150,
-        "y": 1320,
+        "x": 2010,
+        "y": 1220,
         "wires": []
     },
     {
@@ -11015,5 +10787,302 @@
         "x": 1160,
         "y": 380,
         "wires": []
+    },
+    {
+        "id": "4a62f39107d10a25",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "name": "set frigate config directory flow.frigateConfigDir",
+        "rules": [
+            {
+                "t": "set",
+                "p": "configDir",
+                "pt": "flow",
+                "to": "$globalContext('homeDir', 'config') & \"/code/frigate/config\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "38fd03504247825b",
+        "type": "inject",
+        "z": "791e8b1f84050e40",
+        "name": "init-flow-frigate-config-path",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 260,
+        "y": 100,
+        "wires": [
+            [
+                "4a62f39107d10a25"
+            ]
+        ]
+    },
+    {
+        "id": "15cafffd34946386",
+        "type": "file",
+        "z": "791e8b1f84050e40",
+        "d": true,
+        "g": "906735606a5ebdd5",
+        "name": "write backup config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
+        "filenameType": "jsonata",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 400,
+        "y": 780,
+        "wires": [
+            [
+                "4e8936db02bb178f"
+            ]
+        ]
+    },
+    {
+        "id": "bc68fe5b7f067110",
+        "type": "file in",
+        "z": "791e8b1f84050e40",
+        "d": true,
+        "g": "906735606a5ebdd5",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"\t",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 340,
+        "y": 740,
+        "wires": [
+            [
+                "15cafffd34946386"
+            ]
+        ]
+    },
+    {
+        "id": "d79a1bccb7cda804",
+        "type": "file",
+        "z": "791e8b1f84050e40",
+        "d": true,
+        "g": "906735606a5ebdd5",
+        "name": "write backup config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
+        "filenameType": "jsonata",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1740,
+        "y": 1160,
+        "wires": [
+            [
+                "43092f22b971c203"
+            ]
+        ]
+    },
+    {
+        "id": "2a45286ac680158f",
+        "type": "file in",
+        "z": "791e8b1f84050e40",
+        "d": true,
+        "g": "906735606a5ebdd5",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"\t",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 1700,
+        "y": 1120,
+        "wires": [
+            [
+                "d79a1bccb7cda804"
+            ]
+        ]
+    },
+    {
+        "id": "56cafb11de5348b2",
+        "type": "http request",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "read config file from ThingsBoard",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 440,
+        "y": 1380,
+        "wires": [
+            [
+                "9ea228bc25d4e59b"
+            ]
+        ]
+    },
+    {
+        "id": "9aa93ed98869015b",
+        "type": "function",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "set up tb client-side attributes for GET ",
+        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes?clientKeys=backup`\n\nmsg.method = \"GET\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 1340,
+        "wires": [
+            [
+                "56cafb11de5348b2"
+            ]
+        ]
+    },
+    {
+        "id": "9ea228bc25d4e59b",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.client.backup.frigate",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 540,
+        "y": 1420,
+        "wires": [
+            [
+                "25515211bb8cecb4"
+            ]
+        ]
+    },
+    {
+        "id": "25515211bb8cecb4",
+        "type": "http request",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "validate Frigate config, save and restart",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/config/save?save_option=restart",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": true,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "text/plain",
+                "valueValue": ""
+            }
+        ],
+        "x": 620,
+        "y": 1460,
+        "wires": [
+            [
+                "64467a90df93e582"
+            ]
+        ]
+    },
+    {
+        "id": "64467a90df93e582",
+        "type": "switch",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "check for validation error",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "400",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 710,
+        "y": 1500,
+        "wires": [
+            [
+                "3c02407020db3c4a"
+            ]
+        ]
+    },
+    {
+        "id": "3c02407020db3c4a",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "validation error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "65a881b4715da5ef",
+        "type": "link in",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "start restore",
+        "links": [
+            "e4475a4fd4eb47ea"
+        ],
+        "x": 195,
+        "y": 1340,
+        "wires": [
+            [
+                "9aa93ed98869015b"
+            ]
+        ]
     }
 ]
