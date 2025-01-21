@@ -90,9 +90,9 @@
             "477f8523e9784029",
             "5c4e5a6064580e23"
         ],
-        "x": 384,
+        "x": 394,
         "y": 759,
-        "w": 1122,
+        "w": 1112,
         "h": 302
     },
     {
@@ -357,7 +357,7 @@
         ],
         "x": 54,
         "y": 479,
-        "w": 1102,
+        "w": 1092,
         "h": 302
     },
     {
@@ -600,7 +600,7 @@
         ],
         "x": 14,
         "y": 2051.5,
-        "w": 1102,
+        "w": 1092,
         "h": 209.5
     },
     {
@@ -837,7 +837,7 @@
         ],
         "x": 124,
         "y": 131.5,
-        "w": 1078,
+        "w": 1168,
         "h": 475.5
     },
     {
@@ -997,9 +997,9 @@
             "1257b05ec67b5a3e",
             "c12aee3936f24599"
         ],
-        "x": 64,
+        "x": 74,
         "y": 679,
-        "w": 972,
+        "w": 952,
         "h": 342
     },
     {
@@ -1015,11 +1015,12 @@
             "f64e7801aa071234",
             "37bb791e1cfa7ffb",
             "9726f6154932eeed",
-            "02c5bc95c26b6024"
+            "02c5bc95c26b6024",
+            "d1e4b174776b2e77"
         ],
         "x": 744,
         "y": 339,
-        "w": 432,
+        "w": 522,
         "h": 242
     },
     {
@@ -1266,17 +1267,6 @@
         }
     },
     {
-        "id": "8570be913d017562",
-        "type": "ui_group",
-        "name": "IoT Hub (ThingsBoard)",
-        "tab": "b749f5c4a9a4fbf2",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "0fd9a947334c7d0f",
         "type": "ui_tab",
         "name": "System Settings Tab",
@@ -1289,17 +1279,6 @@
         "type": "ui_group",
         "name": "Client-Side Attributes",
         "tab": "0fd9a947334c7d0f",
-        "order": 1,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
-        "id": "77966ee928726fbf",
-        "type": "ui_group",
-        "name": "Deployment Location",
-        "tab": "b749f5c4a9a4fbf2",
         "order": 1,
         "disp": true,
         "width": "6",
@@ -1336,6 +1315,28 @@
         "order": 4,
         "disabled": false,
         "hidden": false
+    },
+    {
+        "id": "8570be913d017562",
+        "type": "ui_group",
+        "name": "IoT Hub (ThingsBoard)",
+        "tab": "b749f5c4a9a4fbf2",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "77966ee928726fbf",
+        "type": "ui_group",
+        "name": "Deployment Location",
+        "tab": "b749f5c4a9a4fbf2",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "e43506628b4a1cdb",
@@ -1473,7 +1474,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "catch - flow-radar",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -9563,8 +9564,7 @@
         "name": "link out 2",
         "mode": "link",
         "links": [
-            "e9545b23f4e4cd35",
-            "10d9ada5e1363236"
+            "e9545b23f4e4cd35"
         ],
         "x": 455,
         "y": 1220,
@@ -9632,8 +9632,7 @@
                 "ab9d774782f92e88",
                 "720ee19c705f37d9",
                 "c0078fa5b3946c05",
-                "c497cfedf6aed533",
-                "dbf0b15048a2a4f8"
+                "c497cfedf6aed533"
             ]
         ]
     },
@@ -9732,7 +9731,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "9",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -10064,120 +10063,6 @@
         "wires": []
     },
     {
-        "id": "90ec4da57d5e81dc",
-        "type": "file in",
-        "z": "f410f6aac9d1a3fc",
-        "name": "read Frigate config file",
-        "filename": "payload",
-        "filenameType": "msg",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 720,
-        "y": 720,
-        "wires": [
-            [
-                "090af8decaa1e8ce"
-            ]
-        ]
-    },
-    {
-        "id": "090af8decaa1e8ce",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "FrigateConfig",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_FrigateConfig",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 960,
-        "y": 720,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "dbf0b15048a2a4f8",
-        "type": "exec",
-        "z": "f410f6aac9d1a3fc",
-        "command": "pwd",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 290,
-        "y": 720,
-        "wires": [
-            [
-                "1d24a7b3d5e4ac83"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "1d24a7b3d5e4ac83",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "set Frigate config file path",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$substring(msg.payload,0, $length(msg.payload)-1) & \"/code/frigate/config/config.yml\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 470,
-        "y": 720,
-        "wires": [
-            [
-                "90ec4da57d5e81dc",
-                "d98c8fe90fd09d8f"
-            ]
-        ]
-    },
-    {
-        "id": "d98c8fe90fd09d8f",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Frigate config file path",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 720,
-        "y": 780,
-        "wires": []
-    },
-    {
         "id": "371b831295a65179",
         "type": "link in",
         "z": "791e8b1f84050e40",
@@ -10374,7 +10259,8 @@
         "y": 380,
         "wires": [
             [
-                "02c5bc95c26b6024"
+                "02c5bc95c26b6024",
+                "d1e4b174776b2e77"
             ]
         ]
     },
@@ -11111,6 +10997,23 @@
         "statusType": "auto",
         "x": 1150,
         "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "d1e4b174776b2e77",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "c5f739aac1d9e9a3",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1160,
+        "y": 380,
         "wires": []
     }
 ]
