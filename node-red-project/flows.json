@@ -474,9 +474,7 @@
             "9beaf948294acd98",
             "2b82d4b028657058",
             "099df29d699f405e",
-            "0312bb5c0734c168",
-            "486556a1e7fce8cf",
-            "4bd9da11f63e508c"
+            "486556a1e7fce8cf"
         ],
         "x": 14,
         "y": 139,
@@ -731,12 +729,11 @@
             "83065a55697cc160",
             "95186b0fee06a3f5",
             "07cdbeafa34a565e",
-            "8658a5e1847ea59b",
             "c61ef5ee09cb5c93"
         ],
-        "x": 354,
+        "x": 394,
         "y": 1379,
-        "w": 1332,
+        "w": 1292,
         "h": 302
     },
     {
@@ -783,7 +780,7 @@
         ],
         "x": 74,
         "y": 259,
-        "w": 652,
+        "w": 732,
         "h": 162
     },
     {
@@ -1031,21 +1028,8 @@
             [
                 "080fd00489701aa1",
                 "16572734c7e02e30",
-                "7e4a607265a272c2"
-            ]
-        ]
-    },
-    {
-        "id": "8658a5e1847ea59b",
-        "type": "junction",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "x": 380,
-        "y": 1500,
-        "wires": [
-            [
-                "07cdbeafa34a565e",
-                "0ba6c9b3eb3d521d"
+                "7e4a607265a272c2",
+                "07cdbeafa34a565e"
             ]
         ]
     },
@@ -1068,8 +1052,8 @@
         "id": "05e485cfcada03a3",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 1620,
-        "y": 300,
+        "x": 1740,
+        "y": 360,
         "wires": [
             [
                 "314e74cc3f8d050c",
@@ -1436,7 +1420,7 @@
         "g": "4bbb9e24b5507a00",
         "property": "payload",
         "name": "",
-        "x": 530,
+        "x": 610,
         "y": 300,
         "wires": [
             [
@@ -1457,7 +1441,7 @@
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 360,
+        "x": 440,
         "y": 300,
         "wires": [
             [
@@ -1505,7 +1489,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 620,
+        "x": 700,
         "y": 380,
         "wires": [
             [
@@ -1526,7 +1510,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
+        "x": 670,
         "y": 340,
         "wires": [
             [
@@ -1570,12 +1554,13 @@
         "id": "5ffb7c9c38b8c5b0",
         "type": "watch",
         "z": "3dae026ab340962a",
+        "d": true,
         "g": "4bbb9e24b5507a00",
         "name": "",
         "files": ".node-red/config.yml",
         "recursive": "",
-        "x": 190,
-        "y": 360,
+        "x": 210,
+        "y": 340,
         "wires": [
             [
                 "7e988d24a7912d71"
@@ -1980,7 +1965,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "latest deployment info",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2038,7 +2023,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1230,
+        "x": 1350,
         "y": 120,
         "wires": [
             [
@@ -2059,8 +2044,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1780,
-        "y": 300,
+        "x": 1900,
+        "y": 360,
         "wires": []
     },
     {
@@ -2087,12 +2072,11 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 930,
+        "x": 1050,
         "y": 120,
         "wires": [
             [
-                "c744236bdcd86cf3",
-                "82d67136bd681ac7"
+                "c744236bdcd86cf3"
             ]
         ]
     },
@@ -2102,7 +2086,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 730,
+        "x": 850,
         "y": 120,
         "wires": []
     },
@@ -2404,7 +2388,7 @@
                 "a489601d43802b82"
             ],
             [
-                "8658a5e1847ea59b"
+                "0ba6c9b3eb3d521d"
             ]
         ]
     },
@@ -3122,17 +3106,6 @@
         ]
     },
     {
-        "id": "59fc16ddf03b8d95",
-        "type": "link out",
-        "z": "1c71c8f26f5b7b19",
-        "name": "link out json TM_RADAR_SERIAL_PORT_00",
-        "mode": "link",
-        "links": [],
-        "x": 1585,
-        "y": 80,
-        "wires": []
-    },
-    {
         "id": "01307f2f13f465f2",
         "type": "link out",
         "z": "1c71c8f26f5b7b19",
@@ -3240,11 +3213,10 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1380,
+        "x": 1500,
         "y": 120,
         "wires": [
             [
-                "59fc16ddf03b8d95",
                 "05e485cfcada03a3"
             ]
         ]
@@ -3255,8 +3227,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 730,
-        "y": 180,
+        "x": 850,
+        "y": 200,
         "wires": []
     },
     {
@@ -3265,8 +3237,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 730,
-        "y": 240,
+        "x": 850,
+        "y": 280,
         "wires": []
     },
     {
@@ -3275,8 +3247,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_03",
         "serial": "9436149d39191450",
-        "x": 730,
-        "y": 300,
+        "x": 850,
+        "y": 360,
         "wires": []
     },
     {
@@ -3285,8 +3257,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 930,
-        "y": 180,
+        "x": 1050,
+        "y": 200,
         "wires": [
             [
                 "b9d0ad874b671281"
@@ -3301,8 +3273,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1230,
-        "y": 180,
+        "x": 1350,
+        "y": 200,
         "wires": [
             [
                 "5ca9d7d0dac757f4"
@@ -3335,8 +3307,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1380,
-        "y": 180,
+        "x": 1500,
+        "y": 200,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3349,8 +3321,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 930,
-        "y": 240,
+        "x": 1050,
+        "y": 280,
         "wires": [
             [
                 "c733b3b6871f335b"
@@ -3365,8 +3337,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1230,
-        "y": 240,
+        "x": 1350,
+        "y": 280,
         "wires": [
             [
                 "787b21d91c5a25b1"
@@ -3399,8 +3371,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1380,
-        "y": 240,
+        "x": 1500,
+        "y": 280,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3413,8 +3385,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_03",
         "serial": "9436149d39191450",
-        "x": 930,
-        "y": 300,
+        "x": 1050,
+        "y": 360,
         "wires": [
             [
                 "be612a06e6fce8b1"
@@ -3429,8 +3401,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1230,
-        "y": 300,
+        "x": 1350,
+        "y": 360,
         "wires": [
             [
                 "9c5feff0083f6fef"
@@ -3463,8 +3435,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1380,
-        "y": 300,
+        "x": 1500,
+        "y": 360,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3486,7 +3458,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1100,
+        "x": 1220,
         "y": 120,
         "wires": [
             [
@@ -3509,8 +3481,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1100,
-        "y": 180,
+        "x": 1220,
+        "y": 200,
         "wires": [
             [
                 "0d53bc6696f96c48"
@@ -3532,8 +3504,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1100,
-        "y": 240,
+        "x": 1220,
+        "y": 280,
         "wires": [
             [
                 "9e504ae365417be4"
@@ -3555,8 +3527,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1100,
-        "y": 300,
+        "x": 1220,
+        "y": 360,
         "wires": [
             [
                 "1d905e0c54b723b5"
@@ -3573,16 +3545,22 @@
         "rules": [
             {
                 "t": "true"
+            },
+            {
+                "t": "else"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
+        "outputs": 2,
         "x": 560,
         "y": 120,
         "wires": [
             [
                 "7c7577ee1b447bf6"
+            ],
+            [
+                "17f2bd782fa7cc56"
             ]
         ]
     },
@@ -3596,16 +3574,22 @@
         "rules": [
             {
                 "t": "true"
+            },
+            {
+                "t": "else"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
+        "outputs": 2,
         "x": 560,
-        "y": 180,
+        "y": 200,
         "wires": [
             [
                 "97c84e89eb5bd113"
+            ],
+            [
+                "066f88dde7da13c1"
             ]
         ]
     },
@@ -3619,16 +3603,22 @@
         "rules": [
             {
                 "t": "true"
+            },
+            {
+                "t": "else"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
+        "outputs": 2,
         "x": 560,
-        "y": 240,
+        "y": 280,
         "wires": [
             [
                 "3b4f896b6f34c759"
+            ],
+            [
+                "1541dc8a3c363ce5"
             ]
         ]
     },
@@ -3642,16 +3632,22 @@
         "rules": [
             {
                 "t": "true"
+            },
+            {
+                "t": "else"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
+        "outputs": 2,
         "x": 560,
-        "y": 300,
+        "y": 360,
         "wires": [
             [
                 "1ad62db35274c50d"
+            ],
+            [
+                "975c56420517a092"
             ]
         ]
     },
@@ -3781,20 +3777,112 @@
         ]
     },
     {
-        "id": "82d67136bd681ac7",
-        "type": "debug",
+        "id": "17f2bd782fa7cc56",
+        "type": "change",
         "z": "1c71c8f26f5b7b19",
-        "name": "debug 12",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1100,
-        "y": 60,
-        "wires": []
+        "name": "set PI mode",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "\"PI\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 160,
+        "wires": [
+            [
+                "7c7577ee1b447bf6"
+            ]
+        ]
+    },
+    {
+        "id": "066f88dde7da13c1",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set PI mode",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "\"PI\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 240,
+        "wires": [
+            [
+                "97c84e89eb5bd113"
+            ]
+        ]
+    },
+    {
+        "id": "1541dc8a3c363ce5",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set PI mode",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "\"PI\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 320,
+        "wires": [
+            [
+                "3b4f896b6f34c759"
+            ]
+        ]
+    },
+    {
+        "id": "975c56420517a092",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set PI mode",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "\"PI\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 400,
+        "wires": [
+            [
+                "1ad62db35274c50d"
+            ]
+        ]
     },
     {
         "id": "f20c74c0ccfd256c",
@@ -8017,9 +8105,7 @@
         "x": 270,
         "y": 700,
         "wires": [
-            [
-                "0312bb5c0734c168"
-            ]
+            []
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -8209,7 +8295,7 @@
         "name": "out query TM_RADAR_SERIAL_PORT_00",
         "mode": "link",
         "links": [],
-        "x": 345,
+        "x": 385,
         "y": 1080,
         "wires": []
     },
@@ -8218,7 +8304,7 @@
         "type": "inject",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "query all settings, after 5",
+        "name": "query all radar settings, after 5",
         "props": [
             {
                 "p": "payload"
@@ -8235,7 +8321,7 @@
         "topic": "",
         "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
         "payloadType": "jsonata",
-        "x": 170,
+        "x": 190,
         "y": 1080,
         "wires": [
             [
@@ -8250,7 +8336,7 @@
         "g": "dc2934def36c6285",
         "name": "in return TM_RADAR_SERIAL_PORT_00",
         "links": [],
-        "x": 365,
+        "x": 405,
         "y": 1120,
         "wires": [
             [
@@ -8263,15 +8349,16 @@
         "type": "debug",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "debug 6",
+        "name": "TM_RADAR_SERIAL_PORT_00 settings",
         "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 620,
+        "x": 760,
         "y": 1120,
         "wires": []
     },
@@ -8297,7 +8384,7 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 460,
+        "x": 500,
         "y": 1120,
         "wires": [
             [
@@ -8549,8 +8636,7 @@
         "wires": [
             [
                 "bcd4c7df6b6f93d3",
-                "d046a343ebc5fe81",
-                "4bd9da11f63e508c"
+                "d046a343ebc5fe81"
             ]
         ]
     },
@@ -8770,15 +8856,16 @@
         "type": "debug",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "debug 7",
+        "name": "frigate GET /api/config",
         "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 560,
+        "x": 600,
         "y": 940,
         "wires": []
     },
@@ -9413,7 +9500,7 @@
         "z": "05fcb02c571dcfee",
         "g": "64c3f8c396d4445c",
         "name": "",
-        "label": "Set System Date and Time",
+        "label": "Enable Set System Date and Time",
         "tooltip": "",
         "group": "f60635dac92356fd",
         "order": 3,
@@ -9543,21 +9630,21 @@
         "name": "",
         "props": [
             {
-                "p": "enabled",
-                "v": "false",
-                "vt": "bool"
+                "p": "payload"
             }
         ],
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": 0.1,
+        "onceDelay": "5",
         "topic": "",
-        "x": 130,
-        "y": 1580,
+        "payload": "#:(config)::config.time.npt_set",
+        "payloadType": "global",
+        "x": 170,
+        "y": 1720,
         "wires": [
             [
-                "1f33180305d5e203"
+                "cf4a0c52e8465948"
             ]
         ]
     },
@@ -9707,7 +9794,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 420,
+        "x": 440,
         "y": 1620,
         "wires": [
             [
@@ -9785,7 +9872,7 @@
         "width": 0,
         "height": 0,
         "passthru": false,
-        "decouple": "false",
+        "decouple": "true",
         "topic": "topic",
         "topicType": "msg",
         "style": "",
@@ -9808,23 +9895,6 @@
         ]
     },
     {
-        "id": "0312bb5c0734c168",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "debug 11",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 530,
-        "y": 700,
-        "wires": []
-    },
-    {
         "id": "486556a1e7fce8cf",
         "type": "link out",
         "z": "05fcb02c571dcfee",
@@ -9836,23 +9906,6 @@
         ],
         "x": 1285,
         "y": 360,
-        "wires": []
-    },
-    {
-        "id": "4bd9da11f63e508c",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "debug 14",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 670,
-        "y": 480,
         "wires": []
     },
     {
@@ -9997,7 +10050,8 @@
         "y": 340,
         "wires": [
             [
-                "6dca925fad91c100"
+                "6dca925fad91c100",
+                "c5891e3e63052f03"
             ]
         ]
     },
@@ -10316,6 +10370,23 @@
         "statusType": "auto",
         "x": 350,
         "y": 40,
+        "wires": []
+    },
+    {
+        "id": "c5891e3e63052f03",
+        "type": "debug",
+        "z": "f410f6aac9d1a3fc",
+        "name": "system_metrics output",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1160,
+        "y": 400,
         "wires": []
     }
 ]
