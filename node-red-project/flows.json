@@ -566,14 +566,13 @@
         "nodes": [
             "542b3b8720733a01",
             "0a28f82092611160",
-            "ac10d4e38e95fa26",
             "058c390e87e3c283",
             "9c111c8d0f212bf8",
             "8ad71425a71a860e"
         ],
         "x": 1114,
         "y": 979,
-        "w": 672,
+        "w": 812,
         "h": 162
     },
     {
@@ -607,12 +606,11 @@
             "df6ac2f42ac6d8c7",
             "21944450ecc08385",
             "93aa421659d2c20b",
-            "9b8c2bcc16a637fd",
-            "4b78cce3e6147ec5"
+            "9b8c2bcc16a637fd"
         ],
         "x": 1114,
         "y": 99,
-        "w": 712,
+        "w": 772,
         "h": 162
     },
     {
@@ -4452,16 +4450,16 @@
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
-        "url": "{{global.tbURL}}/telemetry",
+        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/telemetry",
         "tls": "",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
-        "senderr": false,
+        "senderr": true,
         "headers": [],
-        "x": 1630,
-        "y": 180,
+        "x": 1530,
+        "y": 200,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -4482,8 +4480,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1680,
-        "y": 220,
+        "x": 1740,
+        "y": 200,
         "wires": []
     },
     {
@@ -4962,8 +4960,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1640,
-        "y": 1100,
+        "x": 1780,
+        "y": 1080,
         "wires": []
     },
     {
@@ -4972,10 +4970,10 @@
         "z": "f7932be9acc7391c",
         "g": "8d3fe796e032166c",
         "name": "send client-side attributes",
-        "method": "use",
+        "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
-        "url": "",
+        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/attributes",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -4990,8 +4988,8 @@
                 "valueValue": ""
             }
         ],
-        "x": 1610,
-        "y": 1060,
+        "x": 1550,
+        "y": 1080,
         "wires": [
             [
                 "542b3b8720733a01"
@@ -5104,32 +5102,11 @@
         "y": 220,
         "wires": [
             [
-                "4b78cce3e6147ec5"
+                "677a57bbf3619854"
             ],
             []
         ],
         "info": "see https://thingsboard.io/docs/reference/protocols/"
-    },
-    {
-        "id": "ac10d4e38e95fa26",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "set up tb client-side attributes http api  ",
-        "func": "let host = global.get(\"thingsboard.host\", \"config\")\nlet port = global.get(\"thingsboard.port\", \"config\")\nlet accessToken = global.get(\"thingsboard.api_key\", \"config\")\nmsg.url = `${host}:${port ? ':'+port : ''}/api/v1/${accessToken}/attributes`\nmsg.method = \"POST\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1590,
-        "y": 1020,
-        "wires": [
-            [
-                "0a28f82092611160"
-            ]
-        ]
     },
     {
         "id": "058c390e87e3c283",
@@ -5208,32 +5185,11 @@
         "y": 1100,
         "wires": [
             [
-                "ac10d4e38e95fa26"
+                "0a28f82092611160"
             ],
             []
         ],
         "info": "see https://thingsboard.io/docs/reference/protocols/"
-    },
-    {
-        "id": "4b78cce3e6147ec5",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "694f0242d0985c69",
-        "name": "set up tb telemetry http api ",
-        "func": "let host = global.get(\"thingsboard.host\", \"config\")\nlet port = global.get(\"thingsboard.port\", \"config\")\nlet accessToken = global.get(\"thingsboard.api_key\", \"config\")\nmsg.url = `${host}:${port ? ':'+port : ''}/api/v1/${accessToken}/telemetry`\nmsg.method = \"POST\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1560,
-        "y": 140,
-        "wires": [
-            [
-                "677a57bbf3619854"
-            ]
-        ]
     },
     {
         "id": "3985037239b671c5",
@@ -8045,7 +8001,7 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "180",
+        "onceDelay": "10",
         "topic": "",
         "x": 110,
         "y": 200,
