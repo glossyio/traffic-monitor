@@ -634,8 +634,8 @@
         ],
         "x": 48,
         "y": 233,
-        "w": 1324,
-        "h": 814
+        "w": 1024,
+        "h": 854
     },
     {
         "id": "dea1b8828f8e501f",
@@ -971,7 +971,6 @@
             "f6ecdd18d8e03f91",
             "f9a2f4f97e3ba1cf",
             "928d7cafdc1ab7fa",
-            "9d90fca30cf97264",
             "8f4e9d81288d5abd",
             "689b64c16a889e0a",
             "bc398ad5de3bd112",
@@ -988,8 +987,8 @@
         ],
         "x": 74,
         "y": 439,
-        "w": 1272,
-        "h": 582
+        "w": 972,
+        "h": 622
     },
     {
         "id": "05a58d9ee463c696",
@@ -1085,7 +1084,7 @@
         "type": "junction",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "x": 1040,
+        "x": 740,
         "y": 740,
         "wires": [
             [
@@ -1734,11 +1733,10 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 680,
+        "x": 380,
         "y": 560,
         "wires": [
             [
-                "9d90fca30cf97264",
                 "6d2f607b324415b4"
             ]
         ]
@@ -1756,7 +1754,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 200,
-        "y": 520,
+        "y": 940,
         "wires": [
             [
                 "c25adb99d55eb890"
@@ -1781,31 +1779,13 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 300,
-        "y": 940,
+        "x": 500,
+        "y": 980,
         "wires": [
             [
                 "8a6d4593a661c3df"
             ]
         ]
-    },
-    {
-        "id": "9d90fca30cf97264",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "deployment latest record",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1010,
-        "y": 560,
-        "wires": []
     },
     {
         "id": "8f4e9d81288d5abd",
@@ -1825,8 +1805,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 280,
-        "y": 980,
+        "x": 440,
+        "y": 1020,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -1846,7 +1826,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 810,
+        "x": 510,
         "y": 640,
         "wires": [
             [
@@ -1863,7 +1843,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1180,
+        "x": 880,
         "y": 680,
         "wires": [
             []
@@ -1889,7 +1869,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 730,
+        "x": 430,
         "y": 600,
         "wires": [
             [
@@ -1916,7 +1896,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 880,
+        "x": 580,
         "y": 680,
         "wires": [
             [
@@ -1938,7 +1918,7 @@
             "8768b75dbfee3973",
             "8a83d59ee0db1198"
         ],
-        "x": 1085,
+        "x": 785,
         "y": 740,
         "wires": []
     },
@@ -1956,7 +1936,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1180,
+        "x": 880,
         "y": 780,
         "wires": []
     },
@@ -1980,7 +1960,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 500,
+        "x": 200,
         "y": 480,
         "wires": [
             [
@@ -2000,7 +1980,7 @@
         "syntax": "mustache",
         "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
         "output": "str",
-        "x": 590,
+        "x": 290,
         "y": 520,
         "wires": [
             [
@@ -2060,12 +2040,10 @@
         "syntax": "mustache",
         "template": "SELECT id, entryStartDateTime, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
         "output": "str",
-        "x": 270,
-        "y": 560,
+        "x": 470,
+        "y": 940,
         "wires": [
-            [
-                "f6ecdd18d8e03f91"
-            ]
+            []
         ]
     },
     {
