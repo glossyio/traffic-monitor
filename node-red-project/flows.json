@@ -280,7 +280,9 @@
             "d8786159d48401b9",
             "7f0ef976c7b79245",
             "59a579e6a1fa9a08",
-            "274f87c31437c2d7"
+            "274f87c31437c2d7",
+            "6b08c9332096b857",
+            "3731dfc3716b1167"
         ],
         "x": 54,
         "y": 839,
@@ -632,7 +634,7 @@
         ],
         "x": 48,
         "y": 233,
-        "w": 1204,
+        "w": 1324,
         "h": 814
     },
     {
@@ -653,11 +655,14 @@
             "22234193104332f6",
             "4094c101f6b59d95",
             "de7bc8103f7ca3c6",
-            "ef75320f6a5f0382"
+            "ef75320f6a5f0382",
+            "f9a458c786e4bb84",
+            "8ccadc734d8ab769",
+            "463b64006f270db3"
         ],
         "x": 354,
         "y": 799,
-        "w": 1192,
+        "w": 1222,
         "h": 282
     },
     {
@@ -678,11 +683,14 @@
             "1acba66197b7b0fa",
             "01307f2f13f465f2",
             "3faf0dcbc24ef11c",
-            "2479e1e747a9c6ec"
+            "2479e1e747a9c6ec",
+            "1ef2418fe536aad5",
+            "1db11b98d771c791",
+            "dd88a80a3a79aa0b"
         ],
         "x": 354,
         "y": 499,
-        "w": 1012,
+        "w": 1122,
         "h": 282
     },
     {
@@ -703,11 +711,14 @@
             "7e4a607265a272c2",
             "080fd00489701aa1",
             "a489601d43802b82",
-            "fe45aef575ccab71"
+            "fe45aef575ccab71",
+            "8d4953609399d75e",
+            "d18b637f01871f23",
+            "2aac5b4f344a86e8"
         ],
         "x": 354,
         "y": 1079,
-        "w": 1252,
+        "w": 1242,
         "h": 282
     },
     {
@@ -727,11 +738,14 @@
             "83065a55697cc160",
             "95186b0fee06a3f5",
             "07cdbeafa34a565e",
-            "c61ef5ee09cb5c93"
+            "c61ef5ee09cb5c93",
+            "4f072d31286f7667",
+            "303ea9d25d718231",
+            "a18940845d6c5a2e"
         ],
-        "x": 394,
+        "x": 414,
         "y": 1379,
-        "w": 1292,
+        "w": 1242,
         "h": 302
     },
     {
@@ -752,11 +766,14 @@
             "edcc237df962c31a",
             "59a9c9a7ba535641",
             "0ba6c9b3eb3d521d",
-            "fb89305143faab57"
+            "fb89305143faab57",
+            "45cdb2f02dfb2009",
+            "07d558da50af5ae4",
+            "1bdec3d0b912f792"
         ],
         "x": 354,
         "y": 1699,
-        "w": 1112,
+        "w": 1192,
         "h": 282
     },
     {
@@ -793,12 +810,13 @@
         "nodes": [
             "4bec488857c0553f",
             "ed447e5f8becbfad",
-            "cc84d34370b6feb3"
+            "cc84d34370b6feb3",
+            "a473c7e4eeb01dcd"
         ],
         "x": 134,
         "y": 119,
         "w": 352,
-        "h": 142
+        "h": 182
     },
     {
         "id": "1819134eccdf2660",
@@ -956,18 +974,21 @@
             "9d90fca30cf97264",
             "8f4e9d81288d5abd",
             "689b64c16a889e0a",
-            "95f86a8a5653698f",
             "bc398ad5de3bd112",
             "6d2f607b324415b4",
             "24efdc7f1231f7f0",
             "1ba33a74f2d3a680",
             "17455485af2d8cfc",
             "05c37560dd57ea90",
-            "ac8b2de05ec27001"
+            "ac8b2de05ec27001",
+            "696c3a7b0b83f7b5",
+            "ba3b41519066f03a",
+            "f111096594207360",
+            "c25adb99d55eb890"
         ],
         "x": 74,
         "y": 439,
-        "w": 1152,
+        "w": 1272,
         "h": 582
     },
     {
@@ -1064,7 +1085,7 @@
         "type": "junction",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "x": 920,
+        "x": 1040,
         "y": 740,
         "wires": [
             [
@@ -1638,7 +1659,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 600,
+        "x": 820,
         "y": 860,
         "wires": [
             [
@@ -1651,23 +1672,18 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "create table deployment",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS deployment (id TEXT PRIMARY KEY, entryStartDateTime REAL, entryEndDateTime REAL, lat REAL, lon REAL, bearing TEXT, sensorName TEXT, deviceName TEXT);",
-        "x": 290,
+        "topic": "",
+        "x": 210,
         "y": 860,
         "wires": [
             [
-                "8a6d4593a661c3df"
+                "ba3b41519066f03a"
             ]
         ]
     },
@@ -1676,23 +1692,18 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "select latest 5 rows from deployment",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM deployment ORDER BY entryStartDateTime DESC LIMIT 5;",
-        "x": 260,
+        "topic": "",
+        "x": 200,
         "y": 900,
         "wires": [
             [
-                "8a6d4593a661c3df"
+                "f111096594207360"
             ]
         ]
     },
@@ -1710,8 +1721,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
-        "y": 860,
+        "x": 850,
+        "y": 900,
         "wires": []
     },
     {
@@ -1723,7 +1734,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 560,
+        "x": 680,
         "y": 560,
         "wires": [
             [
@@ -1737,23 +1748,18 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "select latest active deployments",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": "5",
-        "topic": "SELECT id, entryStartDateTime, sensorName, deviceName FROM deployment WHERE entryStartDateTime IN (   SELECT MAX(entryStartDateTime)   FROM deployment   WHERE entryEndDateTime IS NULL   GROUP BY sensorName, deviceName ) ORDER BY sensorName, deviceName;",
-        "x": 250,
-        "y": 560,
+        "topic": "",
+        "x": 200,
+        "y": 520,
         "wires": [
             [
-                "f6ecdd18d8e03f91"
+                "c25adb99d55eb890"
             ]
         ]
     },
@@ -1797,7 +1803,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 890,
+        "x": 1010,
         "y": 560,
         "wires": []
     },
@@ -1840,32 +1846,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 690,
+        "x": 810,
         "y": 640,
         "wires": [
             [
                 "24efdc7f1231f7f0"
-            ]
-        ]
-    },
-    {
-        "id": "95f86a8a5653698f",
-        "type": "function",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "query latest active deployments",
-        "func": "msg.topic = \n`\nSELECT id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n    SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n`\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 470,
-        "y": 520,
-        "wires": [
-            [
-                "f6ecdd18d8e03f91"
             ]
         ]
     },
@@ -1878,7 +1863,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1060,
+        "x": 1180,
         "y": 680,
         "wires": [
             []
@@ -1904,7 +1889,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 730,
         "y": 600,
         "wires": [
             [
@@ -1931,7 +1916,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 760,
+        "x": 880,
         "y": 680,
         "wires": [
             [
@@ -1953,7 +1938,7 @@
             "8768b75dbfee3973",
             "8a83d59ee0db1198"
         ],
-        "x": 965,
+        "x": 1085,
         "y": 740,
         "wires": []
     },
@@ -1971,7 +1956,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1060,
+        "x": 1180,
         "y": 780,
         "wires": []
     },
@@ -1995,11 +1980,91 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 380,
+        "x": 500,
         "y": 480,
         "wires": [
             [
-                "95f86a8a5653698f"
+                "696c3a7b0b83f7b5"
+            ]
+        ]
+    },
+    {
+        "id": "696c3a7b0b83f7b5",
+        "type": "template",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "query latest active deployments",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
+        "output": "str",
+        "x": 590,
+        "y": 520,
+        "wires": [
+            [
+                "f6ecdd18d8e03f91"
+            ]
+        ]
+    },
+    {
+        "id": "ba3b41519066f03a",
+        "type": "template",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "create table deployment",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
+        "output": "str",
+        "x": 490,
+        "y": 860,
+        "wires": [
+            [
+                "8a6d4593a661c3df"
+            ]
+        ]
+    },
+    {
+        "id": "f111096594207360",
+        "type": "template",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "select latest 5 rows from deployment",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM deployment \nORDER BY entryStartDateTime DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 450,
+        "y": 900,
+        "wires": [
+            [
+                "8a6d4593a661c3df"
+            ]
+        ]
+    },
+    {
+        "id": "c25adb99d55eb890",
+        "type": "template",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "select latest active deployments",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT id, entryStartDateTime, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
+        "output": "str",
+        "x": 270,
+        "y": 560,
+        "wires": [
+            [
+                "f6ecdd18d8e03f91"
             ]
         ]
     },
@@ -2493,7 +2558,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 910,
+        "x": 1280,
         "y": 620,
         "wires": [
             [
@@ -2506,23 +2571,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
-        "name": "create radar_dov table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_dov (time REAL, unit TEXT, direction TEXT, velocity REAL, radarName TEXT, deployment_id TEXT);",
-        "x": 640,
+        "topic": "",
+        "x": 550,
         "y": 620,
         "wires": [
             [
-                "ca182659939320ce"
+                "1ef2418fe536aad5"
             ]
         ]
     },
@@ -2531,23 +2591,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
-        "name": "select latest 5 rows from radar_dov",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_dov ORDER BY time DESC LIMIT 5;",
-        "x": 600,
+        "topic": "",
+        "x": 540,
         "y": 660,
         "wires": [
             [
-                "ca182659939320ce"
+                "1db11b98d771c791"
             ]
         ]
     },
@@ -2565,8 +2620,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1200,
-        "y": 620,
+        "x": 1310,
+        "y": 660,
         "wires": []
     },
     {
@@ -2578,7 +2633,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity, radarName, deployment_id) \nVALUES ($time, $unit, $direction, $velocity, $radarName, $deployment_id);\n",
         "name": "",
-        "x": 920,
+        "x": 1280,
         "y": 740,
         "wires": [
             []
@@ -2614,7 +2669,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 990,
+        "x": 1280,
         "y": 920,
         "wires": [
             [
@@ -2627,23 +2682,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
-        "name": "create radar_timedspeedcounts table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (time REAL, direction TEXT, units TEXT, count INTEGER, average REAL, radarName TEXT, deployment_id TEXT);",
-        "x": 670,
+        "topic": "",
+        "x": 550,
         "y": 920,
         "wires": [
             [
-                "50dcead7cf35b74f"
+                "f9a458c786e4bb84"
             ]
         ]
     },
@@ -2652,23 +2702,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
-        "name": "select latest 5 rows from radar_timedspeedcounts",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_timed_speed_counts ORDER BY time DESC LIMIT 5;",
-        "x": 640,
+        "topic": "",
+        "x": 540,
         "y": 960,
         "wires": [
             [
-                "50dcead7cf35b74f"
+                "8ccadc734d8ab769"
             ]
         ]
     },
@@ -2686,8 +2731,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1330,
-        "y": 920,
+        "x": 1360,
+        "y": 960,
         "wires": []
     },
     {
@@ -2720,7 +2765,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average, radarName, deployment_id)\nVALUES ($time, $direction, $units, $count, $average, $radarName, $deployment_id);\n",
         "name": "",
-        "x": 990,
+        "x": 1280,
         "y": 1040,
         "wires": [
             []
@@ -2735,7 +2780,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1030,
+        "x": 1280,
         "y": 1200,
         "wires": [
             [
@@ -2748,23 +2793,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
-        "name": "create radar_raw_speed_magnitude table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (time REAL, unit TEXT, magnitude TEXT, speed TEXT, radarName TEXT, deployment_id TEXT);",
-        "x": 700,
+        "topic": "",
+        "x": 550,
         "y": 1200,
         "wires": [
             [
-                "a3dddf65b65ca371"
+                "8d4953609399d75e"
             ]
         ]
     },
@@ -2773,23 +2813,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
-        "name": "select latest 5 rows from radar_raw_speed_magnitude",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_raw_speed_magnitude ORDER BY time DESC LIMIT 5;",
-        "x": 660,
+        "topic": "",
+        "x": 540,
         "y": 1240,
         "wires": [
             [
-                "a3dddf65b65ca371"
+                "2aac5b4f344a86e8"
             ]
         ]
     },
@@ -2807,8 +2842,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1380,
-        "y": 1200,
+        "x": 1370,
+        "y": 1240,
         "wires": []
     },
     {
@@ -2820,7 +2855,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
-        "x": 1030,
+        "x": 1280,
         "y": 1320,
         "wires": [
             []
@@ -2852,23 +2887,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
-        "name": "create radar_oc_payload table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_oc_payload (     end_time REAL,     start_time REAL,     delta_time_msec INTEGER,     dir TEXT,     frames INTEGER,     max_mph REAL,     min_mph REAL,     max_mag REAL,     avg_mag REAL,     frames_per_mph REAL,     length_ft REAL, radarName TEXT, deployment_id TEXT);",
-        "x": 650,
+        "topic": "",
+        "x": 550,
         "y": 1820,
         "wires": [
             [
-                "09369d5e4816364f"
+                "1bdec3d0b912f792"
             ]
         ]
     },
@@ -2881,7 +2911,7 @@
         "sqlquery": "msg.topic",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
-        "x": 950,
+        "x": 1280,
         "y": 1820,
         "wires": [
             [
@@ -2894,23 +2924,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
-        "name": "select latest 5 rows from radar_oc_payload",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_oc_payload ORDER BY end_time DESC LIMIT 5;",
-        "x": 620,
+        "topic": "",
+        "x": 540,
         "y": 1860,
         "wires": [
             [
-                "09369d5e4816364f"
+                "07d558da50af5ae4"
             ]
         ]
     },
@@ -2928,8 +2953,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1270,
-        "y": 1820,
+        "x": 1350,
+        "y": 1860,
         "wires": []
     },
     {
@@ -2941,7 +2966,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft, radarName, deployment_id)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft, $radarName, $deployment_id);",
         "name": "",
-        "x": 950,
+        "x": 1280,
         "y": 1940,
         "wires": [
             []
@@ -2977,7 +3002,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1050,
+        "x": 1280,
         "y": 1420,
         "wires": [
             [
@@ -2990,23 +3015,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "fcbf8999ca05a371",
-        "name": "create radar_raw_speed_magnitude_single table",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (time REAL, unit TEXT, magnitude REAL, speed REAL, radarName TEXT, deployment_id TEXT);",
-        "x": 690,
+        "topic": "",
+        "x": 550,
         "y": 1420,
         "wires": [
             [
-                "a3924864154eaefb"
+                "a18940845d6c5a2e"
             ]
         ]
     },
@@ -3015,23 +3035,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "fcbf8999ca05a371",
-        "name": "select latest 5 rows from radar_raw_speed_magnitude_single",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM radar_raw_speed_magnitude_single ORDER BY time DESC LIMIT 5;",
-        "x": 660,
+        "topic": "",
+        "x": 540,
         "y": 1460,
         "wires": [
             [
-                "a3924864154eaefb"
+                "303ea9d25d718231"
             ]
         ]
     },
@@ -3049,8 +3064,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1430,
-        "y": 1420,
+        "x": 1400,
+        "y": 1460,
         "wires": []
     },
     {
@@ -3062,7 +3077,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
-        "x": 1120,
+        "x": 1280,
         "y": 1600,
         "wires": [
             []
@@ -3654,23 +3669,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
-        "name": "alter table radar_dov",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 650,
+        "x": 540,
         "y": 700,
         "wires": [
             [
-                "ca182659939320ce"
+                "dd88a80a3a79aa0b"
             ]
         ]
     },
@@ -3679,23 +3689,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
-        "name": "alter table radar_timedspeedcounts",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 680,
+        "x": 540,
         "y": 1000,
         "wires": [
             [
-                "50dcead7cf35b74f"
+                "463b64006f270db3"
             ]
         ]
     },
@@ -3704,23 +3709,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
-        "name": "alter table radar_raw_speed_magnitude",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 710,
+        "x": 540,
         "y": 1280,
         "wires": [
             [
-                "a3dddf65b65ca371"
+                "d18b637f01871f23"
             ]
         ]
     },
@@ -3729,23 +3729,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "fcbf8999ca05a371",
-        "name": "alter table radar_raw_speed_magnitude_single",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 700,
+        "x": 540,
         "y": 1500,
         "wires": [
             [
-                "a3924864154eaefb"
+                "4f072d31286f7667"
             ]
         ]
     },
@@ -3754,23 +3749,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
-        "name": "alter table radar_oc_payload",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 660,
+        "x": 540,
         "y": 1900,
         "wires": [
             [
-                "09369d5e4816364f"
+                "45cdb2f02dfb2009"
             ]
         ]
     },
@@ -3879,6 +3869,306 @@
         "wires": [
             [
                 "1ad62db35274c50d"
+            ]
+        ]
+    },
+    {
+        "id": "1ef2418fe536aad5",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
+        "name": "create radar_dov table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS radar_dov (\n    time REAL, \n    unit TEXT, \n    direction TEXT, \n    velocity REAL, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
+        "output": "str",
+        "x": 940,
+        "y": 620,
+        "wires": [
+            [
+                "ca182659939320ce"
+            ]
+        ]
+    },
+    {
+        "id": "1db11b98d771c791",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
+        "name": "select latest 5 rows from radar_dov",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM radar_dov \nORDER BY time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 900,
+        "y": 660,
+        "wires": [
+            [
+                "ca182659939320ce"
+            ]
+        ]
+    },
+    {
+        "id": "dd88a80a3a79aa0b",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "1eebfe6a2eca8ad4",
+        "name": "alter table radar_dov",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "",
+        "output": "str",
+        "x": 940,
+        "y": 700,
+        "wires": [
+            [
+                "ca182659939320ce"
+            ]
+        ]
+    },
+    {
+        "id": "f9a458c786e4bb84",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
+        "name": "create radar_timedspeedcounts table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (\n    time REAL, \n    direction TEXT, \n    units TEXT, \n    count INTEGER, \n    average REAL, \n    radarName TEXT, \n    deployment_id TEXT\n);",
+        "output": "str",
+        "x": 890,
+        "y": 920,
+        "wires": [
+            [
+                "50dcead7cf35b74f"
+            ]
+        ]
+    },
+    {
+        "id": "8ccadc734d8ab769",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
+        "name": "select latest 5 rows from radar_timedspeedcounts",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM radar_timed_speed_counts \nORDER BY time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 850,
+        "y": 960,
+        "wires": [
+            [
+                "50dcead7cf35b74f"
+            ]
+        ]
+    },
+    {
+        "id": "463b64006f270db3",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "dea1b8828f8e501f",
+        "name": "alter table radar_timedspeedcounts",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "",
+        "output": "str",
+        "x": 900,
+        "y": 1000,
+        "wires": [
+            [
+                "50dcead7cf35b74f"
+            ]
+        ]
+    },
+    {
+        "id": "8d4953609399d75e",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
+        "name": "create radar_raw_speed_magnitude table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (\n    time REAL, \n    unit TEXT, \n    magnitude TEXT, \n    speed TEXT, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
+        "output": "str",
+        "x": 880,
+        "y": 1200,
+        "wires": [
+            [
+                "a3dddf65b65ca371"
+            ]
+        ]
+    },
+    {
+        "id": "d18b637f01871f23",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
+        "name": "alter table radar_raw_speed_magnitude",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "",
+        "output": "str",
+        "x": 880,
+        "y": 1280,
+        "wires": [
+            [
+                "a3dddf65b65ca371"
+            ]
+        ]
+    },
+    {
+        "id": "2aac5b4f344a86e8",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "047f05d7650ba3cc",
+        "name": "select latest 5 rows from radar_raw_speed_magnitude",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM radar_raw_speed_magnitude \nORDER BY time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 840,
+        "y": 1240,
+        "wires": [
+            [
+                "a3dddf65b65ca371"
+            ]
+        ]
+    },
+    {
+        "id": "4f072d31286f7667",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
+        "name": "alter table radar_raw_speed_magnitude_single",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "",
+        "output": "str",
+        "x": 900,
+        "y": 1500,
+        "wires": [
+            [
+                "a3924864154eaefb"
+            ]
+        ]
+    },
+    {
+        "id": "303ea9d25d718231",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
+        "name": "select latest 5 rows from radar_raw_speed_magnitude_single",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM radar_raw_speed_magnitude_single \nORDER BY time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 860,
+        "y": 1460,
+        "wires": [
+            [
+                "a3924864154eaefb"
+            ]
+        ]
+    },
+    {
+        "id": "a18940845d6c5a2e",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "fcbf8999ca05a371",
+        "name": "create radar_raw_speed_magnitude_single table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (\n    time REAL, \n    unit TEXT, \n    magnitude REAL, \n    speed REAL, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
+        "output": "str",
+        "x": 890,
+        "y": 1420,
+        "wires": [
+            [
+                "a3924864154eaefb"
+            ]
+        ]
+    },
+    {
+        "id": "45cdb2f02dfb2009",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "name": "alter table radar_oc_payload",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "",
+        "output": "str",
+        "x": 920,
+        "y": 1900,
+        "wires": [
+            [
+                "09369d5e4816364f"
+            ]
+        ]
+    },
+    {
+        "id": "07d558da50af5ae4",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "name": "select latest 5 rows from radar_oc_payload",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM radar_oc_payload \nORDER BY end_time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 870,
+        "y": 1860,
+        "wires": [
+            [
+                "09369d5e4816364f"
+            ]
+        ]
+    },
+    {
+        "id": "1bdec3d0b912f792",
+        "type": "template",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "name": "create radar_oc_payload table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS radar_oc_payload (\n    end_time REAL,\n    start_time REAL,\n    delta_time_msec INTEGER,\n    dir TEXT,\n    frames INTEGER,\n    max_mph REAL,\n    min_mph REAL,\n    max_mag REAL,\n    avg_mag REAL,\n    frames_per_mph REAL,\n    length_ft REAL,\n    radarName TEXT,\n    deployment_id TEXT\n    );",
+        "output": "str",
+        "x": 910,
+        "y": 1820,
+        "wires": [
+            [
+                "09369d5e4816364f"
             ]
         ]
     },
@@ -4133,7 +4423,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 540,
+        "x": 780,
         "y": 1080,
         "wires": [
             [
@@ -4146,23 +4436,18 @@
         "type": "inject",
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
-        "name": "create table events",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject after 0.1 sec",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY,camera TEXT,label TEXT,sub_label TEXT,top_score REAL,frame_time REAL,start_time REAL,end_time REAL,entered_zones TEXT,score REAL,area REAL,ratio REAL,motionless_count REAL,position_changes REAL,attributes TEXT,direction_calc TEXT,speed_calc REAL,source TEXT,deployment_id TEXT DEFAULT NULL,FOREIGN KEY (deployment_id) REFERENCES deployment(id));",
-        "x": 270,
+        "topic": "",
+        "x": 190,
         "y": 1080,
         "wires": [
             [
-                "510b389597efaf1b"
+                "6b08c9332096b857"
             ]
         ]
     },
@@ -4208,23 +4493,18 @@
         "type": "inject",
         "z": "9269520ddb532b00",
         "g": "53e4faf6d3ece28c",
-        "name": "select latest 5 rows from events",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "inject manually",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM events ORDER BY end_time DESC LIMIT 5;",
-        "x": 230,
+        "topic": "",
+        "x": 180,
         "y": 1120,
         "wires": [
             [
-                "510b389597efaf1b"
+                "3731dfc3716b1167"
             ]
         ]
     },
@@ -4243,7 +4523,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 810,
-        "y": 1080,
+        "y": 1120,
         "wires": []
     },
     {
@@ -4438,6 +4718,46 @@
             ],
             [
                 "673e45159a2dfccf"
+            ]
+        ]
+    },
+    {
+        "id": "6b08c9332096b857",
+        "type": "template",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "create table events",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS events (\n    id TEXT PRIMARY KEY,\n    camera TEXT,\n    label TEXT,\n    sub_label TEXT,\n    top_score REAL,\n    frame_time REAL,\n    start_time REAL,\n    end_time REAL,\n    entered_zones TEXT,\n    score REAL,\n    area REAL,\n    ratio REAL,\n    motionless_count REAL,\n    position_changes REAL,\n    attributes TEXT,\n    direction_calc TEXT,\n    speed_calc REAL,\n    source TEXT,\n    deployment_id TEXT DEFAULT NULL,\n    FOREIGN KEY (deployment_id) REFERENCES deployment(id)\n    );",
+        "output": "str",
+        "x": 510,
+        "y": 1080,
+        "wires": [
+            [
+                "510b389597efaf1b"
+            ]
+        ]
+    },
+    {
+        "id": "3731dfc3716b1167",
+        "type": "template",
+        "z": "9269520ddb532b00",
+        "g": "53e4faf6d3ece28c",
+        "name": "select latest 5 rows from events",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM events \nORDER BY end_time DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 470,
+        "y": 1120,
+        "wires": [
+            [
+                "510b389597efaf1b"
             ]
         ]
     },
@@ -5190,6 +5510,24 @@
             []
         ],
         "info": "see https://thingsboard.io/docs/reference/protocols/"
+    },
+    {
+        "id": "a473c7e4eeb01dcd",
+        "type": "template",
+        "z": "f7932be9acc7391c",
+        "g": "b334a2375eb8cb42",
+        "name": "",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "This is the payload: {{payload}} !",
+        "output": "str",
+        "x": 300,
+        "y": 260,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "3985037239b671c5",
