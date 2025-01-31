@@ -335,6 +335,7 @@
         "x": 14,
         "y": 619,
         "w": 1282,
+        "w": 1282,
         "h": 262
     },
     {
@@ -870,7 +871,7 @@
         "h": 122
     },
     {
-        "id": "99dfff63ac837bc8",
+        "id": "dff0470b2ba97020",
         "type": "group",
         "z": "f7932be9acc7391c",
         "g": "2f27e270200485b9",
@@ -879,8 +880,36 @@
             "label": true
         },
         "nodes": [
-            "521115ddd5741eea",
-            "24c1b5f3bff3834c"
+            "cad1724850f8df3d",
+            "40ea8ad5c0434e3d",
+            "12a8f585b2824848",
+            "e4475a4fd4eb47ea",
+            "0372cefb5e2ec968"
+        ],
+        "x": 34,
+        "y": 1099,
+        "w": 462,
+        "h": 162
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "9aa93ed98869015b",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "65a881b4715da5ef",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d",
+            "5743aab77af94bd2",
+            "4979b291119bce23"
         ],
         "x": 134,
         "y": 819,
@@ -2247,7 +2276,7 @@
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
         "name": "catch - flow-radar",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -8459,6 +8488,9 @@
             [
                 "11b875e91b3d32a6"
             ]
+            [
+                "11b875e91b3d32a6"
+            ]
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -10819,7 +10851,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "9",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -11143,8 +11175,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 350,

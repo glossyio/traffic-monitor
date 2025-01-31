@@ -8,7 +8,7 @@
     # More examples: https://www.golinuxcloud.com/nmcli-command-examples-cheatsheet-centos-rhel/ 
 
 #enable hotspot
-sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
+# sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
 
 #disable hotspot
 #sudo nmcli device disconnect wlan0
@@ -29,5 +29,16 @@ sudo nmcli device wifi hotspot ssid <example-network-name> password <example-pas
 #convenient field values retrieval for scripting
 #nmcli -g ip4.address connection show my-con-eth0
 
-#create ethernet static IP address
-#sudo nmcli con add con-name eth-static type ethernet ifname eth0 ipv4.method manual ipv4.address 192.168.1.15/24 ipv4.gateway 192.168.1.1
+#logs for diagnosing
+# journalctl -u NetworkManager
+# dmesg | grep wlan0
+
+#link status
+# ip link show
+# nmcli device status
+# iwconfig wlan0
+
+#restart network
+# sudo systemctl restart NetworkManager
+# nmcli device down wlan0
+# nmcli device up wlan0
