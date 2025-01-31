@@ -757,6 +757,50 @@
         "h": 282
     },
     {
+        "id": "23636f4163fa6e3b",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "backup and restore",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4a62f39107d10a25",
+            "38fd03504247825b",
+            "b781cb3d6df38fed",
+            "a38a90c36a0abfc3",
+            "0372cefb5e2ec968",
+            "cad1724850f8df3d",
+            "fb62ca91f138ab87"
+        ],
+        "x": 14,
+        "y": 1819,
+        "w": 1398,
+        "h": 448
+    },
+    {
+        "id": "791a8c44b7f98d1b",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "4bbb9e24b5507a00",
+            "8004ba7ad5a9bd83"
+        ],
+        "x": 48,
+        "y": 233,
+        "w": 1024,
+        "h": 854
+    },
+    {
         "id": "b334a2375eb8cb42",
         "type": "group",
         "z": "f7932be9acc7391c",
@@ -913,28 +957,6 @@
         "h": 342
     },
     {
-        "id": "23636f4163fa6e3b",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "backup and restore",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "4a62f39107d10a25",
-            "38fd03504247825b",
-            "b781cb3d6df38fed",
-            "a38a90c36a0abfc3",
-            "0372cefb5e2ec968",
-            "cad1724850f8df3d",
-            "fb62ca91f138ab87"
-        ],
-        "x": 14,
-        "y": 1819,
-        "w": 1398,
-        "h": 448
-    },
-    {
         "id": "b781cb3d6df38fed",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -976,28 +998,6 @@
         "y": 2039,
         "w": 872,
         "h": 202
-    },
-    {
-        "id": "791a8c44b7f98d1b",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "4bbb9e24b5507a00",
-            "8004ba7ad5a9bd83"
-        ],
-        "x": 48,
-        "y": 233,
-        "w": 1024,
-        "h": 854
     },
     {
         "id": "4bbb9e24b5507a00",
@@ -1670,7 +1670,7 @@
         "rules": [
             {
                 "t": "set",
-                "p": "#:(config)::config",
+                "p": "config",
                 "pt": "global",
                 "to": "payload",
                 "tot": "msg"
@@ -1695,7 +1695,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? \"\" : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? \"\" : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? \"\" : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (typeof msg.payload.deployment.lat !== \"undefined\") {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (typeof msg.payload.deployment.lon !== \"undefined\") {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (typeof msg.payload.deployment.bearing !== \"undefined\") {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3273,7 +3273,7 @@
                 "t": "set",
                 "p": "payload.deployment_id",
                 "pt": "msg",
-                "to": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment.id",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment.id",
                 "tot": "global"
             }
         ],
@@ -3368,7 +3368,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_01.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3432,7 +3432,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_02.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3496,7 +3496,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_03.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3609,7 +3609,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3638,7 +3638,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3667,7 +3667,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3696,7 +3696,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
         "propertyType": "global",
         "rules": [
             {
