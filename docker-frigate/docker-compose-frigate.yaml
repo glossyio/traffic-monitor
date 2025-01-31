@@ -25,8 +25,4 @@ services:
       - "8564:8554" # RTSP feeds
       - "8565:8555/tcp" # WebRTC over tcp
       - "8565:8555/udp" # WebRTC over udp
-    environment:
-      FRIGATE_RTSP_PASSWORD: "password"
-      PLUS_API_KEY: ""
-      FRIGATE_MQTT_USER: "mqtt_user"
-      FRIGATE_MQTT_PASSWORD: "mqtt_pass"
+    env_file: "frigate.env"

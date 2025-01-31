@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "791e8b1f84050e40",
+        "type": "tab",
+        "label": "backup-restore",
+        "disabled": false,
+        "info": "Flows that backup/restore the device configuration to/from ThingsBoard. These are triggered by buttons on the Configuration / Setup tab.",
+        "env": []
+    },
+    {
         "id": "04cc3b7b3e019683",
         "type": "group",
         "z": "94d07e407c25f282",
@@ -444,7 +452,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1272,
+        "w": 1282,
         "h": 262
     },
     {
@@ -604,9 +612,6 @@
             "label": true
         },
         "nodes": [
-            "0a28f82092611160",
-            "542b3b8720733a01",
-            "ac10d4e38e95fa26",
             "64c998a572e86dce",
             "4d67617dadcb9ede",
             "28063911d2bbf57e",
@@ -654,11 +659,14 @@
             "33dd63cc1dfb53c4",
             "9beaf948294acd98",
             "2b82d4b028657058",
-            "099df29d699f405e"
+            "099df29d699f405e",
+            "8fa3692b8c3f14a5",
+            "11b875e91b3d32a6",
+            "18b0dfda0489c5b4"
         ],
         "x": 14,
         "y": 99,
-        "w": 1352,
+        "w": 1272,
         "h": 1242
     },
     {
@@ -809,6 +817,71 @@
         "h": 82
     },
     {
+        "id": "b781cb3d6df38fed",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "name": "backup TM configuration to Thingsboard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "371b831295a65179",
+            "f2256e28de366878",
+            "f49c1d345cdfef57",
+            "bd0b99f0ea3996bf",
+            "c5f739aac1d9e9a3"
+        ],
+        "x": 124,
+        "y": 139,
+        "w": 968,
+        "h": 308
+    },
+    {
+        "id": "dff0470b2ba97020",
+        "type": "group",
+        "z": "fa9f914901f79645",
+        "name": "Backup & Restore Buttons",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "cad1724850f8df3d",
+            "40ea8ad5c0434e3d",
+            "12a8f585b2824848",
+            "e4475a4fd4eb47ea",
+            "0372cefb5e2ec968"
+        ],
+        "x": 34,
+        "y": 1099,
+        "w": 462,
+        "h": 162
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "9aa93ed98869015b",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "65a881b4715da5ef",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d",
+            "5743aab77af94bd2",
+            "4979b291119bce23"
+        ],
+        "x": 134,
+        "y": 479,
+        "w": 992,
+        "h": 242
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -907,6 +980,26 @@
         "y": 679,
         "w": 952,
         "h": 342
+    },
+    {
+        "id": "c5f739aac1d9e9a3",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "g": "b781cb3d6df38fed",
+        "name": "Send device attribute",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f64e7801aa071234",
+            "37bb791e1cfa7ffb",
+            "9726f6154932eeed",
+            "02c5bc95c26b6024"
+        ],
+        "x": 634,
+        "y": 179,
+        "w": 432,
+        "h": 242
     },
     {
         "id": "a5d65dd0e3566daa",
@@ -1152,17 +1245,6 @@
         }
     },
     {
-        "id": "8570be913d017562",
-        "type": "ui_group",
-        "name": "IoT Hub (ThingsBoard)",
-        "tab": "b749f5c4a9a4fbf2",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "0fd9a947334c7d0f",
         "type": "ui_tab",
         "name": "System Settings Tab",
@@ -1175,17 +1257,6 @@
         "type": "ui_group",
         "name": "Client-Side Attributes",
         "tab": "0fd9a947334c7d0f",
-        "order": 1,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
-        "id": "77966ee928726fbf",
-        "type": "ui_group",
-        "name": "Deployment Location",
-        "tab": "b749f5c4a9a4fbf2",
         "order": 1,
         "disp": true,
         "width": "6",
@@ -1222,6 +1293,28 @@
         "order": 4,
         "disabled": false,
         "hidden": false
+    },
+    {
+        "id": "8570be913d017562",
+        "type": "ui_group",
+        "name": "IoT Hub (ThingsBoard)",
+        "tab": "b749f5c4a9a4fbf2",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "77966ee928726fbf",
+        "type": "ui_group",
+        "name": "Deployment Location",
+        "tab": "b749f5c4a9a4fbf2",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "e43506628b4a1cdb",
@@ -1359,7 +1452,7 @@
         "type": "debug",
         "z": "94d07e407c25f282",
         "name": "catch - flow-radar",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -6363,77 +6456,6 @@
         "wires": []
     },
     {
-        "id": "0a28f82092611160",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "send client-side attributes",
-        "method": "use",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "application/json",
-                "valueValue": ""
-            }
-        ],
-        "x": 1170,
-        "y": 300,
-        "wires": [
-            [
-                "542b3b8720733a01"
-            ]
-        ]
-    },
-    {
-        "id": "542b3b8720733a01",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "client-side attributes response",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1190,
-        "y": 340,
-        "wires": []
-    },
-    {
-        "id": "ac10d4e38e95fa26",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set up tb client-side attributes post ",
-        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1080,
-        "y": 260,
-        "wires": [
-            [
-                "0a28f82092611160"
-            ]
-        ]
-    },
-    {
         "id": "64c998a572e86dce",
         "type": "exec",
         "z": "05fcb02c571dcfee",
@@ -6526,7 +6548,9 @@
         "x": 270,
         "y": 700,
         "wires": [
-            []
+            [
+                "11b875e91b3d32a6"
+            ]
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -7410,7 +7434,7 @@
         "y": 180,
         "wires": [
             [
-                "ac10d4e38e95fa26"
+                "8fa3692b8c3f14a5"
             ]
         ]
     },
@@ -7818,7 +7842,7 @@
         "y": 1420,
         "wires": [
             [
-                "ac10d4e38e95fa26"
+                "8fa3692b8c3f14a5"
             ]
         ]
     },
@@ -8365,6 +8389,65 @@
                 "b395ee7aa9dc2a44"
             ]
         ]
+    },
+    {
+        "id": "8fa3692b8c3f14a5",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "send device attributes",
+        "mode": "link",
+        "links": [
+            "bd0b99f0ea3996bf"
+        ],
+        "x": 1245,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "11b875e91b3d32a6",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::homeDir",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 700,
+        "wires": [
+            [
+                "18b0dfda0489c5b4"
+            ]
+        ]
+    },
+    {
+        "id": "18b0dfda0489c5b4",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 700,
+        "wires": []
     },
     {
         "id": "e6461a7fdeef48a2",
@@ -9434,6 +9517,114 @@
         ]
     },
     {
+        "id": "cad1724850f8df3d",
+        "type": "ui_button",
+        "z": "fa9f914901f79645",
+        "g": "dff0470b2ba97020",
+        "name": "",
+        "group": "8570be913d017562",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Backup TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "gray",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 170,
+        "y": 1180,
+        "wires": [
+            [
+                "40ea8ad5c0434e3d"
+            ]
+        ]
+    },
+    {
+        "id": "40ea8ad5c0434e3d",
+        "type": "link out",
+        "z": "fa9f914901f79645",
+        "g": "dff0470b2ba97020",
+        "name": "link out 1",
+        "mode": "link",
+        "links": [
+            "371b831295a65179"
+        ],
+        "x": 455,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "12a8f585b2824848",
+        "type": "ui_text",
+        "z": "fa9f914901f79645",
+        "g": "dff0470b2ba97020",
+        "group": "8570be913d017562",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 110,
+        "y": 1140,
+        "wires": []
+    },
+    {
+        "id": "e4475a4fd4eb47ea",
+        "type": "link out",
+        "z": "fa9f914901f79645",
+        "g": "dff0470b2ba97020",
+        "name": "link out 2",
+        "mode": "link",
+        "links": [
+            "65a881b4715da5ef"
+        ],
+        "x": 455,
+        "y": 1220,
+        "wires": []
+    },
+    {
+        "id": "0372cefb5e2ec968",
+        "type": "ui_button",
+        "z": "fa9f914901f79645",
+        "g": "dff0470b2ba97020",
+        "name": "",
+        "group": "8570be913d017562",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Restore TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "gray",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 170,
+        "y": 1220,
+        "wires": [
+            [
+                "e4475a4fd4eb47ea"
+            ]
+        ]
+    },
+    {
         "id": "9f2c4f1852402eb8",
         "type": "inject",
         "z": "f410f6aac9d1a3fc",
@@ -9565,7 +9756,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "9",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -9888,12 +10079,495 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 350,
         "y": 40,
         "wires": []
+    },
+    {
+        "id": "371b831295a65179",
+        "type": "link in",
+        "z": "791e8b1f84050e40",
+        "g": "b781cb3d6df38fed",
+        "name": "start backup",
+        "links": [
+            "40ea8ad5c0434e3d"
+        ],
+        "x": 165,
+        "y": 180,
+        "wires": [
+            [
+                "f2256e28de366878"
+            ]
+        ]
+    },
+    {
+        "id": "f2256e28de366878",
+        "type": "file in",
+        "z": "791e8b1f84050e40",
+        "g": "b781cb3d6df38fed",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 320,
+        "y": 180,
+        "wires": [
+            [
+                "f49c1d345cdfef57"
+            ]
+        ]
+    },
+    {
+        "id": "d4df0505fc0adfd0",
+        "type": "catch",
+        "z": "791e8b1f84050e40",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 220,
+        "y": 40,
+        "wires": [
+            [
+                "b3dced4dc3de5e25"
+            ]
+        ]
+    },
+    {
+        "id": "b3dced4dc3de5e25",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "name": "backup or restore flow error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "f64e7801aa071234",
+        "type": "function",
+        "z": "791e8b1f84050e40",
+        "g": "c5f739aac1d9e9a3",
+        "name": "set up tb client-side attributes post ",
+        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes`\n\nmsg.method = \"POST\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 220,
+        "wires": [
+            [
+                "02c5bc95c26b6024"
+            ]
+        ]
+    },
+    {
+        "id": "37bb791e1cfa7ffb",
+        "type": "http request",
+        "z": "791e8b1f84050e40",
+        "g": "c5f739aac1d9e9a3",
+        "name": "send client-side attributes",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 870,
+        "y": 340,
+        "wires": [
+            [
+                "9726f6154932eeed"
+            ]
+        ]
+    },
+    {
+        "id": "9726f6154932eeed",
+        "type": "debug",
+        "z": "791e8b1f84050e40",
+        "g": "c5f739aac1d9e9a3",
+        "name": "client-side attributes response",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "02c5bc95c26b6024",
+        "type": "delay",
+        "z": "791e8b1f84050e40",
+        "g": "c5f739aac1d9e9a3",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1000",
+        "nbRateUnits": "1",
+        "rateUnits": "minute",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 2,
+        "x": 810,
+        "y": 280,
+        "wires": [
+            [
+                "37bb791e1cfa7ffb"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "f49c1d345cdfef57",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "g": "b781cb3d6df38fed",
+        "name": "set up backup payload for TB",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.backup.frigate",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.backup.dateTime",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 220,
+        "wires": [
+            [
+                "f64e7801aa071234"
+            ]
+        ]
+    },
+    {
+        "id": "bd0b99f0ea3996bf",
+        "type": "link in",
+        "z": "791e8b1f84050e40",
+        "g": "b781cb3d6df38fed",
+        "name": "send device attributes",
+        "links": [
+            "8fa3692b8c3f14a5"
+        ],
+        "x": 475,
+        "y": 280,
+        "wires": [
+            [
+                "f64e7801aa071234"
+            ]
+        ]
+    },
+    {
+        "id": "4a62f39107d10a25",
+        "type": "change",
+        "z": "791e8b1f84050e40",
+        "name": "set frigate config directory flow.frigateConfigDir",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigateConfigDir",
+                "pt": "flow",
+                "to": "$globalContext('homeDir', 'config') & \"/code/frigate/config\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "38fd03504247825b",
+        "type": "inject",
+        "z": "791e8b1f84050e40",
+        "name": "inject after 5 sec",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 230,
+        "y": 100,
+        "wires": [
+            [
+                "4a62f39107d10a25"
+            ]
+        ]
+    },
+    {
+        "id": "56cafb11de5348b2",
+        "type": "http request",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "read config file from ThingsBoard",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 420,
+        "y": 560,
+        "wires": [
+            [
+                "7555653f37b1cd50"
+            ]
+        ]
+    },
+    {
+        "id": "9aa93ed98869015b",
+        "type": "function",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "set up tb client-side attributes for GET ",
+        "func": "let serverUrl = global.get(\"serverUrl\", \"config\")\nlet serverPort = global.get(\"serverPort\", \"config\")\nlet accessToken = global.get(\"accessToken\", \"config\")\nmsg.url = `${serverUrl}:${serverPort}/api/v1/${accessToken}/attributes?clientKeys=backup`\n\nmsg.method = \"GET\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 520,
+        "wires": [
+            [
+                "56cafb11de5348b2",
+                "4979b291119bce23"
+            ]
+        ]
+    },
+    {
+        "id": "25515211bb8cecb4",
+        "type": "http request",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "validate Frigate config, save and restart",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/api/config/save?save_option=restart",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "text/plain",
+                "valueValue": ""
+            }
+        ],
+        "x": 880,
+        "y": 600,
+        "wires": [
+            [
+                "64467a90df93e582"
+            ]
+        ]
+    },
+    {
+        "id": "64467a90df93e582",
+        "type": "switch",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "handle validation error",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "400",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 960,
+        "y": 640,
+        "wires": [
+            [
+                "5b7fe362e2e6b35d"
+            ]
+        ]
+    },
+    {
+        "id": "65a881b4715da5ef",
+        "type": "link in",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "start restore",
+        "links": [
+            "e4475a4fd4eb47ea"
+        ],
+        "x": 175,
+        "y": 520,
+        "wires": [
+            [
+                "9aa93ed98869015b"
+            ]
+        ]
+    },
+    {
+        "id": "7555653f37b1cd50",
+        "type": "json",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 630,
+        "y": 560,
+        "wires": [
+            [
+                "0d394a2d73d138d6"
+            ]
+        ]
+    },
+    {
+        "id": "0d394a2d73d138d6",
+        "type": "function",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "extract frigate config portion for validation",
+        "func": "let newMsg = {};\n\n//put the backed up YAML config into a JSON object to send to validate\nnewMsg.payload = msg.payload.client.backup.frigate;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 560,
+        "wires": [
+            [
+                "25515211bb8cecb4"
+            ]
+        ]
+    },
+    {
+        "id": "5b7fe362e2e6b35d",
+        "type": "ui_toast",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "Frigate Config Restore Validation Error",
+        "name": "show frigate validation error",
+        "x": 980,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "5743aab77af94bd2",
+        "type": "file",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "write backup config file before restore",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
+        "filenameType": "jsonata",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 470,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4979b291119bce23",
+        "type": "file in",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 380,
+        "y": 600,
+        "wires": [
+            [
+                "5743aab77af94bd2"
+            ]
+        ]
     }
 ]
