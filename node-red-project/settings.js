@@ -1,5 +1,6 @@
 /**
- * Node-RED Settings created at Tue, 06 Aug 2024 17:17:33 GMT
+ * Node-RED Settings, refer to documentation:
+ *    https://nodered.org/docs/user-guide/runtime/settings-file
  *
  * It can contain any valid JavaScript code that will get run when Node-RED
  * is started.
@@ -10,6 +11,10 @@
  * For more information about individual settings, refer to the documentation:
  *    https://nodered.org/docs/user-guide/runtime/configuration
  *
+ * Environment variables referenced by `process.env.ENV_VAR` can be found
+ *    in the associated `systemd` environment file installed by this script:
+ *    https://nodered.org/docs/getting-started/raspberrypi
+ * 
  * The settings are split into the following sections:
  *  - Flow File and User Directory Settings
  *  - Security
@@ -341,9 +346,9 @@ module.exports = {
    * Refer to the documentation for further options: https://nodered.org/docs/api/context/
    */
   contextStorage: {
-    default: "memoryOnly",
-    memoryOnly: { module: 'memory' },
-    config: { module: 'localfilesystem' }
+    default: {
+      module:"memory",
+    }
   },
 
   /** `global.keys()` returns a list of all properties set in global context.
