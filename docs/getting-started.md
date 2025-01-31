@@ -1,3 +1,7 @@
+---
+description: Start counting with the Traffic Monitor!
+---
+
 # Getting Started
 
 The traffic monitor requires the [Recommended Hardware](recommended-hardware.md) and [software installation](software-installation.md) before you can begin capturing roadway data.

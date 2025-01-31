@@ -10,9 +10,9 @@
 
 ## Configuration
 
-* [Traffic Monitor Configuration](configuration/traffic-monitor-configuration.md)
-* [Node-RED Config](configuration/node-red-config.md)
+* [Overview](configuration/overview.md)
 * [Frigate Config](configuration/frigate-config.md)
+* [Node-RED Config](configuration/node-red-config.md)
 
 ## Development
 
@@ -24,6 +24,8 @@
 * [Frequently Asked Questions](help-and-faq/frequently-asked-questions.md)
 * [Where can I get support?](help-and-faq/where-can-i-get-support.md)
 
-## Sensors and Payloads
+## Sensor Payloads
 
-* [Air Quality (AQ) Sensor](sensors-and-payloads/air-quality-aq-sensor.md)
+* [Events Payload](sensor-payloads/events-payload.md)
+* [OPS243 Radar Payload](sensor-payloads/ops243-radar-payload.md)
+* [Air Quality (AQ) Payload](sensor-payloads/air-quality-aq-payload.md)

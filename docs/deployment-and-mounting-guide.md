@@ -1,5 +1,5 @@
 ---
-description: Permanent and temporary mounting deployment suggestions
+description: Permanent and temporary physical placement suggestions.
 ---
 
 # Deployment and Mounting Guide
@@ -9,7 +9,7 @@ Deployment encompasses geographic location and bearing, physical hardware mounti
 ## Deployment and Mounting
 
 {% hint style="danger" %}
-Warning: Ensure compliance with all applicable laws and local regulations when installing, mounting, and deploying a traffic monitor, particularly in public spaces. Unauthorized surveillance can lead to legal consequences and infringement of privacy rights. Always consult with legal professionals or local authorities if you are unsure of the requirements. Information in this guide is for educational purposes, and you are responsible for adhering to applicable laws and consequences of the deployment and use of the traffic monitor.
+**Warning:** Ensure compliance with all applicable laws and local regulations when installing, mounting, and deploying a traffic monitor, particularly in public spaces. Unauthorized surveillance can lead to legal consequences and infringement of privacy rights. Always consult with legal professionals or local authorities if you are unsure of the requirements. Information in this guide is for educational purposes, and you are responsible for adhering to applicable laws and consequences of the deployment and use of the traffic monitor.
 
 Ensure you are mounting the traffic monitor in an approved area to comply with local regulations, and avoid attaching it to utility poles without proper authorization.
 {% endhint %}
@@ -50,7 +50,7 @@ This will be dependent on the hardware you have chosen to install:
 The Traffic Monitor will be expecting a number of [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and logic.  These need to manually designated, based on your deployment. &#x20;
 
 {% hint style="success" %}
-Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment. &#x20;
+Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment . &#x20;
 {% endhint %}
 
 * zone\_capture -&#x20;
@@ -61,6 +61,8 @@ Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/
 \[show image of zones properly configured]
 
 ### Define Masks
+
+Optional step for reducing false-positives, creating private areas, and refining your configuration.
 
 {% hint style="warning" %}
 Use masks sparingly. _Over-masking will make it more difficult for objects to be tracked._  See [Frigate masks](https://docs.frigate.video/configuration/masks) for more detailed explanation of how masks work and how to use them.

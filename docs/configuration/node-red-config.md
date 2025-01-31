@@ -46,7 +46,6 @@ NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
 # database locations, relative to user directory defined in settings.js
 #  will be relative path to store SQLite databases
 TM_DATABASE_PATH_TMDB='code/nodered/db/tmdb.sqlite'
-TM_DATABASE_PATH_RADAR='code/nodered/db/radar.sqlite'
 
 # mqtt broker for incoming Frigate events 
 #  Settings below set up the aedes broker node
@@ -58,7 +57,11 @@ TM_MQTT_BROKER_USERNAME=''
 TM_MQTT_BROKER_PASSWORD=''
 
 # defines system USB serial port for radar
-TM_RADAR_SERIAL_PORT='/dev/ttyACM0'
+# run `ls -lat /sys/class/tty/ttyACM*` to list devices
+TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
+TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
+TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
+TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
 ```
 
 ## Config File
@@ -91,43 +94,56 @@ It is _not necessary_ to copy this full configuration file. Default values are s
     port: 443
     # Optional: API key for device 
     # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
-    api_key:
+    access_token:
     # Optional: future use for auto-provisioning (RPiSN)
     # provisionDeviceKey: 
     # Optional: future use for auto-provisioning (manual)
     # provisionDeviceSecret: 
 
 # Optional: deployment location details
-# Note: May be used to determine device placement on maps when no GPS is present
-# NOTE: Can be overridden at the camera level
+# Note: May be used to determine device placement on maps
+# NOTE: Can be overridden at the sensors level, top-level values will cascade down
 deployment:
-    # gps_enabled: False
-    # Optional: Latitude in decimal degrees format; e.g. 45.5225
     # NOTE: for address-level accuracy, recommend at least 4 digits after the decimal
+    # Optional: Latitude in decimal degrees format; e.g. 45.5225
     lat:
     # Optional: Longitude in decimal degrees format; e.g. -122.6919
-    # NOTE: for address-level accuracy, recommend at least 4 digits after the decimal
     lon:
     # Optional: cardinal (N, S, E, W) or ordinal (NE, NW, SE, etc.) direction the camera/radar is facing 
-    # Note: For bearing, match the roadway direction for traffic
+    # Note: For bearing, match the roadway traffic direction
     bearing:
-    # Optional: may be used as an alternative to or combination with lat/lon
-    street_address:
-    city:
-    state:
 
-# Optional: if used, must match the Frigate camera name(s)
-# if not set, will use all cameras available reported by Frigate
-cameras:
-    # camera name must match Frigate configuration camera names
-    picam_264:
-        # Optional Enable/disable the camera (default: shown below).
-        # if disabled, any Frigate events for specified camera will be ignored
-        # Note: this will not impact Frigate's system
-        enabled: True
-        # Optional: define if radar readings are attached to camera (default: shown below)
-        # camera and radar direction and field of view (FOV) should match
-        radar_camera: False
+sensors:
+<strong>    # Optional: if used, must match the Frigate camera name(s)
+</strong>    # if not set, no cameras will be used
+    cameras:
+        # camera name must match Frigate configuration camera names
+        picam_h264:
+            # Optional Enable/disable the camera (default: shown below).
+            # if disabled, any Frigate events for specified camera will be ignored
+            # Note: this will not impact Frigate's system
+            enabled: False
+            # Optional: define the radar co-located with camera to associate speeds
+            # camera and radar direction and field of view (FOV) should match
+            # Note: name needs to match one defined in `radars` section
+            # Note: A single radar may be attached to multiple cameras
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+
+    # Optional: used to specify what radars are enabled for speed/direction and detection
+    radars:
+        # Note: Names must match those defined in the node-red environment file
+        # Names are used to associate readings with cameras and other sensors
+        TM_RADAR_SERIAL_PORT_00:
+            # Optional: Enable/disable the radar (default: shown below).
+            enabled: False
+
+    # Optional: used to specify air quality monitor sensors
+    # Note: air quality configuration file is separate from the node-red config, based on the aq device
+    aq_monitor:
+        # Optional: Enable/disable the AQ sensor payloads (default: shown below).
+        enabled: False
+        # mqtt topic to subscribe for incoming telemetry from sensors
+        mqtt_topic_incoming: aq/readings
 
 time:
     # Optional: Set a timezone to use in the UI (default: use browser local time)

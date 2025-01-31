@@ -1,5 +1,5 @@
 ---
-description: Software installation for the Traffic Monitor
+description: Software installation for the Traffic Monitor.
 ---
 
 # Software Installation
