@@ -415,7 +415,7 @@
             "83de55ae8c9f54c1"
         ],
         "x": 14,
-        "y": 2051.5,
+        "y": 2571.5,
         "w": 1092,
         "h": 209.5
     },
@@ -476,7 +476,9 @@
             "9beaf948294acd98",
             "2b82d4b028657058",
             "099df29d699f405e",
-            "486556a1e7fce8cf"
+            "486556a1e7fce8cf",
+            "11b875e91b3d32a6",
+            "9b0aebdc599ea4cd"
         ],
         "x": 14,
         "y": 139,
@@ -991,6 +993,71 @@
         "h": 622
     },
     {
+        "id": "23636f4163fa6e3b",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "backup and restore",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4a62f39107d10a25",
+            "38fd03504247825b",
+            "b781cb3d6df38fed",
+            "a38a90c36a0abfc3",
+            "0372cefb5e2ec968",
+            "cad1724850f8df3d",
+            "fb62ca91f138ab87"
+        ],
+        "x": 14,
+        "y": 1819,
+        "w": 1398,
+        "h": 448
+    },
+    {
+        "id": "b781cb3d6df38fed",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "backup TM configuration to Thingsboard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f2256e28de366878",
+            "f49c1d345cdfef57",
+            "7c96d66a8330a4fc"
+        ],
+        "x": 514,
+        "y": 1899,
+        "w": 412,
+        "h": 122
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d",
+            "5743aab77af94bd2",
+            "4979b291119bce23"
+        ],
+        "x": 514,
+        "y": 2039,
+        "w": 872,
+        "h": 202
+    },
+    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -1334,7 +1401,7 @@
         "type": "ui_group",
         "name": "WiFi Settings",
         "tab": "0fd9a947334c7d0f",
-        "order": 3,
+        "order": 4,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -1345,7 +1412,7 @@
         "type": "ui_group",
         "name": "Time Set",
         "tab": "0fd9a947334c7d0f",
-        "order": 2,
+        "order": 3,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -1430,6 +1497,17 @@
         "out": "char",
         "addchar": "",
         "responsetimeout": "500"
+    },
+    {
+        "id": "941fb260d6cfb5a2",
+        "type": "ui_group",
+        "name": "Backup & Restore",
+        "tab": "0fd9a947334c7d0f",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
     },
     {
         "id": "a328d3aa7640102a",
@@ -5337,9 +5415,10 @@
         "type": "link in",
         "z": "f7932be9acc7391c",
         "g": "fe1b9f6f9d89d353",
-        "name": "system_metrics link in",
+        "name": "tb attributes link in",
         "links": [
-            "486556a1e7fce8cf"
+            "486556a1e7fce8cf",
+            "7c96d66a8330a4fc"
         ],
         "x": 155,
         "y": 1020,
@@ -8377,7 +8456,9 @@
         "x": 270,
         "y": 700,
         "wires": [
-            []
+            [
+                "11b875e91b3d32a6"
+            ]
         ],
         "info": "// nrlint function-eslint:off\n"
     },
@@ -9479,7 +9560,7 @@
         "splitLayout": "",
         "className": "",
         "x": 480,
-        "y": 2100,
+        "y": 2620,
         "wires": [
             [
                 "2d36fe127efba457"
@@ -9495,7 +9576,7 @@
         "name": "",
         "events": "all",
         "x": 100,
-        "y": 2100,
+        "y": 2620,
         "wires": [
             [
                 "dbc594623a97700f"
@@ -9517,7 +9598,7 @@
         "finalize": "",
         "libs": [],
         "x": 260,
-        "y": 2100,
+        "y": 2620,
         "wires": [
             []
         ]
@@ -9537,7 +9618,7 @@
         "oldrc": false,
         "name": "",
         "x": 860,
-        "y": 2100,
+        "y": 2620,
         "wires": [
             [],
             [],
@@ -9559,7 +9640,7 @@
         "oldrc": false,
         "name": "",
         "x": 860,
-        "y": 2160,
+        "y": 2680,
         "wires": [
             [],
             [],
@@ -9575,7 +9656,7 @@
         "name": "1) create network connect 2) modify for autoconnect yes",
         "info": "",
         "x": 840,
-        "y": 2220,
+        "y": 2740,
         "wires": []
     },
     {
@@ -10178,6 +10259,432 @@
         ],
         "x": 1285,
         "y": 360,
+        "wires": []
+    },
+    {
+        "id": "0372cefb5e2ec968",
+        "type": "ui_button",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "",
+        "group": "941fb260d6cfb5a2",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Restore TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 150,
+        "y": 1980,
+        "wires": [
+            [
+                "56cafb11de5348b2"
+            ]
+        ]
+    },
+    {
+        "id": "cad1724850f8df3d",
+        "type": "ui_button",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "",
+        "group": "941fb260d6cfb5a2",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Backup TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 150,
+        "y": 1940,
+        "wires": [
+            [
+                "f2256e28de366878"
+            ]
+        ]
+    },
+    {
+        "id": "4a62f39107d10a25",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "set frigate config directory flow.frigateConfigDir",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigateConfigDir",
+                "pt": "flow",
+                "to": "$globalContext('deviceAttributes.homeDir', 'config') & \"/code/frigate/config\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 520,
+        "y": 1860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "38fd03504247825b",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "name": "inject after 5 sec",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 150,
+        "y": 1860,
+        "wires": [
+            [
+                "4a62f39107d10a25"
+            ]
+        ]
+    },
+    {
+        "id": "f2256e28de366878",
+        "type": "file in",
+        "z": "05fcb02c571dcfee",
+        "g": "b781cb3d6df38fed",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 640,
+        "y": 1940,
+        "wires": [
+            [
+                "f49c1d345cdfef57"
+            ]
+        ]
+    },
+    {
+        "id": "f49c1d345cdfef57",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "b781cb3d6df38fed",
+        "name": "set up backup payload for TB",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.backup.frigate",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.backup.dateTime",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 1980,
+        "wires": [
+            [
+                "7c96d66a8330a4fc"
+            ]
+        ]
+    },
+    {
+        "id": "56cafb11de5348b2",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "read config file from ThingsBoard",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/attributes?clientKeys=backup",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 680,
+        "y": 2080,
+        "wires": [
+            [
+                "7555653f37b1cd50"
+            ]
+        ]
+    },
+    {
+        "id": "25515211bb8cecb4",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "validate Frigate config, save and restart",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/api/config/save?save_option=restart",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "text/plain",
+                "valueValue": ""
+            }
+        ],
+        "x": 1140,
+        "y": 2120,
+        "wires": [
+            [
+                "64467a90df93e582"
+            ]
+        ]
+    },
+    {
+        "id": "64467a90df93e582",
+        "type": "switch",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "handle validation error",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "400",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1220,
+        "y": 2160,
+        "wires": [
+            [
+                "5b7fe362e2e6b35d"
+            ]
+        ]
+    },
+    {
+        "id": "7555653f37b1cd50",
+        "type": "json",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 890,
+        "y": 2080,
+        "wires": [
+            [
+                "0d394a2d73d138d6"
+            ]
+        ]
+    },
+    {
+        "id": "0d394a2d73d138d6",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "extract frigate config portion for validation",
+        "func": "let newMsg = {};\n\n//put the backed up YAML config into a JSON object to send to validate\nnewMsg.payload = msg.payload.client.backup.frigate;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 2080,
+        "wires": [
+            [
+                "25515211bb8cecb4"
+            ]
+        ]
+    },
+    {
+        "id": "5b7fe362e2e6b35d",
+        "type": "ui_toast",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "Frigate Config Restore Validation Error",
+        "name": "show frigate validation error",
+        "x": 1240,
+        "y": 2200,
+        "wires": []
+    },
+    {
+        "id": "5743aab77af94bd2",
+        "type": "file",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "write backup config file before restore",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
+        "filenameType": "jsonata",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 730,
+        "y": 2160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4979b291119bce23",
+        "type": "file in",
+        "z": "05fcb02c571dcfee",
+        "g": "a38a90c36a0abfc3",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 640,
+        "y": 2120,
+        "wires": [
+            [
+                "5743aab77af94bd2"
+            ]
+        ]
+    },
+    {
+        "id": "7c96d66a8330a4fc",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "b781cb3d6df38fed",
+        "name": "backup link out",
+        "mode": "link",
+        "links": [
+            "d367cb76b239682f"
+        ],
+        "x": 885,
+        "y": 1980,
+        "wires": []
+    },
+    {
+        "id": "fb62ca91f138ab87",
+        "type": "ui_template",
+        "z": "05fcb02c571dcfee",
+        "g": "23636f4163fa6e3b",
+        "group": "941fb260d6cfb5a2",
+        "name": "backup and restore instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<p>Backup and Restore functionality allow you to save settings to ThingsBoard as client-side attributes for returning your traffic monitor to the saved configuration.</p>\n<p>Backup and Restore works for the following configs:</p>\n<ul>\n    <li>Frigate config.yml</li>\n</ul>\n<p>Only one (1) backup is valid at a time.</p>",
+        "storeOutMessages": true,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 170,
+        "y": 1900,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "11b875e91b3d32a6",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "deviceAttributes.homeDir",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 600,
+        "y": 700,
+        "wires": [
+            [
+                "9b0aebdc599ea4cd"
+            ]
+        ]
+    },
+    {
+        "id": "9b0aebdc599ea4cd",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "homeDir",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 840,
+        "y": 700,
         "wires": []
     },
     {
