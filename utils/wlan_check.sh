@@ -52,11 +52,11 @@ _repeat_command() {
 		if [ $? -ne 0 ]
 		then
 			_logallways "ERROR on iteration $((i + 1)): $OUTPUT"
-			ERROR=true
 		else
 			return 0
 		fi
 	done
+	ERROR=true
 }
 
 
