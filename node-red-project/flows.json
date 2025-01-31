@@ -618,28 +618,6 @@
         "h": 162
     },
     {
-        "id": "791a8c44b7f98d1b",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "4bbb9e24b5507a00",
-            "8004ba7ad5a9bd83"
-        ],
-        "x": 48,
-        "y": 233,
-        "w": 1024,
-        "h": 854
-    },
-    {
         "id": "dea1b8828f8e501f",
         "type": "group",
         "z": "1c71c8f26f5b7b19",
@@ -779,28 +757,6 @@
         "h": 282
     },
     {
-        "id": "4bbb9e24b5507a00",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "g": "791a8c44b7f98d1b",
-        "name": "read config file",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "a328d3aa7640102a",
-            "7e988d24a7912d71",
-            "ecc317fcd059b4c3",
-            "b0252bd49dc8e61d",
-            "94136e5a6f092bb6",
-            "5ffb7c9c38b8c5b0"
-        ],
-        "x": 74,
-        "y": 259,
-        "w": 732,
-        "h": 162
-    },
-    {
         "id": "b334a2375eb8cb42",
         "type": "group",
         "z": "f7932be9acc7391c",
@@ -870,7 +826,7 @@
         "h": 122
     },
     {
-        "id": "dff0470b2ba97020",
+        "id": "99dfff63ac837bc8",
         "type": "group",
         "z": "f7932be9acc7391c",
         "g": "2f27e270200485b9",
@@ -879,36 +835,8 @@
             "label": true
         },
         "nodes": [
-            "cad1724850f8df3d",
-            "40ea8ad5c0434e3d",
-            "12a8f585b2824848",
-            "e4475a4fd4eb47ea",
-            "0372cefb5e2ec968"
-        ],
-        "x": 34,
-        "y": 1099,
-        "w": 462,
-        "h": 162
-    },
-    {
-        "id": "a38a90c36a0abfc3",
-        "type": "group",
-        "z": "791e8b1f84050e40",
-        "name": "restore TM Frigate config from ThingsBoard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "56cafb11de5348b2",
-            "9aa93ed98869015b",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "65a881b4715da5ef",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d",
-            "5743aab77af94bd2",
-            "4979b291119bce23"
+            "521115ddd5741eea",
+            "24c1b5f3bff3834c"
         ],
         "x": 134,
         "y": 819,
@@ -985,42 +913,6 @@
         "h": 342
     },
     {
-        "id": "8004ba7ad5a9bd83",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "g": "791a8c44b7f98d1b",
-        "name": "deployment checks and setup",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "8a6d4593a661c3df",
-            "ff28acdecfc4ebb1",
-            "751ff2049a663e9c",
-            "3cdbccf5dbcb1c4e",
-            "f6ecdd18d8e03f91",
-            "f9a2f4f97e3ba1cf",
-            "928d7cafdc1ab7fa",
-            "8f4e9d81288d5abd",
-            "689b64c16a889e0a",
-            "bc398ad5de3bd112",
-            "6d2f607b324415b4",
-            "24efdc7f1231f7f0",
-            "1ba33a74f2d3a680",
-            "17455485af2d8cfc",
-            "05c37560dd57ea90",
-            "ac8b2de05ec27001",
-            "696c3a7b0b83f7b5",
-            "ba3b41519066f03a",
-            "f111096594207360",
-            "c25adb99d55eb890"
-        ],
-        "x": 74,
-        "y": 439,
-        "w": 972,
-        "h": 622
-    },
-    {
         "id": "23636f4163fa6e3b",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -1084,6 +976,86 @@
         "y": 2039,
         "w": 872,
         "h": 202
+    },
+    {
+        "id": "791a8c44b7f98d1b",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "4bbb9e24b5507a00",
+            "8004ba7ad5a9bd83"
+        ],
+        "x": 48,
+        "y": 233,
+        "w": 1024,
+        "h": 854
+    },
+    {
+        "id": "4bbb9e24b5507a00",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "791a8c44b7f98d1b",
+        "name": "read config file",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a328d3aa7640102a",
+            "7e988d24a7912d71",
+            "ecc317fcd059b4c3",
+            "b0252bd49dc8e61d",
+            "94136e5a6f092bb6",
+            "5ffb7c9c38b8c5b0"
+        ],
+        "x": 74,
+        "y": 259,
+        "w": 732,
+        "h": 162
+    },
+    {
+        "id": "8004ba7ad5a9bd83",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "791a8c44b7f98d1b",
+        "name": "deployment checks and setup",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a6d4593a661c3df",
+            "ff28acdecfc4ebb1",
+            "751ff2049a663e9c",
+            "3cdbccf5dbcb1c4e",
+            "f6ecdd18d8e03f91",
+            "f9a2f4f97e3ba1cf",
+            "928d7cafdc1ab7fa",
+            "8f4e9d81288d5abd",
+            "689b64c16a889e0a",
+            "bc398ad5de3bd112",
+            "6d2f607b324415b4",
+            "24efdc7f1231f7f0",
+            "1ba33a74f2d3a680",
+            "17455485af2d8cfc",
+            "05c37560dd57ea90",
+            "ac8b2de05ec27001",
+            "696c3a7b0b83f7b5",
+            "ba3b41519066f03a",
+            "f111096594207360",
+            "c25adb99d55eb890"
+        ],
+        "x": 74,
+        "y": 439,
+        "w": 972,
+        "h": 622
     },
     {
         "id": "05a58d9ee463c696",
@@ -1538,6 +1510,102 @@
         "className": ""
     },
     {
+        "id": "9d0f912cc84546dd",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "name": "catch - init error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 300,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "63b2b42491150896",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "name": "catch - init",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "9d0f912cc84546dd"
+            ]
+        ]
+    },
+    {
+        "id": "22a2431d179ee8db",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "9e0b1edd49eb4244",
+        "name": "debug: Broker status events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "e0525a29b485694f",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "9e0b1edd49eb4244",
+        "name": "debug: broker publish events",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "9ca3b6ed1a6334c0",
+        "type": "aedes broker",
+        "z": "3dae026ab340962a",
+        "g": "9e0b1edd49eb4244",
+        "name": "mqtt-broker-local",
+        "mqtt_port": "${TM_MQTT_BROKER_PORT}",
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "certname": "",
+        "keyname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 180,
+        "y": 140,
+        "wires": [
+            [
+                "22a2431d179ee8db"
+            ],
+            [
+                "e0525a29b485694f"
+            ]
+        ]
+    },
+    {
         "id": "a328d3aa7640102a",
         "type": "yaml",
         "z": "3dae026ab340962a",
@@ -1643,38 +1711,6 @@
         ]
     },
     {
-        "id": "9d0f912cc84546dd",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "name": "catch - init error",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 300,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "63b2b42491150896",
-        "type": "catch",
-        "z": "3dae026ab340962a",
-        "name": "catch - init",
-        "scope": null,
-        "uncaught": false,
-        "x": 80,
-        "y": 40,
-        "wires": [
-            [
-                "9d0f912cc84546dd"
-            ]
-        ]
-    },
-    {
         "id": "5ffb7c9c38b8c5b0",
         "type": "watch",
         "z": "3dae026ab340962a",
@@ -1688,70 +1724,6 @@
         "wires": [
             [
                 "7e988d24a7912d71"
-            ]
-        ]
-    },
-    {
-        "id": "22a2431d179ee8db",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "9e0b1edd49eb4244",
-        "name": "debug: Broker status events",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 420,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "e0525a29b485694f",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "9e0b1edd49eb4244",
-        "name": "debug: broker publish events",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 420,
-        "y": 160,
-        "wires": []
-    },
-    {
-        "id": "9ca3b6ed1a6334c0",
-        "type": "aedes broker",
-        "z": "3dae026ab340962a",
-        "g": "9e0b1edd49eb4244",
-        "name": "mqtt-broker-local",
-        "mqtt_port": "${TM_MQTT_BROKER_PORT}",
-        "mqtt_ws_bind": "port",
-        "mqtt_ws_port": "",
-        "mqtt_ws_path": "",
-        "cert": "",
-        "key": "",
-        "certname": "",
-        "keyname": "",
-        "persistence_bind": "memory",
-        "dburl": "",
-        "usetls": false,
-        "x": 180,
-        "y": 140,
-        "wires": [
-            [
-                "22a2431d179ee8db"
-            ],
-            [
-                "e0525a29b485694f"
             ]
         ]
     },
@@ -2275,7 +2247,7 @@
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
         "name": "catch - flow-radar",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -10847,7 +10819,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "8",
+        "count": "9",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -11171,8 +11143,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
         "x": 350,
