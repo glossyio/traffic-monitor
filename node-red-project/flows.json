@@ -857,6 +857,31 @@
         "h": 162
     },
     {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "791e8b1f84050e40",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "9aa93ed98869015b",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "65a881b4715da5ef",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d",
+            "5743aab77af94bd2",
+            "4979b291119bce23"
+        ],
+        "x": 134,
+        "y": 479,
+        "w": 992,
+        "h": 242
+    },
+    {
         "id": "0e1614cf2e5f9942",
         "type": "group",
         "z": "28627559bebdc324",
@@ -974,29 +999,6 @@
         "x": 634,
         "y": 179,
         "w": 432,
-        "h": 242
-    },
-    {
-        "id": "a38a90c36a0abfc3",
-        "type": "group",
-        "z": "791e8b1f84050e40",
-        "name": "restore TM Frigate config from ThingsBoard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "56cafb11de5348b2",
-            "9aa93ed98869015b",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "65a881b4715da5ef",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d"
-        ],
-        "x": 134,
-        "y": 479,
-        "w": 992,
         "h": 242
     },
     {
@@ -9587,7 +9589,6 @@
         "name": "link out 2",
         "mode": "link",
         "links": [
-            "e9545b23f4e4cd35",
             "65a881b4715da5ef"
         ],
         "x": 455,
@@ -10335,14 +10336,14 @@
         "id": "38fd03504247825b",
         "type": "inject",
         "z": "791e8b1f84050e40",
-        "name": "init-flow-frigate-config-path",
+        "name": "inject after 5 sec",
         "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
         "topic": "",
-        "x": 260,
+        "x": 230,
         "y": 100,
         "wires": [
             [
@@ -10392,7 +10393,8 @@
         "y": 520,
         "wires": [
             [
-                "56cafb11de5348b2"
+                "56cafb11de5348b2",
+                "4979b291119bce23"
             ]
         ]
     },
@@ -10528,5 +10530,44 @@
         "x": 980,
         "y": 680,
         "wires": []
+    },
+    {
+        "id": "5743aab77af94bd2",
+        "type": "file",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "write backup config file before restore",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
+        "filenameType": "jsonata",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 470,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4979b291119bce23",
+        "type": "file in",
+        "z": "791e8b1f84050e40",
+        "g": "a38a90c36a0abfc3",
+        "name": "read Frigate config file",
+        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
+        "filenameType": "jsonata",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 380,
+        "y": 600,
+        "wires": [
+            [
+                "5743aab77af94bd2"
+            ]
+        ]
     }
 ]
