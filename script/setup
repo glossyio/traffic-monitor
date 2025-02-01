@@ -81,8 +81,10 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 #rpicam-vid settings
 # rpicam-vid --list-cameras for modes available
 
+# configure NetworkManager to turn off wifi power management
+sudo cp utils/z-wifi-powersave-off.conf /etc/NetworkManager/conf.d/
+
 ##-- set up wifi reconnect script
-sudo iwconfig wlan0 power off   #turn off wlan0 power management immediately
 mkdir -p ~/code/utils
 cp -p utils/wlan_check.sh ~/code/utils
 chmod +x ~/code/utils/wlan_check.sh
