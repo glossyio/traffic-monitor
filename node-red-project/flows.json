@@ -618,28 +618,6 @@
         "h": 162
     },
     {
-        "id": "791a8c44b7f98d1b",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "4bbb9e24b5507a00",
-            "8004ba7ad5a9bd83"
-        ],
-        "x": 48,
-        "y": 233,
-        "w": 1024,
-        "h": 854
-    },
-    {
         "id": "dea1b8828f8e501f",
         "type": "group",
         "z": "1c71c8f26f5b7b19",
@@ -779,26 +757,48 @@
         "h": 282
     },
     {
-        "id": "4bbb9e24b5507a00",
+        "id": "23636f4163fa6e3b",
         "type": "group",
-        "z": "3dae026ab340962a",
-        "g": "791a8c44b7f98d1b",
-        "name": "read config file",
+        "z": "05fcb02c571dcfee",
+        "name": "backup and restore",
         "style": {
             "label": true
         },
         "nodes": [
-            "a328d3aa7640102a",
-            "7e988d24a7912d71",
-            "ecc317fcd059b4c3",
-            "b0252bd49dc8e61d",
-            "94136e5a6f092bb6",
-            "5ffb7c9c38b8c5b0"
+            "4a62f39107d10a25",
+            "38fd03504247825b",
+            "b781cb3d6df38fed",
+            "a38a90c36a0abfc3",
+            "0372cefb5e2ec968",
+            "cad1724850f8df3d",
+            "fb62ca91f138ab87"
         ],
-        "x": 74,
-        "y": 259,
-        "w": 732,
-        "h": 162
+        "x": 14,
+        "y": 1819,
+        "w": 1398,
+        "h": 448
+    },
+    {
+        "id": "791a8c44b7f98d1b",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "4bbb9e24b5507a00",
+            "8004ba7ad5a9bd83"
+        ],
+        "x": 48,
+        "y": 233,
+        "w": 1024,
+        "h": 854
     },
     {
         "id": "b334a2375eb8cb42",
@@ -870,7 +870,7 @@
         "h": 122
     },
     {
-        "id": "dff0470b2ba97020",
+        "id": "99dfff63ac837bc8",
         "type": "group",
         "z": "f7932be9acc7391c",
         "g": "2f27e270200485b9",
@@ -879,36 +879,8 @@
             "label": true
         },
         "nodes": [
-            "cad1724850f8df3d",
-            "40ea8ad5c0434e3d",
-            "12a8f585b2824848",
-            "e4475a4fd4eb47ea",
-            "0372cefb5e2ec968"
-        ],
-        "x": 34,
-        "y": 1099,
-        "w": 462,
-        "h": 162
-    },
-    {
-        "id": "a38a90c36a0abfc3",
-        "type": "group",
-        "z": "791e8b1f84050e40",
-        "name": "restore TM Frigate config from ThingsBoard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "56cafb11de5348b2",
-            "9aa93ed98869015b",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "65a881b4715da5ef",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d",
-            "5743aab77af94bd2",
-            "4979b291119bce23"
+            "521115ddd5741eea",
+            "24c1b5f3bff3834c"
         ],
         "x": 134,
         "y": 819,
@@ -985,64 +957,6 @@
         "h": 342
     },
     {
-        "id": "8004ba7ad5a9bd83",
-        "type": "group",
-        "z": "3dae026ab340962a",
-        "g": "791a8c44b7f98d1b",
-        "name": "deployment checks and setup",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "8a6d4593a661c3df",
-            "ff28acdecfc4ebb1",
-            "751ff2049a663e9c",
-            "3cdbccf5dbcb1c4e",
-            "f6ecdd18d8e03f91",
-            "f9a2f4f97e3ba1cf",
-            "928d7cafdc1ab7fa",
-            "8f4e9d81288d5abd",
-            "689b64c16a889e0a",
-            "bc398ad5de3bd112",
-            "6d2f607b324415b4",
-            "24efdc7f1231f7f0",
-            "1ba33a74f2d3a680",
-            "17455485af2d8cfc",
-            "05c37560dd57ea90",
-            "ac8b2de05ec27001",
-            "696c3a7b0b83f7b5",
-            "ba3b41519066f03a",
-            "f111096594207360",
-            "c25adb99d55eb890"
-        ],
-        "x": 74,
-        "y": 439,
-        "w": 972,
-        "h": 622
-    },
-    {
-        "id": "23636f4163fa6e3b",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "backup and restore",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "4a62f39107d10a25",
-            "38fd03504247825b",
-            "b781cb3d6df38fed",
-            "a38a90c36a0abfc3",
-            "0372cefb5e2ec968",
-            "cad1724850f8df3d",
-            "fb62ca91f138ab87"
-        ],
-        "x": 14,
-        "y": 1819,
-        "w": 1398,
-        "h": 448
-    },
-    {
         "id": "b781cb3d6df38fed",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -1084,6 +998,64 @@
         "y": 2039,
         "w": 872,
         "h": 202
+    },
+    {
+        "id": "4bbb9e24b5507a00",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "791a8c44b7f98d1b",
+        "name": "read config file",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a328d3aa7640102a",
+            "7e988d24a7912d71",
+            "ecc317fcd059b4c3",
+            "b0252bd49dc8e61d",
+            "94136e5a6f092bb6",
+            "5ffb7c9c38b8c5b0"
+        ],
+        "x": 74,
+        "y": 259,
+        "w": 732,
+        "h": 162
+    },
+    {
+        "id": "8004ba7ad5a9bd83",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "791a8c44b7f98d1b",
+        "name": "deployment checks and setup",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a6d4593a661c3df",
+            "ff28acdecfc4ebb1",
+            "751ff2049a663e9c",
+            "3cdbccf5dbcb1c4e",
+            "f6ecdd18d8e03f91",
+            "f9a2f4f97e3ba1cf",
+            "928d7cafdc1ab7fa",
+            "8f4e9d81288d5abd",
+            "689b64c16a889e0a",
+            "bc398ad5de3bd112",
+            "6d2f607b324415b4",
+            "24efdc7f1231f7f0",
+            "1ba33a74f2d3a680",
+            "17455485af2d8cfc",
+            "05c37560dd57ea90",
+            "ac8b2de05ec27001",
+            "696c3a7b0b83f7b5",
+            "ba3b41519066f03a",
+            "f111096594207360",
+            "c25adb99d55eb890"
+        ],
+        "x": 74,
+        "y": 439,
+        "w": 972,
+        "h": 622
     },
     {
         "id": "05a58d9ee463c696",
@@ -1538,111 +1510,6 @@
         "className": ""
     },
     {
-        "id": "a328d3aa7640102a",
-        "type": "yaml",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "property": "payload",
-        "name": "",
-        "x": 610,
-        "y": 300,
-        "wires": [
-            [
-                "94136e5a6f092bb6"
-            ]
-        ]
-    },
-    {
-        "id": "7e988d24a7912d71",
-        "type": "file in",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "name": "",
-        "filename": ".node-red/config.yml",
-        "filenameType": "str",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 440,
-        "y": 300,
-        "wires": [
-            [
-                "a328d3aa7640102a"
-            ]
-        ]
-    },
-    {
-        "id": "ecc317fcd059b4c3",
-        "type": "inject",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 170,
-        "y": 300,
-        "wires": [
-            [
-                "7e988d24a7912d71"
-            ]
-        ]
-    },
-    {
-        "id": "b0252bd49dc8e61d",
-        "type": "change",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::config",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 700,
-        "y": 380,
-        "wires": [
-            [
-                "ac8b2de05ec27001"
-            ]
-        ]
-    },
-    {
-        "id": "94136e5a6f092bb6",
-        "type": "function",
-        "z": "3dae026ab340962a",
-        "g": "4bbb9e24b5507a00",
-        "name": "init config defaults",
-        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? \"\" : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? \"\" : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? \"\" : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (typeof msg.payload.deployment.lat !== \"undefined\") {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (typeof msg.payload.deployment.lon !== \"undefined\") {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (typeof msg.payload.deployment.bearing !== \"undefined\") {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 670,
-        "y": 340,
-        "wires": [
-            [
-                "b0252bd49dc8e61d"
-            ]
-        ]
-    },
-    {
         "id": "9d0f912cc84546dd",
         "type": "debug",
         "z": "3dae026ab340962a",
@@ -1671,23 +1538,6 @@
         "wires": [
             [
                 "9d0f912cc84546dd"
-            ]
-        ]
-    },
-    {
-        "id": "5ffb7c9c38b8c5b0",
-        "type": "watch",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "4bbb9e24b5507a00",
-        "name": "",
-        "files": ".node-red/config.yml",
-        "recursive": "",
-        "x": 210,
-        "y": 340,
-        "wires": [
-            [
-                "7e988d24a7912d71"
             ]
         ]
     },
@@ -1752,6 +1602,128 @@
             ],
             [
                 "e0525a29b485694f"
+            ]
+        ]
+    },
+    {
+        "id": "a328d3aa7640102a",
+        "type": "yaml",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "property": "payload",
+        "name": "",
+        "x": 610,
+        "y": 300,
+        "wires": [
+            [
+                "94136e5a6f092bb6"
+            ]
+        ]
+    },
+    {
+        "id": "7e988d24a7912d71",
+        "type": "file in",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "",
+        "filename": ".node-red/config.yml",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 440,
+        "y": 300,
+        "wires": [
+            [
+                "a328d3aa7640102a"
+            ]
+        ]
+    },
+    {
+        "id": "ecc317fcd059b4c3",
+        "type": "inject",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 170,
+        "y": 300,
+        "wires": [
+            [
+                "7e988d24a7912d71"
+            ]
+        ]
+    },
+    {
+        "id": "b0252bd49dc8e61d",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "config",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 380,
+        "wires": [
+            [
+                "ac8b2de05ec27001"
+            ]
+        ]
+    },
+    {
+        "id": "94136e5a6f092bb6",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "init config defaults",
+        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 340,
+        "wires": [
+            [
+                "b0252bd49dc8e61d"
+            ]
+        ]
+    },
+    {
+        "id": "5ffb7c9c38b8c5b0",
+        "type": "watch",
+        "z": "3dae026ab340962a",
+        "d": true,
+        "g": "4bbb9e24b5507a00",
+        "name": "",
+        "files": ".node-red/config.yml",
+        "recursive": "",
+        "x": 210,
+        "y": 340,
+        "wires": [
+            [
+                "7e988d24a7912d71"
             ]
         ]
     },
@@ -2275,7 +2247,7 @@
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
         "name": "catch - flow-radar",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3301,7 +3273,7 @@
                 "t": "set",
                 "p": "payload.deployment_id",
                 "pt": "msg",
-                "to": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment.id",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment.id",
                 "tot": "global"
             }
         ],
@@ -3396,7 +3368,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_01.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3460,7 +3432,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_02.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3524,7 +3496,7 @@
                 "p": "payload.deployment_id",
                 "pt": "msg",
                 "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_03.deployment.id",
-                "tot": "str"
+                "tot": "global"
             }
         ],
         "action": "",
@@ -3637,7 +3609,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3666,7 +3638,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_01.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3695,7 +3667,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_02.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -3724,7 +3696,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "name": "enabled?",
-        "property": "#:(config)::config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
+        "property": "config.sensors.radars.TM_RADAR_SERIAL_PORT_03.enabled",
         "propertyType": "global",
         "rules": [
             {
