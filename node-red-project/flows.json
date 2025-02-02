@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "b1fde507a4b80c79",
+        "type": "tab",
+        "label": "capture-aq",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -11166,6 +11174,74 @@
         "statusType": "auto",
         "x": 1160,
         "y": 400,
+        "wires": []
+    },
+    {
+        "id": "e968e39eb0de5bc1",
+        "type": "mqtt in",
+        "z": "b1fde507a4b80c79",
+        "name": "",
+        "topic": "aq/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 110,
+        "y": 60,
+        "wires": [
+            [
+                "3da49a479e99f3b5"
+            ]
+        ]
+    },
+    {
+        "id": "3da49a479e99f3b5",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 330,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "5afaf6995a6bb8cf",
+        "type": "comment",
+        "z": "b1fde507a4b80c79",
+        "name": "attach timestamp, entryDateTime",
+        "info": "",
+        "x": 390,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "3d42c2ee8cdbb69e",
+        "type": "comment",
+        "z": "b1fde507a4b80c79",
+        "name": "check if enabled",
+        "info": "",
+        "x": 180,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "d00238beae2aadd7",
+        "type": "comment",
+        "z": "b1fde507a4b80c79",
+        "name": "create table airquality",
+        "info": "",
+        "x": 420,
+        "y": 460,
         "wires": []
     }
 ]
