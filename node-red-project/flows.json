@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "b1fde507a4b80c79",
+        "type": "tab",
+        "label": "capture-aq",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1056,6 +1064,48 @@
         "y": 439,
         "w": 972,
         "h": 622
+    },
+    {
+        "id": "672f3b07194c5dd5",
+        "type": "group",
+        "z": "b1fde507a4b80c79",
+        "name": "set up airquality database table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "35d0362b1f8a5e1a",
+            "ad3b1bd4bcdd6731",
+            "e063e562cca50f31",
+            "9ec2c67401c5aebc",
+            "d61da5053d3a100e",
+            "e13414feb4f512b8"
+        ],
+        "x": 74,
+        "y": 539,
+        "w": 1042,
+        "h": 122
+    },
+    {
+        "id": "efdb589a1b6e0c2f",
+        "type": "group",
+        "z": "b1fde507a4b80c79",
+        "name": "capture airquality messages, assign properties, format message, save and send",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8cae4cba37aecc0d",
+            "99bfb6c2ced810ec",
+            "014464d29b72fa53",
+            "24ae834ea737eac6",
+            "a40ef3730c08bfce",
+            "ef6ffe823574c1d1"
+        ],
+        "x": 234,
+        "y": 159,
+        "w": 872,
+        "h": 302
     },
     {
         "id": "05a58d9ee463c696",
@@ -4708,7 +4758,7 @@
         "z": "9269520ddb532b00",
         "g": "0a5faeac9fbd6d55",
         "name": "append config, deployment properties",
-        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`, 'config');\n\nmsg.radarEnabled = false;\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    //get radar settings\n    const radar = global.get(`config.sensors.radars.${msg.frigate_event.camera}`, 'config');\n    if (radar.hasOwnProperty('enabled')) {\n        if (radar.enabled === true) {\n            msg.frigate_event.radarName = sensor.camera_radar;\n            msg.radarEnabled = true;\n        }\n    }\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n//indicate if camera is enabled in TM for capture (may still be on in Frigate)\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
+        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`);\n\nmsg.radarEnabled = false;\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    //get radar settings\n    const radar = global.get(`config.sensors.radars.${msg.frigate_event.camera}`);\n    if (radar.hasOwnProperty('enabled')) {\n        if (radar.enabled === true) {\n            msg.frigate_event.radarName = sensor.camera_radar;\n            msg.radarEnabled = true;\n        }\n    }\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n//indicate if camera is enabled in TM for capture (may still be on in Frigate)\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -11166,6 +11216,304 @@
         "statusType": "auto",
         "x": 1160,
         "y": 400,
+        "wires": []
+    },
+    {
+        "id": "e968e39eb0de5bc1",
+        "type": "mqtt in",
+        "z": "b1fde507a4b80c79",
+        "name": "",
+        "topic": "aq/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 110,
+        "y": 100,
+        "wires": [
+            [
+                "3da49a479e99f3b5",
+                "a40ef3730c08bfce"
+            ]
+        ]
+    },
+    {
+        "id": "3da49a479e99f3b5",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "name": "debug: published airquality messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "35d0362b1f8a5e1a",
+        "type": "sqlite",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 920,
+        "y": 580,
+        "wires": [
+            [
+                "9ec2c67401c5aebc"
+            ]
+        ]
+    },
+    {
+        "id": "ad3b1bd4bcdd6731",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject after 0.1 sec",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 210,
+        "y": 580,
+        "wires": [
+            [
+                "d61da5053d3a100e"
+            ]
+        ]
+    },
+    {
+        "id": "e063e562cca50f31",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject manually",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 620,
+        "wires": [
+            [
+                "e13414feb4f512b8"
+            ]
+        ]
+    },
+    {
+        "id": "9ec2c67401c5aebc",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "debug: last 5 rows airquality",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "8cae4cba37aecc0d",
+        "type": "sqlite",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO airquality (entryDateTime, gas_calibrated, temp, bar, hum, dew, temp_raw, bar_raw, hum_raw, pm01, pm025, pm10, gas_red, gas_oxi, gas_nh3, gas_red_raw, gas_oxi_raw, gas_nh3_raw, lux, lux_raw, proximity, noise_level, sensorName, deployment_id)\nVALUES ($entryDateTime, $gas_calibrated, $temp, $bar, $hum, $dew, $temp_raw, $bar_raw, $hum_raw, $pm01, $pm025, $pm10, $gas_red, $gas_oxi, $gas_nh3, $gas_red_raw, $gas_oxi_raw, $gas_nh3_raw, $lux, $lux_raw, $proximity, $noise_level, $sensorName, $deployment_id);\n",
+        "name": "",
+        "x": 940,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "99bfb6c2ced810ec",
+        "type": "function",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "write params for airquality insert",
+        "func": "//format for SQLITE Insert Prepared Statement\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 320,
+        "wires": [
+            [
+                "8cae4cba37aecc0d"
+            ]
+        ]
+    },
+    {
+        "id": "d61da5053d3a100e",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "create airquality table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS airquality (\n    entryDateTime REAL\n    gas_calibrated INTEGER\n    temp REAL\n    bar REAL\n    hum REAL\n    dew REAL\n    temp_raw REAL\n    bar_raw REAL\n    hum_raw REAL\n    pm01 REAL\n    pm025 REAL\n    pm10 REAL\n    gas_red REAL\n    gas_oxi REAL\n    gas_nh3 REAL\n    gas_red_raw REAL\n    gas_oxi_raw REAL\n    gas_nh3_raw REAL\n    lux REAL\n    lux_raw REAL\n    proximity REAL\n    noise_level REAL\n    sensorName TEXT\n    deployment_id TEXT\n    );",
+        "output": "str",
+        "x": 600,
+        "y": 580,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
+        "id": "e13414feb4f512b8",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "select latest 5 rows from airquality",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM airquality \nORDER BY entryDateTime DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 560,
+        "y": 620,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
+        "id": "014464d29b72fa53",
+        "type": "switch",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "enabled?",
+        "property": "sensor.enabled",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 500,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "24ae834ea737eac6",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "format mqtt for sqlite",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{\n    \"entryDateTime\": {{payload.current_time}},\n    \"gas_calibrated\": {{#payload.Gas Calibrated}}1{{/payload.Gas Calibrated}}{{^payload.Gas Calibrated}}0{{/payload.Gas Calibrated}},\n    \"temp\": {{payload.Temp}},\n    \"bar\": {{#payload}}{{#Bar}}{{.[0]}}{{/Bar}}{{/payload}},\n    \"hum\": {{#payload}}{{#Hum}}{{.[0]}}{{/Hum}}{{/payload}},\n    \"dew\": {{payload.Dew}},\n    \"temp_raw\": {{payload.temp_raw}},\n    \"bar_raw\": {{payload.bar_raw}},\n    \"hum_raw\": {{payload.hum_raw}},\n    \"pm01\": {{payload.P1}},\n    \"pm025\": {{payload.P2.5}},\n    \"pm10\": {{payload.P10}},\n    \"gas_red\": {{payload.Red}},\n    \"gas_oxi\": {{payload.Oxi}},\n    \"gas_nh3\": {{payload.NH3}},\n    \"gas_red_raw\": {{payload.gas_red_raw}},\n    \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n    \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n    \"lux\": {{payload.lux}},\n    \"lux_raw\": {{payload.lux_raw}},\n    \"proximity\": {{payload.proximity}},\n    \"noise_level\": \"\",\n    \"sensorName\": {{sensor.name}},\n    \"deployment_id\": {{sensor.deployment_id}}\n}",
+        "output": "json",
+        "x": 600,
+        "y": 320,
+        "wires": [
+            [
+                "99bfb6c2ced810ec",
+                "ef6ffe823574c1d1"
+            ]
+        ]
+    },
+    {
+        "id": "a40ef3730c08bfce",
+        "type": "function",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "append config, deployment properties",
+        "func": "// attach deployment_id, if applicable\nmsg.sensor = {}\n\n//pull the airquality_monitor name, will be second element in mqtt topic; e.g. aq/sensorname01/readings\nconst sensor = global.get(`config.sensors.airquality_monitors.${msg.topic.split('/')[1]}`);\nmsg.sensor.name = msg.topic.split('/')[1];\n\n//indicate if sensor is enabled in TM for capture\nif (sensor.hasOwnProperty('enabled')) {\n    msg.sensor.enabled = sensor.enabled;\n}\n\n//attach deployment_id to message\nif (sensor.hasOwnProperty('deployment')) {\n    msg.sensor.deployment_id = sensor.deployment.id;\n}\n\n//attach mqtt topic to message\nif (sensor.hasOwnProperty('mqtt_topic_incoming')) {\n    msg.sensor.mqtt_topic_incoming = sensor.mqtt_topic_incoming;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "014464d29b72fa53"
+            ]
+        ]
+    },
+    {
+        "id": "ef6ffe823574c1d1",
+        "type": "link out",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "airquality link out",
+        "mode": "link",
+        "links": [],
+        "x": 775,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "78fe0447b9a69129",
+        "type": "catch",
+        "z": "b1fde507a4b80c79",
+        "name": "catch - airquality flow",
+        "scope": null,
+        "uncaught": false,
+        "x": 160,
+        "y": 40,
+        "wires": [
+            [
+                "86c57166ac231b3c"
+            ]
+        ]
+    },
+    {
+        "id": "86c57166ac231b3c",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "name": "catch - airquality flow",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 40,
         "wires": []
     }
 ]
