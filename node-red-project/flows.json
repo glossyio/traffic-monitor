@@ -541,12 +541,13 @@
             "55a1af374cc8ecb9",
             "99dfff63ac837bc8",
             "f35d3f484c2f6107",
-            "694f0242d0985c69"
+            "aa8d606460d6e410",
+            "221ddfedf40c108f"
         ],
         "x": 108,
         "y": 93,
-        "w": 1824,
-        "h": 894
+        "w": 1198,
+        "h": 794
     },
     {
         "id": "fe1b9f6f9d89d353",
@@ -559,33 +560,13 @@
         "nodes": [
             "fac72767826a76d9",
             "f034ca2ecdf9a2f6",
-            "8d3fe796e032166c"
+            "75f7976086cc9838",
+            "232db2c330aebd95"
         ],
         "x": 108,
         "y": 1053,
-        "w": 1864,
+        "w": 1198,
         "h": 234
-    },
-    {
-        "id": "8d3fe796e032166c",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "fe1b9f6f9d89d353",
-        "name": "send tb client-side attributes",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "542b3b8720733a01",
-            "0a28f82092611160",
-            "058c390e87e3c283",
-            "9c111c8d0f212bf8",
-            "8ad71425a71a860e"
-        ],
-        "x": 1134,
-        "y": 1079,
-        "w": 812,
-        "h": 162
     },
     {
         "id": "9e0b1edd49eb4244",
@@ -604,27 +585,6 @@
         "y": 79,
         "w": 512,
         "h": 122
-    },
-    {
-        "id": "694f0242d0985c69",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "2f27e270200485b9",
-        "name": "send tb telemetry",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "677a57bbf3619854",
-            "df6ac2f42ac6d8c7",
-            "21944450ecc08385",
-            "93aa421659d2c20b",
-            "9b8c2bcc16a637fd"
-        ],
-        "x": 1134,
-        "y": 119,
-        "w": 772,
-        "h": 162
     },
     {
         "id": "dea1b8828f8e501f",
@@ -832,7 +792,7 @@
         "x": 74,
         "y": 539,
         "w": 1032,
-        "h": 222
+        "h": 202
     },
     {
         "id": "efdb589a1b6e0c2f",
@@ -866,15 +826,13 @@
             "fill": "#e3f3d3"
         },
         "nodes": [
-            "4bec488857c0553f",
             "ed447e5f8becbfad",
-            "cc84d34370b6feb3",
-            "a473c7e4eeb01dcd"
+            "4bec488857c0553f"
         ],
         "x": 134,
         "y": 119,
-        "w": 352,
-        "h": 182
+        "w": 332,
+        "h": 82
     },
     {
         "id": "1819134eccdf2660",
@@ -903,7 +861,7 @@
             "9a894f4bd304f5a9"
         ],
         "x": 134,
-        "y": 319,
+        "y": 219,
         "w": 872,
         "h": 342
     },
@@ -922,7 +880,7 @@
             "c6ff73faf6fa9e98"
         ],
         "x": 134,
-        "y": 679,
+        "y": 579,
         "w": 372,
         "h": 82
     },
@@ -941,7 +899,7 @@
             "24c1b5f3bff3834c"
         ],
         "x": 134,
-        "y": 779,
+        "y": 679,
         "w": 392,
         "h": 82
     },
@@ -1121,7 +1079,7 @@
             "08da197b902c939e"
         ],
         "x": 134,
-        "y": 879,
+        "y": 779,
         "w": 352,
         "h": 82
     },
@@ -1208,6 +1166,46 @@
         "y": 859,
         "w": 932,
         "h": 242
+    },
+    {
+        "id": "694f0242d0985c69",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "send to tb",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "21944450ecc08385",
+            "93aa421659d2c20b",
+            "9b8c2bcc16a637fd",
+            "43087a735f896849"
+        ],
+        "x": 1374,
+        "y": 93,
+        "w": 1118,
+        "h": 194
+    },
+    {
+        "id": "43087a735f896849",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "694f0242d0985c69",
+        "name": "tb http api",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "9c944328e288b2dc",
+            "dd3f9ef16332021c",
+            "d739b10ce5fa8f40"
+        ],
+        "x": 1714,
+        "y": 119,
+        "w": 752,
+        "h": 142
     },
     {
         "id": "05a58d9ee463c696",
@@ -1309,6 +1307,32 @@
             [
                 "1ba33a74f2d3a680",
                 "17455485af2d8cfc"
+            ]
+        ]
+    },
+    {
+        "id": "232db2c330aebd95",
+        "type": "junction",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "x": 740,
+        "y": 1120,
+        "wires": [
+            [
+                "75f7976086cc9838"
+            ]
+        ]
+    },
+    {
+        "id": "aa8d606460d6e410",
+        "type": "junction",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "x": 1060,
+        "y": 160,
+        "wires": [
+            [
+                "221ddfedf40c108f"
             ]
         ]
     },
@@ -1847,7 +1871,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2049,7 +2073,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "capture deployment info, send diff sql queries",
-        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\", 'config');\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id, 'config');\n                }\n                else {\n                    newMsg.payload = sqlMatchObj;\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
+        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorType = sensorType;\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\");\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorType}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id);\n                }\n                else {\n                    newMsg.payload = sqlMatchObj;\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2228,7 +2252,7 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
+        "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorType TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
         "output": "str",
         "x": 530,
         "y": 900,
@@ -2244,7 +2268,7 @@
         "z": "3dae026ab340962a",
         "g": "a2b2e69319628779",
         "name": "select latest 5 rows from deployment",
-        "field": "payload",
+        "field": "topic",
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
@@ -2268,12 +2292,14 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "SELECT id, entryStartDateTime, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
+        "template": "SELECT id, entryStartDateTime, sensorType, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
         "output": "str",
         "x": 510,
         "y": 980,
         "wires": [
-            []
+            [
+                "8a6d4593a661c3df"
+            ]
         ]
     },
     {
@@ -5006,7 +5032,7 @@
         "type": "debug",
         "z": "b1fde507a4b80c79",
         "name": "debug: published airquality messages",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5299,6 +5325,7 @@
         "id": "f1530cb4468b517b",
         "type": "inject",
         "z": "b1fde507a4b80c79",
+        "d": true,
         "g": "672f3b07194c5dd5",
         "name": "inject manually",
         "props": [],
@@ -5308,7 +5335,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 200,
-        "y": 680,
+        "y": 660,
         "wires": [
             [
                 "f11bc2c9463f8c85"
@@ -5319,6 +5346,7 @@
         "id": "f11bc2c9463f8c85",
         "type": "template",
         "z": "b1fde507a4b80c79",
+        "d": true,
         "g": "672f3b07194c5dd5",
         "name": "drop",
         "field": "topic",
@@ -5328,7 +5356,7 @@
         "template": "DROP TABLE airquality;",
         "output": "str",
         "x": 470,
-        "y": 680,
+        "y": 660,
         "wires": [
             [
                 "35d0362b1f8a5e1a"
@@ -5339,6 +5367,7 @@
         "id": "3ac16ca7857d43a0",
         "type": "inject",
         "z": "b1fde507a4b80c79",
+        "d": true,
         "g": "672f3b07194c5dd5",
         "name": "inject manually",
         "props": [],
@@ -5348,7 +5377,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 200,
-        "y": 720,
+        "y": 700,
         "wires": [
             [
                 "88e51d22037ef437"
@@ -5359,6 +5388,7 @@
         "id": "88e51d22037ef437",
         "type": "template",
         "z": "b1fde507a4b80c79",
+        "d": true,
         "g": "672f3b07194c5dd5",
         "name": "pragma",
         "field": "topic",
@@ -5368,7 +5398,7 @@
         "template": "PRAGMA table_info(airquality);",
         "output": "str",
         "x": 480,
-        "y": 720,
+        "y": 700,
         "wires": [
             [
                 "35d0362b1f8a5e1a"
@@ -5379,12 +5409,12 @@
         "id": "677a57bbf3619854",
         "type": "http request",
         "z": "f7932be9acc7391c",
-        "g": "694f0242d0985c69",
-        "name": "tb telemetry http api",
+        "g": "43087a735f896849",
+        "name": "tb post http api",
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
-        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/telemetry",
+        "url": "",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -5392,8 +5422,8 @@
         "authType": "",
         "senderr": true,
         "headers": [],
-        "x": 1550,
-        "y": 220,
+        "x": 2240,
+        "y": 160,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -5404,9 +5434,9 @@
         "id": "df6ac2f42ac6d8c7",
         "type": "debug",
         "z": "f7932be9acc7391c",
-        "g": "694f0242d0985c69",
+        "g": "43087a735f896849",
         "name": "tb telemetry response",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5414,30 +5444,9 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1760,
+        "x": 2320,
         "y": 220,
         "wires": []
-    },
-    {
-        "id": "4bec488857c0553f",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "b334a2375eb8cb42",
-        "name": "format event telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.frame_time * 1000,\n    values: {\n        event: values\n    }\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 340,
-        "y": 220,
-        "wires": [
-            [
-                "93aa421659d2c20b"
-            ]
-        ]
     },
     {
         "id": "ed447e5f8becbfad",
@@ -5452,28 +5461,9 @@
         "y": 160,
         "wires": [
             [
-                "4bec488857c0553f",
-                "cc84d34370b6feb3"
+                "4bec488857c0553f"
             ]
         ]
-    },
-    {
-        "id": "cc84d34370b6feb3",
-        "type": "debug",
-        "z": "f7932be9acc7391c",
-        "g": "b334a2375eb8cb42",
-        "name": "event link in",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 370,
-        "y": 160,
-        "wires": []
     },
     {
         "id": "695200d405f2d323",
@@ -5517,7 +5507,7 @@
             "01307f2f13f465f2"
         ],
         "x": 175,
-        "y": 460,
+        "y": 360,
         "wires": [
             [
                 "5d3596375bd695c0"
@@ -5534,7 +5524,7 @@
             "4094c101f6b59d95"
         ],
         "x": 175,
-        "y": 360,
+        "y": 260,
         "wires": [
             [
                 "2a979d76853ee0ab"
@@ -5551,7 +5541,7 @@
             "080fd00489701aa1"
         ],
         "x": 175,
-        "y": 500,
+        "y": 400,
         "wires": [
             [
                 "4796b517d7d045a7"
@@ -5568,7 +5558,7 @@
             "95186b0fee06a3f5"
         ],
         "x": 175,
-        "y": 540,
+        "y": 440,
         "wires": [
             [
                 "9a894f4bd304f5a9"
@@ -5585,7 +5575,7 @@
             "59a9c9a7ba535641"
         ],
         "x": 175,
-        "y": 580,
+        "y": 480,
         "wires": [
             [
                 "cc21b9e657cba081"
@@ -5597,10 +5587,10 @@
         "type": "comment",
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
-        "name": "send immediately",
+        "name": "send radar_timedspeedcounts immediately",
         "info": "",
-        "x": 240,
-        "y": 400,
+        "x": 320,
+        "y": 300,
         "wires": []
     },
     {
@@ -5611,7 +5601,7 @@
         "name": "send radar_oc_payload w others to avoid hundreds of messages per object (oc = radar object detection end)",
         "info": "",
         "x": 530,
-        "y": 620,
+        "y": 520,
         "wires": []
     },
     {
@@ -5620,7 +5610,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "format radar_timedspeedcounts telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_timedspeedcounts: values\n    }\n}\n\nreturn msg;",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.TimedSpeedCounts.time * 1000,\n    values: {\n        radar_timedspeedcounts: values.TimedSpeedCounts\n    }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5628,10 +5618,10 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 360,
+        "y": 260,
         "wires": [
             [
-                "93aa421659d2c20b"
+                "aa8d606460d6e410"
             ]
         ]
     },
@@ -5649,7 +5639,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 580,
+        "y": 480,
         "wires": [
             [
                 "d3f14c01ec3c7250"
@@ -5674,7 +5664,7 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 1290,
+        "x": 1530,
         "y": 200,
         "wires": [
             [
@@ -5705,10 +5695,10 @@
         "reduceInitType": "",
         "reduceFixup": "",
         "x": 820,
-        "y": 460,
+        "y": 360,
         "wires": [
             [
-                "93aa421659d2c20b"
+                "aa8d606460d6e410"
             ]
         ]
     },
@@ -5733,7 +5723,7 @@
         "to": "",
         "reg": false,
         "x": 610,
-        "y": 580,
+        "y": 480,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -5754,7 +5744,7 @@
         "finalize": "",
         "libs": [],
         "x": 340,
-        "y": 460,
+        "y": 360,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -5775,7 +5765,7 @@
         "finalize": "",
         "libs": [],
         "x": 400,
-        "y": 500,
+        "y": 400,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -5796,7 +5786,7 @@
         "finalize": "",
         "libs": [],
         "x": 420,
-        "y": 540,
+        "y": 440,
         "wires": [
             [
                 "ff1719e60656a2e6"
@@ -5813,7 +5803,7 @@
             "1ba33a74f2d3a680"
         ],
         "x": 175,
-        "y": 720,
+        "y": 620,
         "wires": [
             [
                 "c6ff73faf6fa9e98"
@@ -5834,10 +5824,10 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 720,
+        "y": 620,
         "wires": [
             [
-                "93aa421659d2c20b"
+                "aa8d606460d6e410"
             ]
         ]
     },
@@ -5855,10 +5845,10 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 820,
+        "y": 720,
         "wires": [
             [
-                "93aa421659d2c20b"
+                "aa8d606460d6e410"
             ]
         ]
     },
@@ -5872,60 +5862,10 @@
             "6dca925fad91c100"
         ],
         "x": 175,
-        "y": 820,
+        "y": 720,
         "wires": [
             [
                 "521115ddd5741eea"
-            ]
-        ]
-    },
-    {
-        "id": "542b3b8720733a01",
-        "type": "debug",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "tb attributes response",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1800,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "0a28f82092611160",
-        "type": "http request",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "send client-side attributes",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/attributes",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "application/json",
-                "valueValue": ""
-            }
-        ],
-        "x": 1570,
-        "y": 1180,
-        "wires": [
-            [
-                "542b3b8720733a01"
             ]
         ]
     },
@@ -5935,7 +5875,7 @@
         "z": "f7932be9acc7391c",
         "g": "fac72767826a76d9",
         "name": "set deployment client side attribute payload",
-        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload.currentDeployment,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deploymentSensors: values,\n        deploymentTopLat: global.get(\"config.deployment.lat\",'config'),\n        deploymentTopLon: global.get(\"config.deployment.lon\",'config'),\n        deploymentTopBearing: global.get(\"config.deployment.bearing\",'config')\n    }\n}\n\nreturn newMsg;\n\n//global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newPayload.id, 'config');\n",
+        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload.currentDeployment,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deploymentSensors: values,\n        deploymentTopLat: global.get(\"config.deployment.lat\"),\n        deploymentTopLon: global.get(\"config.deployment.lon\"),\n        deploymentTopBearing: global.get(\"config.deployment.bearing\")\n    }\n}\n\nreturn newMsg;\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5946,7 +5886,7 @@
         "y": 1220,
         "wires": [
             [
-                "058c390e87e3c283"
+                "232db2c330aebd95"
             ]
         ]
     },
@@ -5981,7 +5921,7 @@
         "y": 1120,
         "wires": [
             [
-                "058c390e87e3c283"
+                "232db2c330aebd95"
             ]
         ]
     },
@@ -5991,7 +5931,7 @@
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
         "name": "thingsboard.enabled",
-        "property": "#:(config)::thingsboard.enabled",
+        "property": "config.thingsboard.enabled",
         "propertyType": "global",
         "rules": [
             {
@@ -6001,7 +5941,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1260,
+        "x": 1500,
         "y": 160,
         "wires": [
             [
@@ -6014,8 +5954,8 @@
         "type": "switch",
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
-        "name": "tb protocol",
-        "property": "#:(config)::thingsboard.protocol",
+        "name": "tb protocol?",
+        "property": "config.thingsboard.protocol",
         "propertyType": "global",
         "rules": [
             {
@@ -6032,116 +5972,15 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 1350,
+        "x": 1590,
         "y": 240,
         "wires": [
             [
-                "677a57bbf3619854"
+                "dd3f9ef16332021c"
             ],
             []
         ],
         "info": "see https://thingsboard.io/docs/reference/protocols/"
-    },
-    {
-        "id": "058c390e87e3c283",
-        "type": "switch",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "thingsboard.enabled",
-        "property": "#:(config)::thingsboard.enabled",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1260,
-        "y": 1120,
-        "wires": [
-            [
-                "9c111c8d0f212bf8"
-            ]
-        ]
-    },
-    {
-        "id": "9c111c8d0f212bf8",
-        "type": "delay",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "",
-        "pauseType": "rate",
-        "timeout": "5",
-        "timeoutUnits": "seconds",
-        "rate": "1000",
-        "nbRateUnits": "1",
-        "rateUnits": "minute",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1290,
-        "y": 1160,
-        "wires": [
-            [
-                "8ad71425a71a860e"
-            ]
-        ]
-    },
-    {
-        "id": "8ad71425a71a860e",
-        "type": "switch",
-        "z": "f7932be9acc7391c",
-        "g": "8d3fe796e032166c",
-        "name": "tb protocol",
-        "property": "#:(config)::thingsboard.protocol",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "http",
-                "vt": "str"
-            },
-            {
-                "t": "eq",
-                "v": "mqtt",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 1350,
-        "y": 1200,
-        "wires": [
-            [
-                "0a28f82092611160"
-            ],
-            []
-        ],
-        "info": "see https://thingsboard.io/docs/reference/protocols/"
-    },
-    {
-        "id": "a473c7e4eeb01dcd",
-        "type": "template",
-        "z": "f7932be9acc7391c",
-        "g": "b334a2375eb8cb42",
-        "name": "",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "This is the payload: {{payload}} !",
-        "output": "str",
-        "x": 300,
-        "y": 260,
-        "wires": [
-            []
-        ]
     },
     {
         "id": "2be1c8d04ce69a48",
@@ -6153,7 +5992,7 @@
             "ef6ffe823574c1d1"
         ],
         "x": 175,
-        "y": 920,
+        "y": 820,
         "wires": [
             [
                 "08da197b902c939e"
@@ -6173,10 +6012,161 @@
         "template": "{\n    \"ts\":{{payload.entryDateTime}},\n    \"values\": {\n        \"airquality\": {\n            \"entryDateTime\": {{payload.entryDateTime}},\n            \"gas_calibrated\": {{payload.gas_calibrated}},\n            \"temp\": {{payload.temp}},\n            \"bar\": {{payload.bar}},\n            \"hum\": {{payload.hum}},\n            \"dew\": {{payload.dew}},\n            \"temp_raw\": {{payload.temp_raw}},\n            \"bar_raw\": {{payload.bar_raw}},\n            \"hum_raw\": {{payload.hum_raw}},\n            \"pm01\": {{payload.pm01}},\n            \"pm025\": {{payload.pm025}},\n            \"pm10\": {{payload.pm10}},\n            \"gas_red\": {{payload.gas_red}},\n            \"gas_oxi\": {{payload.gas_oxi}},\n            \"gas_nh3\": {{payload.gas_nh3}},\n            \"gas_red_raw\": {{payload.gas_red_raw}},\n            \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n            \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n            \"lux\": {{payload.lux}},\n            \"lux_raw\": {{payload.lux_raw}},\n            \"proximity\": {{payload.proximity}},\n            \"sensorName\": \"{{payload.sensorName}}\",\n            \"deployment_id\": \"{{payload.deployment_id}}\"\n        }\n    }\n}",
         "output": "json",
         "x": 350,
-        "y": 920,
+        "y": 820,
+        "wires": [
+            [
+                "aa8d606460d6e410"
+            ]
+        ]
+    },
+    {
+        "id": "9c944328e288b2dc",
+        "type": "template",
+        "z": "f7932be9acc7391c",
+        "g": "43087a735f896849",
+        "name": "telemetry msg.url",
+        "field": "url",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{{{global.config.thingsboard.url}}}/api/v1/{{{global.config.thingsboard.access_token}}}/telemetry",
+        "output": "str",
+        "x": 2010,
+        "y": 160,
+        "wires": [
+            [
+                "677a57bbf3619854"
+            ]
+        ]
+    },
+    {
+        "id": "75f7976086cc9838",
+        "type": "change",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "msg.type = attributes",
+        "rules": [
+            {
+                "t": "set",
+                "p": "type",
+                "pt": "msg",
+                "to": "attributes",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1180,
+        "y": 1120,
         "wires": [
             [
                 "93aa421659d2c20b"
+            ]
+        ]
+    },
+    {
+        "id": "221ddfedf40c108f",
+        "type": "change",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "msg.type = telemetry",
+        "rules": [
+            {
+                "t": "set",
+                "p": "type",
+                "pt": "msg",
+                "to": "telemetry",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1180,
+        "y": 160,
+        "wires": [
+            [
+                "93aa421659d2c20b"
+            ]
+        ]
+    },
+    {
+        "id": "dd3f9ef16332021c",
+        "type": "switch",
+        "z": "f7932be9acc7391c",
+        "g": "43087a735f896849",
+        "name": "msg.type?",
+        "property": "type",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "telemetry",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "attributes",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1810,
+        "y": 180,
+        "wires": [
+            [
+                "9c944328e288b2dc"
+            ],
+            [
+                "d739b10ce5fa8f40"
+            ]
+        ]
+    },
+    {
+        "id": "d739b10ce5fa8f40",
+        "type": "template",
+        "z": "f7932be9acc7391c",
+        "g": "43087a735f896849",
+        "name": "attributes msg.url",
+        "field": "url",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{{{global.config.thingsboard.url}}}/api/v1/{{{global.config.thingsboard.access_token}}}/attributes",
+        "output": "str",
+        "x": 2010,
+        "y": 200,
+        "wires": [
+            [
+                "677a57bbf3619854"
+            ]
+        ]
+    },
+    {
+        "id": "4bec488857c0553f",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "b334a2375eb8cb42",
+        "name": "format event telemetry",
+        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.frame_time * 1000,\n    values: {\n        event: values\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 160,
+        "wires": [
+            [
+                "aa8d606460d6e410"
             ]
         ]
     },
