@@ -24,6 +24,14 @@
         "env": []
     },
     {
+        "id": "b1fde507a4b80c79",
+        "type": "tab",
+        "label": "capture-aq",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "f7932be9acc7391c",
         "type": "tab",
         "label": "thingsboard",
@@ -59,14 +67,6 @@
         "id": "f410f6aac9d1a3fc",
         "type": "tab",
         "label": "system-metrics",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "b1fde507a4b80c79",
-        "type": "tab",
-        "label": "capture-aq",
         "disabled": false,
         "info": "",
         "env": []
@@ -264,38 +264,34 @@
             "c123fc5ed5e14e8a",
             "673e45159a2dfccf",
             "2c7c7df250289562",
-            "627ba0f672680054"
+            "627ba0f672680054",
+            "b7398c4e0bc743e5"
         ],
         "x": 54,
         "y": 359,
-        "w": 1272,
-        "h": 342
+        "w": 1278,
+        "h": 548
     },
     {
         "id": "53e4faf6d3ece28c",
         "type": "group",
         "z": "9269520ddb532b00",
-        "name": "record event to database and pass to dashboard",
+        "name": "create event table",
         "style": {
             "label": true
         },
         "nodes": [
             "510b389597efaf1b",
             "b77bb1c374a198e4",
-            "61d6a19c99c60e0b",
-            "a96d834e3571c549",
             "e256d5e89eb39332",
             "d8786159d48401b9",
-            "7f0ef976c7b79245",
-            "59a579e6a1fa9a08",
-            "274f87c31437c2d7",
             "6b08c9332096b857",
             "3731dfc3716b1167"
         ],
         "x": 54,
-        "y": 839,
+        "y": 1039,
         "w": 912,
-        "h": 322
+        "h": 122
     },
     {
         "id": "541d31d14bcd8b00",
@@ -313,7 +309,8 @@
             "840802d34d143ded",
             "8d65b604e8d9e7f9",
             "db1f35650c8d6448",
-            "6e2a152aecd929d3"
+            "6e2a152aecd929d3",
+            "d53997b3fec84e3a"
         ],
         "x": 14,
         "y": 19,
@@ -542,12 +539,14 @@
             "b334a2375eb8cb42",
             "1819134eccdf2660",
             "55a1af374cc8ecb9",
-            "99dfff63ac837bc8"
+            "99dfff63ac837bc8",
+            "f35d3f484c2f6107",
+            "694f0242d0985c69"
         ],
         "x": 108,
         "y": 93,
-        "w": 924,
-        "h": 834
+        "w": 1824,
+        "h": 894
     },
     {
         "id": "fe1b9f6f9d89d353",
@@ -558,19 +557,20 @@
             "label": true
         },
         "nodes": [
-            "f453ff6136f95abe",
-            "8768b75dbfee3973",
-            "d367cb76b239682f"
+            "fac72767826a76d9",
+            "f034ca2ecdf9a2f6",
+            "8d3fe796e032166c"
         ],
-        "x": 114,
-        "y": 979,
-        "w": 492,
-        "h": 142
+        "x": 108,
+        "y": 1053,
+        "w": 1864,
+        "h": 234
     },
     {
         "id": "8d3fe796e032166c",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
         "name": "send tb client-side attributes",
         "style": {
             "label": true
@@ -582,8 +582,8 @@
             "9c111c8d0f212bf8",
             "8ad71425a71a860e"
         ],
-        "x": 1114,
-        "y": 979,
+        "x": 1134,
+        "y": 1079,
         "w": 812,
         "h": 162
     },
@@ -609,6 +609,7 @@
         "id": "694f0242d0985c69",
         "type": "group",
         "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
         "name": "send tb telemetry",
         "style": {
             "label": true
@@ -620,8 +621,8 @@
             "93aa421659d2c20b",
             "9b8c2bcc16a637fd"
         ],
-        "x": 1114,
-        "y": 99,
+        "x": 1134,
+        "y": 119,
         "w": 772,
         "h": 162
     },
@@ -805,8 +806,54 @@
         ],
         "x": 48,
         "y": 233,
-        "w": 1024,
-        "h": 854
+        "w": 1050,
+        "h": 920
+    },
+    {
+        "id": "672f3b07194c5dd5",
+        "type": "group",
+        "z": "b1fde507a4b80c79",
+        "name": "set up airquality database table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "35d0362b1f8a5e1a",
+            "ad3b1bd4bcdd6731",
+            "e063e562cca50f31",
+            "9ec2c67401c5aebc",
+            "d61da5053d3a100e",
+            "e13414feb4f512b8",
+            "f1530cb4468b517b",
+            "f11bc2c9463f8c85",
+            "3ac16ca7857d43a0",
+            "88e51d22037ef437"
+        ],
+        "x": 74,
+        "y": 539,
+        "w": 1032,
+        "h": 222
+    },
+    {
+        "id": "efdb589a1b6e0c2f",
+        "type": "group",
+        "z": "b1fde507a4b80c79",
+        "name": "capture airquality messages, assign properties, format message, save and send",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8cae4cba37aecc0d",
+            "99bfb6c2ced810ec",
+            "014464d29b72fa53",
+            "24ae834ea737eac6",
+            "ef6ffe823574c1d1",
+            "4ef1e892a6b1c695"
+        ],
+        "x": 294,
+        "y": 159,
+        "w": 952,
+        "h": 222
     },
     {
         "id": "b334a2375eb8cb42",
@@ -815,7 +862,8 @@
         "g": "2f27e270200485b9",
         "name": "event",
         "style": {
-            "label": true
+            "label": true,
+            "fill": "#e3f3d3"
         },
         "nodes": [
             "4bec488857c0553f",
@@ -835,7 +883,8 @@
         "g": "2f27e270200485b9",
         "name": "radar",
         "style": {
-            "label": true
+            "label": true,
+            "fill": "#ffbfbf"
         },
         "nodes": [
             "fee85b1886270ac6",
@@ -865,17 +914,17 @@
         "g": "2f27e270200485b9",
         "name": "deployment",
         "style": {
-            "label": true
+            "label": true,
+            "fill": "#ffffbf"
         },
         "nodes": [
             "8a83d59ee0db1198",
-            "8606059dd2f94a75",
             "c6ff73faf6fa9e98"
         ],
         "x": 134,
         "y": 679,
-        "w": 872,
-        "h": 122
+        "w": 372,
+        "h": 82
     },
     {
         "id": "99dfff63ac837bc8",
@@ -884,14 +933,15 @@
         "g": "2f27e270200485b9",
         "name": "system-metrics",
         "style": {
-            "label": true
+            "label": true,
+            "fill": "#dbcbe7"
         },
         "nodes": [
             "521115ddd5741eea",
             "24c1b5f3bff3834c"
         ],
         "x": 134,
-        "y": 819,
+        "y": 779,
         "w": 392,
         "h": 82
     },
@@ -1039,14 +1089,7 @@
             "label": true
         },
         "nodes": [
-            "8a6d4593a661c3df",
-            "ff28acdecfc4ebb1",
-            "751ff2049a663e9c",
-            "3cdbccf5dbcb1c4e",
             "f6ecdd18d8e03f91",
-            "f9a2f4f97e3ba1cf",
-            "928d7cafdc1ab7fa",
-            "8f4e9d81288d5abd",
             "689b64c16a889e0a",
             "bc398ad5de3bd112",
             "6d2f607b324415b4",
@@ -1056,56 +1099,115 @@
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
+            "a2b2e69319628779"
+        ],
+        "x": 88,
+        "y": 439,
+        "w": 984,
+        "h": 688
+    },
+    {
+        "id": "f35d3f484c2f6107",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "airquality",
+        "style": {
+            "label": true,
+            "fill": "#bfdbef"
+        },
+        "nodes": [
+            "2be1c8d04ce69a48",
+            "08da197b902c939e"
+        ],
+        "x": 134,
+        "y": 879,
+        "w": 352,
+        "h": 82
+    },
+    {
+        "id": "fac72767826a76d9",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "deployment",
+        "style": {
+            "label": true,
+            "fill": "#ffffbf"
+        },
+        "nodes": [
+            "f453ff6136f95abe",
+            "8768b75dbfee3973"
+        ],
+        "x": 134,
+        "y": 1179,
+        "w": 492,
+        "h": 82
+    },
+    {
+        "id": "f034ca2ecdf9a2f6",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "system-attributes",
+        "style": {
+            "label": true,
+            "fill": "#bfc7d7"
+        },
+        "nodes": [
+            "d367cb76b239682f"
+        ],
+        "x": 134,
+        "y": 1079,
+        "w": 115,
+        "h": 82
+    },
+    {
+        "id": "b7398c4e0bc743e5",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "save and forward event",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "274f87c31437c2d7",
+            "61d6a19c99c60e0b",
+            "a96d834e3571c549",
+            "7f0ef976c7b79245",
+            "59a579e6a1fa9a08"
+        ],
+        "x": 494,
+        "y": 759,
+        "w": 812,
+        "h": 122
+    },
+    {
+        "id": "a2b2e69319628779",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "create deployment table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a6d4593a661c3df",
+            "ff28acdecfc4ebb1",
+            "751ff2049a663e9c",
+            "3cdbccf5dbcb1c4e",
+            "f9a2f4f97e3ba1cf",
+            "928d7cafdc1ab7fa",
+            "8f4e9d81288d5abd",
             "ba3b41519066f03a",
             "f111096594207360",
             "c25adb99d55eb890"
         ],
-        "x": 74,
-        "y": 439,
-        "w": 972,
-        "h": 622
-    },
-    {
-        "id": "672f3b07194c5dd5",
-        "type": "group",
-        "z": "b1fde507a4b80c79",
-        "name": "set up airquality database table",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "35d0362b1f8a5e1a",
-            "ad3b1bd4bcdd6731",
-            "e063e562cca50f31",
-            "9ec2c67401c5aebc",
-            "d61da5053d3a100e",
-            "e13414feb4f512b8"
-        ],
-        "x": 74,
-        "y": 539,
-        "w": 1042,
-        "h": 122
-    },
-    {
-        "id": "efdb589a1b6e0c2f",
-        "type": "group",
-        "z": "b1fde507a4b80c79",
-        "name": "capture airquality messages, assign properties, format message, save and send",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "8cae4cba37aecc0d",
-            "99bfb6c2ced810ec",
-            "014464d29b72fa53",
-            "24ae834ea737eac6",
-            "a40ef3730c08bfce",
-            "ef6ffe823574c1d1"
-        ],
-        "x": 234,
-        "y": 159,
-        "w": 872,
-        "h": 302
+        "x": 114,
+        "y": 859,
+        "w": 932,
+        "h": 242
     },
     {
         "id": "05a58d9ee463c696",
@@ -1781,13 +1883,13 @@
         "id": "8a6d4593a661c3df",
         "type": "sqlite",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 820,
-        "y": 860,
+        "x": 860,
+        "y": 900,
         "wires": [
             [
                 "3cdbccf5dbcb1c4e"
@@ -1798,7 +1900,7 @@
         "id": "ff28acdecfc4ebb1",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject after 0.1 sec",
         "props": [],
         "repeat": "",
@@ -1806,8 +1908,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 210,
-        "y": 860,
+        "x": 250,
+        "y": 900,
         "wires": [
             [
                 "ba3b41519066f03a"
@@ -1818,7 +1920,7 @@
         "id": "751ff2049a663e9c",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject manually",
         "props": [],
         "repeat": "",
@@ -1826,8 +1928,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 200,
-        "y": 900,
+        "x": 240,
+        "y": 940,
         "wires": [
             [
                 "f111096594207360"
@@ -1838,7 +1940,7 @@
         "id": "3cdbccf5dbcb1c4e",
         "type": "debug",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "sqlite select last 5 msgs",
         "active": true,
         "tosidebar": true,
@@ -1848,8 +1950,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 850,
-        "y": 900,
+        "x": 890,
+        "y": 940,
         "wires": []
     },
     {
@@ -1873,7 +1975,7 @@
         "id": "f9a2f4f97e3ba1cf",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject manually",
         "props": [],
         "repeat": "",
@@ -1881,8 +1983,8 @@
         "once": false,
         "onceDelay": "5",
         "topic": "",
-        "x": 200,
-        "y": 940,
+        "x": 240,
+        "y": 980,
         "wires": [
             [
                 "c25adb99d55eb890"
@@ -1894,7 +1996,7 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "d": true,
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "drop table deployment",
         "props": [
             {
@@ -1907,8 +2009,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 500,
-        "y": 980,
+        "x": 540,
+        "y": 1020,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -1920,7 +2022,7 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "d": true,
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "alter table deployment from 0.2.0 to 0.3.0",
         "props": [
             {
@@ -1933,8 +2035,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 440,
-        "y": 1020,
+        "x": 480,
+        "y": 1060,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2120,7 +2222,7 @@
         "id": "ba3b41519066f03a",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "create table deployment",
         "field": "topic",
         "fieldType": "msg",
@@ -2128,8 +2230,8 @@
         "syntax": "mustache",
         "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
         "output": "str",
-        "x": 490,
-        "y": 860,
+        "x": 530,
+        "y": 900,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2140,7 +2242,7 @@
         "id": "f111096594207360",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "select latest 5 rows from deployment",
         "field": "payload",
         "fieldType": "msg",
@@ -2148,8 +2250,8 @@
         "syntax": "mustache",
         "template": "SELECT * \nFROM deployment \nORDER BY entryStartDateTime DESC \nLIMIT 5;",
         "output": "str",
-        "x": 450,
-        "y": 900,
+        "x": 490,
+        "y": 940,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2160,7 +2262,7 @@
         "id": "c25adb99d55eb890",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "select latest active deployments",
         "field": "topic",
         "fieldType": "msg",
@@ -2168,8 +2270,8 @@
         "syntax": "mustache",
         "template": "SELECT id, entryStartDateTime, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
         "output": "str",
-        "x": 470,
-        "y": 940,
+        "x": 510,
+        "y": 980,
         "wires": [
             []
         ]
@@ -3231,7 +3333,9 @@
         "g": "1eebfe6a2eca8ad4",
         "name": "radar_dov link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "fee85b1886270ac6"
+        ],
         "x": 475,
         "y": 580,
         "wires": []
@@ -3243,7 +3347,9 @@
         "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "e05e91362c933e94"
+        ],
         "x": 475,
         "y": 1780,
         "wires": []
@@ -3255,7 +3361,9 @@
         "g": "fcbf8999ca05a371",
         "name": "radar_raw_speed_magnitude_single link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "0124afc74d86b533"
+        ],
         "x": 485,
         "y": 1640,
         "wires": []
@@ -3267,7 +3375,9 @@
         "g": "047f05d7650ba3cc",
         "name": "radar_raw_speed_magnitude link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "fc5e2cd719fa680a"
+        ],
         "x": 475,
         "y": 1160,
         "wires": []
@@ -3279,7 +3389,9 @@
         "g": "dea1b8828f8e501f",
         "name": "radar_timedspeedcounts link out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "087588593911f398"
+        ],
         "x": 475,
         "y": 880,
         "wires": []
@@ -4381,15 +4493,15 @@
         "id": "274f87c31437c2d7",
         "type": "link out",
         "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
+        "g": "b7398c4e0bc743e5",
         "name": "event payload",
         "mode": "link",
         "links": [
             "c249329109ac17d5",
             "ed447e5f8becbfad"
         ],
-        "x": 655,
-        "y": 940,
+        "x": 1265,
+        "y": 800,
         "wires": []
     },
     {
@@ -4561,13 +4673,13 @@
         "id": "61d6a19c99c60e0b",
         "type": "sqlite",
         "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
+        "g": "b7398c4e0bc743e5",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
         "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, radarName);",
         "name": "tmdb.events, Prepared Statement",
-        "x": 780,
-        "y": 880,
+        "x": 680,
+        "y": 840,
         "wires": [
             []
         ]
@@ -4576,7 +4688,7 @@
         "id": "a96d834e3571c549",
         "type": "function",
         "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
+        "g": "b7398c4e0bc743e5",
         "name": "write params for events insert",
         "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n//for Timestamp, frigate event and radar use seconds\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\n\nnewMsg.payload.score = msg.frigate_event.score;\nnewMsg.payload.area = msg.frigate_event.area;\nnewMsg.payload.ratio = msg.frigate_event.ratio;\nnewMsg.payload.motionless_count = msg.frigate_event.motionless_count;\nnewMsg.payload.position_changes = msg.frigate_event.position_changes;\nnewMsg.payload.attributes = `${JSON.stringify(msg.frigate_event.attributes)}`; //array, wrap in single quote for sqlite insert as text\n\n\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//provenance, frigate first, then radar, if it matched\nnewMsg.payload.provenance = [];\nnewMsg.payload.provenance.push(\"frigate\");\nif (msg.status_radarMatch === true) {\n    newMsg.payload.provenance.push(\"radar\");\n}\n\nnewMsg.payload.deployment_id = msg.frigate_event.deployment_id;\nnewMsg.payload.radarName = msg.frigate_event.radarName;\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
@@ -4585,8 +4697,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 210,
-        "y": 880,
+        "x": 650,
+        "y": 800,
         "wires": [
             [
                 "61d6a19c99c60e0b",
@@ -4636,7 +4748,7 @@
         "id": "7f0ef976c7b79245",
         "type": "debug",
         "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
+        "g": "b7398c4e0bc743e5",
         "name": "composed tmdb.events message",
         "active": false,
         "tosidebar": true,
@@ -4646,15 +4758,15 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 300,
-        "y": 980,
+        "x": 1040,
+        "y": 840,
         "wires": []
     },
     {
         "id": "59a579e6a1fa9a08",
         "type": "function",
         "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
+        "g": "b7398c4e0bc743e5",
         "name": "cleanse final msg.payload to forward along",
         "func": "let newMsg = {};\n\nnewMsg.topic = \"tm/event\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
         "outputs": 1,
@@ -4663,8 +4775,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 290,
-        "y": 940,
+        "x": 1030,
+        "y": 800,
         "wires": [
             [
                 "7f0ef976c7b79245",
@@ -4868,6 +4980,402 @@
         ]
     },
     {
+        "id": "e968e39eb0de5bc1",
+        "type": "mqtt in",
+        "z": "b1fde507a4b80c79",
+        "name": "",
+        "topic": "aq/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 110,
+        "y": 100,
+        "wires": [
+            [
+                "3da49a479e99f3b5",
+                "4ef1e892a6b1c695"
+            ]
+        ]
+    },
+    {
+        "id": "3da49a479e99f3b5",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "name": "debug: published airquality messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "35d0362b1f8a5e1a",
+        "type": "sqlite",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 920,
+        "y": 580,
+        "wires": [
+            [
+                "9ec2c67401c5aebc"
+            ]
+        ]
+    },
+    {
+        "id": "ad3b1bd4bcdd6731",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject after 0.1 sec",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 210,
+        "y": 580,
+        "wires": [
+            [
+                "d61da5053d3a100e"
+            ]
+        ]
+    },
+    {
+        "id": "e063e562cca50f31",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject manually",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 620,
+        "wires": [
+            [
+                "e13414feb4f512b8"
+            ]
+        ]
+    },
+    {
+        "id": "9ec2c67401c5aebc",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "debug: airquality query",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "8cae4cba37aecc0d",
+        "type": "sqlite",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO airquality (entryDateTime, gas_calibrated, temp, bar, hum, dew, temp_raw, bar_raw, hum_raw, pm01, pm025, pm10, gas_red, gas_oxi, gas_nh3, gas_red_raw, gas_oxi_raw, gas_nh3_raw, lux, lux_raw, proximity, sensorName, deployment_id)\nVALUES ($entryDateTime, $gas_calibrated, $temp, $bar, $hum, $dew, $temp_raw, $bar_raw, $hum_raw, $pm01, $pm025, $pm10, $gas_red, $gas_oxi, $gas_nh3, $gas_red_raw, $gas_oxi_raw, $gas_nh3_raw, $lux, $lux_raw, $proximity, $sensorName, $deployment_id);\n",
+        "name": "",
+        "x": 1080,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "99bfb6c2ced810ec",
+        "type": "function",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "write params for airquality insert",
+        "func": "//format for SQLITE Insert Prepared Statement\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 240,
+        "wires": [
+            [
+                "8cae4cba37aecc0d"
+            ]
+        ]
+    },
+    {
+        "id": "d61da5053d3a100e",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "create airquality table",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "CREATE TABLE IF NOT EXISTS airquality (\n    entryDateTime REAL,\n    gas_calibrated INTEGER,\n    temp REAL,\n    bar REAL,\n    hum REAL,\n    dew REAL,\n    temp_raw REAL,\n    bar_raw REAL,\n    hum_raw REAL,\n    pm01 REAL,\n    pm025 REAL,\n    pm10 REAL,\n    gas_red REAL,\n    gas_oxi REAL,\n    gas_nh3 REAL,\n    gas_red_raw REAL,\n    gas_oxi_raw REAL,\n    gas_nh3_raw REAL,\n    lux REAL,\n    lux_raw REAL,\n    proximity REAL,\n    sensorName TEXT,\n    deployment_id TEXT\n);",
+        "output": "str",
+        "x": 600,
+        "y": 580,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
+        "id": "e13414feb4f512b8",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "select latest 5 rows from airquality",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "SELECT * \nFROM airquality \nORDER BY entryDateTime DESC \nLIMIT 5;",
+        "output": "str",
+        "x": 560,
+        "y": 620,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
+        "id": "014464d29b72fa53",
+        "type": "switch",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "enabled?",
+        "property": "sensor.enabled",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 520,
+        "y": 240,
+        "wires": [
+            [
+                "24ae834ea737eac6"
+            ]
+        ]
+    },
+    {
+        "id": "24ae834ea737eac6",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "format mqtt for sqlite",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{\n    \"entryDateTime\": {{payload.current_time}},\n    \"gas_calibrated\": {{#payload.gas_calibrated}}1{{/payload.gas_calibrated}}{{^payload.gas_calibrated}}0{{/payload.gas_calibrated}},\n    \"temp\": {{payload.temp}},\n    \"bar\": {{payload.bar.0}},\n    \"hum\": {{payload.hum.0}},\n    \"dew\": {{payload.dew}},\n    \"temp_raw\": {{payload.temp_raw}},\n    \"bar_raw\": {{payload.bar_raw}},\n    \"hum_raw\": {{payload.hum_raw}},\n    \"pm01\": {{payload.pm01}},\n    \"pm025\": {{payload.pm025}},\n    \"pm10\": {{payload.pm10}},\n    \"gas_red\": {{payload.gas_red}},\n    \"gas_oxi\": {{payload.gas_oxi}},\n    \"gas_nh3\": {{payload.gas_nh3}},\n    \"gas_red_raw\": {{payload.gas_red_raw}},\n    \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n    \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n    \"lux\": {{payload.lux}},\n    \"lux_raw\": {{payload.lux_raw}},\n    \"proximity\": {{payload.proximity}},\n    \"sensorName\": \"{{sensor.name}}\",\n    \"deployment_id\": \"{{sensor.deployment_id}}\"\n}",
+        "output": "json",
+        "x": 740,
+        "y": 240,
+        "wires": [
+            [
+                "99bfb6c2ced810ec",
+                "ef6ffe823574c1d1"
+            ]
+        ]
+    },
+    {
+        "id": "ef6ffe823574c1d1",
+        "type": "link out",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "airquality link out",
+        "mode": "link",
+        "links": [
+            "2be1c8d04ce69a48"
+        ],
+        "x": 915,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "78fe0447b9a69129",
+        "type": "catch",
+        "z": "b1fde507a4b80c79",
+        "name": "catch - airquality flow",
+        "scope": null,
+        "uncaught": false,
+        "x": 160,
+        "y": 40,
+        "wires": [
+            [
+                "86c57166ac231b3c"
+            ]
+        ]
+    },
+    {
+        "id": "86c57166ac231b3c",
+        "type": "debug",
+        "z": "b1fde507a4b80c79",
+        "name": "catch - airquality flow",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "4ef1e892a6b1c695",
+        "type": "change",
+        "z": "b1fde507a4b80c79",
+        "g": "efdb589a1b6e0c2f",
+        "name": "set sensor config properties",
+        "rules": [
+            {
+                "t": "set",
+                "p": "sensor",
+                "pt": "msg",
+                "to": "$globalContext(\"config.sensors.airquality_monitors.\" & $split(topic, '/', limit)[1])\t ",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "sensor.name",
+                "pt": "msg",
+                "to": "$split(topic, '/', limit)[1]",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 440,
+        "y": 200,
+        "wires": [
+            [
+                "014464d29b72fa53"
+            ]
+        ]
+    },
+    {
+        "id": "f1530cb4468b517b",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject manually",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 680,
+        "wires": [
+            [
+                "f11bc2c9463f8c85"
+            ]
+        ]
+    },
+    {
+        "id": "f11bc2c9463f8c85",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "drop",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "DROP TABLE airquality;",
+        "output": "str",
+        "x": 470,
+        "y": 680,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
+        "id": "3ac16ca7857d43a0",
+        "type": "inject",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "inject manually",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 720,
+        "wires": [
+            [
+                "88e51d22037ef437"
+            ]
+        ]
+    },
+    {
+        "id": "88e51d22037ef437",
+        "type": "template",
+        "z": "b1fde507a4b80c79",
+        "g": "672f3b07194c5dd5",
+        "name": "pragma",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "sql",
+        "syntax": "mustache",
+        "template": "PRAGMA table_info(airquality);",
+        "output": "str",
+        "x": 480,
+        "y": 720,
+        "wires": [
+            [
+                "35d0362b1f8a5e1a"
+            ]
+        ]
+    },
+    {
         "id": "677a57bbf3619854",
         "type": "http request",
         "z": "f7932be9acc7391c",
@@ -4884,8 +5392,8 @@
         "authType": "",
         "senderr": true,
         "headers": [],
-        "x": 1530,
-        "y": 200,
+        "x": 1550,
+        "y": 220,
         "wires": [
             [
                 "df6ac2f42ac6d8c7"
@@ -4906,8 +5414,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1740,
-        "y": 200,
+        "x": 1760,
+        "y": 220,
         "wires": []
     },
     {
@@ -4987,7 +5495,7 @@
         "type": "debug",
         "z": "f7932be9acc7391c",
         "name": "catch - thingsboard error",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5005,7 +5513,9 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_dov link in",
-        "links": [],
+        "links": [
+            "01307f2f13f465f2"
+        ],
         "x": 175,
         "y": 460,
         "wires": [
@@ -5020,7 +5530,9 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_timedspeedcounts link in",
-        "links": [],
+        "links": [
+            "4094c101f6b59d95"
+        ],
         "x": 175,
         "y": 360,
         "wires": [
@@ -5035,7 +5547,9 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_raw_speed_magnitude link in",
-        "links": [],
+        "links": [
+            "080fd00489701aa1"
+        ],
         "x": 175,
         "y": 500,
         "wires": [
@@ -5050,7 +5564,9 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_raw_speed_magnitude_single link in",
-        "links": [],
+        "links": [
+            "95186b0fee06a3f5"
+        ],
         "x": 175,
         "y": 540,
         "wires": [
@@ -5065,7 +5581,9 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "radar_oc_payload link in",
-        "links": [],
+        "links": [
+            "59a9c9a7ba535641"
+        ],
         "x": 175,
         "y": 580,
         "wires": [
@@ -5156,8 +5674,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 1270,
-        "y": 180,
+        "x": 1290,
+        "y": 200,
         "wires": [
             [
                 "9b8c2bcc16a637fd"
@@ -5295,23 +5813,12 @@
             "1ba33a74f2d3a680"
         ],
         "x": 175,
-        "y": 760,
+        "y": 720,
         "wires": [
             [
                 "c6ff73faf6fa9e98"
             ]
         ]
-    },
-    {
-        "id": "8606059dd2f94a75",
-        "type": "comment",
-        "z": "f7932be9acc7391c",
-        "g": "55a1af374cc8ecb9",
-        "name": "upload to TB as telemetry 'deployment'",
-        "info": "",
-        "x": 830,
-        "y": 720,
-        "wires": []
     },
     {
         "id": "c6ff73faf6fa9e98",
@@ -5327,7 +5834,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 760,
+        "y": 720,
         "wires": [
             [
                 "93aa421659d2c20b"
@@ -5348,7 +5855,7 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 860,
+        "y": 820,
         "wires": [
             [
                 "93aa421659d2c20b"
@@ -5365,7 +5872,7 @@
             "6dca925fad91c100"
         ],
         "x": 175,
-        "y": 860,
+        "y": 820,
         "wires": [
             [
                 "521115ddd5741eea"
@@ -5386,8 +5893,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1780,
-        "y": 1080,
+        "x": 1800,
+        "y": 1180,
         "wires": []
     },
     {
@@ -5414,8 +5921,8 @@
                 "valueValue": ""
             }
         ],
-        "x": 1550,
-        "y": 1080,
+        "x": 1570,
+        "y": 1180,
         "wires": [
             [
                 "542b3b8720733a01"
@@ -5426,7 +5933,7 @@
         "id": "f453ff6136f95abe",
         "type": "function",
         "z": "f7932be9acc7391c",
-        "g": "fe1b9f6f9d89d353",
+        "g": "fac72767826a76d9",
         "name": "set deployment client side attribute payload",
         "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload.currentDeployment,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deploymentSensors: values,\n        deploymentTopLat: global.get(\"config.deployment.lat\",'config'),\n        deploymentTopLon: global.get(\"config.deployment.lon\",'config'),\n        deploymentTopBearing: global.get(\"config.deployment.bearing\",'config')\n    }\n}\n\nreturn newMsg;\n\n//global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newPayload.id, 'config');\n",
         "outputs": 1,
@@ -5435,8 +5942,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
-        "y": 1080,
+        "x": 430,
+        "y": 1220,
         "wires": [
             [
                 "058c390e87e3c283"
@@ -5447,13 +5954,13 @@
         "id": "8768b75dbfee3973",
         "type": "link in",
         "z": "f7932be9acc7391c",
-        "g": "fe1b9f6f9d89d353",
+        "g": "fac72767826a76d9",
         "name": "deployment attributes send, link in",
         "links": [
             "1ba33a74f2d3a680"
         ],
-        "x": 155,
-        "y": 1080,
+        "x": 175,
+        "y": 1220,
         "wires": [
             [
                 "f453ff6136f95abe"
@@ -5464,14 +5971,14 @@
         "id": "d367cb76b239682f",
         "type": "link in",
         "z": "f7932be9acc7391c",
-        "g": "fe1b9f6f9d89d353",
+        "g": "f034ca2ecdf9a2f6",
         "name": "tb attributes link in",
         "links": [
             "486556a1e7fce8cf",
             "7c96d66a8330a4fc"
         ],
-        "x": 155,
-        "y": 1020,
+        "x": 175,
+        "y": 1120,
         "wires": [
             [
                 "058c390e87e3c283"
@@ -5494,8 +6001,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1240,
-        "y": 140,
+        "x": 1260,
+        "y": 160,
         "wires": [
             [
                 "21944450ecc08385"
@@ -5525,8 +6032,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 1330,
-        "y": 220,
+        "x": 1350,
+        "y": 240,
         "wires": [
             [
                 "677a57bbf3619854"
@@ -5551,8 +6058,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1240,
-        "y": 1020,
+        "x": 1260,
+        "y": 1120,
         "wires": [
             [
                 "9c111c8d0f212bf8"
@@ -5577,8 +6084,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 1270,
-        "y": 1060,
+        "x": 1290,
+        "y": 1160,
         "wires": [
             [
                 "8ad71425a71a860e"
@@ -5608,8 +6115,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 1330,
-        "y": 1100,
+        "x": 1350,
+        "y": 1200,
         "wires": [
             [
                 "0a28f82092611160"
@@ -5634,6 +6141,43 @@
         "y": 260,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "2be1c8d04ce69a48",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "f35d3f484c2f6107",
+        "name": "airquality link in",
+        "links": [
+            "ef6ffe823574c1d1"
+        ],
+        "x": 175,
+        "y": 920,
+        "wires": [
+            [
+                "08da197b902c939e"
+            ]
+        ]
+    },
+    {
+        "id": "08da197b902c939e",
+        "type": "template",
+        "z": "f7932be9acc7391c",
+        "g": "f35d3f484c2f6107",
+        "name": "format airquality telemetry",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{\n    \"ts\":{{payload.entryDateTime}},\n    \"values\": {\n        \"airquality\": {\n            \"entryDateTime\": {{payload.entryDateTime}},\n            \"gas_calibrated\": {{payload.gas_calibrated}},\n            \"temp\": {{payload.temp}},\n            \"bar\": {{payload.bar}},\n            \"hum\": {{payload.hum}},\n            \"dew\": {{payload.dew}},\n            \"temp_raw\": {{payload.temp_raw}},\n            \"bar_raw\": {{payload.bar_raw}},\n            \"hum_raw\": {{payload.hum_raw}},\n            \"pm01\": {{payload.pm01}},\n            \"pm025\": {{payload.pm025}},\n            \"pm10\": {{payload.pm10}},\n            \"gas_red\": {{payload.gas_red}},\n            \"gas_oxi\": {{payload.gas_oxi}},\n            \"gas_nh3\": {{payload.gas_nh3}},\n            \"gas_red_raw\": {{payload.gas_red_raw}},\n            \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n            \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n            \"lux\": {{payload.lux}},\n            \"lux_raw\": {{payload.lux_raw}},\n            \"proximity\": {{payload.proximity}},\n            \"sensorName\": \"{{payload.sensorName}}\",\n            \"deployment_id\": \"{{payload.deployment_id}}\"\n        }\n    }\n}",
+        "output": "json",
+        "x": 350,
+        "y": 920,
+        "wires": [
+            [
+                "93aa421659d2c20b"
+            ]
         ]
     },
     {
@@ -7281,7 +7825,9 @@
         "x": 710,
         "y": 100,
         "wires": [
-            []
+            [
+                "d53997b3fec84e3a"
+            ]
         ]
     },
     {
@@ -8380,6 +8926,26 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "d53997b3fec84e3a",
+        "type": "ui_toast",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "",
+        "x": 1010,
+        "y": 100,
+        "wires": []
     },
     {
         "id": "9fe1b87c70ae182d",
@@ -11216,304 +11782,6 @@
         "statusType": "auto",
         "x": 1160,
         "y": 400,
-        "wires": []
-    },
-    {
-        "id": "e968e39eb0de5bc1",
-        "type": "mqtt in",
-        "z": "b1fde507a4b80c79",
-        "name": "",
-        "topic": "aq/#",
-        "qos": "2",
-        "datatype": "auto-detect",
-        "broker": "a5d65dd0e3566daa",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 110,
-        "y": 100,
-        "wires": [
-            [
-                "3da49a479e99f3b5",
-                "a40ef3730c08bfce"
-            ]
-        ]
-    },
-    {
-        "id": "3da49a479e99f3b5",
-        "type": "debug",
-        "z": "b1fde507a4b80c79",
-        "name": "debug: published airquality messages",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 450,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "35d0362b1f8a5e1a",
-        "type": "sqlite",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 920,
-        "y": 580,
-        "wires": [
-            [
-                "9ec2c67401c5aebc"
-            ]
-        ]
-    },
-    {
-        "id": "ad3b1bd4bcdd6731",
-        "type": "inject",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 210,
-        "y": 580,
-        "wires": [
-            [
-                "d61da5053d3a100e"
-            ]
-        ]
-    },
-    {
-        "id": "e063e562cca50f31",
-        "type": "inject",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 200,
-        "y": 620,
-        "wires": [
-            [
-                "e13414feb4f512b8"
-            ]
-        ]
-    },
-    {
-        "id": "9ec2c67401c5aebc",
-        "type": "debug",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "debug: last 5 rows airquality",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 620,
-        "wires": []
-    },
-    {
-        "id": "8cae4cba37aecc0d",
-        "type": "sqlite",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO airquality (entryDateTime, gas_calibrated, temp, bar, hum, dew, temp_raw, bar_raw, hum_raw, pm01, pm025, pm10, gas_red, gas_oxi, gas_nh3, gas_red_raw, gas_oxi_raw, gas_nh3_raw, lux, lux_raw, proximity, noise_level, sensorName, deployment_id)\nVALUES ($entryDateTime, $gas_calibrated, $temp, $bar, $hum, $dew, $temp_raw, $bar_raw, $hum_raw, $pm01, $pm025, $pm10, $gas_red, $gas_oxi, $gas_nh3, $gas_red_raw, $gas_oxi_raw, $gas_nh3_raw, $lux, $lux_raw, $proximity, $noise_level, $sensorName, $deployment_id);\n",
-        "name": "",
-        "x": 940,
-        "y": 360,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "99bfb6c2ced810ec",
-        "type": "function",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "name": "write params for airquality insert",
-        "func": "//format for SQLITE Insert Prepared Statement\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 890,
-        "y": 320,
-        "wires": [
-            [
-                "8cae4cba37aecc0d"
-            ]
-        ]
-    },
-    {
-        "id": "d61da5053d3a100e",
-        "type": "template",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "create airquality table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS airquality (\n    entryDateTime REAL\n    gas_calibrated INTEGER\n    temp REAL\n    bar REAL\n    hum REAL\n    dew REAL\n    temp_raw REAL\n    bar_raw REAL\n    hum_raw REAL\n    pm01 REAL\n    pm025 REAL\n    pm10 REAL\n    gas_red REAL\n    gas_oxi REAL\n    gas_nh3 REAL\n    gas_red_raw REAL\n    gas_oxi_raw REAL\n    gas_nh3_raw REAL\n    lux REAL\n    lux_raw REAL\n    proximity REAL\n    noise_level REAL\n    sensorName TEXT\n    deployment_id TEXT\n    );",
-        "output": "str",
-        "x": 600,
-        "y": 580,
-        "wires": [
-            [
-                "35d0362b1f8a5e1a"
-            ]
-        ]
-    },
-    {
-        "id": "e13414feb4f512b8",
-        "type": "template",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "select latest 5 rows from airquality",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "SELECT * \nFROM airquality \nORDER BY entryDateTime DESC \nLIMIT 5;",
-        "output": "str",
-        "x": 560,
-        "y": 620,
-        "wires": [
-            [
-                "35d0362b1f8a5e1a"
-            ]
-        ]
-    },
-    {
-        "id": "014464d29b72fa53",
-        "type": "switch",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "name": "enabled?",
-        "property": "sensor.enabled",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 500,
-        "y": 240,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "24ae834ea737eac6",
-        "type": "template",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "name": "format mqtt for sqlite",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "{\n    \"entryDateTime\": {{payload.current_time}},\n    \"gas_calibrated\": {{#payload.Gas Calibrated}}1{{/payload.Gas Calibrated}}{{^payload.Gas Calibrated}}0{{/payload.Gas Calibrated}},\n    \"temp\": {{payload.Temp}},\n    \"bar\": {{#payload}}{{#Bar}}{{.[0]}}{{/Bar}}{{/payload}},\n    \"hum\": {{#payload}}{{#Hum}}{{.[0]}}{{/Hum}}{{/payload}},\n    \"dew\": {{payload.Dew}},\n    \"temp_raw\": {{payload.temp_raw}},\n    \"bar_raw\": {{payload.bar_raw}},\n    \"hum_raw\": {{payload.hum_raw}},\n    \"pm01\": {{payload.P1}},\n    \"pm025\": {{payload.P2.5}},\n    \"pm10\": {{payload.P10}},\n    \"gas_red\": {{payload.Red}},\n    \"gas_oxi\": {{payload.Oxi}},\n    \"gas_nh3\": {{payload.NH3}},\n    \"gas_red_raw\": {{payload.gas_red_raw}},\n    \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n    \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n    \"lux\": {{payload.lux}},\n    \"lux_raw\": {{payload.lux_raw}},\n    \"proximity\": {{payload.proximity}},\n    \"noise_level\": \"\",\n    \"sensorName\": {{sensor.name}},\n    \"deployment_id\": {{sensor.deployment_id}}\n}",
-        "output": "json",
-        "x": 600,
-        "y": 320,
-        "wires": [
-            [
-                "99bfb6c2ced810ec",
-                "ef6ffe823574c1d1"
-            ]
-        ]
-    },
-    {
-        "id": "a40ef3730c08bfce",
-        "type": "function",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "name": "append config, deployment properties",
-        "func": "// attach deployment_id, if applicable\nmsg.sensor = {}\n\n//pull the airquality_monitor name, will be second element in mqtt topic; e.g. aq/sensorname01/readings\nconst sensor = global.get(`config.sensors.airquality_monitors.${msg.topic.split('/')[1]}`);\nmsg.sensor.name = msg.topic.split('/')[1];\n\n//indicate if sensor is enabled in TM for capture\nif (sensor.hasOwnProperty('enabled')) {\n    msg.sensor.enabled = sensor.enabled;\n}\n\n//attach deployment_id to message\nif (sensor.hasOwnProperty('deployment')) {\n    msg.sensor.deployment_id = sensor.deployment.id;\n}\n\n//attach mqtt topic to message\nif (sensor.hasOwnProperty('mqtt_topic_incoming')) {\n    msg.sensor.mqtt_topic_incoming = sensor.mqtt_topic_incoming;\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 200,
-        "wires": [
-            [
-                "014464d29b72fa53"
-            ]
-        ]
-    },
-    {
-        "id": "ef6ffe823574c1d1",
-        "type": "link out",
-        "z": "b1fde507a4b80c79",
-        "g": "efdb589a1b6e0c2f",
-        "name": "airquality link out",
-        "mode": "link",
-        "links": [],
-        "x": 775,
-        "y": 420,
-        "wires": []
-    },
-    {
-        "id": "78fe0447b9a69129",
-        "type": "catch",
-        "z": "b1fde507a4b80c79",
-        "name": "catch - airquality flow",
-        "scope": null,
-        "uncaught": false,
-        "x": 160,
-        "y": 40,
-        "wires": [
-            [
-                "86c57166ac231b3c"
-            ]
-        ]
-    },
-    {
-        "id": "86c57166ac231b3c",
-        "type": "debug",
-        "z": "b1fde507a4b80c79",
-        "name": "catch - airquality flow",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 400,
-        "y": 40,
         "wires": []
     }
 ]
