@@ -28,10 +28,6 @@ See [Config Readme](https://github.com/greendormer/enviroplus-monitor/blob/main/
 
 ### Recommended config settings
 
-{% hint style="info" %}
-Note: At present, readings will be sent every 5-minutes and _this is hard-coded_. This will be parameterized in a future release.
-{% endhint %}
-
 The following are important keys for the recommended default Traffic Monitor -specific configuration:
 
 * `"enable_send_data_to_homemanager": true` in order to send MQTT payloads to specified broker
@@ -67,30 +63,34 @@ The sensor needs to stabilize (default 5-minutes) after the script initializes b
 ```json
 {
     "gas_calibrated": false,
-    "Bar": [
-        1013.93,
+    "bar": [
+        1009.44,
         "0"
     ],
-    "Hum": [
-        45.9,
-        "1"
+    "hum": [
+        28.7,
+        "2"
     ],
-    "Forecast": {
-        "Valid": false,
-        "3 Hour Change": 0,
-        "Forecast": "Insufficient Data"
-    },
     "p025": 0,
     "p10": 0,
     "p01": 0,
-    "Dew": 7.5,
-    "Temp": 19.5,
-    "Min Temp": 19.5,
-    "Max Temp": 19.5,
-    "Red": 4.43,
-    "Oxi": 0.16,
-    "NH3": 0.66,
-    "Lux": 0
+    "dew": 2.1,
+    "temp": 21,
+    "temp_min": 20.9,
+    "temp_max": 21.1,
+    "gas_red": 4.2,
+    "gas_oxi": 0.15,
+    "gas_nh3": 0.69,
+    "lux": 1.2,
+    "proximity": 255,
+    "lux_raw": 1.16185,
+    "temp_raw": 28.68982029794099,
+    "bar_raw": 1003.7122773175154,
+    "hum_raw": 18.31337919009301,
+    "gas_red_raw": 140805,
+    "gas_oxi_raw": 103585,
+    "gas_nh3_raw": 227871,
+    "current_time": 1738698665.077546
 }
 ```
 
@@ -100,13 +100,13 @@ The sensor needs to stabilize (default 5-minutes) after the script initializes b
 | bar | [REAL, TEXT] | hPa, Comfort-level `{"0": "Stable", "1": "Fair", "3": "Poorer/Windy/", "4": "Rain/Gale/Storm"}` | Air pressure, compensated for altitude and temp as `Bar / comp_factor` where `comp_factor = math.pow(1 - (0.0065 * altitude/(temp + 0.0065 * alt + 273.15)), -5.257)` |
 | hum | [REAL, TEXT] | %, Comfort-level `{"good": "1", "dry": "2", "wet": "3"}`| Adjusted for compensation factor set in `config.json` |
 | Forecast | {OBJECT} | `Valid`: true/false, `3 Hour Change` is millibars difference in barometer readings, `Forecast` is description calculated from barometer change | Calculated forecast based on sensor barometer changes|
-| p01 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 1 micrometers / microns (PM1, PM<sub>1</sub>), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
-| p025 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 2.5 micrometers / microns (PM2.5, PM<sub>2.5</sub>), read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
-| p10 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 10 micrometers / microns (PM10, PM<sub>10</sub>), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
+| pm01 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 1 micrometers / microns (PM1, PM<sub>1</sub>), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
+| pm025 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 2.5 micrometers / microns (PM2.5, PM<sub>2.5</sub>), read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
+| pm10 | REAL | ug/m3 (microgram per meter cubed, µg/m³) | Particulate Matter 10 micrometers / microns (PM10, PM<sub>10</sub>), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor. |
 | dew | REAL | C | Calculated from Temp and Hum as `(237.7 * (math.log(dew_hum/100)+17.271*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271*dew_temp/(237.7 + dew_temp)))` | 
 | temp | REAL |  C | Adjusted for compensation factor set in `config.json` | 
-| Min Temp | REAL | C | Minimum temperature measured while sensor was running (only resets on restart) | 
-| Max Temp | REAL | C | Maximum temperature measured while sensor was running (only resets on restart) | 
+| temp_min | REAL | C | Minimum temperature measured while sensor was running (only resets on restart) | 
+| temp_max | REAL | C | Maximum temperature measured while sensor was running (only resets on restart) | 
 | gas_red | REAL | ppm | Red PPM calculated as `red_in_ppm = math.pow(10, -1.25 * math.log10(red_ratio) + 0.64)`. `red_ratio` is compensated gas value, see Software notes. | 
 | gas_oxi | REAL | ppm | Oxi PPM calculated as `oxi_in_ppm = math.pow(10, math.log10(oxi_ratio) - 0.8129)`. `oxi_ratio` is compensated gas value, see Software notes. | 
 | nh3 | REAL | ppm | NH3 PPM calculated as `nh3_in_ppm = math.pow(10, -1.8 * math.log10(nh3_ratio) - 0.163)`. `nh3_ratio` is compensated gas value, see Software notes. | 
