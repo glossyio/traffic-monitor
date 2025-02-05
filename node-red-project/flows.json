@@ -309,7 +309,8 @@
             "840802d34d143ded",
             "8d65b604e8d9e7f9",
             "db1f35650c8d6448",
-            "6e2a152aecd929d3"
+            "6e2a152aecd929d3",
+            "d53997b3fec84e3a"
         ],
         "x": 14,
         "y": 19,
@@ -805,8 +806,8 @@
         ],
         "x": 48,
         "y": 233,
-        "w": 1024,
-        "h": 854
+        "w": 1050,
+        "h": 920
     },
     {
         "id": "672f3b07194c5dd5",
@@ -1088,14 +1089,7 @@
             "label": true
         },
         "nodes": [
-            "8a6d4593a661c3df",
-            "ff28acdecfc4ebb1",
-            "751ff2049a663e9c",
-            "3cdbccf5dbcb1c4e",
             "f6ecdd18d8e03f91",
-            "f9a2f4f97e3ba1cf",
-            "928d7cafdc1ab7fa",
-            "8f4e9d81288d5abd",
             "689b64c16a889e0a",
             "bc398ad5de3bd112",
             "6d2f607b324415b4",
@@ -1105,14 +1099,12 @@
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
-            "ba3b41519066f03a",
-            "f111096594207360",
-            "c25adb99d55eb890"
+            "a2b2e69319628779"
         ],
-        "x": 74,
+        "x": 88,
         "y": 439,
-        "w": 972,
-        "h": 622
+        "w": 984,
+        "h": 688
     },
     {
         "id": "f35d3f484c2f6107",
@@ -1190,6 +1182,32 @@
         "y": 759,
         "w": 812,
         "h": 122
+    },
+    {
+        "id": "a2b2e69319628779",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "create deployment table",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "8a6d4593a661c3df",
+            "ff28acdecfc4ebb1",
+            "751ff2049a663e9c",
+            "3cdbccf5dbcb1c4e",
+            "f9a2f4f97e3ba1cf",
+            "928d7cafdc1ab7fa",
+            "8f4e9d81288d5abd",
+            "ba3b41519066f03a",
+            "f111096594207360",
+            "c25adb99d55eb890"
+        ],
+        "x": 114,
+        "y": 859,
+        "w": 932,
+        "h": 242
     },
     {
         "id": "05a58d9ee463c696",
@@ -1865,13 +1883,13 @@
         "id": "8a6d4593a661c3df",
         "type": "sqlite",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 820,
-        "y": 860,
+        "x": 860,
+        "y": 900,
         "wires": [
             [
                 "3cdbccf5dbcb1c4e"
@@ -1882,7 +1900,7 @@
         "id": "ff28acdecfc4ebb1",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject after 0.1 sec",
         "props": [],
         "repeat": "",
@@ -1890,8 +1908,8 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 210,
-        "y": 860,
+        "x": 250,
+        "y": 900,
         "wires": [
             [
                 "ba3b41519066f03a"
@@ -1902,7 +1920,7 @@
         "id": "751ff2049a663e9c",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject manually",
         "props": [],
         "repeat": "",
@@ -1910,8 +1928,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 200,
-        "y": 900,
+        "x": 240,
+        "y": 940,
         "wires": [
             [
                 "f111096594207360"
@@ -1922,7 +1940,7 @@
         "id": "3cdbccf5dbcb1c4e",
         "type": "debug",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "sqlite select last 5 msgs",
         "active": true,
         "tosidebar": true,
@@ -1932,8 +1950,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 850,
-        "y": 900,
+        "x": 890,
+        "y": 940,
         "wires": []
     },
     {
@@ -1957,7 +1975,7 @@
         "id": "f9a2f4f97e3ba1cf",
         "type": "inject",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "inject manually",
         "props": [],
         "repeat": "",
@@ -1965,8 +1983,8 @@
         "once": false,
         "onceDelay": "5",
         "topic": "",
-        "x": 200,
-        "y": 940,
+        "x": 240,
+        "y": 980,
         "wires": [
             [
                 "c25adb99d55eb890"
@@ -1978,7 +1996,7 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "d": true,
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "drop table deployment",
         "props": [
             {
@@ -1991,8 +2009,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 500,
-        "y": 980,
+        "x": 540,
+        "y": 1020,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2004,7 +2022,7 @@
         "type": "inject",
         "z": "3dae026ab340962a",
         "d": true,
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "alter table deployment from 0.2.0 to 0.3.0",
         "props": [
             {
@@ -2017,8 +2035,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 440,
-        "y": 1020,
+        "x": 480,
+        "y": 1060,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2204,7 +2222,7 @@
         "id": "ba3b41519066f03a",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "create table deployment",
         "field": "topic",
         "fieldType": "msg",
@@ -2212,8 +2230,8 @@
         "syntax": "mustache",
         "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
         "output": "str",
-        "x": 490,
-        "y": 860,
+        "x": 530,
+        "y": 900,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2224,7 +2242,7 @@
         "id": "f111096594207360",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "select latest 5 rows from deployment",
         "field": "payload",
         "fieldType": "msg",
@@ -2232,8 +2250,8 @@
         "syntax": "mustache",
         "template": "SELECT * \nFROM deployment \nORDER BY entryStartDateTime DESC \nLIMIT 5;",
         "output": "str",
-        "x": 450,
-        "y": 900,
+        "x": 490,
+        "y": 940,
         "wires": [
             [
                 "8a6d4593a661c3df"
@@ -2244,7 +2262,7 @@
         "id": "c25adb99d55eb890",
         "type": "template",
         "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
+        "g": "a2b2e69319628779",
         "name": "select latest active deployments",
         "field": "topic",
         "fieldType": "msg",
@@ -2252,8 +2270,8 @@
         "syntax": "mustache",
         "template": "SELECT id, entryStartDateTime, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
         "output": "str",
-        "x": 470,
-        "y": 940,
+        "x": 510,
+        "y": 980,
         "wires": [
             []
         ]
@@ -7807,7 +7825,9 @@
         "x": 710,
         "y": 100,
         "wires": [
-            []
+            [
+                "d53997b3fec84e3a"
+            ]
         ]
     },
     {
@@ -8906,6 +8926,26 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "d53997b3fec84e3a",
+        "type": "ui_toast",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "",
+        "name": "",
+        "x": 1010,
+        "y": 100,
+        "wires": []
     },
     {
         "id": "9fe1b87c70ae182d",
