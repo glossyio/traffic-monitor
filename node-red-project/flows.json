@@ -541,8 +541,8 @@
             "55a1af374cc8ecb9",
             "99dfff63ac837bc8",
             "f35d3f484c2f6107",
-            "aa8d606460d6e410",
-            "221ddfedf40c108f"
+            "221ddfedf40c108f",
+            "8c521232f464d27a"
         ],
         "x": 108,
         "y": 93,
@@ -561,12 +561,12 @@
             "fac72767826a76d9",
             "f034ca2ecdf9a2f6",
             "75f7976086cc9838",
-            "232db2c330aebd95"
+            "fdb3962b458f90c2"
         ],
         "x": 108,
-        "y": 1053,
+        "y": 999,
         "w": 1198,
-        "h": 234
+        "h": 368
     },
     {
         "id": "9e0b1edd49eb4244",
@@ -816,6 +816,25 @@
         "h": 222
     },
     {
+        "id": "694f0242d0985c69",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "send to tb",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "21944450ecc08385",
+            "93aa421659d2c20b",
+            "9b8c2bcc16a637fd",
+            "43087a735f896849"
+        ],
+        "x": 1374,
+        "y": 93,
+        "w": 1118,
+        "h": 188
+    },
+    {
         "id": "b334a2375eb8cb42",
         "type": "group",
         "z": "f7932be9acc7391c",
@@ -852,13 +871,15 @@
             "e05e91362c933e94",
             "9f5540b6beae8e73",
             "3fb645608f34cc0c",
-            "2a979d76853ee0ab",
             "cc21b9e657cba081",
             "ff1719e60656a2e6",
             "d3f14c01ec3c7250",
-            "5d3596375bd695c0",
             "4796b517d7d045a7",
-            "9a894f4bd304f5a9"
+            "9a894f4bd304f5a9",
+            "5d3596375bd695c0",
+            "f29975eb207b5b8d",
+            "1711871384d75e10",
+            "6c582e93dfb3d6fa"
         ],
         "x": 134,
         "y": 219,
@@ -1094,11 +1115,11 @@
             "fill": "#ffffbf"
         },
         "nodes": [
-            "f453ff6136f95abe",
-            "8768b75dbfee3973"
+            "8768b75dbfee3973",
+            "9b0f7197fe82bbfa"
         ],
         "x": 134,
-        "y": 1179,
+        "y": 1259,
         "w": 492,
         "h": 82
     },
@@ -1113,12 +1134,15 @@
             "fill": "#bfc7d7"
         },
         "nodes": [
-            "d367cb76b239682f"
+            "d367cb76b239682f",
+            "e507fdc9cbf67095",
+            "0b62cae60d488c85",
+            "4af0d78e8bc39647"
         ],
         "x": 134,
         "y": 1079,
-        "w": 115,
-        "h": 82
+        "w": 472,
+        "h": 142
     },
     {
         "id": "b7398c4e0bc743e5",
@@ -1139,6 +1163,27 @@
         "x": 494,
         "y": 759,
         "w": 812,
+        "h": 122
+    },
+    {
+        "id": "43087a735f896849",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "694f0242d0985c69",
+        "name": "tb http api",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "677a57bbf3619854",
+            "df6ac2f42ac6d8c7",
+            "9c944328e288b2dc",
+            "dd3f9ef16332021c",
+            "d739b10ce5fa8f40"
+        ],
+        "x": 1714,
+        "y": 119,
+        "w": 752,
         "h": 122
     },
     {
@@ -1166,46 +1211,6 @@
         "y": 859,
         "w": 932,
         "h": 242
-    },
-    {
-        "id": "694f0242d0985c69",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "send to tb",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "21944450ecc08385",
-            "93aa421659d2c20b",
-            "9b8c2bcc16a637fd",
-            "43087a735f896849"
-        ],
-        "x": 1374,
-        "y": 93,
-        "w": 1118,
-        "h": 194
-    },
-    {
-        "id": "43087a735f896849",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "694f0242d0985c69",
-        "name": "tb http api",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "677a57bbf3619854",
-            "df6ac2f42ac6d8c7",
-            "9c944328e288b2dc",
-            "dd3f9ef16332021c",
-            "d739b10ce5fa8f40"
-        ],
-        "x": 1714,
-        "y": 119,
-        "w": 752,
-        "h": 142
     },
     {
         "id": "05a58d9ee463c696",
@@ -1311,25 +1316,12 @@
         ]
     },
     {
-        "id": "232db2c330aebd95",
-        "type": "junction",
-        "z": "f7932be9acc7391c",
-        "g": "fe1b9f6f9d89d353",
-        "x": 740,
-        "y": 1120,
-        "wires": [
-            [
-                "75f7976086cc9838"
-            ]
-        ]
-    },
-    {
-        "id": "aa8d606460d6e410",
+        "id": "8c521232f464d27a",
         "type": "junction",
         "z": "f7932be9acc7391c",
         "g": "2f27e270200485b9",
-        "x": 1060,
-        "y": 160,
+        "x": 1000,
+        "y": 620,
         "wires": [
             [
                 "221ddfedf40c108f"
@@ -2073,7 +2065,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "capture deployment info, send diff sql queries",
-        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorType = sensorType;\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\");\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorType}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id);\n                }\n                else {\n                    newMsg.payload = sqlMatchObj;\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
+        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorType = sensorType;\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\");\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorType}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id);\n                }\n                //deployment already exists, no change\n                else {\n                    newMsg.payload = sqlMatchObj;\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, sqlMatchObj.id);\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2182,7 +2174,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "latest deployment info",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2232,7 +2224,7 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
+        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
         "output": "str",
         "x": 290,
         "y": 520,
@@ -2292,7 +2284,7 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "SELECT id, entryStartDateTime, sensorType, sensorName, deviceName \nFROM deployment \nWHERE entryStartDateTime IN (   \n    SELECT MAX(entryStartDateTime)   \n    FROM deployment   \n    WHERE entryEndDateTime IS NULL   \n    GROUP BY sensorName, deviceName \n    ) \nORDER BY sensorName, deviceName;",
+        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
         "output": "str",
         "x": 510,
         "y": 980,
@@ -2393,7 +2385,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2695,7 +2687,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
         "name": "debug-radar-raws-speeds-write",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2713,7 +2705,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5436,7 +5428,7 @@
         "z": "f7932be9acc7391c",
         "g": "43087a735f896849",
         "name": "tb telemetry response",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5445,7 +5437,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 2320,
-        "y": 220,
+        "y": 200,
         "wires": []
     },
     {
@@ -5527,7 +5519,7 @@
         "y": 260,
         "wires": [
             [
-                "2a979d76853ee0ab"
+                "f29975eb207b5b8d"
             ]
         ]
     },
@@ -5605,33 +5597,12 @@
         "wires": []
     },
     {
-        "id": "2a979d76853ee0ab",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "1819134eccdf2660",
-        "name": "format radar_timedspeedcounts telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.TimedSpeedCounts.time * 1000,\n    values: {\n        radar_timedspeedcounts: values.TimedSpeedCounts\n    }\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 260,
-        "wires": [
-            [
-                "aa8d606460d6e410"
-            ]
-        ]
-    },
-    {
         "id": "cc21b9e657cba081",
         "type": "function",
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "format radar_oc_payload telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.start_time * 1000,\n    values: {\n        radar_oc_payload: values\n    }\n}\n\nreturn msg;",
+        "func": "const newPayload = {\n    ts: msg.payload.start_time * 1000,\n    values: {\n        radar: {\n            radar_oc_payload: {\n                start_time: msg.payload.start_time,\n                end_time: msg.payload.end_time,\n                delta_time_msec: msg.payload.delta_time_msec,\n                dir: msg.payload.dir,\n                frames: msg.payload.frames,\n                max_mph: msg.payload.max_mph,\n                min_mph: msg.payload.min_mph,\n                max_mag: msg.payload.max_mag,\n                avg_mag: msg.payload.avg_mag,\n                frames_per_mph: msg.payload.frames_per_mph,\n                length_ft: msg.payload.length_ft,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5698,7 +5669,8 @@
         "y": 360,
         "wires": [
             [
-                "aa8d606460d6e410"
+                "1711871384d75e10",
+                "221ddfedf40c108f"
             ]
         ]
     },
@@ -5731,33 +5703,12 @@
         ]
     },
     {
-        "id": "5d3596375bd695c0",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "1819134eccdf2660",
-        "name": "format radar_dov telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_dov: values\n    }\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 340,
-        "y": 360,
-        "wires": [
-            [
-                "ff1719e60656a2e6"
-            ]
-        ]
-    },
-    {
         "id": "4796b517d7d045a7",
         "type": "function",
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "format radar_raw_speed_magnitude telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_raw_speed_magnitude: values\n    }\n}\n\nreturn msg;",
+        "func": "const newPayload = {\n    ts: msg.payload.time * 1000,\n    values: {\n        radar: {\n            radar_raw_speed_magnitude: {\n                time: msg.payload.time,\n                unit: msg.payload.time,\n                magnitude: msg.payload.magnitude,\n                speed: msg.payload.speed,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5778,7 +5729,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "format radar_raw_speed_magnitude_single telemetry",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time * 1000,\n    values: {\n        radar_raw_speed_magnitude_single: values\n    }\n}\n\nreturn msg;",
+        "func": "const newPayload = {\n    ts: msg.payload.time * 1000,\n    values: {\n        radar: {\n            radar_raw_speed_magnitude_single: {\n                time: msg.payload.time,\n                unit: msg.payload.unit,\n                magnitude: msg.payload.magnitude,\n                speed: msg.payload.speed,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5816,7 +5767,7 @@
         "z": "f7932be9acc7391c",
         "g": "55a1af374cc8ecb9",
         "name": "format deployment telemetry",
-        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deployment: values\n    }\n}\n\nreturn newMsg;\n\n/* Sample payload:\n{\n    \"updatedDeployment\": [\n        {\n            \"id\": \"1737518994047-c5a4e582-d\",\n            \"entryStartDateTime\": 1737518994047,\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"e\",\n            \"sensorName\": \"picam_264\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        }\n    ],\n    \"currentDeployment\": [\n        {\n            \"id\": \"1737519005736-e1c914cc-d\",\n            \"entryStartDateTime\": 1737519005736,\n            \"entryEndDateTime\": \"\",\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"w\",\n            \"sensorName\": \"picam_264\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        },\n        {\n            \"id\": \"1737518994047-42d3a02b-d\",\n            \"entryStartDateTime\": 1737518994047,\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"s\",\n            \"sensorName\": \"TM_RADAR_SERIAL_PORT_00\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        }\n    ]\n}\n*/",
+        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deployments: values\n    }\n}\n\nreturn newMsg;\n\n/* Sample payload:\n{\n    \"updatedDeployment\": [\n        {\n            \"id\": \"1737518994047-c5a4e582-d\",\n            \"entryStartDateTime\": 1737518994047,\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"e\",\n            \"sensorName\": \"picam_264\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        }\n    ],\n    \"currentDeployment\": [\n        {\n            \"id\": \"1737519005736-e1c914cc-d\",\n            \"entryStartDateTime\": 1737519005736,\n            \"entryEndDateTime\": \"\",\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"w\",\n            \"sensorName\": \"picam_264\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        },\n        {\n            \"id\": \"1737518994047-42d3a02b-d\",\n            \"entryStartDateTime\": 1737518994047,\n            \"lat\": 45.52252,\n            \"lon\": -122.6912,\n            \"bearing\": \"s\",\n            \"sensorName\": \"TM_RADAR_SERIAL_PORT_00\",\n            \"deviceName\": \"a06979cfbfcc59da\"\n        }\n    ]\n}\n*/",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5827,7 +5778,7 @@
         "y": 620,
         "wires": [
             [
-                "aa8d606460d6e410"
+                "8c521232f464d27a"
             ]
         ]
     },
@@ -5848,7 +5799,7 @@
         "y": 720,
         "wires": [
             [
-                "aa8d606460d6e410"
+                "8c521232f464d27a"
             ]
         ]
     },
@@ -5870,27 +5821,6 @@
         ]
     },
     {
-        "id": "f453ff6136f95abe",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "fac72767826a76d9",
-        "name": "set deployment client side attribute payload",
-        "func": "var newMsg = {};\n\n// format the payload with a timestamp\nlet values = {\n    ...msg.payload.currentDeployment,\n}\n//ts in milliseconds\nnewMsg.payload = {\n    ts: new Date().getTime(),\n    values: {\n        deploymentSensors: values,\n        deploymentTopLat: global.get(\"config.deployment.lat\"),\n        deploymentTopLon: global.get(\"config.deployment.lon\"),\n        deploymentTopBearing: global.get(\"config.deployment.bearing\")\n    }\n}\n\nreturn newMsg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 1220,
-        "wires": [
-            [
-                "232db2c330aebd95"
-            ]
-        ]
-    },
-    {
         "id": "8768b75dbfee3973",
         "type": "link in",
         "z": "f7932be9acc7391c",
@@ -5900,10 +5830,10 @@
             "1ba33a74f2d3a680"
         ],
         "x": 175,
-        "y": 1220,
+        "y": 1300,
         "wires": [
             [
-                "f453ff6136f95abe"
+                "9b0f7197fe82bbfa"
             ]
         ]
     },
@@ -5914,14 +5844,13 @@
         "g": "f034ca2ecdf9a2f6",
         "name": "tb attributes link in",
         "links": [
-            "486556a1e7fce8cf",
-            "7c96d66a8330a4fc"
+            "486556a1e7fce8cf"
         ],
         "x": 175,
         "y": 1120,
         "wires": [
             [
-                "232db2c330aebd95"
+                "e507fdc9cbf67095"
             ]
         ]
     },
@@ -6015,7 +5944,7 @@
         "y": 820,
         "wires": [
             [
-                "aa8d606460d6e410"
+                "8c521232f464d27a"
             ]
         ]
     },
@@ -6166,9 +6095,176 @@
         "y": 160,
         "wires": [
             [
-                "aa8d606460d6e410"
+                "221ddfedf40c108f"
             ]
         ]
+    },
+    {
+        "id": "9b0f7197fe82bbfa",
+        "type": "template",
+        "z": "f7932be9acc7391c",
+        "g": "fac72767826a76d9",
+        "name": "set deployment client side attribute payload",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": {{lat}},\n            \"lon\": {{lon}},\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"lat\": {{global.config.deployment.lat}},\n            \"lon\": {{global.config.deployment.lon}},\n            \"bearing\": \"{{global.config.deployment.bearing}}\"\n        }\n    }\n}",
+        "output": "json",
+        "x": 430,
+        "y": 1300,
+        "wires": [
+            [
+                "75f7976086cc9838"
+            ]
+        ]
+    },
+    {
+        "id": "5d3596375bd695c0",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_dov telemetry",
+        "func": "const newPayload = {\n    ts: msg.payload.time * 1000,\n    values: {\n        radar: {\n            radar_dov: {\n                time: msg.payload.time,\n                unit: msg.payload.unit,\n                direction: msg.payload.direction,\n                velocity: msg.payload.DetectedObjectVelocity,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 360,
+        "wires": [
+            [
+                "ff1719e60656a2e6"
+            ]
+        ]
+    },
+    {
+        "id": "f29975eb207b5b8d",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "format radar_timedspeedcounts telemetry",
+        "func": "const newPayload = {\n    ts: msg.payload.TimedSpeedCounts.time * 1000,\n    values: {\n        radar: {\n            radar_timedspeedcounts: {\n                time: msg.payload.TimedSpeedCounts.time,\n                direction: msg.payload.TimedSpeedCounts.direction,\n                units: msg.payload.TimedSpeedCounts.units,\n                count: msg.payload.TimedSpeedCounts.count,\n                average: msg.payload.TimedSpeedCounts.average,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 260,
+        "wires": [
+            [
+                "221ddfedf40c108f",
+                "6c582e93dfb3d6fa"
+            ]
+        ]
+    },
+    {
+        "id": "1711871384d75e10",
+        "type": "debug",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "6c582e93dfb3d6fa",
+        "type": "debug",
+        "z": "f7932be9acc7391c",
+        "g": "1819134eccdf2660",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "e507fdc9cbf67095",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "f034ca2ecdf9a2f6",
+        "name": "format system info client-side attributes",
+        "func": "const newPayload = {\n    sysinfo_tmVersion: msg.payload.tmVersion,\n    sysinfo_osHostname: msg.payload.osHostname,\n    sysinfo_osRelease: msg.payload.osRelease,\n    sysinfo_osTimeZone: msg.payload.osTimeZone,\n    sysinfo_deviceName: msg.payload.deviceName,\n    sysinfo_frigateVersion: msg.payload.frigateVersion,\n    sysinfo_ssid: msg.payload.ssid,\n    sysinfo_ipv4Address: msg.payload.ipv4Address\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1120,
+        "wires": [
+            [
+                "75f7976086cc9838"
+            ]
+        ]
+    },
+    {
+        "id": "4af0d78e8bc39647",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "f034ca2ecdf9a2f6",
+        "name": "backup link in",
+        "links": [
+            "7c96d66a8330a4fc"
+        ],
+        "x": 175,
+        "y": 1180,
+        "wires": [
+            [
+                "0b62cae60d488c85"
+            ]
+        ]
+    },
+    {
+        "id": "0b62cae60d488c85",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "f034ca2ecdf9a2f6",
+        "name": "format config backup client-side attribute",
+        "func": "const newPayload = {\n    backup_config: msg.payload\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 1180,
+        "wires": [
+            [
+                "75f7976086cc9838"
+            ]
+        ]
+    },
+    {
+        "id": "fdb3962b458f90c2",
+        "type": "comment",
+        "z": "f7932be9acc7391c",
+        "g": "fe1b9f6f9d89d353",
+        "name": "NOTE: instructions to delete client-side attributes",
+        "info": "To delete client-side attributes:\n\n`DELETE` for <TB_URL>/api/plugins/telemetry/{deviceId}/{scope}{?keys}\n\n- {deviceId} = <LONG_DEVICE_HEX_STRING> is from ThingsBoard web portal > Device > Details > Copy device deviceId\n- {scope} = 'CLIENT_SCOPE'\n- keys = comma-separated list of attributes with commas formatted for transmission \n    system_deviceName,system_frigateVersion,system_ipv4Address,system_osHostname,system_osRelease,system_osTimeZone,system_ssid,system_tmVersion\n    becomes system_deviceName%2Csystem_frigateVersion%2Csystem_ipv4Address%2Csystem_osHostname%2Csystem_osRelease%2Csystem_osTimeZone%2Csystem_ssid%2Csystem_tmVersion\n\n\nCan also access it at <TB_URL>/swagger-ui/index.html under 'telemetry-controller' section",
+        "x": 320,
+        "y": 1040,
+        "wires": []
     },
     {
         "id": "3985037239b671c5",
@@ -10858,7 +10954,7 @@
         "type": "link out",
         "z": "05fcb02c571dcfee",
         "g": "dc2934def36c6285",
-        "name": "system_metrics link out",
+        "name": "system_info link out",
         "mode": "link",
         "links": [
             "d367cb76b239682f"
@@ -11003,12 +11099,12 @@
                 "t": "move",
                 "p": "payload",
                 "pt": "msg",
-                "to": "payload.backup.frigate",
+                "to": "payload.frigate_config",
                 "tot": "msg"
             },
             {
                 "t": "set",
-                "p": "payload.backup.dateTime",
+                "p": "payload.dateTime",
                 "pt": "msg",
                 "to": "",
                 "tot": "date"
@@ -11215,7 +11311,7 @@
         "name": "backup link out",
         "mode": "link",
         "links": [
-            "d367cb76b239682f"
+            "4af0d78e8bc39647"
         ],
         "x": 885,
         "y": 1980,
@@ -11716,7 +11812,7 @@
         "id": "6dca925fad91c100",
         "type": "link out",
         "z": "f410f6aac9d1a3fc",
-        "name": "system_metrics",
+        "name": "system_metrics link out",
         "mode": "link",
         "links": [
             "24c1b5f3bff3834c"
