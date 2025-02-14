@@ -604,15 +604,13 @@
             "22234193104332f6",
             "4094c101f6b59d95",
             "de7bc8103f7ca3c6",
-            "ef75320f6a5f0382",
             "f9a458c786e4bb84",
-            "8ccadc734d8ab769",
-            "463b64006f270db3"
+            "8ccadc734d8ab769"
         ],
         "x": 354,
-        "y": 1039,
+        "y": 959,
         "w": 1222,
-        "h": 282
+        "h": 242
     },
     {
         "id": "1eebfe6a2eca8ad4",
@@ -632,15 +630,13 @@
             "1acba66197b7b0fa",
             "01307f2f13f465f2",
             "3faf0dcbc24ef11c",
-            "2479e1e747a9c6ec",
             "1ef2418fe536aad5",
-            "1db11b98d771c791",
-            "dd88a80a3a79aa0b"
+            "1db11b98d771c791"
         ],
         "x": 354,
-        "y": 739,
+        "y": 699,
         "w": 1122,
-        "h": 282
+        "h": 242
     },
     {
         "id": "047f05d7650ba3cc",
@@ -660,15 +656,13 @@
             "7e4a607265a272c2",
             "080fd00489701aa1",
             "a489601d43802b82",
-            "fe45aef575ccab71",
             "8d4953609399d75e",
-            "d18b637f01871f23",
             "2aac5b4f344a86e8"
         ],
         "x": 354,
-        "y": 1339,
+        "y": 1219,
         "w": 1242,
-        "h": 282
+        "h": 242
     },
     {
         "id": "fcbf8999ca05a371",
@@ -687,15 +681,13 @@
             "83065a55697cc160",
             "95186b0fee06a3f5",
             "07cdbeafa34a565e",
-            "c61ef5ee09cb5c93",
-            "4f072d31286f7667",
             "303ea9d25d718231",
             "a18940845d6c5a2e"
         ],
         "x": 414,
-        "y": 1639,
+        "y": 1499,
         "w": 1242,
-        "h": 302
+        "h": 262
     },
     {
         "id": "23636f4163fa6e3b",
@@ -823,18 +815,17 @@
             "6e30f911242c5595",
             "edcc237df962c31a",
             "59a9c9a7ba535641",
-            "fb89305143faab57",
-            "45cdb2f02dfb2009",
             "07d558da50af5ae4",
             "1bdec3d0b912f792",
             "14ec91d93285b0fb",
             "9b57af73505cbb61",
-            "8e8edd5176fc9a71"
+            "8e8edd5176fc9a71",
+            "46e349af1bed1834"
         ],
         "x": 414,
-        "y": 1959,
+        "y": 1779,
         "w": 1132,
-        "h": 362
+        "h": 282
     },
     {
         "id": "805c5feafbb3610b",
@@ -854,11 +845,12 @@
             "9e95f569494a21dc",
             "50c56047654010ea",
             "8c434de19f88fefc",
-            "7eb7b4b61d38b789"
+            "7eb7b4b61d38b789",
+            "3e9d121913d7feae"
         ],
-        "x": 34,
+        "x": 54,
         "y": 439,
-        "w": 2292,
+        "w": 2272,
         "h": 162
     },
     {
@@ -1275,7 +1267,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
         "x": 380,
-        "y": 1080,
+        "y": 1040,
         "wires": [
             [
                 "4094c101f6b59d95",
@@ -1290,7 +1282,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
         "x": 380,
-        "y": 1380,
+        "y": 1300,
         "wires": [
             [
                 "080fd00489701aa1",
@@ -1347,12 +1339,26 @@
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
         "x": 620,
-        "y": 2000,
+        "y": 1820,
         "wires": [
             [
                 "edcc237df962c31a",
                 "ca4ed8761a4ded27",
                 "59a9c9a7ba535641"
+            ]
+        ]
+    },
+    {
+        "id": "3e9d121913d7feae",
+        "type": "junction",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "x": 120,
+        "y": 540,
+        "wires": [
+            [
+                "c4a024def66c8499",
+                "8c434de19f88fefc"
             ]
         ]
     },
@@ -2380,7 +2386,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 640,
-        "y": 1080,
+        "y": 1040,
         "wires": []
     },
     {
@@ -2462,19 +2468,18 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
-        "name": "query all settings, after 4; then active",
+        "name": "query all settings, manually",
         "props": [],
         "repeat": "",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": "4",
         "topic": "",
-        "x": 230,
+        "x": 210,
         "y": 480,
         "wires": [
             [
-                "c4a024def66c8499",
-                "8c434de19f88fefc"
+                "3e9d121913d7feae"
             ]
         ]
     },
@@ -2482,7 +2487,7 @@
         "id": "0cdaafdd0b8921be",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set radar time (in seconds), after 1.2",
+        "name": "init: set radar time (in seconds), repeat 60-min",
         "props": [
             {
                 "p": "payload"
@@ -2494,71 +2499,13 @@
         ],
         "repeat": "3600",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": "1.2",
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
         "x": 240,
-        "y": 200,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
-    },
-    {
-        "id": "b6a08c3a8951d79f",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: set radar timezone, after 1.3",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1.3",
-        "topic": "",
-        "payload": "\"CZ\" & \"PST-7\" & \"\\n\"",
-        "payloadType": "jsonata",
-        "x": 210,
-        "y": 240,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
-    },
-    {
-        "id": "6b8d8a5677b9c558",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: base settings and filters, after 1.1",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1.1",
-        "topic": "",
-        "payload": "\"OJUSF2S2K+IGONO3OUOTOhOc\" & \"OMM>20\\n\" & \"OSR>5\\n\" & \"@O@|300\\n\" & \"A!\" ",
-        "payloadType": "jsonata",
-        "x": 230,
-        "y": 160,
+        "y": 320,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -2569,7 +2516,7 @@
         "id": "561dcf614bf5d56a",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: PI, idle power mode for settings",
+        "name": "init: PI, idle power mode, manual",
         "props": [
             {
                 "p": "payload"
@@ -2586,66 +2533,8 @@
         "topic": "",
         "payload": "\"PI\"",
         "payloadType": "jsonata",
-        "x": 220,
+        "x": 190,
         "y": 120,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
-    },
-    {
-        "id": "7c8d64d25c65f351",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: PA, active power mode, manual",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "20",
-        "topic": "",
-        "payload": "\"PA\"",
-        "payloadType": "jsonata",
-        "x": 220,
-        "y": 400,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
-    },
-    {
-        "id": "a3a84b97fafede04",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: save settings, after 1.6",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1.6",
-        "topic": "",
-        "payload": "\"A!\"",
-        "payloadType": "jsonata",
-        "x": 200,
-        "y": 360,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -2724,66 +2613,8 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 590,
-        "y": 1380,
+        "y": 1300,
         "wires": []
-    },
-    {
-        "id": "d764d1165570c18b",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: turn on OS, after 1.4",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "7200",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1.4",
-        "topic": "",
-        "payload": "\"OS\"",
-        "payloadType": "jsonata",
-        "x": 190,
-        "y": 280,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
-    },
-    {
-        "id": "06c0cf29349aefe0",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init: turn on OM, after 1.5",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "7200",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1.5",
-        "topic": "",
-        "payload": "\"OM\"",
-        "payloadType": "jsonata",
-        "x": 190,
-        "y": 320,
-        "wires": [
-            [
-                "05a58d9ee463c696"
-            ]
-        ]
     },
     {
         "id": "ca182659939320ce",
@@ -2870,7 +2701,7 @@
         "sql": "INSERT INTO radar_dov (time, unit, direction, velocity, radarName, deployment_id) \nVALUES ($time, $unit, $direction, $velocity, $radarName, $deployment_id);\n",
         "name": "",
         "x": 1280,
-        "y": 980,
+        "y": 740,
         "wires": [
             []
         ]
@@ -2888,8 +2719,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 980,
+        "x": 600,
+        "y": 740,
         "wires": [
             [
                 "c6fcbfb9341f189b"
@@ -2906,7 +2737,7 @@
         "sql": "",
         "name": "",
         "x": 1280,
-        "y": 1160,
+        "y": 1120,
         "wires": [
             [
                 "866e0c814ea2b4da"
@@ -2926,7 +2757,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 550,
-        "y": 1160,
+        "y": 1120,
         "wires": [
             [
                 "f9a458c786e4bb84"
@@ -2946,7 +2777,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 540,
-        "y": 1200,
+        "y": 1160,
         "wires": [
             [
                 "8ccadc734d8ab769"
@@ -2968,7 +2799,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1360,
-        "y": 1200,
+        "y": 1160,
         "wires": []
     },
     {
@@ -2985,7 +2816,7 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 1280,
+        "y": 1000,
         "wires": [
             [
                 "22234193104332f6"
@@ -3002,7 +2833,7 @@
         "sql": "INSERT INTO radar_timed_speed_counts (time, direction, units, count, average, radarName, deployment_id)\nVALUES ($time, $direction, $units, $count, $average, $radarName, $deployment_id);\n",
         "name": "",
         "x": 1280,
-        "y": 1280,
+        "y": 1000,
         "wires": [
             []
         ]
@@ -3017,7 +2848,7 @@
         "sql": "",
         "name": "",
         "x": 1280,
-        "y": 1460,
+        "y": 1380,
         "wires": [
             [
                 "9de4885ad8ef8485"
@@ -3037,7 +2868,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 550,
-        "y": 1460,
+        "y": 1380,
         "wires": [
             [
                 "8d4953609399d75e"
@@ -3057,7 +2888,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 540,
-        "y": 1500,
+        "y": 1420,
         "wires": [
             [
                 "2aac5b4f344a86e8"
@@ -3079,7 +2910,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1370,
-        "y": 1500,
+        "y": 1420,
         "wires": []
     },
     {
@@ -3092,7 +2923,7 @@
         "sql": "INSERT INTO radar_raw_speed_magnitude (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
         "x": 1280,
-        "y": 1580,
+        "y": 1260,
         "wires": [
             []
         ]
@@ -3111,7 +2942,7 @@
         "finalize": "",
         "libs": [],
         "x": 660,
-        "y": 1580,
+        "y": 1260,
         "wires": [
             [
                 "81522ee190374834"
@@ -3203,7 +3034,7 @@
         "sql": "INSERT INTO radar_raw_speed_magnitude_single (time, unit, magnitude, speed, radarName, deployment_id) \nVALUES ($time, $unit, $magnitude, $speed, $radarName, $deployment_id);",
         "name": "",
         "x": 1280,
-        "y": 1860,
+        "y": 1580,
         "wires": [
             []
         ]
@@ -3222,7 +3053,7 @@
         "finalize": "",
         "libs": [],
         "x": 740,
-        "y": 1860,
+        "y": 1580,
         "wires": [
             [
                 "252e2f5b95aeb8da"
@@ -3267,8 +3098,8 @@
         "links": [
             "0124afc74d86b533"
         ],
-        "x": 485,
-        "y": 1900,
+        "x": 535,
+        "y": 1640,
         "wires": []
     },
     {
@@ -3282,7 +3113,7 @@
             "fc5e2cd719fa680a"
         ],
         "x": 475,
-        "y": 1420,
+        "y": 1340,
         "wires": []
     },
     {
@@ -3296,7 +3127,7 @@
             "087588593911f398"
         ],
         "x": 475,
-        "y": 1120,
+        "y": 1080,
         "wires": []
     },
     {
@@ -3313,7 +3144,7 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 1800,
+        "y": 1540,
         "wires": [
             [
                 "83065a55697cc160",
@@ -3786,86 +3617,6 @@
         ]
     },
     {
-        "id": "2479e1e747a9c6ec",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "1eebfe6a2eca8ad4",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 540,
-        "y": 940,
-        "wires": [
-            [
-                "dd88a80a3a79aa0b"
-            ]
-        ]
-    },
-    {
-        "id": "ef75320f6a5f0382",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "dea1b8828f8e501f",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 540,
-        "y": 1240,
-        "wires": [
-            [
-                "463b64006f270db3"
-            ]
-        ]
-    },
-    {
-        "id": "fe45aef575ccab71",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "047f05d7650ba3cc",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 540,
-        "y": 1540,
-        "wires": [
-            [
-                "d18b637f01871f23"
-            ]
-        ]
-    },
-    {
-        "id": "c61ef5ee09cb5c93",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 540,
-        "y": 1760,
-        "wires": [
-            [
-                "4f072d31286f7667"
-            ]
-        ]
-    },
-    {
         "id": "17f2bd782fa7cc56",
         "type": "change",
         "z": "1c71c8f26f5b7b19",
@@ -4014,26 +3765,6 @@
         ]
     },
     {
-        "id": "dd88a80a3a79aa0b",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "1eebfe6a2eca8ad4",
-        "name": "alter table radar_dov",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "",
-        "output": "str",
-        "x": 940,
-        "y": 940,
-        "wires": [
-            [
-                "ca182659939320ce"
-            ]
-        ]
-    },
-    {
         "id": "f9a458c786e4bb84",
         "type": "template",
         "z": "1c71c8f26f5b7b19",
@@ -4046,7 +3777,7 @@
         "template": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (\n    time REAL, \n    direction TEXT, \n    units TEXT, \n    count INTEGER, \n    average REAL, \n    radarName TEXT, \n    deployment_id TEXT\n);",
         "output": "str",
         "x": 890,
-        "y": 1160,
+        "y": 1120,
         "wires": [
             [
                 "50dcead7cf35b74f"
@@ -4066,27 +3797,7 @@
         "template": "SELECT * \nFROM radar_timed_speed_counts \nORDER BY time DESC \nLIMIT 5;",
         "output": "str",
         "x": 850,
-        "y": 1200,
-        "wires": [
-            [
-                "50dcead7cf35b74f"
-            ]
-        ]
-    },
-    {
-        "id": "463b64006f270db3",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "dea1b8828f8e501f",
-        "name": "alter table radar_timedspeedcounts",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "",
-        "output": "str",
-        "x": 900,
-        "y": 1240,
+        "y": 1160,
         "wires": [
             [
                 "50dcead7cf35b74f"
@@ -4106,27 +3817,7 @@
         "template": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (\n    time REAL, \n    unit TEXT, \n    magnitude TEXT, \n    speed TEXT, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
         "output": "str",
         "x": 880,
-        "y": 1460,
-        "wires": [
-            [
-                "a3dddf65b65ca371"
-            ]
-        ]
-    },
-    {
-        "id": "d18b637f01871f23",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "047f05d7650ba3cc",
-        "name": "alter table radar_raw_speed_magnitude",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "",
-        "output": "str",
-        "x": 880,
-        "y": 1540,
+        "y": 1380,
         "wires": [
             [
                 "a3dddf65b65ca371"
@@ -4146,30 +3837,10 @@
         "template": "SELECT * \nFROM radar_raw_speed_magnitude \nORDER BY time DESC \nLIMIT 5;",
         "output": "str",
         "x": 840,
-        "y": 1500,
+        "y": 1420,
         "wires": [
             [
                 "a3dddf65b65ca371"
-            ]
-        ]
-    },
-    {
-        "id": "4f072d31286f7667",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "name": "alter table radar_raw_speed_magnitude_single",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "",
-        "output": "str",
-        "x": 900,
-        "y": 1760,
-        "wires": [
-            [
-                "a3924864154eaefb"
             ]
         ]
     },
@@ -4227,8 +3898,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1230,
-        "y": 2100,
+        "x": 810,
+        "y": 1860,
         "wires": []
     },
     {
@@ -4244,7 +3915,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 550,
-        "y": 2200,
+        "y": 1980,
         "wires": [
             [
                 "1bdec3d0b912f792"
@@ -4261,7 +3932,7 @@
         "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft);",
         "name": "",
         "x": 1280,
-        "y": 2200,
+        "y": 1980,
         "wires": [
             [
                 "45801cdcc5094abc"
@@ -4281,7 +3952,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 540,
-        "y": 2240,
+        "y": 2020,
         "wires": [
             [
                 "07d558da50af5ae4"
@@ -4303,7 +3974,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1350,
-        "y": 2240,
+        "y": 2020,
         "wires": []
     },
     {
@@ -4313,10 +3984,10 @@
         "g": "da1c8c74261a93a4",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO radar_oc_payload (end_time, start_time, delta_time_msec, dir, frames, max_mph, min_mph, max_mag, avg_mag, frames_per_mph, length_ft, radarName, deployment_id)\nVALUES ($end_time, $start_time, $delta_time_msec, $dir, $frames, $max_mph, $min_mph, $max_mag, $avg_mag, $frames_per_mph, $length_ft, $radarName, $deployment_id);",
+        "sql": "INSERT INTO radar_oc_payload (start_time, end_time, delta_time_msec, direction, frames_count, velocity_max, velocity_min, magnitude_max, magnitude_mean, velocity_change, frames_per_velocity, object_length, units, object_label, radarName, deployment_id)\nVALUES ($start_time, $end_time, $delta_time_msec, $direction, $frames_count, $velocity_max, $velocity_min, $magnitude_max, $magnitude_mean, $velocity_change, $frames_per_velocity, $object_length, $units, $object_label, $radarName, $deployment_id);",
         "name": "",
         "x": 1280,
-        "y": 2040,
+        "y": 1820,
         "wires": [
             []
         ]
@@ -4334,8 +4005,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1220,
-        "y": 2000,
+        "x": 880,
+        "y": 1820,
         "wires": [
             [
                 "6e30f911242c5595"
@@ -4352,49 +4023,9 @@
         "links": [
             "e05e91362c933e94"
         ],
-        "x": 1155,
-        "y": 2140,
+        "x": 735,
+        "y": 1900,
         "wires": []
-    },
-    {
-        "id": "fb89305143faab57",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "da1c8c74261a93a4",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 540,
-        "y": 2280,
-        "wires": [
-            [
-                "45cdb2f02dfb2009"
-            ]
-        ]
-    },
-    {
-        "id": "45cdb2f02dfb2009",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "da1c8c74261a93a4",
-        "name": "alter table radar_oc_payload",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "",
-        "output": "str",
-        "x": 920,
-        "y": 2280,
-        "wires": [
-            [
-                "09369d5e4816364f"
-            ]
-        ]
     },
     {
         "id": "07d558da50af5ae4",
@@ -4409,7 +4040,7 @@
         "template": "SELECT * \nFROM radar_oc_payload \nORDER BY end_time DESC \nLIMIT 5;",
         "output": "str",
         "x": 870,
-        "y": 2240,
+        "y": 2020,
         "wires": [
             [
                 "09369d5e4816364f"
@@ -4426,10 +4057,10 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_oc_payload (\n    end_time REAL,\n    start_time REAL,\n    delta_time_msec INTEGER,\n    dir TEXT,\n    frames INTEGER,\n    max_mph REAL,\n    min_mph REAL,\n    max_mag REAL,\n    avg_mag REAL,\n    frames_per_mph REAL,\n    length_ft REAL,\n    radarName TEXT,\n    deployment_id TEXT\n    );",
+        "template": "CREATE TABLE IF NOT EXISTS radar_oc_payload (\n    start_time REAL,\n    end_time REAL,\n    delta_time_msec REAL,\n    direction TEXT,\n    frames_count REAL,\n    velocity_max REAL,\n    velocity_min REAL,\n    magnitude_max REAL,\n    magnitude_mean REAL,\n    velocity_change REAL,\n    frames_per_velocity REAL,\n    object_length REAL,\n    units TEXT,\n    object_label TEXT,\n    radarName TEXT,\n    deployment_id TEXT\n);",
         "output": "str",
         "x": 910,
-        "y": 2200,
+        "y": 1980,
         "wires": [
             [
                 "09369d5e4816364f"
@@ -4442,7 +4073,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
         "name": "dir",
-        "func": "\n// end_time\n// start_time\n// delta_time_msec\n// __dirnameframes\n// max_mph\n// min_mph\n// max_mag\n// avg_mag\n// frames_per_mph\n// length_ft\n\n// radarName\n// deployment_id\n\nreturn msg;",
+        "func": "const newPayload = {\n    start_time: msg.payload.start_time,\n    end_time: msg.payload.end_time,\n    delta_time_msec: msg.payload.delta_time_msec,\n    direction: msg.payload.dir == \"OUT\" ? \"outbound\" : msg.payload.dir == \"IN\" ? \"inbound\" : null,\n    frames_count: msg.payload.frames,\n    velocity_max: msg.payload.max_mps !== undefined ? msg.payload.max_mps : msg.payload.max_mph !== undefined ? msg.payload.max_mph : null,\n    velocity_min: msg.payload.min_mps !== undefined ? msg.payload.min_mps : msg.payload.min_mph !== undefined ? msg.payload.min_mph : null,\n    magnitude_max: msg.payload.max_mag,\n    magnitude_mean: msg.payload.avg_mag,\n    velocity_change: null,\n    frames_per_velocity: msg.payload.frames_per_mps !== undefined ? msg.payload.frames_per_mps : msg.payload.frames_per_mph !== undefined ? msg.payload.frames_per_mph : null,\n    object_length: msg.payload.length_m !== undefined ? msg.payload.length_m : msg.payload.length_ft !== undefined ? msg.payload.length_ft : null,\n    units: msg.payload.max_mps !== undefined ? \"metric\" : msg.payload.max_mph !== undefined ? \"imperial\" : null,\n    object_label: null,\n    radarName: msg.payload.radarName,\n    deployment_id: msg.payload.deployment_id\n};\n\nmsg.payload = newPayload;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4450,7 +4081,7 @@
         "finalize": "",
         "libs": [],
         "x": 490,
-        "y": 2000,
+        "y": 1820,
         "wires": [
             [
                 "14ec91d93285b0fb"
@@ -4463,7 +4094,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
         "name": "classifier",
-        "func": "\n\n// classifier\n// start_time\n// max_speed_mph\n// min_speed_mph\n// max_magnitude\n// avg_magnitude\n// total_frames\n// frames_per_mph\n// length_ft\n// delta_time_msec\n\n// radarName\n// deployment_id\n\nreturn msg;",
+        "func": "const newPayload = {\n    start_time: msg.payload.start_time,\n    end_time: msg.payload.end_time,\n    delta_time_msec: msg.payload.delta_time_msec,\n    direction: msg.payload.classifier == \"object_outbound\" ? \"outbound\" : msg.payload.classifier == \"object_inbound\" ? \"inbound\" : null,\n    frames_count: msg.payload.total_frames,\n    velocity_max: msg.payload.max_speed_mps !== undefined ? msg.payload.max_speed_mps : msg.payload.max_speed_mph !== undefined ? msg.payload.max_speed_mph : null,\n    velocity_min: msg.payload.min_speed_mps !== undefined ? msg.payload.min_speed_mps : msg.payload.min_speed_mph !== undefined ? msg.payload.min_speed_mph : null,\n    magnitude_max: msg.payload.max_magnitude,\n    magnitude_mean: msg.payload.avg_magnitude,\n    velocity_change: msg.payload.speed_change,\n    frames_per_velocity: msg.payload.frames_per_mps !== undefined ? msg.payload.frames_per_mps : msg.payload.frames_per_mph !== undefined ? msg.payload.frames_per_mph : null,\n    object_length: msg.payload.length_m !== undefined ? msg.payload.length_m : msg.payload.length_ft !== undefined ? msg.payload.length_ft : null,\n    units: msg.payload.max_speed_mps !== undefined ? \"metric\" : msg.payload.max_speed_mph !== undefined ? \"imperial\" : null,\n    object_label: null,\n    radarName: msg.payload.radarName,\n    deployment_id: msg.payload.deployment_id\n};\n\nmsg.payload = newPayload;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4471,7 +4102,7 @@
         "finalize": "",
         "libs": [],
         "x": 500,
-        "y": 2040,
+        "y": 1860,
         "wires": [
             [
                 "14ec91d93285b0fb"
@@ -4535,7 +4166,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 960,
+        "x": 920,
         "y": 520,
         "wires": [
             [
@@ -4670,15 +4301,15 @@
         "type": "function",
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
-        "name": "query each setting, and clear buffer, takes ~9.0-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\nconst attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"PA\"]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 500; // 500 ms delay\nconst delay_short = 100;\n//500+100 = 600 ms per attribute\n\nnode.send({payload:hexCode});\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({payload:attribute_array[i]});\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({payload:hexCode});\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "name": "init: query each setting, and clear buffer, takes ~9.0-sec",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"PA\"]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 500; // 500 ms delay\nconst delay_short = 100;\n//500+100 = 600 ms per attribute\n\nnode.send({payload:hexCode});\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({payload:attribute_array[i]});\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({payload:hexCode});\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 330,
+        "x": 340,
         "y": 560,
         "wires": [
             [
@@ -4703,11 +4334,179 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 690,
-        "y": 520,
+        "x": 650,
+        "y": 560,
         "wires": [
             [
                 "ae11d5c9948bf4e1"
+            ]
+        ]
+    },
+    {
+        "id": "46e349af1bed1834",
+        "type": "comment",
+        "z": "1c71c8f26f5b7b19",
+        "g": "da1c8c74261a93a4",
+        "name": "payload varies by firmware version/build",
+        "info": "",
+        "x": 590,
+        "y": 1940,
+        "wires": []
+    },
+    {
+        "id": "a0b880e68f9b7198",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init: set initial settings, takes ~6.9-sec",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + date.getTime() + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 240,
+        "wires": [
+            [
+                "05a58d9ee463c696",
+                "09952039b0ab86aa"
+            ]
+        ]
+    },
+    {
+        "id": "355a9ce4be9a632c",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "name": "function 1",
+        "func": "  const date = new Date()\n  const offsetInMinutes = date.getTimezoneOffset()\n  const hours = Math.abs(Math.floor(offsetInMinutes / 60))\n  const minutes = Math.abs(offsetInMinutes % 60)\n  const offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") + \n                       hours.toString().padStart(2, '0') + \n                       minutes.toString().padStart(2, '0')\n  msg.payload = offsetString\n  return msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 660,
+        "wires": [
+            [
+                "2fbcb816a744905e"
+            ]
+        ]
+    },
+    {
+        "id": "2fbcb816a744905e",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1110,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "c501a6a048b77b17",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 750,
+        "y": 660,
+        "wires": [
+            [
+                "355a9ce4be9a632c"
+            ]
+        ]
+    },
+    {
+        "id": "7c8d64d25c65f351",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init: PA, active power mode, manual",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "20",
+        "topic": "",
+        "payload": "\"PA\"",
+        "payloadType": "jsonata",
+        "x": 200,
+        "y": 160,
+        "wires": [
+            [
+                "05a58d9ee463c696"
+            ]
+        ]
+    },
+    {
+        "id": "cca525a755c918da",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init: set initial radar settings",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "a0b880e68f9b7198"
+            ]
+        ]
+    },
+    {
+        "id": "09952039b0ab86aa",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "complete?",
+        "property": "complete",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 350,
+        "y": 280,
+        "wires": [
+            [
+                "3e9d121913d7feae"
             ]
         ]
     },
@@ -5731,7 +5530,7 @@
         "z": "f7932be9acc7391c",
         "g": "43087a735f896849",
         "name": "tb telemetry response",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5905,7 +5704,7 @@
         "z": "f7932be9acc7391c",
         "g": "1819134eccdf2660",
         "name": "format radar_oc_payload telemetry",
-        "func": "const newPayload = {\n    ts: msg.payload.start_time * 1000,\n    values: {\n        radar: {\n            radar_oc_payload: {\n                start_time: msg.payload.start_time,\n                end_time: msg.payload.end_time,\n                delta_time_msec: msg.payload.delta_time_msec,\n                dir: msg.payload.dir,\n                frames: msg.payload.frames,\n                max_mph: msg.payload.max_mph,\n                min_mph: msg.payload.min_mph,\n                max_mag: msg.payload.max_mag,\n                avg_mag: msg.payload.avg_mag,\n                frames_per_mph: msg.payload.frames_per_mph,\n                length_ft: msg.payload.length_ft,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "func": "const newPayload = {\n    ts: msg.payload.start_time * 1000,\n    values: {\n        radar: {\n            radar_oc_payload: {\n                start_time: msg.payload.start_time,\n                end_time: msg.payload.end_time,\n                delta_time_msec: msg.payload.delta_time_msec,\n                direction: msg.payload.direction,\n                frames_count: msg.payload.frames_count,\n                velocity_max: msg.payload.velocity_max,\n                velocity_min: msg.payload.velocity_min,\n                magnitude_max: msg.payload.magnitude_max,\n                magnitude_mean: msg.payload.magnitude_mean,\n                velocity_change: msg.payload.velocity_change,\n                frames_per_velocity: msg.payload.frames_per_velocity,\n                object_length: msg.payload.object_length,\n                units: msg.payload.units,\n                object_label: msg.payload.object_label,\n                radarName: msg.payload.radarName,\n                deployment_id: msg.payload.deployment_id\n            }\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
