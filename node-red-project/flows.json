@@ -2499,8 +2499,8 @@
         ],
         "repeat": "3600",
         "crontab": "",
-        "once": false,
-        "onceDelay": "1.2",
+        "once": true,
+        "onceDelay": "20",
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
@@ -4358,7 +4358,7 @@
         "type": "function",
         "z": "1c71c8f26f5b7b19",
         "name": "init: set initial settings, takes ~6.9-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + date.getTime() + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4370,72 +4370,8 @@
         "wires": [
             [
                 "05a58d9ee463c696",
-                "09952039b0ab86aa"
-            ]
-        ]
-    },
-    {
-        "id": "355a9ce4be9a632c",
-        "type": "function",
-        "z": "1c71c8f26f5b7b19",
-        "name": "function 1",
-        "func": "  const date = new Date()\n  const offsetInMinutes = date.getTimezoneOffset()\n  const hours = Math.abs(Math.floor(offsetInMinutes / 60))\n  const minutes = Math.abs(offsetInMinutes % 60)\n  const offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") + \n                       hours.toString().padStart(2, '0') + \n                       minutes.toString().padStart(2, '0')\n  msg.payload = offsetString\n  return msg",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 920,
-        "y": 660,
-        "wires": [
-            [
-                "2fbcb816a744905e"
-            ]
-        ]
-    },
-    {
-        "id": "2fbcb816a744905e",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1110,
-        "y": 660,
-        "wires": []
-    },
-    {
-        "id": "c501a6a048b77b17",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 750,
-        "y": 660,
-        "wires": [
-            [
-                "355a9ce4be9a632c"
+                "09952039b0ab86aa",
+                "5e7c4009964478fc"
             ]
         ]
     },
@@ -4509,6 +4445,22 @@
                 "3e9d121913d7feae"
             ]
         ]
+    },
+    {
+        "id": "5e7c4009964478fc",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 660,
+        "wires": []
     },
     {
         "id": "f20c74c0ccfd256c",
@@ -4796,7 +4748,7 @@
         "g": "b7398c4e0bc743e5",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, radarName);",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, $radarName);",
         "name": "tmdb.events, Prepared Statement",
         "x": 680,
         "y": 840,
@@ -4990,7 +4942,7 @@
         "z": "9269520ddb532b00",
         "g": "0a5faeac9fbd6d55",
         "name": "append config, deployment properties",
-        "func": "// attach radarName, deployment_id, if applicable\n\nconst sensor = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`);\n\nmsg.radarEnabled = false;\n\nif (sensor.hasOwnProperty('camera_radar')) {\n    //get radar settings\n    const radar = global.get(`config.sensors.radars.${msg.frigate_event.camera}`);\n    if (radar.hasOwnProperty('enabled')) {\n        if (radar.enabled === true) {\n            msg.frigate_event.radarName = sensor.camera_radar;\n            msg.radarEnabled = true;\n        }\n    }\n}\n\nif (sensor.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = sensor.deployment.id;\n}\n//indicate if camera is enabled in TM for capture (may still be on in Frigate)\nif (sensor.hasOwnProperty('enabled')) {\n    msg.enabled = sensor.enabled;\n}\n\nreturn msg;",
+        "func": "// attach radarName, deployment_id, if applicable\n\nconst camera = global.get(`config.sensors.cameras.${msg.frigate_event.camera}`);\n\nmsg.radarEnabled = false;\n\nif (camera.hasOwnProperty('camera_radar')) {\n    //get radar settings\n    const radar = global.get(`config.sensors.radars.${camera.camera_radar}`);\n    if (radar.hasOwnProperty('enabled')) {\n        if (radar.enabled === true) {\n            msg.frigate_event.radarName = camera.camera_radar;\n            msg.radarEnabled = true;\n        }\n    }\n}\n\nif (camera.hasOwnProperty('deployment')) {\n    msg.frigate_event.deployment_id = camera.deployment.id;\n}\n//indicate if camera is enabled in TM for capture (may still be on in Frigate)\nif (camera.hasOwnProperty('enabled')) {\n    msg.enabled = camera.enabled;\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5069,7 +5021,7 @@
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS events (\n    id TEXT PRIMARY KEY,\n    camera TEXT,\n    label TEXT,\n    sub_label TEXT,\n    top_score REAL,\n    frame_time REAL,\n    start_time REAL,\n    end_time REAL,\n    entered_zones TEXT,\n    score REAL,\n    area REAL,\n    ratio REAL,\n    motionless_count REAL,\n    position_changes REAL,\n    attributes TEXT,\n    direction_calc TEXT,\n    speed_calc REAL,\n    source TEXT,\n    deployment_id TEXT DEFAULT NULL,\n    FOREIGN KEY (deployment_id) REFERENCES deployment(id)\n    );",
+        "template": "CREATE TABLE IF NOT EXISTS events (\n    id TEXT PRIMARY KEY,\n    camera TEXT,\n    label TEXT,\n    sub_label TEXT,\n    top_score REAL,\n    frame_time REAL,\n    start_time REAL,\n    end_time REAL,\n    entered_zones TEXT,\n    score REAL,\n    area REAL,\n    ratio REAL,\n    motionless_count REAL,\n    position_changes REAL,\n    attributes TEXT,\n    direction_calc TEXT,\n    speed_calc REAL,\n    provenance TEXT, \n    deployment_id TEXT DEFAULT NULL,\n    radarName TEXT DEFAULT NULL\n    );",
         "output": "str",
         "x": 510,
         "y": 1080,
