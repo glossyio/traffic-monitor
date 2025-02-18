@@ -87,7 +87,7 @@
             "ec7a0e0b1c62e91d"
         ],
         "x": 14,
-        "y": 319,
+        "y": 599,
         "w": 852,
         "h": 202
     },
@@ -106,7 +106,7 @@
             "eb140f61419c6a08"
         ],
         "x": 14,
-        "y": 79,
+        "y": 379,
         "w": 852,
         "h": 202
     },
@@ -126,7 +126,7 @@
             "4f84bcb60e4be762"
         ],
         "x": 14,
-        "y": 559,
+        "y": 819,
         "w": 1052,
         "h": 222
     },
@@ -149,7 +149,7 @@
             "7db4b197df9eb075"
         ],
         "x": 14,
-        "y": 839,
+        "y": 1059,
         "w": 1178,
         "h": 508
     },
@@ -177,8 +177,8 @@
             "c2270f3050bf35ab",
             "3214e8cd3ea79630"
         ],
-        "x": 224,
-        "y": 1539,
+        "x": 214,
+        "y": 1599,
         "w": 1022,
         "h": 542
     },
@@ -199,13 +199,10 @@
             "170ddffb726db9e0",
             "befe91e6862c72db",
             "13a061996f9322f3",
-            "98571c77b9801a83",
-            "bb08a223f0aaef0f",
-            "e3b795e05d7650b2",
-            "c7f00f59861cd00f"
+            "98571c77b9801a83"
         ],
-        "x": 154,
-        "y": 2119,
+        "x": 214,
+        "y": 2179,
         "w": 1172,
         "h": 342
     },
@@ -224,8 +221,8 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 54,
-        "y": 2519,
+        "x": 214,
+        "y": 2559,
         "w": 1252,
         "h": 242
     },
@@ -961,7 +958,7 @@
             "57fa6ca2b7d290e3"
         ],
         "x": 54,
-        "y": 1159,
+        "y": 1379,
         "w": 1112,
         "h": 162
     },
@@ -980,8 +977,8 @@
             "9226865e3385eb56",
             "aa0afb5180297e2b"
         ],
-        "x": 304,
-        "y": 1739,
+        "x": 294,
+        "y": 1799,
         "w": 612,
         "h": 122
     },
@@ -1235,6 +1232,24 @@
         "h": 162
     },
     {
+        "id": "2df66c6bc991dbf4",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "camera selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bb08a223f0aaef0f",
+            "e3b795e05d7650b2",
+            "c7f00f59861cd00f"
+        ],
+        "x": 14,
+        "y": 79,
+        "w": 312,
+        "h": 142
+    },
+    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -1424,7 +1439,7 @@
         "type": "ui_group",
         "name": "Events aggregates",
         "tab": "665d947f9a312a33",
-        "order": 1,
+        "order": 2,
         "disp": true,
         "width": "12",
         "collapse": false,
@@ -1435,7 +1450,7 @@
         "type": "ui_group",
         "name": "Live updates",
         "tab": "665d947f9a312a33",
-        "order": 2,
+        "order": 3,
         "disp": true,
         "width": 12,
         "collapse": false,
@@ -1723,6 +1738,17 @@
         "name": "Backup & Restore",
         "tab": "0fd9a947334c7d0f",
         "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "202181a361213d6d",
+        "type": "ui_group",
+        "name": "Camera Selector",
+        "tab": "665d947f9a312a33",
+        "order": 1,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -6320,7 +6346,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 600,
+        "y": 860,
         "wires": [
             [
                 "928b71f25ce6e7b6"
@@ -6367,7 +6393,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 240,
+        "y": 540,
         "wires": [
             []
         ]
@@ -6390,7 +6416,7 @@
         "senderr": false,
         "headers": [],
         "x": 310,
-        "y": 180,
+        "y": 480,
         "wires": [
             [
                 "eb140f61419c6a08"
@@ -6411,7 +6437,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 230,
-        "y": 120,
+        "y": 420,
         "wires": [
             [
                 "b241a0ef89fd7ce4"
@@ -6424,7 +6450,7 @@
         "z": "28627559bebdc324",
         "g": "5aac1262472b0205",
         "name": "structure frigate api/summary",
-        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera and 10 days or less ago\n    if (myItem.camera == env.get(\"VAR_RADAR_CAMERA\") && new Date(myItem.day).getTime() >= Math.floor((Date.now() - 86400000 * 10))) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera and 10 days or less ago\n    if (myItem.camera == flow.get(\"camera_selection\") && new Date(myItem.day).getTime() >= Math.floor((Date.now() - 86400000 * 10))) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6432,7 +6458,7 @@
         "finalize": "",
         "libs": [],
         "x": 400,
-        "y": 240,
+        "y": 540,
         "wires": [
             [
                 "08d030ffc3fe6adb"
@@ -6462,7 +6488,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 360,
+        "y": 640,
         "wires": [
             [
                 "5f3716d2176c3ab4"
@@ -6509,7 +6535,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 710,
-        "y": 480,
+        "y": 760,
         "wires": [
             []
         ]
@@ -6522,8 +6548,8 @@
         "links": [
             "274f87c31437c2d7"
         ],
-        "x": 165,
-        "y": 1580,
+        "x": 145,
+        "y": 1640,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -6551,8 +6577,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 750,
-        "y": 1940,
+        "x": 740,
+        "y": 2000,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -6577,8 +6603,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 390,
-        "y": 1660,
+        "x": 380,
+        "y": 1720,
         "wires": [
             [
                 "c2270f3050bf35ab"
@@ -6598,8 +6624,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 800,
-        "y": 1980,
+        "x": 790,
+        "y": 2040,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -6619,8 +6645,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 760,
-        "y": 1900,
+        "x": 750,
+        "y": 1960,
         "wires": [
             [
                 "c36c71706e494b5e",
@@ -6633,9 +6659,9 @@
         "type": "switch",
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
-        "name": "only use radar cam",
-        "property": "payload.radarName",
-        "propertyType": "msg",
+        "name": "only use selected camera",
+        "property": "camera_selection",
+        "propertyType": "flow",
         "rules": [
             {
                 "t": "nnull"
@@ -6644,8 +6670,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 340,
-        "y": 1620,
+        "x": 350,
+        "y": 1680,
         "wires": [
             [
                 "2e680914d7da5c94"
@@ -6668,8 +6694,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1060,
-        "y": 1900,
+        "x": 1050,
+        "y": 1960,
         "wires": [
             []
         ]
@@ -6688,8 +6714,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 360,
-        "y": 1580,
+        "x": 350,
+        "y": 1640,
         "wires": []
     },
     {
@@ -6764,7 +6790,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 880,
-        "y": 740,
+        "y": 1000,
         "wires": [
             []
         ]
@@ -6792,7 +6818,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 880,
+        "y": 1100,
         "wires": [
             [
                 "158e6edae533bfdc",
@@ -6813,8 +6839,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 400,
-        "y": 2040,
+        "x": 390,
+        "y": 2100,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -6839,8 +6865,8 @@
         "font": "Courier,monospace",
         "fontSize": "10",
         "color": "#000000",
-        "x": 1070,
-        "y": 2040,
+        "x": 1060,
+        "y": 2100,
         "wires": []
     },
     {
@@ -6859,8 +6885,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1090,
-        "y": 1980,
+        "x": 1080,
+        "y": 2040,
         "wires": [
             []
         ]
@@ -6905,7 +6931,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 970,
-        "y": 1280,
+        "y": 1500,
         "wires": [
             []
         ]
@@ -6949,8 +6975,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1140,
-        "y": 2380,
+        "x": 1200,
+        "y": 2440,
         "wires": [
             []
         ]
@@ -6970,8 +6996,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 1040,
-        "y": 2420,
+        "x": 1100,
+        "y": 2480,
         "wires": []
     },
     {
@@ -6987,8 +7013,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 470,
-        "y": 1900,
+        "x": 460,
+        "y": 1960,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -7018,8 +7044,8 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 240,
-        "y": 2560,
+        "x": 400,
+        "y": 2600,
         "wires": [
             [
                 "584504e6c8935eaf"
@@ -7042,8 +7068,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1130,
-        "y": 2720,
+        "x": 1290,
+        "y": 2760,
         "wires": [
             []
         ]
@@ -7066,8 +7092,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 400,
-        "y": 2160,
+        "x": 460,
+        "y": 2220,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -7094,8 +7120,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 460,
-        "y": 2200,
+        "x": 520,
+        "y": 2260,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7114,8 +7140,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 250,
-        "y": 2280,
+        "x": 310,
+        "y": 2340,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7139,8 +7165,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 450,
-        "y": 1780,
+        "x": 440,
+        "y": 1840,
         "wires": [
             [
                 "9226865e3385eb56",
@@ -7168,8 +7194,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 760,
-        "y": 1820,
+        "x": 750,
+        "y": 1880,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -7189,8 +7215,8 @@
         "active": false,
         "pass": false,
         "outputs": 0,
-        "x": 710,
-        "y": 1780,
+        "x": 700,
+        "y": 1840,
         "wires": []
     },
     {
@@ -7201,8 +7227,8 @@
         "name": "",
         "action": "",
         "property": "payload",
-        "x": 550,
-        "y": 1820,
+        "x": 540,
+        "y": 1880,
         "wires": [
             [
                 "08121a31488784bc"
@@ -7229,8 +7255,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 440,
-        "y": 1700,
+        "x": 430,
+        "y": 1760,
         "wires": [
             [
                 "09f99c931e5535bf"
@@ -7251,8 +7277,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1080,
-        "y": 1840,
+        "x": 1070,
+        "y": 1900,
         "wires": []
     },
     {
@@ -7261,7 +7287,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "create sqlite query, daily summary in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7269,7 +7295,7 @@
         "finalize": "",
         "libs": [],
         "x": 250,
-        "y": 400,
+        "y": 680,
         "wires": [
             [
                 "bdb4b259d648b1f0"
@@ -7286,7 +7312,7 @@
         "sql": "",
         "name": "",
         "x": 390,
-        "y": 440,
+        "y": 720,
         "wires": [
             [
                 "ec7a0e0b1c62e91d"
@@ -7307,7 +7333,7 @@
         "finalize": "",
         "libs": [],
         "x": 330,
-        "y": 480,
+        "y": 760,
         "wires": [
             [
                 "b65e1877b1e04881"
@@ -7320,7 +7346,7 @@
         "z": "28627559bebdc324",
         "g": "5173f4b3ac03407a",
         "name": "create sqlite query, 1-hour counts last day in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7328,7 +7354,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 660,
+        "y": 920,
         "wires": [
             [
                 "c03516d1eb65598d"
@@ -7345,7 +7371,7 @@
         "sql": "",
         "name": "",
         "x": 450,
-        "y": 700,
+        "y": 960,
         "wires": [
             [
                 "4f84bcb60e4be762"
@@ -7366,7 +7392,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 740,
+        "y": 1000,
         "wires": [
             [
                 "02469f2425072f7b"
@@ -7379,7 +7405,7 @@
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
         "name": "create sqlite query, 1-hour counts last day in zone_radar",
-        "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime') AS bin_time,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (3600))\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_radar%'\nGROUP BY\n    label, strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime'), camera\nORDER BY\n    label, bin_time, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime') AS bin_time,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (3600))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_radar%'\nGROUP BY\n    label, strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime'), camera\nORDER BY\n    label, bin_time, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7387,7 +7413,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 1200,
+        "y": 1420,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -7404,7 +7430,7 @@
         "sql": "",
         "name": "",
         "x": 450,
-        "y": 1240,
+        "y": 1460,
         "wires": [
             [
                 "57fa6ca2b7d290e3"
@@ -7425,7 +7451,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 1280,
+        "y": 1500,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -7438,15 +7464,15 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "create sqlite query, daily cumulative counts in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${flow.get(\"sensor_cumulative_objects\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 2280,
+        "x": 660,
+        "y": 2340,
         "wires": [
             [
                 "befe91e6862c72db"
@@ -7462,8 +7488,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 770,
-        "y": 2320,
+        "x": 830,
+        "y": 2380,
         "wires": [
             [
                 "13a061996f9322f3",
@@ -7484,8 +7510,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 770,
-        "y": 2380,
+        "x": 830,
+        "y": 2440,
         "wires": [
             [
                 "6d738ed81fefbedc"
@@ -7505,8 +7531,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
-        "y": 2420,
+        "x": 840,
+        "y": 2480,
         "wires": [
             [
                 "d856c68660eb2202"
@@ -7519,15 +7545,15 @@
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
         "name": "create sqlite query, daily cumulative CAR counts in zone_capture + zone_radar that HAVE valid speed_calc",
-        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 470,
-        "y": 2620,
+        "x": 630,
+        "y": 2660,
         "wires": [
             [
                 "9cf49f0891d25df1"
@@ -7543,8 +7569,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 790,
-        "y": 2660,
+        "x": 950,
+        "y": 2700,
         "wires": [
             [
                 "6d81c8e3c89b68f6"
@@ -7564,8 +7590,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 2720,
+        "x": 900,
+        "y": 2760,
         "wires": [
             [
                 "5417aae0d14fa661"
@@ -7582,7 +7608,7 @@
         "sql": "",
         "name": "",
         "x": 370,
-        "y": 980,
+        "y": 1200,
         "wires": [
             [
                 "39d895a16ca6f6f1",
@@ -7604,7 +7630,7 @@
         "finalize": "",
         "libs": [],
         "x": 220,
-        "y": 940,
+        "y": 1160,
         "wires": [
             [
                 "7cc031e5a7d773a4"
@@ -7625,7 +7651,7 @@
         "finalize": "",
         "libs": [],
         "x": 710,
-        "y": 980,
+        "y": 1200,
         "wires": [
             [
                 "cbb3b02ca505a55b"
@@ -7646,7 +7672,7 @@
         "finalize": "",
         "libs": [],
         "x": 730,
-        "y": 1060,
+        "y": 1280,
         "wires": [
             [
                 "7db4b197df9eb075"
@@ -7693,7 +7719,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 770,
-        "y": 1020,
+        "y": 1240,
         "wires": [
             []
         ]
@@ -7738,7 +7764,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 800,
-        "y": 1100,
+        "y": 1320,
         "wires": [
             []
         ]
@@ -7747,12 +7773,12 @@
         "id": "bb08a223f0aaef0f",
         "type": "ui_dropdown",
         "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
+        "g": "2df66c6bc991dbf4",
         "name": "",
         "label": "",
         "tooltip": "",
         "place": "Select sensor to report cumulative daily object counts",
-        "group": "7866c2aa313ab8b9",
+        "group": "202181a361213d6d",
         "order": 7,
         "width": 0,
         "height": 0,
@@ -7769,8 +7795,8 @@
         "topic": "topic",
         "topicType": "msg",
         "className": "",
-        "x": 380,
-        "y": 2340,
+        "x": 240,
+        "y": 120,
         "wires": [
             [
                 "c7f00f59861cd00f"
@@ -7781,7 +7807,7 @@
         "id": "e3b795e05d7650b2",
         "type": "inject",
         "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
+        "g": "2df66c6bc991dbf4",
         "name": "",
         "props": [
             {
@@ -7800,8 +7826,8 @@
         "topic": "",
         "payload": "$keys($globalContext(\"config.sensors.cameras\"))[0]\t",
         "payloadType": "jsonata",
-        "x": 250,
-        "y": 2340,
+        "x": 110,
+        "y": 120,
         "wires": [
             [
                 "bb08a223f0aaef0f"
@@ -7812,12 +7838,12 @@
         "id": "c7f00f59861cd00f",
         "type": "change",
         "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
+        "g": "2df66c6bc991dbf4",
         "name": "",
         "rules": [
             {
                 "t": "set",
-                "p": "sensor_cumulative_objects",
+                "p": "camera_selection",
                 "pt": "flow",
                 "to": "payload",
                 "tot": "msg"
@@ -7828,8 +7854,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 360,
-        "y": 2400,
+        "x": 190,
+        "y": 180,
         "wires": [
             []
         ]
