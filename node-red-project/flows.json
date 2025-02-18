@@ -199,12 +199,15 @@
             "170ddffb726db9e0",
             "befe91e6862c72db",
             "13a061996f9322f3",
-            "98571c77b9801a83"
+            "98571c77b9801a83",
+            "bb08a223f0aaef0f",
+            "e3b795e05d7650b2",
+            "c7f00f59861cd00f"
         ],
         "x": 154,
-        "y": 2139,
+        "y": 2119,
         "w": 1172,
-        "h": 322
+        "h": 342
     },
     {
         "id": "1bd1f21fa0390c69",
@@ -265,12 +268,13 @@
             "673e45159a2dfccf",
             "2c7c7df250289562",
             "627ba0f672680054",
-            "b7398c4e0bc743e5"
+            "b7398c4e0bc743e5",
+            "a8aeffd2e5bc17f2"
         ],
         "x": 54,
         "y": 359,
-        "w": 1278,
-        "h": 548
+        "w": 1332,
+        "h": 628
     },
     {
         "id": "53e4faf6d3ece28c",
@@ -731,7 +735,7 @@
         "x": 48,
         "y": 233,
         "w": 1050,
-        "h": 920
+        "h": 840
     },
     {
         "id": "672f3b07194c5dd5",
@@ -1100,7 +1104,7 @@
         "x": 88,
         "y": 439,
         "w": 984,
-        "h": 688
+        "h": 608
     },
     {
         "id": "f35d3f484c2f6107",
@@ -1177,12 +1181,13 @@
             "61d6a19c99c60e0b",
             "a96d834e3571c549",
             "7f0ef976c7b79245",
-            "59a579e6a1fa9a08"
+            "b08a42e270ab5a4f",
+            "674346683479762a"
         ],
-        "x": 494,
+        "x": 734,
         "y": 759,
-        "w": 812,
-        "h": 122
+        "w": 572,
+        "h": 202
     },
     {
         "id": "43087a735f896849",
@@ -1220,8 +1225,6 @@
             "751ff2049a663e9c",
             "3cdbccf5dbcb1c4e",
             "f9a2f4f97e3ba1cf",
-            "928d7cafdc1ab7fa",
-            "8f4e9d81288d5abd",
             "ba3b41519066f03a",
             "f111096594207360",
             "c25adb99d55eb890"
@@ -1229,7 +1232,7 @@
         "x": 114,
         "y": 859,
         "w": 932,
-        "h": 242
+        "h": 162
     },
     {
         "id": "05a58d9ee463c696",
@@ -1359,6 +1362,20 @@
             [
                 "c4a024def66c8499",
                 "8c434de19f88fefc"
+            ]
+        ]
+    },
+    {
+        "id": "674346683479762a",
+        "type": "junction",
+        "z": "9269520ddb532b00",
+        "g": "b7398c4e0bc743e5",
+        "x": 760,
+        "y": 800,
+        "wires": [
+            [
+                "b08a42e270ab5a4f",
+                "a96d834e3571c549"
             ]
         ]
     },
@@ -2042,58 +2059,6 @@
         ]
     },
     {
-        "id": "928d7cafdc1ab7fa",
-        "type": "inject",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "a2b2e69319628779",
-        "name": "drop table deployment",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "DROP TABLE IF EXISTS deployment;",
-        "x": 540,
-        "y": 1020,
-        "wires": [
-            [
-                "8a6d4593a661c3df"
-            ]
-        ]
-    },
-    {
-        "id": "8f4e9d81288d5abd",
-        "type": "inject",
-        "z": "3dae026ab340962a",
-        "d": true,
-        "g": "a2b2e69319628779",
-        "name": "alter table deployment from 0.2.0 to 0.3.0",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "ALTER TABLE deployment RENAME COLUMN entryDateTime TO entryStartDateTime; ALTER TABLE deployment ADD COLUMN entryEndDateTime REAL; ALTER TABLE deployment RENAME COLUMN orientation TO bearing; ALTER TABLE deployment DROP COLUMN address; ALTER TABLE deployment DROP COLUMN description; ALTER TABLE deployment ADD COLUMN sensor TEXT;",
-        "x": 480,
-        "y": 1060,
-        "wires": [
-            [
-                "8a6d4593a661c3df"
-            ]
-        ]
-    },
-    {
         "id": "689b64c16a889e0a",
         "type": "function",
         "z": "3dae026ab340962a",
@@ -2359,7 +2324,7 @@
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
         "name": "debug-radar-all-output",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2419,7 +2384,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
         "name": "debug-radar-write-DetectObjectVelocity",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2604,7 +2569,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "047f05d7650ba3cc",
         "name": "debug-radar-raws-speeds-write",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -3890,7 +3855,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "da1c8c74261a93a4",
         "name": "radar_oc_payload",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -4370,8 +4335,7 @@
         "wires": [
             [
                 "05a58d9ee463c696",
-                "09952039b0ab86aa",
-                "5e7c4009964478fc"
+                "09952039b0ab86aa"
             ]
         ]
     },
@@ -4445,22 +4409,6 @@
                 "3e9d121913d7feae"
             ]
         ]
-    },
-    {
-        "id": "5e7c4009964478fc",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 810,
-        "y": 660,
-        "wires": []
     },
     {
         "id": "f20c74c0ccfd256c",
@@ -4572,7 +4520,7 @@
             "c249329109ac17d5",
             "ed447e5f8becbfad"
         ],
-        "x": 1265,
+        "x": 995,
         "y": 800,
         "wires": []
     },
@@ -4679,7 +4627,7 @@
         "y": 660,
         "wires": [
             [
-                "a96d834e3571c549"
+                "a8aeffd2e5bc17f2"
             ]
         ]
     },
@@ -4750,8 +4698,8 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, $radarName);",
         "name": "tmdb.events, Prepared Statement",
-        "x": 680,
-        "y": 840,
+        "x": 960,
+        "y": 920,
         "wires": [
             []
         ]
@@ -4762,19 +4710,18 @@
         "z": "9269520ddb532b00",
         "g": "b7398c4e0bc743e5",
         "name": "write params for events insert",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n// Frigate Event info\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n//for Timestamp, frigate event and radar use seconds\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\nnewMsg.payload.entered_zones = `${JSON.stringify(msg.frigate_event.entered_zones)}`; //array, wrap in single quote for sqlite insert as text\n\nnewMsg.payload.score = msg.frigate_event.score;\nnewMsg.payload.area = msg.frigate_event.area;\nnewMsg.payload.ratio = msg.frigate_event.ratio;\nnewMsg.payload.motionless_count = msg.frigate_event.motionless_count;\nnewMsg.payload.position_changes = msg.frigate_event.position_changes;\nnewMsg.payload.attributes = `${JSON.stringify(msg.frigate_event.attributes)}`; //array, wrap in single quote for sqlite insert as text\n\n\nnewMsg.payload.direction_calc = (msg.event_direction_speed.calc_event_direction || undefined);\nnewMsg.payload.speed_calc = (msg.event_direction_speed.calc_event_speed || undefined);\n\n//provenance, frigate first, then radar, if it matched\nnewMsg.payload.provenance = [];\nnewMsg.payload.provenance.push(\"frigate\");\nif (msg.status_radarMatch === true) {\n    newMsg.payload.provenance.push(\"radar\");\n}\n\nnewMsg.payload.deployment_id = msg.frigate_event.deployment_id;\nnewMsg.payload.radarName = msg.frigate_event.radarName;\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "//JSON objects need to be text for SQLite\n\nmsg.payload.entered_zones = `${JSON.stringify(msg.payload.entered_zones)}`;\nmsg.payload.attributes = `${JSON.stringify(msg.payload.attributes)}`;\nmsg.payload.provenance = `${JSON.stringify(msg.payload.provenance)}`;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 650,
-        "y": 800,
+        "x": 930,
+        "y": 880,
         "wires": [
             [
-                "61d6a19c99c60e0b",
-                "59a579e6a1fa9a08"
+                "61d6a19c99c60e0b"
             ]
         ]
     },
@@ -4830,31 +4777,9 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1040,
+        "x": 1120,
         "y": 840,
         "wires": []
-    },
-    {
-        "id": "59a579e6a1fa9a08",
-        "type": "function",
-        "z": "9269520ddb532b00",
-        "g": "b7398c4e0bc743e5",
-        "name": "cleanse final msg.payload to forward along",
-        "func": "let newMsg = {};\n\nnewMsg.topic = \"tm/event\"\nnewMsg.payload = msg.payload;\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1030,
-        "y": 800,
-        "wires": [
-            [
-                "7f0ef976c7b79245",
-                "274f87c31437c2d7"
-            ]
-        ]
     },
     {
         "id": "b39062019fac1a66",
@@ -5048,6 +4973,56 @@
         "wires": [
             [
                 "510b389597efaf1b"
+            ]
+        ]
+    },
+    {
+        "id": "a8aeffd2e5bc17f2",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "71c085648c20e329",
+        "name": "event finalize output",
+        "func": "\n//provenance, frigate first, then radar, if it matched\nvar thisProvenance = [];\nthisProvenance.push(\"frigate\");\nif (msg.payload.status_radarMatch === true) {\n    thisProvenance.push(\"radar\");\n}\n\nconst newPayload = {\n    id:                 msg.frigate_event.id,\n    camera:             msg.frigate_event.camera,\n    label:              msg.frigate_event.label,\n    sub_label:          msg.frigate_event.sub_label,\n    top_score:          msg.frigate_event.top_score,\n    frame_time:         msg.frigate_event.frame_time,\n    start_time:         msg.frigate_event.start_time,\n    end_time:           msg.frigate_event.end_time,\n    entered_zones:      msg.frigate_event.entered_zones,\n    score:              msg.frigate_event.score,\n    area:               msg.frigate_event.area,\n    ratio:              msg.frigate_event.ratio,\n    motionless_count:   msg.frigate_event.motionless_count,\n    position_changes:   msg.frigate_event.position_changes,\n    attributes:         msg.frigate_event.attributes,\n    direction_calc:     (msg.event_direction_speed.calc_event_direction || undefined),\n    speed_calc:         (msg.event_direction_speed.calc_event_speed || undefined),\n    provenance:         thisProvenance,\n    deployment_id:      msg.frigate_event.deployment_id,\n    radarName:          msg.frigate_event.radarName\n}\n\nmsg.payload = newPayload;\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1260,
+        "y": 700,
+        "wires": [
+            [
+                "674346683479762a"
+            ]
+        ]
+    },
+    {
+        "id": "b08a42e270ab5a4f",
+        "type": "change",
+        "z": "9269520ddb532b00",
+        "g": "b7398c4e0bc743e5",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "tm/event",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 870,
+        "y": 800,
+        "wires": [
+            [
+                "274f87c31437c2d7",
+                "7f0ef976c7b79245"
             ]
         ]
     },
@@ -6659,13 +6634,11 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "only use radar cam",
-        "property": "payload.camera",
+        "property": "payload.radarName",
         "propertyType": "msg",
         "rules": [
             {
-                "t": "eq",
-                "v": "VAR_RADAR_CAMERA",
-                "vt": "env"
+                "t": "nnull"
             }
         ],
         "checkall": "true",
@@ -6707,7 +6680,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "debug: event payload in",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -7094,7 +7067,7 @@
         "repair": false,
         "outputs": 1,
         "x": 400,
-        "y": 2180,
+        "y": 2160,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -7122,7 +7095,7 @@
         "to": "",
         "reg": false,
         "x": 460,
-        "y": 2240,
+        "y": 2200,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7465,7 +7438,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "create sqlite query, daily cumulative counts in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${env.get(\"VAR_RADAR_CAMERA\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${flow.get(\"sensor_cumulative_objects\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7766,6 +7739,97 @@
         "className": "",
         "x": 800,
         "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bb08a223f0aaef0f",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select sensor to report cumulative daily object counts",
+        "group": "7866c2aa313ab8b9",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 380,
+        "y": 2340,
+        "wires": [
+            [
+                "c7f00f59861cd00f"
+            ]
+        ]
+    },
+    {
+        "id": "e3b795e05d7650b2",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "options",
+                "v": "$keys($globalContext(\"config.sensors.cameras\"))\t",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "$keys($globalContext(\"config.sensors.cameras\"))[0]\t",
+        "payloadType": "jsonata",
+        "x": 250,
+        "y": 2340,
+        "wires": [
+            [
+                "bb08a223f0aaef0f"
+            ]
+        ]
+    },
+    {
+        "id": "c7f00f59861cd00f",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "sensor_cumulative_objects",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 360,
+        "y": 2400,
         "wires": [
             []
         ]
