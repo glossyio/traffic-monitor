@@ -567,7 +567,7 @@
         "x": 108,
         "y": 999,
         "w": 1198,
-        "h": 408
+        "h": 468
     },
     {
         "id": "9e0b1edd49eb4244",
@@ -1087,11 +1087,12 @@
             "ecc317fcd059b4c3",
             "b0252bd49dc8e61d",
             "94136e5a6f092bb6",
-            "5ffb7c9c38b8c5b0"
+            "5ffb7c9c38b8c5b0",
+            "2fa46892748adc43"
         ],
         "x": 74,
         "y": 259,
-        "w": 732,
+        "w": 832,
         "h": 162
     },
     {
@@ -1133,7 +1134,7 @@
         },
         "nodes": [
             "2be1c8d04ce69a48",
-            "08da197b902c939e"
+            "87d3892038bb3e5f"
         ],
         "x": 134,
         "y": 779,
@@ -1155,7 +1156,7 @@
             "9b0f7197fe82bbfa"
         ],
         "x": 134,
-        "y": 1299,
+        "y": 1359,
         "w": 492,
         "h": 82
     },
@@ -1175,12 +1176,14 @@
             "0b62cae60d488c85",
             "4af0d78e8bc39647",
             "66bace5cf805a4fb",
-            "22f397ac5c294b6e"
+            "22f397ac5c294b6e",
+            "c49d311e5668de52",
+            "9941048ea93dc79c"
         ],
         "x": 134,
         "y": 1079,
         "w": 472,
-        "h": 202
+        "h": 262
     },
     {
         "id": "b7398c4e0bc743e5",
@@ -1951,7 +1954,8 @@
         "y": 340,
         "wires": [
             [
-                "b0252bd49dc8e61d"
+                "b0252bd49dc8e61d",
+                "2fa46892748adc43"
             ]
         ]
     },
@@ -2318,6 +2322,20 @@
                 "8a6d4593a661c3df"
             ]
         ]
+    },
+    {
+        "id": "2fa46892748adc43",
+        "type": "link out",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "init-config link out",
+        "mode": "link",
+        "links": [
+            "c49d311e5668de52"
+        ],
+        "x": 865,
+        "y": 340,
+        "wires": []
     },
     {
         "id": "0612ca7936dee14a",
@@ -5154,7 +5172,7 @@
         "z": "b1fde507a4b80c79",
         "g": "672f3b07194c5dd5",
         "name": "debug: airquality query",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -5276,7 +5294,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "{\n    \"entryDateTime\": {{payload.current_time}},\n    \"gas_calibrated\": {{#payload.gas_calibrated}}1{{/payload.gas_calibrated}}{{^payload.gas_calibrated}}0{{/payload.gas_calibrated}},\n    \"temp\": {{payload.temp}},\n    \"bar\": {{payload.bar.0}},\n    \"hum\": {{payload.hum.0}},\n    \"dew\": {{payload.dew}},\n    \"temp_raw\": {{payload.temp_raw}},\n    \"bar_raw\": {{payload.bar_raw}},\n    \"hum_raw\": {{payload.hum_raw}},\n    \"pm01\": {{payload.pm01}},\n    \"pm025\": {{payload.pm025}},\n    \"pm10\": {{payload.pm10}},\n    \"gas_red\": {{payload.gas_red}},\n    \"gas_oxi\": {{payload.gas_oxi}},\n    \"gas_nh3\": {{payload.gas_nh3}},\n    \"gas_red_raw\": {{payload.gas_red_raw}},\n    \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n    \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n    \"lux\": {{payload.lux}},\n    \"lux_raw\": {{payload.lux_raw}},\n    \"proximity\": {{payload.proximity}},\n    \"sensorName\": \"{{sensor.name}}\",\n    \"deployment_id\": \"{{sensor.deployment_id}}\"\n}",
+        "template": "{\n    \"entryDateTime\": {{payload.current_time}},\n    \"gas_calibrated\": {{#payload.gas_calibrated}}1{{/payload.gas_calibrated}}{{^payload.gas_calibrated}}0{{/payload.gas_calibrated}},\n    \"temp\": {{payload.temp}},\n    \"bar\": {{payload.bar.0}},\n    \"hum\": {{payload.hum.0}},\n    \"dew\": {{payload.dew}},\n    \"temp_raw\": {{payload.temp_raw}},\n    \"bar_raw\": {{payload.bar_raw}},\n    \"hum_raw\": {{payload.hum_raw}},\n    \"pm01\": {{payload.pm01}},\n    \"pm025\": {{payload.pm025}},\n    \"pm10\": {{payload.pm10}},\n    \"gas_red\": {{payload.gas_red}},\n    \"gas_oxi\": {{payload.gas_oxi}},\n    \"gas_nh3\": {{payload.gas_nh3}},\n    \"gas_red_raw\": {{payload.gas_red_raw}},\n    \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n    \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n    \"lux\": {{payload.lux}},\n    \"lux_raw\": {{payload.lux_raw}},\n    \"proximity\": {{payload.proximity}},\n    \"sensorName\": \"{{sensor.name}}\",\n    \"deployment_id\": \"{{sensor.deployment.id}}\"\n}",
         "output": "json",
         "x": 740,
         "y": 240,
@@ -5884,7 +5902,7 @@
             "1ba33a74f2d3a680"
         ],
         "x": 175,
-        "y": 1340,
+        "y": 1400,
         "wires": [
             [
                 "9b0f7197fe82bbfa"
@@ -5978,27 +5996,7 @@
         "y": 820,
         "wires": [
             [
-                "08da197b902c939e"
-            ]
-        ]
-    },
-    {
-        "id": "08da197b902c939e",
-        "type": "template",
-        "z": "f7932be9acc7391c",
-        "g": "f35d3f484c2f6107",
-        "name": "format airquality telemetry",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "{\n    \"ts\":{{payload.entryDateTime}},\n    \"values\": {\n        \"airquality\": {\n            \"entryDateTime\": {{payload.entryDateTime}},\n            \"gas_calibrated\": {{payload.gas_calibrated}},\n            \"temp\": {{payload.temp}},\n            \"bar\": {{payload.bar}},\n            \"hum\": {{payload.hum}},\n            \"dew\": {{payload.dew}},\n            \"temp_raw\": {{payload.temp_raw}},\n            \"bar_raw\": {{payload.bar_raw}},\n            \"hum_raw\": {{payload.hum_raw}},\n            \"pm01\": {{payload.pm01}},\n            \"pm025\": {{payload.pm025}},\n            \"pm10\": {{payload.pm10}},\n            \"gas_red\": {{payload.gas_red}},\n            \"gas_oxi\": {{payload.gas_oxi}},\n            \"gas_nh3\": {{payload.gas_nh3}},\n            \"gas_red_raw\": {{payload.gas_red_raw}},\n            \"gas_oxi_raw\": {{payload.gas_oxi_raw}},\n            \"gas_nh3_raw\": {{payload.gas_nh3_raw}},\n            \"lux\": {{payload.lux}},\n            \"lux_raw\": {{payload.lux_raw}},\n            \"proximity\": {{payload.proximity}},\n            \"sensorName\": \"{{payload.sensorName}}\",\n            \"deployment_id\": \"{{payload.deployment_id}}\"\n        }\n    }\n}",
-        "output": "json",
-        "x": 350,
-        "y": 820,
-        "wires": [
-            [
-                "8c521232f464d27a"
+                "87d3892038bb3e5f"
             ]
         ]
     },
@@ -6166,7 +6164,7 @@
         "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": {{lat}},\n            \"lon\": {{lon}},\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"lat\": {{global.config.deployment.lat}},\n            \"lon\": {{global.config.deployment.lon}},\n            \"bearing\": \"{{global.config.deployment.bearing}}\"\n        }\n    }\n}",
         "output": "json",
         "x": 430,
-        "y": 1340,
+        "y": 1400,
         "wires": [
             [
                 "75f7976086cc9838"
@@ -6317,6 +6315,65 @@
         "libs": [],
         "x": 410,
         "y": 1240,
+        "wires": [
+            [
+                "75f7976086cc9838"
+            ]
+        ]
+    },
+    {
+        "id": "87d3892038bb3e5f",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "f35d3f484c2f6107",
+        "name": "format airquality telemetry",
+        "func": "const newPayload = {\n    ts: (msg.payload.entryDateTime * 1000),\n    values: {\n        airquality: {\n            entryDateTime:  msg.payload.entryDateTime,\n            gas_calibrated: msg.payload.gas_calibrated,\n            temp:           msg.payload.temp,\n            bar:            msg.payload.bar,\n            hum:            msg.payload.hum,\n            dew:            msg.payload.dew,\n            temp_raw:       msg.payload.temp_raw,\n            bar_raw:        msg.payload.bar_raw,\n            hum_raw:        msg.payload.hum_raw,\n            pm01:           msg.payload.pm01,\n            pm025:          msg.payload.pm025,\n            pm10:           msg.payload.pm10,\n            gas_red:        msg.payload.gas_red,\n            gas_oxi:        msg.payload.gas_oxi,\n            gas_nh3:        msg.payload.gas_nh3,\n            gas_red_raw:    msg.payload.gas_red_raw,\n            gas_oxi_raw:    msg.payload.gas_oxi_raw,\n            gas_nh3_raw:    msg.payload.gas_nh3_raw,\n            lux:            msg.payload.lux,\n            lux_raw:        msg.payload.lux_raw,\n            proximity:      msg.payload.proximity,\n            sensorName:     msg.payload.sensorName,\n            deployment_id:  msg.payload.deployment_id\n        }\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 820,
+        "wires": [
+            [
+                "8c521232f464d27a"
+            ]
+        ]
+    },
+    {
+        "id": "c49d311e5668de52",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "f034ca2ecdf9a2f6",
+        "name": "init-config device attributes link in",
+        "links": [
+            "2fa46892748adc43"
+        ],
+        "x": 175,
+        "y": 1300,
+        "wires": [
+            [
+                "9941048ea93dc79c"
+            ]
+        ]
+    },
+    {
+        "id": "9941048ea93dc79c",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "f034ca2ecdf9a2f6",
+        "name": "format init-config client-side attributes",
+        "func": "const newPayload = {\n    config_tm: msg.payload\n}\n\nmsg.payload = newPayload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1300,
         "wires": [
             [
                 "75f7976086cc9838"
