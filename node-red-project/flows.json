@@ -851,8 +851,26 @@
         ],
         "x": 54,
         "y": 439,
-        "w": 2272,
+        "w": 2512,
         "h": 162
+    },
+    {
+        "id": "2df66c6bc991dbf4",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "camera selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bb08a223f0aaef0f",
+            "e3b795e05d7650b2",
+            "c7f00f59861cd00f"
+        ],
+        "x": 14,
+        "y": 79,
+        "w": 312,
+        "h": 142
     },
     {
         "id": "b334a2375eb8cb42",
@@ -1230,24 +1248,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "2df66c6bc991dbf4",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "name": "camera selection",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "bb08a223f0aaef0f",
-            "e3b795e05d7650b2",
-            "c7f00f59861cd00f"
-        ],
-        "x": 14,
-        "y": 79,
-        "w": 312,
-        "h": 142
     },
     {
         "id": "05a58d9ee463c696",
@@ -4267,7 +4267,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 2160,
+        "x": 2400,
         "y": 560,
         "wires": [
             []
@@ -4283,7 +4283,7 @@
         "links": [
             "66bace5cf805a4fb"
         ],
-        "x": 2285,
+        "x": 2275,
         "y": 520,
         "wires": []
     },
@@ -5842,7 +5842,7 @@
         "z": "f7932be9acc7391c",
         "g": "99dfff63ac837bc8",
         "name": "format system metrics payload",
-        "func": "// format the payload with a timestamp\nlet values = {\n    ...msg.payload,\n}\n//ts in milliseconds\nmsg.payload = {\n    ts: values.time_ms_utc,\n    values: {\n        system_metrics: values\n    }\n}\n\nreturn msg;",
+        "func": "const newPayload = {\n    ts: msg.payload.time_ms_utc,\n    values: {\n        system_metrics: msg.payload\n    }\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6308,7 +6308,7 @@
         "z": "f7932be9acc7391c",
         "g": "f034ca2ecdf9a2f6",
         "name": "format radar info client-side attributes",
-        "func": "const newPayload = {\n    radarInfo: msg.payload,\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "func": "const newPayload = {\n    radarinfo: msg.payload,\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6706,7 +6706,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "debug: event payload in",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -11667,7 +11667,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "8",
+        "count": "9",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -11912,7 +11912,7 @@
         "type": "function",
         "z": "f410f6aac9d1a3fc",
         "name": "Hardware",
-        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"metrics_Hardware\";\nreturn msg;",
+        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"tm/system_metrics\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
