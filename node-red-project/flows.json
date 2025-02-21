@@ -87,8 +87,8 @@
             "ec7a0e0b1c62e91d"
         ],
         "x": 14,
-        "y": 459,
-        "w": 1372,
+        "y": 559,
+        "w": 1172,
         "h": 122
     },
     {
@@ -106,7 +106,7 @@
             "eb140f61419c6a08"
         ],
         "x": 14,
-        "y": 319,
+        "y": 419,
         "w": 1092,
         "h": 122
     },
@@ -126,8 +126,8 @@
             "4f84bcb60e4be762"
         ],
         "x": 14,
-        "y": 599,
-        "w": 1452,
+        "y": 699,
+        "w": 1212,
         "h": 122
     },
     {
@@ -149,63 +149,9 @@
             "7db4b197df9eb075"
         ],
         "x": 14,
-        "y": 739,
-        "w": 1532,
+        "y": 839,
+        "w": 1372,
         "h": 348
-    },
-    {
-        "id": "9b9e4fc50b744fc3",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "91096cd6c9c741e2",
-        "name": "last N events, radar",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "d66541089b01306e",
-            "2e680914d7da5c94",
-            "c788d632f5e93a73",
-            "e5391514131a2b5a",
-            "5ec2d3ba52f944f5",
-            "c36c71706e494b5e",
-            "82bc0c11adb825f8",
-            "736d1e21a49f446b",
-            "5b307e65106f3540",
-            "4c087723a1d698e9",
-            "0f65ceafe3f7c069",
-            "f5d2d92d50d18ce2",
-            "c2270f3050bf35ab"
-        ],
-        "x": 194,
-        "y": 1279,
-        "w": 1292,
-        "h": 362
-    },
-    {
-        "id": "453513c49e4b1b60",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "91096cd6c9c741e2",
-        "name": "cumulative events today by object",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "6d738ed81fefbedc",
-            "d856c68660eb2202",
-            "f57e08e6fb9c0d09",
-            "d23be15251ed6d73",
-            "4760bed60a7f392a",
-            "170ddffb726db9e0",
-            "befe91e6862c72db",
-            "13a061996f9322f3",
-            "98571c77b9801a83"
-        ],
-        "x": 194,
-        "y": 1659,
-        "w": 1592,
-        "h": 182
     },
     {
         "id": "1bd1f21fa0390c69",
@@ -223,8 +169,8 @@
             "6d81c8e3c89b68f6"
         ],
         "x": 14,
-        "y": 1099,
-        "w": 1492,
+        "y": 1199,
+        "w": 1292,
         "h": 122
     },
     {
@@ -859,7 +805,7 @@
         "id": "2df66c6bc991dbf4",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "camera selection",
+        "name": "sensor selection",
         "style": {
             "label": true
         },
@@ -873,11 +819,115 @@
             "f50a7968e032532a",
             "af02df2daa211e5b",
             "1feaed96b954867a",
-            "946c6bc353743bc4"
+            "946c6bc353743bc4",
+            "04c77d4233fbffd3"
         ],
         "x": 14,
         "y": 79,
-        "w": 1232,
+        "w": 1332,
+        "h": 202
+    },
+    {
+        "id": "7c19b3698bb02613",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "airquality_monitor",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a3672e4c4c84d721",
+            "e5ed08571761bd2c",
+            "441e03047af79373",
+            "9d1978d68c96feb9",
+            "2227d1c8d929c91d",
+            "f920233df1bbb23f",
+            "149757a20cc50973",
+            "b8342af470189c50",
+            "95871652f30bc9ce",
+            "8a82204bdfcdddb9",
+            "7d5875326501443c",
+            "d16177f416c9a0ef",
+            "34361a18f847df07",
+            "c1adf5e2bd669713",
+            "c13f03809fbd9809"
+        ],
+        "x": 14,
+        "y": 1999,
+        "w": 1278,
+        "h": 408
+    },
+    {
+        "id": "91096cd6c9c741e2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event-based ui",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c249329109ac17d5",
+            "9b9e4fc50b744fc3",
+            "453513c49e4b1b60",
+            "ca3c18fa88ded42a"
+        ],
+        "x": 94,
+        "y": 1353,
+        "w": 1398,
+        "h": 634
+    },
+    {
+        "id": "9b9e4fc50b744fc3",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "name": "last N events, radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "d66541089b01306e",
+            "2e680914d7da5c94",
+            "c788d632f5e93a73",
+            "e5391514131a2b5a",
+            "5ec2d3ba52f944f5",
+            "c36c71706e494b5e",
+            "82bc0c11adb825f8",
+            "736d1e21a49f446b",
+            "5b307e65106f3540",
+            "4c087723a1d698e9",
+            "0f65ceafe3f7c069",
+            "f5d2d92d50d18ce2",
+            "c2270f3050bf35ab"
+        ],
+        "x": 194,
+        "y": 1379,
+        "w": 1252,
+        "h": 362
+    },
+    {
+        "id": "453513c49e4b1b60",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "name": "cumulative events today by object",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6d738ed81fefbedc",
+            "d856c68660eb2202",
+            "f57e08e6fb9c0d09",
+            "d23be15251ed6d73",
+            "4760bed60a7f392a",
+            "170ddffb726db9e0",
+            "befe91e6862c72db",
+            "13a061996f9322f3",
+            "98571c77b9801a83"
+        ],
+        "x": 194,
+        "y": 1759,
+        "w": 1272,
         "h": 202
     },
     {
@@ -984,28 +1034,8 @@
             "57fa6ca2b7d290e3"
         ],
         "x": 334,
-        "y": 939,
-        "w": 1152,
-        "h": 122
-    },
-    {
-        "id": "f5d2d92d50d18ce2",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "frigate event api for thumbnail",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "09f99c931e5535bf",
-            "08121a31488784bc",
-            "9226865e3385eb56",
-            "aa0afb5180297e2b"
-        ],
-        "x": 594,
-        "y": 1319,
-        "w": 612,
+        "y": 1039,
+        "w": 972,
         "h": 122
     },
     {
@@ -1237,6 +1267,46 @@
         "h": 122
     },
     {
+        "id": "d16177f416c9a0ef",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "event; object counts/speeds individually last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "12df4fdffa628238",
+            "6a292f3905fe5405",
+            "76e813b1b7a4b63e",
+            "5cf61952cb6823de"
+        ],
+        "x": 394,
+        "y": 2259,
+        "w": 872,
+        "h": 122
+    },
+    {
+        "id": "f5d2d92d50d18ce2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "09f99c931e5535bf",
+            "08121a31488784bc",
+            "9226865e3385eb56",
+            "aa0afb5180297e2b"
+        ],
+        "x": 594,
+        "y": 1419,
+        "w": 612,
+        "h": 122
+    },
+    {
         "id": "a2b2e69319628779",
         "type": "group",
         "z": "3dae026ab340962a",
@@ -1259,83 +1329,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "7c19b3698bb02613",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "name": "aq; gas",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "a3672e4c4c84d721",
-            "e5ed08571761bd2c",
-            "441e03047af79373",
-            "9d1978d68c96feb9",
-            "2227d1c8d929c91d",
-            "9573839489d3567f"
-        ],
-        "x": 14,
-        "y": 1899,
-        "w": 1312,
-        "h": 127
-    },
-    {
-        "id": "91096cd6c9c741e2",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "name": "event-based ui",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "c249329109ac17d5",
-            "9b9e4fc50b744fc3",
-            "453513c49e4b1b60"
-        ],
-        "x": 94,
-        "y": 1253,
-        "w": 1718,
-        "h": 614
-    },
-    {
-        "id": "83eedcc325ccc21d",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "name": "aq, particulate matter (PM)",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "bd1b7f16edeb4ed3",
-            "bf4e488edf28469b",
-            "0d4ff80748d1c876",
-            "56bbbcd2844a4c13"
-        ],
-        "x": 234,
-        "y": 2179,
-        "w": 1052,
-        "h": 122
-    },
-    {
-        "id": "d16177f416c9a0ef",
-        "type": "group",
-        "z": "28627559bebdc324",
-        "name": "event; object counts/speeds individually last 24-hours",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "12df4fdffa628238",
-            "6a292f3905fe5405",
-            "76e813b1b7a4b63e",
-            "5cf61952cb6823de"
-        ],
-        "x": 234,
-        "y": 2039,
-        "w": 1092,
-        "h": 122
     },
     {
         "id": "05a58d9ee463c696",
@@ -1483,16 +1476,64 @@
         ]
     },
     {
-        "id": "9573839489d3567f",
+        "id": "04c77d4233fbffd3",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "x": 1320,
+        "y": 240,
+        "wires": [
+            [
+                "a20d5f859bf5c14d"
+            ]
+        ]
+    },
+    {
+        "id": "ca3c18fa88ded42a",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "x": 180,
+        "y": 1420,
+        "wires": [
+            [
+                "82bc0c11adb825f8",
+                "f57e08e6fb9c0d09",
+                "736d1e21a49f446b",
+                "5ec2d3ba52f944f5"
+            ]
+        ]
+    },
+    {
+        "id": "34361a18f847df07",
         "type": "junction",
         "z": "28627559bebdc324",
         "g": "7c19b3698bb02613",
-        "x": 140,
-        "y": 2000,
+        "x": 360,
+        "y": 2040,
         "wires": [
             [
-                "bf4e488edf28469b",
-                "12df4fdffa628238"
+                "12df4fdffa628238",
+                "441e03047af79373"
+            ]
+        ]
+    },
+    {
+        "id": "a20d5f859bf5c14d",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "x": 100,
+        "y": 360,
+        "wires": [
+            [
+                "34361a18f847df07",
+                "158e6edae533bfdc",
+                "79900a566af02159",
+                "928b71f25ce6e7b6",
+                "5f3716d2176c3ab4",
+                "b241a0ef89fd7ce4",
+                "584504e6c8935eaf",
+                "f57e08e6fb9c0d09"
             ]
         ]
     },
@@ -1543,7 +1584,7 @@
         "tab": "665d947f9a312a33",
         "order": 2,
         "disp": true,
-        "width": "12",
+        "width": 8,
         "collapse": false,
         "className": ""
     },
@@ -1852,7 +1893,7 @@
         "tab": "665d947f9a312a33",
         "order": 1,
         "disp": true,
-        "width": 3,
+        "width": 6,
         "collapse": false,
         "className": ""
     },
@@ -6513,7 +6554,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 640,
+        "y": 740,
         "wires": [
             [
                 "928b71f25ce6e7b6"
@@ -6528,8 +6569,8 @@
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
         "order": 4,
-        "width": 6,
-        "height": 7,
+        "width": 0,
+        "height": 0,
         "label": "frigate api/events/summary daily object count for the last 10-days",
         "chartType": "line",
         "legend": "true",
@@ -6560,7 +6601,7 @@
         "useDifferentColor": false,
         "className": "",
         "x": 950,
-        "y": 400,
+        "y": 500,
         "wires": [
             []
         ]
@@ -6583,7 +6624,7 @@
         "senderr": false,
         "headers": [],
         "x": 590,
-        "y": 360,
+        "y": 460,
         "wires": [
             [
                 "eb140f61419c6a08"
@@ -6604,7 +6645,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 230,
-        "y": 360,
+        "y": 460,
         "wires": [
             [
                 "b241a0ef89fd7ce4"
@@ -6625,7 +6666,7 @@
         "finalize": "",
         "libs": [],
         "x": 900,
-        "y": 360,
+        "y": 460,
         "wires": [
             [
                 "08d030ffc3fe6adb"
@@ -6655,7 +6696,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 500,
+        "y": 600,
         "wires": [
             [
                 "5f3716d2176c3ab4"
@@ -6670,8 +6711,8 @@
         "name": "events summary daily, objects",
         "group": "06dde4be9a9a6b27",
         "order": 5,
-        "width": 6,
-        "height": 7,
+        "width": 0,
+        "height": 0,
         "label": "events daily object count for the last 10-days",
         "chartType": "line",
         "legend": "true",
@@ -6701,8 +6742,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1230,
-        "y": 540,
+        "x": 1030,
+        "y": 640,
         "wires": [
             []
         ]
@@ -6717,13 +6758,10 @@
             "274f87c31437c2d7"
         ],
         "x": 135,
-        "y": 1320,
+        "y": 1420,
         "wires": [
             [
-                "5ec2d3ba52f944f5",
-                "82bc0c11adb825f8",
-                "736d1e21a49f446b",
-                "f57e08e6fb9c0d09"
+                "ca3c18fa88ded42a"
             ]
         ]
     },
@@ -6746,7 +6784,7 @@
         "repair": false,
         "outputs": 1,
         "x": 1020,
-        "y": 1520,
+        "y": 1620,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -6772,7 +6810,7 @@
         "repair": false,
         "outputs": 1,
         "x": 360,
-        "y": 1400,
+        "y": 1500,
         "wires": [
             [
                 "c2270f3050bf35ab"
@@ -6793,7 +6831,7 @@
         "finalize": "",
         "libs": [],
         "x": 1050,
-        "y": 1560,
+        "y": 1660,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -6814,7 +6852,7 @@
         "finalize": "",
         "libs": [],
         "x": 1030,
-        "y": 1480,
+        "y": 1580,
         "wires": [
             [
                 "c36c71706e494b5e"
@@ -6838,7 +6876,7 @@
         "repair": false,
         "outputs": 1,
         "x": 330,
-        "y": 1360,
+        "y": 1460,
         "wires": [
             [
                 "2e680914d7da5c94"
@@ -6853,16 +6891,16 @@
         "group": "06dde4be9a9a6b27",
         "name": "last N radar events",
         "order": 2,
-        "width": 0,
-        "height": 0,
+        "width": 8,
+        "height": 19,
         "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1310,
-        "y": 1480,
+        "x": 1270,
+        "y": 1580,
         "wires": [
             []
         ]
@@ -6882,7 +6920,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 330,
-        "y": 1320,
+        "y": 1420,
         "wires": []
     },
     {
@@ -6956,8 +6994,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1280,
-        "y": 680,
+        "x": 1040,
+        "y": 780,
         "wires": [
             []
         ]
@@ -6985,7 +7023,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 780,
+        "y": 880,
         "wires": [
             [
                 "158e6edae533bfdc",
@@ -7007,7 +7045,7 @@
         "finalize": "",
         "libs": [],
         "x": 470,
-        "y": 1600,
+        "y": 1700,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -7021,8 +7059,8 @@
         "g": "9b9e4fc50b744fc3",
         "group": "7866c2aa313ab8b9",
         "order": 6,
-        "width": 0,
-        "height": 0,
+        "width": 6,
+        "height": 7,
         "name": "",
         "label": "last N events, text output",
         "format": "{{msg.payload}}",
@@ -7032,8 +7070,8 @@
         "font": "Courier,monospace",
         "fontSize": "10",
         "color": "#000000",
-        "x": 1330,
-        "y": 1600,
+        "x": 1290,
+        "y": 1700,
         "wires": []
     },
     {
@@ -7044,16 +7082,16 @@
         "group": "06dde4be9a9a6b27",
         "name": "last N radar speeding events",
         "order": 3,
-        "width": 0,
-        "height": 0,
+        "width": 8,
+        "height": 12,
         "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1340,
-        "y": 1560,
+        "x": 1300,
+        "y": 1660,
         "wires": [
             []
         ]
@@ -7097,8 +7135,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1290,
-        "y": 1020,
+        "x": 1110,
+        "y": 1120,
         "wires": [
             []
         ]
@@ -7142,8 +7180,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1600,
-        "y": 1760,
+        "x": 1280,
+        "y": 1840,
         "wires": [
             []
         ]
@@ -7163,8 +7201,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 1500,
-        "y": 1800,
+        "x": 1360,
+        "y": 1920,
         "wires": []
     },
     {
@@ -7181,7 +7219,7 @@
         "finalize": "",
         "libs": [],
         "x": 740,
-        "y": 1480,
+        "y": 1580,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -7212,7 +7250,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 1140,
+        "y": 1240,
         "wires": [
             [
                 "584504e6c8935eaf"
@@ -7227,16 +7265,16 @@
         "group": "7866c2aa313ab8b9",
         "name": "car speed stats for today, since 0400",
         "order": 2,
-        "width": 0,
-        "height": 0,
+        "width": 6,
+        "height": 7,
         "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">car speed stats for today, since 0400</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td ng-repeat =\"(key,value) in payload\">{{key}}: </td>\n        <td ng-repeat =\"(key,value) in payload\">{{value}}</td>\n    </tr>\n</table>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1330,
-        "y": 1180,
+        "x": 1130,
+        "y": 1280,
         "wires": [
             []
         ]
@@ -7260,7 +7298,7 @@
         "repair": false,
         "outputs": 1,
         "x": 320,
-        "y": 1700,
+        "y": 1800,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -7288,7 +7326,7 @@
         "to": "",
         "reg": false,
         "x": 380,
-        "y": 1740,
+        "y": 1840,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7308,7 +7346,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 430,
-        "y": 1800,
+        "y": 1900,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7333,7 +7371,7 @@
         "senderr": false,
         "headers": [],
         "x": 740,
-        "y": 1360,
+        "y": 1460,
         "wires": [
             [
                 "9226865e3385eb56",
@@ -7362,7 +7400,7 @@
         "to": "",
         "reg": false,
         "x": 1050,
-        "y": 1400,
+        "y": 1500,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -7383,7 +7421,7 @@
         "pass": false,
         "outputs": 0,
         "x": 1000,
-        "y": 1360,
+        "y": 1460,
         "wires": []
     },
     {
@@ -7395,7 +7433,7 @@
         "action": "",
         "property": "payload",
         "x": 840,
-        "y": 1400,
+        "y": 1500,
         "wires": [
             [
                 "08121a31488784bc"
@@ -7423,7 +7461,7 @@
         "to": "",
         "reg": false,
         "x": 410,
-        "y": 1440,
+        "y": 1540,
         "wires": [
             [
                 "09f99c931e5535bf"
@@ -7435,7 +7473,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
-        "name": "query, daily summary last 10 days in zone_capture",
+        "name": "query events, daily summary last 10 days in zone_capture",
         "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7443,8 +7481,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 550,
-        "y": 500,
+        "x": 570,
+        "y": 600,
         "wires": [
             [
                 "bdb4b259d648b1f0"
@@ -7460,8 +7498,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 900,
-        "y": 500,
+        "x": 680,
+        "y": 640,
         "wires": [
             [
                 "ec7a0e0b1c62e91d"
@@ -7481,8 +7519,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1190,
-        "y": 500,
+        "x": 990,
+        "y": 600,
         "wires": [
             [
                 "b65e1877b1e04881"
@@ -7494,7 +7532,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "5173f4b3ac03407a",
-        "name": "query, 1-h counts last 24-h in zone_capture",
+        "name": "query events, 1-h counts last 24-h in zone_capture",
         "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7502,8 +7540,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 530,
-        "y": 640,
+        "x": 550,
+        "y": 740,
         "wires": [
             [
                 "c03516d1eb65598d"
@@ -7519,8 +7557,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
-        "y": 640,
+        "x": 640,
+        "y": 780,
         "wires": [
             [
                 "4f84bcb60e4be762"
@@ -7540,8 +7578,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1230,
-        "y": 640,
+        "x": 990,
+        "y": 740,
         "wires": [
             [
                 "02469f2425072f7b"
@@ -7553,7 +7591,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
-        "name": "query, 5-min event speed counts for last 1-h in zone_radar",
+        "name": "query events, 5-min event speed counts for last 1-h in zone_radar",
         "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime') AS bin_time,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (3600))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_radar%'\nGROUP BY\n    label, strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime'), camera\nORDER BY\n    label, bin_time, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7561,8 +7599,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 570,
-        "y": 980,
+        "x": 600,
+        "y": 1080,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -7578,8 +7616,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 940,
-        "y": 980,
+        "x": 740,
+        "y": 1120,
         "wires": [
             [
                 "57fa6ca2b7d290e3"
@@ -7599,8 +7637,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1230,
-        "y": 980,
+        "x": 1050,
+        "y": 1080,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -7612,7 +7650,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
-        "name": "create sqlite query, daily cumulative counts in zone_capture",
+        "name": "query events, daily cumulative counts in zone_capture",
         "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc')\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7620,8 +7658,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 760,
-        "y": 1700,
+        "x": 740,
+        "y": 1800,
         "wires": [
             [
                 "befe91e6862c72db"
@@ -7637,8 +7675,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1140,
-        "y": 1700,
+        "x": 860,
+        "y": 1840,
         "wires": [
             [
                 "13a061996f9322f3",
@@ -7660,7 +7698,7 @@
         "finalize": "",
         "libs": [],
         "x": 1230,
-        "y": 1760,
+        "y": 1800,
         "wires": [
             [
                 "6d738ed81fefbedc"
@@ -7681,7 +7719,7 @@
         "finalize": "",
         "libs": [],
         "x": 1240,
-        "y": 1800,
+        "y": 1880,
         "wires": [
             [
                 "d856c68660eb2202"
@@ -7693,7 +7731,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
-        "name": "query, daily cum car counts in zone_radar with speed_calc",
+        "name": "query events, daily cum car counts in zone_radar with speed_calc",
         "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7701,8 +7739,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
-        "y": 1140,
+        "x": 620,
+        "y": 1240,
         "wires": [
             [
                 "9cf49f0891d25df1"
@@ -7718,8 +7756,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 960,
-        "y": 1140,
+        "x": 760,
+        "y": 1280,
         "wires": [
             [
                 "6d81c8e3c89b68f6"
@@ -7739,8 +7777,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1280,
-        "y": 1140,
+        "x": 1080,
+        "y": 1240,
         "wires": [
             [
                 "5417aae0d14fa661"
@@ -7756,8 +7794,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 840,
-        "y": 780,
+        "x": 620,
+        "y": 920,
         "wires": [
             [
                 "39d895a16ca6f6f1",
@@ -7779,7 +7817,7 @@
         "finalize": "",
         "libs": [],
         "x": 520,
-        "y": 780,
+        "y": 880,
         "wires": [
             [
                 "7cc031e5a7d773a4"
@@ -7799,8 +7837,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1190,
-        "y": 780,
+        "x": 1030,
+        "y": 880,
         "wires": [
             [
                 "cbb3b02ca505a55b"
@@ -7820,8 +7858,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1210,
-        "y": 860,
+        "x": 1050,
+        "y": 960,
         "wires": [
             [
                 "7db4b197df9eb075"
@@ -7867,8 +7905,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1250,
-        "y": 820,
+        "x": 1090,
+        "y": 920,
         "wires": [
             []
         ]
@@ -7912,8 +7950,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1280,
-        "y": 900,
+        "x": 1120,
+        "y": 1000,
         "wires": [
             []
         ]
@@ -7996,7 +8034,9 @@
         "x": 1110,
         "y": 120,
         "wires": [
-            []
+            [
+                "04c77d4233fbffd3"
+            ]
         ]
     },
     {
@@ -8022,7 +8062,9 @@
         "x": 1110,
         "y": 180,
         "wires": [
-            []
+            [
+                "04c77d4233fbffd3"
+            ]
         ]
     },
     {
@@ -8222,7 +8264,9 @@
         "x": 1100,
         "y": 240,
         "wires": [
-            []
+            [
+                "04c77d4233fbffd3"
+            ]
         ]
     },
     {
@@ -8248,11 +8292,10 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 1940,
+        "y": 2040,
         "wires": [
             [
-                "441e03047af79373",
-                "9573839489d3567f"
+                "34361a18f847df07"
             ]
         ]
     },
@@ -8295,8 +8338,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1200,
-        "y": 1980,
+        "x": 1120,
+        "y": 2040,
         "wires": [
             []
         ]
@@ -8306,8 +8349,8 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "7c19b3698bb02613",
-        "name": "query, airquality for every entry",
-        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "name": "query airquality, for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -8315,7 +8358,7 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 1940,
+        "y": 2040,
         "wires": [
             [
                 "9d1978d68c96feb9"
@@ -8331,11 +8374,15 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 820,
-        "y": 1940,
+        "x": 560,
+        "y": 2080,
         "wires": [
             [
-                "2227d1c8d929c91d"
+                "2227d1c8d929c91d",
+                "149757a20cc50973",
+                "95871652f30bc9ce",
+                "7d5875326501443c",
+                "c13f03809fbd9809"
             ]
         ]
     },
@@ -8344,7 +8391,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "7c19b3698bb02613",
-        "name": "structure daily summary payload",
+        "name": "structure payload, gas",
         "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"gas_red\", \"gas_oxi\", \"gas_nh3\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_red })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_oxi })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_nh3 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -8352,115 +8399,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1150,
-        "y": 1940,
+        "x": 860,
+        "y": 2040,
         "wires": [
             [
                 "e5ed08571761bd2c"
-            ]
-        ]
-    },
-    {
-        "id": "bd1b7f16edeb4ed3",
-        "type": "ui_chart",
-        "z": "28627559bebdc324",
-        "g": "83eedcc325ccc21d",
-        "name": "aq PM last 24-hours",
-        "group": "62cdf198fe42de7e",
-        "order": 3,
-        "width": 6,
-        "height": 7,
-        "label": "aq PM ug/m3, every 5-min (or based on settings) for last 24-hours",
-        "chartType": "line",
-        "legend": "true",
-        "xformat": "HH:mm",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": "24",
-        "removeOlderPoints": "10000",
-        "removeOlderUnit": "3600",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 1160,
-        "y": 2260,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "bf4e488edf28469b",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "83eedcc325ccc21d",
-        "name": "query, airquality for every entry",
-        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    pm01, \n    pm025, \n    pm10\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 390,
-        "y": 2220,
-        "wires": [
-            [
-                "0d4ff80748d1c876"
-            ]
-        ]
-    },
-    {
-        "id": "0d4ff80748d1c876",
-        "type": "sqlite",
-        "z": "28627559bebdc324",
-        "g": "83eedcc325ccc21d",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 820,
-        "y": 2220,
-        "wires": [
-            [
-                "56bbbcd2844a4c13"
-            ]
-        ]
-    },
-    {
-        "id": "56bbbcd2844a4c13",
-        "type": "function",
-        "z": "28627559bebdc324",
-        "g": "83eedcc325ccc21d",
-        "name": "structure daily summary payload",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"pm01\", \"pm025\", \"pm10\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm01 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm025 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm10 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1110,
-        "y": 2220,
-        "wires": [
-            [
-                "bd1b7f16edeb4ed3"
             ]
         ]
     },
@@ -8469,7 +8412,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "d16177f416c9a0ef",
-        "name": "query, events 30-min bins last 24-h in zone_capture",
+        "name": "query events, 30-min bins last 24-h in zone_capture",
         "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime') AS bin_time,\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\n    AND label IN ('car')\nGROUP BY\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime'), label\nORDER BY\n    label, bin_time;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -8477,8 +8420,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 450,
-        "y": 2080,
+        "x": 610,
+        "y": 2300,
         "wires": [
             [
                 "6a292f3905fe5405"
@@ -8494,8 +8437,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 820,
-        "y": 2080,
+        "x": 680,
+        "y": 2340,
         "wires": [
             [
                 "76e813b1b7a4b63e"
@@ -8515,8 +8458,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1110,
-        "y": 2080,
+        "x": 1050,
+        "y": 2300,
         "wires": [
             [
                 "5cf61952cb6823de"
@@ -8562,10 +8505,274 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1180,
+        "x": 1120,
+        "y": 2340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f920233df1bbb23f",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq PM last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 3,
+        "width": 6,
+        "height": 7,
+        "label": "aq PM ug/m3, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2080,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "149757a20cc50973",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, PM",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"pm01\", \"pm025\", \"pm10\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm01 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm025 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm10 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2080,
+        "wires": [
+            [
+                "f920233df1bbb23f"
+            ]
+        ]
+    },
+    {
+        "id": "b8342af470189c50",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq TEMP, DEW last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 4,
+        "width": 6,
+        "height": 7,
+        "label": "aq TEMP, DEW, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1140,
         "y": 2120,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "95871652f30bc9ce",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, temp, dew",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"temp\", \"dew\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.temp })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.dew }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 2120,
+        "wires": [
+            [
+                "b8342af470189c50"
+            ]
+        ]
+    },
+    {
+        "id": "8a82204bdfcdddb9",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq HUM last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 5,
+        "width": 6,
+        "height": 7,
+        "label": "aq HUM, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7d5875326501443c",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, hum",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"hum\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.hum })),\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2160,
+        "wires": [
+            [
+                "8a82204bdfcdddb9"
+            ]
+        ]
+    },
+    {
+        "id": "c1adf5e2bd669713",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq BAR last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 6,
+        "width": 6,
+        "height": 7,
+        "label": "aq BAR, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c13f03809fbd9809",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, bar",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"bar\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.bar })),\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2200,
+        "wires": [
+            [
+                "c1adf5e2bd669713"
+            ]
         ]
     },
     {
