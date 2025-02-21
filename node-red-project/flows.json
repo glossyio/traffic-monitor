@@ -75,7 +75,7 @@
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "group summary daily",
+        "name": "event; group summary daily",
         "style": {
             "label": true
         },
@@ -87,15 +87,15 @@
             "ec7a0e0b1c62e91d"
         ],
         "x": 14,
-        "y": 599,
-        "w": 852,
-        "h": 202
+        "y": 459,
+        "w": 1372,
+        "h": 122
     },
     {
         "id": "5aac1262472b0205",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "group frigate api/events/summary",
+        "name": "event; group frigate api/events/summary",
         "style": {
             "label": true
         },
@@ -106,15 +106,15 @@
             "eb140f61419c6a08"
         ],
         "x": 14,
-        "y": 379,
-        "w": 852,
-        "h": 202
+        "y": 319,
+        "w": 1092,
+        "h": 122
     },
     {
         "id": "5173f4b3ac03407a",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "show object counts/speeds last 24-hours",
+        "name": "event; show object counts/speeds last 24-hours",
         "style": {
             "label": true
         },
@@ -126,15 +126,15 @@
             "4f84bcb60e4be762"
         ],
         "x": 14,
-        "y": 819,
-        "w": 1052,
-        "h": 222
+        "y": 599,
+        "w": 1452,
+        "h": 122
     },
     {
         "id": "76417db2b472ef4f",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "radar TimedSpeedCounts (.counts, .speed_average)",
+        "name": "radar; TimedSpeedCounts (.counts, .speed_average)",
         "style": {
             "label": true
         },
@@ -149,14 +149,15 @@
             "7db4b197df9eb075"
         ],
         "x": 14,
-        "y": 1059,
-        "w": 1178,
-        "h": 508
+        "y": 739,
+        "w": 1532,
+        "h": 348
     },
     {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
         "name": "last N events, radar",
         "style": {
             "label": true
@@ -174,18 +175,18 @@
             "4c087723a1d698e9",
             "0f65ceafe3f7c069",
             "f5d2d92d50d18ce2",
-            "c2270f3050bf35ab",
-            "3214e8cd3ea79630"
+            "c2270f3050bf35ab"
         ],
-        "x": 214,
-        "y": 1599,
-        "w": 1022,
-        "h": 542
+        "x": 194,
+        "y": 1279,
+        "w": 1292,
+        "h": 362
     },
     {
         "id": "453513c49e4b1b60",
         "type": "group",
         "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
         "name": "cumulative events today by object",
         "style": {
             "label": true
@@ -201,16 +202,16 @@
             "13a061996f9322f3",
             "98571c77b9801a83"
         ],
-        "x": 214,
-        "y": 2179,
-        "w": 1172,
-        "h": 342
+        "x": 194,
+        "y": 1659,
+        "w": 1592,
+        "h": 182
     },
     {
         "id": "1bd1f21fa0390c69",
         "type": "group",
         "z": "28627559bebdc324",
-        "name": "car event speed stats",
+        "name": "event; car event speed stats",
         "style": {
             "label": true
         },
@@ -221,10 +222,10 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 214,
-        "y": 2559,
-        "w": 1252,
-        "h": 242
+        "x": 14,
+        "y": 1099,
+        "w": 1492,
+        "h": 122
     },
     {
         "id": "0a5faeac9fbd6d55",
@@ -865,12 +866,19 @@
         "nodes": [
             "bb08a223f0aaef0f",
             "e3b795e05d7650b2",
-            "c7f00f59861cd00f"
+            "c7f00f59861cd00f",
+            "ff783e21c3b96d4b",
+            "62c9240d45e9c8d6",
+            "59d0c8b142295eee",
+            "f50a7968e032532a",
+            "af02df2daa211e5b",
+            "1feaed96b954867a",
+            "946c6bc353743bc4"
         ],
         "x": 14,
         "y": 79,
-        "w": 312,
-        "h": 142
+        "w": 1232,
+        "h": 202
     },
     {
         "id": "b334a2375eb8cb42",
@@ -975,10 +983,10 @@
             "eff2193c8246a9d2",
             "57fa6ca2b7d290e3"
         ],
-        "x": 54,
-        "y": 1379,
-        "w": 1112,
-        "h": 162
+        "x": 334,
+        "y": 939,
+        "w": 1152,
+        "h": 122
     },
     {
         "id": "f5d2d92d50d18ce2",
@@ -995,8 +1003,8 @@
             "9226865e3385eb56",
             "aa0afb5180297e2b"
         ],
-        "x": 294,
-        "y": 1799,
+        "x": 594,
+        "y": 1319,
         "w": 612,
         "h": 122
     },
@@ -1253,6 +1261,83 @@
         "h": 162
     },
     {
+        "id": "7c19b3698bb02613",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "aq; gas",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a3672e4c4c84d721",
+            "e5ed08571761bd2c",
+            "441e03047af79373",
+            "9d1978d68c96feb9",
+            "2227d1c8d929c91d",
+            "9573839489d3567f"
+        ],
+        "x": 14,
+        "y": 1899,
+        "w": 1312,
+        "h": 127
+    },
+    {
+        "id": "91096cd6c9c741e2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event-based ui",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c249329109ac17d5",
+            "9b9e4fc50b744fc3",
+            "453513c49e4b1b60"
+        ],
+        "x": 94,
+        "y": 1253,
+        "w": 1718,
+        "h": 614
+    },
+    {
+        "id": "83eedcc325ccc21d",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "aq, particulate matter (PM)",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bd1b7f16edeb4ed3",
+            "bf4e488edf28469b",
+            "0d4ff80748d1c876",
+            "56bbbcd2844a4c13"
+        ],
+        "x": 234,
+        "y": 2179,
+        "w": 1052,
+        "h": 122
+    },
+    {
+        "id": "d16177f416c9a0ef",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event; object counts/speeds individually last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "12df4fdffa628238",
+            "6a292f3905fe5405",
+            "76e813b1b7a4b63e",
+            "5cf61952cb6823de"
+        ],
+        "x": 234,
+        "y": 2039,
+        "w": 1092,
+        "h": 122
+    },
+    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -1398,6 +1483,20 @@
         ]
     },
     {
+        "id": "9573839489d3567f",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "x": 140,
+        "y": 2000,
+        "wires": [
+            [
+                "bf4e488edf28469b",
+                "12df4fdffa628238"
+            ]
+        ]
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-local",
@@ -1455,7 +1554,7 @@
         "tab": "665d947f9a312a33",
         "order": 3,
         "disp": true,
-        "width": 12,
+        "width": 6,
         "collapse": false,
         "className": ""
     },
@@ -1596,12 +1695,12 @@
             }
         },
         "site": {
-            "name": "Node-RED Dashboard",
+            "name": "On-Device Dashboard - Traffic Monitor",
             "hideToolbar": "false",
             "allowSwipe": "false",
             "lockMenu": "false",
             "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
+            "dateFormat": "YYYY-MM-DD",
             "sizes": {
                 "sx": 48,
                 "sy": 48,
@@ -1749,9 +1848,20 @@
     {
         "id": "202181a361213d6d",
         "type": "ui_group",
-        "name": "Camera Selector",
+        "name": "Sensor Selector",
         "tab": "665d947f9a312a33",
         "order": 1,
+        "disp": true,
+        "width": 3,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "62cdf198fe42de7e",
+        "type": "ui_group",
+        "name": "Air Quality",
+        "tab": "665d947f9a312a33",
+        "order": 4,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -2817,7 +2927,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "dea1b8828f8e501f",
         "name": "write params for radar_timedspeedcounts insert",
-        "func": "//get rid of outer TimedSpeedCounts object\nmsg.payload = msg.payload.TimedSpeedCounts;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "const newPayload = {\n    time: msg.payload.TimedSpeedCounts.time,\n    direction: msg.payload.TimedSpeedCounts.direction,\n    units: msg.payload.TimedSpeedCounts.units,\n    count: msg.payload.TimedSpeedCounts.count,\n    average: msg.payload.TimedSpeedCounts.average,\n    radarName: msg.payload.radarName,\n    deployment_id: msg.payload.deployment_id\n}\n\nmsg.payload = newPayload;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6403,7 +6513,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 860,
+        "y": 640,
         "wires": [
             [
                 "928b71f25ce6e7b6"
@@ -6417,7 +6527,7 @@
         "g": "5aac1262472b0205",
         "name": "frigate summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 3,
+        "order": 4,
         "width": 6,
         "height": 7,
         "label": "frigate api/events/summary daily object count for the last 10-days",
@@ -6449,8 +6559,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 710,
-        "y": 540,
+        "x": 950,
+        "y": 400,
         "wires": [
             []
         ]
@@ -6472,8 +6582,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 310,
-        "y": 480,
+        "x": 590,
+        "y": 360,
         "wires": [
             [
                 "eb140f61419c6a08"
@@ -6494,7 +6604,7 @@
         "onceDelay": "5",
         "topic": "",
         "x": 230,
-        "y": 420,
+        "y": 360,
         "wires": [
             [
                 "b241a0ef89fd7ce4"
@@ -6514,8 +6624,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 400,
-        "y": 540,
+        "x": 900,
+        "y": 360,
         "wires": [
             [
                 "08d030ffc3fe6adb"
@@ -6545,7 +6655,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 640,
+        "y": 500,
         "wires": [
             [
                 "5f3716d2176c3ab4"
@@ -6559,7 +6669,7 @@
         "g": "0a6e123f5e53c029",
         "name": "events summary daily, objects",
         "group": "06dde4be9a9a6b27",
-        "order": 4,
+        "order": 5,
         "width": 6,
         "height": 7,
         "label": "events daily object count for the last 10-days",
@@ -6591,8 +6701,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 710,
-        "y": 760,
+        "x": 1230,
+        "y": 540,
         "wires": [
             []
         ]
@@ -6601,12 +6711,13 @@
         "id": "c249329109ac17d5",
         "type": "link in",
         "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
         "name": "link in event capture",
         "links": [
             "274f87c31437c2d7"
         ],
-        "x": 145,
-        "y": 1640,
+        "x": 135,
+        "y": 1320,
         "wires": [
             [
                 "5ec2d3ba52f944f5",
@@ -6634,8 +6745,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 740,
-        "y": 2000,
+        "x": 1020,
+        "y": 1520,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -6660,8 +6771,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 380,
-        "y": 1720,
+        "x": 360,
+        "y": 1400,
         "wires": [
             [
                 "c2270f3050bf35ab"
@@ -6681,8 +6792,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 2040,
+        "x": 1050,
+        "y": 1560,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -6702,12 +6813,11 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 1960,
+        "x": 1030,
+        "y": 1480,
         "wires": [
             [
-                "c36c71706e494b5e",
-                "3214e8cd3ea79630"
+                "c36c71706e494b5e"
             ]
         ]
     },
@@ -6727,8 +6837,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 350,
-        "y": 1680,
+        "x": 330,
+        "y": 1360,
         "wires": [
             [
                 "2e680914d7da5c94"
@@ -6740,7 +6850,7 @@
         "type": "ui_template",
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
-        "group": "7866c2aa313ab8b9",
+        "group": "06dde4be9a9a6b27",
         "name": "last N radar events",
         "order": 2,
         "width": 0,
@@ -6751,8 +6861,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1050,
-        "y": 1960,
+        "x": 1310,
+        "y": 1480,
         "wires": [
             []
         ]
@@ -6771,8 +6881,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 350,
-        "y": 1640,
+        "x": 330,
+        "y": 1320,
         "wires": []
     },
     {
@@ -6813,8 +6923,8 @@
         "z": "28627559bebdc324",
         "g": "5173f4b3ac03407a",
         "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 2,
+        "group": "7866c2aa313ab8b9",
+        "order": 1,
         "width": 0,
         "height": 0,
         "label": "events by object (60-min) for last 24-hours",
@@ -6846,8 +6956,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 880,
-        "y": 1000,
+        "x": 1280,
+        "y": 680,
         "wires": [
             []
         ]
@@ -6875,7 +6985,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 200,
-        "y": 1100,
+        "y": 780,
         "wires": [
             [
                 "158e6edae533bfdc",
@@ -6888,7 +6998,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
-        "name": "store last N any frigate events",
+        "name": "store last N frigate events as text, any zone",
         "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_all\") || [];\n//Keep only last X elements\nvar myArrLength = 10;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//keep only specific elements\nconst newObj = {\n    id: msg.payload.id, \n    label: msg.payload.label,  \n    direction_calc: msg.payload.direction_calc, \n    speed_calc: msg.payload.speed_calc, \n    };\n\n//add current event to end of array\nmyEvents.push(newObj);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_all\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -6896,8 +7006,8 @@
         "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 2100,
+        "x": 470,
+        "y": 1600,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -6910,9 +7020,9 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "group": "7866c2aa313ab8b9",
-        "order": 4,
-        "width": 12,
-        "height": 5,
+        "order": 6,
+        "width": 0,
+        "height": 0,
         "name": "",
         "label": "last N events, text output",
         "format": "{{msg.payload}}",
@@ -6922,8 +7032,8 @@
         "font": "Courier,monospace",
         "fontSize": "10",
         "color": "#000000",
-        "x": 1060,
-        "y": 2100,
+        "x": 1330,
+        "y": 1600,
         "wires": []
     },
     {
@@ -6931,7 +7041,7 @@
         "type": "ui_template",
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
-        "group": "7866c2aa313ab8b9",
+        "group": "06dde4be9a9a6b27",
         "name": "last N radar speeding events",
         "order": 3,
         "width": 0,
@@ -6942,8 +7052,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1080,
-        "y": 2040,
+        "x": 1340,
+        "y": 1560,
         "wires": [
             []
         ]
@@ -6954,8 +7064,8 @@
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
         "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 7,
+        "group": "7866c2aa313ab8b9",
+        "order": 3,
         "width": 0,
         "height": 0,
         "label": "Events in zone_radar (5-min) for last 60-min",
@@ -6987,8 +7097,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 970,
-        "y": 1500,
+        "x": 1290,
+        "y": 1020,
         "wires": [
             []
         ]
@@ -6999,7 +7109,7 @@
         "z": "28627559bebdc324",
         "g": "453513c49e4b1b60",
         "name": "",
-        "group": "7866c2aa313ab8b9",
+        "group": "06dde4be9a9a6b27",
         "order": 1,
         "width": 0,
         "height": 0,
@@ -7032,8 +7142,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1200,
-        "y": 2440,
+        "x": 1600,
+        "y": 1760,
         "wires": [
             []
         ]
@@ -7053,8 +7163,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 1100,
-        "y": 2480,
+        "x": 1500,
+        "y": 1800,
         "wires": []
     },
     {
@@ -7070,8 +7180,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 460,
-        "y": 1960,
+        "x": 740,
+        "y": 1480,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -7101,8 +7211,8 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 400,
-        "y": 2600,
+        "x": 200,
+        "y": 1140,
         "wires": [
             [
                 "584504e6c8935eaf"
@@ -7114,9 +7224,9 @@
         "type": "ui_template",
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
-        "group": "06dde4be9a9a6b27",
+        "group": "7866c2aa313ab8b9",
         "name": "car speed stats for today, since 0400",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">car speed stats for today, since 0400</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td ng-repeat =\"(key,value) in payload\">{{key}}: </td>\n        <td ng-repeat =\"(key,value) in payload\">{{value}}</td>\n    </tr>\n</table>",
@@ -7125,8 +7235,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1290,
-        "y": 2760,
+        "x": 1330,
+        "y": 1180,
         "wires": [
             []
         ]
@@ -7149,8 +7259,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 460,
-        "y": 2220,
+        "x": 320,
+        "y": 1700,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -7177,8 +7287,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 520,
-        "y": 2260,
+        "x": 380,
+        "y": 1740,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7197,8 +7307,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 310,
-        "y": 2340,
+        "x": 430,
+        "y": 1800,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -7222,8 +7332,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 440,
-        "y": 1840,
+        "x": 740,
+        "y": 1360,
         "wires": [
             [
                 "9226865e3385eb56",
@@ -7251,8 +7361,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 750,
-        "y": 1880,
+        "x": 1050,
+        "y": 1400,
         "wires": [
             [
                 "0f65ceafe3f7c069"
@@ -7272,8 +7382,8 @@
         "active": false,
         "pass": false,
         "outputs": 0,
-        "x": 700,
-        "y": 1840,
+        "x": 1000,
+        "y": 1360,
         "wires": []
     },
     {
@@ -7284,8 +7394,8 @@
         "name": "",
         "action": "",
         "property": "payload",
-        "x": 540,
-        "y": 1880,
+        "x": 840,
+        "y": 1400,
         "wires": [
             [
                 "08121a31488784bc"
@@ -7312,8 +7422,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 430,
-        "y": 1760,
+        "x": 410,
+        "y": 1440,
         "wires": [
             [
                 "09f99c931e5535bf"
@@ -7321,29 +7431,11 @@
         ]
     },
     {
-        "id": "3214e8cd3ea79630",
-        "type": "debug",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "debug: last N radar events",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1070,
-        "y": 1900,
-        "wires": []
-    },
-    {
         "id": "5f3716d2176c3ab4",
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
-        "name": "create sqlite query, daily summary in zone_capture",
+        "name": "query, daily summary last 10 days in zone_capture",
         "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7351,8 +7443,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 250,
-        "y": 680,
+        "x": 550,
+        "y": 500,
         "wires": [
             [
                 "bdb4b259d648b1f0"
@@ -7368,8 +7460,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 390,
-        "y": 720,
+        "x": 900,
+        "y": 500,
         "wires": [
             [
                 "ec7a0e0b1c62e91d"
@@ -7389,8 +7481,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 330,
-        "y": 760,
+        "x": 1190,
+        "y": 500,
         "wires": [
             [
                 "b65e1877b1e04881"
@@ -7402,7 +7494,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "5173f4b3ac03407a",
-        "name": "create sqlite query, 1-hour counts last day in zone_capture",
+        "name": "query, 1-h counts last 24-h in zone_capture",
         "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7410,8 +7502,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 290,
-        "y": 920,
+        "x": 530,
+        "y": 640,
         "wires": [
             [
                 "c03516d1eb65598d"
@@ -7427,8 +7519,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 450,
-        "y": 960,
+        "x": 940,
+        "y": 640,
         "wires": [
             [
                 "4f84bcb60e4be762"
@@ -7448,8 +7540,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
-        "y": 1000,
+        "x": 1230,
+        "y": 640,
         "wires": [
             [
                 "02469f2425072f7b"
@@ -7461,7 +7553,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "0e1614cf2e5f9942",
-        "name": "create sqlite query, 1-hour counts last day in zone_radar",
+        "name": "query, 5-min event speed counts for last 1-h in zone_radar",
         "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime') AS bin_time,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (3600))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_radar%'\nGROUP BY\n    label, strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime'), camera\nORDER BY\n    label, bin_time, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7469,8 +7561,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 290,
-        "y": 1420,
+        "x": 570,
+        "y": 980,
         "wires": [
             [
                 "eff2193c8246a9d2"
@@ -7486,8 +7578,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 450,
-        "y": 1460,
+        "x": 940,
+        "y": 980,
         "wires": [
             [
                 "57fa6ca2b7d290e3"
@@ -7507,8 +7599,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
-        "y": 1500,
+        "x": 1230,
+        "y": 980,
         "wires": [
             [
                 "11fa2826769befc7"
@@ -7528,8 +7620,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
-        "y": 2340,
+        "x": 760,
+        "y": 1700,
         "wires": [
             [
                 "befe91e6862c72db"
@@ -7545,8 +7637,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 830,
-        "y": 2380,
+        "x": 1140,
+        "y": 1700,
         "wires": [
             [
                 "13a061996f9322f3",
@@ -7567,8 +7659,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 830,
-        "y": 2440,
+        "x": 1230,
+        "y": 1760,
         "wires": [
             [
                 "6d738ed81fefbedc"
@@ -7588,8 +7680,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 840,
-        "y": 2480,
+        "x": 1240,
+        "y": 1800,
         "wires": [
             [
                 "d856c68660eb2202"
@@ -7601,7 +7693,7 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
-        "name": "create sqlite query, daily cumulative CAR counts in zone_capture + zone_radar that HAVE valid speed_calc",
+        "name": "query, daily cum car counts in zone_radar with speed_calc",
         "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -7609,8 +7701,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 630,
-        "y": 2660,
+        "x": 590,
+        "y": 1140,
         "wires": [
             [
                 "9cf49f0891d25df1"
@@ -7626,8 +7718,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 950,
-        "y": 2700,
+        "x": 960,
+        "y": 1140,
         "wires": [
             [
                 "6d81c8e3c89b68f6"
@@ -7647,8 +7739,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
-        "y": 2760,
+        "x": 1280,
+        "y": 1140,
         "wires": [
             [
                 "5417aae0d14fa661"
@@ -7664,8 +7756,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 370,
-        "y": 1200,
+        "x": 840,
+        "y": 780,
         "wires": [
             [
                 "39d895a16ca6f6f1",
@@ -7679,15 +7771,15 @@
         "z": "28627559bebdc324",
         "g": "76417db2b472ef4f",
         "name": "query TimedSpeedCounts for last 60-min",
-        "func": "//time is already in seconds\n//get for last 60-minutes, 3600 seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(time, 'unixepoch', 'localtime'), '+0 minutes') AS time,\n    direction,\n    count,\n    ABS(average) as speed\nFROM\n    radar_timed_speed_counts\nWHERE\n    time > (unixepoch('now') - (3600))\nORDER BY\n    time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//time is already in seconds\n//get for last 60-minutes, 3600 seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(time, 'unixepoch', 'localtime'), '+0 minutes') AS time,\n    direction,\n    count,\n    ABS(average) as speed\nFROM\n    radar_timed_speed_counts\nWHERE\n    time > (unixepoch('now') - (3600))\n    AND radarName = '${flow.get(\"radar_selection\")}'\nORDER BY\n    time;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 220,
-        "y": 1160,
+        "x": 520,
+        "y": 780,
         "wires": [
             [
                 "7cc031e5a7d773a4"
@@ -7707,8 +7799,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 710,
-        "y": 1200,
+        "x": 1190,
+        "y": 780,
         "wires": [
             [
                 "cbb3b02ca505a55b"
@@ -7728,8 +7820,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 730,
-        "y": 1280,
+        "x": 1210,
+        "y": 860,
         "wires": [
             [
                 "7db4b197df9eb075"
@@ -7742,8 +7834,8 @@
         "z": "28627559bebdc324",
         "g": "76417db2b472ef4f",
         "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 5,
+        "group": "7866c2aa313ab8b9",
+        "order": 4,
         "width": 0,
         "height": 0,
         "label": "SQLite TimedSpeedCounts.counts (5-min) for last 60-min",
@@ -7775,8 +7867,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 770,
-        "y": 1240,
+        "x": 1250,
+        "y": 820,
         "wires": [
             []
         ]
@@ -7787,8 +7879,8 @@
         "z": "28627559bebdc324",
         "g": "76417db2b472ef4f",
         "name": "",
-        "group": "06dde4be9a9a6b27",
-        "order": 6,
+        "group": "7866c2aa313ab8b9",
+        "order": 5,
         "width": 0,
         "height": 0,
         "label": "SQLite TimedSpeedCounts.speed_average (5-min) for last 60-min",
@@ -7820,8 +7912,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 800,
-        "y": 1320,
+        "x": 1280,
+        "y": 900,
         "wires": [
             []
         ]
@@ -7834,9 +7926,9 @@
         "name": "",
         "label": "",
         "tooltip": "",
-        "place": "Select sensor to report cumulative daily object counts",
+        "place": "Select camera",
         "group": "202181a361213d6d",
-        "order": 7,
+        "order": 1,
         "width": 0,
         "height": 0,
         "passthru": true,
@@ -7852,7 +7944,7 @@
         "topic": "topic",
         "topicType": "msg",
         "className": "",
-        "x": 240,
+        "x": 920,
         "y": 120,
         "wires": [
             [
@@ -7865,29 +7957,19 @@
         "type": "inject",
         "z": "28627559bebdc324",
         "g": "2df66c6bc991dbf4",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "options",
-                "v": "$keys($globalContext(\"config.sensors.cameras\"))\t",
-                "vt": "jsonata"
-            }
-        ],
+        "name": "trigger: sensor selections, after 5-secs",
+        "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
         "topic": "",
-        "payload": "$keys($globalContext(\"config.sensors.cameras\"))[0]\t",
-        "payloadType": "jsonata",
-        "x": 110,
+        "x": 210,
         "y": 120,
         "wires": [
             [
-                "bb08a223f0aaef0f"
+                "f50a7968e032532a",
+                "af02df2daa211e5b"
             ]
         ]
     },
@@ -7911,8 +7993,577 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 190,
+        "x": 1110,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ff783e21c3b96d4b",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "radar_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1110,
         "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "62c9240d45e9c8d6",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select radar",
+        "group": "202181a361213d6d",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 920,
+        "y": 180,
+        "wires": [
+            [
+                "ff783e21c3b96d4b"
+            ]
+        ]
+    },
+    {
+        "id": "59d0c8b142295eee",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set radars, default to camera_radar",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.radars\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 180,
+        "wires": [
+            [
+                "62c9240d45e9c8d6"
+            ]
+        ]
+    },
+    {
+        "id": "f50a7968e032532a",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set cameras, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.cameras\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 120,
+        "wires": [
+            [
+                "bb08a223f0aaef0f",
+                "59d0c8b142295eee"
+            ]
+        ]
+    },
+    {
+        "id": "af02df2daa211e5b",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set airquality_monitors, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.airquality_monitors\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.airquality_monitors\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 620,
+        "y": 240,
+        "wires": [
+            [
+                "1feaed96b954867a"
+            ]
+        ]
+    },
+    {
+        "id": "1feaed96b954867a",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select aq_monitor",
+        "group": "202181a361213d6d",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 920,
+        "y": 240,
+        "wires": [
+            [
+                "946c6bc353743bc4"
+            ]
+        ]
+    },
+    {
+        "id": "946c6bc353743bc4",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "aq_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1100,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a3672e4c4c84d721",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 1940,
+        "wires": [
+            [
+                "441e03047af79373",
+                "9573839489d3567f"
+            ]
+        ]
+    },
+    {
+        "id": "e5ed08571761bd2c",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq gas last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 1,
+        "width": 6,
+        "height": 7,
+        "label": "aq gas PPM, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1200,
+        "y": 1980,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "441e03047af79373",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "query, airquality for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 1940,
+        "wires": [
+            [
+                "9d1978d68c96feb9"
+            ]
+        ]
+    },
+    {
+        "id": "9d1978d68c96feb9",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 820,
+        "y": 1940,
+        "wires": [
+            [
+                "2227d1c8d929c91d"
+            ]
+        ]
+    },
+    {
+        "id": "2227d1c8d929c91d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure daily summary payload",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"gas_red\", \"gas_oxi\", \"gas_nh3\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_red })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_oxi })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_nh3 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1150,
+        "y": 1940,
+        "wires": [
+            [
+                "e5ed08571761bd2c"
+            ]
+        ]
+    },
+    {
+        "id": "bd1b7f16edeb4ed3",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "83eedcc325ccc21d",
+        "name": "aq PM last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 3,
+        "width": 6,
+        "height": 7,
+        "label": "aq PM ug/m3, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1160,
+        "y": 2260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bf4e488edf28469b",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "83eedcc325ccc21d",
+        "name": "query, airquality for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    pm01, \n    pm025, \n    pm10\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 2220,
+        "wires": [
+            [
+                "0d4ff80748d1c876"
+            ]
+        ]
+    },
+    {
+        "id": "0d4ff80748d1c876",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "83eedcc325ccc21d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 820,
+        "y": 2220,
+        "wires": [
+            [
+                "56bbbcd2844a4c13"
+            ]
+        ]
+    },
+    {
+        "id": "56bbbcd2844a4c13",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "83eedcc325ccc21d",
+        "name": "structure daily summary payload",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"pm01\", \"pm025\", \"pm10\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm01 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm025 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm10 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1110,
+        "y": 2220,
+        "wires": [
+            [
+                "bd1b7f16edeb4ed3"
+            ]
+        ]
+    },
+    {
+        "id": "12df4fdffa628238",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "query, events 30-min bins last 24-h in zone_capture",
+        "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime') AS bin_time,\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\n    AND label IN ('car')\nGROUP BY\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime'), label\nORDER BY\n    label, bin_time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 2080,
+        "wires": [
+            [
+                "6a292f3905fe5405"
+            ]
+        ]
+    },
+    {
+        "id": "6a292f3905fe5405",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 820,
+        "y": 2080,
+        "wires": [
+            [
+                "76e813b1b7a4b63e"
+            ]
+        ]
+    },
+    {
+        "id": "76e813b1b7a4b63e",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "structure bin_counts for last day",
+        "func": "const series = {};\nconst labels = [];\n\nmsg.payload.forEach((item) => {\n    const timestamp = new Date(item.bin_time);\n    if (!series[item.label]) {\n        series[item.label] = [];\n    }\n    series[item.label].push({ x: timestamp, y: item.count });\n    if (!labels.includes(item.label)) {\n        labels.push(item.label);\n    }\n});\n\nconst result = [{\n    series: labels,\n    data: Object.values(series),\n    labels: [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1110,
+        "y": 2080,
+        "wires": [
+            [
+                "5cf61952cb6823de"
+            ]
+        ]
+    },
+    {
+        "id": "5cf61952cb6823de",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "events (30-min) last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 2,
+        "width": 6,
+        "height": 7,
+        "label": "events by label, every 30-min for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1180,
+        "y": 2120,
         "wires": [
             []
         ]
