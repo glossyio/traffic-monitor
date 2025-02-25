@@ -1,0 +1,47 @@
+---
+# tmsetup go2rtc setup tasks
+- name: Create go2rtc directory
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/go2rtc
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+
+- name: Install go2rtc driver
+  become: true
+  ansible.builtin.get_url:
+    url: 'https://github.com/AlexxIT/go2rtc/releases/download/{{ tmsetup_go2rtc_version }}/go2rtc_linux_{{ tmsetup_dpkg_architecture }}'
+    dest: '/var/lib/go2rtc/go2rtc_linux_{{ tmsetup_dpkg_architecture }}'
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart go2rtc_server service
+
+- name: Create go2rtc_server systemd unit file
+  become: true
+  ansible.builtin.template:
+    src: go2rtc_server.service.j2
+    dest: /etc/systemd/system/go2rtc_server.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart go2rtc_server service
+
+- name: Setup go2rtc rpicam settings
+  become: true
+  ansible.builtin.copy:
+    src: go2rtc.yaml
+    dest: /var/lib/go2rtc/go2rtc.yaml
+    owner: root
+    group: root
+    mode: '644'
+
+- name: Start go2rtc_server service
+  become: true
+  ansible.builtin.systemd_service:
+    name: go2rtc_server.service
+    state: started
+    enabled: true
+...

@@ -1,0 +1,14 @@
+# /etc/systemd/system/go2rtc_server.service
+# to run: sudo systemctl stop/start/restart/enable/disable go2rtc_server
+
+[Unit]
+Description=go2rtc
+After=network.target rc-local.service
+
+[Service]
+Restart=always
+WorkingDirectory=/var/lib/go2rtc/
+ExecStart=/var/lib/go2rtc/go2rtc_linux_{{ tmsetup_dpkg_architecture }}
+
+[Install]
+WantedBy=multi-user.target

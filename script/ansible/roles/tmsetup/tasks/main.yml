@@ -1,0 +1,64 @@
+---
+# tmsetup main task list
+- name: Perform minimum ansible fact gathering
+  tags:
+    - always
+  ansible.builtin.setup:
+    gather_subset: min
+  when: not ansible_facts.keys() | list |
+    intersect(tmsetup_base_required_facts) == tmsetup_base_required_facts
+
+- name: Set Architecture specific variables
+  tags:
+    - always
+  ansible.builtin.include_vars:
+    file: '{{ ansible_architecture }}_vars.yml'
+
+- name: Setup base
+  tags:
+    - base
+  ansible.builtin.import_tasks:
+    file: base_setup.yml
+
+- name: Setup Docker
+  tags:
+    - docker
+  ansible.builtin.import_tasks:
+    file: docker_setup.yml
+
+- name: Setup Coral TPU Runtime Library
+  tags:
+    - coraltpu
+  ansible.builtin.import_tasks:
+    file: coraltpu_setup.yml
+
+- name: Setup Pineboard PCIe TPU
+  tags:
+    - pineboardpcietpu
+  ansible.builtin.import_tasks:
+    file: pineboardtpu_setup.yml
+
+- name: Setup go2rtc driver
+  tags:
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: go2rtc_setup.yml
+
+- name: Setup Frigate
+  tags:
+    - frigate
+  ansible.builtin.import_tasks:
+    file: frigate_setup.yml
+
+- name: Setup Node Red
+  tags:
+    - nodered
+  ansible.builtin.import_tasks:
+    file: nodered_setup.yml
+
+- name: Setup WiFI
+  tags:
+    - wifi
+  ansible.builtin.import_tasks:
+    file: wifi_setup.yml
+...

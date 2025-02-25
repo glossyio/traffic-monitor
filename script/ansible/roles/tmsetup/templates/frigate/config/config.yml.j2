@@ -3,13 +3,15 @@ mqtt:
   enabled: true
   host: 172.18.0.1
   port: 1883
-  user: '{FRIGATE_MQTT_USER}'
+{% raw %}
+  user: '\{FRIGATE_MQTT_USER\}'
   password: '{FRIGATE_MQTT_PASSWORD}'
+{% endraw %}
 
 detectors: 
   coral:
     type: edgetpu
-    device: usb # change to pci for a pcie coral
+    device: {{ tmsetup_frigate_tpu_device }}
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264

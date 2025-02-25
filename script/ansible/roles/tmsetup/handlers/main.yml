@@ -1,0 +1,32 @@
+---
+# tmsetup handlers
+- name: Restart go2rtc_server service
+  become: true
+  ansible.builtin.systemd_service:
+    name: go2rtc_server.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Restart nodered service
+  become: true
+  ansible.builtin.systemd_service:
+    name: nodered.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Restart NetworkManager service
+  become: true
+  ansible.builtin.systemd_service:
+    name: NetworkManager.service
+    state: restarted
+    daemon_reload: true
+    enabled: true
+
+- name: Initiate docker compose
+  community.docker.docker_compose_v2:
+    project_src: '{{ tmsetup_codehomedir }}'
+    files: compose.yaml
+    state: present
+...

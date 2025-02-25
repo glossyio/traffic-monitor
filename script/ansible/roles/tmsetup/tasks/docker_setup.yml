@@ -1,0 +1,60 @@
+---
+- name: Create apt key directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyring
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Download docker key repo key
+  become: true
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Get dpkg architecture
+  ansible.builtin.command: dpkg --print-architecture
+  register: tmsetup_docker_dpkgarch_register
+  changed_when: false
+
+- name: Create Docker apt repo file
+  become: true
+  ansible.builtin.apt_repository:
+    state: present
+    filename: docker
+    repo: >-
+      deb [arch={{ tmsetup_docker_dpkgarch_register.stdout }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+
+- name: Install Docker CE packages
+  become: true
+  ansible.builtin.apt:
+    state: present
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+  notify: Initiate docker compose
+
+- name: Add TM user to docker group
+  become: true
+  ansible.builtin.user:
+    name: '{{ tmsetup_codeowner }}'
+    groups: docker
+    append: true
+
+- name: Copy compose.yaml to code directories
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: '{{ tmsetup_codehomedir }}/compose.yaml'
+    owner: '{{ tmsetup_codeowner }}'
+    mode: '0640'
+  notify: Initiate docker compose
+...

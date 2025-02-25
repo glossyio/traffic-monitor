@@ -1,0 +1,13 @@
+---
+# tmsetup coral tpu setup tasks
+- name: Import tasks to create coral-edgetpu repo
+  ansible.builtin.import_tasks:
+    file: coraltpu_repo_setup.yml
+
+- name: Install runtime library
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    name: libedgetpu1-std
+    state: present
+...

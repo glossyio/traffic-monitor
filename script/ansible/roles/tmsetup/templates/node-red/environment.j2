@@ -1,3 +1,4 @@
+{% raw %}
 ########
 # This file contains node-red environment variables loaded by node-red.service
 #   Read more at https://nodered.org/docs/user-guide/environment-variables
@@ -15,14 +16,15 @@
 ########
 
 # traffic monitor open source software release version
-TM_VERSION='0.3.0'
+{% endraw %}
+TM_VERSION='{{ tmsetup_tm_version }}'
 
 # used in settings.js for credentialSecret 
 NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
 
 # database locations, relative to user directory defined in settings.js
 #  will be relative path to store SQLite databases
-TM_DATABASE_PATH_TMDB='code/nodered/db/tmdb.sqlite'
+TM_DATABASE_PATH_TMDB='{{ tmsetup_nodereddir }}/db/tmdb.sqlite'
 
 # mqtt broker for incoming Frigate events 
 #  Settings below set up the aedes broker node

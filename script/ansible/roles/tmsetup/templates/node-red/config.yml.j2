@@ -8,17 +8,17 @@ thingsboard:
     # Optional: enable connection to backend thingsboard server (default: shown below)
     enabled: False
     # Required: host name, without protocol or port number
-    host: tb.server.com
+    host: {{ tmsetup_thingsboard_server }}
     # Required: thingsboard telemetry protocol (default: shown below), 
     # NOTE: only http(s) currently supported, mqtt coming soon
     #  see https://thingsboard.io/docs/reference/protocols/
-    protocol: https
+    protocol: {{ tmsetup_thingsboard_protocol }}
     # Optional: port, common settings: https=443, http=80, mqtt=1883
     # Check with your ThingsBoard admin for settings
-    port: 443
+    port: {{ tmsetup_thingsboard_port }}
     # Optional: API key for device 
     # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
-    api_key:
+    api_key: {{ tmsetup_thingsboard_api_key }}
     # Optional: future use for auto-provisioning (RPiSN)
     # provisionDeviceKey: 
     # Optional: future use for auto-provisioning (manual)
@@ -30,12 +30,13 @@ thingsboard:
 deployment:
     # NOTE: for address-level accuracy, recommend at least 4 digits after the decimal
     # Optional: Latitude in decimal degrees format; e.g. 45.5225
-    lat:
+    lat: {{ tmsetup_latitude }}
     # Optional: Longitude in decimal degrees format; e.g. -122.6919
     lon:
+    lon: {{ tmsetup_longitude }}
     # Optional: cardinal (N, S, E, W) or ordinal (NE, NW, SE, etc.) direction the camera/radar is facing 
     # Note: For bearing, match the roadway traffic direction
-    bearing:
+    bearing: {{ tmsetup_bearing }}
 
 sensors:
     # Optional: if used, must match the Frigate camera name(s)
@@ -73,7 +74,7 @@ time:
     # Optional: Set a timezone to use in the UI (default: use browser local time)
     # NOTE: shall be in unix tz format: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
     #  this will also set the timezone for the entire system
-    timezone: America/Los_Angeles
+    timezone: {{ tmsetup_timezone }}
     # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
     # Note: for offline deployments, time will stop whenever power is disconnected
     npt_set: True

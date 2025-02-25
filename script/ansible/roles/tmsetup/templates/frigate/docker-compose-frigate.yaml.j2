@@ -7,14 +7,18 @@ services:
     container_name: frigate
     privileged: false # this may not be necessary for all setups
     restart: unless-stopped
-    image: ghcr.io/blakeblackshear/frigate:0.14.0
+    image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
     shm_size: "128mb" # update for your cameras based on calculation https://docs.frigate.video/frigate/installation#calculating-required-shm-size
     devices:
-      - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, /dev/apex_0:/dev/apex_0 for pcie coral
+{% if tmsetup_frigate_tpu_device == "usb" %}
+      - /dev/bus/usb:/dev/bus/usb 
+{% else %}
+      - /dev/apex_0:/dev/apex_0
+{% endif %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ~/code/frigate/config:/config
-      - ~/code/frigate/storage:/media/frigate
+      - {{ tmsetup_codehomedir }}/frigate/config:/config
+      - {{ tmsetup_codehomedir  }}/frigate/storage:/media/frigate
       - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
         target: /tmp/cache
         tmpfs:
