@@ -89,10 +89,10 @@ thingsboard:
     # Required: thingsboard telemetry protocol (default: shown below), 
     # NOTE: only http(s) currently supported, mqtt coming soon
     #  see https://thingsboard.io/docs/reference/protocols/
-    protocol: https
+    protocol: http
     # Optional: port, common settings: https=443, http=80, mqtt=1883
     # Check with your ThingsBoard admin for settings
-    port: 443
+    port:
     # Optional: API key for device 
     # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
     access_token:
