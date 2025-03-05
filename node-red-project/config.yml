@@ -1,0 +1,30 @@
+thingsboard:
+    enabled: false
+    host: tb.server.com
+    protocol: http
+    port:
+    access_token:
+
+deployment:
+    lat:
+    lon:
+    bearing:
+
+sensors:
+    cameras:
+        picam_h264:
+            enabled: false
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+
+    radars:
+        TM_RADAR_SERIAL_PORT_00:
+            enabled: false
+
+    airquality_monitors:
+        sensorname01:
+            enabled: false
+            mqtt_topic_incoming: readings
+
+time:
+    timezone: America/Los_Angeles
+    npt_set: false

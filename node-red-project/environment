@@ -1,15 +1,41 @@
 ########
 # This file contains node-red environment variables loaded by node-red.service
-# see info at https://nodered.org/docs/user-guide/environment-variables
-# variables can be used in settings.js by calling `process.env.ENV_VARIABLE`
+#   Read more at https://nodered.org/docs/user-guide/environment-variables
+#     and https://fedoraproject.org/wiki/Packaging:Systemd
+#  
+# This file shall be located at the root node-red directory, usually `~/.node-red`
+#   this file is loaded by `systemd`, changes can be applied 
+#   by running the command `node-red-restart` in the terminal
+#   read more at https://nodered.org/docs/getting-started/raspberrypi
+#
+# Uses:
+#   - variables can be used in settings.js by calling `process.env.ENV_VAR`
+#   - node property can be set by calling `${ENV_VAR}
+#
 ########
 
+# traffic monitor open source software release version
+TM_VERSION='0.3.0'
+
+# used in settings.js for credentialSecret 
 NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
-VAR_RADAR_CAMERA='picam_h264'
-VAR_LOCATION='tm-location-001'
 
-TM_VERSION='0.2.0'
-# Default Thingsboard server URL and port
+# database locations, relative to user directory defined in settings.js
+#  will be relative path to store SQLite databases
+TM_DATABASE_PATH_TMDB='code/nodered/db/tmdb.sqlite'
 
-VAR_DEFAULT_TB_SERVER = "http://tb.untower.online/home"
-VAR_DEFAULT_TB_PORT = "80"
+# mqtt broker for incoming Frigate events 
+#  Settings below set up the aedes broker node
+TM_MQTT_BROKER_HOST='localhost'
+TM_MQTT_BROKER_PORT='1883'
+# mqtt user, leave blank for no authentication
+TM_MQTT_BROKER_USERNAME=''
+# mqtt password, leave blank for no authentication
+TM_MQTT_BROKER_PASSWORD=''
+
+# defines system USB serial port for radar
+# run `ls -lat /sys/class/tty/ttyACM*` to list devices
+TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
+TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
+TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
+TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'

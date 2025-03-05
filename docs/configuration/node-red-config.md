@@ -74,24 +74,25 @@ The config file is loaded whenever the TM flows restart.  It is located in the u
 It is _not necessary_ to copy this full configuration file. Default values are specified below.
 {% endhint %}
 
-<pre class="language-yaml"><code class="lang-yaml"><strong>########
-</strong><strong># This file contains configuration settings executed by node-red
-</strong><strong># Note: Comments will be removed by updates from node-red
-</strong><strong>########
-</strong><strong>
-</strong><strong># Optional: IoT hub backend integration
-</strong><strong>thingsboard:
-</strong><strong>    # Optional: enable connection to backend thingsboard server (default: shown below)
-</strong>    enabled: False
+```yml
+########
+# This file contains configuration settings executed by node-red
+# Note: Comments will be removed by updates from node-red
+########
+
+# Optional: IoT hub backend integration
+thingsboard:
+    # Optional: enable connection to backend thingsboard server (default: shown below)
+    enabled: false
     # Required: host name, without protocol or port number
     host: tb.server.com
     # Required: thingsboard telemetry protocol (default: shown below), 
     # NOTE: only http(s) currently supported, mqtt coming soon
     #  see https://thingsboard.io/docs/reference/protocols/
-    protocol: https
+    protocol: http
     # Optional: port, common settings: https=443, http=80, mqtt=1883
     # Check with your ThingsBoard admin for settings
-    port: 443
+    port:
     # Optional: API key for device 
     # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
     access_token:
@@ -114,15 +115,15 @@ deployment:
     bearing:
 
 sensors:
-<strong>    # Optional: if used, must match the Frigate camera name(s)
-</strong>    # if not set, no cameras will be used
+    # Optional: if used, must match the Frigate camera name(s)
+    # if not set, no cameras will be used
     cameras:
         # camera name must match Frigate configuration camera names
         picam_h264:
             # Optional Enable/disable the camera (default: shown below).
             # if disabled, any Frigate events for specified camera will be ignored
             # Note: this will not impact Frigate's system
-            enabled: False
+            enabled: false
             # Optional: define the radar co-located with camera to associate speeds
             # camera and radar direction and field of view (FOV) should match
             # Note: name needs to match one defined in `radars` section
@@ -135,15 +136,18 @@ sensors:
         # Names are used to associate readings with cameras and other sensors
         TM_RADAR_SERIAL_PORT_00:
             # Optional: Enable/disable the radar (default: shown below).
-            enabled: False
+            enabled: false
 
-    # Optional: used to specify air quality monitor sensors
+    # Optional: used to specify air quality monitor sensor name(s)
     # Note: air quality configuration file is separate from the node-red config, based on the aq device
-    aq_monitor:
-        # Optional: Enable/disable the AQ sensor payloads (default: shown below).
-        enabled: False
-        # mqtt topic to subscribe for incoming telemetry from sensors
-        mqtt_topic_incoming: aq/readings
+    airquality_monitors:
+        # Required: aq sensor name must match AQ configuration -defined MQTT topic middle element (second element)
+        sensorname01:
+            # Optional: Enable/disable the AQ sensor payloads (default: shown below).
+            enabled: false
+            # Required: mqtt topic to subscribe for incoming full-payload telemetry from AQ sensor
+            #  must be last element in mqtt topic defined in AQ configuration
+            mqtt_topic_incoming: readings
 
 time:
     # Optional: Set a timezone to use in the UI (default: use browser local time)
@@ -152,7 +156,6 @@ time:
     timezone: America/Los_Angeles
     # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
     # Note: for offline deployments, time will stop whenever power is disconnected
-    npt_set: True
-
-</code></pre>
+    npt_set: true
+```
 

@@ -15,7 +15,9 @@ sudo apt-get update
 #rpi recommends full-upgrade: https://www.raspberrypi.com/documentation/computers/os.html#manage-software-packages-with-apt
 sudo apt full-upgrade -y
 
-#set local timezone
+#set inital local timezone
+# NOTE: shall be in unix tz format: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+# this is primarily used for the UI
 sudo raspi-config nonint do_change_timezone America/Los_Angeles
 
 ##-- install docker / docker compose,
@@ -41,6 +43,8 @@ sudo chmod 755 /var/lib/go2rtc/go2rtc_linux_arm64
 sudo chmod +x /var/lib/go2rtc/go2rtc_linux_arm64
 ##-- /go2rtc
 
+#for wifi drop script
+sudo apt-get -y install host
 
 ##-- install coral tpu drivers
 #install EdgeTPU runtime library (??) https://coral.ai/docs/accelerator/get-started/#1-install-the-edge-tpu-runtime

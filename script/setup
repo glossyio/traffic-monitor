@@ -81,3 +81,15 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 #rpicam-vid settings
 # rpicam-vid --list-cameras for modes available
 
+# configure NetworkManager to perform regular connectivity test
+sudo cp utils/nm-connectivity-check.conf /etc/NetworkManager/conf.d/
+# configure NetworkManager to turn off wifi power management
+sudo cp utils/z-wifi-powersave-off.conf /etc/NetworkManager/conf.d/
+
+##-- set up wifi reconnect script
+mkdir -p ~/code/utils
+cp -p utils/wlan_check.sh ~/code/utils
+chmod +x ~/code/utils/wlan_check.sh
+
+# Setup cronjob to regularly run wlan_check script
+crontab script/crontab.jobs

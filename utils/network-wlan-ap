@@ -5,12 +5,17 @@
 #               Allows other devices in remote deployments without a network to connect
 # https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-on-your-raspberry-pi
 # See examples: https://networkmanager.dev/docs/api/latest/nmcli-examples.html
+    # More examples: https://www.golinuxcloud.com/nmcli-command-examples-cheatsheet-centos-rhel/ 
 
 #enable hotspot
-sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
+# sudo nmcli device wifi hotspot ssid <example-network-name> password <example-password>
 
 #disable hotspot
 #sudo nmcli device disconnect wlan0
+
+#to get hotspot to run on restart...
+# sudo -H nano /etc/NetworkManager/system-connections/Hotspot.nmconnection
+# look for `autoconnect=false` and change to true
 
 #list available wifi aps
 #nmcli device wifi list
@@ -23,3 +28,17 @@ sudo nmcli device wifi hotspot ssid <example-network-name> password <example-pas
 
 #convenient field values retrieval for scripting
 #nmcli -g ip4.address connection show my-con-eth0
+
+#logs for diagnosing
+# journalctl -u NetworkManager
+# dmesg | grep wlan0
+
+#link status
+# ip link show
+# nmcli device status
+# iwconfig wlan0
+
+#restart network
+# sudo systemctl restart NetworkManager
+# nmcli device down wlan0
+# nmcli device up wlan0
