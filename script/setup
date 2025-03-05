@@ -83,12 +83,13 @@ sudo chmod 744 /var/lib/go2rtc/go2rtc.yaml
 
 # configure NetworkManager to perform regular connectivity test
 sudo cp utils/nm-connectivity-check.conf /etc/NetworkManager/conf.d/
+# configure NetworkManager to turn off wifi power management
+sudo cp utils/z-wifi-powersave-off.conf /etc/NetworkManager/conf.d/
 
 ##-- set up wifi reconnect script
-sudo iwconfig wlan0 power off   #turn off wlan0 power management immediately
 mkdir -p ~/code/utils
 cp -p utils/wlan_check.sh ~/code/utils
 chmod +x ~/code/utils/wlan_check.sh
 
-# Setup chronjobs to turn off wlan0 power management and regularly run wlan_check script
+# Setup cronjob to regularly run wlan_check script
 crontab script/crontab.jobs
