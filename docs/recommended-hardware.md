@@ -81,5 +81,6 @@ See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) 
 
 ## Enclosure (weather-resistant box)
 
-* _Purchase_: _(coming soon)_ Purchase the box or a kit to assemble yourself.
-* _Print it yourself_:  We offer a 3D printable model so you can build the truly open source Traffic Monitor.  The external enclosure (water-resistant box), internal mounting board, and other required parts are available as 3D models for you to print with an additive (FDM) 3D Printer.  Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.
+* _Purchase_: _(coming soon)_ Purchase the box or a kit to assemble yourself.&#x20;
+* _Print it yourself_:  We offer a 3D printable model so you can build the truly open source Traffic Monitor.  Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.
+* _Alternative DIY_: There are many waterproof electrical junction boxes that may be modified to fit your needs with the traffic monitor. Rough dimensions to fit the Traffic Monitor components including the camera and radar should be around 9"x7"x4" such as the [TICONN IP67 ABS Enclosure](https://www.amazon.com/gp/product/B0B87X944Z).
