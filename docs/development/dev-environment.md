@@ -8,3 +8,13 @@ The Traffic Monitor software is completely open source, so you are welcome to mo
 
 The [Traffic Monitor OSS repo](https://github.com/glossyio/traffic-monitor) is set up as a [monorepo](https://en.wikipedia.org/wiki/Monorepo) containing everything to get the TM up and running.
 
+## Node-RED
+
+[Node-RED](https://nodered.org/) provides the primary logic engine to the Traffic Monitor including:
+
+* Accepting input from other applications, such as Frigate for object detection, and sensors such as the radar for speed measurement.
+* Enriching events by attaching speed
+* Saving payloads and data internally
+* Sending data to downstream applications
+
+_(More instructions coming soon)_
