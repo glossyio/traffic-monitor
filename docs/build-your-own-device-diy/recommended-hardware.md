@@ -20,7 +20,7 @@ Use the following checklist as a quick guide to components you need to purchase
 * [ ] Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) plus [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
 * [ ] AI co-processor: [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/)
 * [ ] Radar (optional): [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
-* [ ] Enclosure:  [Traffic Monitor Enclosure 3D Print Model](https://github.com/greendormer/tm-enclosure-3d)
+* [ ] Enclosure:  [#enclosure-weather-resistant-box](recommended-hardware.md#enclosure-weather-resistant-box "mention")
 
 ## Computing Device
 
@@ -69,6 +69,7 @@ See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) 
 
 (Optional) Air Quality sensor ([Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/)) with [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/).
 
-## Enclosure
+## Enclosure (weather-resistant box)
 
-External enclosure and internal mounting board are available as 3D models at the open source repo [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d).  See [enclosure-3d-print.md](build-your-own-device-diy/enclosure-3d-print.md "mention")section for more details.
+* _Purchase_: _(coming soon)_ Purchase the box or a kit to assemble yourself.
+* _Print it yourself_:  We offer a 3D printable model so you can build the truly open source Traffic Monitor.  The external enclosure (water-resistant box), internal mounting board, and other required parts are available as 3D models for you to print with an additive (FDM) 3D Printer.  Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.

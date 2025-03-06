@@ -1,11 +1,11 @@
 # Table of contents
 
-* [Welcome](README.md)
+* [Welcome to smart city traffic monitoring](README.md)
 * [Getting Started](getting-started.md)
-* [Recommended Hardware](recommended-hardware.md)
 * [Build Your Own Device (DIY)](build-your-own-device-diy/README.md)
-  * [Enclosure 3D Print](build-your-own-device-diy/enclosure-3d-print.md)
-* [Software Installation](software-installation.md)
+  * [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md)
+  * [Assembly Instructions](build-your-own-device-diy/assembly-instructions.md)
+  * [Software Installation](build-your-own-device-diy/software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
 
 ## Configuration

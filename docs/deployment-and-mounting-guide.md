@@ -1,5 +1,6 @@
 ---
 description: Permanent and temporary physical placement suggestions.
+icon: house-day
 ---
 
 # Deployment and Mounting Guide
