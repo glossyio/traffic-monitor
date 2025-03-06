@@ -9,6 +9,8 @@ description: >-
 
 The Traffic Monitor is an open source smart city traffic monitoring software built with commodity hardware to capture holistic roadway usage. Utilizing edge machine learning object detection and Doppler radar, it counts pedestrians, bicycles, and cars and measures vehicle speeds.
 
+Find our website at [https://www.trafficmonitor.ai](https://www.trafficmonitor.ai) to sign up for the newsletter and learn more.&#x20;
+
 <figure><picture><source srcset=".gitbook/assets/tm-roadway-graphic-1920x1080-color-bg_black (1).png" media="(prefers-color-scheme: dark)"><img src=".gitbook/assets/tm-roadway-graphic-1920x1080-color-bg_white.png" alt=""></picture><figcaption><p>Be Counted!</p></figcaption></figure>
 
 Our mission is to _democratize the power of AI tools_ to _improve community safety and quality of life_ through the _ethical and transparent use of AI_.&#x20;

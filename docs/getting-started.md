@@ -1,11 +1,11 @@
 ---
-description: Start counting with the Traffic Monitor!
 icon: play
+description: Start counting with the Traffic Monitor!
 ---
 
 # Getting Started
 
-The traffic monitor requires the [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md) and [software installation](build-your-own-device-diy/software-installation.md) before you can begin capturing roadway data.
+The traffic monitor requires the [Recommended Hardware](recommended-hardware.md) and [software installation](build-your-own-device-diy/software-installation.md) before you can begin capturing roadway data.
 
 There are two ways to get started:
 
