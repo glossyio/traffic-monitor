@@ -6,6 +6,8 @@ description: Doppler radar payloads
 
 ## Overview
 
+The Doppler radar enables speed and direction measurement to be collected and added to events.
+
 ### Hardware
 
 {% hint style="info" %}

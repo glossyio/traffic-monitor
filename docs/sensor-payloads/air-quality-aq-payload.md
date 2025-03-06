@@ -1,16 +1,24 @@
 ---
-description: Enviro + Air Quality sensor from Pimoroni for environmental conditions
+description: Environment and air quality sensor for the Traffic Monitor
 ---
 
 # Air Quality (AQ) Payload
 
-## Air Quality (AQ) Sensor Specifications
+## Overview
+
+The air quality monitor enables collection of a variety of environmental measurements including gasses commonly associated with pollution, temperature, pressure, humidity, and much more.
 
 {% hint style="info" %}
-The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor). It is based on the wonderful work from the [roscoe81/enviro-monitor](https://github.com/roscoe81/enviro-monitor) and [Pimoroni Enviroplus](https://github.com/pimoroni/enviroplus-python) projects.
+The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor). It is based on the wonderful work from the [roscoe81/enviro-monitor](https://github.com/roscoe81/enviro-monitor) and [pimoroni/enviroplus](https://github.com/pimoroni/enviroplus-python) projects.
 {% endhint %}
 
 ### Hardware
+
+The following hardware has been tested and incorporated into the Traffic Monitor.&#x20;
+
+{% hint style="info" %}
+Although we strive to include high-quality equipment and data collection into our application, we make no warranty on the veracity or quality of the hardware or data. We welcome those with an [environmental science](https://en.wikipedia.org/wiki/Environmental_science) background to [contribute](../development/contributing.md)!
+{% endhint %}
 
 * [Enviro for Raspberry Pi](https://www.pishop.us/product/enviro-for-raspberry-pi/) – **Enviro + Air Quality**
   * Enviro for Raspberry Pi – **Enviro + Air Quality**
