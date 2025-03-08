@@ -1,6 +1,6 @@
 ---
-description: Steps to connect to and setup your Traffic Monitor.
 icon: sliders
+description: Steps to connect to and setup your Traffic Monitor.
 ---
 
 # Setup Guide
@@ -15,9 +15,9 @@ This guide will walk you though configuring your device based on your sensors (r
 The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.&#x20;
 {% endhint %}
 
-* [x] [#connect-to-your-device](deployment-and-mounting-guide-1.md#connect-to-your-device "mention")
-* [x] [#configure-frigate-zones](deployment-and-mounting-guide-1.md#configure-frigate-zones "mention")
-* [x] [#configure-node-red](deployment-and-mounting-guide-1.md#configure-node-red "mention")
+* [x] [#connect-to-your-device](setup-guide.md#connect-to-your-device "mention")
+* [x] [#configure-frigate-zones](setup-guide.md#configure-frigate-zones "mention")
+* [x] [#configure-node-red](setup-guide.md#configure-node-red "mention")
 
 ## Connect to your Device
 
@@ -77,7 +77,7 @@ After changes are made, you will need to restart Frigate before they take effect
 
 Node-RED controls most of the workflow logic and data collection.
 
-You will need to [#connect-to-your-device](deployment-and-mounting-guide-1.md#connect-to-your-device "mention") to edit the [node-red-config.md](configuration/node-red-config.md "mention") files.
+You will need to [#connect-to-your-device](setup-guide.md#connect-to-your-device "mention") to edit the [node-red-config.md](configuration/node-red-config.md "mention") files.
 
 1. Open up the terminal or via SSH enter the command: `nano ~/.node-red/config.yml` to begin editing the config file.
 2. Change the deployment location information to represent the current deployment. Get your latitude and longitude from any map service, such as Google Maps and enter bearing with the single-letter cardinal direction the traffic monitor is facing.

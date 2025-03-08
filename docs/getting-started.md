@@ -24,7 +24,7 @@ The traffic monitor must be placed with a good view of the roadway. See the [dep
 
 After you have your traffic monitor physically set up (mounted), boot it up and it is ready to go.  However, to get the best data and most out of the device, you will need to set up the device:
 
-1. Follow the [deployment-and-mounting-guide-1.md](deployment-and-mounting-guide-1.md "mention").
+1. Follow the [setup-guide.md](setup-guide.md "mention").
 2. [frigate-config.md](configuration/frigate-config.md "mention") will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
 3. [node-red-config.md](configuration/node-red-config.md "mention") will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!&#x20;
 

@@ -2,7 +2,7 @@
 description: Doppler radar payloads
 ---
 
-# Radar (OPS243) Payload
+# Radar Payload
 
 ## Overview
 
@@ -23,17 +23,17 @@ The [OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) ra
 The OPS243 radar sensors include an easy-to-use [API interface](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) for returning a variety of radar readings and calculated values in JSON format. By default, we capture all of these values in separate tables:
 
 * **DetectedObjectVelocity** (command `ON`).&#x20;
-  * [#radar\_dov-table](ops243-radar-payload.md#radar_dov-table "mention")
+  * [#radar\_dov-table](radar-payload.md#radar_dov-table "mention")
   * Sensor determines if an object is present by looking for 2 consecutive speed reports. If met, the max speed detected is reported. If a faster speed is detected, additional speeds are reported. This lowers the number of speed reports for a given detected object. Use On to turn the mode off.
 * **TimedSpeedCounts** (command @O).&#x20;
-  * [#radar\_timed\_speed\_counts-table](ops243-radar-payload.md#radar_timed_speed_counts-table "mention").&#x20;
+  * [#radar\_timed\_speed\_counts-table](radar-payload.md#radar_timed_speed_counts-table "mention").&#x20;
   * Sensor counts and reports the cumulative number of objects (defined by DetectedObjectVelocity) that have gone by in a given period. Default TM setting is reporting every 300-seconds.
 * **Raw Speed Magnitude** (command `OS`).&#x20;
-  * [#radar\_raw\_speed\_magnitude-table](ops243-radar-payload.md#radar_raw_speed_magnitude-table "mention") and [#radar\_raw\_speed\_magnitude\_single-table](ops243-radar-payload.md#radar_raw_speed_magnitude_single-table "mention")
+  * [#radar\_raw\_speed\_magnitude-table](radar-payload.md#radar_raw_speed_magnitude-table "mention") and [#radar\_raw\_speed\_magnitude\_single-table](radar-payload.md#radar_raw_speed_magnitude_single-table "mention")
   * Reports magnitude and associated speed of each reading. The magnitude is a measure of the size, distance, and reflectivity of the object detected. By default, TM captures the 3-burst speed/magnitude pairs and the single strongest magnitude and associated speed in separate tables for deep dive and easier analysis, respectively.
 * **Vehicle Length** (command `OC`).&#x20;
   * Note: _Requires Firmware OPS9243._&#x20;
-  * [#radar\_oc\_payload-table](ops243-radar-payload.md#radar_oc_payload-table "mention")
+  * [#radar\_oc\_payload-table](radar-payload.md#radar_oc_payload-table "mention")
   * From the docs: _Provides several parameters which can help identify the vehicle type and/or lane in which the vehicle is located_. This includes start/end time, frames, min/max MPH, magnitude, and length calculations.
 
 ## Radar Database

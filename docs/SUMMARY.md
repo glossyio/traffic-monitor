@@ -7,7 +7,7 @@
   * [Assembly Instructions](build-your-own-device-diy/assembly-instructions.md)
   * [Software Installation](build-your-own-device-diy/software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
-* [Setup Guide](deployment-and-mounting-guide-1.md)
+* [Setup Guide](setup-guide.md)
 
 ## Configuration
 
@@ -28,5 +28,5 @@
 ## Sensor Payloads
 
 * [Events Payload](sensor-payloads/events-payload.md)
-* [Radar (OPS243) Payload](sensor-payloads/ops243-radar-payload.md)
+* [Radar Payload](sensor-payloads/radar-payload.md)
 * [Air Quality (AQ) Payload](sensor-payloads/air-quality-aq-payload.md)
