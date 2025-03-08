@@ -20,12 +20,13 @@ The traffic monitor must be placed with a good view of the roadway. See the [dep
 1. [#temporary](deployment-and-mounting-guide.md#temporary "mention") deployments allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
 2. [#permanent](deployment-and-mounting-guide.md#permanent "mention") deployments are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
 
-## Step 3: Configure your Device
+## Step 3: Set up your Device
 
 After you have your traffic monitor physically set up (mounted), boot it up and it is ready to go.  However, to get the best data and most out of the device, you will need to set up the device:
 
-1. [frigate-config.md](configuration/frigate-config.md "mention") will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
-2. [node-red-config.md](configuration/node-red-config.md "mention") will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!&#x20;
+1. Follow the [deployment-and-mounting-guide-1.md](deployment-and-mounting-guide-1.md "mention").
+2. [frigate-config.md](configuration/frigate-config.md "mention") will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
+3. [node-red-config.md](configuration/node-red-config.md "mention") will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!&#x20;
 
 ## Step 4: Collect and Share that Data
 

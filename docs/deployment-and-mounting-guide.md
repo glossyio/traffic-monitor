@@ -1,6 +1,6 @@
 ---
-description: Permanent and temporary physical placement suggestions.
 icon: house-day
+description: Permanent and temporary physical placement suggestions.
 ---
 
 # Deployment and Mounting Guide
@@ -42,24 +42,28 @@ This will be dependent on the hardware you have chosen to install:
 * **The camera** needs an unobstructed view of the roadway for the best performance, but it is able to perform object detection anywhere in the camera frame.
 * **The radar** has a narrower field-of-view (FOV) than most cameras and requires specific angles to the roadway for the most accurate speed measurements.
 
-\[show image of sample roadway
+\[show image of sample roadway]
 
 ## Post-deployment Configuration
 
 ### Configure Zones
 
-The Traffic Monitor will be expecting a number of [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and logic.  These need to manually designated, based on your deployment. &#x20;
+The Traffic Monitor will be expecting a number of [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and logic.  These need to manually designated, based on your deployment.
 
 {% hint style="success" %}
 Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment . &#x20;
 {% endhint %}
 
-* zone\_capture -&#x20;
-* zone\_near -&#x20;
-* zone\_far -&#x20;
-* zone\_radar - (for units equipped with radar) -&#x20;
+Access Frigate's interface by going to `http://<TM_IP_ADDRESS>:5000` and go Settings > Configure > Masks / Zones.
 
-\[show image of zones properly configured]
+Set up the following zones:
+
+* <mark style="color:red;">zone\_capture</mark> - Set to capture the entire roadway, including sidewalks that are clearly in view for counting objects.
+* <mark style="color:red;">zone\_near</mark> - Paired with `zone_near`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the further half of the `zone_capture` region.
+* <mark style="color:red;">zone\_far</mark> - Paired with `zone_far`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the closer half of the `zone_capture` region.
+* <mark style="color:red;">zone\_radar</mark> - (for units equipped with radar) - This should correspond to the field of view for the radar (where it can pick up accurate measurements) on the street. It will roughly make a rectangle in the center of the camera field of view from curb to curb.
+
+<figure><img src=".gitbook/assets/Screenshot_20250306_110924.png" alt=""><figcaption><p>Properly configured Frigate Zones</p></figcaption></figure>
 
 ### Define Masks
 

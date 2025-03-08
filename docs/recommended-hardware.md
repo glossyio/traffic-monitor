@@ -18,7 +18,7 @@ Use the following checklist as a quick guide to components you need to purchase
 * [ ] Storage: microSD card (≥32GB), [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA)
 * [ ] Power: official RPi [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
 * [ ] Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) plus [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
-* [ ] AI co-processor: [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/)
+* [ ] AI co-processor: see [AI Co-processor](recommended-hardware.md#ai-co-processor)
 * [ ] Radar (optional): [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
 * [ ] Enclosure:  [#enclosure-weather-resistant-box](recommended-hardware.md#enclosure-weather-resistant-box "mention")
 
@@ -62,14 +62,21 @@ The Raspberry Pi 5 has 2 camera transceiver slots, so you can easily attach 2 na
 See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) for more information on tuning stream configurations based on various goals for your deployment.
 {% endhint %}
 
-## AI Co-processor (TPU)
+## AI Co-processor
 
-(Required with camera) [Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/). The Coral TPU is capable of 100+ FPS with millisecond inference time. Other co-processors may work, but the Coral TPU is fully supported with [Frigate object detectors](https://docs.frigate.video/configuration/object_detectors) out of the box. &#x20;
+(Required with camera) The AI co-processor is an efficient way to run the object detection model, much more efficient than CPU-alone.
+
+{% hint style="info" %}
+The AI co-processor is used by Frigate to run the object detection model, see Frigate's [supported hardware](https://docs.frigate.video/configuration/object_detectors) for more options and details.
+{% endhint %}
+
+[Coral AI Tensor Processing Unit (TPU)](https://coral.ai/products/). The Coral TPU is capable of 100+ FPS with millisecond inference time. Other co-processors may work, but the Coral TPU is fully supported with [Frigate object detectors](https://docs.frigate.video/configuration/object_detectors) out of the box. &#x20;
 
 1. _Easiest Option_: [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor that you can connect to any computing device with a USB interface.
-2. _Alternative_: HATs (Hardware-Attached-on-Top \[of a Raspberry Pi]) are more compact, upgradable, and usually cheaper:
+2. _Alternative_: Coral HATs (Hardware-Attached-on-Top \[of a Raspberry Pi]) are more compact, upgradable, and usually cheaper:
    * [Rapsberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/) pairs nicely with the [Coral M.2 Accelerator A+E Key](https://coral.ai/products/m2-accelerator-ae).
    * Pineboards offers the [Hat AI! Coral TPU bundle](https://pineboards.io/products/hat-ai-coral-edge-tpu-bundle-for-raspberry-pi-5) that connects via PCIe that offers a sleek way to add the Coral capabilities with an additional slot for an M.2 SSD.
+3. _Alternative_: [Raspberry Pi AI HAT+](https://www.raspberrypi.com/products/ai-hat/) with Hailo-8L offers high-performance, power-efficient processing.
 
 ## Radar
 

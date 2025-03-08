@@ -7,10 +7,11 @@
   * [Assembly Instructions](build-your-own-device-diy/assembly-instructions.md)
   * [Software Installation](build-your-own-device-diy/software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
+* [Setup Guide](deployment-and-mounting-guide-1.md)
 
 ## Configuration
 
-* [Overview](configuration/overview.md)
+* [Config Overview](configuration/overview.md)
 * [Frigate Config](configuration/frigate-config.md)
 * [Node-RED Config](configuration/node-red-config.md)
 
