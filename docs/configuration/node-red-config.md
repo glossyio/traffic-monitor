@@ -156,6 +156,6 @@ time:
     timezone: America/Los_Angeles
     # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
     # Note: for offline deployments, time will stop whenever power is disconnected
-    npt_set: false
+    npt_set: true
 ```
 

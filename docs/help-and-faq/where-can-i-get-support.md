@@ -1,3 +1,7 @@
+---
+description: Get help with the Traffic Monitor
+---
+
 # Where can I get support?
 
 We are a volunteer-driven open source project relying on the generosity of our community to answer questions and offer support. While we strive to assist as many as possible, our capacity is limited, and your patience is appreciated. Your involvement is crucial, and by engaging with us, you help foster a supportive and thriving environment where everyone can benefit from shared knowledge and solutions.
