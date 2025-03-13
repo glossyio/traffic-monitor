@@ -1,5 +1,6 @@
 ---
-- name: Create apt key directory
+# TMSetup - Docker Setup tasks
+- name: TMSetup - Docker Setup - Create apt key directory
   become: true
   ansible.builtin.file:
     path: /etc/apt/keyring
@@ -8,7 +9,7 @@
     owner: root
     group: root
 
-- name: Download docker key repo key
+- name: TMSetup - Docker Setup - Download docker key repo key
   become: true
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -17,21 +18,16 @@
     owner: root
     group: root
 
-- name: Get dpkg architecture
-  ansible.builtin.command: dpkg --print-architecture
-  register: tmsetup_docker_dpkgarch_register
-  changed_when: false
-
-- name: Create Docker apt repo file
+- name: TMSetup - Docker Setup - Create Docker apt repo file
   become: true
   ansible.builtin.apt_repository:
     state: present
     filename: docker
     repo: >-
-      deb [arch={{ tmsetup_docker_dpkgarch_register.stdout }} signed-by=/etc/apt/keyrings/docker.asc]
+      deb [arch={{ tmsetup_dpkg_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
       https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
 
-- name: Install Docker CE packages
+- name: TMSetup - Docker Setup - Install Docker CE packages
   become: true
   ansible.builtin.apt:
     state: present
@@ -43,18 +39,21 @@
       - docker-compose-plugin
   notify: Initiate docker compose
 
-- name: Add TM user to docker group
+- name: TMSetup - docker_setup - Add TM user to docker group
   become: true
   ansible.builtin.user:
     name: '{{ tmsetup_codeowner }}'
     groups: docker
     append: true
 
-- name: Copy compose.yaml to code directories
+- name: TMSetup - Docker Setup - Copy compose.yaml to code directories
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.template:
     src: compose.yaml.j2
-    dest: '{{ tmsetup_codehomedir }}/compose.yaml'
+    dest: '{{ tmsetup_codedir }}/compose.yaml'
     owner: '{{ tmsetup_codeowner }}'
     mode: '0640'
+    force: '{{ tmsetup_force_configs }}'
   notify: Initiate docker compose
 ...

@@ -1,5 +1,5 @@
 ---
-# tmsetup variables (non-configurable)
+# TMSetup Variables (non-configurable)
 tmsetup_tm_version: '0.3.0'
 tmsetup_go2rtc_version: 'v1.8.5'
 tmsetup_frigate_version: '0.14.0'

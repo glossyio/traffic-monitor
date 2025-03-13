@@ -4,7 +4,7 @@
   vars:
 ## User configurable variables. Defaults are defined here.  
 #    tmsetup_codeowner: '{{ ansible_user_id }}'
-#    tmsetup_codehomedir: '{{ ansible_user_dir }}/code'
+#    tmsetup_codedir: '{{ ansible_user_dir }}/code'
 #    tmsetup_nodereddir: '{{ ansible_user_dir }}/.node-red'
 #    tmsetup_timezone: 'America/Los_Angeles'
 #    tmsetup_frigate_rtsp_password: password

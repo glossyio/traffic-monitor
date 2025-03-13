@@ -1,6 +1,6 @@
 ---
 # tmsetup wifi setup tasks
-- name: Copy wifi powersave config
+- name: TMSetup - WiFi Setup - Copy wifi powersave config
   become: true
   ansible.builtin.copy:
     src: z-wifi-powersave-off.conf
@@ -10,25 +10,31 @@
     mode: '0644'
   notify: Restart NetworkManager service
 
-- name: Create utils directory
+- name: TMSetup - WiFi Setup - Create utils directory
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
-    path: '{{ tmsetup_codehomedir }}/utils'
+    path: '{{ tmsetup_codedir }}/utils'
     state: directory
     owner: '{{ tmsetup_codeowner }}'
     mode: '0750'
 
-- name: Copy WLAN Check script to utils folder
+- name: TMSetup - WiFi Setup - Copy WLAN Check script to utils folder
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.copy:
     src: wlan_check.sh
-    dest: '{{ tmsetup_codehomedir }}/utils/wlan_check.sh'
+    dest: '{{ tmsetup_codedir }}/utils/wlan_check.sh'
     owner: '{{ tmsetup_codeowner }}'
     mode: '0750'
 
-- name: Setup crontab
+- name: TMSetup - WiFi Setup - Setup crontab
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.cron:
     name: Traffic Monitor Wifi Check
     user: '{{ tmsetup_codeowner }}'
     minute: '*/5'
-    job: '/usr/bin/sudo /bin/bash {{ tmsetup_codehomedir }}/utils/wlan_check.sh -q'
+    job: '/usr/bin/sudo /bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
     state: present
 ...

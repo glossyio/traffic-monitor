@@ -1,8 +1,8 @@
 ---
-# tmsetup default variables (user configurable)
-tmsetup_codeowner: '{{ ansible_user_id }}'
-tmsetup_codehomedir: '{{ ansible_user_dir }}/code'
-tmsetup_nodereddir: '{{ ansible_user_dir }}/.node-red'
+# TMSetup Default Variables (user configurable)
+tmsetup_codeowner: 'tmadmin'
+tmsetup_codeowner_homedir: None
+tmsetup_codedir: '/opt/traffic-monitor'
 tmsetup_timezone: 'America/Los_Angeles'
 
 tmsetup_frigate_rtsp_password: password
@@ -18,5 +18,7 @@ tmsetup_thingsboard_api_key: ''
 tmsetup_latitude: ''
 tmsetup_longitude: ''
 tmsetup_bearing: ''
+
+tmsetup_force_configs: false
 
 ...

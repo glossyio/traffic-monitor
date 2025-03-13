@@ -1,13 +1,76 @@
 ---
-# tmsetup coral tpu setup tasks
-- name: Import tasks to create coral-edgetpu repo
-  ansible.builtin.import_tasks:
-    file: coraltpu_repo_setup.yml
+# TMSetup - Coral TPU Setup tasks
+- name: TMSetup - Coral TPU Setup - Add Coral-TPU Repository apt key
+  become: true
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
 
-- name: Install runtime library
+- name: TMSetup - Coral TPU Setup - Add Coral-TPU apt repo
+  become: true
+  ansible.builtin.apt_repository:
+    filename: coral-edgetpu
+    repo: 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main'
+    state: present
+
+- name: TMSetup - Coral TPU Setup - Install runtime library
   become: true
   ansible.builtin.apt:
     update_cache: true
     name: libedgetpu1-std
     state: present
+
+- name: TMSetup - Coral TPU Setup - Enable PCIe connector at bootup
+  become: true
+  ansible.builtin.blockinfile:
+    path: /boot/firmware/config.txt
+    block: |
+      # Enable the PCIe External connector.
+      dtparam=pciex1
+      kernel=kernel8.img
+      # Enable Pineboards Hat Ai
+      dtoverlay=pineboards-hat-ai
+    append_newline: true
+    prepend_newline: true
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: present
+
+- name: TMSetup - Coral TPU Setup - Install required packages
+  become: true
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name:
+      - gasket-dkms=1.0-18
+      - cmake
+      - libedgetpu1-std
+      - devscripts
+      - debhelper
+      - dkms
+
+- name: TMSetup - Coral TPU Setup - Create apex udev rules to manage device permissions
+  become: true
+  ansible.builtin.copy:
+    src: 65-apex.rules
+    dest: /etc/udev/rules.d/65-apex.rules
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - Coral TPU Setup - Create apex group
+  become: true
+  ansible.builtin.group:
+    name: apex
+    state: present
+
+- name: TMSetup - Coral TPU Setup - Add codeowner to apex group
+  become: true
+  ansible.builtin.user:
+    name: '{{ tmsetup_codeowner }}'
+    groups: apex
+    append: true
+
 ...

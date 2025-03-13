@@ -18,7 +18,7 @@ Role Variables
 
 - `tmsetup_codeowner`: STRING # The user that non-system services will run under and all data will be owned by
   - default: `'{{ ansible_user_id }}'`
-- `tmsetup_codehomedir`: STRING # Path to directory for frigate and other application data will be stored
+- `tmsetup_codedir`: STRING # Path to directory for frigate and other application data will be stored
   - default: `'{{ ansible_user_dir }}/code'`
 - `tmsetup_nodereddir`: STRING # Path to directory for nodered installation
   - default: `'{{ ansible_user_dir }}/.node-red'`

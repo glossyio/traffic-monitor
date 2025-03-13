@@ -1,25 +1,30 @@
 ---
-# tmsetup frigate setup tasks
-- name: Create Frigate Directories
+# TMSetup - Frigate Setup tasks
+- name: TMSetup - Frigate Setup - Create Frigate Directories
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
     path: '{{ item }}'
     state: directory
     mode: '0750'
     owner: '{{ tmsetup_codeowner }}'
   loop:
-    - '{{ tmsetup_codehomedir }}'
-    - '{{ tmsetup_codehomedir }}/frigate'
-    - '{{ tmsetup_codehomedir }}/frigate/config'
-    - '{{ tmsetup_codehomedir }}/frigate/storage'
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/frigate'
+    - '{{ tmsetup_codedir }}/frigate/config'
+    - '{{ tmsetup_codedir }}/frigate/storage'
   notify: Initiate docker compose
 
-- name: Create Frigate docker files
+- name: TMSetup - Frigate Setup - Create Frigate docker files
+  become: true
+  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.template:
     src: '{{ item }}.j2'
-    dest: '{{ tmsetup_codehomedir }}/{{ item }}'
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
     owner: '{{ tmsetup_codeowner }}'
     backup: true
     mode: '0640'
+    force: '{{ tmsetup_force_configs }}'
   loop:
     - frigate/docker-compose-frigate.yaml
     - frigate/frigate.env
