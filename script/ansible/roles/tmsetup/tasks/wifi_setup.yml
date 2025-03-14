@@ -32,7 +32,6 @@
 
 - name: TMSetup - WiFi Setup - Setup crontab
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.cron:
     name: Traffic Monitor Wifi Check
     user: '{{ tmsetup_codeowner }}'
