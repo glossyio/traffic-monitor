@@ -21,7 +21,7 @@
   register: tmsetup_base_register_user_codeowner
 
 - name: TMSetup - Base Setup - Set var for codeowner home directory
-  ansible.builtin.set_vars:
+  ansible.builtin.set_fact:
     tmsetup_codeowner_homedir: tmsetup_base_register_user_codeowner.home
 
 - name: TMSetup - Base Setup - Set timezone
