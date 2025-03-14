@@ -8,6 +8,7 @@
     state: directory
     mode: '0750'
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
   loop:
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/frigate'
@@ -22,6 +23,7 @@
     src: '{{ item }}.j2'
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     backup: true
     mode: '0640'
     force: '{{ tmsetup_force_configs }}'

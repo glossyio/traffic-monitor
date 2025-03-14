@@ -1,6 +1,7 @@
 ---
 # TMSetup Default Variables (user configurable)
 tmsetup_codeowner: 'tmadmin'
+tmsetup_codegroup: '{{ tmsetup_codeowner }}'
 tmsetup_codeowner_homedir: None
 tmsetup_codedir: '/opt/traffic-monitor'
 tmsetup_timezone: 'America/Los_Angeles'

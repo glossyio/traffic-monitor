@@ -5,12 +5,11 @@
   become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
     path: '{{ item }}'
-    recurse: true
     state: directory
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     mode: '0750'
   loop:
-    - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/nodered'
     - '{{ tmsetup_codedir }}/nodered/db'
     - '{{ tmsetup_codedir }}/nodered/installer'
@@ -34,42 +33,72 @@
     dest: '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered'
     backup: true
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     mode: '0750'
   register: tmsetup_nodered_download_installer_register
 
 - name: TMSetup - Node Red Setup - Run Node Red installer
   when: tmsetup_nodered_download_installer_register.changed # noqa: no-handler
   block:
+    - name: TMSetup - Node Red Setup - Give code owner full sudo privs for setup
+      become: true
+      community.general.sudoers:
+        name: 'tmsetup_tm_{{ tmsetup_codeowner }}'
+        user: '{{ tmsetup_codeowner }}'
+        host: ALL
+        commands: ALL
+        nopassword: true
+        state: present
+
     - name: TMSetup - Node Red Setup - Run Node Red installer if changed
       become: true
       become_user: '{{ tmsetup_codeowner }}'
-      ansible.builtin.command: '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered --confirm-install --confirm-pi --no-init --node20'
+      ansible.builtin.command: >
+        {{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered
+         --confirm-install
+         --confirm-pi
+         --no-init
+         --node20
+         --nodered-user={{ tmsetup_codeowner }}
       register: tmsetup_nodered_installer_register
-      changed_when: tmsetup_nodered_installer_register.rc != 0
+      changed_when: tmsetup_nodered_installer_register.rc == 0
       notify: Restart nodered service
+
   rescue:
     - name: TMSetup - Node Red Setup - Revert to backup from node red-installer
       become: true
       become_user: '{{ tmsetup_codeowner }}'
-      when: tmsetup_nodered_download_installer_register.backup_file is file
+      when:
+        - tmsetup_nodered_download_installer_register.backup_file is defined
+        - tmsetup_nodered_download_installer_register.backup_file is file
       ansible.builtin.copy:
         remote_src: true
         mode: '0750'
         owner: '{{ tmsetup_codeowner }}'
+        group: '{{ tmsetup_codegroup }}'
         src: '{{ tmsetup_nodered_download_installer_register.backup_file }}'
         dest: '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered'
+
     - name: TMSetup - Node Red Setup - Clean up installer if no backup
       become: true
       become_user: '{{ tmsetup_codeowner }}'
-      when: not tmsetup_nodered_download_installer_register.backup_file is file
+      when: ( tmsetup_nodered_download_installer_register.backup_file is not defined ) or
+            ( not tmsetup_nodered_download_installer_register.backup_file is file )
       ansible.builtin.file:
         dest: '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered'
         state: absent
+
     - name: TMSetup - Node Red Setup - Fail out
       ansible.builtin.fail:
         msg: |
           Node Red installation failed.  Details:
           {{ tmsetup_nodered_installer_register }}
+  always:
+    - name: TMSetup - Node Red Setup - Remove temporary sudo privileges
+      become: true
+      community.general.sudoers:
+        name: 'tmsetup_tm_{{ tmsetup_codeowner }}'
+        state: absent
 
 - name: TMSetup - Node Red Setup - Create templated files
   become: true
@@ -78,8 +107,9 @@
     src: node-red/{{ item }}.j2
     dest: '{{ tmsetup_codedir }}/.node-red/{{ item }}'
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     mode: '0640'
-    force: false
+    force: '{{ tmsetup_force_configs }}'
   loop:
     - config.yml
     - environment
@@ -91,6 +121,7 @@
     src: 'node-red-project/{{ item }}'
     dest: '{{ tmsetup_codedir }}/.node-red/{{ item }}'
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     mode: '0640'
   loop:
     - flows_cred.json

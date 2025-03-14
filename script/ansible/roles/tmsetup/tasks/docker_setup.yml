@@ -39,7 +39,7 @@
       - docker-compose-plugin
   notify: Initiate docker compose
 
-- name: TMSetup - docker_setup - Add TM user to docker group
+- name: TMSetup - Docker Setup - Add TM user to docker group
   become: true
   ansible.builtin.user:
     name: '{{ tmsetup_codeowner }}'
@@ -53,6 +53,7 @@
     src: compose.yaml.j2
     dest: '{{ tmsetup_codedir }}/compose.yaml'
     owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     force: '{{ tmsetup_force_configs }}'
   notify: Initiate docker compose
