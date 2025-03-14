@@ -1,17 +1,11 @@
 ---
 - name: Traffic Monitor Setup
   hosts: localhost
-  vars:
-## User configurable variables. Defaults are defined here.  
-#    tmsetup_codeowner: '{{ ansible_user_id }}'
-#    tmsetup_codedir: '{{ ansible_user_dir }}/code'
-#    tmsetup_nodereddir: '{{ ansible_user_dir }}/.node-red'
-#    tmsetup_timezone: 'America/Los_Angeles'
-#    tmsetup_frigate_rtsp_password: password
-#    tmsetup_frigate_mqtt_user: mqtt_user
-#    tmsetup_frigate_mqtt_password: mqtt_pass
-##   Set below variable to 'usb' if using a usb coraltpu
-#    tmsetup_frigate_tpu_device: pci
+## User configurable variables. Defaults are defined here.
+#  vars:
+#    tmsetup_codeowner: 'tmadmin'
+#    tmsetup_codedir: '/opt/traffic-monitor'
+#    tmsetup_force_configs: false
   tasks:
     - name: Run tmsetup role
       ansible.builtin.import_role:
