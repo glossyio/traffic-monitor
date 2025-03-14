@@ -20,11 +20,11 @@
   ansible.builtin.import_tasks:
     file: base_setup.yml
 
-- name: TMSetup - Main - Setup Docker
+- name: TMSetup - Main - Setup go2rtc driver
   tags:
-    - docker
+    - go2rtc
   ansible.builtin.import_tasks:
-    file: docker_setup.yml
+    file: go2rtc_setup.yml
 
 - name: TMSetup - Main - Setup Coral TPU Runtime Library
   tags:
@@ -32,11 +32,11 @@
   ansible.builtin.import_tasks:
     file: coraltpu_setup.yml
 
-- name: TMSetup - Main - Setup go2rtc driver
+- name: TMSetup - Main - Setup Docker
   tags:
-    - go2rtc
+    - docker
   ansible.builtin.import_tasks:
-    file: go2rtc_setup.yml
+    file: docker_setup.yml
 
 - name: TMSetup - Main - Setup Frigate
   tags:
