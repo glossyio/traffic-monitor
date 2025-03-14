@@ -10,11 +10,8 @@ services:
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
     shm_size: "128mb" # update for your cameras based on calculation https://docs.frigate.video/frigate/installation#calculating-required-shm-size
     devices:
-{% if tmsetup_frigate_tpu_device == "usb" %}
       - /dev/bus/usb:/dev/bus/usb 
-{% else %}
       - /dev/apex_0:/dev/apex_0
-{% endif %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - {{ tmsetup_codedir }}/frigate/config:/config
