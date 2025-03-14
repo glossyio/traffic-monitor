@@ -22,6 +22,7 @@
   become_user: '{{ tmsetup_codeowner }}'
   when: ansible_user_dir != tmsetup_codedir
   ansible.builtin.file:
+    state: link
     src: '{{ tmsetup_codedir }}/.node-red'
     path: '{{ tmsetup_codeowner_homedir }}/.node-red'
 
