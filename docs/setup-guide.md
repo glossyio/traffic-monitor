@@ -1,6 +1,6 @@
 ---
-icon: sliders
 description: Steps to connect to and setup your Traffic Monitor.
+icon: sliders
 ---
 
 # Setup Guide
@@ -19,7 +19,7 @@ The default configuration files have disabled all sensors until you follow these
 * [x] [#configure-frigate-zones](setup-guide.md#configure-frigate-zones "mention")
 * [x] [#configure-node-red](setup-guide.md#configure-node-red "mention")
 
-## Connect to your Device
+## 1. Connect to your Device
 
 ### Physical Access
 
@@ -46,7 +46,7 @@ You will need to know the Traffic Monitor / Raspberry Pi IP address or host name
 
 See [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address) for more options.
 
-## Configure Frigate Zones
+## 2. Configure Frigate Zones
 
 Frigate controls and generates object detection events with the camera.
 
@@ -73,7 +73,26 @@ Set up or modify the following zones, overlaying any temporary or permanent stat
 
 After changes are made, you will need to restart Frigate before they take effect. You can do this via **Frigate > Settings > Restart Frigate**.
 
-## Configure Node-RED
+### Define Masks
+
+Optional step for reducing false-positives, creating private areas, and refining your configuration.
+
+{% hint style="warning" %}
+Use masks sparingly. _Over-masking will make it more difficult for objects to be tracked._  See [Frigate masks](https://docs.frigate.video/configuration/masks) for more detailed explanation of how masks work and how to use them.
+{% endhint %}
+
+* **Motion Masks**:  may be designated to prevent unwanted types of motion from triggering detection.
+* **Object filter masks**: filter out false positives for a given object type based on location.
+
+For more information view [Frigate > Setup > Motion Masks](https://docs.frigate.video/guides/getting_started/#step-5-setup-motion-masks) and detailed info at [Frigate > Masks](https://docs.frigate.video/configuration/masks).
+
+### Optimize Object Detection
+
+The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, different cameras and camera settings, and environmental conditions.&#x20;
+
+The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.&#x20;
+
+## 3. Configure Node-RED
 
 Node-RED controls most of the workflow logic and data collection.
 
