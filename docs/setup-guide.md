@@ -15,9 +15,9 @@ This guide will walk you though configuring your device based on your sensors (r
 The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.&#x20;
 {% endhint %}
 
-* [x] [#connect-to-your-device](setup-guide.md#connect-to-your-device "mention")
-* [x] [#configure-frigate-zones](setup-guide.md#configure-frigate-zones "mention")
-* [x] [#configure-node-red](setup-guide.md#configure-node-red "mention")
+* [x] [#id-1.-connect-to-your-device](setup-guide.md#id-1.-connect-to-your-device "mention")
+* [x] [#id-2.-configure-frigate-zones](setup-guide.md#id-2.-configure-frigate-zones "mention")
+* [x] [#id-3.-configure-node-red](setup-guide.md#id-3.-configure-node-red "mention")
 
 ## 1. Connect to your Device
 
