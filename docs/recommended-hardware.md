@@ -97,7 +97,7 @@ The AI co-processor is used by Frigate to run the object detection model, see Fr
 
 1. _Easiest Option_: [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor that you can connect to any computing device with a USB interface.
 2. _Alternative_: Coral HATs (Hardware-Attached-on-Top \[of a Raspberry Pi]) are more compact, upgradable, and usually cheaper:
-   * [Rapsberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/) pairs nicely with the [Coral M.2 Accelerator A+E Key](https://coral.ai/products/m2-accelerator-ae).
+   * [Rapsberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/) pairs nicely with the [Coral M.2 Accelerator B+M Key](https://coral.ai/products/m2-accelerator-bm/) (not the A+E key!).
    * Pineboards offers the [Hat AI! Coral TPU bundle](https://pineboards.io/products/hat-ai-coral-edge-tpu-bundle-for-raspberry-pi-5) that connects via PCIe that offers a sleek way to add the Coral capabilities with an additional slot for an M.2 SSD.
 3. _Alternative (currently testing)_: [Raspberry Pi AI HAT+](https://www.raspberrypi.com/products/ai-hat/) with Hailo-8L offers high-performance, power-efficient processing.
 
