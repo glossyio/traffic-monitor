@@ -42,6 +42,14 @@
   loop:
     - '{{ tmsetup_codedir }}'
 
+- name: TMSetup - Base Setup - Remove conflicting packages
+  become: true
+  ansible.builtin.apt:
+    name: '{{ tmsetup_remove_packages }}'
+    state: absent
+    autoremove: true
+    purge: true
+
 - name: TMSetup - Base Setup - Install required packages
   become: true
   ansible.builtin.apt:

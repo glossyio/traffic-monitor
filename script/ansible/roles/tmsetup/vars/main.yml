@@ -4,12 +4,16 @@ tmsetup_tm_version: '0.3.0'
 tmsetup_go2rtc_version: 'v1.8.5'
 tmsetup_frigate_version: '0.14.0'
 
+tmsetup_remove_packages:
+  - rpicam-apps-lite
+
 tmsetup_packages:
   - ca-certificates
   - host
   - screen
   - build-essential
   - cron
+  - rpicam-apps
 
 tmsetup_base_required_facts:
   - 'ansible_os_family'
