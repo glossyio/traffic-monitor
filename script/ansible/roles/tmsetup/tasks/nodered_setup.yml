@@ -2,7 +2,6 @@
 # tmsetup Node Red setup tasks
 - name: TMSetup - Node Red Setup - Create Node Red directories
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
     path: '{{ item }}'
     state: directory
@@ -18,7 +17,6 @@
 
 - name: TMSetup - Node Red Setup - Create link at .node-red to user home if not same
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   when: ansible_user_dir != tmsetup_codedir
   ansible.builtin.file:
     state: link
@@ -27,7 +25,6 @@
 
 - name: TMSetup - Node Red Setup - Get latest NodeRed update and install script
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.get_url:
     url: 'https://raw.githubusercontent.com/node-red/linux-installers/master/deb/update-nodejs-and-nodered'
     dest: '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered'
@@ -52,14 +49,14 @@
 
     - name: TMSetup - Node Red Setup - Run Node Red installer if changed
       become: true
-      become_user: '{{ tmsetup_codeowner }}'
       ansible.builtin.command: >
-        {{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered
-         --confirm-install
-         --confirm-pi
-         --no-init
-         --node20
-         --nodered-user={{ tmsetup_codeowner }}
+        su - -c 
+        '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered \
+         --confirm-install \
+         --confirm-pi \
+         --no-init \
+         --node20 \
+         --nodered-user={{ tmsetup_codeowner }}'
       register: tmsetup_nodered_installer_register
       changed_when: tmsetup_nodered_installer_register.rc == 0
       notify: Restart nodered service
@@ -67,7 +64,6 @@
   rescue:
     - name: TMSetup - Node Red Setup - Revert to backup from node red-installer
       become: true
-      become_user: '{{ tmsetup_codeowner }}'
       when:
         - tmsetup_nodered_download_installer_register.backup_file is defined
         - tmsetup_nodered_download_installer_register.backup_file is file
@@ -81,7 +77,6 @@
 
     - name: TMSetup - Node Red Setup - Clean up installer if no backup
       become: true
-      become_user: '{{ tmsetup_codeowner }}'
       when: ( tmsetup_nodered_download_installer_register.backup_file is not defined ) or
             ( not tmsetup_nodered_download_installer_register.backup_file is file )
       ansible.builtin.file:
@@ -102,7 +97,6 @@
 
 - name: TMSetup - Node Red Setup - Create templated files
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.template:
     src: node-red/{{ item }}.j2
     dest: '{{ tmsetup_codedir }}/.node-red/{{ item }}'
@@ -116,7 +110,6 @@
 
 - name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.copy:
     src: 'node-red-project/{{ item }}'
     dest: '{{ tmsetup_codedir }}/.node-red/{{ item }}'
@@ -132,11 +125,18 @@
 
 - name: TMSetup - Node Red Setup - Install project dependencies
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   community.general.npm:
     path: '{{ tmsetup_codedir }}/.node-red'
     unsafe_perm: true
     production: true
+
+- name: TMSetup - Node Red Setup - Correct module permissions
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_codedir }}/.node-red/node_modules'
+    owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
+    recurse: true
 
 - name: TMSetup - Node Red Setup - Start service
   become: true

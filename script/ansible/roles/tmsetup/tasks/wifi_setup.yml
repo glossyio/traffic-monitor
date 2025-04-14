@@ -12,7 +12,6 @@
 
 - name: TMSetup - WiFi Setup - Create utils directory
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
     path: '{{ tmsetup_codedir }}/utils'
     state: directory
@@ -22,7 +21,6 @@
 
 - name: TMSetup - WiFi Setup - Copy WLAN Check script to utils folder
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.copy:
     src: wlan_check.sh
     dest: '{{ tmsetup_codedir }}/utils/wlan_check.sh'

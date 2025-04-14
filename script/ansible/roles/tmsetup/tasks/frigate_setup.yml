@@ -2,7 +2,6 @@
 # TMSetup - Frigate Setup tasks
 - name: TMSetup - Frigate Setup - Create Frigate Directories
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.file:
     path: '{{ item }}'
     state: directory
@@ -18,7 +17,6 @@
 
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.template:
     src: '{{ item }}.j2'
     dest: '{{ tmsetup_codedir }}/{{ item }}'
