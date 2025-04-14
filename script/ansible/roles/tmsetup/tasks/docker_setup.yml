@@ -12,7 +12,7 @@
 - name: TMSetup - Docker Setup - Download docker key repo key
   become: true
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
     dest: /etc/apt/keyrings/docker.asc
     mode: '0644'
     owner: root
@@ -25,7 +25,7 @@
     filename: docker
     repo: >-
       deb [arch={{ tmsetup_dpkg_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      https://download.docker.com/linux/{{ ansible_os_family | lower }} {{ ansible_distribution_release }} stable
 
 - name: TMSetup - Docker Setup - Install Docker CE packages
   become: true
@@ -48,7 +48,6 @@
 
 - name: TMSetup - Docker Setup - Copy compose.yaml to code directories
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   ansible.builtin.template:
     src: compose.yaml.j2
     dest: '{{ tmsetup_codedir }}/compose.yaml'
