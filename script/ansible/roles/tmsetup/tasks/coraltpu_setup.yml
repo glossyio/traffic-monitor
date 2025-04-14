@@ -38,13 +38,27 @@
     mode: '0644'
     state: present
 
+- name: TMSetup - Coral TPU Setup - Copy gasket-dkms .deb file to /tmp
+  become: true
+  ansible.builtin.copy:
+    src: gasket-dkms_1.0-18_all.deb
+    dest: /tmp/gasket-dkms_1.0-18_all.deb
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - Coral TPU Setup - Install gasket-dkms from .deb
+  become: true
+  ansible.builtin.copy:
+    deb: /tmp/gasket-dkms_1.0-18_all.deb
+    state: present
+
 - name: TMSetup - Coral TPU Setup - Install required packages
   become: true
   ansible.builtin.apt:
     state: present
     update_cache: true
     name:
-      - gasket-dkms=1.0-18
       - cmake
       - libedgetpu1-std
       - devscripts
