@@ -49,7 +49,7 @@
 
 - name: TMSetup - Coral TPU Setup - Install gasket-dkms from .deb
   become: true
-  ansible.builtin.copy:
+  ansible.builtin.apt:
     deb: /tmp/gasket-dkms_1.0-18_all.deb
     state: present
 

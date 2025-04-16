@@ -50,7 +50,7 @@
     - name: TMSetup - Node Red Setup - Run Node Red installer if changed
       become: true
       ansible.builtin.command: >
-        su - -c 
+        su - -c
         '{{ tmsetup_codedir }}/nodered/installer/update-nodejs-and-nodered \
          --confirm-install \
          --confirm-pi \

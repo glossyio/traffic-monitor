@@ -127,7 +127,7 @@ fi
 
 # Check Ansible version in venv if present
 _ANSIBLE_VERSION=$(${_BIN_PATH}/pip3 show ansible | grep "^Version:" | tr -d '[:space:]' | cut -d: -f2)
-if [ -f ${_BIN_PATH}/ansible-playbook ] && ( printf "%s\n%s\n" "${_ANSIBLE_VERSION}" "${_MIN_ANSIBLE_VERSION}" | sort --version-sort --check )
+if [ -f ${_BIN_PATH}/ansible-playbook ] && ( printf "%s\n%s\n" "${_MIN_ANSIBLE_VERSION}" "${_ANSIBLE_VERSION}" | sort --version-sort --check )
 then
   printf "Ansible already installed and up to required version (%s).  Skipping...\n" "${_MIN_ANSIBLE_VERSION}"
 else
