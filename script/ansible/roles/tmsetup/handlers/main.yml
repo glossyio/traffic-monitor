@@ -26,7 +26,6 @@
 
 - name: Initiate docker compose
   become: true
-  become_user: '{{ tmsetup_codeowner }}'
   community.docker.docker_compose_v2:
     project_src: '{{ tmsetup_codedir }}'
     files: compose.yaml
