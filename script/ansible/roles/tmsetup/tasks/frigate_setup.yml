@@ -2,32 +2,32 @@
 # TMSetup - Frigate Setup tasks
 - name: TMSetup - Frigate Setup - Create Frigate Directories
   become: true
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: directory
-    mode: '0750'
-    owner: '{{ tmsetup_codeowner }}'
-    group: '{{ tmsetup_codegroup }}'
   loop:
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/frigate'
     - '{{ tmsetup_codedir }}/frigate/config'
     - '{{ tmsetup_codedir }}/frigate/storage'
-  notify: Initiate docker compose
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
 
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
-  ansible.builtin.template:
-    src: '{{ item }}.j2'
-    dest: '{{ tmsetup_codedir }}/{{ item }}'
-    owner: '{{ tmsetup_codeowner }}'
-    group: '{{ tmsetup_codegroup }}'
-    backup: true
-    mode: '0640'
-    force: '{{ tmsetup_force_configs }}'
   loop:
+    - frigate/config/config.yml
     - frigate/docker-compose-frigate.yaml
     - frigate/frigate.env
-    - frigate/config/config.yml
-  notify: Initiate docker compose
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify: Restart tm-docker service
 ...

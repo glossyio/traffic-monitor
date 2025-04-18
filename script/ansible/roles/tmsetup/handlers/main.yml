@@ -3,31 +3,28 @@
 - name: Restart go2rtc_server service
   become: true
   ansible.builtin.systemd_service:
+    daemon_reload: true
     name: go2rtc_server.service
     state: restarted
-    daemon_reload: true
-    enabled: true
 
 - name: Restart nodered service
   become: true
   ansible.builtin.systemd_service:
+    daemon_reload: true
     name: nodered.service
     state: restarted
-    daemon_reload: true
-    enabled: true
 
 - name: Restart NetworkManager service
   become: true
   ansible.builtin.systemd_service:
+    daemon_reload: true
     name: NetworkManager.service
     state: restarted
-    daemon_reload: true
-    enabled: true
 
-- name: Initiate docker compose
+- name: Restart tm-docker service
   become: true
-  community.docker.docker_compose_v2:
-    project_src: '{{ tmsetup_codedir }}'
-    files: compose.yaml
-    state: present
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: tm-docker.service
+    state: restarted
 ...

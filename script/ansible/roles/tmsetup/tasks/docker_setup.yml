@@ -3,57 +3,76 @@
 - name: TMSetup - Docker Setup - Create apt key directory
   become: true
   ansible.builtin.file:
-    path: /etc/apt/keyring
-    state: directory
+    group: root
     mode: '0755'
     owner: root
-    group: root
+    path: /etc/apt/keyring
+    state: directory
 
 - name: TMSetup - Docker Setup - Download docker key repo key
   become: true
   ansible.builtin.get_url:
-    url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
     dest: /etc/apt/keyrings/docker.asc
+    group: root
     mode: '0644'
     owner: root
-    group: root
+    url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
 
 - name: TMSetup - Docker Setup - Create Docker apt repo file
   become: true
   ansible.builtin.apt_repository:
-    state: present
     filename: docker
     repo: >-
       deb [arch={{ tmsetup_dpkg_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
       https://download.docker.com/linux/{{ ansible_os_family | lower }} {{ ansible_distribution_release }} stable
+    state: present
 
 - name: TMSetup - Docker Setup - Install Docker CE packages
   become: true
   ansible.builtin.apt:
-    state: present
     name:
-      - docker-ce
-      - docker-ce-cli
       - containerd.io
       - docker-buildx-plugin
+      - docker-ce
+      - docker-ce-cli
       - docker-compose-plugin
-  notify: Initiate docker compose
+    state: present
+  notify: Restart tm-docker service
 
 - name: TMSetup - Docker Setup - Add TM user to docker group
   become: true
   ansible.builtin.user:
-    name: '{{ tmsetup_codeowner }}'
-    groups: docker
     append: true
+    groups: docker
+    name: '{{ tmsetup_codeowner }}'
 
 - name: TMSetup - Docker Setup - Copy compose.yaml to code directories
   become: true
   ansible.builtin.template:
-    src: compose.yaml.j2
     dest: '{{ tmsetup_codedir }}/compose.yaml'
-    owner: '{{ tmsetup_codeowner }}'
+    force: '{{ tmsetup_force_configs }}'
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
-    force: '{{ tmsetup_force_configs }}'
-  notify: Initiate docker compose
+    owner: '{{ tmsetup_codeowner }}'
+    src: compose.yaml.j2
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Setup - Create Systemd unit file for tm-docker
+  become: true
+  ansible.builtin.template:
+    dest: "{{ tmsetup_codedir }}/services/tm-docker.service"
+    group: root
+    mode: '0644'
+    owner: root
+    src: services/tm-docker.service.j2
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Setup - Link tm-docker.service into systemd
+  become: true
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system/tm-docker.service
+    src: "{{ tmsetup_codedir }}/services/tm-docker.service"
+    state: link
+  notify: Restart tm-docker service
+
 ...

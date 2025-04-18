@@ -1,0 +1,71 @@
+---
+# This set up of tasks is still a work in progress - there are severe issues with 6.12+ kernel versions and the gasket-dkms driver
+# Setup tasks for PCIe or M.2 Coral TPU devices.
+
+- name: TMSetup - Coral TPU PCI Setup - Enable PCIe connector at bootup
+  become: true
+  ansible.builtin.blockinfile:
+    path: /boot/firmware/config.txt
+    block: |
+      # Enable the PCIe External connector.
+      dtparam=pciex1
+      kernel=kernel8.img
+      # Enable Pineboards Hat Ai
+      dtoverlay=pineboards-hat-ai
+    append_newline: true
+    prepend_newline: true
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: present
+
+- name: TMSetup - Coral TPU PCI Setup - Copy gasket-dkms .deb file to /tmp
+  become: true
+  ansible.builtin.copy:
+    src: gasket-dkms_1.0-18_all.deb
+    dest: /tmp/gasket-dkms_1.0-18_all.deb
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - Coral TPU PCI Setup - Install gasket-dkms from .deb
+  become: true
+  ansible.builtin.apt:
+    deb: /tmp/gasket-dkms_1.0-18_all.deb
+    state: present
+
+- name: TMSetup - Coral TPU Setup - Install required packages
+  become: true
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name:
+      - cmake
+      - devscripts
+      - debhelper
+      - dkms
+
+- name: TMSetup - Coral TPU PCI Setup - Create apex udev rules to manage device permissions
+  become: true
+  ansible.builtin.copy:
+    src: 65-apex.rules
+    dest: /etc/udev/rules.d/65-apex.rules
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - Coral TPU PCI Setup - Create apex group
+  become: true
+  ansible.builtin.group:
+    name: apex
+    state: present
+
+- name: TMSetup - Coral TPU PCI Setup - Add codeowner to apex group
+  become: true
+  ansible.builtin.user:
+    name: '{{ tmsetup_codeowner }}'
+    groups: apex
+    append: true
+
+...

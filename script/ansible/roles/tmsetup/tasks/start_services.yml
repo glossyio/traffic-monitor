@@ -1,0 +1,17 @@
+---
+# task file to start all services
+
+- name: TMSetup - Start Services - Start and enable all services
+  become: true
+  loop:
+    - NetworkManager.service
+    - go2rtc_server.service
+    - tm-docker.service
+    - nodered.service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: go2rtc_server.service
+    state: started
+
+...

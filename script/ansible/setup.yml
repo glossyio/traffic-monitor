@@ -1,5 +1,6 @@
 ---
 - name: Traffic Monitor Setup
+  connection: local
   hosts: localhost
 ## User configurable variables. Defaults are defined here.
 #  vars:

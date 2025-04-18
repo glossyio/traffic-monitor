@@ -55,4 +55,8 @@
     - wifi
   ansible.builtin.import_tasks:
     file: wifi_setup.yml
+
+- name: TMSetup - Main - Start Services
+  ansible.builtin.import_tasks:
+    file: start_services.yml
 ...

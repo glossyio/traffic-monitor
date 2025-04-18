@@ -114,14 +114,12 @@ if ! which python3
 then 
   printf 'Installing python3\n'
   sudo apt install python3
-else
-  printf 'python3 already installed.  Skipping...\n'
 fi
 
 # Check if pip installed in venv already
 if ! [ -f ${_BIN_PATH}/pip3 ]
 then
-  printf 'Installing python3 venv at ${VENV_DIR}\n'
+  printf "Installing python3 venv at %s\n" "${VENV_DIR}"
   python3 -m venv ${VENV_DIR}
 fi
 
@@ -140,7 +138,7 @@ _pline
 printf "Running Ansible playbook to setup Traffic Monitor\n"
 _pline
 cd $_SCRIPT_DIR/ansible
-${_BIN_PATH}/ansible-playbook setup.yml ${_EXTRA_VARS}
+${_BIN_PATH}/ansible-playbook -i localhost setup.yml ${_EXTRA_VARS}
 _RETVAL=${PIPESTATUS[0]}
 
 # Notify and exit on error
@@ -167,11 +165,11 @@ then
   printf "\n"
   if ! [[ $CONT =~ ^[Yy]$ ]]
   then
-    printf "Reboot skipped.  Exitting.\n"
+    printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
     exit 0
   fi
 else
-  printf "Reboot confirmation skipped.  Rebooting system now\n"
+  printf "Reboot confirmation skipped.  Rebooting system now.\n"
 fi
 
 # Reboot
