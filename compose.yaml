@@ -5,4 +5,4 @@
 ################################################################################
 
 include:
-  - frigate/docker-compose-frigate.yml
+  - docker-frigate/docker-compose-frigate.yaml
