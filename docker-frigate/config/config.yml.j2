@@ -9,12 +9,12 @@ mqtt:
 {% endraw %}
 
 detectors: 
-  coral0:
-    type: edgetpu
-    device: usb
-  coral2:
+  coralpci:
     type: edgetpu
     device: pci
+#  coralusb:
+#    type: edgetpu
+#    device: usb
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264
