@@ -9,12 +9,14 @@ mqtt:
 {% endraw %}
 
 detectors: 
-  coralpci:
-    type: edgetpu
-    device: pci
+#  coralpci:
+#    type: edgetpu
+#    device: pci
 #  coralusb:
 #    type: edgetpu
 #    device: usb
+  mycpu:
+    type: cpu
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264
@@ -28,12 +30,10 @@ cameras:
         roles:
         - detect
     detect:
-      enabled: false # <---- disable detection until you have a working camera feed
-      width: 2304 # <---- update for your camera's resolution
-      height: 1296 # <---- update for your camera's resolution
-      # Optional: desired fps for your camera for the input with the detect role (default: shown below)
-      # NOTE: Recommended value of 5. Ideally, try and reduce your FPS on the camera.
-      fps: 5
+      enabled: false
+      width: 2304
+      height: 1296
+      fps: 10
     zones:
       zone_capture:
         coordinates: 2304,1296,0,1296,0,493,998,268,2304,475
@@ -51,20 +51,13 @@ objects:
   - car
   - motorcycle
   - dog
-  # Optional: filters to reduce false positives for specific object types
   filters:
     bicycle:
-      # Optional: minimum width*height of the bounding box for the detected object (default: 0)
       min_area: 0
-      # Optional: maximum width*height of the bounding box for the detected object (default: 24000000)
       max_area: 24000000
-      # Optional: minimum width/height of the bounding box for the detected object (default: 0)
       min_ratio: 0.2
-      # Optional: maximum width/height of the bounding box for the detected object (default: 24000000)
       max_ratio: 10.0
-      # Optional: minimum score for the object to initiate tracking (default: shown below)
       min_score: 0.25
-      # Optional: minimum decimal percentage for tracked object's computed score to be considered a true positive (default: shown below)
       threshold: 0.42
     motorcycle:
       min_area: 0
