@@ -3,6 +3,7 @@
 
 # User defined variables:
 VENV_DIR=~/tm_venv
+REBOOT_TOUCH_FILE=~/tm-reboot-required
 
 
 # Set Internal Variables
@@ -11,11 +12,13 @@ _SCRIPT_DIR=$(dirname "$_THIS_SCRIPT")
 _START_DIR=$(pwd)
 _BIN_PATH=${VENV_DIR}/bin
 _EXIT_STATUS=0
-_EXTRA_VARS=""
+_EXTRA_ARGS=""
 _FORCE=false
 _CONFIRM=false
 _LOGFILE=~/tmsetup-$(date +%Y%m%d).log
 _MIN_ANSIBLE_VERSION=10.7.0
+declare _VALID_TAGS=("base" "wifi" "docker" "frigate" "nodered" "go2rtc")
+
 
 _pline() { # Print line function
   printf '============================================================\n'
@@ -30,10 +33,25 @@ printf "  %-20s%s\n" \
   "-h" "Show this usage output" \
   "-l PATH" "PATH to log file for output of installer (default ${_LOGFILE})" \
   "-o USER" "Set the OWNER of traffic-monitor files and processes (default tmadmin)" \
-  "-v" "Verbose ansible-playbook output" \
+  "-t TAG" "TAG the ansible-playbook command to only run a subset of plays" \
+  "-T" "Get a list of available tags and exit" \
+  "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
 #  "-U" "UNINSTALL Traffic Monitor software" # Future addition
+}
+
+_add_arg(){
+  local arg=$1
+  _EXTRA_ARGS="${_EXTRA_ARGS} $arg"
+  return 0
+}
+
+_add_var(){
+  local key=$1
+  local val=$2
+  _add_arg "--extra-vars $key=$val"
+  return 0
 }
 
 _install_ansible() { # Check if python installed or install
@@ -64,34 +82,53 @@ fi
 return 0
 }
 
+if [[ -n ${REBOOT_TOUCH_FILE} ]] ;then
+  _add_var tmsetup_reboot_touch_file "${REBOOT_TOUCH_FILE}"
+  touch ${REBOOT_TOUCH_FILE} || exit 1
+  printf '0' > ${REBOOT_TOUCH_FILE} || exit 1
+fi
 
 # Collect command-line options
-while getopts ":fhvyd:g:l:o:z:" opt
+while getopts ":fhTvyd:g:l:o:t:z:" opt
 do
   case ${opt} in
     d) # Set PATH for install
-      _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_codedir=${OPTARG}"
+      _add_var tmsetup_codedir "${OPTARG}"
       ;;
     f) # Force config overwrite
       _FORCE=true
       ;;
     g) # Set code GROUP
-      _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_codegroup=${OPTARG}"
+      _add_var tmsetup_codegroup "${OPTARG}"
       ;;
     l) # Log output to file
       _LOGFILE="${OPTARG}"
       ;;
     o) # Set Code OWNER
-      _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_codeowner=${OPTARG}"
+      _EXTRA_ARGS="${_EXTRA_ARGS} -e tmsetup_codeowner=${OPTARG}"
+      _add_var tmsetup_codeowner "${OPTARG}"
+      ;;
+    t) # Set playbook TAG
+      if [[ " ${_VALID_TAGS[*]} " =~ [[:space:]]${OPTARG}[[:space:]] ]] ;then
+        _add_arg "--tags ${OPTARG}"
+      else
+        printf "Invalid Tag: %s\nExitting.\n\n" "${OPTARG}"
+        exit 1
+      fi
+      ;;
+    T) # Get TAG list
+      printf "Valid Tags:\n"
+      printf "  %s\n" ${_VALID_TAGS[@]}
+      exit 2  
       ;;
     y) # Ignore confirmation requests
       _CONFIRM=true
       ;;
     v) # Verbose output from ansible
-      _EXTRA_VARS="${_EXTRA_VARS} -v"
+      _add_arg "-v" 
       ;;
     z) # Set Time Zone
-      _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_timezone=${OPTARG}"
+      _add_var tmsetup_timezone "${OPTARG}"
       ;;
     h) # Show Usage
       _usage
@@ -123,7 +160,7 @@ then
   if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
     exit 2
   fi
-  _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_force_configs=true" 
+  _add_var tmsetup_force_configs "true" 
 fi
 
 # Initiate ansible playbook
@@ -132,35 +169,39 @@ printf "Running Ansible playbook to setup Traffic Monitor\n"
 _pline
 cd "${_SCRIPT_DIR}/ansible" || exit 1
 . "${VENV_DIR}/bin/activate" || exit 1
-ansible-playbook -i localhost setup.yml ${_EXTRA_VARS}
+
+ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
+printf "%s\n" "${ANSIBLE_CMD}"
+${ANSIBLE_CMD}
 
 # Notify and exit on error
 [[ "${PIPESTATUS[0]}" -eq 0 ]] || _EXIT_STATUS=1
 
 cd "${_START_DIR}" || exit "${_EXIT_STATUS}"
 
+printf "\n\n\n"
 _pline
 if [[ "${_EXIT_STATUS}" -eq 0 ]]
 then
   printf "Setup completed succesfully!\n"
 else
   printf "Setup completed with errors.  Review logs at: %s\n" "${_LOGFILE}"
-  exit ${_EXIT_STATUS}
 fi
 _pline
 
 
 # Ask to reboot if not bypassed
-printf "\n\n\n"
-_pline
-printf "Reboot is required to complete the installation.\n"
-if _confirm_cont "Would you like to reboot now? [yN] "
-then
-  printf "Rebooting system now.\n"
-  sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
-  printf "\n"
-else
-  printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
+if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
+  _pline
+  printf "Reboot is required to complete the installation.\n"
+  if _confirm_cont "Would you like to reboot now? [yN] "
+  then
+    printf "Rebooting system now.\n"
+    sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
+    printf "\n"
+  else
+    printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
+  fi
 fi
 
-exit 0
+exit ${_EXIT_STATUS}

@@ -19,12 +19,13 @@
     group: root
     mode: '0644'
     state: present
+  notify: TMSetup - Flag for reboot
 
 - name: TMSetup - Corap TPU PCI setup - Get package facts
   ansible.builtin.package_facts:
 
 - name: TMSetup - Coral TPU PCI Setup - Build and install gasket-dkms if not already installed
-  when: ansible_facts['package_facts']['gasket-dkms'] is not defined
+  when: ansible_facts['packages']['gasket-dkms'] is not defined
   block:
     - name: TMSetup - Coral TPU PCI Setup - Copy gasket-build.Dockerfile
       become: true
@@ -45,6 +46,7 @@
       ansible.builtin.apt:
         deb: /tmp/gasket-dkms_1.0-18_all.deb
         state: present
+      notify: TMSetup - Flag for reboot
         
 - name: TMSetup - Coral TPU PCI Setup - Create apex udev rules to manage device permissions
   become: true
@@ -54,6 +56,7 @@
     owner: root
     group: root
     mode: '0644'
+  notify: TMSetup - Flag for reboot
 
 - name: TMSetup - Coral TPU PCI Setup - Create apex group
   become: true

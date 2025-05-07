@@ -10,15 +10,6 @@
     mode: '0644'
   notify: Restart NetworkManager service
 
-- name: TMSetup - WiFi Setup - Copy WLAN Check script to utils folder
-  become: true
-  ansible.builtin.copy:
-    src: wlan_check.sh
-    dest: '{{ tmsetup_codedir }}/utils/wlan_check.sh'
-    owner: '{{ tmsetup_codeowner }}'
-    group: '{{ tmsetup_codegroup }}'
-    mode: '0750'
-
 - name: TMSetup - WiFi Setup - Setup crontab
   become: true
   ansible.builtin.cron:

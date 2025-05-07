@@ -29,6 +29,8 @@
 - name: TMSetup - Main - Setup Docker
   tags:
     - docker
+    - frigate
+    - coraltpu
   ansible.builtin.import_tasks:
     file: docker_setup.yml
 
@@ -63,6 +65,12 @@
     file: wifi_setup.yml
 
 - name: TMSetup - Main - Start Services
+  tags:
+    - wifi
+    - docker
+    - frigate
+    - nodered
+    - go2rtc
   ansible.builtin.import_tasks:
     file: start_services.yml
 ...

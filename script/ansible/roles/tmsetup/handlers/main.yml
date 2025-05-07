@@ -27,4 +27,11 @@
     daemon_reload: true
     name: tm-docker.service
     state: restarted
+
+- name: TMSetup - Flag for reboot
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ tmsetup_reboot_touch_file }}"
+    content: '1'
+    mode: '0644'
 ...

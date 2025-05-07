@@ -21,5 +21,6 @@ tmsetup_longitude: ''
 tmsetup_bearing: ''
 
 tmsetup_force_configs: false
+tmsetup_reboot_touch_file: ~/tm-reboot-required
 
 ...

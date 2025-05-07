@@ -9,9 +9,29 @@
 
 - name: TMSetup - Base Setup - Run full update
   become: true
+  async: 3600
+  poll: 0
   ansible.builtin.apt:
     update_cache: true
     upgrade: full
+  register: tmsetup_apt_update_register
+  changed_when: false
+  
+- name: TMSetup - Base Setup - Monitor update job for results
+  become: true
+  ansible.builtin.async_status:
+    jid: "{{ tmsetup_apt_update_register.ansible_job_id }}"
+  register: tmsetup_apt_upate_job_register
+  until: tmsetup_apt_upate_job_register.finished
+  retries: 360
+  delay: 10
+
+- name: TMSetup - Base Setup - Check if reboot needed
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: tmsetup_reboot_required_stat_register
+  changed_when: tmsetup_reboot_required_stat_register.stat.exists
+  notify: TMSetup - Flag for reboot
 
 - name: TMSetup - Base Setup - Create code owner
   become: true
@@ -58,5 +78,14 @@
     name: '{{ tmsetup_packages }}'
     state: present
     update_cache: false
+
+- name: TMSetup - Base Setup - Copy utils files to codedir
+  become: true
+  ansible.builtin.copy:
+    src: utils/
+    dest: "{{ tmsetup_codedir }}/utils/"
+    owner: "{{ tmsetup_codeowner }}"
+    group: "{{ tmsetup_codegroup }}"
+    mode: "0755"
 
 ...
