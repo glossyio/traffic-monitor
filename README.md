@@ -30,14 +30,15 @@ _Coming soon._
     - First boot may take a few minutes before it is fully online
 1. [Remotely access your device](https://www.raspberrypi.com/documentation/computers/remote-access.html#introduction-to-remote-access) (recommend using SSH) and login to your Raspberry Pi
     - Recommend use IP Address in case your router doesn't recognize the hostname you set during setup.
-1. Run `git clone https://github.com/glossyio/traffic-monitor` into your home folder (or any folder)
-1. Run `bash traffic-monitor/script/tmsetup.sh`
-1. Access the application at the following URLs (check container status with `docker ps`):
+1. Install git if using OS Lite `sudo apt update && sudo apt install git`
+2. Run `git clone https://github.com/glossyio/traffic-monitor` into your home folder (or any folder)
+3. Run `bash traffic-monitor/script/tmsetup.sh`
+4. Access the application at the following URLs (check container status with `systemctl status tm-docker` or `docker ps`):
     1. `http://<device_ip_address>:1880/ui` is your primary device dashboard, use it to ensure it is capturing events (Node-Red dashboard)
-    1. `http://<device_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
-1. Mount your device in a place it can capture the entire roadway in the mounting guide (coming soon).
-1. [Configure your device](#configuration)
-1. Start capturing roadway usage data!
+    2. `http://<device_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
+5. Mount your device in a place it can capture the entire roadway in the mounting guide (coming soon).
+6. [Configure your device](#configuration)
+7. Start capturing roadway usage data!
 
 ### Hardware Components 🛠️
 This setup uses commidity, consumer hardware to enable object detection and speed/direction measurement:

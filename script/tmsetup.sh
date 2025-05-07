@@ -21,15 +21,16 @@ _pline() { # Print line function
   printf '============================================================\n'
 }
 _usage() { # Print usage function
-printf "%s [-d PATH][-o USER][-z TIMEZONE][-f|h|y] \n" "$_THIS_SCRIPT"
+printf "%s [-d PATH][-o USER][-z TIMEZONE][-f|h|y] \n" "${_THIS_SCRIPT}"
 printf "Install Traffic Monitor software for Raspberry Pi\n\n"
 printf "  %-20s%s\n" \
   "-d PATH" "Set PATH for traffic-monitor installation (default /opt/traffic-monitor)" \
   "-f" "FORCE to overwrite any existing configs with fresh copies from template" \
   "-g GROUP" "Set the GROUP owner of traffic-monitor files an processes (default tmadmin)" \
   "-h" "Show this usage output" \
-  "-l PATH" "PATH to log file for output of installer (default $_LOGFILE)" \
+  "-l PATH" "PATH to log file for output of installer (default ${_LOGFILE})" \
   "-o USER" "Set the OWNER of traffic-monitor files and processes (default tmadmin)" \
+  "-v" "Verbose ansible-playbook output" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
 #  "-U" "UNINSTALL Traffic Monitor software" # Future addition
@@ -38,18 +39,17 @@ printf "  %-20s%s\n" \
 _install_ansible() { # Check if python installed or install
 local venv_dir=$1
 which python3 || sudo apt install python3 || return 1
-. "${venv_dir}/bin/activate" || python3 -m venv "${venv_dir}"  || return 1
-. "${venv_dir}/bin/activate" || return 1
+. "${venv_dir}/bin/activate" > /dev/null || ( python3 -m venv "${venv_dir}"  && . "${venv_dir}/bin/activate" ) || return 1
 pip3 install -r "${_SCRIPT_DIR}/requirements" || return 1
 return 0
 }
 
 _log_check() { # Check if Log Path exists and create if not or exit
 local logfile=$1
-[[ -d "$(dirname "$logfile")" ]] || mkdir -p "$(dirname "$logfile")" || return 1
+[[ -d "$(dirname "${logfile}")" ]] || mkdir -p "$(dirname "${logfile}")" || return 1
 
 # Create log file or exit
-touch "$logfile" || ( printf "Unable to write to log file: %s\n" "${logfile}" && return 1 )
+touch "${logfile}" || ( printf "Unable to write to log file: %s\n" "${logfile}" && return 1 )
 }
 
 _confirm_cont() { # Request to confirm continuation
@@ -110,14 +110,14 @@ do
   esac
 done
 
-_log_check "$_LOGFILE" || exit 1
+_log_check "${_LOGFILE}" || exit 1
 
 # Log all further output to logfile
-exec > >(tee -i "$_LOGFILE")
+exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
 
 _install_ansible "${VENV_DIR}"
-if [ "$_FORCE" = true ]
+if [ "${_FORCE}" = true ]
 then
   printf "Force argument passed.  Existing configurations will be overwritten with defaults.\n"
   if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
@@ -130,7 +130,7 @@ fi
 _pline
 printf "Running Ansible playbook to setup Traffic Monitor\n"
 _pline
-cd "$_SCRIPT_DIR/ansible" || exit 1
+cd "${_SCRIPT_DIR}/ansible" || exit 1
 . "${VENV_DIR}/bin/activate" || exit 1
 ansible-playbook -i localhost setup.yml ${_EXTRA_VARS}
 
