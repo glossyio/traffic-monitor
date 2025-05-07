@@ -1,1 +1,1 @@
-ansible==10.7.0
+ansible>=10.7.0
