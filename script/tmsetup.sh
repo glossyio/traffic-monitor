@@ -64,15 +64,6 @@ fi
 return 0
 }
 
-_force_configs() { # Confirming FORCE argument if not IGNORE CONFIRMATION
-if [ "$_FORCE" = true ]
-then
-  printf 'Force argument passed.  Existing configurations will be overwritten with defaults.\n'
-  if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
-  return 2 
-  fi
-fi
-}
 
 # Collect command-line options
 while getopts ":fhyd:g:l:o:z:" opt
@@ -123,10 +114,13 @@ exec > >(tee -i "$_LOGFILE")
 exec 2>&1
 
 _install_ansible "${VENV_DIR}"
-if _force_configs ;then
+if [ "$_FORCE" = true ]
+then
+  printf "Force argument passed.  Existing configurations will be overwritten with defaults.\n"
+  if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
+    exit 2
+  fi
   _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_force_configs=true" 
-else
-  exit $?
 fi
 
 # Initiate ansible playbook
