@@ -6844,7 +6844,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "store last N radar events",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 18;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 21;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
