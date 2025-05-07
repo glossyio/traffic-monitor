@@ -7,9 +7,10 @@ VENV_DIR=~/tm_venv
 
 # Set Internal Variables
 _THIS_SCRIPT=$0
-_SCRIPT_DIR=$(dirname $_THIS_SCRIPT)
+_SCRIPT_DIR=$(dirname "$_THIS_SCRIPT")
 _START_DIR=$(pwd)
 _BIN_PATH=${VENV_DIR}/bin
+_EXIT_STATUS=0
 _EXTRA_VARS=""
 _FORCE=false
 _CONFIRM=false
@@ -34,10 +35,49 @@ printf "  %-20s%s\n" \
 #  "-U" "UNINSTALL Traffic Monitor software" # Future addition
 }
 
+_install_ansible() { # Check if python installed or install
+local venv_dir=$1
+which python3 || sudo apt install python3 || return 1
+. "${venv_dir}/bin/activate" || python3 -m venv "${venv_dir}"  || return 1
+. "${venv_dir}/bin/activate" || return 1
+pip3 install -r "${_SCRIPT_DIR}/requirements" || return 1
+return 0
+}
+
+_log_check() { # Check if Log Path exists and create if not or exit
+local logfile=$1
+[[ -d "$(dirname "$logfile")" ]] || mkdir -p "$(dirname "$logfile")" || return 1
+
+# Create log file or exit
+touch "$logfile" || ( printf "Unable to write to log file: %s\n" "${logfile}" && return 1 )
+}
+
+_confirm_cont() { # Request to confirm continuation
+local conf_text=$1
+local cont=n
+if [[ "${_CONFIRM}" == false ]]
+then
+  read -p "${conf_text}" -n 1 -r cont
+  printf '\n'
+  [[ "${cont}" =~ ^[Yy]$ ]] || return 1
+fi
+return 0
+}
+
+_force_configs() { # Confirming FORCE argument if not IGNORE CONFIRMATION
+if [ "$_FORCE" = true ]
+then
+  printf 'Force argument passed.  Existing configurations will be overwritten with defaults.\n'
+  if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
+  return 2 
+  fi
+fi
+}
+
 # Collect command-line options
 while getopts ":fhyd:g:l:o:z:" opt
 do
-  case $opt in
+  case ${opt} in
     d) # Set PATH for install
       _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_codedir=${OPTARG}"
       ;;
@@ -69,110 +109,61 @@ do
       exit 1
       ;;
     ?) #Invalid option
-      printf "Error: Invalid Option: -%s\n\n" "$OPTARG"
+      printf "Error: Invalid Option: -%s\n\n" "${OPTARG}"
       _usage
       exit 1
       ;;
   esac
 done
-# Check if Log Path exists and create if not or exit
-if ! [ -d "$(dirname $_LOGFILE)" ]
-then
-  mkdir -p $(dirname $_LOGFILE) || exit 1
-fi
-# Create log file or exit
-touch $_LOGFILE || exit 1
+
+_log_check "$_LOGFILE" || exit 1
+
 # Log all further output to logfile
-exec > >(tee -i $_LOGFILE)
+exec > >(tee -i "$_LOGFILE")
 exec 2>&1
 
-
-# Confirming FORCE argument if not IGNORE CONFIRMATION
-if [ "$_FORCE" = true ]
-then
-  if [ "$_CONFIRM" = false ]
-  then
-      printf 'Force argument passed.  Existing configurations will be overwritten with defaults.\n'
-      read -p 'Are you sure you wish to continue? [yN] ' -n 1 -r CONT
-      printf '\n'
-      if [[ ! "$CONT" =~ ^[Yy]$ ]]
-      then
-        printf 'Installation cancelled.  Exitting...\n'
-        exit 2
-      fi
-  fi
+_install_ansible "${VENV_DIR}"
+if _force_configs ;then
   _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_force_configs=true" 
-fi
-
-# Install Ansible in venv
-_pline
-printf "Installing and setting up Ansible\n"
-_pline
-
-# Check if python installed or install
-if ! which python3 
-then 
-  printf 'Installing python3\n'
-  sudo apt install python3
-fi
-
-# Check if pip installed in venv already
-if ! [ -f ${_BIN_PATH}/pip3 ]
-then
-  printf "Installing python3 venv at %s\n" "${VENV_DIR}"
-  python3 -m venv ${VENV_DIR}
-fi
-
-# Check Ansible version in venv if present
-_ANSIBLE_VERSION=$(${_BIN_PATH}/pip3 show ansible | grep "^Version:" | tr -d '[:space:]' | cut -d: -f2)
-if [ -f ${_BIN_PATH}/ansible-playbook ] && ( printf "%s\n%s\n" "${_MIN_ANSIBLE_VERSION}" "${_ANSIBLE_VERSION}" | sort --version-sort --check )
-then
-  printf "Ansible already installed and up to required version (%s).  Skipping...\n" "${_MIN_ANSIBLE_VERSION}"
 else
-  printf "Ansible not currently installed in venv at %s.  Installing...\n" "${VENV_DIR}"
-  ${_BIN_PATH}/pip3 install "ansible>=${_MIN_ANSIBLE_VERSION}"
+  exit $?
 fi
 
 # Initiate ansible playbook
 _pline
 printf "Running Ansible playbook to setup Traffic Monitor\n"
 _pline
-cd $_SCRIPT_DIR/ansible
-${_BIN_PATH}/ansible-playbook -i localhost setup.yml ${_EXTRA_VARS}
-_RETVAL=${PIPESTATUS[0]}
+cd "$_SCRIPT_DIR/ansible" || exit 1
+. "${VENV_DIR}/bin/activate" || exit 1
+ansible-playbook -i localhost setup.yml ${_EXTRA_VARS}
 
 # Notify and exit on error
-if [ $_RETVAL -ne 0 ]
+[[ "${PIPESTATUS[0]}" -eq 0 ]] || _EXIT_STATUS=1
+
+cd "${_START_DIR}" || exit "${_EXIT_STATUS}"
+
+_pline
+if [[ "${_EXIT_STATUS}" -eq 0 ]]
 then
-  _pline
-  printf "Something went wrong! Please review above logs.\n"
-  _pline
-  cd $_START_DIR
-  exit 1
+  printf "Setup completed succesfully!\n"
+else
+  printf "Setup completed with errors.  Review logs at: %s\n" "${_LOGFILE}"
+  exit ${_EXIT_STATUS}
 fi
-
-_pline
-printf "Setup completed succesfully!\n"
 _pline
 
-cd $_START_DIR
 
 # Ask to reboot if not bypassed
-if [ "$_CONFIRM" != true ]
+printf "\n\n\n"
+_pline
+printf "Reboot is required to complete the installation.\n"
+if _confirm_cont "Would you like to reboot now? [yN] "
 then
-  printf "Reboot is required to complete the installation.\n"
-  read -p 'Do you wish to reboot now? [yN] ' -n 1 -r CONT
+  printf "Rebooting system now.\n"
+  sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
   printf "\n"
-  if ! [[ $CONT =~ ^[Yy]$ ]]
-  then
-    printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
-    exit 0
-  fi
 else
-  printf "Reboot confirmation skipped.  Rebooting system now.\n"
+  printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
 fi
-
-# Reboot
-sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
 
 exit 0
