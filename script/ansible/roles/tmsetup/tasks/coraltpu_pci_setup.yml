@@ -20,32 +20,32 @@
     mode: '0644'
     state: present
 
-- name: TMSetup - Coral TPU PCI Setup - Copy gasket-dkms .deb file to /tmp
-  become: true
-  ansible.builtin.copy:
-    src: gasket-dkms_1.0-18_all.deb
-    dest: /tmp/gasket-dkms_1.0-18_all.deb
-    owner: root
-    group: root
-    mode: '0644'
+- name: TMSetup - Corap TPU PCI setup - Get package facts
+  ansible.builtin.package_facts:
 
-- name: TMSetup - Coral TPU PCI Setup - Install gasket-dkms from .deb
-  become: true
-  ansible.builtin.apt:
-    deb: /tmp/gasket-dkms_1.0-18_all.deb
-    state: present
+- name: TMSetup - Coral TPU PCI Setup - Build and install gasket-dkms if not already installed
+  when: ansible_facts['package_facts']['gasket-dkms'] is not defined
+  block:
+    - name: TMSetup - Coral TPU PCI Setup - Copy gasket-build.Dockerfile
+      become: true
+      ansible.builtin.copy:
+        src: gasket-builder.Dockerfile
+        dest: /tmp/gasket-builder.Dockerfile
+        mode: '0644'
 
-- name: TMSetup - Coral TPU Setup - Install required packages
-  become: true
-  ansible.builtin.apt:
-    state: present
-    update_cache: true
-    name:
-      - cmake
-      - devscripts
-      - debhelper
-      - dkms
-
+    - name: TMSetup - Coral TPU PCI Setup - Run Docker build
+      become: true
+      ansible.builtin.command:
+        chdir: /tmp
+        cmd: docker build -f gasket-builder.Dockerfile --output . .
+        creates: /tmp/gasket-dkms_1.0-18_all.deb
+    
+    - name: TMSetup - Coral TPU PCI Setup - Install gasket-dkms from .deb
+      become: true
+      ansible.builtin.apt:
+        deb: /tmp/gasket-dkms_1.0-18_all.deb
+        state: present
+        
 - name: TMSetup - Coral TPU PCI Setup - Create apex udev rules to manage device permissions
   become: true
   ansible.builtin.copy:

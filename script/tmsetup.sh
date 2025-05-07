@@ -66,7 +66,7 @@ return 0
 
 
 # Collect command-line options
-while getopts ":fhyd:g:l:o:z:" opt
+while getopts ":fhvyd:g:l:o:z:" opt
 do
   case ${opt} in
     d) # Set PATH for install
@@ -86,6 +86,9 @@ do
       ;;
     y) # Ignore confirmation requests
       _CONFIRM=true
+      ;;
+    v) # Verbose output from ansible
+      _EXTRA_VARS="${_EXTRA_VARS} -v"
       ;;
     z) # Set Time Zone
       _EXTRA_VARS="${_EXTRA_VARS} -e tmsetup_timezone=${OPTARG}"
