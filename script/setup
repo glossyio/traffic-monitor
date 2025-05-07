@@ -92,5 +92,8 @@ mkdir -p ~/code/utils
 cp -p utils/wlan_check.sh ~/code/utils
 chmod +x ~/code/utils/wlan_check.sh
 
+##-- set up script that grabs hardware metrics for reporting to Thingsboard
+cp -p utils/rpi5-nodered-telemetry.py ~/code/utils
+
 # Setup cronjob to regularly run wlan_check script
 crontab script/crontab.jobs
