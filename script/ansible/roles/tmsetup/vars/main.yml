@@ -1,8 +1,8 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.3.0'
+tmsetup_tm_version: '0.3.1'
 tmsetup_go2rtc_version: 'v1.8.5'
-tmsetup_frigate_version: '0.14.0'
+tmsetup_frigate_version: '0.15.1'
 
 tmsetup_remove_packages:
   - rpicam-apps-lite
