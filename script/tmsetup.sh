@@ -56,7 +56,7 @@ _add_var(){
 
 _install_ansible() { # Check if python installed or install
 local venv_dir=$1
-dpkg -S python3.10-venv || ( sudo apt update && sudo apt install python3.10-venv )
+dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
 while ! . "${venv_dir}/bin/activate" ;do 
   python3 -m venv "${venv_dir}"  || return 1
 done
