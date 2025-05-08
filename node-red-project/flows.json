@@ -11039,7 +11039,7 @@
         "id": "c0078fa5b3946c05",
         "type": "exec",
         "z": "f410f6aac9d1a3fc",
-        "command": "python3 .node-red/projects/traffic-monitor/utils/rpi5-nodered-telemetry.py",
+        "command": "python3 ${TM_UTIL_PATH}/rpi5-nodered-telemetry.py",
         "addpay": "",
         "append": "",
         "useSpawn": "true",
