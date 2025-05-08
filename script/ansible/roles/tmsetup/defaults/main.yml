@@ -1,0 +1,26 @@
+---
+# TMSetup Default Variables (user configurable)
+tmsetup_codeowner: 'tmadmin'
+tmsetup_codegroup: '{{ tmsetup_codeowner }}'
+tmsetup_codeowner_homedir: None
+tmsetup_codedir: '/opt/traffic-monitor'
+tmsetup_timezone: 'America/Los_Angeles'
+
+tmsetup_frigate_rtsp_password: password
+tmsetup_frigate_mqtt_user: mqtt_user
+tmsetup_frigate_mqtt_password: mqtt_pass
+tmsetup_frigate_tpu_device: pci
+
+tmsetup_thingsboard_server: 'tb.server.com'
+tmsetup_thingsboard_protocol: 'https'
+tmsetup_thingsboard_port: '443'
+tmsetup_thingsboard_api_key: ''
+
+tmsetup_latitude: ''
+tmsetup_longitude: ''
+tmsetup_bearing: ''
+
+tmsetup_force_configs: false
+tmsetup_reboot_touch_file: ~/tm-reboot-required
+
+...

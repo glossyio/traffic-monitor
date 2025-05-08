@@ -1,14 +1,14 @@
 thingsboard:
     enabled: false
-    host: tb.server.com
-    protocol: http
-    port:
-    access_token:
+    host: {{ tmsetup_thingsboard_server }}
+    protocol: {{ tmsetup_thingsboard_protocol }}
+    port: {{ tmsetup_thingsboard_port }}
+    access_token: {{ tmsetup_thingsboard_api_key }}
 
 deployment:
-    lat:
-    lon:
-    bearing:
+    lat: {{ tmsetup_latitude }}
+    lon: {{ tmsetup_longitude }}
+    bearing: {{ tmsetup_bearing }}
 
 sensors:
     cameras:
@@ -26,5 +26,5 @@ sensors:
             mqtt_topic_incoming: readings
 
 time:
-    timezone: America/Los_Angeles
-    npt_set: false
+    timezone: {{ tmsetup_timezone }}
+    npt_set: true

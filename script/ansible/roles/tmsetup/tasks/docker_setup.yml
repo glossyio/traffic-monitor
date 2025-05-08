@@ -1,0 +1,78 @@
+---
+# TMSetup - Docker Setup tasks
+- name: TMSetup - Docker Setup - Create apt key directory
+  become: true
+  ansible.builtin.file:
+    group: root
+    mode: '0755'
+    owner: root
+    path: /etc/apt/keyring
+    state: directory
+
+- name: TMSetup - Docker Setup - Download docker key repo key
+  become: true
+  ansible.builtin.get_url:
+    dest: /etc/apt/keyrings/docker.asc
+    group: root
+    mode: '0644'
+    owner: root
+    url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
+
+- name: TMSetup - Docker Setup - Create Docker apt repo file
+  become: true
+  ansible.builtin.apt_repository:
+    filename: docker
+    repo: >-
+      deb [arch={{ tmsetup_dpkg_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/{{ ansible_os_family | lower }} {{ ansible_distribution_release }} stable
+    state: present
+
+- name: TMSetup - Docker Setup - Install Docker CE packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-ce
+      - docker-ce-cli
+      - docker-compose-plugin
+    state: present
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Setup - Add TM user to docker group
+  become: true
+  ansible.builtin.user:
+    append: true
+    groups: docker
+    name: '{{ tmsetup_codeowner }}'
+
+- name: TMSetup - Docker Setup - Copy compose.yaml to code directories
+  become: true
+  ansible.builtin.template:
+    dest: '{{ tmsetup_codedir }}/compose.yaml'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: compose.yaml.j2
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Setup - Create Systemd unit file for tm-docker
+  become: true
+  ansible.builtin.template:
+    dest: "{{ tmsetup_codedir }}/services/tm-docker.service"
+    group: root
+    mode: '0644'
+    owner: root
+    src: services/tm-docker.service.j2
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Setup - Link tm-docker.service into systemd
+  become: true
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system/tm-docker.service
+    src: "{{ tmsetup_codedir }}/services/tm-docker.service"
+    state: link
+  notify: Restart tm-docker service
+
+...

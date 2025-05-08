@@ -1,0 +1,21 @@
+---
+# tmsetup wifi setup tasks
+- name: TMSetup - WiFi Setup - Copy wifi powersave config
+  become: true
+  ansible.builtin.copy:
+    src: z-wifi-powersave-off.conf
+    dest: /etc/NetworkManager/conf.d/z-wifi-powersave-off.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart NetworkManager service
+
+- name: TMSetup - WiFi Setup - Setup crontab
+  become: true
+  ansible.builtin.cron:
+    name: Traffic Monitor Wifi Check
+    user: '{{ tmsetup_codeowner }}'
+    minute: '*/5'
+    job: '/usr/bin/sudo /bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
+    state: present
+...

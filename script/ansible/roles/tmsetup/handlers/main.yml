@@ -1,0 +1,37 @@
+---
+# tmsetup handlers
+- name: Restart go2rtc_server service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: go2rtc_server.service
+    state: restarted
+
+- name: Restart nodered service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: nodered.service
+    state: restarted
+
+- name: Restart NetworkManager service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: NetworkManager.service
+    state: restarted
+
+- name: Restart tm-docker service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: tm-docker.service
+    state: restarted
+
+- name: TMSetup - Flag for reboot
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ tmsetup_reboot_touch_file }}"
+    content: '1'
+    mode: '0644'
+...
