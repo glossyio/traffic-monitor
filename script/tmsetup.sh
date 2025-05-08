@@ -10,6 +10,7 @@ REBOOT_TOUCH_FILE=~/tm-reboot-required
 _THIS_SCRIPT=$0
 _SCRIPT_DIR=$(dirname "$_THIS_SCRIPT")
 _START_DIR=$(pwd)
+_APT_UPGRADE=false
 _BIN_PATH=${VENV_DIR}/bin
 _EXIT_STATUS=0
 _EXTRA_ARGS=""
@@ -35,10 +36,11 @@ printf "  %-20s%s\n" \
   "-o USER" "Set the OWNER of traffic-monitor files and processes (default tmadmin)" \
   "-t TAG" "TAG the ansible-playbook command to only run a subset of plays" \
   "-T" "Get a list of available tags and exit" \
+  "-u" "Perform system UPGRADE (apt full-upgrad) as part of installation" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
-#  "-U" "UNINSTALL Traffic Monitor software" # Future addition
+# "-e" "ERASE Traffic Monitor software" # Future addition
 }
 
 _add_arg(){
@@ -51,6 +53,12 @@ _add_var(){
   local key=$1
   local val=$2
   _add_arg "--extra-vars $key=$val"
+  return 0
+}
+
+_apt_upgrade(){
+  sudo apt update || return 1
+  sudo apt upgrade || return 1
   return 0
 }
 
@@ -89,7 +97,7 @@ if [[ -n ${REBOOT_TOUCH_FILE} ]] ;then
 fi
 
 # Collect command-line options
-while getopts ":fhTvyd:g:l:o:t:z:" opt
+while getopts ":fhTuvyd:g:l:o:t:z:" opt
 do
   case ${opt} in
     d) # Set PATH for install
@@ -120,6 +128,9 @@ do
       printf "Valid Tags:\n"
       printf "  %s\n" ${_VALID_TAGS[@]}
       exit 2  
+      ;;
+    u) # Perform system upgrade as part of install
+      _APT_UPGRADE=true
       ;;
     y) # Ignore confirmation requests
       _CONFIRM=true
@@ -152,6 +163,8 @@ _log_check "${_LOGFILE}" || exit 1
 # Log all further output to logfile
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
+
+[[ "${_APT_UPGRADE}" == "true" ]] && _apt_upgrade || exit 1
 
 _install_ansible "${VENV_DIR}"
 if [ "${_FORCE}" = true ]

@@ -7,24 +7,24 @@
     groups: sudo
     name: '{{ tmsetup_codeowner }}'
 
-- name: TMSetup - Base Setup - Run full update
-  become: true
-  async: 3600
-  poll: 0
-  ansible.builtin.apt:
-    update_cache: true
-    upgrade: full
-  register: tmsetup_apt_update_register
-  changed_when: false
-  
-- name: TMSetup - Base Setup - Monitor update job for results
-  become: true
-  ansible.builtin.async_status:
-    jid: "{{ tmsetup_apt_update_register.ansible_job_id }}"
-  register: tmsetup_apt_upate_job_register
-  until: tmsetup_apt_upate_job_register.finished
-  retries: 360
-  delay: 10
+# - name: TMSetup - Base Setup - Run full update
+#   become: true
+#   async: 3600
+#   poll: 0
+#   ansible.builtin.apt:
+#     update_cache: true
+#     upgrade: full
+#   register: tmsetup_apt_update_register
+#   changed_when: false
+
+# - name: TMSetup - Base Setup - Monitor update job for results
+#   become: true
+#   ansible.builtin.async_status:
+#     jid: "{{ tmsetup_apt_update_register.ansible_job_id }}"
+#   register: tmsetup_apt_upate_job_register
+#   until: tmsetup_apt_upate_job_register.finished
+#   retries: 360
+#   delay: 10
 
 - name: TMSetup - Base Setup - Check if reboot needed
   ansible.builtin.stat:
