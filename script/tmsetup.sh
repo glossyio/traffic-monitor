@@ -16,7 +16,7 @@ _EXIT_STATUS=0
 _EXTRA_ARGS=""
 _FORCE=false
 _CONFIRM=false
-_LOGFILE=~/tmsetup-$(date +%Y%m%d).log
+_LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
 _MIN_ANSIBLE_VERSION=10.7.0
 declare _VALID_TAGS=("base" "wifi" "docker" "frigate" "nodered" "go2rtc")
 
@@ -200,6 +200,7 @@ then
 else
   printf "Setup completed with errors.  Review logs at: %s\n" "${_LOGFILE}"
 fi
+printf "Full output logged to: %s\n" "${_LOGFILE}"
 _pline
 
 
