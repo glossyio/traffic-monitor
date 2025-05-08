@@ -1,3 +1,6 @@
+# Thank you to jnicolson for providing this Dockerfile to fix Gasket-DKMS build issues
+# https://github.com/jnicolson/gasket-builder
+
 FROM ubuntu:24.04 AS build-stage
 
 ARG DEBIAN_FRONTEND=noninteractive
