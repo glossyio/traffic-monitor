@@ -1,14 +1,10 @@
-################################################################################
-# Frigate NVR Compose
-# mqtt credentials come from broker (set up via node-red)
-################################################################################
 services:
   frigate:
     container_name: frigate
-    privileged: false # this may not be necessary for all setups
+    privileged: false
     restart: unless-stopped
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
-    shm_size: "128mb" # update for your cameras based on calculation https://docs.frigate.video/frigate/installation#calculating-required-shm-size
+    shm_size: "256MB"
     devices:
       - /dev/bus/usb:/dev/bus/usb 
       - /dev/apex_0:/dev/apex_0
