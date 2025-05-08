@@ -4,9 +4,9 @@ description: Software installation for the Traffic Monitor.
 
 # Software Installation
 
-Whether you [build-your-own-device-diy](build-your-own-device-diy/ "mention") or buy a pre-made unit, these are the instructions to start from scratch with the open source Traffic Monitor:
+Whether you [.](./ "mention") or buy a pre-made unit, these are the instructions to start from scratch with the open source Traffic Monitor:
 
-1. Assemble your device (see [recommended hardware](recommended-hardware.md) ⚒️).
+1. Assemble your device (see [recommended hardware](../recommended-hardware.md) ⚒️).
 2. Install [Raspberry Pi OS](https://www.raspberrypi.com/software/) (Full Install) Bookworm (latest).
    * Full Install required for all components to run properly. Lite is missing H.264 codec for libcamera.
    * Recommend to [Install using Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager) instructions and follow the [OS customization](https://www.raspberrypi.com/documentation/computers/getting-started.html#advanced-options) to set up your Wi-Fi credentials and username and password to access the device headless (no monitor or keyboard).
