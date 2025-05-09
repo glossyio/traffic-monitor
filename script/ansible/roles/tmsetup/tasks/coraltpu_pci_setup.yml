@@ -40,14 +40,14 @@
         chdir: /tmp
         cmd: docker build -f gasket-builder.Dockerfile --output . .
         creates: /tmp/gasket-dkms_1.0-18_all.deb
-    
+
     - name: TMSetup - Coral TPU PCI Setup - Install gasket-dkms from .deb
       become: true
       ansible.builtin.apt:
         deb: /tmp/gasket-dkms_1.0-18_all.deb
         state: present
       notify: TMSetup - Flag for reboot
-        
+
 - name: TMSetup - Coral TPU PCI Setup - Create apex udev rules to manage device permissions
   become: true
   ansible.builtin.copy:

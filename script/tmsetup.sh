@@ -40,7 +40,7 @@ printf "  %-20s%s\n" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
-# "-e" "ERASE Traffic Monitor software" # Future addition
+# "-R" "REMOVE Traffic Monitor software" # Future addition
 }
 
 _add_arg(){
