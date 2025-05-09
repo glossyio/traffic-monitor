@@ -3,13 +3,14 @@
     "description": "Traffic Monitor built with edge ML for object detection and radar for speed monitoring",
     "version": "0.3.0-beta1",
     "dependencies": {
+        "@flowfuse/node-red-dashboard": "~1.23.0",
         "node-red-contrib-aedes": "~0.13.0",
         "node-red-contrib-image-output": "~0.6.4",
+        "node-red-contrib-os": "0.2.1",
         "node-red-dashboard": "~3.6.5",
-        "node-red-node-serialport": "~2.0.2",
-        "node-red-node-sqlite": "1.1.0",
         "node-red-node-base64": "0.3.0",
-        "node-red-contrib-os": "0.2.1"
+        "node-red-node-serialport": "~2.0.2",
+        "node-red-node-sqlite": "1.1.0"
     },
     "node-red": {
         "settings": {
