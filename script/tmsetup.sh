@@ -164,7 +164,7 @@ _log_check "${_LOGFILE}" || exit 1
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
 
-[[ "${_APT_UPGRADE}" == "true" ]] && _apt_upgrade || exit 1
+[[ "${_APT_UPGRADE}" == "true" ]] && _apt_upgrade
 
 _install_ansible "${VENV_DIR}"
 if [ "${_FORCE}" = true ]
