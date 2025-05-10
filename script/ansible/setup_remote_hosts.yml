@@ -1,0 +1,13 @@
+---
+- name: Traffic Monitor Setup remote hosts
+  hosts: all
+## User configurable variables. Defaults are defined here.
+#  vars:
+#    tmsetup_codeowner: 'tmadmin'
+#    tmsetup_codedir: '/opt/traffic-monitor'
+#    tmsetup_force_configs: false
+  tasks:
+    - name: Run tmsetup role
+      ansible.builtin.import_role:
+        name: tmsetup
+...

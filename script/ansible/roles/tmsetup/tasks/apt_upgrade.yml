@@ -1,0 +1,7 @@
+---
+- name: TMSetup - Run apt full-upgrade on remote hosts (Warning this can take a while)
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: full
+
+...
