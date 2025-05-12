@@ -18,6 +18,7 @@ services:
       - "1883:1883"                     #aedes mqtt broker port 
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - {{ tmsetup_codedir  }}/node-red-tm/config:/config           # internal sqlite db 
       #- {{ tmsetup_codedir  }}/node-red-tm/data:/data      # uncomment for dev deployment 
       - {{ tmsetup_codedir  }}/node-red-tm/db:/db           # internal sqlite db 
     devices:

@@ -5,6 +5,7 @@
   loop:
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/node-red-tm'
+    - '{{ tmsetup_codedir }}/node-red-tm/config'
     - '{{ tmsetup_codedir }}/node-red-tm/data'
     - '{{ tmsetup_codedir }}/node-red-tm/db'
   ansible.builtin.file:
