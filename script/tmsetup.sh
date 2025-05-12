@@ -1,6 +1,8 @@
 #!/bin/bash
 # Setup ansible for install
 
+set -e
+
 # TUNEABLE VARIABLES
 TM_TMP_DIR=~/.tmsetup
 VENV_DIR="${TM_TMP_DIR}/tm_venv"
@@ -99,11 +101,11 @@ return 0
 }
 
 _init_reboot_touchfile() { # Initialize the reboot touchfile 
-  local __tf=$1
-  if [[ -n ${tf} ]] ;then
-  _add_var tmsetup_reboot_touch_file "${tf}"
-    touch ${tf} || return 1
-    printf '0' > ${tf} || return 1
+  local _tf=$1
+  if [[ -n ${_tf} ]] ;then
+  _add_var tmsetup_reboot_touch_file "${_tf}"
+    touch ${_tf} || return 1
+    printf '0' > ${_tf} || return 1
   fi
   return 0
 }
@@ -153,7 +155,7 @@ do
       _add_var tmsetup_codeowner "${OPTARG}"
       ;;
     t) # Set playbook TAG
-      if [[ " ${_VALID_TAGS[*]} " =~ "[[:space:]]${OPTARG}[[:space:]]" ]] ;then
+      if [[ " ${_VALID_TAGS[*]} " =~ [[:space:]]${OPTARG}[[:space:]] ]] ;then
         _add_arg "--tags ${OPTARG}"
       else
         printf "Invalid Tag: %s\nExitting.\n\n" "${OPTARG}"
@@ -168,11 +170,11 @@ do
     u) # Perform system upgrade as part of install
       _APT_UPGRADE=true
       ;;
-    y) # Ignore confirmation requests
-      _CONFIRM=true
-      ;;
     v) # Verbose output from ansible
       _add_arg "-v" 
+      ;;
+    y) # Ignore confirmation requests
+      _CONFIRM=true
       ;;
     z) # Set Time Zone
       _add_var tmsetup_timezone "${OPTARG}"
@@ -194,22 +196,24 @@ do
   esac
 done
 
-mkdir -p "${TM_TMP_DIR}" || exit
+mkdir -p "${TM_TMP_DIR}"
 printf "This directory %s is just a tmp directory for traffic-monitor tmsetup.sh script.\n Everything in here can be safely deleted but future tmsetup.sh runs will take a bit longer.\n\nThank you,\n-The TM Team\n" "${TM_TMP_DIR}" > "${TM_TMP_DIR}/README.txt"
 
-_log_check "${_LOGFILE}" || exit
-
+_log_check "${_LOGFILE}"
 # Log all further output to logfile
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
 
-if [[ -n "${_REMOTE_HOSTS}" ]];then
+if [[ -n "${TM_TMP_DIR}" ]] ;then
+  _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
+fi
+if [[ -n "${_REMOTE_HOSTS}" ]] ;then
   _set_tmp_ansible_inv "${_REMOTE_HOSTS}" "${TMP_INVENTORY_PATH}"
 fi
-_init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || exit $?
+_init_reboot_touchfile "${REBOOT_TOUCH_FILE}"
 
-if [[ "${_APT_UPGRADE}" == "true" ]];then
-  if [[ -z "${_REMOTE_HOSTS}" ]];then
+if [[ "${_APT_UPGRADE}" == "true" ]] ;then
+  if [[ -z "${_REMOTE_HOSTS}" ]] ;then
     _apt_upgrade
   else
     _add_var tmsetup_perform_apt_upgrade true
@@ -230,13 +234,13 @@ fi
 _pline
 printf "Running Ansible playbook to setup Traffic Monitor\n"
 _pline
-cd "${_SCRIPT_DIR}/ansible" || exit
-. "${VENV_DIR}/bin/activate" || exit
+cd "${_SCRIPT_DIR}/ansible"
+. "${VENV_DIR}/bin/activate"
 
-if [[ -z "${_REMOTE_HOSTS}" ]];then
+if [[ -z "${_REMOTE_HOSTS}" ]] ;then
   ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
 else
-  ANSIBLE_CMD="ansible-playbook -i "${TMP_INVENTORY_PATH}" setup_remote_hosts.yml ${_EXTRA_ARGS}"
+  ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
 fi
 
 printf "%s\n" "${ANSIBLE_CMD}"
@@ -245,7 +249,7 @@ ${ANSIBLE_CMD}
 # Notify and exit on error
 _EXIT_STATUS="${PIPESTATUS[0]}"
 
-cd "${_START_DIR}" || exit
+cd "${_START_DIR}"
 
 printf "\n\n\n"
 _pline
@@ -259,17 +263,17 @@ printf "Full output logged to: %s\n" "${_LOGFILE}"
 _pline
 
 # Ask to reboot if not bypassed
-if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] && [[ -z "${_REMOTE_HOSTS}" ]] ;then
-  _pline
-  printf "Reboot is required to complete the installation.\n"
-  if _confirm_cont "Would you like to reboot now? [yN] "
-  then
-    printf "Rebooting system now.\n"
-    sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
-    printf "\n"
+if [[ -z "${_REMOTE_HOSTS}" ]] ;then
+  if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
+    _pline
+    printf "Reboot is required to complete the installation.\n"
+    if _confirm_cont "Would you like to reboot now? [yN] " ;then
+      printf "Rebooting system now.\n"
+      sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
+      printf "\n"
+    fi
   else
     printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
   fi
 fi
-
 exit ${_EXIT_STATUS}

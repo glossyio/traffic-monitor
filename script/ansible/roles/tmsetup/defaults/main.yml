@@ -22,6 +22,8 @@ tmsetup_bearing: ''
 
 tmsetup_perform_apt_upgrade: false
 tmsetup_force_configs: false
-tmsetup_reboot_touch_file: ~/tm-reboot-required
+tmsetup_reboot_now: false
+tmsetup_tmp_dir: ~/.tmsetup
+tmsetup_reboot_touch_file: "{{ tmsetup_tmpdir }}/reboot-required"
 
 ...
