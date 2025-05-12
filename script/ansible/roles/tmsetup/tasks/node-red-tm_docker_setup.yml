@@ -16,6 +16,22 @@
     state: directory
   notify: Restart tm-docker service
 
+- name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
+  become: true
+  loop:
+    - flows_cred.json
+    - flows.json
+    - package.json
+    - README.md
+    - settings.js
+    - Dockerfile
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/.node-red/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'node-red-project/{{ item }}'
+
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
   loop:
