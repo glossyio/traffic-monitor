@@ -1,0 +1,33 @@
+---
+# TMSetup - Node-RED-TM Setup tasks
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/node-red-tm'
+    - '{{ tmsetup_codedir }}/node-red-tm/data'
+    - '{{ tmsetup_codedir }}/node-red-tm/db'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
+  become: true
+  loop:
+    - node-red-tm/config/config.yml
+    - node-red-tm/docker-compose-node-red.yaml
+    - node-red-tm/node-red.env
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify: Restart tm-docker service
+...

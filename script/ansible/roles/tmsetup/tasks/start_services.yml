@@ -7,7 +7,6 @@
     - NetworkManager.service
     - go2rtc_server.service
     - tm-docker.service
-    - nodered.service
   ansible.builtin.systemd_service:
     daemon_reload: true
     enabled: true

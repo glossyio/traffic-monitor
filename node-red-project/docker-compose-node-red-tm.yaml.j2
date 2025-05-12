@@ -1,0 +1,33 @@
+################################################################################
+# Node-RED Stack or Compose
+################################################################################
+# docker stack deploy node-red --compose-file docker-compose-node-red.yml
+# docker-compose -f docker-compose-node-red.yml -p myNoderedProject up
+# for OPS-243 device, see
+#   https://nodered.org/docs/getting-started/docker#serial-port---dialout---adding-groups 
+#
+# disable volumes for data when deploying to allow image to be built with all packages
+################################################################################
+services:
+  node-red:
+    container_name: node-red-tm
+    restart: unless-stopped
+    build: .
+    ports:
+      - "1880:1880"                     #node-red flow gui and dashboard ui port
+      - "1883:1883"                     #aedes mqtt broker port 
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      #- {{ tmsetup_codedir  }}/node-red-tm/data:/data      # uncomment for dev deployment 
+      - {{ tmsetup_codedir  }}/node-red-tm/db:/db           # internal sqlite db 
+    devices:
+      - "/dev/ttyACM0"
+      - "/dev/ttyACM1"
+      - "/dev/ttyACM2"
+      - "/dev/ttyACM3"
+    group_add:
+      - dialout
+    env_file: "node-red-tm.env"
+    depends_on:
+      frigate:
+        condition: service_healthy
