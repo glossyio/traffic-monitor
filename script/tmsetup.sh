@@ -99,10 +99,11 @@ return 0
 }
 
 _init_reboot_touchfile() { # Initialize the reboot touchfile 
-  if [[ -n ${REBOOT_TOUCH_FILE} ]] ;then
-  _ add_var tmsetup_reboot_touch_file "${REBOOT_TOUCH_FILE}"
-    touch ${REBOOT_TOUCH_FILE} || return 1
-    printf '0' > ${REBOOT_TOUCH_FILE} || return 1
+  local __tf=$1
+  if [[ -n ${tf} ]] ;then
+  _add_var tmsetup_reboot_touch_file "${tf}"
+    touch ${tf} || return 1
+    printf '0' > ${tf} || return 1
   fi
   return 0
 }
@@ -205,7 +206,7 @@ exec 2>&1
 if [[ -n "${_REMOTE_HOSTS}" ]];then
   _set_tmp_ansible_inv "${_REMOTE_HOSTS}" "${TMP_INVENTORY_PATH}"
 fi
-_init_reboot_touchfile || exit $?
+_init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || exit $?
 
 if [[ "${_APT_UPGRADE}" == "true" ]];then
   if [[ -z "${_REMOTE_HOSTS}" ]];then
