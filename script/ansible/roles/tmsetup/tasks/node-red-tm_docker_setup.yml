@@ -19,9 +19,9 @@
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
   loop:
-    - node-red/config/config.yml
-    - node-red/docker-compose-node-red-tm.yaml
-    - node-red/node-red-tm.env
+    - node-red-tm/config/config.yml
+    - node-red-tm/docker-compose-node-red-tm.yaml
+    - node-red-tm/node-red-tm.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
