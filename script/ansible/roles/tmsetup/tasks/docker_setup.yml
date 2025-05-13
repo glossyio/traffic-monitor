@@ -50,7 +50,7 @@
   become: true
   ansible.builtin.template:
     dest: '{{ tmsetup_codedir }}/compose.yaml'
-    force: '{{ tmsetup_force_configs }}'
+    force: true
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
