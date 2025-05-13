@@ -52,9 +52,7 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}.j2'
-  notify:
-    - Build container images
-    - Restart tm-docker service
+  notify: Restart tm-docker service
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
