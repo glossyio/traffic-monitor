@@ -7,12 +7,15 @@
     name: go2rtc_server.service
     state: restarted
 
-- name: Restart nodered service
+- name: Build container images
   become: true
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: nodered.service
-    state: restarted
+  community.docker.docker_compose_v2:
+    build: always
+    files:
+      - compose.yaml
+    project_src: "{{ tmsetup_codedir }}"
+    recreate: always
+    state: stopped
 
 - name: Restart NetworkManager service
   become: true
