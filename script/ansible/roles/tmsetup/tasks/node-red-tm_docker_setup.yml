@@ -24,7 +24,6 @@
     - package.json
     - README.md
     - settings.js
-    - Dockerfile
   ansible.builtin.copy:
     dest: '{{ tmsetup_codedir }}/node-red-tm/{{ item }}'
     group: '{{ tmsetup_codegroup }}'
@@ -32,11 +31,25 @@
     owner: '{{ tmsetup_codeowner }}'
     src: 'node-red-tm/{{ item }}'
 
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Dockerfile
+  become: true
+  loop:
+    - node-red-tm/Dockerfile
+    - node-red-tm/docker-compose-node-red-tm.yaml
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify: Restart tm-docker service
+
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
   loop:
     - node-red-tm/config/config.yml
-    - node-red-tm/docker-compose-node-red-tm.yaml
     - node-red-tm/node-red-tm.env
   ansible.builtin.template:
     backup: true
