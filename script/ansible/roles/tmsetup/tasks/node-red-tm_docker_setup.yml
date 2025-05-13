@@ -13,21 +13,27 @@
   ansible.builtin.set_fact:
     tmsetup_radars_confirmed: "{{ tmsetup_radars_confirmed | default([]) + [item['stat']['path']] }}"
 
-- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Directories
+# https://github.com/node-red/node-red-docker/wiki/Permissions-and-Persistence
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Data Persistence Directories and Set Ownership
   become: true
   loop:
-    - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/node-red-tm'
     - '{{ tmsetup_codedir }}/node-red-tm/config'
     - '{{ tmsetup_codedir }}/node-red-tm/data'
     - '{{ tmsetup_codedir }}/node-red-tm/db'
-  ansible.builtin.file:
-    group: '{{ tmsetup_codegroup }}'
-    mode: '0750'
-    owner: '{{ tmsetup_codeowner }}'
-    path: '{{ item }}'
-    state: directory
-  notify: Restart tm-docker service
+  block:
+    - name: Create directory and set ownership
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: '{{ tmsetup_codeowner }}'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0755'
+      notify: Restart tm-docker service
+
+    - name: Set node-red owner and group
+      ansible.builtin.command: chown -R 1000:1000 {{ item }}
+      notify: Restart tm-docker service
 
 - name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
   become: true
@@ -37,12 +43,17 @@
     - package.json
     - README.md
     - settings.js
-  ansible.builtin.copy:
-    dest: '{{ tmsetup_codedir }}/node-red-tm/data/{{ item }}'
-    group: '{{ tmsetup_codegroup }}'
-    mode: '0644'
-    owner: '{{ tmsetup_codeowner }}'
-    src: 'node-red-tm/{{ item }}'
+  block:
+    - name: Set ownership
+      ansible.builtin.copy:
+        dest: '{{ tmsetup_codedir }}/node-red-tm/data/{{ item }}'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0755'
+        owner: '{{ tmsetup_codeowner }}'
+        src: 'node-red-tm/{{ item }}'
+    - name: Set node-red owner and group
+      ansible.builtin.command: chown -R 1000:1000 {{ item }}
+      notify: Restart tm-docker service
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Dockerfile
   become: true
