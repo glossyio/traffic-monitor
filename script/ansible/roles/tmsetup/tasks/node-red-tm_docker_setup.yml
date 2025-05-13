@@ -16,44 +16,28 @@
 # https://github.com/node-red/node-red-docker/wiki/Permissions-and-Persistence
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Data Persistence Directories and Set Ownership
   become: true
+  include_tasks: "node-red_docker_permissions.yml"
   loop:
     - '{{ tmsetup_codedir }}/node-red-tm'
     - '{{ tmsetup_codedir }}/node-red-tm/config'
     - '{{ tmsetup_codedir }}/node-red-tm/data'
     - '{{ tmsetup_codedir }}/node-red-tm/db'
-  block:
-    - name: Create directory and set ownership
-      ansible.builtin.file:
-        path: '{{ item }}'
-        state: directory
-        owner: '{{ tmsetup_codeowner }}'
-        group: '{{ tmsetup_codegroup }}'
-        mode: '0755'
-      notify: Restart tm-docker service
-
-    - name: Set node-red owner and group
-      ansible.builtin.command: chown -R 1000:1000 {{ item }}
-      notify: Restart tm-docker service
+  loop_control:
+    loop_var: item
+  notify: Restart tm-docker service
 
 - name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
   become: true
+  include_tasks: "node-red_docker_permissions.yml"
   loop:
     - flows_cred.json
     - flows.json
     - package.json
     - README.md
     - settings.js
-  block:
-    - name: Set ownership
-      ansible.builtin.copy:
-        dest: '{{ tmsetup_codedir }}/node-red-tm/data/{{ item }}'
-        group: '{{ tmsetup_codegroup }}'
-        mode: '0755'
-        owner: '{{ tmsetup_codeowner }}'
-        src: 'node-red-tm/{{ item }}'
-    - name: Set node-red owner and group
-      ansible.builtin.command: chown -R 1000:1000 {{ item }}
-      notify: Restart tm-docker service
+  loop_control:
+    loop_var: item
+  notify: Restart tm-docker service
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Dockerfile
   become: true
