@@ -25,7 +25,7 @@
     - README.md
     - settings.js
   ansible.builtin.copy:
-    dest: '{{ tmsetup_codedir }}/node-red-tm/{{ item }}'
+    dest: '{{ tmsetup_codedir }}/node-red-tm/data/{{ item }}'
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
