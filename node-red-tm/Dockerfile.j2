@@ -2,3 +2,4 @@ FROM nodered/node-red:{{ tmsetup_node_red_tm_version }}
 WORKDIR /data
 COPY ./data/package.json /data
 RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
+WORKDIR /usr/src/node-red
