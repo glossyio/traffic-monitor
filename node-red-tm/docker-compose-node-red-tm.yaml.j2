@@ -30,6 +30,7 @@ services:
     group_add:
       - dialout
       - "{{ tmsetup_codeowner_gid }}"
+    user: "{{ tmsetup_codeowner_uid }}"
     env_file: "node-red-tm.env"
     depends_on:
       frigate:
