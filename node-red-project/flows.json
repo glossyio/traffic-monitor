@@ -6615,7 +6615,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/events/summary",
+        "url": "http://frigate:5000/api/events/summary",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -7362,7 +7362,7 @@
         "method": "GET",
         "ret": "bin",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
+        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -10539,7 +10539,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/config",
+        "url": "http://frigate:5000/api/config",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -10565,7 +10565,7 @@
         "method": "GET",
         "ret": "txt",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/version",
+        "url": "http://frigate:5000/api/version",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -12482,7 +12482,6 @@
                 "674f21d2e645cc18",
                 "ab9d774782f92e88",
                 "720ee19c705f37d9",
-                "c0078fa5b3946c05",
                 "c497cfedf6aed533"
             ]
         ]
@@ -12582,7 +12581,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "9",
+        "count": "8",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -12799,50 +12798,6 @@
         ]
     },
     {
-        "id": "c0078fa5b3946c05",
-        "type": "exec",
-        "z": "f410f6aac9d1a3fc",
-        "command": "python3 ${TM_UTIL_PATH}/rpi5-nodered-telemetry.py",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "true",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "Hardware metrics",
-        "x": 310,
-        "y": 600,
-        "wires": [
-            [
-                "35a886e73a73f32e"
-            ],
-            [
-                "cc4ab72bfb50feca"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "35a886e73a73f32e",
-        "type": "function",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Hardware",
-        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"tm/system_metrics\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 600,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
         "id": "6e88f30f09b49d22",
         "type": "comment",
         "z": "f410f6aac9d1a3fc",
@@ -12850,23 +12805,6 @@
         "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - hardware cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/).\n - hardware meminfo comes from 'cat /proc/meminfo'.",
         "x": 940,
         "y": 160,
-        "wires": []
-    },
-    {
-        "id": "cc4ab72bfb50feca",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Errors that occurred while getting Hardware metrics",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 630,
-        "y": 640,
         "wires": []
     },
     {
