@@ -1,4 +1,4 @@
-FROM nodered/node-red:{{ tmsetup_node-red-tm_version }}
+FROM nodered/node-red:{{ tmsetup_node_red_tm_version }}
 WORKDIR /data
 COPY ./data/package.json /data
 RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
