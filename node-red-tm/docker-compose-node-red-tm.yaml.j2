@@ -21,11 +21,12 @@ services:
       - {{ tmsetup_codedir }}/node-red-tm/config:/config
       - {{ tmsetup_codedir }}/node-red-tm/data:/data
       - {{ tmsetup_codedir }}/node-red-tm/db:/db
+{% if tmsetup_radars_confirmed is defined and tmsetup_radars_confirmed is iterable %}
     devices:
-      - "/dev/ttyACM0"
-      - "/dev/ttyACM1"
-      - "/dev/ttyACM2"
-      - "/dev/ttyACM3"
+{% for rad in tmsetup_radars_confirmed %}
+      - "{{ rad }}"
+{% endfor %}
+{% endif %}
     group_add:
       - dialout
     env_file: "node-red-tm.env"

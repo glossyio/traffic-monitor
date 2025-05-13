@@ -11,6 +11,12 @@ tmsetup_frigate_mqtt_user: mqtt_user
 tmsetup_frigate_mqtt_password: mqtt_pass
 tmsetup_frigate_tpu_device: pci
 
+tmsetup_radar_paths:
+  - /dev/ttyACM0
+  - /dev/ttyACM1
+  - /dev/ttyACM2
+  - /dev/ttyACM3
+
 tmsetup_thingsboard_server: 'tb.server.com'
 tmsetup_thingsboard_protocol: 'https'
 tmsetup_thingsboard_port: '443'

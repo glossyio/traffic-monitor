@@ -1,5 +1,18 @@
 ---
 # TMSetup - Node-RED-TM Setup tasks
+
+- name: TMSetup - Node-RED-TM Setup - Check for radars
+  loop: "{{ tmsetup_radar_paths }}"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: tmsetup_radarpath_stat_register
+
+- name: TMSetup Node-RED-TM Setup - Add existing radars to list
+  loop: "{{ tmsetup_radarpath_stat_register.results }}"
+  when: item['stat']['exists'] | bool
+  ansible.builtin.set_fact:
+    tmsetup_radars_confirmed: "{{ tmsetup_radars_confirmed | default([]) + [item['stat']['path']] }}"
+
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Directories
   become: true
   loop:
