@@ -352,27 +352,6 @@
         "h": 502
     },
     {
-        "id": "dd29df4e644425b0",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "wifi settings",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "dbc594623a97700f",
-            "cfaca843d1fc4679",
-            "8173247be30b656e",
-            "2d36fe127efba457",
-            "80d2ef499f6612a6",
-            "83de55ae8c9f54c1"
-        ],
-        "x": 14,
-        "y": 2571.5,
-        "w": 1092,
-        "h": 209.5
-    },
-    {
         "id": "dc2934def36c6285",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -421,12 +400,6 @@
             "9dc62a7e0c39ac0e",
             "ab89cf1a793d2be5",
             "02470b22b2f6893c",
-            "f216858954e6862d",
-            "614c44640342d24f",
-            "8a7e7a97fd87ea18",
-            "33dd63cc1dfb53c4",
-            "9beaf948294acd98",
-            "2b82d4b028657058",
             "099df29d699f405e",
             "486556a1e7fce8cf",
             "11b875e91b3d32a6",
@@ -436,7 +409,7 @@
         "x": 14,
         "y": 139,
         "w": 1312,
-        "h": 1189.5
+        "h": 1022
     },
     {
         "id": "64c3f8c396d4445c",
@@ -1768,17 +1741,6 @@
         "name": "Client-Side Attributes",
         "tab": "0fd9a947334c7d0f",
         "order": 1,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
-        "id": "f61a29742f312bb9",
-        "type": "ui_group",
-        "name": "WiFi Settings",
-        "tab": "0fd9a947334c7d0f",
-        "order": 4,
         "disp": true,
         "width": "6",
         "collapse": false,
@@ -10170,8 +10132,6 @@
                 "416d4b4451795bfe",
                 "5bb734f0283c5112",
                 "9dc62a7e0c39ac0e",
-                "f216858954e6862d",
-                "614c44640342d24f",
                 "5dcc009cdc781454"
             ]
         ]
@@ -11070,7 +11030,7 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "",
-        "count": "8",
+        "count": "6",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -11083,321 +11043,6 @@
                 "486556a1e7fce8cf"
             ]
         ]
-    },
-    {
-        "id": "f216858954e6862d",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "nmcli -g ip4.address connection show preconfigured",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 390,
-        "y": 1200,
-        "wires": [
-            [
-                "8a7e7a97fd87ea18"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "614c44640342d24f",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "nmcli -g 802-11-wireless.ssid connection show preconfigured",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 420,
-        "y": 1280,
-        "wires": [
-            [
-                "9beaf948294acd98"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "8a7e7a97fd87ea18",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.ipv4Address",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.ipv4Address",
-                "pt": "global",
-                "to": "$trim(payload)",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "ipv4Address",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 860,
-        "y": 1180,
-        "wires": [
-            [
-                "33dd63cc1dfb53c4",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "33dd63cc1dfb53c4",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "ipv4Address",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1130,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "9beaf948294acd98",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.ssid",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.ssid",
-                "pt": "global",
-                "to": "$trim(payload)",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "ssid",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 870,
-        "y": 1260,
-        "wires": [
-            [
-                "2b82d4b028657058",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "2b82d4b028657058",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 4,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "ssid",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1110,
-        "y": 1260,
-        "wires": []
-    },
-    {
-        "id": "dbc594623a97700f",
-        "type": "ui_form",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "",
-        "label": "WiFi SSID Connection",
-        "group": "f61a29742f312bb9",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "options": [
-            {
-                "label": "SSID",
-                "value": "ssid",
-                "type": "text",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Password",
-                "value": "password",
-                "type": "password",
-                "required": false,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "ssid": "",
-            "password": ""
-        },
-        "payload": "",
-        "submit": "submit",
-        "cancel": "cancel",
-        "topic": "topic",
-        "topicType": "msg",
-        "splitLayout": "",
-        "className": "",
-        "x": 480,
-        "y": 2620,
-        "wires": [
-            [
-                "2d36fe127efba457"
-            ]
-        ]
-    },
-    {
-        "id": "cfaca843d1fc4679",
-        "type": "ui_ui_control",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "",
-        "events": "all",
-        "x": 100,
-        "y": 2620,
-        "wires": [
-            [
-                "dbc594623a97700f"
-            ]
-        ]
-    },
-    {
-        "id": "8173247be30b656e",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "function 2",
-        "func": "\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 260,
-        "y": 2620,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "2d36fe127efba457",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "command": "nmcli device wifi connect \"$SSID\" password \"$PASSWORD\"",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 860,
-        "y": 2620,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "80d2ef499f6612a6",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "command": "nmcli connection add type wifi autoconnect yes ifname wlan1",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 860,
-        "y": 2680,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "83de55ae8c9f54c1",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "1) create network connect 2) modify for autoconnect yes",
-        "info": "",
-        "x": 840,
-        "y": 2740,
-        "wires": []
     },
     {
         "id": "6d99762995fa853e",
