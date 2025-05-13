@@ -287,7 +287,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1282,
+        "w": 1272,
         "h": 262
     },
     {
@@ -395,7 +395,6 @@
             "04e1eeacc898a859",
             "a9c83f35c32eb917",
             "afdd83e46ca13149",
-            "10b176495132c277",
             "8fd2b9ab457b5065",
             "fe2e9d1af38b2ca8",
             "b6bb1e836852dc04",
@@ -431,7 +430,8 @@
             "099df29d699f405e",
             "486556a1e7fce8cf",
             "11b875e91b3d32a6",
-            "9b0aebdc599ea4cd"
+            "9b0aebdc599ea4cd",
+            "5dcc009cdc781454"
         ],
         "x": 14,
         "y": 139,
@@ -10166,13 +10166,13 @@
         "wires": [
             [
                 "64c998a572e86dce",
-                "10b176495132c277",
                 "b6bb1e836852dc04",
                 "416d4b4451795bfe",
                 "5bb734f0283c5112",
                 "9dc62a7e0c39ac0e",
                 "f216858954e6862d",
-                "614c44640342d24f"
+                "614c44640342d24f",
+                "5dcc009cdc781454"
             ]
         ]
     },
@@ -10581,29 +10581,6 @@
             ]
         ],
         "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
-    },
-    {
-        "id": "10b176495132c277",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "cat /etc/timezone",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 290,
-        "y": 280,
-        "wires": [
-            [
-                "c0a27f9a895a1a94"
-            ],
-            [],
-            []
-        ]
     },
     {
         "id": "8fd2b9ab457b5065",
@@ -12449,6 +12426,27 @@
         "x": 840,
         "y": 700,
         "wires": []
+    },
+    {
+        "id": "5dcc009cdc781454",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "js timezone",
+        "func": "msg.payload = Intl.DateTimeFormat().resolvedOptions().timeZone;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 260,
+        "wires": [
+            [
+                "c0a27f9a895a1a94"
+            ]
+        ]
     },
     {
         "id": "9f2c4f1852402eb8",
