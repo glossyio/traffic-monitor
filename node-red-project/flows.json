@@ -362,8 +362,6 @@
         "nodes": [
             "64c998a572e86dce",
             "4d67617dadcb9ede",
-            "28063911d2bbf57e",
-            "185f835e89c9acf9",
             "feba76606996723c",
             "416d4b4451795bfe",
             "4d37c161816bd3a2",
@@ -371,9 +369,6 @@
             "4a28823b499c04e0",
             "9912f0375ba8d68e",
             "5235db548e7aaef3",
-            "04e1eeacc898a859",
-            "a9c83f35c32eb917",
-            "afdd83e46ca13149",
             "8fd2b9ab457b5065",
             "fe2e9d1af38b2ca8",
             "b6bb1e836852dc04",
@@ -384,19 +379,12 @@
             "bcd4c7df6b6f93d3",
             "f2885df5fb61fa3f",
             "60fb5d8b6644ef02",
-            "aaba861811975692",
             "41e6810f869d1552",
             "4af4cb47fdd97610",
             "2f43413dfaba508a",
             "040751d9061fe787",
             "d046a343ebc5fe81",
             "6d99762995fa853e",
-            "772eec7408fe83a7",
-            "a385b9186009250e",
-            "7d28172c4ed9e31b",
-            "2f0f10b6553e5840",
-            "41d1b47da00573bb",
-            "8d209b47f10933fb",
             "9dc62a7e0c39ac0e",
             "ab89cf1a793d2be5",
             "02470b22b2f6893c",
@@ -408,8 +396,8 @@
         ],
         "x": 14,
         "y": 139,
-        "w": 1312,
-        "h": 1022
+        "w": 1452,
+        "h": 662
     },
     {
         "id": "2f27e270200485b9",
@@ -589,7 +577,7 @@
             "fb62ca91f138ab87"
         ],
         "x": 14,
-        "y": 1219,
+        "y": 879,
         "w": 1398,
         "h": 368
     },
@@ -1016,7 +1004,7 @@
             "4d376b9ae709214b"
         ],
         "x": 514,
-        "y": 1259,
+        "y": 919,
         "w": 702,
         "h": 82
     },
@@ -1038,7 +1026,7 @@
             "5b7fe362e2e6b35d"
         ],
         "x": 514,
-        "y": 1359,
+        "y": 1019,
         "w": 872,
         "h": 202
     },
@@ -10085,28 +10073,6 @@
         ]
     },
     {
-        "id": "28063911d2bbf57e",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "Firmware (TM Repo release)",
-        "info": "",
-        "x": 180,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "185f835e89c9acf9",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "other Client attributes (system)",
-        "info": "",
-        "x": 190,
-        "y": 480,
-        "wires": []
-    },
-    {
         "id": "feba76606996723c",
         "type": "function",
         "z": "05fcb02c571dcfee",
@@ -10124,8 +10090,8 @@
                 "module": "os"
             }
         ],
-        "x": 270,
-        "y": 700,
+        "x": 350,
+        "y": 560,
         "wires": [
             [
                 "11b875e91b3d32a6"
@@ -10151,8 +10117,8 @@
                 "module": "os"
             }
         ],
-        "x": 280,
-        "y": 540,
+        "x": 360,
+        "y": 400,
         "wires": [
             [
                 "8fd2b9ab457b5065"
@@ -10178,8 +10144,8 @@
                 "module": "os"
             }
         ],
-        "x": 270,
-        "y": 740,
+        "x": 350,
+        "y": 600,
         "wires": [
             []
         ],
@@ -10203,8 +10169,8 @@
                 "module": "os"
             }
         ],
-        "x": 270,
-        "y": 580,
+        "x": 350,
+        "y": 440,
         "wires": [
             [
                 "fe2e9d1af38b2ca8"
@@ -10230,8 +10196,8 @@
                 "module": "os"
             }
         ],
-        "x": 270,
-        "y": 620,
+        "x": 350,
+        "y": 480,
         "wires": [
             []
         ],
@@ -10255,8 +10221,8 @@
                 "module": "os"
             }
         ],
-        "x": 270,
-        "y": 660,
+        "x": 350,
+        "y": 520,
         "wires": [
             []
         ],
@@ -10280,189 +10246,14 @@
                 "module": "os"
             }
         ],
-        "x": 260,
-        "y": 780,
+        "x": 340,
+        "y": 640,
         "wires": [
             [
                 "41e6810f869d1552"
             ]
         ],
         "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "04e1eeacc898a859",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "get Frigate version, config settings",
-        "info": "",
-        "x": 200,
-        "y": 900,
-        "wires": []
-    },
-    {
-        "id": "772eec7408fe83a7",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "get OPS firmware, config settings",
-        "info": "",
-        "x": 190,
-        "y": 1040,
-        "wires": []
-    },
-    {
-        "id": "a385b9186009250e",
-        "type": "link out",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "out query TM_RADAR_SERIAL_PORT_00",
-        "mode": "link",
-        "links": [],
-        "x": 385,
-        "y": 1080,
-        "wires": []
-    },
-    {
-        "id": "7d28172c4ed9e31b",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "query all radar settings, after 5",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
-        "payloadType": "jsonata",
-        "x": 190,
-        "y": 1080,
-        "wires": [
-            [
-                "a385b9186009250e"
-            ]
-        ]
-    },
-    {
-        "id": "2f0f10b6553e5840",
-        "type": "link in",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "in return TM_RADAR_SERIAL_PORT_00",
-        "links": [],
-        "x": 405,
-        "y": 1120,
-        "wires": [
-            [
-                "8d209b47f10933fb"
-            ]
-        ]
-    },
-    {
-        "id": "41d1b47da00573bb",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "TM_RADAR_SERIAL_PORT_00 settings",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "8d209b47f10933fb",
-        "type": "join",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "mode": "custom",
-        "build": "merged",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": true,
-        "timeout": "2",
-        "count": "",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 500,
-        "y": 1120,
-        "wires": [
-            [
-                "41d1b47da00573bb"
-            ]
-        ]
-    },
-    {
-        "id": "a9c83f35c32eb917",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dc2934def36c6285",
-        "name": "get Frigate config",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "120",
-        "topic": "",
-        "x": 150,
-        "y": 940,
-        "wires": [
-            [
-                "afdd83e46ca13149",
-                "9dc62a7e0c39ac0e"
-            ]
-        ]
-    },
-    {
-        "id": "afdd83e46ca13149",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "frigate api/config",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/config",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 360,
-        "y": 940,
-        "wires": [
-            [
-                "aaba861811975692"
-            ]
-        ],
-        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
     },
     {
         "id": "9dc62a7e0c39ac0e",
@@ -10482,7 +10273,7 @@
         "senderr": false,
         "headers": [],
         "x": 370,
-        "y": 980,
+        "y": 760,
         "wires": [
             [
                 "ab89cf1a793d2be5"
@@ -10517,8 +10308,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 620,
-        "y": 540,
+        "x": 780,
+        "y": 400,
         "wires": [
             [
                 "f2885df5fb61fa3f",
@@ -10553,8 +10344,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
-        "y": 580,
+        "x": 790,
+        "y": 440,
         "wires": [
             [
                 "60fb5d8b6644ef02",
@@ -10589,8 +10380,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 660,
-        "y": 980,
+        "x": 760,
+        "y": 760,
         "wires": [
             [
                 "02470b22b2f6893c",
@@ -10632,8 +10423,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
-        "y": 400,
+        "x": 790,
+        "y": 320,
         "wires": [
             [
                 "bcd4c7df6b6f93d3",
@@ -10782,8 +10573,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 880,
-        "y": 400,
+        "x": 1060,
+        "y": 320,
         "wires": []
     },
     {
@@ -10804,8 +10595,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 890,
-        "y": 540,
+        "x": 1070,
+        "y": 400,
         "wires": []
     },
     {
@@ -10826,8 +10617,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 890,
-        "y": 580,
+        "x": 1070,
+        "y": 440,
         "wires": []
     },
     {
@@ -10848,26 +10639,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 840,
-        "y": 1020,
-        "wires": []
-    },
-    {
-        "id": "aaba861811975692",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "frigate GET /api/config",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 940,
+        "x": 1080,
+        "y": 760,
         "wires": []
     },
     {
@@ -10888,8 +10661,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 690,
-        "y": 780,
+        "x": 1070,
+        "y": 640,
         "wires": []
     },
     {
@@ -10905,7 +10678,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 780,
+        "y": 640,
         "wires": [
             [
                 "5235db548e7aaef3",
@@ -10931,8 +10704,8 @@
                 "module": "os"
             }
         ],
-        "x": 260,
-        "y": 820,
+        "x": 340,
+        "y": 680,
         "wires": [
             [
                 "040751d9061fe787"
@@ -10958,8 +10731,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 700,
-        "y": 820,
+        "x": 1080,
+        "y": 680,
         "wires": []
     },
     {
@@ -10984,8 +10757,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 1130,
-        "y": 360,
+        "x": 1270,
+        "y": 380,
         "wires": [
             [
                 "486556a1e7fce8cf"
@@ -11026,7 +10799,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 620,
+        "y": 480,
         "wires": [
             [
                 "4a28823b499c04e0",
@@ -11046,8 +10819,8 @@
         "links": [
             "d367cb76b239682f"
         ],
-        "x": 1285,
-        "y": 360,
+        "x": 1425,
+        "y": 380,
         "wires": []
     },
     {
@@ -11072,7 +10845,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 150,
-        "y": 1340,
+        "y": 1000,
         "wires": [
             [
                 "56cafb11de5348b2"
@@ -11101,7 +10874,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 150,
-        "y": 1300,
+        "y": 960,
         "wires": [
             [
                 "4d376b9ae709214b"
@@ -11136,7 +10909,7 @@
         "to": "",
         "reg": false,
         "x": 960,
-        "y": 1300,
+        "y": 960,
         "wires": [
             [
                 "7c96d66a8330a4fc"
@@ -11161,7 +10934,7 @@
         "senderr": false,
         "headers": [],
         "x": 680,
-        "y": 1400,
+        "y": 1060,
         "wires": [
             [
                 "7555653f37b1cd50"
@@ -11193,7 +10966,7 @@
             }
         ],
         "x": 1140,
-        "y": 1440,
+        "y": 1100,
         "wires": [
             [
                 "64467a90df93e582"
@@ -11219,7 +10992,7 @@
         "repair": false,
         "outputs": 1,
         "x": 1220,
-        "y": 1480,
+        "y": 1140,
         "wires": [
             [
                 "5b7fe362e2e6b35d"
@@ -11236,7 +11009,7 @@
         "action": "",
         "pretty": false,
         "x": 890,
-        "y": 1400,
+        "y": 1060,
         "wires": [
             [
                 "0d394a2d73d138d6"
@@ -11257,7 +11030,7 @@
         "finalize": "",
         "libs": [],
         "x": 1120,
-        "y": 1400,
+        "y": 1060,
         "wires": [
             [
                 "25515211bb8cecb4"
@@ -11281,7 +11054,7 @@
         "topic": "Frigate Config Restore Validation Error",
         "name": "show frigate validation error",
         "x": 1240,
-        "y": 1520,
+        "y": 1180,
         "wires": []
     },
     {
@@ -11295,7 +11068,7 @@
             "4af0d78e8bc39647"
         ],
         "x": 1175,
-        "y": 1300,
+        "y": 960,
         "wires": []
     },
     {
@@ -11315,7 +11088,7 @@
         "templateScope": "local",
         "className": "",
         "x": 170,
-        "y": 1260,
+        "y": 920,
         "wires": [
             []
         ]
@@ -11340,8 +11113,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 600,
-        "y": 700,
+        "x": 800,
+        "y": 560,
         "wires": [
             [
                 "9b0aebdc599ea4cd"
@@ -11366,8 +11139,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 840,
-        "y": 700,
+        "x": 1060,
+        "y": 560,
         "wires": []
     },
     {
@@ -11383,7 +11156,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 490,
+        "x": 350,
         "y": 260,
         "wires": [
             [
@@ -11416,166 +11189,12 @@
             }
         ],
         "x": 660,
-        "y": 1300,
+        "y": 960,
         "wires": [
             [
                 "f49c1d345cdfef57"
             ]
         ]
-    },
-    {
-        "id": "ddbd9ce4695fc8f8",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "name": "validate Frigate config, save and restart",
-        "method": "GET",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/config/raw",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "text/plain",
-                "valueValue": ""
-            }
-        ],
-        "x": 480,
-        "y": 1760,
-        "wires": [
-            [
-                "23e499f07d12c266"
-            ]
-        ]
-    },
-    {
-        "id": "b360edc5d76238c8",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 180,
-        "y": 1760,
-        "wires": [
-            [
-                "ddbd9ce4695fc8f8"
-            ]
-        ]
-    },
-    {
-        "id": "23e499f07d12c266",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 1780,
-        "wires": []
-    },
-    {
-        "id": "0f6ba6e2723f52cc",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "name": "fetch frigate /api/config",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/config",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "application/json",
-                "valueValue": ""
-            }
-        ],
-        "x": 420,
-        "y": 1800,
-        "wires": [
-            [
-                "4319ea3cee4d49f0"
-            ]
-        ]
-    },
-    {
-        "id": "ceb6e5af975ae3bb",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 180,
-        "y": 1800,
-        "wires": [
-            [
-                "0f6ba6e2723f52cc"
-            ]
-        ]
-    },
-    {
-        "id": "4319ea3cee4d49f0",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 1820,
-        "wires": []
     },
     {
         "id": "9f2c4f1852402eb8",
