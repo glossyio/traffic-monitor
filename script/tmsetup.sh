@@ -71,53 +71,112 @@ _apt_upgrade(){ # perform full upgrade on local installs
 }
 
 _install_ansible() { # check and install python3-venv and setup venv
-local venv_dir=$1
+local _venvd=$1
 dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
-while ! . "${venv_dir}/bin/activate" ;do 
-  python3 -m venv "${venv_dir}"  || return 1
+while ! . "${_venvd}/bin/activate" ;do 
+  python3 -m venv "${_venvd}"  || return 1
 done
 pip3 install -r "${_SCRIPT_DIR}/requirements" || return 1
 return 0
 }
 
 _log_check() { # Check if Log Path exists and create if not or exit
-local logfile=$1
-[[ -d "$(dirname "${logfile}")" ]] || mkdir -p "$(dirname "${logfile}")" || return 1
+local _logfil=$1
+[[ -d "$(dirname "${_logfil}")" ]] || mkdir -p "$(dirname "${_logfil}")" || return 1
 
 # Create log file or exit
-touch "${logfile}" || ( printf "Unable to write to log file: %s\n" "${logfile}" && return 1 )
+touch "${_logfil}" || ( printf "Unable to write to log file: %s\n" "${_logfil}" && return 1 )
 }
 
 _confirm_cont() { # Request to confirm continuation
-local conf_text=$1
-local cont=n
+local _cnftxt=$1
+local _contin=n
 if [[ "${_CONFIRM}" == false ]]
 then
-  read -p "${conf_text}" -n 1 -r cont
+  read -p "${_cnftxt}" -n 1 -r cont
   printf '\n'
-  [[ "${cont}" =~ ^[Yy]$ ]] || return 1
+  [[ "${_contin}" =~ ^[Yy]$ ]] || return 1
 fi
 return 0
 }
 
 _init_reboot_touchfile() { # Initialize the reboot touchfile 
-  local _tf=$1
-  if [[ -n ${_tf} ]] ;then
-  _add_var tmsetup_reboot_touch_file "${_tf}"
-    touch ${_tf} || return 1
-    printf '0' > ${_tf} || return 1
+  local _tchfil=$1
+  if [[ -n ${_tchfil} ]] ;then
+    _add_var tmsetup_reboot_touch_file "${_tchfil}"
+    printf '0' > ${_tchfil} || return 1
   fi
   return 0
 }
 
 _set_tmp_ansible_inv() { # Setup ansible inventory for remote hosts
-  local _remote_hosts=$1
-  local _tmp_inventory=$2
-  if [[ -n "${_remote_hosts}" ]];then
-    IFS=',' read -r -a _hosts_array <<< ${_remote_hosts}
-    printf "[all]\n" > "${_tmp_inventory}"
-    printf "%s\n" ${_hosts_array[@]} >> "${_tmp_inventory}"
+  local _rhosts=$1
+  local _tmpinv=$2
+  if [[ -n "${_rhosts}" ]];then
+    IFS=',' read -r -a _hosts_array <<< ${_rhosts}
+    printf "[all]\n" > "${_tmpinv}"
+    printf "%s\n" ${_hosts_array[@]} >> "${_tmpinv}"
   fi
+}
+
+_print_result(){
+  local _exitst=$1
+  _pline
+  if [[ "${_exitst}" -eq 0 ]]
+  then
+    printf "Setup completed SUCCESFULLY!\n"
+  else
+    printf "Setup completed with ERRORS!!\n"
+  fi
+  printf "Full output logged to: %s\n" "${_LOGFILE}"
+  _pline
+}
+
+_tmsetup_local(){ # Installation on localhost only
+  _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
+  [[ "${_APT_UPGRADE}" == "true" ]] && ( _apt_upgrade || return 1 )
+  printf "\n\n"
+  _pline
+  printf "Running Ansible playbook to setup Traffic Monitor\n"
+  _pline
+  ANSIBLE_CMD="${ANSIBLE_BIN} -i localhost setup.yml ${_EXTRA_ARGS}"
+  printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
+  ${ANSIBLE_CMD}
+  _EXIT_STATUS="$?"
+  cd "${_START_DIR}"
+  printf "\n\n"
+  _print_result "${_EXIT_STATUS}"
+  if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
+    _pline
+    printf "Reboot is required to complete the installation.\n"
+    if _confirm_cont "Would you like to reboot now? [yN] " ;then
+      printf "Rebooting system now.\n"
+      sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
+      printf "\n"
+    else
+      printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
+    fi
+  fi
+  return ${_EXIT_STATUS}
+}
+
+_tmsetup_remote(){ # Installation on Remote hosts
+  local _rhosts=$1
+  _set_tmp_ansible_inv "${_rhosts}" "${TMP_INVENTORY_PATH}"
+  [[ "${_APT_UPGRADE}" == "true" ]] && _add_var tmsetup_perform_apt_upgrade true
+  printf "\n\n"
+  _pline
+  printf "Running Ansible playbook to setup Traffic Monitor on the following remote hosts:\n"
+  printf "\t%s\n" "${_rhosts}"
+  _pline
+  ANSIBLE_CMD="${ANSIBLE_BIN} -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
+  printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
+  ${ANSIBLE_CMD}
+  _EXIT_STATUS="$?"
+  cd "${_START_DIR}"
+  printf "\n\n"
+  _print_result "${_EXIT_STATUS}"
+  return ${_EXIT_STATUS}
 }
 
 ### Start of MAIN
@@ -136,7 +195,7 @@ do
       _add_var tmsetup_codegroup "${OPTARG}"
       ;;
     H) # Set remote HOST execution
-      if [[ -n "${_REMOTE_HOSTS}" ]];then
+      if [[ -z "${_REMOTE_HOSTS}" ]];then
         _REMOTE_HOSTS="${OPTARG}"
       else
         _REMOTE_HOSTS="${_REMOTE_HOSTS},${OPTARG}"
@@ -204,76 +263,41 @@ _log_check "${_LOGFILE}"
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
 
-if [[ -n "${TM_TMP_DIR}" ]] ;then
-  _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
-fi
-if [[ -n "${_REMOTE_HOSTS}" ]] ;then
-  _set_tmp_ansible_inv "${_REMOTE_HOSTS}" "${TMP_INVENTORY_PATH}"
-fi
-_init_reboot_touchfile "${REBOOT_TOUCH_FILE}"
-
-if [[ "${_APT_UPGRADE}" == "true" ]] ;then
-  if [[ -z "${_REMOTE_HOSTS}" ]] ;then
-    _apt_upgrade
-  else
-    _add_var tmsetup_perform_apt_upgrade true
-  fi
-fi
-
+[[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
 _install_ansible "${VENV_DIR}"
+. "${VENV_DIR}/bin/activate"
+cd "${_SCRIPT_DIR}/ansible"
+
 if [ "${_FORCE}" = true ]
 then
+  printf "\n"
+  _pline
   printf "Force argument passed.  Existing configurations will be overwritten with defaults.\n"
+  _pline
   if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
+    printf "\nTMSetup cancelled.  Exitting.\n"
     exit 2
   fi
   _add_var tmsetup_force_configs "true" 
 fi
 
-# Initiate ansible playbook
-_pline
-printf "Running Ansible playbook to setup Traffic Monitor\n"
-_pline
-cd "${_SCRIPT_DIR}/ansible"
-. "${VENV_DIR}/bin/activate"
-
-if [[ -z "${_REMOTE_HOSTS}" ]] ;then
-  ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
+if which unbuffer ;then
+  ANSIBLE_BIN="unbuffer ansible-playbook"
 else
-  ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
+  ANSIBLE_BIN="ansible-playbook"
 fi
 
-printf "%s\n" "${ANSIBLE_CMD}"
-${ANSIBLE_CMD}
 
-# Notify and exit on error
-_EXIT_STATUS="${PIPESTATUS[0]}"
 
-cd "${_START_DIR}"
-
-printf "\n\n\n"
-_pline
-if [[ "${_EXIT_STATUS}" -eq 0 ]]
-then
-  printf "Setup completed SUCCESFULLY!\n"
+if [[ -z "${_REMOTE_HOSTS}" ]] || [[ "${_REMOTE_HOSTS}" =~ ^,?localhost$ ]] ;then
+  _tmsetup_local
 else
-  printf "Setup completed with ERRORS!!\n"
+  _tmsetup_remote "${_REMOTE_HOSTS}"
 fi
-printf "Full output logged to: %s\n" "${_LOGFILE}"
-_pline
 
-# Ask to reboot if not bypassed
-if [[ -z "${_REMOTE_HOSTS}" ]] ;then
-  if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
-    _pline
-    printf "Reboot is required to complete the installation.\n"
-    if _confirm_cont "Would you like to reboot now? [yN] " ;then
-      printf "Rebooting system now.\n"
-      sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
-      printf "\n"
-    fi
-  else
-    printf "Reboot skipped. You will need to manually reboot this device to finalize tmsetup.\nExitting...\n"
-  fi
-fi
+
+
+
+
+
 exit ${_EXIT_STATUS}
