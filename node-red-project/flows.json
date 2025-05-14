@@ -582,8 +582,6 @@
             "label": true
         },
         "nodes": [
-            "4a62f39107d10a25",
-            "38fd03504247825b",
             "b781cb3d6df38fed",
             "a38a90c36a0abfc3",
             "0372cefb5e2ec968",
@@ -591,9 +589,9 @@
             "fb62ca91f138ab87"
         ],
         "x": 14,
-        "y": 1819,
+        "y": 1219,
         "w": 1398,
-        "h": 448
+        "h": 368
     },
     {
         "id": "791a8c44b7f98d1b",
@@ -1013,14 +1011,14 @@
             "label": true
         },
         "nodes": [
-            "f2256e28de366878",
             "f49c1d345cdfef57",
-            "7c96d66a8330a4fc"
+            "7c96d66a8330a4fc",
+            "4d376b9ae709214b"
         ],
         "x": 514,
-        "y": 1899,
-        "w": 412,
-        "h": 122
+        "y": 1259,
+        "w": 702,
+        "h": 82
     },
     {
         "id": "a38a90c36a0abfc3",
@@ -1037,12 +1035,10 @@
             "64467a90df93e582",
             "7555653f37b1cd50",
             "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d",
-            "5743aab77af94bd2",
-            "4979b291119bce23"
+            "5b7fe362e2e6b35d"
         ],
         "x": 514,
-        "y": 2039,
+        "y": 1359,
         "w": 872,
         "h": 202
     },
@@ -11076,7 +11072,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 150,
-        "y": 1980,
+        "y": 1340,
         "wires": [
             [
                 "56cafb11de5348b2"
@@ -11105,77 +11101,10 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 150,
-        "y": 1940,
+        "y": 1300,
         "wires": [
             [
-                "f2256e28de366878"
-            ]
-        ]
-    },
-    {
-        "id": "4a62f39107d10a25",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "set frigate config directory flow.frigateConfigDir",
-        "rules": [
-            {
-                "t": "set",
-                "p": "frigateConfigDir",
-                "pt": "flow",
-                "to": "$globalContext('deviceAttributes.homeDir', 'config') & \"/code/frigate/config\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 520,
-        "y": 1860,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "38fd03504247825b",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "inject after 5 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "x": 150,
-        "y": 1860,
-        "wires": [
-            [
-                "4a62f39107d10a25"
-            ]
-        ]
-    },
-    {
-        "id": "f2256e28de366878",
-        "type": "file in",
-        "z": "05fcb02c571dcfee",
-        "g": "b781cb3d6df38fed",
-        "name": "read Frigate config file",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
-        "filenameType": "jsonata",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 640,
-        "y": 1940,
-        "wires": [
-            [
-                "f49c1d345cdfef57"
+                "4d376b9ae709214b"
             ]
         ]
     },
@@ -11206,8 +11135,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 700,
-        "y": 1980,
+        "x": 960,
+        "y": 1300,
         "wires": [
             [
                 "7c96d66a8330a4fc"
@@ -11232,7 +11161,7 @@
         "senderr": false,
         "headers": [],
         "x": 680,
-        "y": 2080,
+        "y": 1400,
         "wires": [
             [
                 "7555653f37b1cd50"
@@ -11248,7 +11177,7 @@
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/config/save?save_option=restart",
+        "url": "http://frigate:5000/api/config/save?save_option=restart",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -11264,7 +11193,7 @@
             }
         ],
         "x": 1140,
-        "y": 2120,
+        "y": 1440,
         "wires": [
             [
                 "64467a90df93e582"
@@ -11290,7 +11219,7 @@
         "repair": false,
         "outputs": 1,
         "x": 1220,
-        "y": 2160,
+        "y": 1480,
         "wires": [
             [
                 "5b7fe362e2e6b35d"
@@ -11307,7 +11236,7 @@
         "action": "",
         "pretty": false,
         "x": 890,
-        "y": 2080,
+        "y": 1400,
         "wires": [
             [
                 "0d394a2d73d138d6"
@@ -11328,7 +11257,7 @@
         "finalize": "",
         "libs": [],
         "x": 1120,
-        "y": 2080,
+        "y": 1400,
         "wires": [
             [
                 "25515211bb8cecb4"
@@ -11352,47 +11281,8 @@
         "topic": "Frigate Config Restore Validation Error",
         "name": "show frigate validation error",
         "x": 1240,
-        "y": 2200,
+        "y": 1520,
         "wires": []
-    },
-    {
-        "id": "5743aab77af94bd2",
-        "type": "file",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "write backup config file before restore",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
-        "filenameType": "jsonata",
-        "appendNewline": true,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 730,
-        "y": 2160,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "4979b291119bce23",
-        "type": "file in",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "read Frigate config file",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
-        "filenameType": "jsonata",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 640,
-        "y": 2120,
-        "wires": [
-            [
-                "5743aab77af94bd2"
-            ]
-        ]
     },
     {
         "id": "7c96d66a8330a4fc",
@@ -11404,8 +11294,8 @@
         "links": [
             "4af0d78e8bc39647"
         ],
-        "x": 885,
-        "y": 1980,
+        "x": 1175,
+        "y": 1300,
         "wires": []
     },
     {
@@ -11425,7 +11315,7 @@
         "templateScope": "local",
         "className": "",
         "x": 170,
-        "y": 1900,
+        "y": 1260,
         "wires": [
             []
         ]
@@ -11500,6 +11390,192 @@
                 "c0a27f9a895a1a94"
             ]
         ]
+    },
+    {
+        "id": "4d376b9ae709214b",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "g": "b781cb3d6df38fed",
+        "name": "fetch frigate /api/config/raw",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config/raw",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 660,
+        "y": 1300,
+        "wires": [
+            [
+                "f49c1d345cdfef57"
+            ]
+        ]
+    },
+    {
+        "id": "ddbd9ce4695fc8f8",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "name": "validate Frigate config, save and restart",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config/raw",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "text/plain",
+                "valueValue": ""
+            }
+        ],
+        "x": 480,
+        "y": 1760,
+        "wires": [
+            [
+                "23e499f07d12c266"
+            ]
+        ]
+    },
+    {
+        "id": "b360edc5d76238c8",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 1760,
+        "wires": [
+            [
+                "ddbd9ce4695fc8f8"
+            ]
+        ]
+    },
+    {
+        "id": "23e499f07d12c266",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "0f6ba6e2723f52cc",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "name": "fetch frigate /api/config",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 420,
+        "y": 1800,
+        "wires": [
+            [
+                "4319ea3cee4d49f0"
+            ]
+        ]
+    },
+    {
+        "id": "ceb6e5af975ae3bb",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 1800,
+        "wires": [
+            [
+                "0f6ba6e2723f52cc"
+            ]
+        ]
+    },
+    {
+        "id": "4319ea3cee4d49f0",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 1820,
+        "wires": []
     },
     {
         "id": "9f2c4f1852402eb8",
