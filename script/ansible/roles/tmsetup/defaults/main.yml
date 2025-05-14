@@ -17,6 +17,9 @@ tmsetup_radar_paths:
   - /dev/ttyACM2
   - /dev/ttyACM3
 
+tmsetup_pcie_tpu_paths:
+  - /dev/apex_0
+
 tmsetup_thingsboard_server: 'tb.server.com'
 tmsetup_thingsboard_protocol: 'https'
 tmsetup_thingsboard_port: '443'
