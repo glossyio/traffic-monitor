@@ -18,7 +18,7 @@
     {
         "id": "9269520ddb532b00",
         "type": "tab",
-        "label": "events",
+        "label": "capture-events",
         "disabled": false,
         "info": "",
         "env": []
@@ -990,11 +990,11 @@
             "6d2f607b324415b4",
             "24efdc7f1231f7f0",
             "1ba33a74f2d3a680",
-            "17455485af2d8cfc",
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
-            "a2b2e69319628779"
+            "a2b2e69319628779",
+            "17455485af2d8cfc"
         ],
         "x": 88,
         "y": 439,
@@ -2262,24 +2262,6 @@
         "wires": []
     },
     {
-        "id": "17455485af2d8cfc",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "latest deployment info",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 880,
-        "y": 780,
-        "wires": []
-    },
-    {
         "id": "ac8b2de05ec27001",
         "type": "change",
         "z": "3dae026ab340962a",
@@ -2399,6 +2381,24 @@
         ],
         "x": 865,
         "y": 340,
+        "wires": []
+    },
+    {
+        "id": "17455485af2d8cfc",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "latest deployment info",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 780,
         "wires": []
     },
     {
