@@ -44,7 +44,7 @@
     owner: '{{ tmsetup_codeowner }}'
     src: 'node-red-tm/{{ item }}'
 
-- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Dockerfile
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
   loop:
     - node-red-tm/Dockerfile
@@ -61,7 +61,7 @@
     - Build container images
     - Restart tm-docker service
 
-- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
   become: true
   loop:
     - node-red-tm/config/config.yml
