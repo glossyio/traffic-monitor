@@ -32,23 +32,23 @@
 - name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
   become: true
   loop:
-    - flows_cred.json
-    - flows.json
-    - package.json
-    - README.md
-    - settings.js
+    - node-red-tm/data/flows_cred.json
+    - node-red-tm/data/flows.json
+    - node-red-tm/data/README.md
+    - node-red-tm/data/settings.js
   ansible.builtin.copy:
-    dest: '{{ tmsetup_codedir }}/node-red-tm/data/{{ item }}'
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
     group: '{{ tmsetup_codegroup }}'
     mode: '0644'
     owner: '{{ tmsetup_codeowner }}'
-    src: 'node-red-tm/{{ item }}'
+    src: '{{ item }}'
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
   become: true
   loop:
     - node-red-tm/Dockerfile
     - node-red-tm/docker-compose-node-red-tm.yaml
+    - node-red-tm/data/package.json
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
