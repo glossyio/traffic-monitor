@@ -23,5 +23,6 @@ tmsetup_base_required_facts:
   - 'ansible_architecture'
   - 'ansible_user_id'
   - 'ansible_user_dir'
+  - 'ansible_hostname'
 
 ...
