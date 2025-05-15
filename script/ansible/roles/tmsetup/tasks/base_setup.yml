@@ -7,13 +7,6 @@
     groups: sudo
     name: '{{ tmsetup_codeowner }}'
 
-- name: TMSetup - Base Setup - Check if reboot needed
-  ansible.builtin.stat:
-    path: /var/run/reboot-required
-  register: tmsetup_reboot_required_stat_register
-  changed_when: tmsetup_reboot_required_stat_register.stat.exists
-  notify: TMSetup - Flag for reboot
-
 - name: TMSetup - Base Setup - Create code owner
   become: true
   ansible.builtin.user:
@@ -47,6 +40,13 @@
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item }}'
     state: directory
+
+- name: TMSetup - Base Setup - Install aptitude for better package management
+  become: true
+  ansible.builtin.apt:
+    name: aptitude
+    state: present
+    update_cache: true
 
 - name: TMSetup - Base Setup - Remove conflicting packages
   become: true
