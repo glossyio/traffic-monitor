@@ -143,7 +143,7 @@ _tmsetup_local(){ # Installation on localhost only
   _pline
   printf "Running Ansible playbook to setup Traffic Monitor\n"
   _pline
-  ANSIBLE_CMD="${ANSIBLE_BIN} -i localhost setup.yml ${_EXTRA_ARGS}"
+  ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
   ${ANSIBLE_CMD}
   _EXIT_STATUS="$?"
@@ -175,7 +175,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
   printf "Running Ansible playbook to setup Traffic Monitor on the following remote hosts:\n"
   printf "\t%s\n" "${_rhosts}"
   _pline
-  ANSIBLE_CMD="${ANSIBLE_BIN} -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
+  ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
   ${ANSIBLE_CMD}
   _EXIT_STATUS="$?"
@@ -188,7 +188,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
 ### Start of MAIN
 
 # Collect command-line options
-while getopts ":fhkTuvyd:g:H:l:L:o:t:z:" opt
+while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:" opt
 do
   case ${opt} in
     d) # Set PATH for install
@@ -215,6 +215,9 @@ do
       ;;
     k) # Prompt for password for login for remote host execution
       _add_arg "-k"
+      ;;
+    K) # Prompt for password for privilege escalation (sudo)
+      _add_arg "-K"
       ;;
     o) # Set Code OWNER
       _add_var tmsetup_codeowner "${OPTARG}"
@@ -287,23 +290,10 @@ then
   _add_var tmsetup_force_configs "true" 
 fi
 
-if which unbuffer ;then
-  ANSIBLE_BIN="unbuffer ansible-playbook"
-else
-  ANSIBLE_BIN="ansible-playbook"
-fi
-
-
-
 if [[ -z "${_REMOTE_HOSTS}" ]] || [[ "${_REMOTE_HOSTS}" =~ ^,?localhost$ ]] ;then
   _tmsetup_local
 else
   _tmsetup_remote "${_REMOTE_HOSTS}"
 fi
-
-
-
-
-
 
 exit ${_EXIT_STATUS}
