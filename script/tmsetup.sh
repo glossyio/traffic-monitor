@@ -90,12 +90,14 @@ touch "${_logfil}" || ( printf "Unable to write to log file: %s\n" "${_logfil}" 
 
 _confirm_cont() { # Request to confirm continuation
 local _cnftxt=$1
-local _contin=n
+local _contin=''
 if [[ "${_CONFIRM}" == false ]]
 then
-  read -p "${_cnftxt}" -n 1 -r cont
-  printf '\n'
-  [[ "${_contin}" =~ ^[Yy]$ ]] || return 1
+  while ! [[ "${_contin}" =~ ^[YyNn]$ ]] ;do
+    read -p "${_cnftxt}" -n 1 -r _contin
+    printf '\n'
+    [[ "${_contin}" =~ ^[Nn]$ ]] && return 2
+  done
 fi
 return 0
 }
@@ -133,6 +135,8 @@ _print_result(){
 }
 
 _tmsetup_local(){ # Installation on localhost only
+  printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
+  _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
   [[ "${_APT_UPGRADE}" == "true" ]] && ( _apt_upgrade || return 1 )
   printf "\n\n"
@@ -149,7 +153,7 @@ _tmsetup_local(){ # Installation on localhost only
   if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
     _pline
     printf "Reboot is required to complete the installation.\n"
-    if _confirm_cont "Would you like to reboot now? [yN] " ;then
+    if _confirm_cont "Would you like to reboot now? [y|N] " ;then
       printf "Rebooting system now.\n"
       sudo shutdown -r +1 "System is rebooting to finalize tmsetup.sh"
       printf "\n"
@@ -162,6 +166,8 @@ _tmsetup_local(){ # Installation on localhost only
 
 _tmsetup_remote(){ # Installation on Remote hosts
   local _rhosts=$1
+  printf "This will install the traffic monitor software on these devices:\n\t%s\n" "${_rhosts}"
+  _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
   _set_tmp_ansible_inv "${_rhosts}" "${TMP_INVENTORY_PATH}"
   [[ "${_APT_UPGRADE}" == "true" ]] && _add_var tmsetup_perform_apt_upgrade true
   printf "\n\n"
@@ -214,7 +220,7 @@ do
       _add_var tmsetup_codeowner "${OPTARG}"
       ;;
     t) # Set playbook TAG
-      if [[ " ${_VALID_TAGS[*]} " =~ [[:space:]]${OPTARG}[[:space:]] ]] ;then
+      if [[ \ ${_VALID_TAGS[*]}\  =~ [[:space:]]${OPTARG}[[:space:]] ]] ;then
         _add_arg "--tags ${OPTARG}"
       else
         printf "Invalid Tag: %s\nExitting.\n\n" "${OPTARG}"
@@ -274,7 +280,7 @@ then
   _pline
   printf "Force argument passed.  Existing configurations will be overwritten with defaults.\n"
   _pline
-  if ! _confirm_cont "Are you sure you wish to continue? [yN] " ;then
+  if ! _confirm_cont "Are you sure you wish to continue? [y|N] " ;then
     printf "\nTMSetup cancelled.  Exitting.\n"
     exit 2
   fi
