@@ -30,6 +30,7 @@
   tags:
     - docker
     - frigate
+    - node-red-tm
     - coraltpu
   ansible.builtin.import_tasks:
     file: docker_setup.yml
@@ -52,11 +53,11 @@
   ansible.builtin.import_tasks:
     file: frigate_setup.yml
 
-- name: TMSetup - Main - Setup Node Red
+- name: TMSetup - Main - Setup Node-Red-TM
   tags:
-    - nodered
+    - node-red-tm
   ansible.builtin.import_tasks:
-    file: nodered_setup.yml
+    file: node-red-tm_docker_setup.yml
 
 - name: TMSetup - Main - Setup WiFI
   tags:
@@ -69,6 +70,7 @@
     - wifi
     - docker
     - frigate
+    - node-red-tm
     - nodered
     - go2rtc
   ansible.builtin.import_tasks:

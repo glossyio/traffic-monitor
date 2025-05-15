@@ -26,6 +26,9 @@
 - name: TMSetup - Base Setup - Set var for codeowner home directory
   ansible.builtin.set_fact:
     tmsetup_codeowner_homedir: '{{ tmsetup_base_register_user_codeowner.home }}'
+    tmsetup_codeowner_uid: '{{ tmsetup_base_register_user_codeowner.uid }}'
+    tmsetup_codeowner_gid: '{{ tmsetup_base_register_user_codeowner.group }}'
+
 
 - name: TMSetup - Base Setup - Set timezone
   become: true
