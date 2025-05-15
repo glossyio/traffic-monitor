@@ -41,6 +41,7 @@ printf "  %-20s%s\n" \
   "-l USERNAME" "LOGIN to for remote host execution" \
   "-L PATH" "PATH to LOGFILE file for output of installer (default ${_LOGFILE})" \
   "-k" "Prompt for password for remote host execution." \
+  "-K" "Prompt for password for privilege escalation (sudo)." \
   "-o USER" "Set the OWNER of traffic-monitor files and processes (default tmadmin)" \
   "-t TAG" "TAG the ansible-playbook command to only run a subset of plays" \
   "-T" "Get a list of available tags and exit" \
