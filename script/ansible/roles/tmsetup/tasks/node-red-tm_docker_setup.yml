@@ -1,0 +1,78 @@
+---
+# TMSetup - Node-RED-TM Setup tasks
+
+- name: TMSetup - Node-RED-TM Setup - Check for radars
+  loop: "{{ tmsetup_radar_paths }}"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: tmsetup_radarpath_stat_register
+
+- name: TMSetup Node-RED-TM Setup - Add existing radars to list
+  loop: "{{ tmsetup_radarpath_stat_register.results }}"
+  when: item['stat']['exists'] | bool
+  ansible.builtin.set_fact:
+    tmsetup_radars_confirmed: "{{ tmsetup_radars_confirmed | default([]) + [item['stat']['path']] }}"
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/node-red-tm'
+    - '{{ tmsetup_codedir }}/node-red-tm/config'
+    - '{{ tmsetup_codedir }}/node-red-tm/data'
+    - '{{ tmsetup_codedir }}/node-red-tm/db'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
+  become: true
+  loop:
+    - node-red-tm/data/flows_cred.json
+    - node-red-tm/data/flows.json
+    - node-red-tm/data/README.md
+    - node-red-tm/data/settings.js
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}'
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
+  become: true
+  loop:
+    - node-red-tm/Dockerfile
+    - node-red-tm/docker-compose-node-red-tm.yaml
+    - node-red-tm/data/package.json
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify:
+    - Build container images
+    - Restart tm-docker service
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
+  become: true
+  loop:
+    - node-red-tm/config/config.yml
+    - node-red-tm/node-red-tm.env
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify: Restart tm-docker service
+...

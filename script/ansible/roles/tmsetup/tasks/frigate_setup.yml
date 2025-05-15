@@ -1,5 +1,18 @@
 ---
 # TMSetup - Frigate Setup tasks
+
+- name: TMSetup - Frigate Setup - Check for PCIE Coral TPUs
+  loop: "{{ tmsetup_pcie_tpu_paths }}"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: tmsetup_pcietpupath_stat_register
+
+- name: TMSetup Frigate Setup - Add existing PCIE Coral TPUs to list
+  loop: "{{ tmsetup_pcietpupath_stat_register.results }}"
+  when: item['stat']['exists'] | bool
+  ansible.builtin.set_fact:
+    tmsetup_pcietpus_confirmed: "{{ tmsetup_pcietpus_confirmed | default([]) + [item['stat']['path']] }}"
+
 - name: TMSetup - Frigate Setup - Create Frigate Directories
   become: true
   loop:
@@ -29,5 +42,7 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}.j2'
-  notify: Restart tm-docker service
+  notify:
+    - Build container images
+    - Restart tm-docker service
 ...
