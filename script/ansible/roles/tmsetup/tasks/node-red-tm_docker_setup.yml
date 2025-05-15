@@ -54,7 +54,7 @@
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     force: true
     group: '{{ tmsetup_codegroup }}'
-    mode: '0640'
+    mode: '0644'
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}.j2'
   notify:
