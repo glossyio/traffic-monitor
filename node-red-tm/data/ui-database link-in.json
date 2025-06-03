@@ -1,0 +1,19 @@
+[
+    {
+        "id": "b97ef1195ac572e8",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "name": "dashboard 2 create comment",
+        "links": [
+            "cf47ae54ebd02d2f"
+        ],
+        "x": 355,
+        "y": 20,
+        "wires": [
+            [
+                "8d65b604e8d9e7f9"
+            ]
+        ]
+    }
+]
