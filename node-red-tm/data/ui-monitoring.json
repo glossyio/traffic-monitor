@@ -1,0 +1,2641 @@
+[
+    {
+        "id": "28627559bebdc324",
+        "type": "tab",
+        "label": "ui-monitoring",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "0a6e123f5e53c029",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event; group summary daily",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "b65e1877b1e04881",
+            "5f3716d2176c3ab4",
+            "bdb4b259d648b1f0",
+            "ec7a0e0b1c62e91d",
+            "4aa9d363945f4a02"
+        ],
+        "x": 334,
+        "y": 559,
+        "w": 852,
+        "h": 162
+    },
+    {
+        "id": "5aac1262472b0205",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event; group frigate api/events/summary",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "08d030ffc3fe6adb",
+            "b241a0ef89fd7ce4",
+            "eb140f61419c6a08"
+        ],
+        "x": 334,
+        "y": 419,
+        "w": 712,
+        "h": 122
+    },
+    {
+        "id": "5173f4b3ac03407a",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event; show object counts/speeds last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "02469f2425072f7b",
+            "928b71f25ce6e7b6",
+            "c03516d1eb65598d",
+            "4f84bcb60e4be762",
+            "3cdf16d288b5de2b"
+        ],
+        "x": 334,
+        "y": 699,
+        "w": 892,
+        "h": 162
+    },
+    {
+        "id": "76417db2b472ef4f",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "radar; TimedSpeedCounts (.counts, .speed_average)",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0e1614cf2e5f9942",
+            "7cc031e5a7d773a4",
+            "79900a566af02159",
+            "39d895a16ca6f6f1",
+            "62be7d38b991716c",
+            "cbb3b02ca505a55b",
+            "7db4b197df9eb075"
+        ],
+        "x": 308,
+        "y": 839,
+        "w": 1078,
+        "h": 348
+    },
+    {
+        "id": "1bd1f21fa0390c69",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event; car event speed stats",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "5417aae0d14fa661",
+            "584504e6c8935eaf",
+            "9cf49f0891d25df1",
+            "6d81c8e3c89b68f6",
+            "51ef499f21462fe5"
+        ],
+        "x": 354,
+        "y": 1199,
+        "w": 952,
+        "h": 162
+    },
+    {
+        "id": "2df66c6bc991dbf4",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "sensor selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "bb08a223f0aaef0f",
+            "e3b795e05d7650b2",
+            "c7f00f59861cd00f",
+            "ff783e21c3b96d4b",
+            "62c9240d45e9c8d6",
+            "59d0c8b142295eee",
+            "f50a7968e032532a",
+            "af02df2daa211e5b",
+            "1feaed96b954867a",
+            "946c6bc353743bc4",
+            "04c77d4233fbffd3"
+        ],
+        "x": 14,
+        "y": 79,
+        "w": 1332,
+        "h": 202
+    },
+    {
+        "id": "7c19b3698bb02613",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "airquality_monitor",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a3672e4c4c84d721",
+            "e5ed08571761bd2c",
+            "441e03047af79373",
+            "9d1978d68c96feb9",
+            "2227d1c8d929c91d",
+            "f920233df1bbb23f",
+            "149757a20cc50973",
+            "b8342af470189c50",
+            "95871652f30bc9ce",
+            "8a82204bdfcdddb9",
+            "7d5875326501443c",
+            "d16177f416c9a0ef",
+            "34361a18f847df07",
+            "c1adf5e2bd669713",
+            "c13f03809fbd9809"
+        ],
+        "x": 24,
+        "y": 1999,
+        "w": 1268,
+        "h": 408
+    },
+    {
+        "id": "91096cd6c9c741e2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "name": "event-based ui",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c249329109ac17d5",
+            "9b9e4fc50b744fc3",
+            "453513c49e4b1b60",
+            "ca3c18fa88ded42a"
+        ],
+        "x": 94,
+        "y": 1353,
+        "w": 1418,
+        "h": 674
+    },
+    {
+        "id": "9b9e4fc50b744fc3",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "name": "last N events, radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "d66541089b01306e",
+            "2e680914d7da5c94",
+            "c788d632f5e93a73",
+            "e5391514131a2b5a",
+            "5ec2d3ba52f944f5",
+            "c36c71706e494b5e",
+            "82bc0c11adb825f8",
+            "736d1e21a49f446b",
+            "5b307e65106f3540",
+            "4c087723a1d698e9",
+            "0f65ceafe3f7c069",
+            "f5d2d92d50d18ce2",
+            "c2270f3050bf35ab",
+            "3bb1ab86f5f416ef"
+        ],
+        "x": 194,
+        "y": 1379,
+        "w": 1252,
+        "h": 362
+    },
+    {
+        "id": "453513c49e4b1b60",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "name": "cumulative events today by object",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6d738ed81fefbedc",
+            "d856c68660eb2202",
+            "f57e08e6fb9c0d09",
+            "d23be15251ed6d73",
+            "4760bed60a7f392a",
+            "170ddffb726db9e0",
+            "befe91e6862c72db",
+            "13a061996f9322f3",
+            "98571c77b9801a83",
+            "1b8526347f65ae81"
+        ],
+        "x": 194,
+        "y": 1759,
+        "w": 1292,
+        "h": 242
+    },
+    {
+        "id": "0e1614cf2e5f9942",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "show object counts/speeds (5-min) last 60-min in zone_radar",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "11fa2826769befc7",
+            "158e6edae533bfdc",
+            "eff2193c8246a9d2",
+            "57fa6ca2b7d290e3"
+        ],
+        "x": 334,
+        "y": 1039,
+        "w": 972,
+        "h": 122
+    },
+    {
+        "id": "d16177f416c9a0ef",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "event; object counts/speeds individually last 24-hours",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "12df4fdffa628238",
+            "6a292f3905fe5405",
+            "76e813b1b7a4b63e",
+            "5cf61952cb6823de"
+        ],
+        "x": 384,
+        "y": 2259,
+        "w": 882,
+        "h": 122
+    },
+    {
+        "id": "f5d2d92d50d18ce2",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "frigate event api for thumbnail",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "09f99c931e5535bf",
+            "08121a31488784bc",
+            "9226865e3385eb56",
+            "aa0afb5180297e2b"
+        ],
+        "x": 594,
+        "y": 1419,
+        "w": 612,
+        "h": 122
+    },
+    {
+        "id": "04c77d4233fbffd3",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "x": 1320,
+        "y": 240,
+        "wires": [
+            [
+                "a20d5f859bf5c14d"
+            ]
+        ]
+    },
+    {
+        "id": "ca3c18fa88ded42a",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "x": 180,
+        "y": 1420,
+        "wires": [
+            [
+                "82bc0c11adb825f8",
+                "f57e08e6fb9c0d09",
+                "736d1e21a49f446b",
+                "5ec2d3ba52f944f5"
+            ]
+        ]
+    },
+    {
+        "id": "34361a18f847df07",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "x": 360,
+        "y": 2040,
+        "wires": [
+            [
+                "12df4fdffa628238",
+                "441e03047af79373"
+            ]
+        ]
+    },
+    {
+        "id": "a20d5f859bf5c14d",
+        "type": "junction",
+        "z": "28627559bebdc324",
+        "x": 100,
+        "y": 360,
+        "wires": [
+            [
+                "34361a18f847df07",
+                "158e6edae533bfdc",
+                "79900a566af02159",
+                "928b71f25ce6e7b6",
+                "5f3716d2176c3ab4",
+                "b241a0ef89fd7ce4",
+                "584504e6c8935eaf",
+                "f57e08e6fb9c0d09"
+            ]
+        ]
+    },
+    {
+        "id": "08d030ffc3fe6adb",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
+        "name": "frigate summary daily, objects",
+        "group": "06dde4be9a9a6b27",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "label": "frigate api/events/summary daily object count for the last 10-days",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "Y-M-D",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "10",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "86400",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 890,
+        "y": 500,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b241a0ef89fd7ce4",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
+        "name": "frigate api/events/summary - Daily summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/api/events/summary",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 530,
+        "y": 460,
+        "wires": [
+            [
+                "eb140f61419c6a08"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "eb140f61419c6a08",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "5aac1262472b0205",
+        "name": "structure frigate api/summary",
+        "func": "var newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //only do this for the radar camera and 10 days or less ago\n    if (myItem.camera == flow.get(\"camera_selection\") && new Date(myItem.day).getTime() >= Math.floor((Date.now() - 86400000 * 10))) {\n        //if label doesn't exist, push it\n        if (newMsg[0].series.indexOf(myItem.label) < 0) {\n            newMsg[0].series.push(myItem.label);\n            //create new data array element that matches the series index\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n        }\n\n        //Check if it's a new date or existing in data[0][0].x\n        //datapoint for date \n        let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n        if (xIndex < 0) {\n            //new date\n            let thisDataPoint = {};\n            thisDataPoint.x = new Date(myItem.day);\n            thisDataPoint.y = myItem.count;\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n        }\n        else {\n            //date exists, sum counts\n            newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n        }\n\n    };\n    \n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 460,
+        "wires": [
+            [
+                "08d030ffc3fe6adb"
+            ]
+        ]
+    },
+    {
+        "id": "b65e1877b1e04881",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "events summary daily, objects",
+        "group": "06dde4be9a9a6b27",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "events daily object count for the last 10-days",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "Y-M-D",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "10",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "86400",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": true,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1030,
+        "y": 640,
+        "wires": [
+            [
+                "4aa9d363945f4a02"
+            ]
+        ]
+    },
+    {
+        "id": "c249329109ac17d5",
+        "type": "link in",
+        "z": "28627559bebdc324",
+        "g": "91096cd6c9c741e2",
+        "name": "link in event capture",
+        "links": [
+            "274f87c31437c2d7"
+        ],
+        "x": 135,
+        "y": 1420,
+        "wires": [
+            [
+                "ca3c18fa88ded42a",
+                "79900a566af02159",
+                "158e6edae533bfdc",
+                "584504e6c8935eaf",
+                "928b71f25ce6e7b6",
+                "5f3716d2176c3ab4",
+                "b241a0ef89fd7ce4"
+            ]
+        ]
+    },
+    {
+        "id": "d66541089b01306e",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only event with speed",
+        "property": "$abs(payload.speed_calc)",
+        "propertyType": "jsonata",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "20",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1020,
+        "y": 1620,
+        "wires": [
+            [
+                "c788d632f5e93a73"
+            ]
+        ]
+    },
+    {
+        "id": "2e680914d7da5c94",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only zone_radar",
+        "property": "payload.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "zone_radar",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 360,
+        "y": 1500,
+        "wires": [
+            [
+                "c2270f3050bf35ab"
+            ]
+        ]
+    },
+    {
+        "id": "c788d632f5e93a73",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N speed events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_speed\") || [];\n//Keep only last X elements\nvar myArrLength = 3;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_speed\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 1660,
+        "wires": [
+            [
+                "4c087723a1d698e9"
+            ]
+        ]
+    },
+    {
+        "id": "e5391514131a2b5a",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N radar events",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 21;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 1580,
+        "wires": [
+            [
+                "c36c71706e494b5e"
+            ]
+        ]
+    },
+    {
+        "id": "5ec2d3ba52f944f5",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "only use selected camera",
+        "property": "camera_selection",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 330,
+        "y": 1460,
+        "wires": [
+            [
+                "2e680914d7da5c94"
+            ]
+        ]
+    },
+    {
+        "id": "c36c71706e494b5e",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "06dde4be9a9a6b27",
+        "name": "last N radar events",
+        "order": 2,
+        "width": 8,
+        "height": 19,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar events for radar_camera</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1270,
+        "y": 1580,
+        "wires": [
+            [
+                "3bb1ab86f5f416ef"
+            ]
+        ]
+    },
+    {
+        "id": "82bc0c11adb825f8",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "debug: event payload in",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 330,
+        "y": 1420,
+        "wires": []
+    },
+    {
+        "id": "4abe0507c83f87a2",
+        "type": "catch",
+        "z": "28627559bebdc324",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "a309589b69eb07e1"
+            ]
+        ]
+    },
+    {
+        "id": "a309589b69eb07e1",
+        "type": "debug",
+        "z": "28627559bebdc324",
+        "name": "catch: all - dashboard",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 270,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "02469f2425072f7b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "",
+        "group": "7866c2aa313ab8b9",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "events by object (60-min) for last 36 hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1030,
+        "y": 780,
+        "wires": [
+            [
+                "3cdf16d288b5de2b"
+            ]
+        ]
+    },
+    {
+        "id": "736d1e21a49f446b",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "store last N frigate events as text, any zone",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_all\") || [];\n//Keep only last X elements\nvar myArrLength = 10;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//keep only specific elements\nconst newObj = {\n    id: msg.payload.id, \n    label: msg.payload.label,  \n    direction_calc: msg.payload.direction_calc, \n    speed_calc: msg.payload.speed_calc, \n    };\n\n//add current event to end of array\nmyEvents.push(newObj);\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_all\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\nif (flow.get(\"events_recent_radar\") === undefined) {\n    flow.set(\"events_recent_radar\", [])\n}\n",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 1700,
+        "wires": [
+            [
+                "5b307e65106f3540"
+            ]
+        ]
+    },
+    {
+        "id": "5b307e65106f3540",
+        "type": "ui_text",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "7866c2aa313ab8b9",
+        "order": 6,
+        "width": 6,
+        "height": 7,
+        "name": "",
+        "label": "last N events, text output",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": true,
+        "font": "Courier,monospace",
+        "fontSize": "10",
+        "color": "#000000",
+        "x": 1290,
+        "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "4c087723a1d698e9",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "group": "06dde4be9a9a6b27",
+        "name": "last N radar speeding events",
+        "order": 3,
+        "width": 8,
+        "height": 12,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">last N zone_radar speeding events for radar_camera (>20-mph)</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td><img src=\"data:image/jpg;base64, {{payload.thumbnail_base64jpg}}\" alt=\"thumbnail\" /></td>\n        <td>\n            id: {{payload.id}} <br /> \n            label: {{payload.label}} <br />\n            top_score: {{payload.top_score}} <br />\n            frame_time: {{payload.frame_time_datestring}} <br />\n            direction: {{payload.direction_calc}} <br />\n            speed: {{payload.speed_calc}}\n        </td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1300,
+        "y": 1660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "11fa2826769befc7",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "",
+        "group": "7866c2aa313ab8b9",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "label": "Events in zone_radar (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1110,
+        "y": 1120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6d738ed81fefbedc",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "group": "06dde4be9a9a6b27",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "cumulative events by object since midnight",
+        "chartType": "horizontalBar",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1290,
+        "y": 1840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d856c68660eb2202",
+        "type": "mqtt out",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "topic": "tm/events",
+        "qos": "1",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "a5d65dd0e3566daa",
+        "x": 1360,
+        "y": 1960,
+        "wires": []
+    },
+    {
+        "id": "0f65ceafe3f7c069",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "format last N radar event for output",
+        "func": "\n\nconst newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\nnewMsg.payload.frame_time_datestring = new Date(msg.frigate_event.frame_time * 1000).toLocaleString();\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = msg.frigate_event.direction_calc;\nnewMsg.payload.speed_calc = msg.frigate_event.speed_calc;\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = msg.frigate_event.location;\n\nreturn newMsg;\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 1580,
+        "wires": [
+            [
+                "e5391514131a2b5a",
+                "d66541089b01306e"
+            ]
+        ]
+    },
+    {
+        "id": "5417aae0d14fa661",
+        "type": "ui_template",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "group": "7866c2aa313ab8b9",
+        "name": "car speed stats for today, since 0400",
+        "order": 2,
+        "width": 6,
+        "height": 7,
+        "format": "<p class=\"label nr-dashboard-chart-title nr-dashboard-chart-titlel\">car speed stats for today, since 0400</p>\n<table class=\"table\">\n    <tr ng-repeat=\"payload in msg.payload\">\n        <td ng-repeat =\"(key,value) in payload\">{{key}}: </td>\n        <td ng-repeat =\"(key,value) in payload\">{{value}}</td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1130,
+        "y": 1280,
+        "wires": [
+            [
+                "51ef499f21462fe5"
+            ]
+        ]
+    },
+    {
+        "id": "f57e08e6fb9c0d09",
+        "type": "switch",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "only for zone_capture",
+        "property": "payload.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "zone_capture",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 320,
+        "y": 1800,
+        "wires": [
+            [
+                "d23be15251ed6d73"
+            ]
+        ]
+    },
+    {
+        "id": "d23be15251ed6d73",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "set flow.event_latest",
+        "rules": [
+            {
+                "t": "set",
+                "p": "event_latest",
+                "pt": "flow",
+                "to": "payload.label",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 1840,
+        "wires": [
+            [
+                "170ddffb726db9e0"
+            ]
+        ]
+    },
+    {
+        "id": "4760bed60a7f392a",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 430,
+        "y": 1900,
+        "wires": [
+            [
+                "170ddffb726db9e0"
+            ]
+        ]
+    },
+    {
+        "id": "09f99c931e5535bf",
+        "type": "http request",
+        "z": "28627559bebdc324",
+        "g": "f5d2d92d50d18ce2",
+        "name": "frigate http api for thumbnail",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 740,
+        "y": 1460,
+        "wires": [
+            [
+                "9226865e3385eb56",
+                "aa0afb5180297e2b"
+            ]
+        ]
+    },
+    {
+        "id": "08121a31488784bc",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "f5d2d92d50d18ce2",
+        "name": "set frigate_event_api_thumbnail",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event_api_thumbnail",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1050,
+        "y": 1500,
+        "wires": [
+            [
+                "0f65ceafe3f7c069"
+            ]
+        ]
+    },
+    {
+        "id": "9226865e3385eb56",
+        "type": "image",
+        "z": "28627559bebdc324",
+        "g": "f5d2d92d50d18ce2",
+        "name": "",
+        "width": "175",
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": false,
+        "pass": false,
+        "outputs": 0,
+        "x": 1000,
+        "y": 1460,
+        "wires": []
+    },
+    {
+        "id": "aa0afb5180297e2b",
+        "type": "base64",
+        "z": "28627559bebdc324",
+        "g": "f5d2d92d50d18ce2",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 840,
+        "y": 1500,
+        "wires": [
+            [
+                "08121a31488784bc"
+            ]
+        ]
+    },
+    {
+        "id": "c2270f3050bf35ab",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "set frigate_event from payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 410,
+        "y": 1540,
+        "wires": [
+            [
+                "09f99c931e5535bf"
+            ]
+        ]
+    },
+    {
+        "id": "5f3716d2176c3ab4",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "query events, daily summary last 10 days in zone_capture",
+        "func": "//frame_time is already in seconds\n    // (unixepoch(frame_time) / 86400) > (unixepoch('now') - (86400 * 1))\n    // frame_time > (unixepoch('now') - (86400 * 1))\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch', 'localtime') as day,\n    label,\n    camera,\n    COUNT(*) as count,\n    trunc((unixepoch('now') / 86400)) - trunc(frame_time / 86400) as difference,\n    frame_time\nFROM\n    events\nWHERE\n    difference < 9\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 600,
+        "wires": [
+            [
+                "bdb4b259d648b1f0"
+            ]
+        ]
+    },
+    {
+        "id": "bdb4b259d648b1f0",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 680,
+        "y": 640,
+        "wires": [
+            [
+                "ec7a0e0b1c62e91d"
+            ]
+        ]
+    },
+    {
+        "id": "ec7a0e0b1c62e91d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "structure daily summary payload",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == myItem.day);\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = myItem.day;\n        thisDataPoint.y = myItem.count;\n        // include day in {weekday, month, day-of-month} format for convenience when showing in charts\n        thisDataPoint.day = new Date(myItem.frame_time * 1000).toLocaleDateString('en-us', { weekday: \"short\", day: \"numeric\", month: \"short\" });\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 600,
+        "wires": [
+            [
+                "b65e1877b1e04881"
+            ]
+        ]
+    },
+    {
+        "id": "928b71f25ce6e7b6",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "query events, 1-h counts last 36-h in zone_capture",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000', frame_time, 'unixepoch', 'localtime') as hour,\n    label,\n    camera,\n    COUNT(*) as count,\n    trunc((unixepoch('now') / 3600)) - trunc(frame_time / 3600) as difference\nFROM\n    events\nWHERE\n    difference < 36\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 740,
+        "wires": [
+            [
+                "c03516d1eb65598d"
+            ]
+        ]
+    },
+    {
+        "id": "c03516d1eb65598d",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 640,
+        "y": 780,
+        "wires": [
+            [
+                "4f84bcb60e4be762"
+            ]
+        ]
+    },
+    {
+        "id": "4f84bcb60e4be762",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "structure 1-hour counts last day",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.hour)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.hour);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 740,
+        "wires": [
+            [
+                "02469f2425072f7b"
+            ]
+        ]
+    },
+    {
+        "id": "158e6edae533bfdc",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "query events, 5-min event speed counts for last 1-h in zone_radar",
+        "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime') AS bin_time,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (3600))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_radar%'\nGROUP BY\n    label, strftime('%Y-%m-%d %H:%M:00', (frame_time + 299), 'unixepoch', '-' || ((frame_time + 299) % 300) || ' seconds', 'localtime'), camera\nORDER BY\n    label, bin_time, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 1080,
+        "wires": [
+            [
+                "eff2193c8246a9d2"
+            ]
+        ]
+    },
+    {
+        "id": "eff2193c8246a9d2",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 740,
+        "y": 1120,
+        "wires": [
+            [
+                "57fa6ca2b7d290e3"
+            ]
+        ]
+    },
+    {
+        "id": "57fa6ca2b7d290e3",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "0e1614cf2e5f9942",
+        "name": "structure 1-hour counts last day",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.bin_time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.bin_time);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 1080,
+        "wires": [
+            [
+                "11fa2826769befc7"
+            ]
+        ]
+    },
+    {
+        "id": "170ddffb726db9e0",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "query events, daily cumulative counts in zone_capture",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time >= unixepoch(strftime('%Y-%m-%dT00:00','now', 'localtime'),'utc')\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY \n    label\nORDER BY\n    label;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 1800,
+        "wires": [
+            [
+                "befe91e6862c72db"
+            ]
+        ]
+    },
+    {
+        "id": "befe91e6862c72db",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 860,
+        "y": 1840,
+        "wires": [
+            [
+                "13a061996f9322f3",
+                "98571c77b9801a83",
+                "1b8526347f65ae81"
+            ]
+        ]
+    },
+    {
+        "id": "13a061996f9322f3",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "structure daily object counts for chart",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\nconst motorcycleCount = msg.payload.find(item => item.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item.label === 'person')?.count || 0;\n\nconst formattedData = [{\n  series: [...msg.payload.map(item => item.label), 'bicycle_adj', 'person_adj'],\n  data: [\n    ...(msg.payload.map(item => [item.count])),\n    [bicycleCount + motorcycleCount],\n    [personCount - (bicycleCount + motorcycleCount)]\n  ],\n  labels: [\"\"]\n}];\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1230,
+        "y": 1800,
+        "wires": [
+            [
+                "6d738ed81fefbedc"
+            ]
+        ]
+    },
+    {
+        "id": "98571c77b9801a83",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "structure daily object counts for tm/events",
+        "func": "//send as key:value pair for lable:count\n\n//create bicycle_adj to be bicycle+motorcycle\n//create person_adj to be person - bicycle_adj\n\n\n\nconst motorcycleCount = msg.payload.find(item => item.label === 'motorcycle')?.count || 0;\nconst bicycleCount = msg.payload.find(item => item.label === 'bicycle')?.count || 0;\nconst personCount = msg.payload.find(item => item.label === 'person')?.count || 0;\n\nconst formattedData = msg.payload.reduce((acc, curr) => {\n  acc[curr.label] = curr.count;\n\n  if (curr.label === 'bicycle') {\n    acc['bicycle_adj'] = (bicycleCount + motorcycleCount);\n  }\n\n  if (curr.label === 'person') {\n    acc['person_adj'] = (personCount - (bicycleCount + motorcycleCount));\n  }\n\n  return acc;\n}, {});\n\nformattedData['event_latest'] = flow.get(\"event_latest\");\n\nmsg.payload = formattedData;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1250,
+        "y": 1920,
+        "wires": [
+            [
+                "d856c68660eb2202"
+            ]
+        ]
+    },
+    {
+        "id": "584504e6c8935eaf",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "query events, daily cum car counts in zone_radar with speed_calc",
+        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 1240,
+        "wires": [
+            [
+                "9cf49f0891d25df1"
+            ]
+        ]
+    },
+    {
+        "id": "9cf49f0891d25df1",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 760,
+        "y": 1280,
+        "wires": [
+            [
+                "6d81c8e3c89b68f6"
+            ]
+        ]
+    },
+    {
+        "id": "6d81c8e3c89b68f6",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "format payload for car speed daily",
+        "func": "\nconst originalPayload = msg.payload;\n\nconst convertedPayload = Object.keys(originalPayload[0])\n  .filter(key => key !== \"speeds\")\n  .map(key => {\n    const value = originalPayload[0][key];\n    return { [key]: typeof value === \"number\" ? Math.round(value) : value };\n  });\n\nmsg.payload = convertedPayload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 1240,
+        "wires": [
+            [
+                "5417aae0d14fa661"
+            ]
+        ]
+    },
+    {
+        "id": "7cc031e5a7d773a4",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 620,
+        "y": 920,
+        "wires": [
+            [
+                "39d895a16ca6f6f1",
+                "62be7d38b991716c"
+            ]
+        ]
+    },
+    {
+        "id": "79900a566af02159",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "query TimedSpeedCounts for last 60-min",
+        "func": "//time is already in seconds\n//get for last 60-minutes, 3600 seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(time, 'unixepoch', 'localtime'), '+0 minutes') AS time,\n    direction,\n    count,\n    ABS(average) as speed\nFROM\n    radar_timed_speed_counts\nWHERE\n    time > (unixepoch('now') - (3600))\n    AND radarName = '${flow.get(\"radar_selection\")}'\nORDER BY\n    time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 880,
+        "wires": [
+            [
+                "7cc031e5a7d773a4"
+            ]
+        ]
+    },
+    {
+        "id": "39d895a16ca6f6f1",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure SQLite TimedSpeedCounts.counts",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// count\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n    //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.count;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 880,
+        "wires": [
+            [
+                "cbb3b02ca505a55b"
+            ]
+        ]
+    },
+    {
+        "id": "62be7d38b991716c",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "structure sqlite TimedSpeedCounts.speed_average",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, directions\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].direction = [];\n\n// time\n// speed\n// direction\n\n\nmsg.payload.forEach((myItem) => {\n\n   // use absolute value of speed, bc speeds outbound will be negative\n   myItem.speed = Math.abs(myItem.speed)\n\n   //if direction doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.direction) < 0) {\n        newMsg[0].series.push(myItem.direction);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].findIndex((element) => element.x == String(new Date(myItem.time)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.time);\n        thisDataPoint.y = myItem.speed;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.direction)][xIndex].y += myItem.speed;\n    };\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 960,
+        "wires": [
+            [
+                "7db4b197df9eb075"
+            ]
+        ]
+    },
+    {
+        "id": "cbb3b02ca505a55b",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "7866c2aa313ab8b9",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.counts (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1090,
+        "y": 920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7db4b197df9eb075",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "76417db2b472ef4f",
+        "name": "",
+        "group": "7866c2aa313ab8b9",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "SQLite TimedSpeedCounts.speed_average (5-min) for last 60-min",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "60",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 1000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bb08a223f0aaef0f",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select camera",
+        "group": "202181a361213d6d",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 920,
+        "y": 120,
+        "wires": [
+            [
+                "c7f00f59861cd00f"
+            ]
+        ]
+    },
+    {
+        "id": "e3b795e05d7650b2",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "trigger: sensor selections, after 5-secs",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 210,
+        "y": 120,
+        "wires": [
+            [
+                "f50a7968e032532a",
+                "af02df2daa211e5b"
+            ]
+        ]
+    },
+    {
+        "id": "c7f00f59861cd00f",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "camera_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1110,
+        "y": 120,
+        "wires": [
+            [
+                "04c77d4233fbffd3"
+            ]
+        ]
+    },
+    {
+        "id": "ff783e21c3b96d4b",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "radar_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1110,
+        "y": 180,
+        "wires": [
+            [
+                "04c77d4233fbffd3"
+            ]
+        ]
+    },
+    {
+        "id": "62c9240d45e9c8d6",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select radar",
+        "group": "202181a361213d6d",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 920,
+        "y": 180,
+        "wires": [
+            [
+                "ff783e21c3b96d4b"
+            ]
+        ]
+    },
+    {
+        "id": "59d0c8b142295eee",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set radars, default to camera_radar",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.radars\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 180,
+        "wires": [
+            [
+                "62c9240d45e9c8d6"
+            ]
+        ]
+    },
+    {
+        "id": "f50a7968e032532a",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set cameras, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.cameras\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 120,
+        "wires": [
+            [
+                "bb08a223f0aaef0f",
+                "59d0c8b142295eee"
+            ]
+        ]
+    },
+    {
+        "id": "af02df2daa211e5b",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "set airquality_monitors, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.airquality_monitors\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.airquality_monitors\"))",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 620,
+        "y": 240,
+        "wires": [
+            [
+                "1feaed96b954867a"
+            ]
+        ]
+    },
+    {
+        "id": "1feaed96b954867a",
+        "type": "ui_dropdown",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select aq_monitor",
+        "group": "202181a361213d6d",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 920,
+        "y": 240,
+        "wires": [
+            [
+                "946c6bc353743bc4"
+            ]
+        ]
+    },
+    {
+        "id": "946c6bc353743bc4",
+        "type": "change",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "aq_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1100,
+        "y": 240,
+        "wires": [
+            [
+                "04c77d4233fbffd3"
+            ]
+        ]
+    },
+    {
+        "id": "a3672e4c4c84d721",
+        "type": "inject",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 2040,
+        "wires": [
+            [
+                "34361a18f847df07"
+            ]
+        ]
+    },
+    {
+        "id": "e5ed08571761bd2c",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq gas last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 1,
+        "width": 6,
+        "height": 7,
+        "label": "aq gas PPM, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2040,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "441e03047af79373",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "query airquality, for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 2040,
+        "wires": [
+            [
+                "9d1978d68c96feb9"
+            ]
+        ]
+    },
+    {
+        "id": "9d1978d68c96feb9",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 560,
+        "y": 2080,
+        "wires": [
+            [
+                "2227d1c8d929c91d",
+                "149757a20cc50973",
+                "95871652f30bc9ce",
+                "7d5875326501443c",
+                "c13f03809fbd9809"
+            ]
+        ]
+    },
+    {
+        "id": "2227d1c8d929c91d",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, gas",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"gas_red\", \"gas_oxi\", \"gas_nh3\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_red })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_oxi })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.gas_nh3 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2040,
+        "wires": [
+            [
+                "e5ed08571761bd2c"
+            ]
+        ]
+    },
+    {
+        "id": "12df4fdffa628238",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "query events, 30-min bins last 24-h in zone_capture",
+        "func": "//frame_time is already in seconds\n//frame_time as 5-minute intervals, rounded up\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime') AS bin_time,\n    label,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\n    AND label IN ('car')\nGROUP BY\n    strftime('%Y-%m-%d %H:%M:00', (frame_time + 1799), 'unixepoch', '-' || ((frame_time + 1799) % 1800) || ' seconds', 'localtime'), label\nORDER BY\n    label, bin_time;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 2300,
+        "wires": [
+            [
+                "6a292f3905fe5405"
+            ]
+        ]
+    },
+    {
+        "id": "6a292f3905fe5405",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 680,
+        "y": 2340,
+        "wires": [
+            [
+                "76e813b1b7a4b63e"
+            ]
+        ]
+    },
+    {
+        "id": "76e813b1b7a4b63e",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "structure bin_counts for last day",
+        "func": "const series = {};\nconst labels = [];\n\nmsg.payload.forEach((item) => {\n    const timestamp = new Date(item.bin_time);\n    if (!series[item.label]) {\n        series[item.label] = [];\n    }\n    series[item.label].push({ x: timestamp, y: item.count });\n    if (!labels.includes(item.label)) {\n        labels.push(item.label);\n    }\n});\n\nconst result = [{\n    series: labels,\n    data: Object.values(series),\n    labels: [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 2300,
+        "wires": [
+            [
+                "5cf61952cb6823de"
+            ]
+        ]
+    },
+    {
+        "id": "5cf61952cb6823de",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "d16177f416c9a0ef",
+        "name": "events (30-min) last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 2,
+        "width": 6,
+        "height": 7,
+        "label": "events by label, every 30-min for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f920233df1bbb23f",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq PM last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 3,
+        "width": 6,
+        "height": 7,
+        "label": "aq PM ug/m3, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2080,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "149757a20cc50973",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, PM",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"pm01\", \"pm025\", \"pm10\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm01 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm025 })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.pm10 }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2080,
+        "wires": [
+            [
+                "f920233df1bbb23f"
+            ]
+        ]
+    },
+    {
+        "id": "b8342af470189c50",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq TEMP, DEW last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 4,
+        "width": 6,
+        "height": 7,
+        "label": "aq TEMP, DEW, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1140,
+        "y": 2120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "95871652f30bc9ce",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, temp, dew",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"temp\", \"dew\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.temp })),\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.dew }))\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 2120,
+        "wires": [
+            [
+                "b8342af470189c50"
+            ]
+        ]
+    },
+    {
+        "id": "8a82204bdfcdddb9",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq HUM last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 5,
+        "width": 6,
+        "height": 7,
+        "label": "aq HUM, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7d5875326501443c",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, hum",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"hum\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.hum })),\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2160,
+        "wires": [
+            [
+                "8a82204bdfcdddb9"
+            ]
+        ]
+    },
+    {
+        "id": "c1adf5e2bd669713",
+        "type": "ui_chart",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "aq BAR last 24-hours",
+        "group": "62cdf198fe42de7e",
+        "order": 6,
+        "width": 6,
+        "height": 7,
+        "label": "aq BAR, every 5-min (or based on settings) for last 24-hours",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "10000",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1120,
+        "y": 2200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c13f03809fbd9809",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "7c19b3698bb02613",
+        "name": "structure payload, bar",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nconst result = [{\n    \"series\": [\"bar\"],\n    \"data\": [\n        msg.payload.map(item => ({ \"x\": new Date(item.datetime), \"y\": item.bar })),\n    ],\n    \"labels\": [\"\"]\n}];\n\nmsg.payload = result;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 2200,
+        "wires": [
+            [
+                "c1adf5e2bd669713"
+            ]
+        ]
+    },
+    {
+        "id": "3bb1ab86f5f416ef",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "Latest Observations",
+        "mode": "link",
+        "links": [
+            "b4c9b122afb34876"
+        ],
+        "x": 1355,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "1b8526347f65ae81",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "cumulative events by object since 0400",
+        "mode": "link",
+        "links": [
+            "8c5ad4dc749b0552"
+        ],
+        "x": 1115,
+        "y": 1880,
+        "wires": []
+    },
+    {
+        "id": "51ef499f21462fe5",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "Car Counts and Speeds, since 0400",
+        "mode": "link",
+        "links": [
+            "61ce02565677e825"
+        ],
+        "x": 1195,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "3cdf16d288b5de2b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "events by object (60-min) for last 24-hours",
+        "mode": "link",
+        "links": [
+            "52c59e6d6d990e41"
+        ],
+        "x": 1185,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "4aa9d363945f4a02",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "events daily object count for the last 10-days",
+        "mode": "link",
+        "links": [
+            "4d6e3b9832beb86d"
+        ],
+        "x": 1115,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "06dde4be9a9a6b27",
+        "type": "ui_group",
+        "name": "Events aggregates",
+        "tab": "665d947f9a312a33",
+        "order": 2,
+        "disp": true,
+        "width": 8,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "7866c2aa313ab8b9",
+        "type": "ui_group",
+        "name": "Live updates",
+        "tab": "665d947f9a312a33",
+        "order": 3,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "a5d65dd0e3566daa",
+        "type": "mqtt-broker",
+        "name": "mqtt-broker-local",
+        "broker": "${TM_MQTT_BROKER_HOST}",
+        "port": "${TM_MQTT_BROKER_PORT}",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "2f60c1ab30a6fc8f",
+        "type": "sqlitedb",
+        "db": "${TM_DATABASE_PATH_TMDB}",
+        "mode": "RWC"
+    },
+    {
+        "id": "202181a361213d6d",
+        "type": "ui_group",
+        "name": "Sensor Selector",
+        "tab": "665d947f9a312a33",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "62cdf198fe42de7e",
+        "type": "ui_group",
+        "name": "Air Quality",
+        "tab": "665d947f9a312a33",
+        "order": 4,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "665d947f9a312a33",
+        "type": "ui_tab",
+        "name": "Monitoring Tab",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
