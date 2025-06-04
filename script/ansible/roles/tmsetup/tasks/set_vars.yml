@@ -20,6 +20,6 @@
 
 - name: TMSetup - Main - Set RPi serial number fact
   ansible.builtin.set_fact:
-    tmsetup_raspberry_pi_serial: "{{ __tmsetup_slurp_devtree_register['content'] | b64decode }}"
+    tmsetup_raspberry_pi_serial: "{{ __tmsetup_slurp_devtree_register['content'][:-1] | b64decode }}"
 
 ...
