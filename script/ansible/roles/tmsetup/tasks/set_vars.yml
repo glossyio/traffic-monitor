@@ -1,0 +1,25 @@
+---
+- name: TMSetup - Main - Perform minimum ansible fact gathering
+  tags:
+    - always
+  ansible.builtin.setup:
+    gather_subset: min
+  when: not ansible_facts.keys() | list |
+    intersect(tmsetup_base_required_facts) == tmsetup_base_required_facts
+
+- name: TMSetup - Main - Set Architecture specific variables
+  tags:
+    - always
+  ansible.builtin.include_vars:
+    file: '{{ ansible_architecture }}_vars.yml'
+
+- name: TMSetup - Main - Set var for Raspberry Pi serial number
+  ansible.builtin.slurp:
+    src: /sys/firmware/devicetree/base/serial-number
+  register: __tmsetup_slurp_devtree_register
+
+- name: TMSetup - Main - Set RPi serial number fact
+  ansible.builtin.set_fact:
+    tmsetup_raspberry_pi_serial: "{{ __tmsetup_slurp_devtree_register['content'][:-1] | b64decode }}"
+
+...

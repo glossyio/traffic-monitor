@@ -1,18 +1,10 @@
 ---
 # TMSetup - Main tasks
-- name: TMSetup - Main - Perform minimum ansible fact gathering
+- name: TMSetup - Main - Set variables
   tags:
     - always
-  ansible.builtin.setup:
-    gather_subset: min
-  when: not ansible_facts.keys() | list |
-    intersect(tmsetup_base_required_facts) == tmsetup_base_required_facts
-
-- name: TMSetup - Main - Set Architecture specific variables
-  tags:
-    - always
-  ansible.builtin.include_vars:
-    file: '{{ ansible_architecture }}_vars.yml'
+  ansible.builtin.import_tasks:
+    file: 'set_vars.yml'
 
 - name: TMSetup - Main - Setup base
   tags:
