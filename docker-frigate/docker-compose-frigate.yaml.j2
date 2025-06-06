@@ -7,7 +7,7 @@ services:
     shm_size: "256MB"
     devices:
       - /dev/bus/usb:/dev/bus/usb 
-{% if tmsetup_pcietpus_confirmed is iterable %}
+{% if tmsetup_pcietpus_confirmed is defined and tmsetup_pcietpus_confirmed is iterable %}
 {% for tpu in tmsetup_pcietpus_confirmed %}
       - {{ tpu }}:{{ tpu }}
 {% endfor %}
