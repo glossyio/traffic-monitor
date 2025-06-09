@@ -40,9 +40,9 @@ module.exports = {
   },
 
   contextStorage: {
-    default: {
-      module:"memory",
-    }
+    default: "memoryOnly",
+    memoryOnly: { module: 'memory' },
+    persistContext: { module: 'localfilesystem' }
   },
 
   exportGlobalContextKeys: false,
