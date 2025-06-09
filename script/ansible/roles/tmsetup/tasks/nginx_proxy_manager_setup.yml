@@ -1,0 +1,34 @@
+---
+# TMSetup - NGINX Proxy Manager (NPM) Setup tasks
+
+- name: TMSetup - NPM Setup - Create NPM Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/npm'
+    - '{{ tmsetup_codedir }}/npm/data'
+    - '{{ tmsetup_codedir }}/npm/letsencrypt'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - NPM Setup - Create NPM docker files
+  become: true
+  loop:
+    - npm/docker-compose-npm.yaml
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify:
+    - Build container images
+    - Restart tm-docker service
+...

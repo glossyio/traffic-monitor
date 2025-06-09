@@ -1,0 +1,13 @@
+services:
+  npm:
+    container_name: npm
+    privileged: false
+    restart: unless-stopped
+    image: 'docker.io/jc21/nginx-proxy-manager:{{ tmsetup_npm_version }}'
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - {{ tmsetup_codedir }}/npm/data:/data
+      - {{ tmsetup_codedir }}/npm/letsencrypt:/etc/letsencrypt

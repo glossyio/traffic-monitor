@@ -21,6 +21,7 @@
 - name: TMSetup - Main - Setup Docker
   tags:
     - docker
+    - npm
     - frigate
     - node-red-tm
     - coraltpu
@@ -38,6 +39,12 @@
     - coraltpu
   ansible.builtin.import_tasks:
     file: coraltpu_pci_setup.yml
+
+- name: TMSetup - Main - Setup NGINX Proxy Manager (NPM)
+  tags:
+    - npm
+  ansible.builtin.import_tasks:
+    file: nginx_proxy_manager_setup.yml
 
 - name: TMSetup - Main - Setup Frigate
   tags:
@@ -61,6 +68,7 @@
   tags:
     - wifi
     - docker
+    - npm
     - frigate
     - node-red-tm
     - nodered
