@@ -4,6 +4,10 @@ services:
     privileged: false
     restart: unless-stopped
     image: 'docker.io/jc21/nginx-proxy-manager:{{ tmsetup_npm_version }}'
+    healthcheck:
+      test: ["CMD", "/usr/bin/check-health"]
+      interval: 10s
+      timeout: 3s
     ports:
       - '80:80'
       - '81:81'
