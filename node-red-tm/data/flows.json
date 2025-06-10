@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "52393b3e4bf2293d",
+        "type": "tab",
+        "label": "Dashboard 2 - Database",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -250,7 +258,8 @@
             "8d65b604e8d9e7f9",
             "db1f35650c8d6448",
             "6e2a152aecd929d3",
-            "d53997b3fec84e3a"
+            "d53997b3fec84e3a",
+            "30efa506d0f51bc4"
         ],
         "x": 14,
         "y": 19,
@@ -279,7 +288,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1272,
+        "w": 1282,
         "h": 262
     },
     {
@@ -761,6 +770,60 @@
         "h": 634
     },
     {
+        "id": "23636f4163fa6e3b",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "backup and restore",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "b781cb3d6df38fed",
+            "a38a90c36a0abfc3",
+            "0372cefb5e2ec968",
+            "cad1724850f8df3d",
+            "fb62ca91f138ab87"
+        ],
+        "x": 114,
+        "y": 1599,
+        "w": 1398,
+        "h": 368
+    },
+    {
+        "id": "3c299af3b0814ea5",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "system metrics, telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "9f2c4f1852402eb8",
+            "040a9f02853598aa",
+            "8c8c487fbf8e11a1",
+            "e1d39852db4af08c",
+            "65e30edd475cad64",
+            "c497cfedf6aed533",
+            "ae7325dd07b1f3ba",
+            "7b406e86282cd677",
+            "674f21d2e645cc18",
+            "ab9d774782f92e88",
+            "720ee19c705f37d9",
+            "398089ca4a10bdc5",
+            "882369d2082717a5",
+            "b6b8a1a7c08eb0ac",
+            "976ec527b724bd3d",
+            "6881f1dd8a4805af",
+            "6e88f30f09b49d22",
+            "6dca925fad91c100",
+            "c5891e3e63052f03"
+        ],
+        "x": 14,
+        "y": 539,
+        "w": 1312,
+        "h": 502
+    },
+    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1128,6 +1191,47 @@
         "h": 122
     },
     {
+        "id": "b781cb3d6df38fed",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "backup TM configuration to Thingsboard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f49c1d345cdfef57",
+            "7c96d66a8330a4fc",
+            "4d376b9ae709214b"
+        ],
+        "x": 614,
+        "y": 1639,
+        "w": 702,
+        "h": 82
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d"
+        ],
+        "x": 614,
+        "y": 1739,
+        "w": 872,
+        "h": 202
+    },
+    {
         "id": "f5d2d92d50d18ce2",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1172,99 +1276,46 @@
         "h": 162
     },
     {
-        "id": "23636f4163fa6e3b",
+        "id": "e11d3ada8d422864",
         "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "backup and restore",
+        "z": "52393b3e4bf2293d",
+        "name": "Comments Section",
         "style": {
             "label": true
         },
         "nodes": [
-            "b781cb3d6df38fed",
-            "a38a90c36a0abfc3",
-            "0372cefb5e2ec968",
-            "cad1724850f8df3d",
-            "fb62ca91f138ab87"
+            "cf47ae54ebd02d2f",
+            "943c0adb61dbfac3"
         ],
-        "x": 114,
-        "y": 1599,
-        "w": 1398,
-        "h": 368
-    },
-    {
-        "id": "b781cb3d6df38fed",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "backup TM configuration to Thingsboard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f49c1d345cdfef57",
-            "7c96d66a8330a4fc",
-            "4d376b9ae709214b"
-        ],
-        "x": 614,
-        "y": 1639,
-        "w": 702,
+        "x": 144,
+        "y": 159,
+        "w": 322,
         "h": 82
     },
     {
-        "id": "a38a90c36a0abfc3",
+        "id": "d58714d193d44ae6",
         "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "restore TM Frigate config from ThingsBoard",
+        "z": "52393b3e4bf2293d",
+        "name": "Download Database",
         "style": {
             "label": true
         },
         "nodes": [
-            "56cafb11de5348b2",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d"
+            "08bff1ab640003f3",
+            "f7b3e11474e3626a",
+            "2ad488b2e5da088f",
+            "f03fbb7876aea448",
+            "65649713a0f3ec8d",
+            "0a10210304d7f8c7",
+            "50e14971c08db756",
+            "4d92b6ddc2277d16",
+            "449a21db01788110",
+            "f2f4054783d0bfc5"
         ],
-        "x": 614,
-        "y": 1739,
-        "w": 872,
-        "h": 202
-    },
-    {
-        "id": "3c299af3b0814ea5",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "system metrics, telemetry",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "9f2c4f1852402eb8",
-            "040a9f02853598aa",
-            "8c8c487fbf8e11a1",
-            "e1d39852db4af08c",
-            "65e30edd475cad64",
-            "c497cfedf6aed533",
-            "ae7325dd07b1f3ba",
-            "7b406e86282cd677",
-            "674f21d2e645cc18",
-            "ab9d774782f92e88",
-            "720ee19c705f37d9",
-            "398089ca4a10bdc5",
-            "882369d2082717a5",
-            "b6b8a1a7c08eb0ac",
-            "976ec527b724bd3d",
-            "6881f1dd8a4805af",
-            "6e88f30f09b49d22",
-            "6dca925fad91c100",
-            "c5891e3e63052f03"
-        ],
-        "x": 14,
-        "y": 539,
-        "w": 1312,
-        "h": 502
+        "x": 134,
+        "y": 279,
+        "w": 1212,
+        "h": 262
     },
     {
         "id": "05a58d9ee463c696",
@@ -1821,6 +1872,109 @@
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "d1b753e7c692d80c",
+        "type": "ui-group",
+        "name": "Comments",
+        "page": "6599f3821baa508f",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": true,
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "e566a6a1e878cd10",
+        "type": "ui-group",
+        "name": "Download Database",
+        "page": "6599f3821baa508f",
+        "width": 6,
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "6599f3821baa508f",
+        "type": "ui-page",
+        "name": "Database",
+        "ui": "2a8899583532edb4",
+        "path": "/database",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 2,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "14550b211f0fccc6",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "2a8899583532edb4",
+        "type": "ui-base",
+        "name": "Database",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "temporary",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": "1",
+        "showDisconnectNotification": true,
+        "allowInstall": true
     },
     {
         "id": "9d0f912cc84546dd",
@@ -11370,5 +11524,390 @@
         "x": 1010,
         "y": 100,
         "wires": []
+    },
+    {
+        "id": "30efa506d0f51bc4",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "name": "create comment",
+        "links": [
+            "cf47ae54ebd02d2f"
+        ],
+        "x": 325,
+        "y": 60,
+        "wires": [
+            [
+                "8d65b604e8d9e7f9"
+            ]
+        ]
+    },
+    {
+        "id": "800b8e6b444d523b",
+        "type": "catch",
+        "z": "52393b3e4bf2293d",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 190,
+        "y": 40,
+        "wires": [
+            [
+                "6422c68062c311d6"
+            ]
+        ]
+    },
+    {
+        "id": "6422c68062c311d6",
+        "type": "debug",
+        "z": "52393b3e4bf2293d",
+        "name": "catch: all - dashboard 2 database",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "b57b5fa5da3fca8e",
+        "type": "comment",
+        "z": "52393b3e4bf2293d",
+        "name": "Dashboard-2 version of Database page",
+        "info": "",
+        "x": 290,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "cf47ae54ebd02d2f",
+        "type": "link out",
+        "z": "52393b3e4bf2293d",
+        "g": "e11d3ada8d422864",
+        "name": "Dashboard 2 - comment",
+        "mode": "link",
+        "links": [
+            "30efa506d0f51bc4"
+        ],
+        "x": 425,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "2ad488b2e5da088f",
+        "type": "inject",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "Set database filename",
+        "props": [
+            {
+                "p": "payload.filename",
+                "v": "TM_DATABASE_PATH_TMDB",
+                "vt": "env"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 280,
+        "y": 400,
+        "wires": [
+            [
+                "f7b3e11474e3626a"
+            ]
+        ]
+    },
+    {
+        "id": "f03fbb7876aea448",
+        "type": "http in",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "Respond to download request",
+        "url": "/storefile",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 280,
+        "y": 460,
+        "wires": [
+            [
+                "0a10210304d7f8c7"
+            ]
+        ]
+    },
+    {
+        "id": "65649713a0f3ec8d",
+        "type": "debug",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "0a10210304d7f8c7",
+        "type": "function",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "Validate filename",
+        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = 'xxxx';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 460,
+        "wires": [
+            [
+                "65649713a0f3ec8d",
+                "4d92b6ddc2277d16"
+            ]
+        ]
+    },
+    {
+        "id": "50e14971c08db756",
+        "type": "file in",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "read the file in chunks",
+        "filename": "filePath",
+        "filenameType": "msg",
+        "format": "stream",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": true,
+        "x": 1020,
+        "y": 440,
+        "wires": [
+            [
+                "fc8c97f7afe41d21",
+                "f2f4054783d0bfc5"
+            ]
+        ]
+    },
+    {
+        "id": "4d92b6ddc2277d16",
+        "type": "switch",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "Test for error",
+        "property": "filePath",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nnull"
+            },
+            {
+                "t": "null"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 750,
+        "y": 460,
+        "wires": [
+            [
+                "50e14971c08db756"
+            ],
+            [
+                "449a21db01788110"
+            ]
+        ]
+    },
+    {
+        "id": "449a21db01788110",
+        "type": "http response",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 970,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "fc8c97f7afe41d21",
+        "type": "debug",
+        "z": "52393b3e4bf2293d",
+        "name": "debug 3",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1240,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "f2f4054783d0bfc5",
+        "type": "function",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "send chunks",
+        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1250,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "943c0adb61dbfac3",
+        "type": "ui-form",
+        "z": "52393b3e4bf2293d",
+        "g": "e11d3ada8d422864",
+        "name": "Create New Comment",
+        "group": "d1b753e7c692d80c",
+        "label": "Create New Comment",
+        "order": 1,
+        "width": "6",
+        "height": "9",
+        "options": [
+            {
+                "label": "Effective Date (start of comment period)",
+                "key": "effective_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Effective TIme",
+                "key": "effectiveTime",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Date",
+                "key": "expiration_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Time",
+                "key": "expirationTime",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Comment",
+                "key": "comment",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            },
+            {
+                "label": "Commenter Name (or Description)",
+                "key": "name",
+                "type": "text",
+                "required": true,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "effective_date": "",
+            "effectiveTime": "",
+            "expiration_date": "",
+            "expirationTime": "",
+            "comment": "",
+            "name": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "resetOnSubmit": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "passthru": false,
+        "dropdownOptions": [],
+        "x": 270,
+        "y": 200,
+        "wires": [
+            [
+                "cf47ae54ebd02d2f"
+            ]
+        ]
+    },
+    {
+        "id": "08bff1ab640003f3",
+        "type": "ui-text",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "group": "e566a6a1e878cd10",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Press this button to download the TM database, which includes camera, radar, and air quality readings.",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
+        "className": "",
+        "x": 520,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "f7b3e11474e3626a",
+        "type": "ui-template",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "group": "e566a6a1e878cd10",
+        "page": "",
+        "ui": "",
+        "name": "Button to trigger download request",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n  <a :href=\"`/storefile?file=${msg.payload.filename}`\" style=\"text-decoration:none\">\n    <button class=\"v-btn v-btn--block v-theme--nrdb v-btn--density-default v-btn--size-default v-btn--variant-flat\">Download Database</button>\n  </a>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 580,
+        "y": 400,
+        "wires": [
+            []
+        ]
     }
 ]
