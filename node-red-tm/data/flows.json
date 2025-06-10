@@ -824,6 +824,48 @@
         "h": 502
     },
     {
+        "id": "e11d3ada8d422864",
+        "type": "group",
+        "z": "52393b3e4bf2293d",
+        "name": "Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "cf47ae54ebd02d2f",
+            "943c0adb61dbfac3"
+        ],
+        "x": 144,
+        "y": 159,
+        "w": 322,
+        "h": 82
+    },
+    {
+        "id": "d58714d193d44ae6",
+        "type": "group",
+        "z": "52393b3e4bf2293d",
+        "name": "Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "08bff1ab640003f3",
+            "f7b3e11474e3626a",
+            "2ad488b2e5da088f",
+            "f03fbb7876aea448",
+            "65649713a0f3ec8d",
+            "0a10210304d7f8c7",
+            "50e14971c08db756",
+            "4d92b6ddc2277d16",
+            "449a21db01788110",
+            "f2f4054783d0bfc5"
+        ],
+        "x": 134,
+        "y": 279,
+        "w": 1212,
+        "h": 262
+    },
+    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1274,48 +1316,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "e11d3ada8d422864",
-        "type": "group",
-        "z": "52393b3e4bf2293d",
-        "name": "Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "cf47ae54ebd02d2f",
-            "943c0adb61dbfac3"
-        ],
-        "x": 144,
-        "y": 159,
-        "w": 322,
-        "h": 82
-    },
-    {
-        "id": "d58714d193d44ae6",
-        "type": "group",
-        "z": "52393b3e4bf2293d",
-        "name": "Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "08bff1ab640003f3",
-            "f7b3e11474e3626a",
-            "2ad488b2e5da088f",
-            "f03fbb7876aea448",
-            "65649713a0f3ec8d",
-            "0a10210304d7f8c7",
-            "50e14971c08db756",
-            "4d92b6ddc2277d16",
-            "449a21db01788110",
-            "f2f4054783d0bfc5"
-        ],
-        "x": 134,
-        "y": 279,
-        "w": 1212,
-        "h": 262
     },
     {
         "id": "05a58d9ee463c696",
@@ -1874,70 +1874,6 @@
         "className": ""
     },
     {
-        "id": "d1b753e7c692d80c",
-        "type": "ui-group",
-        "name": "Comments",
-        "page": "6599f3821baa508f",
-        "width": "6",
-        "height": "1",
-        "order": 1,
-        "showTitle": true,
-        "className": "section-title, section-body",
-        "visible": true,
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "e566a6a1e878cd10",
-        "type": "ui-group",
-        "name": "Download Database",
-        "page": "6599f3821baa508f",
-        "width": 6,
-        "height": "1",
-        "order": 2,
-        "showTitle": true,
-        "className": "section-title, section-body",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "6599f3821baa508f",
-        "type": "ui-page",
-        "name": "Database",
-        "ui": "2a8899583532edb4",
-        "path": "/database",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "14550b211f0fccc6",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 2,
-        "className": "",
-        "visible": true,
-        "disabled": false
-    },
-    {
         "id": "14550b211f0fccc6",
         "type": "ui-theme",
         "name": "Default Theme",
@@ -1975,6 +1911,70 @@
         "notificationDisplayTime": "1",
         "showDisconnectNotification": true,
         "allowInstall": true
+    },
+    {
+        "id": "6599f3821baa508f",
+        "type": "ui-page",
+        "name": "Database",
+        "ui": "2a8899583532edb4",
+        "path": "/database",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "d1b753e7c692d80c",
+        "type": "ui-group",
+        "name": "Comments",
+        "page": "6599f3821baa508f",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": true,
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "e566a6a1e878cd10",
+        "type": "ui-group",
+        "name": "Download Database",
+        "page": "6599f3821baa508f",
+        "width": 6,
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -11648,7 +11648,7 @@
         "z": "52393b3e4bf2293d",
         "g": "d58714d193d44ae6",
         "name": "debug 4",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -11666,7 +11666,7 @@
         "z": "52393b3e4bf2293d",
         "g": "d58714d193d44ae6",
         "name": "Validate filename",
-        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = 'xxxx';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
+        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = '';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
