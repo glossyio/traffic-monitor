@@ -9,6 +9,7 @@
 - name: TMSetup - Main - Setup base
   tags:
     - base
+    - always
   ansible.builtin.import_tasks:
     file: base_setup.yml
 
