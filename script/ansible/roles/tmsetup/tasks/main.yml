@@ -13,6 +13,13 @@
   ansible.builtin.import_tasks:
     file: base_setup.yml
 
+- name: TMSetup - Main - Apt Full Upgrade (for remote hosts)
+  tags:
+    - full_upgrade
+  when: tmsetup_perform_apt_upgrade | bool
+  ansible.builtin.import_tasks:
+    file: apt_upgrade.yml
+
 - name: TMSetup - Main - Setup go2rtc driver
   tags:
     - go2rtc
@@ -68,4 +75,14 @@
     - go2rtc
   ansible.builtin.import_tasks:
     file: start_services.yml
+
+- name: TMSetup - Base Setup - Check if reboot needed
+  tags:
+    - always
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: tmsetup_reboot_required_stat_register
+  changed_when: tmsetup_reboot_required_stat_register.stat.exists
+  notify: TMSetup - Flag for reboot
+
 ...

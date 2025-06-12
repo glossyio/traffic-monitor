@@ -1,0 +1,20 @@
+---
+- name: TMSetup - Reboot_Handler - Mark for reboot on localhost installations
+  when: inventory_hostname == 'localhost'
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ tmsetup_reboot_touch_file }}"
+    content: '1'
+    mode: '0644'
+
+- name: TMSetup - Reboot_Handler - Prompt and reboot
+  when: inventory_hostname != 'localhost'
+  block:
+    - name: TMSetup - Reboot_Handler - Reboot
+      become: true
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+        msg: "Reboot initiated via ansible for TMSetup"
+        pre_reboot_delay: 5
+
+...

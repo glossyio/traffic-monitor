@@ -9,6 +9,7 @@ tmsetup_remove_packages:
   - rpicam-apps-lite
 
 tmsetup_packages:
+  - aptitude
   - ca-certificates
   - host
   - screen
