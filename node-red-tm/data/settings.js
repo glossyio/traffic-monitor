@@ -51,6 +51,14 @@ module.exports = {
   },
 
   editorTheme: {
+    header: {
+      // This is the text next to the Node-red logo on the editor page header
+      title: process.env.TM_HOSTNAME,
+    },
+    page: {
+      // And this is the text next to the favicon on the browser tab
+      title: process.env.TM_HOSTNAME,
+    },
     palette: {
     },
     projects: {
