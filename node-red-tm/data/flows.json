@@ -64,14 +64,6 @@
         "env": []
     },
     {
-        "id": "52393b3e4bf2293d",
-        "type": "tab",
-        "label": "Dashboard 2 - Database",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -259,7 +251,8 @@
             "db1f35650c8d6448",
             "6e2a152aecd929d3",
             "d53997b3fec84e3a",
-            "30efa506d0f51bc4"
+            "30efa506d0f51bc4",
+            "7cd1147cdd98c73c"
         ],
         "x": 14,
         "y": 19,
@@ -824,54 +817,6 @@
         "h": 502
     },
     {
-        "id": "e11d3ada8d422864",
-        "type": "group",
-        "z": "52393b3e4bf2293d",
-        "name": "Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "cf47ae54ebd02d2f",
-            "943c0adb61dbfac3"
-        ],
-        "x": 144,
-        "y": 159,
-        "w": 322,
-        "h": 82
-    },
-    {
-        "id": "d58714d193d44ae6",
-        "type": "group",
-        "z": "52393b3e4bf2293d",
-        "name": "Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f7b3e11474e3626a",
-            "2ad488b2e5da088f",
-            "f03fbb7876aea448",
-            "0a10210304d7f8c7",
-            "50e14971c08db756",
-            "4d92b6ddc2277d16",
-            "449a21db01788110",
-            "f2f4054783d0bfc5",
-            "396c90ebe85db8c2",
-            "c629bab8eb81f07e",
-            "817efc474a9809f8",
-            "e78a56289029c007",
-            "d2b3042374fa28aa",
-            "fda1f9b5367bd61d",
-            "875e60949f6bc611",
-            "82c0e19501c290c9"
-        ],
-        "x": 134,
-        "y": 279,
-        "w": 1252,
-        "h": 362
-    },
-    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1322,6 +1267,55 @@
         "y": 859,
         "w": 932,
         "h": 162
+    },
+    {
+        "id": "e11d3ada8d422864",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "cf47ae54ebd02d2f",
+            "943c0adb61dbfac3",
+            "96c8b17930fcc9b9"
+        ],
+        "x": 14,
+        "y": 1459,
+        "w": 322,
+        "h": 122
+    },
+    {
+        "id": "d58714d193d44ae6",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f7b3e11474e3626a",
+            "2ad488b2e5da088f",
+            "f03fbb7876aea448",
+            "0a10210304d7f8c7",
+            "50e14971c08db756",
+            "4d92b6ddc2277d16",
+            "449a21db01788110",
+            "f2f4054783d0bfc5",
+            "396c90ebe85db8c2",
+            "c629bab8eb81f07e",
+            "817efc474a9809f8",
+            "e78a56289029c007",
+            "d2b3042374fa28aa",
+            "fda1f9b5367bd61d",
+            "875e60949f6bc611",
+            "82c0e19501c290c9"
+        ],
+        "x": 14,
+        "y": 1599,
+        "w": 1252,
+        "h": 362
     },
     {
         "id": "05a58d9ee463c696",
@@ -1957,14 +1951,14 @@
     {
         "id": "d1b753e7c692d80c",
         "type": "ui-group",
-        "name": "Comments",
+        "name": "Create Local Comments",
         "page": "6599f3821baa508f",
         "width": "6",
         "height": "1",
-        "order": 1,
+        "order": 2,
         "showTitle": true,
         "className": "section-title, section-body",
-        "visible": true,
+        "visible": "true",
         "disabled": "false",
         "groupType": "default"
     },
@@ -1975,7 +1969,7 @@
         "page": "6599f3821baa508f",
         "width": 6,
         "height": "1",
-        "order": 2,
+        "order": 1,
         "showTitle": true,
         "className": "section-title, section-body",
         "visible": "true",
@@ -10410,7 +10404,8 @@
         "y": 100,
         "wires": [
             [
-                "d53997b3fec84e3a"
+                "d53997b3fec84e3a",
+                "7cd1147cdd98c73c"
             ]
         ]
     },
@@ -10523,7 +10518,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "3a9bb6ed1306eb1c",
         "name": "Set base path",
-        "func": "//restrict to c:\\temp\\\nvar basePath = \"code/nodered/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
+        "func": "//restrict to c:\\temp\\\nvar basePath = \"/db/\";\nvar filename = msg.req.params.fn;\n\n\nif(filename.includes(\"..\\\\\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} else if(filename.includes(\"../\")){\n    msg.payload = \"Illegal file path\";\n    msg.statusCode = 405;//not allowed\n    return [null, msg];//fire output 2\n} \n//TODO: add more checks\n\nmsg.filename = basePath + filename;\nreturn [msg, null];//fire output 1\n\n\n",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -11549,221 +11544,28 @@
         ]
     },
     {
-        "id": "800b8e6b444d523b",
-        "type": "catch",
-        "z": "52393b3e4bf2293d",
-        "name": "",
-        "scope": null,
-        "uncaught": false,
-        "x": 190,
-        "y": 40,
-        "wires": [
-            [
-                "6422c68062c311d6"
-            ]
-        ]
-    },
-    {
-        "id": "6422c68062c311d6",
-        "type": "debug",
-        "z": "52393b3e4bf2293d",
-        "name": "catch: all - dashboard 2 database",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 420,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "b57b5fa5da3fca8e",
-        "type": "comment",
-        "z": "52393b3e4bf2293d",
-        "name": "Dashboard-2 version of Database page",
-        "info": "",
-        "x": 310,
-        "y": 100,
-        "wires": []
-    },
-    {
         "id": "cf47ae54ebd02d2f",
         "type": "link out",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "e11d3ada8d422864",
         "name": "Dashboard 2 - comment",
         "mode": "link",
         "links": [
             "30efa506d0f51bc4"
         ],
-        "x": 425,
-        "y": 200,
+        "x": 295,
+        "y": 1540,
         "wires": []
-    },
-    {
-        "id": "2ad488b2e5da088f",
-        "type": "inject",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "Set database filename",
-        "props": [
-            {
-                "p": "payload.filename",
-                "v": "TM_DATABASE_PATH_TMDB",
-                "vt": "env"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 290,
-        "y": 440,
-        "wires": [
-            [
-                "f7b3e11474e3626a",
-                "396c90ebe85db8c2"
-            ]
-        ]
-    },
-    {
-        "id": "f03fbb7876aea448",
-        "type": "http in",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "Respond to download request",
-        "url": "/storefile",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 280,
-        "y": 500,
-        "wires": [
-            [
-                "0a10210304d7f8c7"
-            ]
-        ]
-    },
-    {
-        "id": "0a10210304d7f8c7",
-        "type": "function",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "Validate filename",
-        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = '';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 500,
-        "wires": [
-            [
-                "4d92b6ddc2277d16"
-            ]
-        ]
-    },
-    {
-        "id": "50e14971c08db756",
-        "type": "file in",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "read the file in chunks",
-        "filename": "filePath",
-        "filenameType": "msg",
-        "format": "stream",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": true,
-        "x": 940,
-        "y": 480,
-        "wires": [
-            [
-                "f2f4054783d0bfc5"
-            ]
-        ]
-    },
-    {
-        "id": "4d92b6ddc2277d16",
-        "type": "switch",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "Test for error",
-        "property": "filePath",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "nnull"
-            },
-            {
-                "t": "null"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 730,
-        "y": 500,
-        "wires": [
-            [
-                "50e14971c08db756"
-            ],
-            [
-                "449a21db01788110",
-                "875e60949f6bc611"
-            ]
-        ]
-    },
-    {
-        "id": "449a21db01788110",
-        "type": "http response",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 890,
-        "y": 520,
-        "wires": []
-    },
-    {
-        "id": "f2f4054783d0bfc5",
-        "type": "function",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "send chunks",
-        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1130,
-        "y": 480,
-        "wires": [
-            [
-                "d2b3042374fa28aa"
-            ]
-        ]
     },
     {
         "id": "943c0adb61dbfac3",
         "type": "ui-form",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "e11d3ada8d422864",
         "name": "Create New Comment",
         "group": "d1b753e7c692d80c",
         "label": "Create New Comment",
-        "order": 1,
+        "order": 2,
         "width": "6",
         "height": "9",
         "options": [
@@ -11828,8 +11630,8 @@
         "className": "",
         "passthru": false,
         "dropdownOptions": [],
-        "x": 270,
-        "y": 200,
+        "x": 140,
+        "y": 1540,
         "wires": [
             [
                 "cf47ae54ebd02d2f"
@@ -11839,7 +11641,7 @@
     {
         "id": "f7b3e11474e3626a",
         "type": "ui-template",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "group": "e566a6a1e878cd10",
         "page": "",
@@ -11855,16 +11657,167 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 580,
-        "y": 440,
+        "x": 460,
+        "y": 1760,
         "wires": [
             []
         ]
     },
     {
+        "id": "2ad488b2e5da088f",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "Set database filename",
+        "props": [
+            {
+                "p": "payload.filename",
+                "v": "TM_DATABASE_PATH_TMDB",
+                "vt": "env"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 170,
+        "y": 1760,
+        "wires": [
+            [
+                "f7b3e11474e3626a",
+                "396c90ebe85db8c2"
+            ]
+        ]
+    },
+    {
+        "id": "f03fbb7876aea448",
+        "type": "http in",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "Respond to download request",
+        "url": "/storefile",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 1820,
+        "wires": [
+            [
+                "0a10210304d7f8c7"
+            ]
+        ]
+    },
+    {
+        "id": "0a10210304d7f8c7",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "Validate filename",
+        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = '';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1820,
+        "wires": [
+            [
+                "4d92b6ddc2277d16"
+            ]
+        ]
+    },
+    {
+        "id": "50e14971c08db756",
+        "type": "file in",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "read the file in chunks",
+        "filename": "filePath",
+        "filenameType": "msg",
+        "format": "stream",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": true,
+        "x": 820,
+        "y": 1800,
+        "wires": [
+            [
+                "f2f4054783d0bfc5"
+            ]
+        ]
+    },
+    {
+        "id": "4d92b6ddc2277d16",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "Test for error",
+        "property": "filePath",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nnull"
+            },
+            {
+                "t": "null"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 610,
+        "y": 1820,
+        "wires": [
+            [
+                "50e14971c08db756"
+            ],
+            [
+                "449a21db01788110",
+                "875e60949f6bc611"
+            ]
+        ]
+    },
+    {
+        "id": "449a21db01788110",
+        "type": "http response",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 770,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "f2f4054783d0bfc5",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "send chunks",
+        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 1800,
+        "wires": [
+            [
+                "d2b3042374fa28aa"
+            ]
+        ]
+    },
+    {
         "id": "396c90ebe85db8c2",
         "type": "function",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "name": "get db size in MB",
         "func": "const fs = global.get(\"fs\");\nvar stats = fs.statSync(msg.payload.filename);\nvar fileSizeInBytes = stats.size;\n// Convert the file size to megabytes (optional)\nvar fileSizeInMegabytes = (fileSizeInBytes / (1024*1024)).toFixed(3);\n\nmsg.payload = fileSizeInMegabytes;\nreturn msg;",
@@ -11874,8 +11827,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 530,
-        "y": 400,
+        "x": 410,
+        "y": 1720,
         "wires": [
             [
                 "c629bab8eb81f07e",
@@ -11886,7 +11839,7 @@
     {
         "id": "c629bab8eb81f07e",
         "type": "ui-text",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "group": "e566a6a1e878cd10",
         "order": 2,
@@ -11902,14 +11855,14 @@
         "color": "#717171",
         "wrapText": false,
         "className": "",
-        "x": 760,
-        "y": 360,
+        "x": 640,
+        "y": 1680,
         "wires": []
     },
     {
         "id": "817efc474a9809f8",
         "type": "ui-template",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "group": "e566a6a1e878cd10",
         "page": "",
@@ -11925,8 +11878,8 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 260,
-        "y": 320,
+        "x": 140,
+        "y": 1640,
         "wires": [
             []
         ]
@@ -11934,7 +11887,7 @@
     {
         "id": "e78a56289029c007",
         "type": "ui-notification",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "ui": "2a8899583532edb4",
         "position": "top right",
@@ -11950,8 +11903,8 @@
         "raw": false,
         "className": "",
         "name": "",
-        "x": 1270,
-        "y": 560,
+        "x": 1150,
+        "y": 1880,
         "wires": [
             []
         ]
@@ -11959,7 +11912,7 @@
     {
         "id": "d2b3042374fa28aa",
         "type": "template",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "name": "notification running",
         "field": "payload",
@@ -11968,8 +11921,8 @@
         "syntax": "mustache",
         "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
         "output": "str",
-        "x": 1210,
-        "y": 520,
+        "x": 1090,
+        "y": 1840,
         "wires": [
             [
                 "e78a56289029c007"
@@ -11979,7 +11932,7 @@
     {
         "id": "fda1f9b5367bd61d",
         "type": "change",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "name": "",
         "rules": [
@@ -11996,8 +11949,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 740,
-        "y": 400,
+        "x": 620,
+        "y": 1720,
         "wires": [
             []
         ]
@@ -12005,7 +11958,7 @@
     {
         "id": "875e60949f6bc611",
         "type": "template",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "name": "notification failure",
         "field": "payload",
@@ -12014,8 +11967,8 @@
         "syntax": "mustache",
         "template": "Database Download Failed",
         "output": "str",
-        "x": 930,
-        "y": 560,
+        "x": 810,
+        "y": 1880,
         "wires": [
             [
                 "82c0e19501c290c9"
@@ -12025,7 +11978,7 @@
     {
         "id": "82c0e19501c290c9",
         "type": "ui-notification",
-        "z": "52393b3e4bf2293d",
+        "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "ui": "2a8899583532edb4",
         "position": "top right",
@@ -12041,8 +11994,58 @@
         "raw": false,
         "className": "",
         "name": "",
-        "x": 990,
-        "y": 600,
+        "x": 870,
+        "y": 1920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7cd1147cdd98c73c",
+        "type": "ui-notification",
+        "z": "239d7b3ba410ad5e",
+        "g": "541d31d14bcd8b00",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "",
+        "x": 1010,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "96c8b17930fcc9b9",
+        "type": "ui-template",
+        "z": "239d7b3ba410ad5e",
+        "g": "e11d3ada8d422864",
+        "group": "d1b753e7c692d80c",
+        "page": "",
+        "ui": "",
+        "name": "comments instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <p>Comments are date-sensitive entries about the Traffic Monitor status, deployment, location, conditions, construction, etc.\n            <br />\n            These comments do not directly impact any display or counts but may be used for downstream analysis. Do not include any personally identifiable information.\n        </p>\n        <p> For example: Create a comment that says \"Road repaving, local access only\" with dates from June 1 through June 22.\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 140,
+        "y": 1500,
         "wires": [
             []
         ]
