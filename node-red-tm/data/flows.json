@@ -275,14 +275,17 @@
             "ecb0810a22dc4a5c",
             "b4e0b45a7bedd728",
             "5124f45846b94ef0",
-            "7050ed881890ce4d",
             "82073a9c3e0f504f",
-            "44f3b2f2c2ae88fe"
+            "44f3b2f2c2ae88fe",
+            "84ed50c153fdfe53",
+            "dcd8309b262fe625",
+            "3a997d3ad0dc6a47",
+            "e0ce011d867645a4"
         ],
         "x": 14,
         "y": 619,
-        "w": 1282,
-        "h": 262
+        "w": 1472,
+        "h": 182
     },
     {
         "id": "81c973dcdca1a4f0",
@@ -338,12 +341,17 @@
             "b519f0927284d44a",
             "2f3cc99c3c41ab90",
             "62e90c91d0238273",
-            "c00796fd5642dae0"
+            "c00796fd5642dae0",
+            "8220e90747650db3",
+            "9d030ab441fe8a0d",
+            "267ddbb399fbe111",
+            "28c5f2ee95034ae9",
+            "60480f896c44d57c"
         ],
         "x": 14,
-        "y": 919,
-        "w": 1552,
-        "h": 502
+        "y": 839,
+        "w": 1512,
+        "h": 562
     },
     {
         "id": "dc2934def36c6285",
@@ -817,6 +825,74 @@
         "h": 502
     },
     {
+        "id": "e11d3ada8d422864",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "cf47ae54ebd02d2f",
+            "943c0adb61dbfac3",
+            "96c8b17930fcc9b9"
+        ],
+        "x": 14,
+        "y": 1459,
+        "w": 322,
+        "h": 122
+    },
+    {
+        "id": "d58714d193d44ae6",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f7b3e11474e3626a",
+            "2ad488b2e5da088f",
+            "f03fbb7876aea448",
+            "0a10210304d7f8c7",
+            "50e14971c08db756",
+            "4d92b6ddc2277d16",
+            "449a21db01788110",
+            "f2f4054783d0bfc5",
+            "396c90ebe85db8c2",
+            "c629bab8eb81f07e",
+            "817efc474a9809f8",
+            "e78a56289029c007",
+            "d2b3042374fa28aa",
+            "fda1f9b5367bd61d",
+            "875e60949f6bc611",
+            "82c0e19501c290c9"
+        ],
+        "x": 14,
+        "y": 1599,
+        "w": 1252,
+        "h": 362
+    },
+    {
+        "id": "911fe099dbaacc04",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Generate JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "6ea49e34b047b55f",
+            "3a4ee0a692fe3962",
+            "003b99076d0bd38e",
+            "9dc5916695382ba8"
+        ],
+        "x": 14,
+        "y": 1979,
+        "w": 332,
+        "h": 142
+    },
+    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1269,55 +1345,6 @@
         "h": 162
     },
     {
-        "id": "e11d3ada8d422864",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard 2 - Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "cf47ae54ebd02d2f",
-            "943c0adb61dbfac3",
-            "96c8b17930fcc9b9"
-        ],
-        "x": 14,
-        "y": 1459,
-        "w": 322,
-        "h": 122
-    },
-    {
-        "id": "d58714d193d44ae6",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard 2 - Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f7b3e11474e3626a",
-            "2ad488b2e5da088f",
-            "f03fbb7876aea448",
-            "0a10210304d7f8c7",
-            "50e14971c08db756",
-            "4d92b6ddc2277d16",
-            "449a21db01788110",
-            "f2f4054783d0bfc5",
-            "396c90ebe85db8c2",
-            "c629bab8eb81f07e",
-            "817efc474a9809f8",
-            "e78a56289029c007",
-            "d2b3042374fa28aa",
-            "fda1f9b5367bd61d",
-            "875e60949f6bc611",
-            "82c0e19501c290c9"
-        ],
-        "x": 14,
-        "y": 1599,
-        "w": 1252,
-        "h": 362
-    },
-    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -1521,6 +1548,23 @@
                 "b241a0ef89fd7ce4",
                 "584504e6c8935eaf",
                 "f57e08e6fb9c0d09"
+            ]
+        ]
+    },
+    {
+        "id": "28c5f2ee95034ae9",
+        "type": "junction",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "x": 380,
+        "y": 1060,
+        "wires": [
+            [
+                "b519f0927284d44a",
+                "b5e099e92ce27bf6",
+                "68fecdfda8e4e774",
+                "790a89794204c383",
+                "35dd409613d47a60"
             ]
         ]
     },
@@ -1955,7 +1999,7 @@
         "page": "6599f3821baa508f",
         "width": "6",
         "height": "1",
-        "order": 2,
+        "order": 1,
         "showTitle": true,
         "className": "section-title, section-body",
         "visible": "true",
@@ -1969,12 +2013,37 @@
         "page": "6599f3821baa508f",
         "width": 6,
         "height": "1",
-        "order": 1,
+        "order": 2,
         "showTitle": true,
         "className": "section-title, section-body",
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
+    },
+    {
+        "id": "16d5e25ad80890a0",
+        "type": "ui-group",
+        "name": "JSON Download by DateTime",
+        "page": "6599f3821baa508f",
+        "width": 6,
+        "height": 1,
+        "order": 3,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "7b92e8b3c49c7092",
+        "type": "ui-spacer",
+        "group": "16d5e25ad80890a0",
+        "name": "ui_template.label.spacer",
+        "tooltip": "",
+        "order": 3,
+        "width": 1,
+        "height": 1,
+        "className": ""
     },
     {
         "id": "9d0f912cc84546dd",
@@ -10486,7 +10555,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1090,
+        "x": 930,
         "y": 660,
         "wires": []
     },
@@ -10496,18 +10565,19 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "create events query",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Events JSON</h3>\n    Last generated:\n    <table>\n        <tr>\n            <td>Start:</td>\n            <td>${formatstartDateTime}</td>\n        </tr>\n        <tr>\n            <td>End:</td> \n            <td>${formatendDateTime}</td>\n        </tr>\n    </table>\n    <ul>\n        <li><a href=\"/files/events.json\">events.json</a></li>\n    </ul>\n`;\n\nreturn newMsg;\n",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime()/1000;\n\nnewMsg.topic = \"SELECT * FROM events WHERE start_time >= '\"+ newMsg.payload.startDateTime +\"' AND end_time <= '\"+ newMsg.payload.endDateTime +\"';\";\n\nnewMsg.payload.formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nnewMsg.payload.formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nreturn newMsg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
+        "x": 430,
         "y": 700,
         "wires": [
             [
-                "44f3b2f2c2ae88fe"
+                "e0ce011d867645a4",
+                "3a997d3ad0dc6a47"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -10650,17 +10720,6 @@
         ]
     },
     {
-        "id": "7050ed881890ce4d",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "0e3b2be7bcc3d3b8",
-        "name": "enable download link",
-        "info": "",
-        "x": 360,
-        "y": 740,
-        "wires": []
-    },
-    {
         "id": "f2bd56710ba03238",
         "type": "sqlite",
         "z": "239d7b3ba410ad5e",
@@ -10669,8 +10728,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 890,
-        "y": 840,
+        "x": 1120,
+        "y": 760,
         "wires": [
             [
                 "b4e0b45a7bedd728"
@@ -10719,8 +10778,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1180,
-        "y": 840,
+        "x": 1360,
+        "y": 760,
         "wires": [
             []
         ]
@@ -10739,10 +10798,10 @@
         "cancel": "",
         "raw": true,
         "className": "",
-        "topic": "Events JSON output created (download available)",
+        "topic": "",
         "name": "",
-        "x": 1180,
-        "y": 780,
+        "x": 1370,
+        "y": 700,
         "wires": []
     },
     {
@@ -10751,18 +10810,19 @@
         "z": "239d7b3ba410ad5e",
         "g": "0e3b2be7bcc3d3b8",
         "name": "format events creation notification",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"<div><b>Created events.json withing DateTimes</b></div>\"\nnewMsg.payload = \"<div><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></div>\";\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"Created events.json\"\nnewMsg.payload = \"<div><p>Find link(s) below to download.</p><p><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></p></div>\";\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 940,
-        "y": 780,
+        "x": 1120,
+        "y": 700,
         "wires": [
             [
-                "5124f45846b94ef0"
+                "5124f45846b94ef0",
+                "84ed50c153fdfe53"
             ]
         ]
     },
@@ -10821,7 +10881,7 @@
         "splitLayout": "",
         "className": "",
         "x": 160,
-        "y": 960,
+        "y": 880,
         "wires": [
             [
                 "91cae91e61fcea38",
@@ -10844,7 +10904,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1050,
-        "y": 960,
+        "y": 880,
         "wires": []
     },
     {
@@ -10860,8 +10920,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 590,
-        "y": 1140,
+        "x": 550,
+        "y": 1120,
         "wires": [
             [
                 "314a302b5d86fb5a"
@@ -10878,8 +10938,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1140,
+        "x": 980,
+        "y": 1120,
         "wires": [
             [
                 "7dba386e57337c72"
@@ -10909,7 +10969,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 120,
-        "y": 1040,
+        "y": 960,
         "wires": [
             [
                 "91cae91e61fcea38"
@@ -10928,8 +10988,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1290,
-        "y": 1140,
+        "x": 1250,
+        "y": 1120,
         "wires": [
             []
         ]
@@ -10948,10 +11008,10 @@
         "cancel": "",
         "raw": true,
         "className": "",
-        "topic": "Events JSON output created (download available)",
+        "topic": "",
         "name": "",
-        "x": 1140,
-        "y": 1080,
+        "x": 810,
+        "y": 1060,
         "wires": []
     },
     {
@@ -10962,7 +11022,7 @@
         "name": "enable download link when generated",
         "info": "",
         "x": 210,
-        "y": 1080,
+        "y": 1000,
         "wires": []
     },
     {
@@ -10971,18 +11031,19 @@
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
         "name": "format radar creation notification",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"<div><b>Created radar.json withing DateTimes</b></div>\"\nnewMsg.payload = \"<div><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></div>\";\n\nreturn newMsg;",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nlet startDateTime = new Date(msg.payload.startDateTime * 1000).toISOString();\nlet endDateTime = new Date(msg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.topic = \"Created radar.json\"\nnewMsg.payload = \"<div><p>Find link(s) below to download.</p><p><span>Start: \" + startDateTime + \"</span> <br /> <span>End: \" + endDateTime +\"</span></p></div>\";\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 910,
-        "y": 1080,
+        "x": 570,
+        "y": 1040,
         "wires": [
             [
-                "04df9cb8c0753abb"
+                "04df9cb8c0753abb",
+                "8220e90747650db3"
             ]
         ]
     },
@@ -10992,7 +11053,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "1bfaaf118f38aee0",
         "name": "create radar dates for query",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime() / 1000;\n\nlet formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nlet formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nnewMsg.template = `\n    <h3>Generated Radar JSON</h3>\n    Last generated:\n    <table>\n        <tr>\n            <td>Start:</td> \n            <td>${formatstartDateTime}</td>\n        </tr>\n        <tr>\n            <td>End:</td> \n            <td>${formatendDateTime}</td>\n        </tr>\n    </table>\n    <ul>\n        <li><a href=\"/files/radar_dov.json\">radar_dov.json</a></li>\n        <li><a href=\"/files/radar_timed_speed_counts.json\">radar_timed_speed_counts.json</a> </li>\n        <li><a href=\"/files/radar_raw_speed_magnitude.json\">radar_raw_speed_magnitude.json</a> </li>\n        <li><a href=\"/files/radar_raw_speed_magnitude_single.json\">radar_raw_speed_magnitude_single.json</a> </li>\n        <li><a href=\"/files/radar_oc_payload.json\">radar_oc_payload.json</a> </li>\n    </ul>\n`;\n\nreturn newMsg;\n",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create startDateTime, if no date, use 7 days ago, if no time, leave as default\nconst startDateTime = (msg.payload.start_date) ? new Date(msg.payload.start_date) : new Date(new Date().setDate(new Date().getDate() - 7));\nif (msg.payload.start_time) {\n    const startTime = new Date(msg.payload.start_time);\n    \n    startDateTime.setTime(startTime.getTime());\n}\n\n//create endDateTime, if no date, use current date, if no time, leave as default\nconst endDateTime = (msg.payload.end_date) ? new Date(msg.payload.end_date) : new Date();\nif (msg.payload.end_time) {\n    const endTime = new Date(msg.payload.end_time);\n\n    endDateTime.setTime(endTime.getTime());\n}\n\nnewMsg.payload.startDateTime = startDateTime.getTime()/1000;\nnewMsg.payload.endDateTime = endDateTime.getTime() / 1000;\n\nnewMsg.payload.formatstartDateTime = new Date(newMsg.payload.startDateTime * 1000).toISOString();\nnewMsg.payload.formatendDateTime = new Date(newMsg.payload.endDateTime * 1000).toISOString();\n\nreturn newMsg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -11000,10 +11061,11 @@
         "finalize": "",
         "libs": [],
         "x": 500,
-        "y": 1000,
+        "y": 920,
         "wires": [
             [
-                "c00796fd5642dae0"
+                "60480f896c44d57c",
+                "267ddbb399fbe111"
             ]
         ],
         "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
@@ -11021,8 +11083,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 640,
-        "y": 1200,
+        "x": 600,
+        "y": 1180,
         "wires": [
             [
                 "8c660460752a27b2"
@@ -11039,8 +11101,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1200,
+        "x": 980,
+        "y": 1180,
         "wires": [
             [
                 "d50d86038fe1af32"
@@ -11059,8 +11121,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1340,
-        "y": 1200,
+        "x": 1300,
+        "y": 1180,
         "wires": [
             []
         ]
@@ -11078,8 +11140,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 650,
-        "y": 1260,
+        "x": 610,
+        "y": 1240,
         "wires": [
             [
                 "f77b0f12f5047d25"
@@ -11096,8 +11158,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1260,
+        "x": 980,
+        "y": 1240,
         "wires": [
             [
                 "fbf290de9b7b858f"
@@ -11117,8 +11179,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1350,
-        "y": 1260,
+        "x": 1310,
+        "y": 1240,
         "wires": [
             []
         ]
@@ -11136,8 +11198,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 670,
-        "y": 1320,
+        "x": 630,
+        "y": 1300,
         "wires": [
             [
                 "729b953264ce47aa"
@@ -11154,8 +11216,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1320,
+        "x": 980,
+        "y": 1300,
         "wires": [
             [
                 "23b1ba527419b29b"
@@ -11174,8 +11236,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1370,
-        "y": 1320,
+        "x": 1330,
+        "y": 1300,
         "wires": [
             []
         ]
@@ -11193,8 +11255,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 1380,
+        "x": 570,
+        "y": 1360,
         "wires": [
             [
                 "2f3cc99c3c41ab90"
@@ -11211,8 +11273,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 1020,
-        "y": 1380,
+        "x": 980,
+        "y": 1360,
         "wires": [
             [
                 "62e90c91d0238273"
@@ -11231,8 +11293,8 @@
         "createDir": false,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 1320,
-        "y": 1380,
+        "x": 1280,
+        "y": 1360,
         "wires": [
             []
         ]
@@ -11269,22 +11331,18 @@
         "order": 2,
         "width": 0,
         "height": 0,
-        "format": "",
+        "format": "<h3>Generated Radar JSON</h3>\n<p>Submit to download</p>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 560,
-        "y": 1080,
+        "x": 900,
+        "y": 920,
         "wires": [
             [
                 "29583ca6de66fedf",
-                "790a89794204c383",
-                "68fecdfda8e4e774",
-                "b5e099e92ce27bf6",
-                "35dd409613d47a60",
-                "b519f0927284d44a"
+                "28c5f2ee95034ae9"
             ]
         ]
     },
@@ -11311,14 +11369,14 @@
         "order": 2,
         "width": 0,
         "height": 0,
-        "format": "",
+        "format": "<h3>Generated Events JSON</h3>\n<p>Submit to download</p>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 630,
-        "y": 780,
+        "x": 810,
+        "y": 700,
         "wires": [
             [
                 "f2bd56710ba03238",
@@ -11531,7 +11589,7 @@
         "type": "link in",
         "z": "239d7b3ba410ad5e",
         "g": "541d31d14bcd8b00",
-        "name": "create comment",
+        "name": "dashboard - comment link out",
         "links": [
             "cf47ae54ebd02d2f"
         ],
@@ -11548,7 +11606,7 @@
         "type": "link out",
         "z": "239d7b3ba410ad5e",
         "g": "e11d3ada8d422864",
-        "name": "Dashboard 2 - comment",
+        "name": "dashboard - comment link in",
         "mode": "link",
         "links": [
             "30efa506d0f51bc4"
@@ -12048,6 +12106,338 @@
         "y": 1500,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "8220e90747650db3",
+        "type": "ui-notification",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": true,
+        "className": "",
+        "name": "",
+        "x": 810,
+        "y": 1020,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "84ed50c153fdfe53",
+        "type": "ui-notification",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": true,
+        "className": "",
+        "name": "",
+        "x": 1370,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6ea49e34b047b55f",
+        "type": "ui-form",
+        "z": "239d7b3ba410ad5e",
+        "g": "911fe099dbaacc04",
+        "name": "Generate Radar JSON",
+        "group": "16d5e25ad80890a0",
+        "label": "Generate Radar JSON",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Radar start date (default 7-days ago)",
+                "key": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar start time",
+                "key": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end date (default now)",
+                "key": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Radar end time",
+                "key": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "resetOnSubmit": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "passthru": false,
+        "dropdownOptions": [],
+        "x": 140,
+        "y": 2080,
+        "wires": [
+            [
+                "9dc5916695382ba8"
+            ]
+        ]
+    },
+    {
+        "id": "3a4ee0a692fe3962",
+        "type": "ui-form",
+        "z": "239d7b3ba410ad5e",
+        "g": "911fe099dbaacc04",
+        "name": "Generate Events JSON",
+        "group": "16d5e25ad80890a0",
+        "label": "Generate Events JSON",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Events start date (default 7-days ago)",
+                "key": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Events start time",
+                "key": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Events end date (default now)",
+                "key": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Events end time",
+                "key": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "resetOnSubmit": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "passthru": false,
+        "dropdownOptions": [],
+        "x": 150,
+        "y": 2020,
+        "wires": [
+            [
+                "003b99076d0bd38e"
+            ]
+        ]
+    },
+    {
+        "id": "003b99076d0bd38e",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "g": "911fe099dbaacc04",
+        "name": "dashboard - json events link out",
+        "mode": "link",
+        "links": [
+            "dcd8309b262fe625"
+        ],
+        "x": 305,
+        "y": 2020,
+        "wires": []
+    },
+    {
+        "id": "9dc5916695382ba8",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "g": "911fe099dbaacc04",
+        "name": "dashboard - json radar link out",
+        "mode": "link",
+        "links": [
+            "9d030ab441fe8a0d"
+        ],
+        "x": 305,
+        "y": 2080,
+        "wires": []
+    },
+    {
+        "id": "9d030ab441fe8a0d",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "dashboard - json events link in",
+        "links": [
+            "9dc5916695382ba8"
+        ],
+        "x": 245,
+        "y": 920,
+        "wires": [
+            [
+                "91cae91e61fcea38"
+            ]
+        ]
+    },
+    {
+        "id": "dcd8309b262fe625",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "dashboard - json events link in",
+        "links": [
+            "003b99076d0bd38e"
+        ],
+        "x": 265,
+        "y": 700,
+        "wires": [
+            [
+                "c45589c369c843a5"
+            ]
+        ]
+    },
+    {
+        "id": "3a997d3ad0dc6a47",
+        "type": "ui-template",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "group": "16d5e25ad80890a0",
+        "page": "",
+        "ui": "",
+        "name": "download Events JSON",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <h3>Generated Events JSON</h3>\n        <p><em>Click link(s) below to download.</em></p>\n        <p>Last generated:</p>\n        <table>\n            <tr>\n                <td>Start:</td>\n                <td>{{msg.payload?.formatstartDateTime}}</td>\n            </tr>\n            <tr>\n                <td>End:</td> \n                <td>{{msg.payload?.formatendDateTime}}</td>\n            </tr>\n        </table>\n        <ul>\n            <li><a href=\"/files/events.json\">events.json</a></li>\n        </ul>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 810,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "267ddbb399fbe111",
+        "type": "ui-template",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "group": "16d5e25ad80890a0",
+        "page": "",
+        "ui": "",
+        "name": "download Radar JSON",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <h3>Generated Radar JSON</h3>\n        <p><em>Click link(s) below to download.</em></p>\n        <p>Last generated:</p>\n        <table>\n            <tr>\n                <td>Start:</td>\n                <td>{{msg.payload?.formatstartDateTime}}</td>\n            </tr>\n            <tr>\n                <td>End:</td>\n                <td>{{msg.payload?.formatendDateTime}}</td>\n            </tr>\n        </table>\n        <ul>\n            <li><a href=\"/files/radar_dov.json\">radar_dov.json</a></li>\n            <li><a href=\"/files/radar_timed_speed_counts.json\">radar_timed_speed_counts.json</a> </li>\n            <li><a href=\"/files/radar_raw_speed_magnitude.json\">radar_raw_speed_magnitude.json</a> </li>\n            <li><a href=\"/files/radar_raw_speed_magnitude_single.json\">radar_raw_speed_magnitude_single.json</a> </li>\n            <li><a href=\"/files/radar_oc_payload.json\">radar_oc_payload.json</a> </li>\n        </ul>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 900,
+        "y": 960,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "60480f896c44d57c",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "1bfaaf118f38aee0",
+        "name": "",
+        "field": "template",
+        "fieldType": "msg",
+        "format": "html",
+        "syntax": "mustache",
+        "template": "<h3>Generated Radar JSON</h3>\n<p><em>Click link(s) below to download.</em></p>\n<p>Last generated:</p>\n<table>\n    <tr>\n        <td>Start:</td>\n        <td>{{payload.formatstartDateTime}}</td>\n    </tr>\n    <tr>\n        <td>End:</td>\n        <td>{{payload.formatendDateTime}}</td>\n    </tr>\n</table>\n<ul>\n    <li><a href=\"/files/radar_dov.json\">radar_dov.json</a></li>\n    <li><a href=\"/files/radar_timed_speed_counts.json\">radar_timed_speed_counts.json</a> </li>\n    <li><a href=\"/files/radar_raw_speed_magnitude.json\">radar_raw_speed_magnitude.json</a> </li>\n    <li><a href=\"/files/radar_raw_speed_magnitude_single.json\">radar_raw_speed_magnitude_single.json</a> </li>\n    <li><a href=\"/files/radar_oc_payload.json\">radar_oc_payload.json</a> </li>\n</ul>",
+        "output": "str",
+        "x": 720,
+        "y": 920,
+        "wires": [
+            [
+                "c00796fd5642dae0"
+            ]
+        ]
+    },
+    {
+        "id": "e0ce011d867645a4",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "0e3b2be7bcc3d3b8",
+        "name": "",
+        "field": "template",
+        "fieldType": "msg",
+        "format": "html",
+        "syntax": "mustache",
+        "template": "<h3>Generated Events JSON</h3>\n<p><em>Click link(s) below to download.</em></p>\n<p>Last generated:</p>\n<table>\n    <tr>\n        <td>Start:</td>\n        <td>{{payload.formatstartDateTime}}</td>\n    </tr>\n    <tr>\n        <td>End:</td> \n        <td>{{payload.formatendDateTime}}</td>\n    </tr>\n</table>\n<ul>\n    <li><a href=\"/files/events.json\">events.json</a></li>\n</ul>",
+        "output": "str",
+        "x": 620,
+        "y": 700,
+        "wires": [
+            [
+                "44f3b2f2c2ae88fe"
+            ]
         ]
     }
 ]
