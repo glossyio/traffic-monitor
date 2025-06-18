@@ -849,21 +849,27 @@
             "label": true
         },
         "nodes": [
-            "08bff1ab640003f3",
             "f7b3e11474e3626a",
             "2ad488b2e5da088f",
             "f03fbb7876aea448",
-            "65649713a0f3ec8d",
             "0a10210304d7f8c7",
             "50e14971c08db756",
             "4d92b6ddc2277d16",
             "449a21db01788110",
-            "f2f4054783d0bfc5"
+            "f2f4054783d0bfc5",
+            "396c90ebe85db8c2",
+            "c629bab8eb81f07e",
+            "817efc474a9809f8",
+            "e78a56289029c007",
+            "d2b3042374fa28aa",
+            "fda1f9b5367bd61d",
+            "875e60949f6bc611",
+            "82c0e19501c290c9"
         ],
         "x": 134,
         "y": 279,
-        "w": 1212,
-        "h": 262
+        "w": 1252,
+        "h": 362
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -11580,7 +11586,7 @@
         "z": "52393b3e4bf2293d",
         "name": "Dashboard-2 version of Database page",
         "info": "",
-        "x": 290,
+        "x": 310,
         "y": 100,
         "wires": []
     },
@@ -11611,16 +11617,17 @@
                 "vt": "env"
             }
         ],
-        "repeat": "",
+        "repeat": "300",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 280,
-        "y": 400,
+        "x": 290,
+        "y": 440,
         "wires": [
             [
-                "f7b3e11474e3626a"
+                "f7b3e11474e3626a",
+                "396c90ebe85db8c2"
             ]
         ]
     },
@@ -11635,30 +11642,12 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 280,
-        "y": 460,
+        "y": 500,
         "wires": [
             [
                 "0a10210304d7f8c7"
             ]
         ]
-    },
-    {
-        "id": "65649713a0f3ec8d",
-        "type": "debug",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "name": "debug 4",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 700,
-        "y": 500,
-        "wires": []
     },
     {
         "id": "0a10210304d7f8c7",
@@ -11674,10 +11663,9 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 460,
+        "y": 500,
         "wires": [
             [
-                "65649713a0f3ec8d",
                 "4d92b6ddc2277d16"
             ]
         ]
@@ -11695,11 +11683,10 @@
         "sendError": false,
         "encoding": "none",
         "allProps": true,
-        "x": 1020,
-        "y": 440,
+        "x": 940,
+        "y": 480,
         "wires": [
             [
-                "fc8c97f7afe41d21",
                 "f2f4054783d0bfc5"
             ]
         ]
@@ -11723,14 +11710,15 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 750,
-        "y": 460,
+        "x": 730,
+        "y": 500,
         "wires": [
             [
                 "50e14971c08db756"
             ],
             [
-                "449a21db01788110"
+                "449a21db01788110",
+                "875e60949f6bc611"
             ]
         ]
     },
@@ -11742,24 +11730,8 @@
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 970,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "fc8c97f7afe41d21",
-        "type": "debug",
-        "z": "52393b3e4bf2293d",
-        "name": "debug 3",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1240,
-        "y": 480,
+        "x": 890,
+        "y": 520,
         "wires": []
     },
     {
@@ -11775,10 +11747,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1250,
-        "y": 440,
+        "x": 1130,
+        "y": 480,
         "wires": [
-            []
+            [
+                "d2b3042374fa28aa"
+            ]
         ]
     },
     {
@@ -11863,29 +11837,6 @@
         ]
     },
     {
-        "id": "08bff1ab640003f3",
-        "type": "ui-text",
-        "z": "52393b3e4bf2293d",
-        "g": "d58714d193d44ae6",
-        "group": "e566a6a1e878cd10",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Press this button to download the TM database, which includes camera, radar, and air quality readings.",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#717171",
-        "wrapText": true,
-        "className": "",
-        "x": 520,
-        "y": 320,
-        "wires": []
-    },
-    {
         "id": "f7b3e11474e3626a",
         "type": "ui-template",
         "z": "52393b3e4bf2293d",
@@ -11894,7 +11845,7 @@
         "page": "",
         "ui": "",
         "name": "Button to trigger download request",
-        "order": 2,
+        "order": 3,
         "width": 0,
         "height": 0,
         "head": "",
@@ -11905,7 +11856,193 @@
         "templateScope": "local",
         "className": "",
         "x": 580,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "396c90ebe85db8c2",
+        "type": "function",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "get db size in MB",
+        "func": "const fs = global.get(\"fs\");\nvar stats = fs.statSync(msg.payload.filename);\nvar fileSizeInBytes = stats.size;\n// Convert the file size to megabytes (optional)\nvar fileSizeInMegabytes = (fileSizeInBytes / (1024*1024)).toFixed(3);\n\nmsg.payload = fileSizeInMegabytes;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
         "y": 400,
+        "wires": [
+            [
+                "c629bab8eb81f07e",
+                "fda1f9b5367bd61d"
+            ]
+        ]
+    },
+    {
+        "id": "c629bab8eb81f07e",
+        "type": "ui-text",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "group": "e566a6a1e878cd10",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Database size (MB): ",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 760,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "817efc474a9809f8",
+        "type": "ui-template",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "group": "e566a6a1e878cd10",
+        "page": "",
+        "ui": "",
+        "name": "download instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <p>Click the button below to download the entire Traffic Monitor SQLite database(s) to your current browser. \n            Database will include data for all connected sensors including events, radar, air quality, and more only from this device while the Traffic Monitor was deployed and capturing.</p>\n    </div>\n</template>\n",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 260,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e78a56289029c007",
+        "type": "ui-notification",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "",
+        "x": 1270,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d2b3042374fa28aa",
+        "type": "template",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "notification running",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
+        "output": "str",
+        "x": 1210,
+        "y": 520,
+        "wires": [
+            [
+                "e78a56289029c007"
+            ]
+        ]
+    },
+    {
+        "id": "fda1f9b5367bd61d",
+        "type": "change",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "dbSize",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 740,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "875e60949f6bc611",
+        "type": "template",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "name": "notification failure",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "Database Download Failed",
+        "output": "str",
+        "x": 930,
+        "y": 560,
+        "wires": [
+            [
+                "82c0e19501c290c9"
+            ]
+        ]
+    },
+    {
+        "id": "82c0e19501c290c9",
+        "type": "ui-notification",
+        "z": "52393b3e4bf2293d",
+        "g": "d58714d193d44ae6",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "",
+        "x": 990,
+        "y": 600,
         "wires": [
             []
         ]
