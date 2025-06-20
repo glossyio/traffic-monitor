@@ -40,6 +40,12 @@
   ansible.builtin.import_tasks:
     file: coraltpu_pci_setup.yml
 
+- name: TMSetup - Main - Setup nginx
+  tags:
+    - nginx
+  ansible.builtin.import_tasks:
+    file: docker_nginx_setup.yml
+
 - name: TMSetup - Main - Setup Frigate
   tags:
     - frigate

@@ -1,0 +1,33 @@
+---
+# TMSetup - nginx Setup tasks
+
+- name: TMSetup - nginx Setup - Create nginx Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/nginx'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - nginx Setup - Create nginx docker files
+  become: true
+  loop:
+    - nginx/Dockerfile
+    - nginx/docker-compose-nginx.yaml
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify:
+    - Build container images
+    - Restart tm-docker service
+...
