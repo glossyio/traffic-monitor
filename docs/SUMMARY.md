@@ -24,6 +24,7 @@
 
 * [Frequently Asked Questions](help-and-faq/frequently-asked-questions.md)
 * [Where can I get support?](help-and-faq/where-can-i-get-support.md)
+* [Use Cases and Scenarios](help-and-faq/use-cases-and-scenarios.md)
 
 ## Sensor Payloads
 
