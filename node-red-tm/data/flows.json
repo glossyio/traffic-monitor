@@ -80,14 +80,6 @@
         "env": []
     },
     {
-        "id": "7d4b71e5ce536a48",
-        "type": "tab",
-        "label": "Flow 1",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1011,13 +1003,14 @@
             "2e49ae46131b1b63",
             "f3ebd7067c32beb0",
             "eb7053718706968b",
-            "5c91fd1b79e1a6f3",
-            "e53d9c47889188c0"
+            "3132d36d148e80d2",
+            "95215b45c821d24a",
+            "fe681b9c50c9c5e2"
         ],
         "x": 134,
         "y": 199,
-        "w": 1012,
-        "h": 162
+        "w": 1212,
+        "h": 142
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -2175,7 +2168,7 @@
         "page": "37da1871896b31d3",
         "width": "12",
         "height": "15",
-        "order": 1,
+        "order": 3,
         "showTitle": false,
         "className": "",
         "visible": "true",
@@ -2201,49 +2194,27 @@
         }
     },
     {
-        "id": "d1fc87389a0f81d0",
-        "type": "ui-page",
-        "name": "Dropdown",
-        "ui": "2a8899583532edb4",
-        "path": "/dropdown",
-        "icon": "form-dropdown",
-        "layout": "grid",
-        "theme": "9d8bfd7e0d216779",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 3,
+        "id": "316f38770e41a119",
+        "type": "ui-group",
+        "name": "Selection Section",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": "5",
+        "order": 1,
+        "showTitle": false,
         "className": "",
-        "visible": true,
-        "disabled": false
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
     },
     {
-        "id": "257a42dba45787e5",
+        "id": "c5b3bbdd72468bc1",
         "type": "ui-group",
-        "name": "Dropdown Node",
-        "page": "d1fc87389a0f81d0",
-        "width": "12",
-        "height": "1",
-        "order": 1,
+        "name": "Monitoring Section on Top-Right",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": 1,
+        "order": 2,
         "showTitle": false,
         "className": "",
         "visible": "true",
@@ -10393,8 +10364,9 @@
         "mode": "link",
         "links": [
             "61ce02565677e825",
-            "e7f5b49a7e6da452",
-            "9561ae374a7382e3"
+            "bf05450bee7a95bf",
+            "084ba56f9b1374c1",
+            "a5f24a3f4174b885"
         ],
         "x": 1225,
         "y": 1320,
@@ -12032,10 +12004,10 @@
         "type": "ui-chart",
         "z": "0fa19dea799cc41d",
         "g": "dc5a88bd7605f321",
-        "group": "608443aad6f1050e",
+        "group": "c5b3bbdd72468bc1",
         "name": "Cumulative Observations by Type since Midnight",
         "label": "Cumulative Observations by Type since Midnight",
-        "order": 3,
+        "order": 1,
         "chartType": "bar",
         "category": "",
         "categoryType": "none",
@@ -12098,7 +12070,7 @@
         "group": "608443aad6f1050e",
         "name": "Observations by Type for Each Hour for the Last 36 Hours",
         "label": "Observations by Type for Each Hour for the Last 36 Hours",
-        "order": 4,
+        "order": 1,
         "chartType": "bar",
         "category": "type",
         "categoryType": "property",
@@ -12161,7 +12133,7 @@
         "group": "608443aad6f1050e",
         "name": "Observations by Type for Each Day for the Last 10 Days",
         "label": "Observations by Type for Each Day for the Last 10 Days",
-        "order": 5,
+        "order": 2,
         "chartType": "bar",
         "category": "type",
         "categoryType": "property",
@@ -12221,7 +12193,7 @@
         "type": "ui-template",
         "z": "0fa19dea799cc41d",
         "g": "30d5f95b51a19a92",
-        "group": "608443aad6f1050e",
+        "group": "316f38770e41a119",
         "page": "",
         "ui": "",
         "name": "Today's Car Counts and Speeds, since 0400",
@@ -12274,7 +12246,7 @@
         "page": "",
         "ui": "",
         "name": "Latest Observations (updated as they happen)",
-        "order": 6,
+        "order": 3,
         "width": "0",
         "height": "0",
         "head": "",
@@ -12349,7 +12321,7 @@
                 "t": "set",
                 "p": "ui_update.options",
                 "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))",
+                "to": "[\t   $keys(\t       $globalContext(\"config.sensors.cameras\")\t)\t]",
                 "tot": "jsonata"
             }
         ],
@@ -12363,7 +12335,7 @@
         "wires": [
             [
                 "f3ebd7067c32beb0",
-                "e38cf366f7262f18"
+                "3132d36d148e80d2"
             ]
         ]
     },
@@ -12383,9 +12355,9 @@
             },
             {
                 "t": "set",
-                "p": "options",
+                "p": "ui_update.options",
                 "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.radars\"))",
+                "to": "[$keys($globalContext(\"config.sensors.radars\"))]",
                 "tot": "jsonata"
             }
         ],
@@ -12397,7 +12369,9 @@
         "x": 660,
         "y": 300,
         "wires": [
-            []
+            [
+                "95215b45c821d24a"
+            ]
         ]
     },
     {
@@ -12410,122 +12384,136 @@
         "links": [
             "37424f8064a95296"
         ],
-        "x": 1065,
+        "x": 1305,
         "y": 260,
         "wires": []
     },
     {
-        "id": "e38cf366f7262f18",
-        "type": "debug",
-        "z": "0fa19dea799cc41d",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "ui_update",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 920,
-        "y": 180,
-        "wires": []
-    },
-    {
-        "id": "5c91fd1b79e1a6f3",
-        "type": "ui-form",
+        "id": "3132d36d148e80d2",
+        "type": "ui-dropdown",
         "z": "0fa19dea799cc41d",
         "g": "89279ffabac66b61",
-        "name": "",
-        "group": "608443aad6f1050e",
-        "label": "Select Camera & Radar",
-        "order": 1,
+        "group": "316f38770e41a119",
+        "name": "Select Camera",
+        "label": "Select Camera:",
+        "tooltip": "",
+        "order": 3,
         "width": "3",
-        "height": "5",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
         "options": [
             {
-                "label": "Camera",
-                "key": "Camera",
-                "type": "dropdown",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Radar",
-                "key": "Radar",
-                "type": "dropdown",
-                "required": true,
-                "rows": null
+                "label": "",
+                "value": "",
+                "type": "str"
             }
         ],
-        "formValue": {
-            "Camera": "",
-            "Radar": ""
-        },
         "payload": "",
-        "submit": "submit",
-        "cancel": "",
-        "resetOnSubmit": true,
         "topic": "topic",
         "topicType": "msg",
-        "splitLayout": "",
-        "className": "section-border",
-        "passthru": false,
-        "dropdownOptions": [
-            {
-                "dropdown": "Camera",
-                "value": "Camera 1",
-                "label": "Camera 1"
-            },
-            {
-                "dropdown": "Camera",
-                "value": "Camera 2",
-                "label": "Camera 2"
-            },
-            {
-                "dropdown": "Radar",
-                "value": "Radar 1",
-                "label": "Radar 1"
-            },
-            {
-                "dropdown": "Radar",
-                "value": "Radar 2",
-                "label": "Radar 2"
-            }
-        ],
-        "x": 1010,
-        "y": 280,
+        "className": "",
+        "typeIsComboBox": true,
+        "msgTrigger": "onChange",
+        "x": 920,
+        "y": 240,
         "wires": [
-            []
+            [
+                "5442ec8b3a493c72"
+            ]
         ]
     },
     {
-        "id": "e53d9c47889188c0",
-        "type": "inject",
+        "id": "95215b45c821d24a",
+        "type": "ui-dropdown",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "group": "316f38770e41a119",
+        "name": "Select Radar",
+        "label": "Select Radar:",
+        "tooltip": "",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": true,
+        "msgTrigger": "onChange",
+        "x": 910,
+        "y": 300,
+        "wires": [
+            [
+                "fe681b9c50c9c5e2"
+            ]
+        ]
+    },
+    {
+        "id": "5442ec8b3a493c72",
+        "type": "change",
+        "z": "0fa19dea799cc41d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "camera_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1130,
+        "y": 240,
+        "wires": [
+            [
+                "eb7053718706968b"
+            ]
+        ]
+    },
+    {
+        "id": "fe681b9c50c9c5e2",
+        "type": "change",
         "z": "0fa19dea799cc41d",
         "g": "89279ffabac66b61",
         "name": "",
-        "props": [
+        "rules": [
             {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
+                "t": "set",
+                "p": "radar_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
             }
         ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 800,
-        "y": 320,
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1150,
+        "y": 300,
         "wires": [
             [
-                "5c91fd1b79e1a6f3"
+                "eb7053718706968b"
             ]
         ]
     },
@@ -12893,674 +12881,6 @@
         "className": "",
         "x": 580,
         "y": 400,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "5e2535d02a05ab15",
-        "type": "link in",
-        "z": "7d4b71e5ce536a48",
-        "name": "dashboard-2 cumulative observations by type since midnight",
-        "links": [
-            "42a095ee9445e33b"
-        ],
-        "x": 305,
-        "y": 520,
-        "wires": [
-            [
-                "38666a6017d27e88"
-            ]
-        ]
-    },
-    {
-        "id": "38666a6017d27e88",
-        "type": "function",
-        "z": "7d4b71e5ce536a48",
-        "name": "reorder types to get consistent colors",
-        "func": "// reorder types to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nconst results = [];\nfor (const type of types) {\n     const entry = msg.payload.find(entry => entry.label === type);\n     if (entry !== undefined) {\n          const count = entry.count;\n          const result = {label: type, count};\n          results.push(result);\n     }\n}\nmsg.payload = results;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 590,
-        "y": 520,
-        "wires": [
-            [
-                "65d8660d8d90e976"
-            ]
-        ]
-    },
-    {
-        "id": "65d8660d8d90e976",
-        "type": "ui-chart",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "name": "Cumulative Observations by Type since Midnight",
-        "label": "Cumulative Observations by Type since Midnight",
-        "order": 4,
-        "chartType": "bar",
-        "category": "",
-        "categoryType": "none",
-        "xAxisLabel": "",
-        "xAxisProperty": "label",
-        "xAxisPropertyType": "property",
-        "xAxisType": "category",
-        "xAxisFormat": "",
-        "xAxisFormatType": "auto",
-        "xmin": "",
-        "xmax": "",
-        "yAxisLabel": "Count",
-        "yAxisProperty": "count",
-        "yAxisPropertyType": "property",
-        "ymin": "",
-        "ymax": "",
-        "bins": 10,
-        "action": "replace",
-        "stackSeries": false,
-        "pointShape": "circle",
-        "pointRadius": 4,
-        "showLegend": false,
-        "removeOlder": 1,
-        "removeOlderUnit": "3600",
-        "removeOlderPoints": "",
-        "colors": [
-            "#0095ff",
-            "#ff0000",
-            "#ff7f0e",
-            "#2ca02c",
-            "#a347e1",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "textColor": [
-            "#000000"
-        ],
-        "textColorDefault": false,
-        "gridColor": [
-            "#e5e5e5"
-        ],
-        "gridColorDefault": true,
-        "width": "6",
-        "height": "5",
-        "className": "section-border",
-        "interpolation": "linear",
-        "x": 1010,
-        "y": 520,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "7bf622d7128567a0",
-        "type": "link in",
-        "z": "7d4b71e5ce536a48",
-        "name": "dashboard-2 Observations by Type for Each Hour for the Last 36 Hours",
-        "links": [
-            "4c66b12f99b8cb1b"
-        ],
-        "x": 265,
-        "y": 616,
-        "wires": [
-            [
-                "e7808692aed60cbf"
-            ]
-        ]
-    },
-    {
-        "id": "e7808692aed60cbf",
-        "type": "function",
-        "z": "7d4b71e5ce536a48",
-        "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    const entry = data[index];\n    // reorganize input data so that it is in the format [hour, type, count]\n    // rather than [[hour, count]] where the outer array is ordered by type\n    for (const hourEntry of entry) {\n      const date = new Date(hourEntry.x);\n      const count = hourEntry.y;\n      results.push({ type, date, count });\n    }\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 605,
-        "y": 616,
-        "wires": [
-            [
-                "f24cd2c1bb53be03"
-            ]
-        ]
-    },
-    {
-        "id": "f24cd2c1bb53be03",
-        "type": "ui-chart",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "name": "Observations by Type for Each Hour for the Last 36 Hours",
-        "label": "Observations by Type for Each Hour for the Last 36 Hours",
-        "order": 5,
-        "chartType": "bar",
-        "category": "type",
-        "categoryType": "property",
-        "xAxisLabel": "Hour",
-        "xAxisProperty": "hour",
-        "xAxisPropertyType": "property",
-        "xAxisType": "category",
-        "xAxisFormat": "",
-        "xAxisFormatType": "auto",
-        "xmin": "",
-        "xmax": "",
-        "yAxisLabel": "Count",
-        "yAxisProperty": "count",
-        "yAxisPropertyType": "property",
-        "ymin": "",
-        "ymax": "",
-        "bins": 10,
-        "action": "replace",
-        "stackSeries": true,
-        "pointShape": "circle",
-        "pointRadius": 4,
-        "showLegend": true,
-        "removeOlder": 1,
-        "removeOlderUnit": "3600",
-        "removeOlderPoints": "",
-        "colors": [
-            "#0095ff",
-            "#ff0000",
-            "#ff7f0e",
-            "#2ca02c",
-            "#a347e1",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "textColor": [
-            "#080808"
-        ],
-        "textColorDefault": false,
-        "gridColor": [
-            "#e5e5e5"
-        ],
-        "gridColorDefault": true,
-        "width": 6,
-        "height": "5",
-        "className": "section-border section-title",
-        "interpolation": "linear",
-        "x": 1085,
-        "y": 616,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "cfa9929ac6e7a2c6",
-        "type": "link in",
-        "z": "7d4b71e5ce536a48",
-        "name": "dashboard-2 Observations by Type for Each Day for the Last 10 Days",
-        "links": [
-            "872601ee6be93e1a"
-        ],
-        "x": 325,
-        "y": 740,
-        "wires": [
-            [
-                "f61abf4a428ff3d6"
-            ]
-        ]
-    },
-    {
-        "id": "f61abf4a428ff3d6",
-        "type": "function",
-        "z": "7d4b71e5ce536a48",
-        "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    const entry = data[index];\n    // reorganize input data so that it is in the format [date, day, type, count]\n    // rather than [[date, day, count]] where the outer array is ordered by type\n    for (const dayEntry of entry) {\n      const date = dayEntry.x;\n      const count = dayEntry.y;\n      const day = dayEntry.day;\n      results.push({ type, date, day, count });\n    }\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\nreturn {payload: results};",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 580,
-        "y": 740,
-        "wires": [
-            [
-                "896dc3afe90b0949"
-            ]
-        ]
-    },
-    {
-        "id": "896dc3afe90b0949",
-        "type": "ui-chart",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "name": "Observations by Type for Each Day for the Last 10 Days",
-        "label": "Observations by Type for Each Day for the Last 10 Days",
-        "order": 6,
-        "chartType": "bar",
-        "category": "type",
-        "categoryType": "property",
-        "xAxisLabel": "Day",
-        "xAxisProperty": "day",
-        "xAxisPropertyType": "property",
-        "xAxisType": "category",
-        "xAxisFormat": "",
-        "xAxisFormatType": "auto",
-        "xmin": "",
-        "xmax": "",
-        "yAxisLabel": "Count",
-        "yAxisProperty": "count",
-        "yAxisPropertyType": "property",
-        "ymin": "",
-        "ymax": "",
-        "bins": 10,
-        "action": "replace",
-        "stackSeries": true,
-        "pointShape": "circle",
-        "pointRadius": 4,
-        "showLegend": true,
-        "removeOlder": 1,
-        "removeOlderUnit": "3600",
-        "removeOlderPoints": "",
-        "colors": [
-            "#0095ff",
-            "#ff0000",
-            "#ff7f0e",
-            "#2ca02c",
-            "#a347e1",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "textColor": [
-            "#080808"
-        ],
-        "textColorDefault": false,
-        "gridColor": [
-            "#e5e5e5"
-        ],
-        "gridColorDefault": true,
-        "width": 6,
-        "height": "5",
-        "className": "section-border section-title",
-        "interpolation": "linear",
-        "x": 950,
-        "y": 740,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "6769c48b7a850d35",
-        "type": "link in",
-        "z": "7d4b71e5ce536a48",
-        "name": "dashboard-2 Latest Observations",
-        "links": [
-            "3ac45430055698aa"
-        ],
-        "x": 305,
-        "y": 840,
-        "wires": [
-            [
-                "4744feb441adbcaf"
-            ]
-        ]
-    },
-    {
-        "id": "4744feb441adbcaf",
-        "type": "function",
-        "z": "7d4b71e5ce536a48",
-        "name": "format images and data for display",
-        "func": "const payload = [];\nmsg.payload.forEach((item) => {\n    const img = \"data:image/jpg;base64, \" + item.thumbnail_base64jpg;\n    const {thumbnail_base64jpg: _, ...details} = item; // copy all fields except image\n    payload.push({img, details});\n})\nmsg.payload = payload;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 550,
-        "y": 840,
-        "wires": [
-            [
-                "21c3fc8f29ff69d6"
-            ]
-        ]
-    },
-    {
-        "id": "21c3fc8f29ff69d6",
-        "type": "ui-template",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "page": "",
-        "ui": "",
-        "name": "Latest Observations (updated as they happen)",
-        "order": 7,
-        "width": "0",
-        "height": "0",
-        "head": "",
-        "format": "<template>\n    <div>\n        <p class=\"section-title\">Latest Observations</p>\n    </div>\n    <div class=\"container\">\n        <div v-for=\"item in msg.payload\" :key=\"item.details.id\" class=\"item\">\n            <v-img\n                height=\"2in\"\n                position=\"10px\"\n                :src=\"item.img\">\n            </v-img>\n            <table style=\"position:relative;left:10px;right:10px;\">\n                <tbody>\n                    <tr><td class=\"tbl-caption\">id:</td><td class=\"tbl-value\">{{item.details.id}}</td></tr>\n                    <tr><td class=\"tbl-caption\">type:</td><td class=\"tbl-value\">{{item.details.label}}</td></tr>\n                    <tr><td class=\"tbl-caption\">time:</td><td class=\"tbl-value\">{{item.details.frame_time_datestring}}</td></tr>\n                    <tr><td class=\"tbl-caption\">direction:</td><td class=\"tbl-value\">{{item.details.direction_calc}}</td></tr>\n                    <tr><td class=\"tbl-caption\">speed:</td><td class=\"tbl-value\">{{item.details.speed_calc}}</td></tr>\n                </tbody>\n            </table>\n        </div>\n    </div>\n</template>\n\n<style scoped>\n    .container {\n        /* Styling for the whole image area */\n        display: flex; /* Use flexbox to arrange items horizontally */\n        flex-wrap: wrap; /* Make items from wrap to the next line */\n        overflow-x: auto; /* Enable horizontal scrolling if necessary */\n    }\n\n    .item {\n        /* Styling for each item */\n        max-width: 2.5in;\n        min-width: 2.5in; /* Ensure items don't collapse if content is small */\n    }\n\n    .tbl-caption {\n         width: 25%;\n    }\n    \n    .tbl-value {\n        width: 75%;\n        word-wrap: break-word;\n    }\n</style>",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "section-border",
-        "x": 910,
-        "y": 840,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "94ebe5d9484c535f",
-        "type": "ui-template",
-        "z": "7d4b71e5ce536a48",
-        "group": "",
-        "page": "",
-        "ui": "2a8899583532edb4",
-        "name": "CSS  (All Pages)",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "head": "",
-        "format": ".section-title {\n    font-weight: bold;\n    text-align: center;\n    font-size: larger;\n}\n\n.section-border {\n    border-style: solid;\n}",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "site:style",
-        "className": "",
-        "x": 220,
-        "y": 220,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "494c667299e1b4c4",
-        "type": "change",
-        "z": "7d4b71e5ce536a48",
-        "name": "set cameras, default to index 0",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
-                "tot": "jsonata"
-            },
-            {
-                "t": "set",
-                "p": "ui_update.options",
-                "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 790,
-        "y": 320,
-        "wires": [
-            [
-                "4752b5c1ca6c3473",
-                "4097334466713c75"
-            ]
-        ]
-    },
-    {
-        "id": "efc2b0d732a0141a",
-        "type": "inject",
-        "z": "7d4b71e5ce536a48",
-        "name": "trigger: sensor selections, after 5-secs",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "x": 470,
-        "y": 320,
-        "wires": [
-            [
-                "494c667299e1b4c4"
-            ]
-        ]
-    },
-    {
-        "id": "4752b5c1ca6c3473",
-        "type": "change",
-        "z": "7d4b71e5ce536a48",
-        "name": "set radars, default to camera_radar",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
-                "tot": "jsonata"
-            },
-            {
-                "t": "set",
-                "p": "options",
-                "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.radars\"))",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1000,
-        "y": 380,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "4097334466713c75",
-        "type": "debug",
-        "z": "7d4b71e5ce536a48",
-        "name": "debug 2",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "ui_update",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1100,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "775f9497a25956df",
-        "type": "catch",
-        "z": "7d4b71e5ce536a48",
-        "name": "",
-        "scope": null,
-        "uncaught": false,
-        "x": 160,
-        "y": 100,
-        "wires": [
-            [
-                "43be3335f6c793d5"
-            ]
-        ]
-    },
-    {
-        "id": "43be3335f6c793d5",
-        "type": "debug",
-        "z": "7d4b71e5ce536a48",
-        "name": "catch: all - dashboard 2 database",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 390,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "1ad7ae7329437faa",
-        "type": "comment",
-        "z": "7d4b71e5ce536a48",
-        "name": "Dashboard-2 version of Monitoring page",
-        "info": "",
-        "x": 260,
-        "y": 160,
-        "wires": []
-    },
-    {
-        "id": "b4331c083736d1d4",
-        "type": "ui-form",
-        "z": "7d4b71e5ce536a48",
-        "name": "Select Camera & Radar",
-        "group": "257a42dba45787e5",
-        "label": "Select Camera & Radar",
-        "order": 3,
-        "width": "3",
-        "height": "5",
-        "options": [
-            {
-                "label": "Camera",
-                "key": "Camera",
-                "type": "dropdown",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Radar",
-                "key": "Radar",
-                "type": "dropdown",
-                "required": true,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "Camera": "",
-            "Radar": ""
-        },
-        "payload": "",
-        "submit": "",
-        "cancel": "",
-        "resetOnSubmit": true,
-        "topic": "topic",
-        "topicType": "msg",
-        "splitLayout": "",
-        "className": "section-border",
-        "passthru": false,
-        "dropdownOptions": [
-            {
-                "dropdown": "Camera",
-                "value": "Option 1",
-                "label": "Option 1"
-            },
-            {
-                "dropdown": "Camera",
-                "value": "Option 2",
-                "label": "Option 2"
-            },
-            {
-                "dropdown": "Radar",
-                "value": "Radar 1",
-                "label": "Radar 1"
-            },
-            {
-                "dropdown": "Radar",
-                "value": "Radar 2",
-                "label": "Radar 2"
-            }
-        ],
-        "x": 1230,
-        "y": 320,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "6890633672a16e0c",
-        "type": "ui-dropdown",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "name": "",
-        "label": "Select Camera",
-        "tooltip": "",
-        "order": 1,
-        "width": "3",
-        "height": "3",
-        "passthru": false,
-        "multiple": false,
-        "chips": false,
-        "clearable": false,
-        "options": [
-            {
-                "label": "Camera 1",
-                "value": "Camera 1",
-                "type": "str"
-            },
-            {
-                "label": "Camera 2",
-                "value": "Camera 2",
-                "type": "str"
-            }
-        ],
-        "payload": "",
-        "topic": "topic",
-        "topicType": "msg",
-        "className": "",
-        "typeIsComboBox": true,
-        "msgTrigger": "onChange",
-        "x": 500,
-        "y": 400,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "6233932125e8d79e",
-        "type": "ui-dropdown",
-        "z": "7d4b71e5ce536a48",
-        "group": "257a42dba45787e5",
-        "name": "",
-        "label": "Select Radar",
-        "tooltip": "",
-        "order": 2,
-        "width": "3",
-        "height": "2",
-        "passthru": false,
-        "multiple": false,
-        "chips": false,
-        "clearable": false,
-        "options": [
-            {
-                "label": "Radar 1",
-                "value": "Radar 1",
-                "type": "str"
-            },
-            {
-                "label": "Radar 2",
-                "value": "Radar 2",
-                "type": "str"
-            }
-        ],
-        "payload": "",
-        "topic": "topic",
-        "topicType": "msg",
-        "className": "",
-        "typeIsComboBox": true,
-        "msgTrigger": "onChange",
-        "x": 490,
-        "y": 460,
         "wires": [
             []
         ]
