@@ -10333,8 +10333,7 @@
         "name": "events daily object count for the last 10-days",
         "mode": "link",
         "links": [
-            "4d6e3b9832beb86d",
-            "cfa9929ac6e7a2c6"
+            "4d6e3b9832beb86d"
         ],
         "x": 1135,
         "y": 680,
@@ -10348,8 +10347,7 @@
         "name": "events by object (60-min) for last 36 hours",
         "mode": "link",
         "links": [
-            "52c59e6d6d990e41",
-            "7bf622d7128567a0"
+            "52c59e6d6d990e41"
         ],
         "x": 1165,
         "y": 820,
@@ -10363,10 +10361,7 @@
         "name": "Car Counts and Speeds, since Midnight",
         "mode": "link",
         "links": [
-            "61ce02565677e825",
-            "bf05450bee7a95bf",
-            "084ba56f9b1374c1",
-            "a5f24a3f4174b885"
+            "61ce02565677e825"
         ],
         "x": 1225,
         "y": 1320,
@@ -10380,8 +10375,7 @@
         "name": "Latest Observations",
         "mode": "link",
         "links": [
-            "b4c9b122afb34876",
-            "6769c48b7a850d35"
+            "b4c9b122afb34876"
         ],
         "x": 1335,
         "y": 1620,
@@ -10395,8 +10389,7 @@
         "name": "cumulative events by object type since midnight",
         "mode": "link",
         "links": [
-            "8c5ad4dc749b0552",
-            "5e2535d02a05ab15"
+            "8c5ad4dc749b0552"
         ],
         "x": 1185,
         "y": 1880,
@@ -11886,7 +11879,7 @@
         "z": "0fa19dea799cc41d",
         "g": "ace8ea830f3a6877",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    const entry = data[index];\n    // reorganize input data so that it is in the format [hour, type, count]\n    // rather than [[hour, count]] where the outer array is ordered by type\n    for (const hourEntry of entry) {\n      const date = new Date(hourEntry.x);\n      const count = hourEntry.y;\n      results.push({ type, date, count });\n    }\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -11907,7 +11900,7 @@
         "z": "0fa19dea799cc41d",
         "g": "793988735b710932",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    const entry = data[index];\n    // reorganize input data so that it is in the format [date, day, type, count]\n    // rather than [[date, day, count]] where the outer array is ordered by type\n    for (const dayEntry of entry) {\n      const date = dayEntry.x;\n      const count = dayEntry.y;\n      const day = dayEntry.day;\n      results.push({ type, date, day, count });\n    }\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\nreturn {payload: results};",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -12268,7 +12261,7 @@
         "z": "0fa19dea799cc41d",
         "g": "dc5a88bd7605f321",
         "name": "reorder types to get consistent colors",
-        "func": "// reorder types to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle'];\nconst results = [];\nfor (const type of types) {\n     const entry = msg.payload.find(entry => entry.label === type);\n     if (entry !== undefined) {\n          const count = entry.count;\n          const result = {label: type, count};\n          results.push(result);\n     }\n}\nmsg.payload = results;\nreturn msg;",
+        "func": "// reorder types to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nconst results = [];\nfor (const type of types) {\n     const entry = msg.payload.find(entry => entry.label === type);\n     if (entry !== undefined) {\n          const count = entry.count;\n          const result = {label: type, count};\n          results.push(result);\n     }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const entry of msg.payload) {\n     const type = types.find(type => type == entry.label);\n     if (type == undefined) {\n          const count = entry.count;\n          const label = entry.label;\n          const result = {label, count};\n          results.push(result);\n     }\n}\nmsg.payload = results;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
