@@ -865,13 +865,21 @@
             "e78a56289029c007",
             "d2b3042374fa28aa",
             "fda1f9b5367bd61d",
-            "875e60949f6bc611",
-            "82c0e19501c290c9"
+            "82c0e19501c290c9",
+            "e4825e2a1444d8f8",
+            "ab40a558c8e2a9f0",
+            "c8d357e96682cb11",
+            "2102eb821151ac80",
+            "221f3cd2d450519f",
+            "98fc383875d98841",
+            "a8ec4cf1a33bfcd0",
+            "bca760382517d9eb",
+            "38184399b82b7cae"
         ],
         "x": 14,
         "y": 1599,
-        "w": 1252,
-        "h": 362
+        "w": 1332,
+        "h": 409.5
     },
     {
         "id": "911fe099dbaacc04",
@@ -888,7 +896,7 @@
             "9dc5916695382ba8"
         ],
         "x": 14,
-        "y": 1979,
+        "y": 2139,
         "w": 332,
         "h": 142
     },
@@ -11772,7 +11780,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
         "name": "Validate filename",
-        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = '';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
+        "func": "  // Stream a large file from a safe folder using a query param: ?file=filename.ext\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Define the base directory where downloadable files are stored\nconst baseDir = '';\n\n// Get the requested filename from query parameters\nconst fileName = msg.payload.file;\n\n// Validate query\nif (!fileName) {\n  node.error('Missing \"file\" query parameter.');\n  msg.res.statusCode = 400;\n  msg.payload = 'Missing \"file\" query parameter.';\n  return msg;\n}\n\n// Resolve the full path to prevent path traversal attacks\nconst filePath = path.resolve(baseDir, fileName);\n\n// Ensure the resolved path is still inside the allowed directory\nif (!filePath.startsWith(baseDir)) {\n  node.error(\"Access denied to \" + filePath);\n  node.error(\"baseDir is \" + baseDir);\n  msg.res.statusCode = 403;\n  msg.payload = 'Access denied.';\n  return msg;\n}\n\n// Check if the file exists\nif (!fs.existsSync(filePath)) {\n  msg.res.statusCode = 404;\n  msg.payload = 'File \"' + filePath + '\"not found.';\n  return msg;\n}\n\nmsg.filePath = filePath;\n\n// set headers\nconst name = filePath.substring(filePath.lastIndexOf('/') + 1);\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '\"');\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -11792,16 +11800,16 @@
         "type": "file in",
         "z": "239d7b3ba410ad5e",
         "g": "d58714d193d44ae6",
-        "name": "read the file in chunks",
-        "filename": "filePath",
-        "filenameType": "msg",
+        "name": "read the zip file in chunks",
+        "filename": "\"download.tar.gz\"",
+        "filenameType": "jsonata",
         "format": "stream",
         "chunk": false,
         "sendError": false,
         "encoding": "none",
         "allProps": true,
-        "x": 820,
-        "y": 1800,
+        "x": 250,
+        "y": 1900,
         "wires": [
             [
                 "f2f4054783d0bfc5"
@@ -11818,10 +11826,10 @@
         "propertyType": "msg",
         "rules": [
             {
-                "t": "nnull"
+                "t": "null"
             },
             {
-                "t": "null"
+                "t": "nnull"
             }
         ],
         "checkall": "true",
@@ -11831,11 +11839,11 @@
         "y": 1820,
         "wires": [
             [
-                "50e14971c08db756"
+                "82c0e19501c290c9",
+                "449a21db01788110"
             ],
             [
-                "449a21db01788110",
-                "875e60949f6bc611"
+                "e4825e2a1444d8f8"
             ]
         ]
     },
@@ -11847,8 +11855,8 @@
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 770,
-        "y": 1840,
+        "x": 850,
+        "y": 1760,
         "wires": []
     },
     {
@@ -11864,11 +11872,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1010,
-        "y": 1800,
+        "x": 450,
+        "y": 1900,
         "wires": [
             [
-                "d2b3042374fa28aa"
+                "38184399b82b7cae"
             ]
         ]
     },
@@ -11961,8 +11969,8 @@
         "raw": false,
         "className": "",
         "name": "",
-        "x": 1150,
-        "y": 1880,
+        "x": 1110,
+        "y": 1900,
         "wires": [
             []
         ]
@@ -11979,8 +11987,8 @@
         "syntax": "mustache",
         "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
         "output": "str",
-        "x": 1090,
-        "y": 1840,
+        "x": 890,
+        "y": 1900,
         "wires": [
             [
                 "e78a56289029c007"
@@ -12014,26 +12022,6 @@
         ]
     },
     {
-        "id": "875e60949f6bc611",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "name": "notification failure",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "Database Download Failed",
-        "output": "str",
-        "x": 810,
-        "y": 1880,
-        "wires": [
-            [
-                "82c0e19501c290c9"
-            ]
-        ]
-    },
-    {
         "id": "82c0e19501c290c9",
         "type": "ui-notification",
         "z": "239d7b3ba410ad5e",
@@ -12042,7 +12030,7 @@
         "position": "top right",
         "colorDefault": true,
         "color": "#000000",
-        "displayTime": "3",
+        "displayTime": "10",
         "showCountdown": true,
         "outputs": 1,
         "allowDismiss": true,
@@ -12052,10 +12040,12 @@
         "raw": false,
         "className": "",
         "name": "",
-        "x": 870,
-        "y": 1920,
+        "x": 930,
+        "y": 1720,
         "wires": [
-            []
+            [
+                "2102eb821151ac80"
+            ]
         ]
     },
     {
@@ -12216,7 +12206,7 @@
         "passthru": false,
         "dropdownOptions": [],
         "x": 140,
-        "y": 2080,
+        "y": 2240,
         "wires": [
             [
                 "9dc5916695382ba8"
@@ -12281,7 +12271,7 @@
         "passthru": false,
         "dropdownOptions": [],
         "x": 150,
-        "y": 2020,
+        "y": 2180,
         "wires": [
             [
                 "003b99076d0bd38e"
@@ -12299,7 +12289,7 @@
             "dcd8309b262fe625"
         ],
         "x": 305,
-        "y": 2020,
+        "y": 2180,
         "wires": []
     },
     {
@@ -12313,7 +12303,7 @@
             "9d030ab441fe8a0d"
         ],
         "x": 305,
-        "y": 2080,
+        "y": 2240,
         "wires": []
     },
     {
@@ -12437,6 +12427,215 @@
         "wires": [
             [
                 "44f3b2f2c2ae88fe"
+            ]
+        ]
+    },
+    {
+        "id": "e4825e2a1444d8f8",
+        "type": "exec",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "command": "tar czvf download.tar.gz",
+        "addpay": "filePath",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "60",
+        "winHide": false,
+        "oldrc": false,
+        "name": "zip files",
+        "x": 820,
+        "y": 1820,
+        "wires": [
+            [],
+            [],
+            [
+                "ab40a558c8e2a9f0"
+            ]
+        ]
+    },
+    {
+        "id": "ab40a558c8e2a9f0",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "test for failure",
+        "property": "payload.code",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "neq",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1000,
+        "y": 1820,
+        "wires": [
+            [
+                "c8d357e96682cb11"
+            ],
+            [
+                "50e14971c08db756"
+            ]
+        ]
+    },
+    {
+        "id": "c8d357e96682cb11",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "Copy error message",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.message",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1220,
+        "y": 1820,
+        "wires": [
+            [
+                "82c0e19501c290c9",
+                "449a21db01788110"
+            ]
+        ]
+    },
+    {
+        "id": "2102eb821151ac80",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "show error msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1160,
+        "y": 1720,
+        "wires": []
+    },
+    {
+        "id": "221f3cd2d450519f",
+        "type": "exec",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "command": "rm download.tar.gz",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "remove tar file",
+        "x": 880,
+        "y": 1960,
+        "wires": [
+            [],
+            [],
+            [
+                "bca760382517d9eb"
+            ]
+        ]
+    },
+    {
+        "id": "98fc383875d98841",
+        "type": "catch",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 400,
+        "y": 1640,
+        "wires": [
+            [
+                "a8ec4cf1a33bfcd0"
+            ]
+        ]
+    },
+    {
+        "id": "a8ec4cf1a33bfcd0",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "catch any errors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "bca760382517d9eb",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "show rm error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1120,
+        "y": 1960,
+        "wires": []
+    },
+    {
+        "id": "38184399b82b7cae",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "d58714d193d44ae6",
+        "name": "check for end",
+        "property": "parts.count",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 640,
+        "y": 1900,
+        "wires": [
+            [
+                "d2b3042374fa28aa"
+            ],
+            [
+                "221f3cd2d450519f"
             ]
         ]
     }
