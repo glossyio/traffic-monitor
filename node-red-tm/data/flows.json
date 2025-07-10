@@ -287,7 +287,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1272,
+        "w": 1282,
         "h": 262
     },
     {
@@ -1507,6 +1507,33 @@
         ]
     },
     {
+        "id": "17fdbe639fdcb97b",
+        "type": "junction",
+        "z": "25f7f607e1a0c3d8",
+        "x": 220,
+        "y": 1480,
+        "wires": [
+            [
+                "ddc4f014f060823e",
+                "2a444cb6a10b9a3d",
+                "502297c9c2c4141d"
+            ]
+        ]
+    },
+    {
+        "id": "d36efb8af7906580",
+        "type": "junction",
+        "z": "25f7f607e1a0c3d8",
+        "x": 220,
+        "y": 640,
+        "wires": [
+            [
+                "f63c6ec932284371",
+                "de66a086e2c22e45"
+            ]
+        ]
+    },
+    {
         "id": "a5d65dd0e3566daa",
         "type": "mqtt-broker",
         "name": "mqtt-broker-local",
@@ -1858,16 +1885,16 @@
     {
         "id": "1457cef4e96be987",
         "type": "ui-base",
-        "name": "My Dashboard",
+        "name": "${TM_HOSTNAME}",
         "path": "/dashboard",
-        "appIcon": "",
+        "appIcon": "https://www.trafficmonitor.ai/web/image/website/2/logo/TrafficMonitor.ai?unique=ec0f245",
         "includeClientData": true,
         "acceptsClientConfig": [
             "ui-notification",
             "ui-control"
         ],
         "showPathInSidebar": false,
-        "headerContent": "page",
+        "headerContent": "dashpage",
         "navigationStyle": "default",
         "titleBarStyle": "default",
         "showReconnectNotification": true,
@@ -1945,9 +1972,9 @@
         "groupType": "dialog"
     },
     {
-        "id": "121b3d35599dee0f",
+        "id": "7421f498f10f1b26",
         "type": "ui-group",
-        "name": "Home",
+        "name": "System Check",
         "page": "d96a538483bedaa5",
         "width": 6,
         "height": 1,
@@ -1957,42 +1984,6 @@
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
-    },
-    {
-        "id": "9a4697d205ba2c98",
-        "type": "ui-page",
-        "name": "ui_template.layout.page 2",
-        "ui": "1457cef4e96be987",
-        "path": "/page2",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "6b8bffea6842a807",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 2,
-        "className": "",
-        "visible": "true",
-        "disabled": "false"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -4688,6 +4679,273 @@
             [
                 "3e9d121913d7feae"
             ]
+        ]
+    },
+    {
+        "id": "4d24c3172feb2465",
+        "type": "status",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "scope": [
+            "926ac6db07adc540"
+        ],
+        "x": 1140,
+        "y": 160,
+        "wires": [
+            [
+                "3877f03c5676ba48",
+                "ba95926dbda6ea82"
+            ]
+        ]
+    },
+    {
+        "id": "3877f03c5676ba48",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1460,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "5f7ab1a1fe8e30a9",
+        "type": "inject",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 880,
+        "y": 40,
+        "wires": [
+            [
+                "7c7577ee1b447bf6"
+            ]
+        ]
+    },
+    {
+        "id": "ba95926dbda6ea82",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set global.status.TM_RADAR_SERIAL_PORT_00",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_00.text",
+                "pt": "global",
+                "to": "status.text",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_00.fill",
+                "pt": "global",
+                "to": "status.fill",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_00.shape",
+                "pt": "global",
+                "to": "status.shape",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "060e90cc97defc77",
+        "type": "status",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "scope": [
+            "917b8f4b46895cee"
+        ],
+        "x": 1140,
+        "y": 240,
+        "wires": [
+            [
+                "ec0e2bf95ef7c79f"
+            ]
+        ]
+    },
+    {
+        "id": "ec0e2bf95ef7c79f",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set global.status.TM_RADAR_SERIAL_PORT_01",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_01.text",
+                "pt": "global",
+                "to": "status.text",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_01.fill",
+                "pt": "global",
+                "to": "status.fill",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_01.shape",
+                "pt": "global",
+                "to": "status.shape",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7085ec374a5b46a4",
+        "type": "status",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "scope": [
+            "9353b933e36e8b9e"
+        ],
+        "x": 1140,
+        "y": 320,
+        "wires": [
+            [
+                "6c5806ece0067097"
+            ]
+        ]
+    },
+    {
+        "id": "6c5806ece0067097",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set global.status.TM_RADAR_SERIAL_PORT_02",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_02.text",
+                "pt": "global",
+                "to": "status.text",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_02.fill",
+                "pt": "global",
+                "to": "status.fill",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_02.shape",
+                "pt": "global",
+                "to": "status.shape",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bf35a376add85372",
+        "type": "status",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "scope": [
+            "e221212a505a78ac"
+        ],
+        "x": 1140,
+        "y": 400,
+        "wires": [
+            [
+                "e7a6ee3155a2ef7e"
+            ]
+        ]
+    },
+    {
+        "id": "e7a6ee3155a2ef7e",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set global.status.TM_RADAR_SERIAL_PORT_03",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_03.text",
+                "pt": "global",
+                "to": "status.text",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_03.fill",
+                "pt": "global",
+                "to": "status.fill",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "status.radars.TM_RADAR_SERIAL_PORT_03.shape",
+                "pt": "global",
+                "to": "status.shape",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 400,
+        "wires": [
+            []
         ]
     },
     {
@@ -7578,6 +7836,7 @@
         "id": "9f2c4f1852402eb8",
         "type": "inject",
         "z": "05fcb02c571dcfee",
+        "d": true,
         "g": "3c299af3b0814ea5",
         "name": "",
         "props": [
@@ -7968,7 +8227,7 @@
         "z": "05fcb02c571dcfee",
         "g": "3c299af3b0814ea5",
         "name": "system_metrics output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -11814,5 +12073,1344 @@
                 "f2adafe8cd575fc3"
             ]
         ]
+    },
+    {
+        "id": "651af48adbe9d9e5",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "STATUS - device (cpu, ram, tpu?), SENSOR (radar. camera, aq, GPIO??), containers (frigate)",
+        "info": "",
+        "x": 360,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "0508905f03d91568",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "CONFIG (NRTM) SECTION via CONTEXT/YAML",
+        "info": "",
+        "x": 260,
+        "y": 1280,
+        "wires": []
+    },
+    {
+        "id": "a85f8ee270d46e57",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "rev proxy in front of it all",
+        "info": "",
+        "x": 180,
+        "y": 2100,
+        "wires": []
+    },
+    {
+        "id": "a2293d3ca2e59fe9",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "QUICK START STEPS - docs",
+        "info": "",
+        "x": 160,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "134b655587fe1f0f",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "radar status",
+        "info": "show current \"connection\" status from nodes\nto correct:\n- check if config sensor.[name].enabled == true\n- to reset, need to rerun task tag \"node-red-tm\", will re-generate the dockerfile\n\n",
+        "x": 150,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "330abb0acd373887",
+        "type": "ui-template",
+        "z": "25f7f607e1a0c3d8",
+        "group": "7421f498f10f1b26",
+        "page": "",
+        "ui": "",
+        "name": "radar-checks",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <div>\n            <h2>Radar checks</h2>\n            <p>Radars must be plugged in to a USB slot and added to the configuration before they will appear here. Use the\n                selection on the right to add and enable radars.</p>\n            <div v-if=\"msg.payload.config_radars && Object.keys(msg.payload.config_radars).length > 0\">\n                <div v-for=\"(radar, radarName) in msg.payload.config_radars\" :key=\"radarName\">\n                    <h3>{{ radarName }}</h3>\n                    <div style=\"display: flex; justify-content: space-between;\">\n                        <span style=\"width: 10%;\">{{ msg.payload.status_radars[radarName].text.includes('.connected') ? '✅' : '❌' }}</span>\n                        <span style=\"width: 20%;\">status:</span>\n                        <span style=\"width: 45%;\"><span :style=\"{ color: msg.payload.status_radars[radarName].fill }\">{{ msg.payload.status_radars[radarName].text }}</span></span>\n                        <span style=\"width: 25%;\"></span>\n                    </div>\n                    <div style=\"display: flex; justify-content: space-between; align-items: center;\">\n                        <span style=\"width: 10%;\">{{ radar.enabled ? '✅' : '❌' }}</span>\n                        <span style=\"width: 20%;\">enabled: </span>\n                        <span style=\"width: 45%;\"><span :style=\"{ color: radar.enabled ? 'green' : 'red' }\">{{ radar.enabled }}</span></span>\n                        <span style=\"width: 25%;\">\n                            <v-switch v-model=\"radar.enabled\" label=\"Enable\" :color=\"radar.enabled ? 'primary' : 'grey'\" @update:model-value=\"send({payload: {radar_enabled: radar.enabled}})\"></v-switch>\n                        </span>\n                    </div>\n                </div>\n            </div>\n            <div v-else>\n                <h3>No radar configured!</h3>\n            </div>\n        </div>\n        <div>\n            <h3>Add a Radar</h3>\n            <div title=\"Add a radar to the configuration. Note: Needs to be connected before it will work.\">\n                <label> \n                    <span>Select a radar to add and enable: </span>\n                    <select v-model=\"selectedOption\" :style=\"{ border: '3px solid black', backgroundColor: 'lightgrey', padding: '5px' }\" @update:model-value=\"send({payload: {radar_add: selectedOption}})\">\n                        <option value=\"\"></option>\n                        <option value=\"TM_RADAR_SERIAL_PORT_00\">TM_RADAR_SERIAL_PORT_00</option>\n                        <option value=\"TM_RADAR_SERIAL_PORT_01\">TM_RADAR_SERIAL_PORT_01</option>\n                        <option value=\"TM_RADAR_SERIAL_PORT_02\">TM_RADAR_SERIAL_PORT_02</option>\n                        <option value=\"TM_RADAR_SERIAL_PORT_03\">TM_RADAR_SERIAL_PORT_03</option>\n                    </select>\n                </label>\n            </div>\n        </div>\n    </div>\n</template>\n",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 730,
+        "y": 620,
+        "wires": [
+            [
+                "a01904428ccbe10c"
+            ]
+        ]
+    },
+    {
+        "id": "84d598b0044b6490",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 150,
+        "y": 620,
+        "wires": [
+            [
+                "d36efb8af7906580"
+            ]
+        ]
+    },
+    {
+        "id": "1dd41a8b8fd8cc4c",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 1320,
+        "wires": [
+            [
+                "93e952e834415641"
+            ]
+        ]
+    },
+    {
+        "id": "79b22d0d9c985b12",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "camera status",
+        "info": "need it from:\n- Host OS, via:\n  -[x] go2rtc \n  -[] and `rpicam-vid`\n- [x] Frigate (configuration + enabled?)\n- [x] TM Config (configuration + enabled)\n",
+        "x": 150,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "edf5d40995c60ba8",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "frigate api/stats",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/stats",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 300,
+        "y": 780,
+        "wires": [
+            [
+                "ad73dad961baac2a"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "d05e0b3481b14141",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 130,
+        "y": 780,
+        "wires": [
+            [
+                "edf5d40995c60ba8"
+            ]
+        ]
+    },
+    {
+        "id": "e94f3827f92a5f10",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "ai co-processor (TPU) status",
+        "info": "- Host OS TPU availability\n  - `uname -a` (what does this tell us??)\n  - `lspci -nn | grep 089a` (see if module installed)\n  - `ls /dev/apex_0` (see if driver enabled)\n- Frigate configuration + enabled\n- Frigate Dockerfile has `/dev/apex_0` (can we check this??)\n\nTo reset: re-run `tmsetup -t base frigate`",
+        "x": 200,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "f52f5e56d60f10f9",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "services, containers",
+        "info": "Containers\n-[x] Frigate\n-[] node-red-tm (this one, requires auth and settings.js enablement)\n-[] nginx\n\nServices\n-[x] go2rtc, host\n- ",
+        "x": 170,
+        "y": 1420,
+        "wires": []
+    },
+    {
+        "id": "9a61079e3bae318c",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "config.sensors.cameras",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "config.sensors.cameras",
+                "tot": "global"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "config_cameras",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 370,
+        "y": 920,
+        "wires": [
+            [
+                "4bde9b4deaf247b8"
+            ]
+        ]
+    },
+    {
+        "id": "a04fbb0a03b69da1",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "go2rtc api/streams",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://172.18.0.1:1984/api/streams",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 350,
+        "y": 960,
+        "wires": [
+            [
+                "1db7d157b4dac5cf",
+                "4be49f3949ced835"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "ddc4f014f060823e",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "frigate api",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 320,
+        "y": 1460,
+        "wires": [
+            [
+                "3fdf9066d2d39172"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "7e620ddf7853c5cc",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 1460,
+        "wires": [
+            [
+                "17fdbe639fdcb97b"
+            ]
+        ]
+    },
+    {
+        "id": "e5128de9f949c5d7",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "frigate api/labels",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/labels?picam_h264",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 280,
+        "y": 1640,
+        "wires": [
+            [
+                "9e367fe6ed26e9a1"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "9e367fe6ed26e9a1",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 11",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "f75dc93979af3384",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 1640,
+        "wires": [
+            [
+                "e5128de9f949c5d7"
+            ]
+        ]
+    },
+    {
+        "id": "f1c538fd6b4c5548",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "other info",
+        "info": "Other things:\n- [x] Frigate, list active labels (https://docs.frigate.video/integrations/api/get-labels-labels-get)\n- [x] Frigate, snapshot of zones, masks (https://docs.frigate.video/integrations/api/latest-frame-camera-name-latest-extension-get)\n\n",
+        "x": 140,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "f63c6ec932284371",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "get config.sensors.radars",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "config.sensors.radars",
+                "tot": "global"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "config_radars",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 350,
+        "y": 660,
+        "wires": [
+            [
+                "ee355a6b6f1c52e0"
+            ]
+        ]
+    },
+    {
+        "id": "db57802a547a0c53",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "environmental monitor (aq) status",
+        "info": "- airquality_server, host systemctl service\n- /var/lib/airquality/config.json",
+        "x": 210,
+        "y": 1860,
+        "wires": []
+    },
+    {
+        "id": "2a444cb6a10b9a3d",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "go2rtc api",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://172.18.0.1:1984/api",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 320,
+        "y": 1500,
+        "wires": [
+            [
+                "81fadbd2dbd97770"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "de66a086e2c22e45",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "get status.radars",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "status.radars",
+                "tot": "global"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_radars",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 620,
+        "wires": [
+            [
+                "ee355a6b6f1c52e0"
+            ]
+        ]
+    },
+    {
+        "id": "a01904428ccbe10c",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "9e211c29a0f34faa",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "93e952e834415641",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "config",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 320,
+        "y": 1320,
+        "wires": [
+            [
+                "9e211c29a0f34faa"
+            ]
+        ]
+    },
+    {
+        "id": "9a0ec52847ed6583",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "frigate api/latest",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/picam_h264/latest.jpg?zones=1",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 280,
+        "y": 1680,
+        "wires": [
+            [
+                "12b7684746d0cc82",
+                "fb2b74042951dc30"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "12b7684746d0cc82",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1680,
+        "wires": []
+    },
+    {
+        "id": "85dc4217d7335db7",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 1680,
+        "wires": [
+            [
+                "9a0ec52847ed6583"
+            ]
+        ]
+    },
+    {
+        "id": "fb2b74042951dc30",
+        "type": "image",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "width": 160,
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": true,
+        "pass": false,
+        "outputs": 0,
+        "x": 540,
+        "y": 1720,
+        "wires": []
+    },
+    {
+        "id": "ee355a6b6f1c52e0",
+        "type": "join",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 550,
+        "y": 620,
+        "wires": [
+            [
+                "330abb0acd373887"
+            ]
+        ]
+    },
+    {
+        "id": "ad73dad961baac2a",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.frigate",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 780,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7cb4f982a59db4d5",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 130,
+        "y": 880,
+        "wires": [
+            [
+                "2a2a1a345bb70be9",
+                "9a61079e3bae318c",
+                "a04fbb0a03b69da1",
+                "ade48af7eba4ce22"
+            ]
+        ]
+    },
+    {
+        "id": "2a2a1a345bb70be9",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "status.frigate.cameras",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "status.frigate.cameras",
+                "tot": "global"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_cameras",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 360,
+        "y": 880,
+        "wires": [
+            [
+                "4bde9b4deaf247b8"
+            ]
+        ]
+    },
+    {
+        "id": "66186987b345268b",
+        "type": "ui-template",
+        "z": "25f7f607e1a0c3d8",
+        "group": "7421f498f10f1b26",
+        "page": "",
+        "ui": "",
+        "name": "camera-checks",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <div>\n            <h2>Camera checks</h2>\n            <p>Camera must be connected and added to the config to show up here.</p>\n            <div v-for=\"(camera, cameraName) in msg.payload.config_cameras\" :key=\"cameraName\">\n                <h3>{{ cameraName }}</h3>\n                <p>{{ msg.payload.status_go2rtc[cameraName] && msg.payload.status_go2rtc[cameraName].consumers ? '✅' :\n                    '❌' }} go2rtc consumer(s): {{ msg.payload.status_go2rtc[cameraName] &&\n                    msg.payload.status_go2rtc[cameraName].consumers ? 'Yes' : 'No' }}: \n                    <span v-for=\"(consumer, index) in msg.payload.status_go2rtc[cameraName].consumers\" :key=\"index\">\n                        {{ consumer.user_agent }}\n                    </span>\n                    </p>\n                <p>{{ msg.payload.status_cameras[cameraName].detection_enabled ? '✅' : '❌' }} Frigate detection_enabled:\n                    <span :style=\"{ color: msg.payload.status_cameras[cameraName].detection_enabled ? 'green' : 'red' }\"> {{ msg.payload.status_cameras[cameraName].detection_enabled }}</span>\n                </p>\n                <p>{{ msg.payload.config_cameras[cameraName].enabled ? '✅' : '❌' }} enabled:\n                    <span :style=\"{ color: msg.payload.config_cameras[cameraName].enabled ? 'green' : 'red' }\"> {{ msg.payload.config_cameras[cameraName].enabled }}</span>\n                </p>\n                <p>{{ msg.payload.config_cameras[cameraName].camera_radar ? '✅' : '❌' }} attached radar:\n                    <span :style=\"{ color: msg.payload.config_cameras[cameraName].camera_radar ? 'green' : 'red' }\"> {{ msg.payload.config_cameras[cameraName].camera_radar ? msg.payload.config_cameras[cameraName].camera_radar : 'None' }}</span>\n                </p>\n            </div>\n\n        </div>\n\n        <div>\n            <!-- add a camera, read Frigate AND/OR host system AND/OR go2rtc -->\n\n        </div>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 920,
+        "y": 880,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4bde9b4deaf247b8",
+        "type": "join",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 710,
+        "y": 880,
+        "wires": [
+            [
+                "66186987b345268b",
+                "42c814ec47339147"
+            ]
+        ]
+    },
+    {
+        "id": "42c814ec47339147",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 15",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "1db7d157b4dac5cf",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.go2rtc",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_go2rtc",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 540,
+        "y": 960,
+        "wires": [
+            [
+                "4bde9b4deaf247b8"
+            ]
+        ]
+    },
+    {
+        "id": "8049798b483574ee",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 130,
+        "y": 1100,
+        "wires": [
+            [
+                "75136a730323abff"
+            ]
+        ]
+    },
+    {
+        "id": "75136a730323abff",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "status.frigate.detectors",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "status.frigate.detectors",
+                "tot": "global"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_detector",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 360,
+        "y": 1100,
+        "wires": [
+            [
+                "e8ecdb22515916a2"
+            ]
+        ]
+    },
+    {
+        "id": "5f3bbcd7f2ab8318",
+        "type": "ui-control",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "ui": "1457cef4e96be987",
+        "events": "all",
+        "x": 140,
+        "y": 660,
+        "wires": [
+            [
+                "d36efb8af7906580"
+            ]
+        ]
+    },
+    {
+        "id": "ade48af7eba4ce22",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "go2rtc api/config",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://172.18.0.1:1984/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 340,
+        "y": 1000,
+        "wires": [
+            [
+                "e86590e65e381151"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "e86590e65e381151",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "4be49f3949ced835",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 630,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "85b96d612b08767a",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "set time",
+        "info": "Set system time (when no NPT present)",
+        "x": 130,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "77bee76b221b09f4",
+        "type": "ui-template",
+        "z": "25f7f607e1a0c3d8",
+        "group": "7421f498f10f1b26",
+        "page": "",
+        "ui": "",
+        "name": "services-checks",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <div>\n            <h2>Microservices</h2>\n            <p>Camera must be connected and added to the config to show up here.</p>\n            <div>\n                <h3>Frigate</h3>\n                <p>\n                    {{ msg.payload.status_frigate_health == \"Frigate is running. Alive and healthy!\" ? '✅' :'❌' }} \n                    {{ msg.payload.status_frigate_health }}\n                    <v-btn @click=\"send({payload: 'restart-frigate'})\">Restart Frigate\n                </p>\n                <h3>go2rtc - camera(s) host</h3>\n                <p>\n                    {{ msg.payload.status_go2rtc_app ? '✅' :'❌' }} \n                    host: {{ msg.payload.status_go2rtc_app.host }}\n                    <v-btn @click=\"send({payload: 'restart-go2rtc'})\">Restart go2rtc\n                </p>\n            </div>\n\n        </div>\n\n        <div>\n            <!-- add a camera, read Frigate AND/OR host system AND/OR go2rtc -->\n\n        </div>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 980,
+        "y": 1440,
+        "wires": [
+            [
+                "81263bb4944a6d1a"
+            ]
+        ]
+    },
+    {
+        "id": "3fdf9066d2d39172",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "status.frigate.health",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.frigate.health",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_frigate_health",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 1460,
+        "wires": [
+            [
+                "f5400a82f57d1a5b"
+            ]
+        ]
+    },
+    {
+        "id": "bcd114768caae3a6",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "f5400a82f57d1a5b",
+        "type": "join",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 730,
+        "y": 1460,
+        "wires": [
+            [
+                "77bee76b221b09f4",
+                "bcd114768caae3a6"
+            ]
+        ]
+    },
+    {
+        "id": "81263bb4944a6d1a",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 8",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1110,
+        "y": 1520,
+        "wires": []
+    },
+    {
+        "id": "60675148972abdec",
+        "type": "ui-control",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "ui": "1457cef4e96be987",
+        "events": "all",
+        "x": 140,
+        "y": 1500,
+        "wires": [
+            [
+                "17fdbe639fdcb97b"
+            ]
+        ]
+    },
+    {
+        "id": "81fadbd2dbd97770",
+        "type": "change",
+        "z": "25f7f607e1a0c3d8",
+        "name": "status.go2rtc.app",
+        "rules": [
+            {
+                "t": "set",
+                "p": "status.go2rtc.app",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "status_go2rtc_app",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 1500,
+        "wires": [
+            [
+                "f5400a82f57d1a5b"
+            ]
+        ]
+    },
+    {
+        "id": "502297c9c2c4141d",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "node-red-tm api",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://node-red-tm/flows/state",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 340,
+        "y": 1540,
+        "wires": [
+            [
+                "295a195f1975af1b"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "295a195f1975af1b",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "dd665363779643b2",
+        "type": "ui-template",
+        "z": "25f7f607e1a0c3d8",
+        "group": "7421f498f10f1b26",
+        "page": "",
+        "ui": "",
+        "name": "detectors-checks",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <div>\n            <h2>Detectors (AI co-processors)</h2>\n            <p>AI co-processors must be connected and have drivers installed on the host OS. (<a href=\"https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware#ai-co-processor\">Learn more about AI co-processors</a>)</p>\n            <div>\n                <p>\n                    {{ msg.payload.status_detector ? '✅' :'❌' }} \n                    detector: {{ Object.keys(msg.payload.status_detector)[0]  }}\n                    <v-btn @click=\"send({payload: 'enable-detector'})\">Enable Detector\n                </p>\n            </div>\n\n        </div>\n\n        <div>\n            <!-- add a camera, read Frigate AND/OR host system AND/OR go2rtc -->\n\n        </div>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 830,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e8ecdb22515916a2",
+        "type": "join",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "1",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 570,
+        "y": 1100,
+        "wires": [
+            [
+                "dd665363779643b2",
+                "58dab0093c1350d4"
+            ]
+        ]
+    },
+    {
+        "id": "58dab0093c1350d4",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 10",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 1160,
+        "wires": []
+    },
+    {
+        "id": "4069741afe4ece6e",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "set as wifi hotspot or connect to wifi network(??)",
+        "info": "Set system time (when no NPT present)",
+        "x": 260,
+        "y": 1980,
+        "wires": []
+    },
+    {
+        "id": "5cdf017bb4237a52",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "set TB config",
+        "info": "Set system time (when no NPT present)",
+        "x": 150,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "4db095bfb1c63159",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "set deployment location",
+        "info": "Set system time (when no NPT present)",
+        "x": 340,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "416d247c9e4338e6",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "air quality monitor",
+        "info": "",
+        "x": 440,
+        "y": 1860,
+        "wires": []
+    },
+    {
+        "id": "7262c5d91d5f3871",
+        "type": "comment",
+        "z": "25f7f607e1a0c3d8",
+        "name": "enable / disable buttons on EVERYTHING",
+        "info": "",
+        "x": 200,
+        "y": 440,
+        "wires": []
     }
 ]
