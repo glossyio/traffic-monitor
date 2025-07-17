@@ -13412,5 +13412,143 @@
         "x": 200,
         "y": 440,
         "wires": []
+    },
+    {
+        "id": "646beac9383ec28c",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 2300,
+        "wires": [
+            [
+                "d448b3877d8c8a84"
+            ]
+        ]
+    },
+    {
+        "id": "d448b3877d8c8a84",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://172.18.0.1:8000/listcams",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 2300,
+        "wires": [
+            [
+                "4de22f2599c68747"
+            ]
+        ]
+    },
+    {
+        "id": "4de22f2599c68747",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 12",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 490,
+        "y": 2300,
+        "wires": []
+    },
+    {
+        "id": "12d8e777866b2488",
+        "type": "inject",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 2360,
+        "wires": [
+            [
+                "6a4837ae35cf720d"
+            ]
+        ]
+    },
+    {
+        "id": "6a4837ae35cf720d",
+        "type": "http request",
+        "z": "25f7f607e1a0c3d8",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://172.18.0.1:8000/gettime",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 2360,
+        "wires": [
+            [
+                "93e0ab928a508860"
+            ]
+        ]
+    },
+    {
+        "id": "93e0ab928a508860",
+        "type": "debug",
+        "z": "25f7f607e1a0c3d8",
+        "name": "debug 13",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 490,
+        "y": 2360,
+        "wires": []
     }
 ]
