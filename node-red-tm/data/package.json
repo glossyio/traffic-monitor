@@ -1,22 +1,22 @@
 {
     "name": "traffic-monitor",
     "description": "Traffic Monitor built with edge ML for object detection and radar for speed monitoring",
-    "version": "{{ tmsetup_tm_version }}",
+    "version": "0.4.0-pre",
     "dependencies": {
-        "node-red": "{{ tmsetup_node_red_tm_version }}",
+        "@flowfuse/node-red-dashboard": "~1.24.2",
+        "node-red": "4.0.9",
         "node-red-contrib-aedes": "~0.13.0",
         "node-red-contrib-image-output": "~0.6.4",
-        "node-red-dashboard": "~3.6.5",
-        "node-red-node-serialport": "~2.0.2",
-        "node-red-node-sqlite": "1.1.0",
-        "node-red-node-base64": "1.0.0",
         "node-red-contrib-os": "0.2.1",
-        "@flowfuse/node-red-dashboard": "~1.24.2"
+        "node-red-dashboard": "~3.6.5",
+        "node-red-node-base64": "1.0.0",
+        "node-red-node-serialport": "~2.0.2",
+        "node-red-node-sqlite": "1.1.0"
     },
     "node-red": {
         "settings": {
-            "flowFile": "/data/flows.json",
-            "credentialsFile": "/data/flows_cred.json"
+            "flowFile": "flows.json",
+            "credentialsFile": "flows_cred.json"
         }
     },
     "scripts": {

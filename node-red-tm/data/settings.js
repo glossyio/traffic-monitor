@@ -89,6 +89,8 @@ module.exports = {
   functionTimeout: 0,
 
   functionGlobalContext: {
+    fs:require('fs'),
+    path:require('path')
   },
 
   debugMaxLength: 1000,
