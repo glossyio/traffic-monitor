@@ -73,7 +73,7 @@ _apt_upgrade(){ # perform full upgrade on local installs
 
 _install_ansible() { # check and install python3-venv and setup venv
 local _venvd=$1
-dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
+#dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
 while ! . "${_venvd}/bin/activate" ;do 
   python3 -m venv "${_venvd}"  || return 1
 done
