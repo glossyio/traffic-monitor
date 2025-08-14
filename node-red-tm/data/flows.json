@@ -18,7 +18,7 @@
     {
         "id": "9269520ddb532b00",
         "type": "tab",
-        "label": "events",
+        "label": "capture-events",
         "disabled": false,
         "info": "",
         "env": []
@@ -40,6 +40,14 @@
         "env": []
     },
     {
+        "id": "05fcb02c571dcfee",
+        "type": "tab",
+        "label": "system",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "28627559bebdc324",
         "type": "tab",
         "label": "ui-monitoring",
@@ -51,22 +59,6 @@
         "id": "239d7b3ba410ad5e",
         "type": "tab",
         "label": "ui-database",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "05fcb02c571dcfee",
-        "type": "tab",
-        "label": "ui-system",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "f410f6aac9d1a3fc",
-        "type": "tab",
-        "label": "system-metrics",
         "disabled": false,
         "info": "",
         "env": []
@@ -287,7 +279,7 @@
         ],
         "x": 14,
         "y": 619,
-        "w": 1282,
+        "w": 1272,
         "h": 262
     },
     {
@@ -352,27 +344,6 @@
         "h": 502
     },
     {
-        "id": "dd29df4e644425b0",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "wifi settings",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "dbc594623a97700f",
-            "cfaca843d1fc4679",
-            "8173247be30b656e",
-            "2d36fe127efba457",
-            "80d2ef499f6612a6",
-            "83de55ae8c9f54c1"
-        ],
-        "x": 14,
-        "y": 2571.5,
-        "w": 1092,
-        "h": 209.5
-    },
-    {
         "id": "dc2934def36c6285",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -381,22 +352,9 @@
             "label": true
         },
         "nodes": [
-            "64c998a572e86dce",
             "4d67617dadcb9ede",
-            "28063911d2bbf57e",
-            "185f835e89c9acf9",
-            "feba76606996723c",
-            "416d4b4451795bfe",
-            "4d37c161816bd3a2",
             "5bb734f0283c5112",
-            "4a28823b499c04e0",
-            "9912f0375ba8d68e",
             "5235db548e7aaef3",
-            "04e1eeacc898a859",
-            "a9c83f35c32eb917",
-            "afdd83e46ca13149",
-            "10b176495132c277",
-            "8fd2b9ab457b5065",
             "fe2e9d1af38b2ca8",
             "b6bb1e836852dc04",
             "c0a27f9a895a1a94",
@@ -404,76 +362,24 @@
             "eb3b3c5230e3dd32",
             "611949e637ab7173",
             "bcd4c7df6b6f93d3",
-            "f2885df5fb61fa3f",
             "60fb5d8b6644ef02",
-            "aaba861811975692",
             "41e6810f869d1552",
             "4af4cb47fdd97610",
             "2f43413dfaba508a",
             "040751d9061fe787",
             "d046a343ebc5fe81",
-            "6d99762995fa853e",
-            "772eec7408fe83a7",
-            "a385b9186009250e",
-            "7d28172c4ed9e31b",
-            "2f0f10b6553e5840",
-            "41d1b47da00573bb",
-            "8d209b47f10933fb",
             "9dc62a7e0c39ac0e",
             "ab89cf1a793d2be5",
             "02470b22b2f6893c",
-            "f216858954e6862d",
-            "614c44640342d24f",
-            "8a7e7a97fd87ea18",
-            "33dd63cc1dfb53c4",
-            "9beaf948294acd98",
-            "2b82d4b028657058",
-            "099df29d699f405e",
             "486556a1e7fce8cf",
-            "11b875e91b3d32a6",
-            "9b0aebdc599ea4cd"
+            "5dcc009cdc781454",
+            "8fd2b9ab457b5065",
+            "f2885df5fb61fa3f"
         ],
         "x": 14,
-        "y": 139,
-        "w": 1312,
-        "h": 1189.5
-    },
-    {
-        "id": "64c3f8c396d4445c",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "time settings",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "d541ace7a209a1d7",
-            "a411516e46bf7fd6",
-            "865fd78705194730",
-            "497d7e2831eb983b",
-            "efa31fae9a8d79f5",
-            "fe941a906b772e44",
-            "c9bec37bcbc11ccd",
-            "c524d79accb49648",
-            "1f33180305d5e203",
-            "7f09ed91e3dfbe2f",
-            "801f5adc07bfe7e8",
-            "3fb79b44d4787b15",
-            "fbb1ec4d830de603",
-            "a035b3ce9edec363",
-            "504aa2fe928643b3",
-            "c589aa9260a5f3a7",
-            "33f201622a5a02cd",
-            "ec0affbeb3a3cdb8",
-            "32581c3d7d35b439",
-            "5e61626ef0f824f5",
-            "b395ee7aa9dc2a44",
-            "cf4a0c52e8465948"
-        ],
-        "x": 14,
-        "y": 1379,
-        "w": 1352,
-        "h": 389.5
+        "y": 99,
+        "w": 1372,
+        "h": 382
     },
     {
         "id": "2f27e270200485b9",
@@ -636,28 +542,6 @@
         "y": 1499,
         "w": 1242,
         "h": 262
-    },
-    {
-        "id": "23636f4163fa6e3b",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "name": "backup and restore",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "4a62f39107d10a25",
-            "38fd03504247825b",
-            "b781cb3d6df38fed",
-            "a38a90c36a0abfc3",
-            "0372cefb5e2ec968",
-            "cad1724850f8df3d",
-            "fb62ca91f138ab87"
-        ],
-        "x": 14,
-        "y": 1819,
-        "w": 1398,
-        "h": 448
     },
     {
         "id": "791a8c44b7f98d1b",
@@ -1068,49 +952,6 @@
         "h": 342
     },
     {
-        "id": "b781cb3d6df38fed",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "backup TM configuration to Thingsboard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f2256e28de366878",
-            "f49c1d345cdfef57",
-            "7c96d66a8330a4fc"
-        ],
-        "x": 514,
-        "y": 1899,
-        "w": 412,
-        "h": 122
-    },
-    {
-        "id": "a38a90c36a0abfc3",
-        "type": "group",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "restore TM Frigate config from ThingsBoard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "56cafb11de5348b2",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d",
-            "5743aab77af94bd2",
-            "4979b291119bce23"
-        ],
-        "x": 514,
-        "y": 2039,
-        "w": 872,
-        "h": 202
-    },
-    {
         "id": "4bbb9e24b5507a00",
         "type": "group",
         "z": "3dae026ab340962a",
@@ -1149,11 +990,11 @@
             "6d2f607b324415b4",
             "24efdc7f1231f7f0",
             "1ba33a74f2d3a680",
-            "17455485af2d8cfc",
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
-            "a2b2e69319628779"
+            "a2b2e69319628779",
+            "17455485af2d8cfc"
         ],
         "x": 88,
         "y": 439,
@@ -1329,6 +1170,101 @@
         "y": 859,
         "w": 932,
         "h": 162
+    },
+    {
+        "id": "23636f4163fa6e3b",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "name": "backup and restore",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "b781cb3d6df38fed",
+            "a38a90c36a0abfc3",
+            "0372cefb5e2ec968",
+            "cad1724850f8df3d",
+            "fb62ca91f138ab87"
+        ],
+        "x": 114,
+        "y": 1599,
+        "w": 1398,
+        "h": 368
+    },
+    {
+        "id": "b781cb3d6df38fed",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "backup TM configuration to Thingsboard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f49c1d345cdfef57",
+            "7c96d66a8330a4fc",
+            "4d376b9ae709214b"
+        ],
+        "x": 614,
+        "y": 1639,
+        "w": 702,
+        "h": 82
+    },
+    {
+        "id": "a38a90c36a0abfc3",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "restore TM Frigate config from ThingsBoard",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "56cafb11de5348b2",
+            "25515211bb8cecb4",
+            "64467a90df93e582",
+            "7555653f37b1cd50",
+            "0d394a2d73d138d6",
+            "5b7fe362e2e6b35d"
+        ],
+        "x": 614,
+        "y": 1739,
+        "w": 872,
+        "h": 202
+    },
+    {
+        "id": "3c299af3b0814ea5",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "system metrics, telemetry",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "9f2c4f1852402eb8",
+            "040a9f02853598aa",
+            "8c8c487fbf8e11a1",
+            "e1d39852db4af08c",
+            "65e30edd475cad64",
+            "c497cfedf6aed533",
+            "ae7325dd07b1f3ba",
+            "7b406e86282cd677",
+            "674f21d2e645cc18",
+            "ab9d774782f92e88",
+            "720ee19c705f37d9",
+            "398089ca4a10bdc5",
+            "882369d2082717a5",
+            "b6b8a1a7c08eb0ac",
+            "976ec527b724bd3d",
+            "6881f1dd8a4805af",
+            "6e88f30f09b49d22",
+            "6dca925fad91c100",
+            "c5891e3e63052f03"
+        ],
+        "x": 14,
+        "y": 539,
+        "w": 1312,
+        "h": 502
     },
     {
         "id": "05a58d9ee463c696",
@@ -1774,28 +1710,6 @@
         "className": ""
     },
     {
-        "id": "f61a29742f312bb9",
-        "type": "ui_group",
-        "name": "WiFi Settings",
-        "tab": "0fd9a947334c7d0f",
-        "order": 4,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
-        "id": "f60635dac92356fd",
-        "type": "ui_group",
-        "name": "Time Set",
-        "tab": "0fd9a947334c7d0f",
-        "order": 3,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "6739e78652771a41",
         "type": "serial-port",
         "name": "",
@@ -2032,7 +1946,7 @@
         "sendError": false,
         "encoding": "none",
         "allProps": false,
-        "x": 440,
+        "x": 430,
         "y": 300,
         "wires": [
             [
@@ -2114,12 +2028,11 @@
         "id": "5ffb7c9c38b8c5b0",
         "type": "watch",
         "z": "3dae026ab340962a",
-        "d": true,
         "g": "4bbb9e24b5507a00",
         "name": "",
         "files": "/config/config.yml",
         "recursive": "",
-        "x": 210,
+        "x": 200,
         "y": 340,
         "wires": [
             [
@@ -2349,24 +2262,6 @@
         "wires": []
     },
     {
-        "id": "17455485af2d8cfc",
-        "type": "debug",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "latest deployment info",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 880,
-        "y": 780,
-        "wires": []
-    },
-    {
         "id": "ac8b2de05ec27001",
         "type": "change",
         "z": "3dae026ab340962a",
@@ -2486,6 +2381,24 @@
         ],
         "x": 865,
         "y": 340,
+        "wires": []
+    },
+    {
+        "id": "17455485af2d8cfc",
+        "type": "debug",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "name": "latest deployment info",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 780,
         "wires": []
     },
     {
@@ -6312,7 +6225,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": {{lat}},\n            \"lon\": {{lon}},\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"lat\": {{global.config.deployment.lat}},\n            \"lon\": {{global.config.deployment.lon}},\n            \"bearing\": \"{{global.config.deployment.bearing}}\"\n        }\n    }\n}",
+        "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": \"{{lat}}\",\n            \"lon\": \"{{lon}}\",\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"lat\": \"{{global.config.deployment.lat}}\",\n            \"lon\": \"{{global.config.deployment.lon}}\",\n            \"bearing\": \"{{global.config.deployment.bearing}}\"\n        }\n    }\n}",
         "output": "json",
         "x": 430,
         "y": 1400,
@@ -6532,6 +6445,1370 @@
         ]
     },
     {
+        "id": "f49c1d345cdfef57",
+        "type": "change",
+        "z": "f7932be9acc7391c",
+        "g": "b781cb3d6df38fed",
+        "name": "set up backup payload for TB",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.frigate_config",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.dateTime",
+                "pt": "msg",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1060,
+        "y": 1680,
+        "wires": [
+            [
+                "7c96d66a8330a4fc"
+            ]
+        ]
+    },
+    {
+        "id": "7c96d66a8330a4fc",
+        "type": "link out",
+        "z": "f7932be9acc7391c",
+        "g": "b781cb3d6df38fed",
+        "name": "backup link out",
+        "mode": "link",
+        "links": [
+            "4af0d78e8bc39647"
+        ],
+        "x": 1275,
+        "y": 1680,
+        "wires": []
+    },
+    {
+        "id": "4d376b9ae709214b",
+        "type": "http request",
+        "z": "f7932be9acc7391c",
+        "g": "b781cb3d6df38fed",
+        "name": "fetch frigate /api/config/raw",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config/raw",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 760,
+        "y": 1680,
+        "wires": [
+            [
+                "f49c1d345cdfef57"
+            ]
+        ]
+    },
+    {
+        "id": "56cafb11de5348b2",
+        "type": "http request",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "name": "read config file from ThingsBoard",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/attributes?clientKeys=backup",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 780,
+        "y": 1780,
+        "wires": [
+            [
+                "7555653f37b1cd50"
+            ]
+        ]
+    },
+    {
+        "id": "25515211bb8cecb4",
+        "type": "http request",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "name": "validate Frigate config, save and restart",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config/save?save_option=restart",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "text/plain",
+                "valueValue": ""
+            }
+        ],
+        "x": 1240,
+        "y": 1820,
+        "wires": [
+            [
+                "64467a90df93e582"
+            ]
+        ]
+    },
+    {
+        "id": "64467a90df93e582",
+        "type": "switch",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "name": "handle validation error",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "400",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1320,
+        "y": 1860,
+        "wires": [
+            [
+                "5b7fe362e2e6b35d"
+            ]
+        ]
+    },
+    {
+        "id": "7555653f37b1cd50",
+        "type": "json",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 990,
+        "y": 1780,
+        "wires": [
+            [
+                "0d394a2d73d138d6"
+            ]
+        ]
+    },
+    {
+        "id": "0d394a2d73d138d6",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "name": "extract frigate config portion for validation",
+        "func": "let newMsg = {};\n\n//put the backed up YAML config into a JSON object to send to validate\nnewMsg.payload = msg.payload.client.backup.frigate;\n\nreturn newMsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1220,
+        "y": 1780,
+        "wires": [
+            [
+                "25515211bb8cecb4"
+            ]
+        ]
+    },
+    {
+        "id": "5b7fe362e2e6b35d",
+        "type": "ui_toast",
+        "z": "f7932be9acc7391c",
+        "g": "a38a90c36a0abfc3",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "Frigate Config Restore Validation Error",
+        "name": "show frigate validation error",
+        "x": 1340,
+        "y": 1900,
+        "wires": []
+    },
+    {
+        "id": "0372cefb5e2ec968",
+        "type": "ui_button",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "",
+        "group": "941fb260d6cfb5a2",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Restore TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 250,
+        "y": 1720,
+        "wires": [
+            [
+                "56cafb11de5348b2"
+            ]
+        ]
+    },
+    {
+        "id": "cad1724850f8df3d",
+        "type": "ui_button",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "name": "",
+        "group": "941fb260d6cfb5a2",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Backup TM Configuration",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 250,
+        "y": 1680,
+        "wires": [
+            [
+                "4d376b9ae709214b"
+            ]
+        ]
+    },
+    {
+        "id": "fb62ca91f138ab87",
+        "type": "ui_template",
+        "z": "f7932be9acc7391c",
+        "g": "23636f4163fa6e3b",
+        "group": "941fb260d6cfb5a2",
+        "name": "backup and restore instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<p>Backup and Restore functionality allow you to save settings to ThingsBoard as client-side attributes for returning your traffic monitor to the saved configuration.</p>\n<p>Backup and Restore works for the following configs:</p>\n<ul>\n    <li>Frigate config.yml</li>\n</ul>\n<p>Only one (1) backup is valid at a time.</p>",
+        "storeOutMessages": true,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 270,
+        "y": 1640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9fe1b87c70ae182d",
+        "type": "catch",
+        "z": "05fcb02c571dcfee",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 40,
+        "wires": [
+            [
+                "070133633f340279"
+            ]
+        ]
+    },
+    {
+        "id": "070133633f340279",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "name": "debug error, system tab",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 310,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "4d67617dadcb9ede",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "props": [],
+        "repeat": "3600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "10",
+        "topic": "",
+        "x": 110,
+        "y": 140,
+        "wires": [
+            [
+                "b6bb1e836852dc04",
+                "5bb734f0283c5112",
+                "9dc62a7e0c39ac0e",
+                "5dcc009cdc781454",
+                "0dccfc4a6467f7f4",
+                "8fd2b9ab457b5065"
+            ]
+        ]
+    },
+    {
+        "id": "5bb734f0283c5112",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "os.release()",
+        "func": "msg.payload = `${os.release()}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "fe2e9d1af38b2ca8"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "5235db548e7aaef3",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "DateTime",
+        "func": "msg.payload = new Date().toString();\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 340,
+        "y": 400,
+        "wires": [
+            [
+                "41e6810f869d1552"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "9dc62a7e0c39ac0e",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "frigate api/version",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/version",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 370,
+        "y": 340,
+        "wires": [
+            [
+                "ab89cf1a793d2be5"
+            ]
+        ],
+        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
+    },
+    {
+        "id": "fe2e9d1af38b2ca8",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.osRelease",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::deviceAttributes.osRelease",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osRelease",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 300,
+        "wires": [
+            [
+                "60fb5d8b6644ef02",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "ab89cf1a793d2be5",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.frigateVersion",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::deviceAttributes.frigateVersion",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "frigateVersion",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 340,
+        "wires": [
+            [
+                "02470b22b2f6893c",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "b6bb1e836852dc04",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.tmVersion",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::deviceAttributes.tmVersion",
+                "pt": "global",
+                "to": "TM_VERSION",
+                "tot": "env"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "tmVersion",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "TM_VERSION",
+                "tot": "env"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 180,
+        "wires": [
+            [
+                "bcd4c7df6b6f93d3",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "c0a27f9a895a1a94",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.osTimeZone",
+        "rules": [
+            {
+                "t": "set",
+                "p": "#:(config)::deviceAttributes.osTimeZone",
+                "pt": "global",
+                "to": "$trim(payload)",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osTimeZone",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$trim(payload)",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 260,
+        "wires": [
+            [
+                "611949e637ab7173",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "0dccfc4a6467f7f4",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.deviceName",
+        "rules": [
+            {
+                "t": "set",
+                "p": "deviceAttributes.deviceName",
+                "pt": "global",
+                "to": "TM_RPI_SN",
+                "tot": "env"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "deviceName",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 140,
+        "wires": [
+            [
+                "eb3b3c5230e3dd32",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "eb3b3c5230e3dd32",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "deviceName",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1070,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "611949e637ab7173",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 9,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "osTimeZone",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1070,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "bcd4c7df6b6f93d3",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "tmVersion",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1060,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "60fb5d8b6644ef02",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "osRelease",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1070,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "02470b22b2f6893c",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "frigateVersion",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1080,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "41e6810f869d1552",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 8,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Date & Time",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1070,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "4af4cb47fdd97610",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "props": [],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 400,
+        "wires": [
+            [
+                "5235db548e7aaef3",
+                "2f43413dfaba508a"
+            ]
+        ]
+    },
+    {
+        "id": "2f43413dfaba508a",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "UTC-ms",
+        "func": "msg.payload = new Date().getTime();\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "os",
+                "module": "os"
+            }
+        ],
+        "x": 340,
+        "y": 440,
+        "wires": [
+            [
+                "040751d9061fe787"
+            ]
+        ],
+        "info": "// nrlint function-eslint:off\n"
+    },
+    {
+        "id": "040751d9061fe787",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 10,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Time UTC (ms)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1080,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "d046a343ebc5fe81",
+        "type": "join",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "6",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 1250,
+        "y": 260,
+        "wires": [
+            [
+                "486556a1e7fce8cf"
+            ]
+        ]
+    },
+    {
+        "id": "486556a1e7fce8cf",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "system_info link out",
+        "mode": "link",
+        "links": [
+            "d367cb76b239682f"
+        ],
+        "x": 1345,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "5dcc009cdc781454",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "js timezone",
+        "func": "msg.payload = Intl.DateTimeFormat().resolvedOptions().timeZone;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 260,
+        "wires": [
+            [
+                "c0a27f9a895a1a94"
+            ]
+        ]
+    },
+    {
+        "id": "8fd2b9ab457b5065",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "name": "set global.deviceAttributes.osHostname",
+        "rules": [
+            {
+                "t": "set",
+                "p": "deviceAttributes.osHostname",
+                "pt": "global",
+                "to": "TM_HOSTNAME",
+                "tot": "env"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "osHostname",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 220,
+        "wires": [
+            [
+                "f2885df5fb61fa3f",
+                "d046a343ebc5fe81"
+            ]
+        ]
+    },
+    {
+        "id": "f2885df5fb61fa3f",
+        "type": "ui_text",
+        "z": "05fcb02c571dcfee",
+        "g": "dc2934def36c6285",
+        "group": "55acf8751a68ec74",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "osHostname",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1070,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9f2c4f1852402eb8",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/5 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "time_ms_utc",
+        "payload": "",
+        "payloadType": "date",
+        "x": 170,
+        "y": 580,
+        "wires": [
+            [
+                "040a9f02853598aa",
+                "8c8c487fbf8e11a1",
+                "ae7325dd07b1f3ba",
+                "7b406e86282cd677",
+                "674f21d2e645cc18",
+                "ab9d774782f92e88",
+                "720ee19c705f37d9",
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "040a9f02853598aa",
+        "type": "OS",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 290,
+        "y": 620,
+        "wires": [
+            [
+                "e1d39852db4af08c"
+            ]
+        ]
+    },
+    {
+        "id": "8c8c487fbf8e11a1",
+        "type": "Drives",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 290,
+        "y": 700,
+        "wires": [
+            [
+                "65e30edd475cad64"
+            ]
+        ]
+    },
+    {
+        "id": "e1d39852db4af08c",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "OS",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_OS",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 620,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "65e30edd475cad64",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "Drives",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Drives",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 700,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "c497cfedf6aed533",
+        "type": "join",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "Compose Metrics Msg",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "",
+        "count": "8",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 890,
+        "y": 800,
+        "wires": [
+            [
+                "6dca925fad91c100",
+                "c5891e3e63052f03"
+            ]
+        ]
+    },
+    {
+        "id": "ae7325dd07b1f3ba",
+        "type": "Uptime",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 300,
+        "y": 760,
+        "wires": [
+            [
+                "398089ca4a10bdc5"
+            ]
+        ]
+    },
+    {
+        "id": "7b406e86282cd677",
+        "type": "CPUs",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 290,
+        "y": 820,
+        "wires": [
+            [
+                "882369d2082717a5"
+            ]
+        ]
+    },
+    {
+        "id": "674f21d2e645cc18",
+        "type": "Loadavg",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 300,
+        "y": 880,
+        "wires": [
+            [
+                "b6b8a1a7c08eb0ac"
+            ]
+        ]
+    },
+    {
+        "id": "ab9d774782f92e88",
+        "type": "Memory",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "scale": "Byte",
+        "x": 300,
+        "y": 940,
+        "wires": [
+            [
+                "976ec527b724bd3d"
+            ]
+        ]
+    },
+    {
+        "id": "720ee19c705f37d9",
+        "type": "NetworkIntf",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "",
+        "x": 310,
+        "y": 1000,
+        "wires": [
+            [
+                "6881f1dd8a4805af"
+            ]
+        ]
+    },
+    {
+        "id": "398089ca4a10bdc5",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "Uptime",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Uptime",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 760,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "882369d2082717a5",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "CPUs",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_CPUx",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 820,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "b6b8a1a7c08eb0ac",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "Loadavg",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Loadavg",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 520,
+        "y": 880,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "976ec527b724bd3d",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "Memory",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_Memory",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 520,
+        "y": 940,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "6881f1dd8a4805af",
+        "type": "change",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "NetworkIntf",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "metrics_NetworkIntf",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 530,
+        "y": 1000,
+        "wires": [
+            [
+                "c497cfedf6aed533"
+            ]
+        ]
+    },
+    {
+        "id": "6e88f30f09b49d22",
+        "type": "comment",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "OS and Hardware Metrics Documentation",
+        "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - hardware cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/).\n - hardware meminfo comes from 'cat /proc/meminfo'.",
+        "x": 960,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "6dca925fad91c100",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "system_metrics link out",
+        "mode": "link",
+        "links": [
+            "24c1b5f3bff3834c"
+        ],
+        "x": 1105,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "c5891e3e63052f03",
+        "type": "debug",
+        "z": "05fcb02c571dcfee",
+        "g": "3c299af3b0814ea5",
+        "name": "system_metrics output",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 860,
+        "wires": []
+    },
+    {
         "id": "3985037239b671c5",
         "type": "inject",
         "z": "28627559bebdc324",
@@ -6615,7 +7892,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/events/summary",
+        "url": "http://frigate:5000/api/events/summary",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -7362,7 +8639,7 @@
         "method": "GET",
         "ret": "bin",
         "paytoqs": "ignore",
-        "url": "http://localhost:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
+        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/thumbnail.jpg",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -10092,2843 +11369,6 @@
         "name": "",
         "x": 1010,
         "y": 100,
-        "wires": []
-    },
-    {
-        "id": "9fe1b87c70ae182d",
-        "type": "catch",
-        "z": "05fcb02c571dcfee",
-        "name": "",
-        "scope": null,
-        "uncaught": false,
-        "x": 80,
-        "y": 40,
-        "wires": [
-            [
-                "070133633f340279"
-            ]
-        ]
-    },
-    {
-        "id": "070133633f340279",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "name": "debug error, system tab",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 310,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "64c998a572e86dce",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "cat /sys/firmware/devicetree/base/serial-number",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 380,
-        "y": 200,
-        "wires": [
-            [
-                "6d99762995fa853e"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "4d67617dadcb9ede",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "props": [],
-        "repeat": "3600",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "10",
-        "topic": "",
-        "x": 110,
-        "y": 200,
-        "wires": [
-            [
-                "64c998a572e86dce",
-                "10b176495132c277",
-                "b6bb1e836852dc04",
-                "416d4b4451795bfe",
-                "5bb734f0283c5112",
-                "9dc62a7e0c39ac0e",
-                "f216858954e6862d",
-                "614c44640342d24f"
-            ]
-        ]
-    },
-    {
-        "id": "28063911d2bbf57e",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "Firmware (TM Repo release)",
-        "info": "",
-        "x": 180,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "185f835e89c9acf9",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "other Client attributes (system)",
-        "info": "",
-        "x": 190,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "feba76606996723c",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.homedir()",
-        "func": "msg.payload = `${os.homedir()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 270,
-        "y": 700,
-        "wires": [
-            [
-                "11b875e91b3d32a6"
-            ]
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "416d4b4451795bfe",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.hostname()",
-        "func": "msg.payload = `${os.hostname()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 280,
-        "y": 540,
-        "wires": [
-            [
-                "8fd2b9ab457b5065"
-            ]
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "4d37c161816bd3a2",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.platform()",
-        "func": "msg.payload = `${os.platform()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 270,
-        "y": 740,
-        "wires": [
-            []
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "5bb734f0283c5112",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.release()",
-        "func": "msg.payload = `${os.release()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 270,
-        "y": 580,
-        "wires": [
-            [
-                "fe2e9d1af38b2ca8"
-            ]
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "4a28823b499c04e0",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.version()",
-        "func": "msg.payload = `${os.version()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 270,
-        "y": 620,
-        "wires": [
-            []
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "9912f0375ba8d68e",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "os.uptime()",
-        "func": "msg.payload = `${os.uptime()}`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 270,
-        "y": 660,
-        "wires": [
-            []
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "5235db548e7aaef3",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "DateTime",
-        "func": "msg.payload = new Date().toString();\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 260,
-        "y": 780,
-        "wires": [
-            [
-                "41e6810f869d1552"
-            ]
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "04e1eeacc898a859",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "get Frigate version, config settings",
-        "info": "",
-        "x": 200,
-        "y": 900,
-        "wires": []
-    },
-    {
-        "id": "772eec7408fe83a7",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "get OPS firmware, config settings",
-        "info": "",
-        "x": 190,
-        "y": 1040,
-        "wires": []
-    },
-    {
-        "id": "a385b9186009250e",
-        "type": "link out",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "out query TM_RADAR_SERIAL_PORT_00",
-        "mode": "link",
-        "links": [],
-        "x": 385,
-        "y": 1080,
-        "wires": []
-    },
-    {
-        "id": "7d28172c4ed9e31b",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "query all radar settings, after 5",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "payload": "\"?P\" & \"?N\" & \"?V\" & \"?B\" & \"??\" & \"O?\" & \"?F\" & \"?s\"",
-        "payloadType": "jsonata",
-        "x": 190,
-        "y": 1080,
-        "wires": [
-            [
-                "a385b9186009250e"
-            ]
-        ]
-    },
-    {
-        "id": "2f0f10b6553e5840",
-        "type": "link in",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "in return TM_RADAR_SERIAL_PORT_00",
-        "links": [],
-        "x": 405,
-        "y": 1120,
-        "wires": [
-            [
-                "8d209b47f10933fb"
-            ]
-        ]
-    },
-    {
-        "id": "41d1b47da00573bb",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "TM_RADAR_SERIAL_PORT_00 settings",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "8d209b47f10933fb",
-        "type": "join",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "mode": "custom",
-        "build": "merged",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": true,
-        "timeout": "2",
-        "count": "",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 500,
-        "y": 1120,
-        "wires": [
-            [
-                "41d1b47da00573bb"
-            ]
-        ]
-    },
-    {
-        "id": "a9c83f35c32eb917",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dc2934def36c6285",
-        "name": "get Frigate config",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "120",
-        "topic": "",
-        "x": 150,
-        "y": 940,
-        "wires": [
-            [
-                "afdd83e46ca13149",
-                "9dc62a7e0c39ac0e"
-            ]
-        ]
-    },
-    {
-        "id": "afdd83e46ca13149",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "frigate api/config",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/config",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 360,
-        "y": 940,
-        "wires": [
-            [
-                "aaba861811975692"
-            ]
-        ],
-        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
-    },
-    {
-        "id": "9dc62a7e0c39ac0e",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "frigate api/version",
-        "method": "GET",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/version",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 370,
-        "y": 980,
-        "wires": [
-            [
-                "ab89cf1a793d2be5"
-            ]
-        ],
-        "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
-    },
-    {
-        "id": "10b176495132c277",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "cat /etc/timezone",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 290,
-        "y": 280,
-        "wires": [
-            [
-                "c0a27f9a895a1a94"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "8fd2b9ab457b5065",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.osHostname",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.osHostname",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "osHostname",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 620,
-        "y": 540,
-        "wires": [
-            [
-                "f2885df5fb61fa3f",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "fe2e9d1af38b2ca8",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.osRelease",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.osRelease",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "osRelease",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 610,
-        "y": 580,
-        "wires": [
-            [
-                "60fb5d8b6644ef02",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "ab89cf1a793d2be5",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.frigateVersion",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.frigateVersion",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "frigateVersion",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 660,
-        "y": 980,
-        "wires": [
-            [
-                "02470b22b2f6893c",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "b6bb1e836852dc04",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.tmVersion",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.tmVersion",
-                "pt": "global",
-                "to": "TM_VERSION",
-                "tot": "env"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "tmVersion",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "TM_VERSION",
-                "tot": "env"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 610,
-        "y": 400,
-        "wires": [
-            [
-                "bcd4c7df6b6f93d3",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "c0a27f9a895a1a94",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.osTimeZone",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.osTimeZone",
-                "pt": "global",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "osTimeZone",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 780,
-        "y": 260,
-        "wires": [
-            [
-                "611949e637ab7173",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "0dccfc4a6467f7f4",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.deviceName",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.deviceName",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "deviceName",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 780,
-        "y": 220,
-        "wires": [
-            [
-                "eb3b3c5230e3dd32",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "eb3b3c5230e3dd32",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "deviceName",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1070,
-        "y": 220,
-        "wires": []
-    },
-    {
-        "id": "611949e637ab7173",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 9,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "osTimeZone",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1070,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "bcd4c7df6b6f93d3",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 5,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "tmVersion",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 880,
-        "y": 400,
-        "wires": []
-    },
-    {
-        "id": "f2885df5fb61fa3f",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "osHostname",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 890,
-        "y": 540,
-        "wires": []
-    },
-    {
-        "id": "60fb5d8b6644ef02",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 7,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "osRelease",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 890,
-        "y": 580,
-        "wires": []
-    },
-    {
-        "id": "02470b22b2f6893c",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 6,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "frigateVersion",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 840,
-        "y": 1020,
-        "wires": []
-    },
-    {
-        "id": "aaba861811975692",
-        "type": "debug",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "frigate GET /api/config",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 600,
-        "y": 940,
-        "wires": []
-    },
-    {
-        "id": "41e6810f869d1552",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 8,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Date & Time",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 690,
-        "y": 780,
-        "wires": []
-    },
-    {
-        "id": "4af4cb47fdd97610",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "props": [],
-        "repeat": "60",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 110,
-        "y": 780,
-        "wires": [
-            [
-                "5235db548e7aaef3",
-                "2f43413dfaba508a"
-            ]
-        ]
-    },
-    {
-        "id": "2f43413dfaba508a",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "UTC-ms",
-        "func": "msg.payload = new Date().getTime();\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [
-            {
-                "var": "os",
-                "module": "os"
-            }
-        ],
-        "x": 260,
-        "y": 820,
-        "wires": [
-            [
-                "040751d9061fe787"
-            ]
-        ],
-        "info": "// nrlint function-eslint:off\n"
-    },
-    {
-        "id": "040751d9061fe787",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 10,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Time UTC (ms)",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 700,
-        "y": 820,
-        "wires": []
-    },
-    {
-        "id": "d046a343ebc5fe81",
-        "type": "join",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "",
-        "count": "8",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 1130,
-        "y": 360,
-        "wires": [
-            [
-                "486556a1e7fce8cf"
-            ]
-        ]
-    },
-    {
-        "id": "f216858954e6862d",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "nmcli -g ip4.address connection show preconfigured",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 390,
-        "y": 1200,
-        "wires": [
-            [
-                "8a7e7a97fd87ea18"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "614c44640342d24f",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "command": "nmcli -g 802-11-wireless.ssid connection show preconfigured",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 420,
-        "y": 1280,
-        "wires": [
-            [
-                "9beaf948294acd98"
-            ],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "8a7e7a97fd87ea18",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.ipv4Address",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.ipv4Address",
-                "pt": "global",
-                "to": "$trim(payload)",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "ipv4Address",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 860,
-        "y": 1180,
-        "wires": [
-            [
-                "33dd63cc1dfb53c4",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "33dd63cc1dfb53c4",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "ipv4Address",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1130,
-        "y": 1180,
-        "wires": []
-    },
-    {
-        "id": "9beaf948294acd98",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "set global.deviceAttributes.ssid",
-        "rules": [
-            {
-                "t": "set",
-                "p": "#:(config)::deviceAttributes.ssid",
-                "pt": "global",
-                "to": "$trim(payload)",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "ssid",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "$trim(payload)",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 870,
-        "y": 1260,
-        "wires": [
-            [
-                "2b82d4b028657058",
-                "d046a343ebc5fe81"
-            ]
-        ]
-    },
-    {
-        "id": "2b82d4b028657058",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 4,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "ssid",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1110,
-        "y": 1260,
-        "wires": []
-    },
-    {
-        "id": "dbc594623a97700f",
-        "type": "ui_form",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "",
-        "label": "WiFi SSID Connection",
-        "group": "f61a29742f312bb9",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "options": [
-            {
-                "label": "SSID",
-                "value": "ssid",
-                "type": "text",
-                "required": true,
-                "rows": null
-            },
-            {
-                "label": "Password",
-                "value": "password",
-                "type": "password",
-                "required": false,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "ssid": "",
-            "password": ""
-        },
-        "payload": "",
-        "submit": "submit",
-        "cancel": "cancel",
-        "topic": "topic",
-        "topicType": "msg",
-        "splitLayout": "",
-        "className": "",
-        "x": 480,
-        "y": 2620,
-        "wires": [
-            [
-                "2d36fe127efba457"
-            ]
-        ]
-    },
-    {
-        "id": "cfaca843d1fc4679",
-        "type": "ui_ui_control",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "",
-        "events": "all",
-        "x": 100,
-        "y": 2620,
-        "wires": [
-            [
-                "dbc594623a97700f"
-            ]
-        ]
-    },
-    {
-        "id": "8173247be30b656e",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "function 2",
-        "func": "\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 260,
-        "y": 2620,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "2d36fe127efba457",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "command": "nmcli device wifi connect \"$SSID\" password \"$PASSWORD\"",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 860,
-        "y": 2620,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "80d2ef499f6612a6",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "command": "nmcli connection add type wifi autoconnect yes ifname wlan1",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 860,
-        "y": 2680,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "83de55ae8c9f54c1",
-        "type": "comment",
-        "z": "05fcb02c571dcfee",
-        "d": true,
-        "g": "dd29df4e644425b0",
-        "name": "1) create network connect 2) modify for autoconnect yes",
-        "info": "",
-        "x": 840,
-        "y": 2740,
-        "wires": []
-    },
-    {
-        "id": "6d99762995fa853e",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "buffer to string",
-        "func": "msg.payload = msg.payload.toString();\n// remove null character and anything trailing\nmsg.payload = msg.payload.substr(0, msg.payload.indexOf('\\0'));\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 680,
-        "y": 180,
-        "wires": [
-            [
-                "0dccfc4a6467f7f4"
-            ]
-        ]
-    },
-    {
-        "id": "099df29d699f405e",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 110,
-        "y": 620,
-        "wires": [
-            [
-                "4a28823b499c04e0",
-                "9912f0375ba8d68e",
-                "feba76606996723c",
-                "4d37c161816bd3a2"
-            ]
-        ]
-    },
-    {
-        "id": "d541ace7a209a1d7",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "60",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "object",
-        "payloadType": "date",
-        "x": 130,
-        "y": 1420,
-        "wires": [
-            [
-                "a411516e46bf7fd6"
-            ]
-        ]
-    },
-    {
-        "id": "a411516e46bf7fd6",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "format timestamp for current time zone",
-        "func": "msg.payload = msg.payload.toString();\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 470,
-        "y": 1420,
-        "wires": [
-            [
-                "865fd78705194730"
-            ]
-        ]
-    },
-    {
-        "id": "865fd78705194730",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "group": "f60635dac92356fd",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "currentTimestamp",
-        "label": "Current Timestamp",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 750,
-        "y": 1420,
-        "wires": []
-    },
-    {
-        "id": "497d7e2831eb983b",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "group": "f60635dac92356fd",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "name": "currentTimezone",
-        "label": "Current Timezone",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 750,
-        "y": 1460,
-        "wires": []
-    },
-    {
-        "id": "efa31fae9a8d79f5",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "2",
-        "topic": "",
-        "payload": "#:(config)::osTimeZone",
-        "payloadType": "global",
-        "x": 150,
-        "y": 1460,
-        "wires": [
-            [
-                "497d7e2831eb983b"
-            ]
-        ]
-    },
-    {
-        "id": "fe941a906b772e44",
-        "type": "ui_text_input",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "dateTimePicker",
-        "label": "Date Time Picker",
-        "tooltip": "Set Date and Time",
-        "group": "f60635dac92356fd",
-        "order": 5,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "mode": "datetime-local",
-        "delay": "0",
-        "topic": "topic",
-        "sendOnBlur": true,
-        "className": "",
-        "topicType": "msg",
-        "x": 620,
-        "y": 1660,
-        "wires": [
-            [
-                "3fb79b44d4787b15"
-            ]
-        ]
-    },
-    {
-        "id": "c9bec37bcbc11ccd",
-        "type": "ui_switch",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "label": "Enable Set System Date and Time",
-        "tooltip": "",
-        "group": "f60635dac92356fd",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": true,
-        "decouple": "false",
-        "topic": "topic",
-        "topicType": "msg",
-        "style": "",
-        "onvalue": "true",
-        "onvalueType": "bool",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "false",
-        "offvalueType": "bool",
-        "officon": "",
-        "offcolor": "",
-        "animate": false,
-        "className": "",
-        "x": 180,
-        "y": 1620,
-        "wires": [
-            [
-                "1f33180305d5e203",
-                "ec0affbeb3a3cdb8"
-            ]
-        ]
-    },
-    {
-        "id": "c524d79accb49648",
-        "type": "ui_button",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "group": "f60635dac92356fd",
-        "order": 6,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Set System Time Button",
-        "tooltip": "DateTime and TZ trigger when input loses focus",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 650,
-        "y": 1580,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "1f33180305d5e203",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "msg.enabled",
-        "rules": [
-            {
-                "t": "set",
-                "p": "enabled",
-                "pt": "msg",
-                "to": "payload",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 230,
-        "y": 1660,
-        "wires": [
-            [
-                "fe941a906b772e44",
-                "7f09ed91e3dfbe2f",
-                "c524d79accb49648",
-                "cf4a0c52e8465948"
-            ]
-        ]
-    },
-    {
-        "id": "7f09ed91e3dfbe2f",
-        "type": "ui_text_input",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "TimezonePicker",
-        "label": "Time Zone (unix tz format)",
-        "tooltip": "Shall be in Unix TZ format",
-        "group": "f60635dac92356fd",
-        "order": 4,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "mode": "text",
-        "delay": "0",
-        "topic": "topic",
-        "sendOnBlur": true,
-        "className": "",
-        "topicType": "msg",
-        "x": 620,
-        "y": 1620,
-        "wires": [
-            [
-                "a035b3ce9edec363"
-            ]
-        ]
-    },
-    {
-        "id": "801f5adc07bfe7e8",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "payload": "#:(config)::config.time.npt_set",
-        "payloadType": "global",
-        "x": 170,
-        "y": 1720,
-        "wires": [
-            [
-                "cf4a0c52e8465948"
-            ]
-        ]
-    },
-    {
-        "id": "3fb79b44d4787b15",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "format datetime for set",
-        "func": "//format datetimestamp for `sudo date -s '@EPOCHTIMESTAMP'`\n\nvar dateMS = Date.now();\n\nif (msg.payload) {\n    //sends back entered time as UTC, user should enter their local time\n    // break apart timestamp as a string and reassemble in local time\n\n    const dateTimeObj = new Date(msg.payload);\n\n    const dateString = dateTimeObj.toISOString();\n\n    const year = dateString.split('-')[0];\n    const month = Number(dateString.split('-')[1]) - 1;\n    const datePart = dateString.split('T')[0].split('-')[2];\n    const hours = dateString.split('T')[1].split(':')[0];\n    const minutes = dateString.split('T')[1].split(':')[1];\n\n    dateMS = new Date(year, month, datePart, hours, minutes);\n\n}\n\n//convert to seconds for command\nvar dateS = Math.ceil(dateMS / 1000)\n\nmsg.payload = `'@${dateS}'`;\nmsg.topic = 'Set system date/time'\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 840,
-        "y": 1660,
-        "wires": [
-            [
-                "fbb1ec4d830de603",
-                "c589aa9260a5f3a7"
-            ]
-        ]
-    },
-    {
-        "id": "fbb1ec4d830de603",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "command": "sudo date -s ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1050,
-        "y": 1620,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "a035b3ce9edec363",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "format timezone for set",
-        "func": "//format timezone for `sudo raspi-config nonint do_change_timezone <timezone>`\n//if timezone is null or empty string, use global.osTimeZone\n\nif (flow.get(\"setTimeZone\")) {\n    var thisTimezone = flow.get(\"setTimeZone\");\n    global.set(\"osTimeZone\", thisTimezone, \"config\");\n    console.log(\"Set osTimeZone from flow\");\n}\nelse {\n    var thisTimezone = global.get(\"osTimeZone\", \"config\");\n    console.log(\"Set osTimeZone from existing global\");\n}\n\nmsg.payload = thisTimezone;\nmsg.topic = 'Set system time zone';\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 840,
-        "y": 1620,
-        "wires": [
-            [
-                "504aa2fe928643b3",
-                "33f201622a5a02cd"
-            ]
-        ]
-    },
-    {
-        "id": "504aa2fe928643b3",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "command": "sudo raspi-config nonint do_change_timezone ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1160,
-        "y": 1560,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "c589aa9260a5f3a7",
-        "type": "ui_toast",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "",
-        "name": "",
-        "x": 1060,
-        "y": 1660,
-        "wires": []
-    },
-    {
-        "id": "33f201622a5a02cd",
-        "type": "ui_toast",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "",
-        "name": "",
-        "x": 1060,
-        "y": 1520,
-        "wires": []
-    },
-    {
-        "id": "ec0affbeb3a3cdb8",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "#:(config)::osTimeZone",
-                "tot": "global"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 440,
-        "y": 1620,
-        "wires": [
-            [
-                "7f09ed91e3dfbe2f"
-            ]
-        ]
-    },
-    {
-        "id": "32581c3d7d35b439",
-        "type": "ui_ui_control",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "events": "all",
-        "x": 100,
-        "y": 1520,
-        "wires": [
-            [
-                "5e61626ef0f824f5"
-            ]
-        ]
-    },
-    {
-        "id": "5e61626ef0f824f5",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "clear msg",
-        "func": "msg = {};\n//initialize time fields as disabled\nmsg.payload = false;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 240,
-        "y": 1520,
-        "wires": [
-            [
-                "1f33180305d5e203"
-            ]
-        ]
-    },
-    {
-        "id": "b395ee7aa9dc2a44",
-        "type": "exec",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "command": "sudo timedatectl set-ntp ",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1090,
-        "y": 1720,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "cf4a0c52e8465948",
-        "type": "ui_switch",
-        "z": "05fcb02c571dcfee",
-        "g": "64c3f8c396d4445c",
-        "name": "",
-        "label": "Set NTP",
-        "tooltip": "Enable/Disable Network Time Protocol (internet time sync)",
-        "group": "f60635dac92356fd",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "decouple": "true",
-        "topic": "topic",
-        "topicType": "msg",
-        "style": "",
-        "onvalue": "true",
-        "onvalueType": "bool",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "false",
-        "offvalueType": "bool",
-        "officon": "",
-        "offcolor": "",
-        "animate": false,
-        "className": "",
-        "x": 600,
-        "y": 1720,
-        "wires": [
-            [
-                "b395ee7aa9dc2a44"
-            ]
-        ]
-    },
-    {
-        "id": "486556a1e7fce8cf",
-        "type": "link out",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "system_info link out",
-        "mode": "link",
-        "links": [
-            "d367cb76b239682f"
-        ],
-        "x": 1285,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "0372cefb5e2ec968",
-        "type": "ui_button",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "",
-        "group": "941fb260d6cfb5a2",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Restore TM Configuration",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 150,
-        "y": 1980,
-        "wires": [
-            [
-                "56cafb11de5348b2"
-            ]
-        ]
-    },
-    {
-        "id": "cad1724850f8df3d",
-        "type": "ui_button",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "",
-        "group": "941fb260d6cfb5a2",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Backup TM Configuration",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 150,
-        "y": 1940,
-        "wires": [
-            [
-                "f2256e28de366878"
-            ]
-        ]
-    },
-    {
-        "id": "4a62f39107d10a25",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "set frigate config directory flow.frigateConfigDir",
-        "rules": [
-            {
-                "t": "set",
-                "p": "frigateConfigDir",
-                "pt": "flow",
-                "to": "$globalContext('deviceAttributes.homeDir', 'config') & \"/code/frigate/config\"",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 520,
-        "y": 1860,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "38fd03504247825b",
-        "type": "inject",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "name": "inject after 5 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "x": 150,
-        "y": 1860,
-        "wires": [
-            [
-                "4a62f39107d10a25"
-            ]
-        ]
-    },
-    {
-        "id": "f2256e28de366878",
-        "type": "file in",
-        "z": "05fcb02c571dcfee",
-        "g": "b781cb3d6df38fed",
-        "name": "read Frigate config file",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
-        "filenameType": "jsonata",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 640,
-        "y": 1940,
-        "wires": [
-            [
-                "f49c1d345cdfef57"
-            ]
-        ]
-    },
-    {
-        "id": "f49c1d345cdfef57",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "b781cb3d6df38fed",
-        "name": "set up backup payload for TB",
-        "rules": [
-            {
-                "t": "move",
-                "p": "payload",
-                "pt": "msg",
-                "to": "payload.frigate_config",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "payload.dateTime",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 700,
-        "y": 1980,
-        "wires": [
-            [
-                "7c96d66a8330a4fc"
-            ]
-        ]
-    },
-    {
-        "id": "56cafb11de5348b2",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "read config file from ThingsBoard",
-        "method": "GET",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "{{global.config.thingsboard.url}}/api/v1/{{global.config.access_token}}/attributes?clientKeys=backup",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 680,
-        "y": 2080,
-        "wires": [
-            [
-                "7555653f37b1cd50"
-            ]
-        ]
-    },
-    {
-        "id": "25515211bb8cecb4",
-        "type": "http request",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "validate Frigate config, save and restart",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "http://localhost:5000/api/config/save?save_option=restart",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "text/plain",
-                "valueValue": ""
-            }
-        ],
-        "x": 1140,
-        "y": 2120,
-        "wires": [
-            [
-                "64467a90df93e582"
-            ]
-        ]
-    },
-    {
-        "id": "64467a90df93e582",
-        "type": "switch",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "handle validation error",
-        "property": "statusCode",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "400",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1220,
-        "y": 2160,
-        "wires": [
-            [
-                "5b7fe362e2e6b35d"
-            ]
-        ]
-    },
-    {
-        "id": "7555653f37b1cd50",
-        "type": "json",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "",
-        "property": "payload",
-        "action": "",
-        "pretty": false,
-        "x": 890,
-        "y": 2080,
-        "wires": [
-            [
-                "0d394a2d73d138d6"
-            ]
-        ]
-    },
-    {
-        "id": "0d394a2d73d138d6",
-        "type": "function",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "extract frigate config portion for validation",
-        "func": "let newMsg = {};\n\n//put the backed up YAML config into a JSON object to send to validate\nnewMsg.payload = msg.payload.client.backup.frigate;\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1120,
-        "y": 2080,
-        "wires": [
-            [
-                "25515211bb8cecb4"
-            ]
-        ]
-    },
-    {
-        "id": "5b7fe362e2e6b35d",
-        "type": "ui_toast",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "Frigate Config Restore Validation Error",
-        "name": "show frigate validation error",
-        "x": 1240,
-        "y": 2200,
-        "wires": []
-    },
-    {
-        "id": "5743aab77af94bd2",
-        "type": "file",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "write backup config file before restore",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.bak.yml\"",
-        "filenameType": "jsonata",
-        "appendNewline": true,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 730,
-        "y": 2160,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "4979b291119bce23",
-        "type": "file in",
-        "z": "05fcb02c571dcfee",
-        "g": "a38a90c36a0abfc3",
-        "name": "read Frigate config file",
-        "filename": "$flowContext(\"frigateConfigDir\") & \"/config.yml\"",
-        "filenameType": "jsonata",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": false,
-        "x": 640,
-        "y": 2120,
-        "wires": [
-            [
-                "5743aab77af94bd2"
-            ]
-        ]
-    },
-    {
-        "id": "7c96d66a8330a4fc",
-        "type": "link out",
-        "z": "05fcb02c571dcfee",
-        "g": "b781cb3d6df38fed",
-        "name": "backup link out",
-        "mode": "link",
-        "links": [
-            "4af0d78e8bc39647"
-        ],
-        "x": 885,
-        "y": 1980,
-        "wires": []
-    },
-    {
-        "id": "fb62ca91f138ab87",
-        "type": "ui_template",
-        "z": "05fcb02c571dcfee",
-        "g": "23636f4163fa6e3b",
-        "group": "941fb260d6cfb5a2",
-        "name": "backup and restore instructions",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "format": "<p>Backup and Restore functionality allow you to save settings to ThingsBoard as client-side attributes for returning your traffic monitor to the saved configuration.</p>\n<p>Backup and Restore works for the following configs:</p>\n<ul>\n    <li>Frigate config.yml</li>\n</ul>\n<p>Only one (1) backup is valid at a time.</p>",
-        "storeOutMessages": true,
-        "fwdInMessages": false,
-        "resendOnRefresh": false,
-        "templateScope": "local",
-        "className": "",
-        "x": 170,
-        "y": 1900,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "11b875e91b3d32a6",
-        "type": "change",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "deviceAttributes.homeDir",
-                "pt": "global",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 600,
-        "y": 700,
-        "wires": [
-            [
-                "9b0aebdc599ea4cd"
-            ]
-        ]
-    },
-    {
-        "id": "9b0aebdc599ea4cd",
-        "type": "ui_text",
-        "z": "05fcb02c571dcfee",
-        "g": "dc2934def36c6285",
-        "group": "55acf8751a68ec74",
-        "order": 7,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "homeDir",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 840,
-        "y": 700,
-        "wires": []
-    },
-    {
-        "id": "9f2c4f1852402eb8",
-        "type": "inject",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "*/5 0-23 * * *",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "time_ms_utc",
-        "payload": "",
-        "payloadType": "date",
-        "x": 150,
-        "y": 120,
-        "wires": [
-            [
-                "040a9f02853598aa",
-                "8c8c487fbf8e11a1",
-                "ae7325dd07b1f3ba",
-                "7b406e86282cd677",
-                "674f21d2e645cc18",
-                "ab9d774782f92e88",
-                "720ee19c705f37d9",
-                "c0078fa5b3946c05",
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "040a9f02853598aa",
-        "type": "OS",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 270,
-        "y": 160,
-        "wires": [
-            [
-                "e1d39852db4af08c"
-            ]
-        ]
-    },
-    {
-        "id": "8c8c487fbf8e11a1",
-        "type": "Drives",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 270,
-        "y": 240,
-        "wires": [
-            [
-                "65e30edd475cad64"
-            ]
-        ]
-    },
-    {
-        "id": "e1d39852db4af08c",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "OS",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_OS",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 490,
-        "y": 160,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "65e30edd475cad64",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Drives",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_Drives",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 490,
-        "y": 240,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "c497cfedf6aed533",
-        "type": "join",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Compose Metrics Msg",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "",
-        "count": "9",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 870,
-        "y": 340,
-        "wires": [
-            [
-                "6dca925fad91c100",
-                "c5891e3e63052f03"
-            ]
-        ]
-    },
-    {
-        "id": "ae7325dd07b1f3ba",
-        "type": "Uptime",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 280,
-        "y": 300,
-        "wires": [
-            [
-                "398089ca4a10bdc5"
-            ]
-        ]
-    },
-    {
-        "id": "7b406e86282cd677",
-        "type": "CPUs",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 270,
-        "y": 360,
-        "wires": [
-            [
-                "882369d2082717a5"
-            ]
-        ]
-    },
-    {
-        "id": "674f21d2e645cc18",
-        "type": "Loadavg",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 280,
-        "y": 420,
-        "wires": [
-            [
-                "b6b8a1a7c08eb0ac"
-            ]
-        ]
-    },
-    {
-        "id": "ab9d774782f92e88",
-        "type": "Memory",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "scale": "Byte",
-        "x": 280,
-        "y": 480,
-        "wires": [
-            [
-                "976ec527b724bd3d"
-            ]
-        ]
-    },
-    {
-        "id": "720ee19c705f37d9",
-        "type": "NetworkIntf",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "x": 290,
-        "y": 540,
-        "wires": [
-            [
-                "6881f1dd8a4805af"
-            ]
-        ]
-    },
-    {
-        "id": "398089ca4a10bdc5",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Uptime",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_Uptime",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 490,
-        "y": 300,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "882369d2082717a5",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "CPUs",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_CPUx",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 490,
-        "y": 360,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "b6b8a1a7c08eb0ac",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Loadavg",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_Loadavg",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 500,
-        "y": 420,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "976ec527b724bd3d",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Memory",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_Memory",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 500,
-        "y": 480,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "6881f1dd8a4805af",
-        "type": "change",
-        "z": "f410f6aac9d1a3fc",
-        "name": "NetworkIntf",
-        "rules": [
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "metrics_NetworkIntf",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 510,
-        "y": 540,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "c0078fa5b3946c05",
-        "type": "exec",
-        "z": "f410f6aac9d1a3fc",
-        "command": "python3 ${TM_UTIL_PATH}/rpi5-nodered-telemetry.py",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "true",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "Hardware metrics",
-        "x": 310,
-        "y": 600,
-        "wires": [
-            [
-                "35a886e73a73f32e"
-            ],
-            [
-                "cc4ab72bfb50feca"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "35a886e73a73f32e",
-        "type": "function",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Hardware",
-        "func": "msg.payload = JSON.parse(msg.payload);\nmsg.topic = \"tm/system_metrics\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 600,
-        "wires": [
-            [
-                "c497cfedf6aed533"
-            ]
-        ]
-    },
-    {
-        "id": "6e88f30f09b49d22",
-        "type": "comment",
-        "z": "f410f6aac9d1a3fc",
-        "name": "OS and Hardware Metrics Documentation",
-        "info": "Send various operating system and hardware metrics to the ThingsBoard server as telemetry:\n - See [node-red-contrib-os](https://github.com/Argonne-National-Laboratory/node-red-contrib-os/blob/master/README.md) package for definition of operating system metrics\n - Most of the hardware metrics come from the [vcgencmd command line tool](https://elinux.org/RPI_vcgencmd_usage). Both that documenation and others that are available online seem to be out-of-date. See also [How to Benchmark a Raspberry Pi Using Vcgencmd](https://www.tomshardware.com/how-to/raspberry-pi-benchmark-vcgencmd).\n - hardware cpu_percent is obtained from [psutil](https://psutil.readthedocs.io/en/latest/).\n - hardware meminfo comes from 'cat /proc/meminfo'.",
-        "x": 940,
-        "y": 160,
-        "wires": []
-    },
-    {
-        "id": "cc4ab72bfb50feca",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "Errors that occurred while getting Hardware metrics",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 630,
-        "y": 640,
-        "wires": []
-    },
-    {
-        "id": "6dca925fad91c100",
-        "type": "link out",
-        "z": "f410f6aac9d1a3fc",
-        "name": "system_metrics link out",
-        "mode": "link",
-        "links": [
-            "24c1b5f3bff3834c"
-        ],
-        "x": 1085,
-        "y": 340,
-        "wires": []
-    },
-    {
-        "id": "36703c045ec3d26f",
-        "type": "catch",
-        "z": "f410f6aac9d1a3fc",
-        "name": "",
-        "scope": null,
-        "uncaught": false,
-        "x": 100,
-        "y": 40,
-        "wires": [
-            [
-                "f68bd35ce57e8af8"
-            ]
-        ]
-    },
-    {
-        "id": "f68bd35ce57e8af8",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "metrics flow error",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 350,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "c5891e3e63052f03",
-        "type": "debug",
-        "z": "f410f6aac9d1a3fc",
-        "name": "system_metrics output",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1160,
-        "y": 400,
         "wires": []
     }
 ]
