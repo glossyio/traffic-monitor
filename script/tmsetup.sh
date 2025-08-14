@@ -89,7 +89,7 @@ _install_ansible_remote() { # check and install python3-venv and setup venv
     pip3 install -r "${_script_dir}/requirements" || return 1
   else
     cat << EOF
-Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
+ERROR: Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
   For Debian based systems:       sudo apt update && sudo apt install python3-venv
   For RHEL/Fedora/CentOS systems: sudo dnf install python3-libs
   For Arch based systems:         sudo pacman -Sy python-virutalenv
