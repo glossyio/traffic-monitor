@@ -101,14 +101,6 @@ EOF
     exit 1
   fi
   return 0
-_install_ansible() { # check and install python3-venv and setup venv
-local _venvd=$1
-#dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
-while ! . "${_venvd}/bin/activate" ;do 
-  python3 -m venv "${_venvd}"  || return 1
-done
-pip3 install -r "${_SCRIPT_DIR}/requirements" || return 1
-return 0
 }
 
 _log_check() { # Check if Log Path exists and create if not or exit
@@ -168,7 +160,11 @@ _print_result(){
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
+  _install_ansible_local "${VENV_DIR}" "${_SCRIPT_DIR}"
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
+  . "${VENV_DIR}/bin/activate"
+  cd "${_SCRIPT_DIR}/ansible"
   [[ "${_APT_UPGRADE}" == "true" ]] && ( _apt_upgrade || return 1 )
   printf "\n\n"
   _pline
@@ -199,6 +195,10 @@ _tmsetup_remote(){ # Installation on Remote hosts
   local _rhosts=$1
   printf "This will install the traffic monitor software on these devices:\n\t%s\n" "${_rhosts}"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
+  _install_ansible_remote "${VENV_DIR}" "${_SCRIPT_DIR}"
+  . "${VENV_DIR}/bin/activate"
+  cd "${_SCRIPT_DIR}/ansible"
   _set_tmp_ansible_inv "${_rhosts}" "${TMP_INVENTORY_PATH}"
   [[ "${_APT_UPGRADE}" == "true" ]] && _add_var tmsetup_perform_apt_upgrade true
   printf "\n\n"
@@ -302,11 +302,6 @@ _log_check "${_LOGFILE}"
 # Log all further output to logfile
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
-
-[[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
-_install_ansible "${VENV_DIR}"
-. "${VENV_DIR}/bin/activate"
-cd "${_SCRIPT_DIR}/ansible"
 
 if [ "${_FORCE}" = true ]
 then
