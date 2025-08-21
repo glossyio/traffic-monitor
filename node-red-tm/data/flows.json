@@ -72,16 +72,16 @@
             "label": true
         },
         "nodes": [
-            "404ac097795a2da0",
             "b65e1877b1e04881",
             "5f3716d2176c3ab4",
             "bdb4b259d648b1f0",
-            "ec7a0e0b1c62e91d"
+            "ec7a0e0b1c62e91d",
+            "872601ee6be93e1a"
         ],
-        "x": 14,
+        "x": 334,
         "y": 559,
-        "w": 1172,
-        "h": 122
+        "w": 852,
+        "h": 162
     },
     {
         "id": "5aac1262472b0205",
@@ -94,12 +94,11 @@
         "nodes": [
             "08d030ffc3fe6adb",
             "b241a0ef89fd7ce4",
-            "91d3f8965f62f4b0",
             "eb140f61419c6a08"
         ],
-        "x": 14,
+        "x": 394,
         "y": 419,
-        "w": 1092,
+        "w": 712,
         "h": 122
     },
     {
@@ -111,16 +110,16 @@
             "label": true
         },
         "nodes": [
-            "3985037239b671c5",
             "02469f2425072f7b",
             "928b71f25ce6e7b6",
             "c03516d1eb65598d",
-            "4f84bcb60e4be762"
+            "4f84bcb60e4be762",
+            "4c66b12f99b8cb1b"
         ],
-        "x": 14,
+        "x": 334,
         "y": 699,
-        "w": 1212,
-        "h": 122
+        "w": 902,
+        "h": 162
     },
     {
         "id": "76417db2b472ef4f",
@@ -131,7 +130,6 @@
             "label": true
         },
         "nodes": [
-            "15797ab24727f84d",
             "0e1614cf2e5f9942",
             "7cc031e5a7d773a4",
             "79900a566af02159",
@@ -140,9 +138,9 @@
             "cbb3b02ca505a55b",
             "7db4b197df9eb075"
         ],
-        "x": 14,
+        "x": 308,
         "y": 839,
-        "w": 1372,
+        "w": 1078,
         "h": 348
     },
     {
@@ -154,16 +152,16 @@
             "label": true
         },
         "nodes": [
-            "c90aed37b7a31d9e",
             "5417aae0d14fa661",
             "584504e6c8935eaf",
             "9cf49f0891d25df1",
-            "6d81c8e3c89b68f6"
+            "6d81c8e3c89b68f6",
+            "c124347dafdc25f3"
         ],
-        "x": 14,
+        "x": 354,
         "y": 1199,
-        "w": 1292,
-        "h": 122
+        "w": 952,
+        "h": 162
     },
     {
         "id": "0a5faeac9fbd6d55",
@@ -746,9 +744,9 @@
             "c1adf5e2bd669713",
             "c13f03809fbd9809"
         ],
-        "x": 14,
+        "x": 24,
         "y": 1999,
-        "w": 1278,
+        "w": 1268,
         "h": 408
     },
     {
@@ -768,7 +766,7 @@
         "x": 94,
         "y": 1353,
         "w": 1398,
-        "h": 634
+        "h": 674
     },
     {
         "id": "23636f4163fa6e3b",
@@ -922,7 +920,8 @@
             "4c087723a1d698e9",
             "0f65ceafe3f7c069",
             "f5d2d92d50d18ce2",
-            "c2270f3050bf35ab"
+            "c2270f3050bf35ab",
+            "3ac45430055698aa"
         ],
         "x": 194,
         "y": 1379,
@@ -947,12 +946,13 @@
             "170ddffb726db9e0",
             "befe91e6862c72db",
             "13a061996f9322f3",
-            "98571c77b9801a83"
+            "98571c77b9801a83",
+            "42a095ee9445e33b"
         ],
         "x": 194,
         "y": 1759,
         "w": 1272,
-        "h": 202
+        "h": 242
     },
     {
         "id": "b334a2375eb8cb42",
@@ -1262,9 +1262,9 @@
             "76e813b1b7a4b63e",
             "5cf61952cb6823de"
         ],
-        "x": 394,
+        "x": 384,
         "y": 2259,
-        "w": 872,
+        "w": 882,
         "h": 122
     },
     {
@@ -8040,36 +8040,6 @@
         "wires": []
     },
     {
-        "id": "3985037239b671c5",
-        "type": "inject",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "trigger Event query every 60-min",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "3600",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "2",
-        "topic": "query",
-        "payload": "",
-        "payloadType": "date",
-        "x": 200,
-        "y": 740,
-        "wires": [
-            [
-                "928b71f25ce6e7b6"
-            ]
-        ]
-    },
-    {
         "id": "08d030ffc3fe6adb",
         "type": "ui_chart",
         "z": "28627559bebdc324",
@@ -8141,26 +8111,6 @@
         "info": "`{\"camera\":\"picam_gs_h264\",\n\"count\":83,\"day\":\"2024-03-21\",\n\"label\":\"bicycle\",\n\"sub_label\":null,\n\"zones\":[]}`"
     },
     {
-        "id": "91d3f8965f62f4b0",
-        "type": "inject",
-        "z": "28627559bebdc324",
-        "g": "5aac1262472b0205",
-        "name": "trigger summary Event query every 2-hours",
-        "props": [],
-        "repeat": "7200",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "x": 230,
-        "y": 460,
-        "wires": [
-            [
-                "b241a0ef89fd7ce4"
-            ]
-        ]
-    },
-    {
         "id": "eb140f61419c6a08",
         "type": "function",
         "z": "28627559bebdc324",
@@ -8178,36 +8128,6 @@
         "wires": [
             [
                 "08d030ffc3fe6adb"
-            ]
-        ]
-    },
-    {
-        "id": "404ac097795a2da0",
-        "type": "inject",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "trigger Event query every 2-hours",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "7200",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "query",
-        "payload": "",
-        "payloadType": "date",
-        "x": 200,
-        "y": 600,
-        "wires": [
-            [
-                "5f3716d2176c3ab4"
             ]
         ]
     },
@@ -8253,7 +8173,9 @@
         "x": 1030,
         "y": 640,
         "wires": [
-            []
+            [
+                "872601ee6be93e1a"
+            ]
         ]
     },
     {
@@ -8269,7 +8191,13 @@
         "y": 1420,
         "wires": [
             [
-                "ca3c18fa88ded42a"
+                "ca3c18fa88ded42a",
+                "584504e6c8935eaf",
+                "158e6edae533bfdc",
+                "79900a566af02159",
+                "928b71f25ce6e7b6",
+                "5f3716d2176c3ab4",
+                "b241a0ef89fd7ce4"
             ]
         ]
     },
@@ -8352,7 +8280,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "store last N radar events",
-        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 5;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
+        "func": "//events_recent_radar should show the last N events where payload.entered_zones CONTAINS zone_radar\n\nvar myEvents = flow.get(\"events_recent_radar\") || [];\n//Keep only last X elements\nvar myArrLength = 21;\n\n//invert array so OLDEST IS FIRST, for functions\nmyEvents.reverse();\n\nif (myEvents.length >= myArrLength) {\n    //remove first element (oldest event)\n    myEvents.shift();\n}\n\n//add current event to end of array\nmyEvents.push(msg.payload);\n\n\n//invert array so NEWEST IS FIRST, for display\nmyEvents.reverse();\n\nflow.set(\"events_recent_radar\", myEvents);\n\nmsg.payload = myEvents;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -8410,7 +8338,9 @@
         "x": 1270,
         "y": 1580,
         "wires": [
-            []
+            [
+                "3ac45430055698aa"
+            ]
         ]
     },
     {
@@ -8505,37 +8435,8 @@
         "x": 1040,
         "y": 780,
         "wires": [
-            []
-        ]
-    },
-    {
-        "id": "15797ab24727f84d",
-        "type": "inject",
-        "z": "28627559bebdc324",
-        "g": "76417db2b472ef4f",
-        "name": "trigger Event query every 5-min",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1",
-        "topic": "query",
-        "payload": "",
-        "payloadType": "date",
-        "x": 200,
-        "y": 880,
-        "wires": [
             [
-                "158e6edae533bfdc",
-                "79900a566af02159"
+                "4c66b12f99b8cb1b"
             ]
         ]
     },
@@ -8710,7 +8611,7 @@
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
         "x": 1360,
-        "y": 1920,
+        "y": 1960,
         "wires": []
     },
     {
@@ -8736,36 +8637,6 @@
         ]
     },
     {
-        "id": "c90aed37b7a31d9e",
-        "type": "inject",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "trigger Event query every 5-min",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "1",
-        "topic": "query",
-        "payload": "",
-        "payloadType": "date",
-        "x": 200,
-        "y": 1240,
-        "wires": [
-            [
-                "584504e6c8935eaf"
-            ]
-        ]
-    },
-    {
         "id": "5417aae0d14fa661",
         "type": "ui_template",
         "z": "28627559bebdc324",
@@ -8784,7 +8655,9 @@
         "x": 1130,
         "y": 1280,
         "wires": [
-            []
+            [
+                "c124347dafdc25f3"
+            ]
         ]
     },
     {
@@ -8982,7 +8855,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "query events, daily summary last 10 days in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch') as day,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 10))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch', 'localtime') as day,\n    label,\n    camera,\n    COUNT(*) as count,\n    trunc((unixepoch('now') / 86400)) - trunc(frame_time / 86400) as difference,\n    frame_time\nFROM\n    events\nWHERE\n    difference < 9\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9020,7 +8893,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "structure daily summary payload",
-        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.day);\n        thisDataPoint.y = myItem.count;\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "func": "//https://github.com/node-red/node-red-dashboard/blob/master/Charts.md\n//Array of Object with keys of series, data=x:ts,y:count, labels\n\nvar newMsg = [{}];\nnewMsg[0].series = [];\nnewMsg[0].data = [];\nnewMsg[0].label = [];\n\nmsg.payload.forEach((myItem) => {\n\n    //if label doesn't exist, push it\n    if (newMsg[0].series.indexOf(myItem.label) < 0) {\n        newMsg[0].series.push(myItem.label);\n        //create new data array element that matches the series index\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)] = [];\n    }\n\n    //Check if it's a new date or existing in data[0][0].x\n    //datapoint for date \n    let xIndex = newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].findIndex((element) => element.x == String(new Date(myItem.day)));\n    if (xIndex < 0) {\n        //new date\n        let thisDataPoint = {};\n        thisDataPoint.x = new Date(myItem.day);\n        thisDataPoint.y = myItem.count;\n        thisDataPoint.day = new Date(myItem.frame_time * 1000).toLocaleDateString('en-us', {\n            weekday: \"short\", day: \"numeric\", month: \"short\" });\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)].push(thisDataPoint);\n    }\n    else {\n        //date exists, sum counts\n        newMsg[0].data[newMsg[0].series.indexOf(myItem.label)][xIndex].y += myItem.count;\n    }\n\n});\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9040,8 +8913,8 @@
         "type": "function",
         "z": "28627559bebdc324",
         "g": "5173f4b3ac03407a",
-        "name": "query events, 1-h counts last 24-h in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000Z', frame_time, 'unixepoch') as hour,\n    label,\n    camera,\n    COUNT(*) as count\nFROM\n    events\nWHERE\n    frame_time > (unixepoch('now') - (86400 * 1))\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "name": "query events, 1-h counts last 36-h in zone_capture",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    strftime('%FT%H:00:00.000', frame_time, 'unixepoch', 'localtime') as hour,\n    label,\n    camera,\n    COUNT(*) as count,\n    trunc((unixepoch('now') / 3600)) - trunc(frame_time / 3600) as difference\nFROM\n    events\nWHERE\n    difference < 36\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, strftime('%F %H', frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, hour, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9188,7 +9061,8 @@
         "wires": [
             [
                 "13a061996f9322f3",
-                "98571c77b9801a83"
+                "98571c77b9801a83",
+                "42a095ee9445e33b"
             ]
         ]
     },
@@ -9226,8 +9100,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1240,
-        "y": 1880,
+        "x": 1250,
+        "y": 1920,
         "wires": [
             [
                 "d856c68660eb2202"
@@ -11597,7 +11471,7 @@
         "type": "link in",
         "z": "239d7b3ba410ad5e",
         "g": "541d31d14bcd8b00",
-        "name": "dashboard - comment link out",
+        "name": "create comment",
         "links": [
             "cf47ae54ebd02d2f"
         ],
@@ -12636,6 +12510,1100 @@
             ],
             [
                 "221f3cd2d450519f"
+            ]
+        ]
+    },
+    {
+        "id": "0fa19dea799cc41d",
+        "type": "tab",
+        "label": "Dashboard 2 - Monitoring",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "30d5f95b51a19a92",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "61ce02565677e825",
+            "c0e4e6adcc7a5782",
+            "d30d84986a8c41bc"
+        ],
+        "x": 134,
+        "y": 373,
+        "w": 632,
+        "h": 148
+    },
+    {
+        "id": "9a78c94293803e49",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "0a16f2a32973e96e",
+            "b4c9b122afb34876",
+            "cac9b4933417e60c",
+            "463d933f207505c2"
+        ],
+        "x": 134,
+        "y": 999,
+        "w": 872,
+        "h": 142
+    },
+    {
+        "id": "793988735b710932",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "7500f6780dee6eb1",
+            "4d6e3b9832beb86d",
+            "b73ab00e77148f62",
+            "4ac7575557241d3e"
+        ],
+        "x": 134,
+        "y": 839,
+        "w": 912,
+        "h": 142
+    },
+    {
+        "id": "ace8ea830f3a6877",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ca26a14eb3961c1f",
+            "52c59e6d6d990e41",
+            "b641d9844dc739cd",
+            "fa5d96e6ffb70fcf"
+        ],
+        "x": 134,
+        "y": 679,
+        "w": 912,
+        "h": 142
+    },
+    {
+        "id": "dc5a88bd7605f321",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "d077a9d3b85203c0",
+            "8c5ad4dc749b0552",
+            "7d45f3dde88536d9",
+            "ae4b925039bf6e52"
+        ],
+        "x": 134,
+        "y": 539,
+        "w": 972,
+        "h": 122
+    },
+    {
+        "id": "89279ffabac66b61",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "name": "Camera & Radar Selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "22bc03eebc06aa57",
+            "2e49ae46131b1b63",
+            "f3ebd7067c32beb0",
+            "eb7053718706968b",
+            "3132d36d148e80d2",
+            "95215b45c821d24a",
+            "fe681b9c50c9c5e2"
+        ],
+        "x": 134,
+        "y": 199,
+        "w": 1212,
+        "h": 142
+    },
+    {
+        "id": "37da1871896b31d3",
+        "type": "ui-page",
+        "name": "Monitoring",
+        "ui": "2a8899583532edb4",
+        "path": "/monitoring",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "608443aad6f1050e",
+        "type": "ui-group",
+        "name": "Monitoring",
+        "page": "37da1871896b31d3",
+        "width": "12",
+        "height": "15",
+        "order": 3,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "9d8bfd7e0d216779",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#15617e",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "316f38770e41a119",
+        "type": "ui-group",
+        "name": "Selection Section",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": "5",
+        "order": 1,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "c5b3bbdd72468bc1",
+        "type": "ui-group",
+        "name": "Monitoring Section on Top-Right",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": 1,
+        "order": 2,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "872601ee6be93e1a",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "events daily object count for the last 10-days",
+        "mode": "link",
+        "links": [
+            "4d6e3b9832beb86d"
+        ],
+        "x": 1135,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "4c66b12f99b8cb1b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "events by object (60-min) for last 36 hours",
+        "mode": "link",
+        "links": [
+            "52c59e6d6d990e41"
+        ],
+        "x": 1165,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "c124347dafdc25f3",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "Car Counts and Speeds, since Midnight",
+        "mode": "link",
+        "links": [
+            "61ce02565677e825"
+        ],
+        "x": 1225,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "3ac45430055698aa",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "Latest Observations",
+        "mode": "link",
+        "links": [
+            "b4c9b122afb34876"
+        ],
+        "x": 1335,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "42a095ee9445e33b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "cumulative events by object type since midnight",
+        "mode": "link",
+        "links": [
+            "8c5ad4dc749b0552"
+        ],
+        "x": 1185,
+        "y": 1880,
+        "wires": []
+    },
+    {
+        "id": "37424f8064a95296",
+        "type": "link in",
+        "z": "28627559bebdc324",
+        "name": "sensor selections",
+        "links": [
+            "eb7053718706968b"
+        ],
+        "x": 35,
+        "y": 360,
+        "wires": [
+            [
+                "a20d5f859bf5c14d"
+            ]
+        ]
+    },
+    {
+        "id": "3c7e6d7cf17e8ddc",
+        "type": "catch",
+        "z": "0fa19dea799cc41d",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 170,
+        "y": 40,
+        "wires": [
+            [
+                "9a6c9507f7b016ee"
+            ]
+        ]
+    },
+    {
+        "id": "9a6c9507f7b016ee",
+        "type": "debug",
+        "z": "0fa19dea799cc41d",
+        "name": "catch: all - dashboard 2 monitoring",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "61ce02565677e825",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "30d5f95b51a19a92",
+        "name": "dashboard-2-car-counts",
+        "links": [
+            "c124347dafdc25f3"
+        ],
+        "x": 185,
+        "y": 480,
+        "wires": [
+            [
+                "c0e4e6adcc7a5782"
+            ]
+        ]
+    },
+    {
+        "id": "8c5ad4dc749b0552",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "dc5a88bd7605f321",
+        "name": "dashboard-2 cumulative observations by type since midnight",
+        "links": [
+            "42a095ee9445e33b"
+        ],
+        "x": 185,
+        "y": 620,
+        "wires": [
+            [
+                "ae4b925039bf6e52"
+            ]
+        ]
+    },
+    {
+        "id": "36c8938384843a46",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "name": "Dashboard-2 version of Monitoring page",
+        "info": "",
+        "x": 280,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "d30d84986a8c41bc",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "30d5f95b51a19a92",
+        "name": "Today's Car Counts and Speeds, since 0400",
+        "info": "",
+        "x": 330,
+        "y": 414,
+        "wires": []
+    },
+    {
+        "id": "7d45f3dde88536d9",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "dc5a88bd7605f321",
+        "name": "Cumulative Observations by Type since Midnight",
+        "info": "",
+        "x": 340,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "ca26a14eb3961c1f",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "Observations by Type for Each Hour for the Last 36 Hours",
+        "info": "",
+        "x": 370,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "52c59e6d6d990e41",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "dashboard-2 Observations by Type for Each Hour for the Last 36 Hours",
+        "links": [
+            "4c66b12f99b8cb1b"
+        ],
+        "x": 185,
+        "y": 780,
+        "wires": [
+            [
+                "fa5d96e6ffb70fcf"
+            ]
+        ]
+    },
+    {
+        "id": "fa5d96e6ffb70fcf",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "format data for chart",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 780,
+        "wires": [
+            [
+                "b641d9844dc739cd"
+            ]
+        ]
+    },
+    {
+        "id": "7500f6780dee6eb1",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "793988735b710932",
+        "name": "format data for chart",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\nreturn {payload: results};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 940,
+        "wires": [
+            [
+                "b73ab00e77148f62"
+            ]
+        ]
+    },
+    {
+        "id": "4d6e3b9832beb86d",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "793988735b710932",
+        "name": "dashboard-2 Observations by Type for Each Day for the Last 10 Days",
+        "links": [
+            "872601ee6be93e1a"
+        ],
+        "x": 185,
+        "y": 940,
+        "wires": [
+            [
+                "7500f6780dee6eb1"
+            ]
+        ]
+    },
+    {
+        "id": "4ac7575557241d3e",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "793988735b710932",
+        "name": "Observations by Type for Each Day for the Last 10 Days",
+        "info": "",
+        "x": 360,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "0a16f2a32973e96e",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "9a78c94293803e49",
+        "name": "dashboard-2 Latest Observations",
+        "info": "",
+        "x": 290,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "b4c9b122afb34876",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "9a78c94293803e49",
+        "name": "dashboard-2 Latest Observations",
+        "links": [
+            "3ac45430055698aa"
+        ],
+        "x": 195,
+        "y": 1100,
+        "wires": [
+            [
+                "cac9b4933417e60c"
+            ]
+        ]
+    },
+    {
+        "id": "cac9b4933417e60c",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "9a78c94293803e49",
+        "name": "format images and data for display",
+        "func": "const payload = [];\nmsg.payload.forEach((item) => {\n    const img = \"data:image/jpg;base64, \" + item.thumbnail_base64jpg;\n    const {thumbnail_base64jpg: _, ...details} = item; // copy all fields except image\n    payload.push({img, details});\n})\nmsg.payload = payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 1100,
+        "wires": [
+            [
+                "463d933f207505c2"
+            ]
+        ]
+    },
+    {
+        "id": "d077a9d3b85203c0",
+        "type": "ui-chart",
+        "z": "0fa19dea799cc41d",
+        "g": "dc5a88bd7605f321",
+        "group": "c5b3bbdd72468bc1",
+        "name": "Cumulative Observations by Type since Midnight",
+        "label": "Cumulative Observations by Type since Midnight",
+        "order": 1,
+        "chartType": "bar",
+        "category": "",
+        "categoryType": "none",
+        "xAxisLabel": "",
+        "xAxisProperty": "label",
+        "xAxisPropertyType": "property",
+        "xAxisType": "category",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "Count",
+        "yAxisProperty": "count",
+        "yAxisPropertyType": "property",
+        "ymin": "",
+        "ymax": "",
+        "bins": 10,
+        "action": "replace",
+        "stackSeries": false,
+        "pointShape": "circle",
+        "pointRadius": 4,
+        "showLegend": false,
+        "removeOlder": 1,
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#000000"
+        ],
+        "textColorDefault": false,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": "6",
+        "height": "5",
+        "className": "section-border",
+        "interpolation": "linear",
+        "x": 890,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b641d9844dc739cd",
+        "type": "ui-chart",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "group": "608443aad6f1050e",
+        "name": "Observations by Type for Each Hour for the Last 36 Hours",
+        "label": "Observations by Type for Each Hour for the Last 36 Hours",
+        "order": 1,
+        "chartType": "bar",
+        "category": "type",
+        "categoryType": "property",
+        "xAxisLabel": "Hour",
+        "xAxisProperty": "hour",
+        "xAxisPropertyType": "property",
+        "xAxisType": "category",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "Count",
+        "yAxisProperty": "count",
+        "yAxisPropertyType": "property",
+        "ymin": "",
+        "ymax": "",
+        "bins": 10,
+        "action": "replace",
+        "stackSeries": true,
+        "pointShape": "circle",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": 1,
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#080808"
+        ],
+        "textColorDefault": false,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": "5",
+        "className": "section-border section-title",
+        "interpolation": "linear",
+        "x": 810,
+        "y": 780,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b73ab00e77148f62",
+        "type": "ui-chart",
+        "z": "0fa19dea799cc41d",
+        "g": "793988735b710932",
+        "group": "608443aad6f1050e",
+        "name": "Observations by Type for Each Day for the Last 10 Days",
+        "label": "Observations by Type for Each Day for the Last 10 Days",
+        "order": 2,
+        "chartType": "bar",
+        "category": "type",
+        "categoryType": "property",
+        "xAxisLabel": "Day",
+        "xAxisProperty": "day",
+        "xAxisPropertyType": "property",
+        "xAxisType": "category",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "Count",
+        "yAxisProperty": "count",
+        "yAxisPropertyType": "property",
+        "ymin": "",
+        "ymax": "",
+        "bins": 10,
+        "action": "replace",
+        "stackSeries": true,
+        "pointShape": "circle",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": 1,
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#080808"
+        ],
+        "textColorDefault": false,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": "5",
+        "className": "section-border section-title",
+        "interpolation": "linear",
+        "x": 810,
+        "y": 940,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c0e4e6adcc7a5782",
+        "type": "ui-template",
+        "z": "0fa19dea799cc41d",
+        "g": "30d5f95b51a19a92",
+        "group": "316f38770e41a119",
+        "page": "",
+        "ui": "",
+        "name": "Today's Car Counts and Speeds, since 0400",
+        "order": 2,
+        "width": "3",
+        "height": "5",
+        "head": "",
+        "format": "<p class=\"section-title\">Today's Car Counts and Speeds, since 0400</p>\n<table class=\"table\" style=\"margin-left:30%;margin-right:30%\">\n    <tr v-for=\"payload in msg.payload\">\n        <td>{{Object.keys(payload)[0]}}</td>\n        <td>{{Object.values(payload)[0]}}</td>\n    </tr>\n</table>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "section-border",
+        "x": 570,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "eea887327a18a5c7",
+        "type": "ui-template",
+        "z": "0fa19dea799cc41d",
+        "group": "",
+        "page": "",
+        "ui": "2a8899583532edb4",
+        "name": "CSS  (All Pages)",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": ".section-title {\n    font-weight: bold;\n    text-align: center;\n    font-size: larger;\n}\n\n.section-border {\n    border-style: solid;\n}",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "site:style",
+        "className": "",
+        "x": 200,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "463d933f207505c2",
+        "type": "ui-template",
+        "z": "0fa19dea799cc41d",
+        "g": "9a78c94293803e49",
+        "group": "608443aad6f1050e",
+        "page": "",
+        "ui": "",
+        "name": "Latest Observations (updated as they happen)",
+        "order": 3,
+        "width": "0",
+        "height": "0",
+        "head": "",
+        "format": "<template>\n    <div>\n        <p class=\"section-title\">Latest Observations</p>\n    </div>\n    <div class=\"container\">\n        <div v-for=\"item in msg.payload\" :key=\"item.details.id\" class=\"item\">\n            <v-img\n                height=\"2in\"\n                position=\"10px\"\n                :src=\"item.img\">\n            </v-img>\n            <table style=\"position:relative;left:10px;right:10px;\">\n                <tbody>\n                    <tr><td class=\"tbl-caption\">id:</td><td class=\"tbl-value\">{{item.details.id}}</td></tr>\n                    <tr><td class=\"tbl-caption\">type:</td><td class=\"tbl-value\">{{item.details.label}}</td></tr>\n                    <tr><td class=\"tbl-caption\">time:</td><td class=\"tbl-value\">{{item.details.frame_time_datestring}}</td></tr>\n                    <tr><td class=\"tbl-caption\">direction:</td><td class=\"tbl-value\">{{item.details.direction_calc}}</td></tr>\n                    <tr><td class=\"tbl-caption\">speed:</td><td class=\"tbl-value\">{{item.details.speed_calc}}</td></tr>\n                </tbody>\n            </table>\n        </div>\n    </div>\n</template>\n\n<style scoped>\n    .container {\n        /* Styling for the whole image area */\n        display: flex; /* Use flexbox to arrange items horizontally */\n        flex-wrap: wrap; /* Make items from wrap to the next line */\n        overflow-x: auto; /* Enable horizontal scrolling if necessary */\n    }\n\n    .item {\n        /* Styling for each item */\n        max-width: 2.5in;\n        min-width: 2.5in; /* Ensure items don't collapse if content is small */\n    }\n\n    .tbl-caption {\n         width: 25%;\n    }\n    \n    .tbl-value {\n        width: 75%;\n        word-wrap: break-word;\n    }\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "section-border",
+        "x": 800,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ae4b925039bf6e52",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "dc5a88bd7605f321",
+        "name": "reorder types to get consistent colors",
+        "func": "// reorder types to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nconst results = [];\nfor (const type of types) {\n     const entry = msg.payload.find(entry => entry.label === type);\n     if (entry !== undefined) {\n          const count = entry.count;\n          const result = {label: type, count};\n          results.push(result);\n     }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const entry of msg.payload) {\n     const type = types.find(type => type == entry.label);\n     if (type == undefined) {\n          const count = entry.count;\n          const label = entry.label;\n          const result = {label, count};\n          results.push(result);\n     }\n}\nmsg.payload = results;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 620,
+        "wires": [
+            [
+                "d077a9d3b85203c0"
+            ]
+        ]
+    },
+    {
+        "id": "22bc03eebc06aa57",
+        "type": "inject",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "trigger: sensor selections, after 5-secs",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 330,
+        "y": 240,
+        "wires": [
+            [
+                "2e49ae46131b1b63"
+            ]
+        ]
+    },
+    {
+        "id": "2e49ae46131b1b63",
+        "type": "change",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "set cameras, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "ui_update.options",
+                "pt": "msg",
+                "to": "[\t   $keys(\t       $globalContext(\"config.sensors.cameras\")\t)\t]",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 650,
+        "y": 240,
+        "wires": [
+            [
+                "f3ebd7067c32beb0",
+                "3132d36d148e80d2"
+            ]
+        ]
+    },
+    {
+        "id": "f3ebd7067c32beb0",
+        "type": "change",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "set radars, default to camera_radar",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "ui_update.options",
+                "pt": "msg",
+                "to": "[$keys($globalContext(\"config.sensors.radars\"))]",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 300,
+        "wires": [
+            [
+                "95215b45c821d24a"
+            ]
+        ]
+    },
+    {
+        "id": "eb7053718706968b",
+        "type": "link out",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "sensor selections",
+        "mode": "link",
+        "links": [
+            "37424f8064a95296"
+        ],
+        "x": 1305,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "3132d36d148e80d2",
+        "type": "ui-dropdown",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "group": "316f38770e41a119",
+        "name": "Select Camera",
+        "label": "Select Camera:",
+        "tooltip": "",
+        "order": 3,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": true,
+        "msgTrigger": "onChange",
+        "x": 920,
+        "y": 240,
+        "wires": [
+            [
+                "5442ec8b3a493c72"
+            ]
+        ]
+    },
+    {
+        "id": "95215b45c821d24a",
+        "type": "ui-dropdown",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "group": "316f38770e41a119",
+        "name": "Select Radar",
+        "label": "Select Radar:",
+        "tooltip": "",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": true,
+        "msgTrigger": "onChange",
+        "x": 910,
+        "y": 300,
+        "wires": [
+            [
+                "fe681b9c50c9c5e2"
+            ]
+        ]
+    },
+    {
+        "id": "5442ec8b3a493c72",
+        "type": "change",
+        "z": "0fa19dea799cc41d",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "camera_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1130,
+        "y": 240,
+        "wires": [
+            [
+                "eb7053718706968b"
+            ]
+        ]
+    },
+    {
+        "id": "fe681b9c50c9c5e2",
+        "type": "change",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "radar_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1150,
+        "y": 300,
+        "wires": [
+            [
+                "eb7053718706968b"
             ]
         ]
     }
