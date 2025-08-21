@@ -45,7 +45,7 @@ printf "  %-20s%s\n" \
   "-o USER" "Set the OWNER of traffic-monitor files and processes (default tmadmin)" \
   "-t TAG" "TAG the ansible-playbook command to only run a subset of plays" \
   "-T" "Get a list of available tags and exit" \
-  "-u" "Perform system UPGRADE (apt full-upgrad) as part of installation" \
+  "-u" "Perform system UPGRADE (apt full-upgrade) as part of installation" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
@@ -71,14 +71,36 @@ _apt_upgrade(){ # perform full upgrade on local installs
   return 0
 }
 
-_install_ansible() { # check and install python3-venv and setup venv
-local _venvd=$1
-#dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
-while ! . "${_venvd}/bin/activate" ;do 
-  python3 -m venv "${_venvd}"  || return 1
-done
-pip3 install -r "${_SCRIPT_DIR}/requirements" || return 1
-return 0
+_install_ansible_local() { # check and install python3-venv and setup venv
+  local _venvd=$1
+  local _script_dir=$2
+  dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
+  while ! . "${_venvd}/bin/activate" ;do 
+    python3 -m venv "${_venvd}"  || return 1
+  done
+  pip3 install -r "${_script_dir}/requirements" || return 1
+  return 0
+}
+
+_install_ansible_remote() { # check and install python3-venv and setup venv
+  local _venvd=$1
+  local _script_dir=$2
+  if python3 -m venv ${_venvd} ; then
+    pip3 install -r "${_script_dir}/requirements" || return 1
+  else
+    cat << EOF
+ERROR: Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
+  For Debian based systems:       sudo apt update && sudo apt install python3-venv
+  For RHEL/Fedora/CentOS systems: sudo dnf install python3-libs
+  For Arch based systems:         sudo pacman -Sy python-virutalenv
+  for MacOS X:                    python3 -m pip install --user virtualenv
+  For Windows:                    python3 -m pip install --user virtualenv
+To install python you an follow the appropriate instructions for your operating system from:
+  https://www.python.org/
+EOF
+    exit 1
+  fi
+  return 0
 }
 
 _log_check() { # Check if Log Path exists and create if not or exit
@@ -138,7 +160,11 @@ _print_result(){
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
+  _install_ansible_local "${VENV_DIR}" "${_SCRIPT_DIR}"
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
+  . "${VENV_DIR}/bin/activate"
+  cd "${_SCRIPT_DIR}/ansible"
   [[ "${_APT_UPGRADE}" == "true" ]] && ( _apt_upgrade || return 1 )
   printf "\n\n"
   _pline
@@ -169,6 +195,10 @@ _tmsetup_remote(){ # Installation on Remote hosts
   local _rhosts=$1
   printf "This will install the traffic monitor software on these devices:\n\t%s\n" "${_rhosts}"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
+  _install_ansible_remote "${VENV_DIR}" "${_SCRIPT_DIR}"
+  . "${VENV_DIR}/bin/activate"
+  cd "${_SCRIPT_DIR}/ansible"
   _set_tmp_ansible_inv "${_rhosts}" "${TMP_INVENTORY_PATH}"
   [[ "${_APT_UPGRADE}" == "true" ]] && _add_var tmsetup_perform_apt_upgrade true
   printf "\n\n"
@@ -272,11 +302,6 @@ _log_check "${_LOGFILE}"
 # Log all further output to logfile
 exec > >(tee -i "${_LOGFILE}")
 exec 2>&1
-
-[[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
-_install_ansible "${VENV_DIR}"
-. "${VENV_DIR}/bin/activate"
-cd "${_SCRIPT_DIR}/ansible"
 
 if [ "${_FORCE}" = true ]
 then
