@@ -119,7 +119,7 @@
         ],
         "x": 14,
         "y": 699,
-        "w": 1212,
+        "w": 1222,
         "h": 122
     },
     {
@@ -140,9 +140,9 @@
             "cbb3b02ca505a55b",
             "7db4b197df9eb075"
         ],
-        "x": 14,
+        "x": 24,
         "y": 839,
-        "w": 1372,
+        "w": 1362,
         "h": 348
     },
     {
@@ -160,9 +160,9 @@
             "9cf49f0891d25df1",
             "6d81c8e3c89b68f6"
         ],
-        "x": 14,
+        "x": 24,
         "y": 1199,
-        "w": 1292,
+        "w": 1282,
         "h": 122
     },
     {
@@ -746,9 +746,9 @@
             "c1adf5e2bd669713",
             "c13f03809fbd9809"
         ],
-        "x": 14,
+        "x": 24,
         "y": 1999,
-        "w": 1278,
+        "w": 1268,
         "h": 408
     },
     {
@@ -899,6 +899,48 @@
         "y": 2139,
         "w": 332,
         "h": 142
+    },
+    {
+        "id": "43d053d1610ee5b4",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "88720fc3c75f099f",
+            "2b1c3d71ad20b263",
+            "7176560e6e59d0c0",
+            "aa7171b67bf6074a",
+            "9b2ca5644ff9cf84",
+            "cffedda3c6a04d86",
+            "6c6ed2e6275b4176",
+            "fcd5defae1f49f98",
+            "1e0a4613670838d3",
+            "93f63fcd3ba2440f",
+            "59970dab353a9df2",
+            "28c1cee001d3e44d",
+            "4349d9542fcef9bf",
+            "69a3e94d92f077e4",
+            "a0ea90dcc50f145f",
+            "4bd9dfdae32ed89d",
+            "ea76ddc60dd7fce4",
+            "e16a295db51f4e40",
+            "140c955da5a0a1a6",
+            "90b36878c842e81b",
+            "42f812bccab81d11",
+            "648ec2cda6fd51d8",
+            "8307c666eee43aa2",
+            "da08d89de91fea10",
+            "917ca4ffbcd1d8d3",
+            "b859c6f569d0da50",
+            "49947e8f04ae54cc"
+        ],
+        "x": 14,
+        "y": 2519,
+        "w": 1552,
+        "h": 502
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -1262,9 +1304,9 @@
             "76e813b1b7a4b63e",
             "5cf61952cb6823de"
         ],
-        "x": 394,
+        "x": 384,
         "y": 2259,
-        "w": 872,
+        "w": 882,
         "h": 122
     },
     {
@@ -2035,7 +2077,7 @@
         "page": "6599f3821baa508f",
         "width": 6,
         "height": 1,
-        "order": 3,
+        "order": 4,
         "showTitle": true,
         "className": "",
         "visible": "true",
@@ -2052,6 +2094,20 @@
         "width": 1,
         "height": 1,
         "className": ""
+    },
+    {
+        "id": "76f6d276d5d6b336",
+        "type": "ui-group",
+        "name": "Download JSON",
+        "page": "6599f3821baa508f",
+        "width": 6,
+        "height": 1,
+        "order": 3,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -12583,8 +12639,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 580,
@@ -12638,5 +12694,645 @@
                 "221f3cd2d450519f"
             ]
         ]
+    },
+    {
+        "id": "88720fc3c75f099f",
+        "type": "ui-form",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Download Json",
+        "group": "76f6d276d5d6b336",
+        "label": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Start date (default 7-days ago)",
+                "key": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Start time",
+                "key": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "End date (default now)",
+                "key": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "End time",
+                "key": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
+        },
+        "payload": "",
+        "submit": "",
+        "cancel": "",
+        "resetOnSubmit": false,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "passthru": false,
+        "dropdownOptions": [
+            {
+                "dropdown": "",
+                "value": "Database",
+                "label": "Entire Database"
+            },
+            {
+                "dropdown": "",
+                "value": "Bicycle",
+                "label": "Bicycle"
+            },
+            {
+                "dropdown": "",
+                "value": "Car",
+                "label": "Car"
+            },
+            {
+                "dropdown": "",
+                "value": "Person",
+                "label": "Person"
+            }
+        ],
+        "x": 140,
+        "y": 2820,
+        "wires": [
+            [
+                "a0ea90dcc50f145f"
+            ]
+        ]
+    },
+    {
+        "id": "2b1c3d71ad20b263",
+        "type": "ui-dropdown",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "group": "76f6d276d5d6b336",
+        "name": "Select JSON Contents",
+        "label": "* Select JSON Contents:",
+        "tooltip": "",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "multiple": true,
+        "chips": true,
+        "clearable": true,
+        "options": [],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": false,
+        "msgTrigger": "onChange",
+        "x": 1160,
+        "y": 2600,
+        "wires": [
+            [
+                "6c6ed2e6275b4176"
+            ]
+        ]
+    },
+    {
+        "id": "7176560e6e59d0c0",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 670,
+        "y": 2600,
+        "wires": [
+            [
+                "cffedda3c6a04d86"
+            ]
+        ]
+    },
+    {
+        "id": "aa7171b67bf6074a",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "setup SQL to get distinct event labels",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT DISTINCT label FROM events;",
+        "output": "str",
+        "x": 370,
+        "y": 2600,
+        "wires": [
+            [
+                "7176560e6e59d0c0"
+            ]
+        ]
+    },
+    {
+        "id": "9b2ca5644ff9cf84",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 2600,
+        "wires": [
+            [
+                "aa7171b67bf6074a"
+            ]
+        ]
+    },
+    {
+        "id": "cffedda3c6a04d86",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "setup selection options",
+        "func": "\n// default options\nconst options = [\n    {label: \"Entire Database\", value: \"all\"},\n    {label: \"Radar\", value: \"radar\"}\n    ];\n// process the unique event labels from the database\nif (msg.payload.length > 0) {\n    const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n    sortedPayload.forEach(function(entry) {\n        const label = entry.label;\n        const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n        const choice = { label: initialLabel, value: label};\n        options.push(choice);\n    });\n}\nconst result = {};\nresult.ui_update = {};\nresult.ui_update.options = options;\nreturn result;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 2600,
+        "wires": [
+            [
+                "2b1c3d71ad20b263"
+            ]
+        ]
+    },
+    {
+        "id": "6c6ed2e6275b4176",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "save user selection",
+        "func": "flow.set(\"download_content\", msg.payload);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1370,
+        "y": 2600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fcd5defae1f49f98",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Setup \"Select JSON Contents\" choices per database event labels",
+        "info": "",
+        "x": 280,
+        "y": 2560,
+        "wires": []
+    },
+    {
+        "id": "1e0a4613670838d3",
+        "type": "ui-button",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "group": "76f6d276d5d6b336",
+        "name": "Clear",
+        "label": "Clear",
+        "order": 3,
+        "width": "1",
+        "height": "1",
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "reposition-clear-button",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 90,
+        "y": 2700,
+        "wires": [
+            [
+                "93f63fcd3ba2440f"
+            ]
+        ]
+    },
+    {
+        "id": "93f63fcd3ba2440f",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "clear form and selection choices",
+        "func": "flow.set(\"download_content\", \"\");\nflow.set(\"download_start_date\", \"\");\nflow.set(\"download_start_time\", \"\");\nflow.set(\"download_end_date\", \"\");\nflow.set(\"download_end_time\", \"\");\nmsg.payload = {\n    \"start_date\": \"\",\n    \"start_time\": \"\",\n    \"end_date\": \"\",\n    \"end_time\": \"\"\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 2700,
+        "wires": [
+            [
+                "88720fc3c75f099f",
+                "59970dab353a9df2"
+            ]
+        ]
+    },
+    {
+        "id": "59970dab353a9df2",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "reset selection menu",
+        "func": "msg.payload = [];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 2700,
+        "wires": [
+            [
+                "2b1c3d71ad20b263"
+            ]
+        ]
+    },
+    {
+        "id": "28c1cee001d3e44d",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "\"Clear\" is a separate button because the builtin ui-form \"clear\" doesn't work",
+        "info": "",
+        "x": 310,
+        "y": 2660,
+        "wires": []
+    },
+    {
+        "id": "4349d9542fcef9bf",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Note: ui-form does not support multi-choice dropdown fields",
+        "info": "",
+        "x": 800,
+        "y": 2560,
+        "wires": []
+    },
+    {
+        "id": "69a3e94d92f077e4",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Has User Selected Content?",
+        "property": "download_content",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 600,
+        "y": 2820,
+        "wires": [
+            [
+                "90b36878c842e81b"
+            ],
+            [
+                "4bd9dfdae32ed89d"
+            ]
+        ]
+    },
+    {
+        "id": "a0ea90dcc50f145f",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Save form values",
+        "func": "flow.set(\"download_start_date\", msg.payload.start_date);\nflow.set(\"download_start_time\", msg.payload.start_time);\nflow.set(\"download_end_date\", msg.payload.end_date);\nflow.set(\"download_end_time\", msg.payload.end_time);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 2820,
+        "wires": [
+            [
+                "69a3e94d92f077e4"
+            ]
+        ]
+    },
+    {
+        "id": "4bd9dfdae32ed89d",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Default the dates and times, if not set by user",
+        "func": "// Convert the start & end dates & times to a Unix timestamp for use in SQL query, and apply defaults\nconst start_date = flow.get(\"download_start_date\");\nconst start_time = flow.get(\"download_start_time\");\nconst end_date = flow.get(\"download_end_date\");\nconst end_time = flow.get(\"download_end_time\");\n\n// Decompose the current date into components\n// because we want to default the time in the local timezone,\n// not in UTC (as stored by the Date class)\nconst current_date = new Date();\nconst year = current_date.getFullYear();\nconst month = current_date.getMonth();\nconst day = current_date.getDate();\nconst hours = current_date.getHours();\nconst minutes = current_date.getMinutes();\n\n// Default the start date to now\nlet start_year = year;\nlet start_month = month;\nlet start_day = day;\nif (start_date) {\n    start_year = start_date.substring(0,4);\n    start_month = start_date.substring(5,7) - 1;\n    start_day = start_date.substring(8,10);\n}\n// Default the start time to the start of the specified date (i.e. 00:00 hours)\nlet start_hours = 0;\nlet start_minutes = 0;\nif (start_time) {\n    start_hours = start_time.substring(0,2);\n    start_minutes = start_time.substring(3,5);\n}\n// recompose the components as a Unix timestamp\nlet startDateTime = new Date(start_year, start_month, start_day, start_hours, start_minutes).valueOf();\n// Default the start day to 7 days before now\nif (!start_date) {\n    startDateTime -= (7 * 24 * 60 * 60 * 1000);\n}\n\n// Default the end date to now\nlet end_year = year;\nlet end_month = month;\nlet end_day = day;\nif (end_date) {\n    end_year = end_date.substring(0, 4);\n    end_month = end_date.substring(5, 7) - 1;\n    end_day = end_date.substring(8, 10);\n}\n// Default the end time to the end of the specified date (i.e. 23:59:59)\nlet end_hours = 23;\nlet end_minutes = 59;\nif (end_time) {\n    end_hours = end_time.substring(0, 2);\n    end_minutes = end_time.substring(3, 5);\n}\n// recompose the components as a Unix timestamp\nlet endDateTime = new Date(end_year, end_month, end_day, end_hours, end_minutes, 59, 999).valueOf();\n\n// node.warn(\"ISO startDateTime: \" + new Date(startDateTime).toISOString());\n// node.warn(\"local startDateTime: \" + new Date(startDateTime).toString());\n// node.warn(\"ISO endDateTime: \" + new Date(endDateTime).toISOString());\n// node.warn(\"local endDateTime: \" + new Date(endDateTime).toString());\n\nflow.set(\"download_start_date_time\", startDateTime);\nflow.set(\"download_end_date_time\", endDateTime);\n// flag end date before start date because the comparison doesn't work in a switch node\nflow.set(\"download_date_error\", endDateTime <= startDateTime);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 2820,
+        "wires": [
+            [
+                "ea76ddc60dd7fce4"
+            ]
+        ]
+    },
+    {
+        "id": "ea76ddc60dd7fce4",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Check for end date-time before start date-time",
+        "property": "download_date_error",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1340,
+        "y": 2820,
+        "wires": [
+            [
+                "140c955da5a0a1a6"
+            ],
+            [
+                "648ec2cda6fd51d8"
+            ]
+        ]
+    },
+    {
+        "id": "e16a295db51f4e40",
+        "type": "ui-notification",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "30",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "Show error message",
+        "x": 1440,
+        "y": 2760,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "140c955da5a0a1a6",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "End date & time must be after start date & time",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "End date & time must be after start date & time",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1080,
+        "y": 2760,
+        "wires": [
+            [
+                "e16a295db51f4e40"
+            ]
+        ]
+    },
+    {
+        "id": "90b36878c842e81b",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Select JSON Contents",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "Select JSON Contents",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1040,
+        "y": 2720,
+        "wires": [
+            [
+                "e16a295db51f4e40"
+            ]
+        ]
+    },
+    {
+        "id": "42f812bccab81d11",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Form for entering start & end dates & times",
+        "info": "",
+        "x": 200,
+        "y": 2780,
+        "wires": []
+    },
+    {
+        "id": "648ec2cda6fd51d8",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "setup Events Query",
+        "func": "let query = \"SELECT * FROM events WHERE\";\nlet count = 0;\n// if \"all\" is selected, don't bother with individual labels\nif (!(flow.get(\"download_content\").includes(\"all\"))) {\n    flow.get(\"download_content\").forEach(function(label)  {\n        if (label != 'all'\n            && label != 'radar') {\n                if (count == 0) {\n                    query += \" (\";\n                } else {\n                    query += \" OR\";\n                }\n                query += \" label == '\" + label + \"'\";\n                count++;\n            }\n    })\n}\nif (count > 0) {\n    query += \") AND\"\n}\nquery += \" start_time >= \" + (flow.get(\"download_start_date_time\") / 1000);\nquery += \" AND end_time < \" + (flow.get(\"download_end_date_time\")/1000);\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 150,
+        "y": 2920,
+        "wires": [
+            [
+                "da08d89de91fea10",
+                "b859c6f569d0da50"
+            ]
+        ]
+    },
+    {
+        "id": "8307c666eee43aa2",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "Query Events table",
+        "info": "",
+        "x": 130,
+        "y": 2860,
+        "wires": []
+    },
+    {
+        "id": "da08d89de91fea10",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 430,
+        "y": 2920,
+        "wires": [
+            [
+                "917ca4ffbcd1d8d3",
+                "49947e8f04ae54cc"
+            ]
+        ]
+    },
+    {
+        "id": "917ca4ffbcd1d8d3",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "",
+        "filename": "/db/events.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 670,
+        "y": 2920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b859c6f569d0da50",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "topic",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 2980,
+        "wires": []
+    },
+    {
+        "id": "49947e8f04ae54cc",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "43d053d1610ee5b4",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 2980,
+        "wires": []
     }
 ]
