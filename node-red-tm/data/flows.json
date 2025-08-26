@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "0fa19dea799cc41d",
+        "type": "tab",
+        "label": "Dashboard 2 - Monitoring",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -662,9 +670,9 @@
             "8e8edd5176fc9a71",
             "46e349af1bed1834"
         ],
-        "x": 414,
+        "x": 404,
         "y": 1779,
-        "w": 1132,
+        "w": 1142,
         "h": 282
     },
     {
@@ -690,7 +698,7 @@
         ],
         "x": 54,
         "y": 439,
-        "w": 2512,
+        "w": 2522,
         "h": 162
     },
     {
@@ -894,9 +902,211 @@
             "9dc5916695382ba8"
         ],
         "x": 14,
-        "y": 2139,
+        "y": 2059,
         "w": 332,
         "h": 142
+    },
+    {
+        "id": "30d5f95b51a19a92",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "61ce02565677e825",
+            "c0e4e6adcc7a5782",
+            "d30d84986a8c41bc"
+        ],
+        "x": 134,
+        "y": 373,
+        "w": 632,
+        "h": 148
+    },
+    {
+        "id": "9a78c94293803e49",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "0a16f2a32973e96e",
+            "b4c9b122afb34876",
+            "cac9b4933417e60c",
+            "463d933f207505c2"
+        ],
+        "x": 134,
+        "y": 999,
+        "w": 872,
+        "h": 142
+    },
+    {
+        "id": "793988735b710932",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "7500f6780dee6eb1",
+            "4d6e3b9832beb86d",
+            "b73ab00e77148f62",
+            "4ac7575557241d3e"
+        ],
+        "x": 134,
+        "y": 839,
+        "w": 912,
+        "h": 142
+    },
+    {
+        "id": "ace8ea830f3a6877",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ca26a14eb3961c1f",
+            "52c59e6d6d990e41",
+            "b641d9844dc739cd",
+            "fa5d96e6ffb70fcf"
+        ],
+        "x": 134,
+        "y": 679,
+        "w": 912,
+        "h": 142
+    },
+    {
+        "id": "dc5a88bd7605f321",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "d077a9d3b85203c0",
+            "8c5ad4dc749b0552",
+            "7d45f3dde88536d9",
+            "ae4b925039bf6e52"
+        ],
+        "x": 134,
+        "y": 539,
+        "w": 972,
+        "h": 122
+    },
+    {
+        "id": "89279ffabac66b61",
+        "type": "group",
+        "z": "0fa19dea799cc41d",
+        "name": "Camera & Radar Selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "22bc03eebc06aa57",
+            "2e49ae46131b1b63",
+            "f3ebd7067c32beb0",
+            "eb7053718706968b",
+            "3132d36d148e80d2",
+            "95215b45c821d24a",
+            "fe681b9c50c9c5e2"
+        ],
+        "x": 134,
+        "y": 199,
+        "w": 1212,
+        "h": 142
+    },
+    {
+        "id": "f1b0841c57e0cc81",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Dashboard 2 - Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a782683dff4cfa78",
+            "06df94be8e240a57",
+            "150923b76596e024",
+            "e6d63a5fdb37f429",
+            "7fc8fb401a2bd998",
+            "bab0d686b38689bf",
+            "3b42ea8efe3d7c9c",
+            "2260477a9aaf5026",
+            "648cafbf07229241",
+            "149d826699d0edaa",
+            "d23343bf87fb37e9",
+            "ad4b75c4cbe33c26",
+            "14b726187eff21f1",
+            "940016590ade63f1",
+            "269e3042a08d1a6e",
+            "7005b6ecf6502d61",
+            "8ca4a2d78e4cc4d4",
+            "950b0ffef082954e",
+            "02286ac2695f6042",
+            "4bfce82ef61bddb5",
+            "ebb491fa2583f894",
+            "c32c639ca0b56397",
+            "b76038185ff74fcc",
+            "9924b5846d887f2d",
+            "c57e9d2f3b104b35",
+            "19fae627748c3852",
+            "70a0d56d3692d7d7",
+            "15a3f779e658d6cb",
+            "5e87bb988af573a7",
+            "542beb6dc00fc238",
+            "bda1abf94916d949",
+            "b3a93bd949fa2177",
+            "53b9c0a3aa2e33d0",
+            "9bc07b9b3de30d0c",
+            "7aaa37e7d1016610",
+            "eff12057676506cf",
+            "c551199257a6e6f0",
+            "9d622ce9024114f4",
+            "1828984ee7d5bc67",
+            "cb88847246c8449a",
+            "93a57694e35fe6c7",
+            "6abad55c409dd3cd",
+            "11d4f2fd5ad44df7",
+            "3c476351c9feea9f",
+            "0967f4976de6019d",
+            "25f9596f40ba4cdc"
+        ],
+        "x": 14,
+        "y": 2259,
+        "w": 1552,
+        "h": 802
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -2052,6 +2262,116 @@
         "width": 1,
         "height": 1,
         "className": ""
+    },
+    {
+        "id": "37da1871896b31d3",
+        "type": "ui-page",
+        "name": "Monitoring",
+        "ui": "2a8899583532edb4",
+        "path": "/monitoring",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 2,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "608443aad6f1050e",
+        "type": "ui-group",
+        "name": "Monitoring",
+        "page": "37da1871896b31d3",
+        "width": "12",
+        "height": "15",
+        "order": 3,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "9d8bfd7e0d216779",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#15617e",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "316f38770e41a119",
+        "type": "ui-group",
+        "name": "Selection Section",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": "5",
+        "order": 1,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "c5b3bbdd72468bc1",
+        "type": "ui-group",
+        "name": "Monitoring Section on Top-Right",
+        "page": "37da1871896b31d3",
+        "width": 6,
+        "height": 1,
+        "order": 2,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "128fad6284fd9892",
+        "type": "ui-group",
+        "name": "Download JSON",
+        "page": "6599f3821baa508f",
+        "width": 6,
+        "height": 1,
+        "order": 4,
+        "showTitle": true,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -10158,6 +10478,92 @@
         ]
     },
     {
+        "id": "872601ee6be93e1a",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "0a6e123f5e53c029",
+        "name": "events daily object count for the last 10-days",
+        "mode": "link",
+        "links": [
+            "4d6e3b9832beb86d"
+        ],
+        "x": 1135,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "4c66b12f99b8cb1b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "5173f4b3ac03407a",
+        "name": "events by object (60-min) for last 36 hours",
+        "mode": "link",
+        "links": [
+            "52c59e6d6d990e41"
+        ],
+        "x": 1165,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "c124347dafdc25f3",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "1bd1f21fa0390c69",
+        "name": "Car Counts and Speeds, since Midnight",
+        "mode": "link",
+        "links": [
+            "61ce02565677e825"
+        ],
+        "x": 1225,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "3ac45430055698aa",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "Latest Observations",
+        "mode": "link",
+        "links": [
+            "b4c9b122afb34876"
+        ],
+        "x": 1335,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "42a095ee9445e33b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "453513c49e4b1b60",
+        "name": "cumulative events by object type since midnight",
+        "mode": "link",
+        "links": [
+            "8c5ad4dc749b0552"
+        ],
+        "x": 1185,
+        "y": 1880,
+        "wires": []
+    },
+    {
+        "id": "37424f8064a95296",
+        "type": "link in",
+        "z": "28627559bebdc324",
+        "name": "sensor selections",
+        "links": [
+            "eb7053718706968b"
+        ],
+        "x": 35,
+        "y": 360,
+        "wires": [
+            [
+                "a20d5f859bf5c14d"
+            ]
+        ]
+    },
+    {
         "id": "6a05187a692bed7c",
         "type": "ui_form",
         "z": "239d7b3ba410ad5e",
@@ -12080,7 +12486,7 @@
         "passthru": false,
         "dropdownOptions": [],
         "x": 140,
-        "y": 2240,
+        "y": 2160,
         "wires": [
             [
                 "9dc5916695382ba8"
@@ -12145,7 +12551,7 @@
         "passthru": false,
         "dropdownOptions": [],
         "x": 150,
-        "y": 2180,
+        "y": 2100,
         "wires": [
             [
                 "003b99076d0bd38e"
@@ -12163,7 +12569,7 @@
             "dcd8309b262fe625"
         ],
         "x": 305,
-        "y": 2180,
+        "y": 2100,
         "wires": []
     },
     {
@@ -12177,7 +12583,7 @@
             "9d030ab441fe8a0d"
         ],
         "x": 305,
-        "y": 2240,
+        "y": 2160,
         "wires": []
     },
     {
@@ -12514,335 +12920,1019 @@
         ]
     },
     {
-        "id": "0fa19dea799cc41d",
-        "type": "tab",
-        "label": "Dashboard 2 - Monitoring",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "30d5f95b51a19a92",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "61ce02565677e825",
-            "c0e4e6adcc7a5782",
-            "d30d84986a8c41bc"
-        ],
-        "x": 134,
-        "y": 373,
-        "w": 632,
-        "h": 148
-    },
-    {
-        "id": "9a78c94293803e49",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "0a16f2a32973e96e",
-            "b4c9b122afb34876",
-            "cac9b4933417e60c",
-            "463d933f207505c2"
-        ],
-        "x": 134,
-        "y": 999,
-        "w": 872,
-        "h": 142
-    },
-    {
-        "id": "793988735b710932",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "7500f6780dee6eb1",
-            "4d6e3b9832beb86d",
-            "b73ab00e77148f62",
-            "4ac7575557241d3e"
-        ],
-        "x": 134,
-        "y": 839,
-        "w": 912,
-        "h": 142
-    },
-    {
-        "id": "ace8ea830f3a6877",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "ca26a14eb3961c1f",
-            "52c59e6d6d990e41",
-            "b641d9844dc739cd",
-            "fa5d96e6ffb70fcf"
-        ],
-        "x": 134,
-        "y": 679,
-        "w": 912,
-        "h": 142
-    },
-    {
-        "id": "dc5a88bd7605f321",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "d077a9d3b85203c0",
-            "8c5ad4dc749b0552",
-            "7d45f3dde88536d9",
-            "ae4b925039bf6e52"
-        ],
-        "x": 134,
-        "y": 539,
-        "w": 972,
-        "h": 122
-    },
-    {
-        "id": "89279ffabac66b61",
-        "type": "group",
-        "z": "0fa19dea799cc41d",
-        "name": "Camera & Radar Selection",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "22bc03eebc06aa57",
-            "2e49ae46131b1b63",
-            "f3ebd7067c32beb0",
-            "eb7053718706968b",
-            "3132d36d148e80d2",
-            "95215b45c821d24a",
-            "fe681b9c50c9c5e2"
-        ],
-        "x": 134,
-        "y": 199,
-        "w": 1212,
-        "h": 142
-    },
-    {
-        "id": "37da1871896b31d3",
-        "type": "ui-page",
-        "name": "Monitoring",
-        "ui": "2a8899583532edb4",
-        "path": "/monitoring",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "14550b211f0fccc6",
-        "breakpoints": [
+        "id": "a782683dff4cfa78",
+        "type": "ui-form",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Download Json",
+        "group": "128fad6284fd9892",
+        "label": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "options": [
             {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
+                "label": "Start date (default 7-days ago)",
+                "key": "start_date",
+                "type": "date",
+                "required": false,
+                "rows": null
             },
             {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
+                "label": "Start time",
+                "key": "start_time",
+                "type": "time",
+                "required": false,
+                "rows": null
             },
             {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
+                "label": "End date (default now)",
+                "key": "end_date",
+                "type": "date",
+                "required": false,
+                "rows": null
             },
             {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
+                "label": "End time",
+                "key": "end_time",
+                "type": "time",
+                "required": false,
+                "rows": null
             }
         ],
-        "order": 1,
-        "className": "",
-        "visible": true,
-        "disabled": false
-    },
-    {
-        "id": "608443aad6f1050e",
-        "type": "ui-group",
-        "name": "Monitoring",
-        "page": "37da1871896b31d3",
-        "width": "12",
-        "height": "15",
-        "order": 3,
-        "showTitle": false,
-        "className": "",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "9d8bfd7e0d216779",
-        "type": "ui-theme",
-        "name": "Default Theme",
-        "colors": {
-            "surface": "#ffffff",
-            "primary": "#15617e",
-            "bgPage": "#eeeeee",
-            "groupBg": "#ffffff",
-            "groupOutline": "#cccccc"
+        "formValue": {
+            "start_date": "",
+            "start_time": "",
+            "end_date": "",
+            "end_time": ""
         },
-        "sizes": {
-            "pagePadding": "12px",
-            "groupGap": "12px",
-            "groupBorderRadius": "4px",
-            "widgetGap": "12px"
-        }
-    },
-    {
-        "id": "316f38770e41a119",
-        "type": "ui-group",
-        "name": "Selection Section",
-        "page": "37da1871896b31d3",
-        "width": 6,
-        "height": "5",
-        "order": 1,
-        "showTitle": false,
+        "payload": "",
+        "submit": "",
+        "cancel": "",
+        "resetOnSubmit": false,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
         "className": "",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "c5b3bbdd72468bc1",
-        "type": "ui-group",
-        "name": "Monitoring Section on Top-Right",
-        "page": "37da1871896b31d3",
-        "width": 6,
-        "height": 1,
-        "order": 2,
-        "showTitle": false,
-        "className": "",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "872601ee6be93e1a",
-        "type": "link out",
-        "z": "28627559bebdc324",
-        "g": "0a6e123f5e53c029",
-        "name": "events daily object count for the last 10-days",
-        "mode": "link",
-        "links": [
-            "4d6e3b9832beb86d"
+        "passthru": false,
+        "dropdownOptions": [
+            {
+                "dropdown": "",
+                "value": "Database",
+                "label": "Entire Database"
+            },
+            {
+                "dropdown": "",
+                "value": "Bicycle",
+                "label": "Bicycle"
+            },
+            {
+                "dropdown": "",
+                "value": "Car",
+                "label": "Car"
+            },
+            {
+                "dropdown": "",
+                "value": "Person",
+                "label": "Person"
+            }
         ],
-        "x": 1135,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "4c66b12f99b8cb1b",
-        "type": "link out",
-        "z": "28627559bebdc324",
-        "g": "5173f4b3ac03407a",
-        "name": "events by object (60-min) for last 36 hours",
-        "mode": "link",
-        "links": [
-            "52c59e6d6d990e41"
-        ],
-        "x": 1165,
-        "y": 820,
-        "wires": []
-    },
-    {
-        "id": "c124347dafdc25f3",
-        "type": "link out",
-        "z": "28627559bebdc324",
-        "g": "1bd1f21fa0390c69",
-        "name": "Car Counts and Speeds, since Midnight",
-        "mode": "link",
-        "links": [
-            "61ce02565677e825"
-        ],
-        "x": 1225,
-        "y": 1320,
-        "wires": []
-    },
-    {
-        "id": "3ac45430055698aa",
-        "type": "link out",
-        "z": "28627559bebdc324",
-        "g": "9b9e4fc50b744fc3",
-        "name": "Latest Observations",
-        "mode": "link",
-        "links": [
-            "b4c9b122afb34876"
-        ],
-        "x": 1335,
-        "y": 1620,
-        "wires": []
-    },
-    {
-        "id": "42a095ee9445e33b",
-        "type": "link out",
-        "z": "28627559bebdc324",
-        "g": "453513c49e4b1b60",
-        "name": "cumulative events by object type since midnight",
-        "mode": "link",
-        "links": [
-            "8c5ad4dc749b0552"
-        ],
-        "x": 1185,
-        "y": 1880,
-        "wires": []
-    },
-    {
-        "id": "37424f8064a95296",
-        "type": "link in",
-        "z": "28627559bebdc324",
-        "name": "sensor selections",
-        "links": [
-            "eb7053718706968b"
-        ],
-        "x": 35,
-        "y": 360,
+        "x": 140,
+        "y": 2560,
         "wires": [
             [
-                "a20d5f859bf5c14d"
+                "940016590ade63f1"
             ]
         ]
+    },
+    {
+        "id": "06df94be8e240a57",
+        "type": "ui-dropdown",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "group": "128fad6284fd9892",
+        "name": "Select JSON Contents",
+        "label": "* Select JSON Contents:",
+        "tooltip": "",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "multiple": true,
+        "chips": true,
+        "clearable": true,
+        "options": [],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": false,
+        "msgTrigger": "onChange",
+        "x": 1160,
+        "y": 2340,
+        "wires": [
+            [
+                "bab0d686b38689bf"
+            ]
+        ]
+    },
+    {
+        "id": "150923b76596e024",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 670,
+        "y": 2340,
+        "wires": [
+            [
+                "7fc8fb401a2bd998"
+            ]
+        ]
+    },
+    {
+        "id": "e6d63a5fdb37f429",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "setup SQL to get distinct event labels",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT DISTINCT label FROM events;",
+        "output": "str",
+        "x": 370,
+        "y": 2340,
+        "wires": [
+            [
+                "150923b76596e024"
+            ]
+        ]
+    },
+    {
+        "id": "7fc8fb401a2bd998",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "setup selection options",
+        "func": "\n// default options\nconst options = [\n    {label: \"Entire Database\", value: \"all\"},\n    {label: \"Radar\", value: \"radar\"}\n    ];\n// process the unique event labels from the database\nif (msg.payload.length > 0) {\n    const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n    sortedPayload.forEach(function(entry) {\n        const label = entry.label;\n        const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n        const choice = { label: initialLabel, value: label};\n        options.push(choice);\n    });\n}\nconst result = {};\nresult.ui_update = {};\nresult.ui_update.options = options;\nreturn result;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 2340,
+        "wires": [
+            [
+                "06df94be8e240a57"
+            ]
+        ]
+    },
+    {
+        "id": "bab0d686b38689bf",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "save user selection",
+        "func": "flow.set(\"download_content\", msg.payload);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1370,
+        "y": 2340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3b42ea8efe3d7c9c",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Setup \"Select JSON Contents\" choices per database event labels",
+        "info": "",
+        "x": 280,
+        "y": 2300,
+        "wires": []
+    },
+    {
+        "id": "2260477a9aaf5026",
+        "type": "ui-button",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "group": "128fad6284fd9892",
+        "name": "Clear",
+        "label": "Clear",
+        "order": 3,
+        "width": "1",
+        "height": "1",
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "reposition-clear-button",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 90,
+        "y": 2440,
+        "wires": [
+            [
+                "648cafbf07229241"
+            ]
+        ]
+    },
+    {
+        "id": "648cafbf07229241",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "clear form and selection choices",
+        "func": "flow.set(\"download_content\", \"\");\nflow.set(\"download_start_date\", \"\");\nflow.set(\"download_start_time\", \"\");\nflow.set(\"download_end_date\", \"\");\nflow.set(\"download_end_time\", \"\");\nmsg.payload = {\n    \"start_date\": \"\",\n    \"start_time\": \"\",\n    \"end_date\": \"\",\n    \"end_time\": \"\"\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 2440,
+        "wires": [
+            [
+                "a782683dff4cfa78",
+                "149d826699d0edaa"
+            ]
+        ]
+    },
+    {
+        "id": "149d826699d0edaa",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "reset selection menu",
+        "func": "msg.payload = [];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 2440,
+        "wires": [
+            [
+                "06df94be8e240a57"
+            ]
+        ]
+    },
+    {
+        "id": "d23343bf87fb37e9",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "\"Clear\" is a separate button because the builtin ui-form \"clear\" doesn't work",
+        "info": "",
+        "x": 310,
+        "y": 2400,
+        "wires": []
+    },
+    {
+        "id": "ad4b75c4cbe33c26",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Note: ui-form does not support multi-choice dropdown fields",
+        "info": "",
+        "x": 800,
+        "y": 2300,
+        "wires": []
+    },
+    {
+        "id": "14b726187eff21f1",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Has User Selected Content?",
+        "property": "download_content",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 600,
+        "y": 2560,
+        "wires": [
+            [
+                "02286ac2695f6042"
+            ],
+            [
+                "269e3042a08d1a6e"
+            ]
+        ]
+    },
+    {
+        "id": "940016590ade63f1",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Save form values",
+        "func": "flow.set(\"download_start_date\", msg.payload.start_date);\nflow.set(\"download_start_time\", msg.payload.start_time);\nflow.set(\"download_end_date\", msg.payload.end_date);\nflow.set(\"download_end_time\", msg.payload.end_time);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 2560,
+        "wires": [
+            [
+                "14b726187eff21f1"
+            ]
+        ]
+    },
+    {
+        "id": "269e3042a08d1a6e",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Default the dates and times, if not set by user",
+        "func": "// Convert the start & end dates & times to a Unix timestamp for use in SQL query, and apply defaults\nconst start_date = flow.get(\"download_start_date\");\nconst start_time = flow.get(\"download_start_time\");\nconst end_date = flow.get(\"download_end_date\");\nconst end_time = flow.get(\"download_end_time\");\n\n// Decompose the current date into components\n// because we want to default the time in the local timezone,\n// not in UTC (as stored by the Date class)\nconst current_date = new Date();\nconst year = current_date.getFullYear();\nconst month = current_date.getMonth();\nconst day = current_date.getDate();\nconst hours = current_date.getHours();\nconst minutes = current_date.getMinutes();\n\n// Default the start date to now\nlet start_year = year;\nlet start_month = month;\nlet start_day = day;\nif (start_date) {\n    start_year = start_date.substring(0,4);\n    start_month = start_date.substring(5,7) - 1;\n    start_day = start_date.substring(8,10);\n}\n// Default the start time to the start of the specified date (i.e. 00:00 hours)\nlet start_hours = 0;\nlet start_minutes = 0;\nif (start_time) {\n    start_hours = start_time.substring(0,2);\n    start_minutes = start_time.substring(3,5);\n}\n// recompose the components as a Unix timestamp\nlet startDateTime = new Date(start_year, start_month, start_day, start_hours, start_minutes).valueOf();\n// Default the start day to 7 days before now\nif (!start_date) {\n    startDateTime -= (7 * 24 * 60 * 60 * 1000);\n}\n\n// Default the end date to now\nlet end_year = year;\nlet end_month = month;\nlet end_day = day;\nif (end_date) {\n    end_year = end_date.substring(0, 4);\n    end_month = end_date.substring(5, 7) - 1;\n    end_day = end_date.substring(8, 10);\n}\n// Default the end time to the end of the specified date (i.e. 23:59:59)\nlet end_hours = 23;\nlet end_minutes = 59;\nif (end_time) {\n    end_hours = end_time.substring(0, 2);\n    end_minutes = end_time.substring(3, 5);\n}\n// recompose the components as a Unix timestamp\nlet endDateTime = new Date(end_year, end_month, end_day, end_hours, end_minutes, 59, 999).valueOf();\n\n// node.warn(\"ISO startDateTime: \" + new Date(startDateTime).toISOString());\n// node.warn(\"local startDateTime: \" + new Date(startDateTime).toString());\n// node.warn(\"ISO endDateTime: \" + new Date(endDateTime).toISOString());\n// node.warn(\"local endDateTime: \" + new Date(endDateTime).toString());\n\nflow.set(\"download_start_date_time\", startDateTime / 1000);\nflow.set(\"download_end_date_time\", endDateTime / 1000);\n// flag end date before start date because the comparison doesn't work in a switch node\nflow.set(\"download_date_error\", endDateTime <= startDateTime);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 2560,
+        "wires": [
+            [
+                "7005b6ecf6502d61"
+            ]
+        ]
+    },
+    {
+        "id": "7005b6ecf6502d61",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Check for end date-time before start date-time",
+        "property": "download_date_error",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1340,
+        "y": 2560,
+        "wires": [
+            [
+                "950b0ffef082954e"
+            ],
+            [
+                "ebb491fa2583f894",
+                "cb88847246c8449a"
+            ]
+        ]
+    },
+    {
+        "id": "8ca4a2d78e4cc4d4",
+        "type": "ui-notification",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "ui": "2a8899583532edb4",
+        "position": "top right",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "30",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "Show error message",
+        "x": 1440,
+        "y": 2500,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "950b0ffef082954e",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "End date & time must be after start date & time",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "End date & time must be after start date & time",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1080,
+        "y": 2500,
+        "wires": [
+            [
+                "8ca4a2d78e4cc4d4"
+            ]
+        ]
+    },
+    {
+        "id": "02286ac2695f6042",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Select JSON Contents",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "Select JSON Contents",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1040,
+        "y": 2460,
+        "wires": [
+            [
+                "8ca4a2d78e4cc4d4"
+            ]
+        ]
+    },
+    {
+        "id": "4bfce82ef61bddb5",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Form for entering start & end dates & times",
+        "info": "",
+        "x": 200,
+        "y": 2520,
+        "wires": []
+    },
+    {
+        "id": "ebb491fa2583f894",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "setup Events Query",
+        "func": "let query = \"SELECT * FROM events WHERE\";\nlet count = 0;\n// if \"all\" is selected, don't bother with individual labels\nif (!(flow.get(\"download_content\").includes(\"all\"))) {\n    flow.get(\"download_content\").forEach(function(label)  {\n        if (label != 'all'\n            && label != 'radar') {\n                if (count == 0) {\n                    query += \" (\";\n                } else {\n                    query += \" OR\";\n                }\n                query += \" label == '\" + label + \"'\";\n                count++;\n            }\n    })\n}\nif (count > 0) {\n    query += \") AND\";\n}\nif (count > 0\n    || flow.get(\"download_content\").includes(\"all\")) {\n    query += \" start_time >= \" + flow.get(\"download_start_date_time\");\n    query += \" AND end_time < \" + flow.get(\"download_end_date_time\");\n} else {\n    query = \"\"; // to tell switch that there is no events query to execute\n}\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 170,
+        "y": 2660,
+        "wires": [
+            [
+                "c57e9d2f3b104b35",
+                "9d622ce9024114f4"
+            ]
+        ]
+    },
+    {
+        "id": "c32c639ca0b56397",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Query Events table",
+        "info": "",
+        "x": 130,
+        "y": 2600,
+        "wires": []
+    },
+    {
+        "id": "b76038185ff74fcc",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 810,
+        "y": 2660,
+        "wires": [
+            [
+                "9924b5846d887f2d",
+                "1828984ee7d5bc67"
+            ]
+        ]
+    },
+    {
+        "id": "9924b5846d887f2d",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/events.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1060,
+        "y": 2660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c57e9d2f3b104b35",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "test whether events query is needed",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 470,
+        "y": 2660,
+        "wires": [
+            [
+                "b76038185ff74fcc"
+            ]
+        ]
+    },
+    {
+        "id": "19fae627748c3852",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 910,
+        "y": 2780,
+        "wires": [
+            [
+                "70a0d56d3692d7d7"
+            ]
+        ]
+    },
+    {
+        "id": "70a0d56d3692d7d7",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/radar_dov.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1180,
+        "y": 2780,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "15a3f779e658d6cb",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 910,
+        "y": 2840,
+        "wires": [
+            [
+                "5e87bb988af573a7"
+            ]
+        ]
+    },
+    {
+        "id": "5e87bb988af573a7",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/radar_timed_speed_counts.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1230,
+        "y": 2840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "542beb6dc00fc238",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 910,
+        "y": 2900,
+        "wires": [
+            [
+                "bda1abf94916d949"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "bda1abf94916d949",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1240,
+        "y": 2900,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b3a93bd949fa2177",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 920,
+        "y": 2960,
+        "wires": [
+            [
+                "53b9c0a3aa2e33d0"
+            ]
+        ]
+    },
+    {
+        "id": "53b9c0a3aa2e33d0",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/radar_raw_speed_magnitude_single.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1270,
+        "y": 2960,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9bc07b9b3de30d0c",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 920,
+        "y": 3020,
+        "wires": [
+            [
+                "7aaa37e7d1016610",
+                "6abad55c409dd3cd"
+            ]
+        ]
+    },
+    {
+        "id": "7aaa37e7d1016610",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "",
+        "filename": "/db/radar_oc_payload.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1220,
+        "y": 3020,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "eff12057676506cf",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Query Radar table",
+        "info": "",
+        "x": 130,
+        "y": 2720,
+        "wires": []
+    },
+    {
+        "id": "c551199257a6e6f0",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "Create radar_dov query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_dov WHERE time >= '{{flow.download_start_date_time}}' AND time <= '{{flow.download_end_date_time}}';",
+        "output": "str",
+        "x": 490,
+        "y": 2780,
+        "wires": [
+            [
+                "19fae627748c3852"
+            ]
+        ]
+    },
+    {
+        "id": "9d622ce9024114f4",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "topic",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 2600,
+        "wires": []
+    },
+    {
+        "id": "1828984ee7d5bc67",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 2620,
+        "wires": []
+    },
+    {
+        "id": "cb88847246c8449a",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "test whether radar query is needed",
+        "property": "download_content",
+        "propertyType": "flow",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "radar",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "all",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 2,
+        "x": 200,
+        "y": 2780,
+        "wires": [
+            [
+                "c551199257a6e6f0",
+                "93a57694e35fe6c7",
+                "11d4f2fd5ad44df7",
+                "3c476351c9feea9f",
+                "0967f4976de6019d"
+            ],
+            [
+                "c551199257a6e6f0",
+                "93a57694e35fe6c7",
+                "11d4f2fd5ad44df7",
+                "3c476351c9feea9f",
+                "0967f4976de6019d"
+            ]
+        ]
+    },
+    {
+        "id": "93a57694e35fe6c7",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "create radar_timed_speed_counts query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_timed_speed_counts WHERE time >= '{{flow.download_start_date_time}}' AND time <= '{{flow.download_end_date_time}}';",
+        "output": "str",
+        "x": 540,
+        "y": 2840,
+        "wires": [
+            [
+                "15a3f779e658d6cb"
+            ]
+        ]
+    },
+    {
+        "id": "6abad55c409dd3cd",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1360,
+        "y": 2780,
+        "wires": []
+    },
+    {
+        "id": "11d4f2fd5ad44df7",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "create radar_raw_speed_magnitude query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_raw_speed_magnitude WHERE time >= '{{flow.download_start_date_time}}' AND time <= '{{flow.download_end_date_time}}';",
+        "output": "str",
+        "x": 540,
+        "y": 2900,
+        "wires": [
+            [
+                "542beb6dc00fc238"
+            ]
+        ]
+    },
+    {
+        "id": "3c476351c9feea9f",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "create radar_raw_speed_magnitude_single query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_raw_speed_magnitude_single WHERE time >= '{{flow.download_start_date_time}}' AND time <= '{{flow.download_end_date_time}}';",
+        "output": "str",
+        "x": 570,
+        "y": 2960,
+        "wires": [
+            [
+                "b3a93bd949fa2177"
+            ]
+        ]
+    },
+    {
+        "id": "0967f4976de6019d",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "create radar_oc_payload query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_oc_payload WHERE start_time >= '{{flow.download_start_date_time}}' AND end_time <= '{{flow.download_end_date_time}}';",
+        "output": "str",
+        "x": 510,
+        "y": 3020,
+        "wires": [
+            [
+                "9bc07b9b3de30d0c"
+            ]
+        ]
+    },
+    {
+        "id": "25f9596f40ba4cdc",
+        "type": "ui-control",
+        "z": "239d7b3ba410ad5e",
+        "g": "f1b0841c57e0cc81",
+        "name": "when UI opens",
+        "ui": "2a8899583532edb4",
+        "events": "change",
+        "x": 120,
+        "y": 2340,
+        "wires": [
+            [
+                "e6d63a5fdb37f429",
+                "f0daf5887dfb3742"
+            ]
+        ]
+    },
+    {
+        "id": "f0daf5887dfb3742",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 440,
+        "y": 2240,
+        "wires": []
     },
     {
         "id": "3c7e6d7cf17e8ddc",
