@@ -72,6 +72,14 @@
         "env": []
     },
     {
+        "id": "19f43eef1cf17dc8",
+        "type": "subflow",
+        "name": "Subflow 1",
+        "info": "",
+        "in": [],
+        "out": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -728,7 +736,7 @@
             "8d65b604e8d9e7f9",
             "db1f35650c8d6448"
         ],
-        "x": 24,
+        "x": 44,
         "y": 279,
         "w": 1092,
         "h": 202
@@ -749,7 +757,7 @@
             "817efc474a9809f8",
             "fda1f9b5367bd61d"
         ],
-        "x": 14,
+        "x": 34,
         "y": 499,
         "w": 752,
         "h": 162
@@ -946,8 +954,7 @@
             "d33424d512cee85a",
             "525710dc43d5acc5",
             "cdd2b8f5fa65aae6",
-            "d8eb428652b41aa3",
-            "4e11bae211ef734e"
+            "d8eb428652b41aa3"
         ],
         "x": 34,
         "y": 699,
@@ -986,6 +993,23 @@
         "y": 1679,
         "w": 1332,
         "h": 409.5
+    },
+    {
+        "id": "839f163f693aa2d9",
+        "type": "group",
+        "z": "239d7b3ba410ad5e",
+        "name": "Iniitalization",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0223975e0768d0ac",
+            "e21cfa6404c4e7df"
+        ],
+        "x": 34,
+        "y": 151.5,
+        "w": 712,
+        "h": 97
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -1411,23 +1435,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "839f163f693aa2d9",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Iniitalization",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0223975e0768d0ac",
-            "e21cfa6404c4e7df"
-        ],
-        "x": 34,
-        "y": 151.5,
-        "w": 712,
-        "h": 97
     },
     {
         "id": "05a58d9ee463c696",
@@ -10391,7 +10398,7 @@
         "className": "",
         "passthru": false,
         "dropdownOptions": [],
-        "x": 160,
+        "x": 180,
         "y": 440,
         "wires": [
             [
@@ -10418,7 +10425,7 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 460,
+        "x": 480,
         "y": 620,
         "wires": [
             []
@@ -10442,7 +10449,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 170,
+        "x": 190,
         "y": 620,
         "wires": [
             [
@@ -10464,7 +10471,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
+        "x": 430,
         "y": 580,
         "wires": [
             [
@@ -10492,7 +10499,7 @@
         "color": "#717171",
         "wrapText": false,
         "className": "",
-        "x": 640,
+        "x": 660,
         "y": 540,
         "wires": []
     },
@@ -10515,7 +10522,7 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 140,
+        "x": 160,
         "y": 540,
         "wires": [
             []
@@ -10541,7 +10548,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 620,
+        "x": 640,
         "y": 580,
         "wires": [
             []
@@ -10566,7 +10573,7 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 160,
+        "x": 180,
         "y": 400,
         "wires": [
             []
@@ -10691,8 +10698,7 @@
         "y": 1020,
         "wires": [
             [
-                "bdd1f6d18092f3a1",
-                "4e11bae211ef734e"
+                "bdd1f6d18092f3a1"
             ]
         ]
     },
@@ -11390,7 +11396,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "c2c6204bad31b1c1",
         "name": "Validate filenames",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nconst files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\nmsg.payload.filepath = filepath;\n\n// set headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst name = files[0].split('.')[0];\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + name + '.zip\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\nmsg.payload.filepath = filepath;\n\n// set headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nlet name = files[0].split('.')[0];\nif (name == \"/db/tmdb\") { // use just database name when downloading complete db\n  name = \"tmdb\";\n}\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst filename = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_' + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -11701,7 +11707,7 @@
         "z": "239d7b3ba410ad5e",
         "g": "c2c6204bad31b1c1",
         "ui": "2a8899583532edb4",
-        "position": "top right",
+        "position": "center center",
         "colorDefault": true,
         "color": "#000000",
         "displayTime": "3",
@@ -11856,7 +11862,7 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 620,
+        "x": 640,
         "y": 340,
         "wires": [
             [
@@ -11881,7 +11887,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
-        "x": 190,
+        "x": 210,
         "y": 320,
         "wires": [
             [
@@ -11906,7 +11912,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
-        "x": 210,
+        "x": 230,
         "y": 360,
         "wires": [
             [
@@ -11928,7 +11934,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 950,
+        "x": 970,
         "y": 340,
         "wires": []
     },
@@ -11945,7 +11951,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 460,
+        "x": 480,
         "y": 440,
         "wires": [
             [
@@ -11963,7 +11969,7 @@
         "sqlquery": "prepared",
         "sql": "INSERT INTO comments (id, effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($id, $effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
         "name": "tmdb.comments, Prepared Statement",
-        "x": 800,
+        "x": 820,
         "y": 440,
         "wires": [
             []
@@ -12022,7 +12028,7 @@
         "type": "exec",
         "z": "239d7b3ba410ad5e",
         "g": "839f163f693aa2d9",
-        "command": "mkdir /db/temp",
+        "command": "mkdir -p /db/temp",
         "addpay": "",
         "append": "",
         "useSpawn": "false",
@@ -12037,23 +12043,6 @@
             [],
             []
         ]
-    },
-    {
-        "id": "4e11bae211ef734e",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 380,
-        "y": 1080,
-        "wires": []
     },
     {
         "id": "3c7e6d7cf17e8ddc",
