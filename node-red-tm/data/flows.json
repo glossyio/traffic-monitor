@@ -987,12 +987,16 @@
             "fdc851cbf7608f01",
             "f1fa95ea232fc524",
             "495f886efa6f1019",
-            "3524b3702d879e06"
+            "3524b3702d879e06",
+            "71af49b49c869074",
+            "281e8d7d74723bf7",
+            "da5a4fd7b898bce1",
+            "0b5b52671ea44337"
         ],
         "x": 34,
         "y": 1679,
         "w": 1332,
-        "h": 409.5
+        "h": 469.5
     },
     {
         "id": "839f163f693aa2d9",
@@ -11395,19 +11399,20 @@
         "type": "function",
         "z": "239d7b3ba410ad5e",
         "g": "c2c6204bad31b1c1",
-        "name": "Validate filenames",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\nmsg.payload.filepath = filepath;\n\n// set headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nlet name = files[0].split('.')[0];\nif (name == \"/db/tmdb\") { // use just database name when downloading complete db\n  name = \"tmdb\";\n}\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst filename = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_' + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "name": "Validate filenames, setup tar",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Build part of tar command. This is appended to 'tar cvf download.tar.gz -C /db/temp'.\n// The 'transform' option changes the internal names stored within the tar file from \"/db/tmp\" or \"/db\"\n// to the prefix that is computed above.\nlet transform = \"--transform 's|\" + baseDir + \"/|\" + prefix + \"|' \";\nmsg.payload.filepath = transform + filepath;\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nlet name = files[0].split('.')[0]; // use name of first file as part of downloaded 'tar.gz' filename\nif (name == \"/db/tmdb\") { // use just database name when downloading complete db\n  name = \"tmdb\";\n}\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 430,
+        "x": 440,
         "y": 1820,
         "wires": [
             [
-                "211c1170a567424f"
+                "211c1170a567424f",
+                "71af49b49c869074"
             ]
         ]
     },
@@ -11432,7 +11437,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 630,
+        "x": 650,
         "y": 1820,
         "wires": [
             [
@@ -12043,6 +12048,97 @@
             [],
             []
         ]
+    },
+    {
+        "id": "71af49b49c869074",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "c2c6204bad31b1c1",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "281e8d7d74723bf7",
+        "type": "exec",
+        "z": "239d7b3ba410ad5e",
+        "g": "c2c6204bad31b1c1",
+        "command": "gtar --version",
+        "addpay": "payload.filepath",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "60",
+        "winHide": false,
+        "oldrc": false,
+        "name": "tar --version",
+        "x": 310,
+        "y": 2100,
+        "wires": [
+            [
+                "0b5b52671ea44337"
+            ],
+            [
+                "0b5b52671ea44337"
+            ],
+            [
+                "0b5b52671ea44337"
+            ]
+        ]
+    },
+    {
+        "id": "da5a4fd7b898bce1",
+        "type": "inject",
+        "z": "239d7b3ba410ad5e",
+        "g": "c2c6204bad31b1c1",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 2100,
+        "wires": [
+            [
+                "281e8d7d74723bf7"
+            ]
+        ]
+    },
+    {
+        "id": "0b5b52671ea44337",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "c2c6204bad31b1c1",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 2100,
+        "wires": []
     },
     {
         "id": "3c7e6d7cf17e8ddc",
