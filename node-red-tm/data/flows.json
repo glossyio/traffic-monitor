@@ -954,7 +954,9 @@
             "d33424d512cee85a",
             "525710dc43d5acc5",
             "cdd2b8f5fa65aae6",
-            "d8eb428652b41aa3"
+            "d8eb428652b41aa3",
+            "f9b51367cacb4d3b",
+            "13b1391318ae6a60"
         ],
         "x": 34,
         "y": 699,
@@ -971,7 +973,6 @@
         },
         "nodes": [
             "3bca76b97616a721",
-            "eda64547ba14ee2d",
             "211c1170a567424f",
             "6805125aee214043",
             "fdda93ec10974b33",
@@ -988,10 +989,10 @@
             "f1fa95ea232fc524",
             "495f886efa6f1019",
             "3524b3702d879e06",
-            "71af49b49c869074",
             "281e8d7d74723bf7",
             "da5a4fd7b898bce1",
-            "0b5b52671ea44337"
+            "0b5b52671ea44337",
+            "eda64547ba14ee2d"
         ],
         "x": 34,
         "y": 1679,
@@ -10653,7 +10654,9 @@
         "y": 800,
         "wires": [
             [
-                "ae6535ff0b81adbf"
+                "ae6535ff0b81adbf",
+                "f9b51367cacb4d3b",
+                "13b1391318ae6a60"
             ]
         ]
     },
@@ -11395,28 +11398,6 @@
         ]
     },
     {
-        "id": "eda64547ba14ee2d",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Build part of tar command. This is appended to 'tar cvf download.tar.gz -C /db/temp'.\n// The 'transform' option changes the internal names stored within the tar file from \"/db/tmp\" or \"/db\"\n// to the prefix that is computed above.\nlet transform = \"--transform 's|\" + baseDir + \"/|\" + prefix + \"|' \";\nmsg.payload.filepath = transform + filepath;\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nlet name = files[0].split('.')[0]; // use name of first file as part of downloaded 'tar.gz' filename\nif (name == \"/db/tmdb\") { // use just database name when downloading complete db\n  name = \"tmdb\";\n}\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 1820,
-        "wires": [
-            [
-                "211c1170a567424f",
-                "71af49b49c869074"
-            ]
-        ]
-    },
-    {
         "id": "211c1170a567424f",
         "type": "switch",
         "z": "239d7b3ba410ad5e",
@@ -12050,23 +12031,6 @@
         ]
     },
     {
-        "id": "71af49b49c869074",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 640,
-        "y": 1780,
-        "wires": []
-    },
-    {
         "id": "281e8d7d74723bf7",
         "type": "exec",
         "z": "239d7b3ba410ad5e",
@@ -12139,6 +12103,63 @@
         "x": 500,
         "y": 2100,
         "wires": []
+    },
+    {
+        "id": "f9b51367cacb4d3b",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "${TM_DATABASE_PATH_TMDB}",
+        "targetType": "jsonata",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "13b1391318ae6a60",
+        "type": "debug",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "eda64547ba14ee2d",
+        "type": "function",
+        "z": "239d7b3ba410ad5e",
+        "g": "c2c6204bad31b1c1",
+        "name": "Validate filenames, setup tar",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// The list of files is appended to 'tar cvf download.tar.gz -C /db/temp' (or '-C /db' when downloading the database)\n// ... in the next node\nmsg.payload.filepath = filepath;\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 1820,
+        "wires": [
+            [
+                "211c1170a567424f"
+            ]
+        ]
     },
     {
         "id": "3c7e6d7cf17e8ddc",
