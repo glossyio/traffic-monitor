@@ -1,17 +1,38 @@
 ---
+---
 # TMSetup - Coral TPU Setup tasks
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU Repository apt key
-  become: true
-  ansible.builtin.apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
 
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU apt repo
-  become: true
-  ansible.builtin.apt_repository:
-    filename: coral-edgetpu
-    repo: 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main'
+- name: Ensure prerequisites for signed repositories
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - gnupg
+      - apt-transport-https
     state: present
+    update_cache: true
+  become: true
+
+- name: Ensure keyring directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Download Coral TPU GPG key to keyring
+  ansible.builtin.get_url:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    dest: /usr/share/keyrings/coral-tpu-archive-keyring.gpg
+    mode: "0644"
+  become: true
+
+- name: Add Coral TPU apt repository (signed-by)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/coral-tpu-archive-keyring.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main"
+    filename: coral-tpu
+    state: present
+    update_cache: true
+  become: true
 
 - name: TMSetup - Coral TPU Setup - Install runtime library
   become: true
