@@ -504,7 +504,7 @@
         ],
         "x": 294,
         "y": 159,
-        "w": 952,
+        "w": 942,
         "h": 222
     },
     {
@@ -947,12 +947,22 @@
             "525710dc43d5acc5",
             "cdd2b8f5fa65aae6",
             "d8eb428652b41aa3",
-            "1d72d9a95605c62c"
+            "1d72d9a95605c62c",
+            "388f25d362c59bf3",
+            "dc1c575b2d951d73",
+            "eba02aa136051f14",
+            "489e9c2dac86a67a",
+            "667310590862a3ff",
+            "30a288d4be8df396",
+            "997720e4050c2ba4",
+            "806dcbef48f773a2",
+            "221addbcadd48eb6",
+            "175f14d8399d2882"
         ],
         "x": 34,
         "y": 699,
         "w": 1802,
-        "h": 862
+        "h": 1102
     },
     {
         "id": "c2c6204bad31b1c1",
@@ -984,7 +994,7 @@
             "cee8e5d249eaf026"
         ],
         "x": 34,
-        "y": 1679,
+        "y": 1859,
         "w": 1332,
         "h": 409.5
     },
@@ -5468,7 +5478,7 @@
         "type": "debug",
         "z": "b1fde507a4b80c79",
         "name": "debug: published airquality messages",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -10586,7 +10596,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
+        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Air Quality\", value: \"airquality\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
         "storeOutMessages": true,
         "passthru": false,
         "resendOnRefresh": true,
@@ -11277,14 +11287,14 @@
         "useparts": false,
         "accumulate": false,
         "timeout": "0",
-        "count": "2",
+        "count": "3",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 300,
-        "y": 1520,
+        "x": 360,
+        "y": 1760,
         "wires": [
             [
                 "525710dc43d5acc5"
@@ -11301,8 +11311,8 @@
             "235293bf4ab1d3c3",
             "ff73409f58e8b833"
         ],
-        "x": 125,
-        "y": 1520,
+        "x": 135,
+        "y": 1760,
         "wires": [
             [
                 "45056fb66b0f57df"
@@ -11319,8 +11329,8 @@
             "b2becdd99377ae81",
             "d33424d512cee85a"
         ],
-        "x": 125,
-        "y": 1460,
+        "x": 135,
+        "y": 1720,
         "wires": [
             [
                 "45056fb66b0f57df"
@@ -11335,7 +11345,7 @@
         "name": "sync events and radar queries",
         "info": "",
         "x": 180,
-        "y": 1400,
+        "y": 1640,
         "wires": []
     },
     {
@@ -11377,7 +11387,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 180,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [
                 "eda64547ba14ee2d"
@@ -11406,7 +11416,7 @@
         "repair": false,
         "outputs": 2,
         "x": 650,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [
                 "6805125aee214043",
@@ -11437,7 +11447,7 @@
         "className": "",
         "name": "",
         "x": 950,
-        "y": 1720,
+        "y": 1900,
         "wires": [
             [
                 "43aa560c48e43156"
@@ -11453,7 +11463,7 @@
         "statusCode": "",
         "headers": {},
         "x": 910,
-        "y": 1760,
+        "y": 1940,
         "wires": []
     },
     {
@@ -11470,7 +11480,7 @@
         "oldrc": false,
         "name": "zip files",
         "x": 840,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [],
             [],
@@ -11500,7 +11510,7 @@
         "to": "",
         "reg": false,
         "x": 1240,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [
                 "6805125aee214043",
@@ -11523,7 +11533,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1180,
-        "y": 1720,
+        "y": 1900,
         "wires": []
     },
     {
@@ -11548,7 +11558,7 @@
         "repair": false,
         "outputs": 2,
         "x": 1020,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [
                 "622ee4aef0f2f0e5"
@@ -11572,7 +11582,7 @@
         "encoding": "none",
         "allProps": true,
         "x": 270,
-        "y": 1900,
+        "y": 2080,
         "wires": [
             [
                 "fd44791904f5a967"
@@ -11593,7 +11603,7 @@
         "finalize": "",
         "libs": [],
         "x": 470,
-        "y": 1900,
+        "y": 2080,
         "wires": [
             [
                 "6fd8d0c9cfffbf59"
@@ -11620,7 +11630,7 @@
         "repair": false,
         "outputs": 2,
         "x": 660,
-        "y": 1900,
+        "y": 2080,
         "wires": [
             [
                 "aa2c381dff735b13"
@@ -11645,7 +11655,7 @@
         "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
         "output": "str",
         "x": 910,
-        "y": 1900,
+        "y": 2080,
         "wires": [
             [
                 "fdc851cbf7608f01"
@@ -11666,7 +11676,7 @@
         "oldrc": false,
         "name": "remove tar file",
         "x": 900,
-        "y": 1960,
+        "y": 2140,
         "wires": [
             [],
             [],
@@ -11695,7 +11705,7 @@
         "className": "",
         "name": "",
         "x": 1130,
-        "y": 1900,
+        "y": 2080,
         "wires": [
             []
         ]
@@ -11715,7 +11725,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1140,
-        "y": 1960,
+        "y": 2140,
         "wires": []
     },
     {
@@ -11726,7 +11736,7 @@
         "name": "This responds to a GET .../storefiles?files=a,b,c,...-- typically invoked by an HTTP redirect",
         "info": "",
         "x": 370,
-        "y": 1720,
+        "y": 1900,
         "wires": []
     },
     {
@@ -11749,7 +11759,7 @@
         "templateScope": "local",
         "className": "",
         "x": 750,
-        "y": 1520,
+        "y": 1760,
         "wires": [
             []
         ]
@@ -11800,7 +11810,8 @@
         "wires": [
             [
                 "a5be1aecb83f8f98",
-                "2902a8c762dddfb0"
+                "2902a8c762dddfb0",
+                "eba02aa136051f14"
             ]
         ]
     },
@@ -11818,7 +11829,7 @@
         "oldrc": false,
         "name": "remove json files",
         "x": 910,
-        "y": 2040,
+        "y": 2220,
         "wires": [
             [],
             [],
@@ -12032,7 +12043,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 1820,
+        "y": 2000,
         "wires": [
             [
                 "211c1170a567424f"
@@ -12067,7 +12078,217 @@
             "1d72d9a95605c62c"
         ],
         "x": 665,
-        "y": 2000,
+        "y": 2180,
+        "wires": []
+    },
+    {
+        "id": "388f25d362c59bf3",
+        "type": "link in",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "air quality query finished",
+        "links": [
+            "221addbcadd48eb6",
+            "175f14d8399d2882"
+        ],
+        "x": 135,
+        "y": 1680,
+        "wires": [
+            [
+                "45056fb66b0f57df"
+            ]
+        ]
+    },
+    {
+        "id": "dc1c575b2d951d73",
+        "type": "comment",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "Query Air Quality table",
+        "info": "",
+        "x": 180,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "eba02aa136051f14",
+        "type": "switch",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "test whether air quality query is needed",
+        "property": "payload.events",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "airquality",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "all",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 3,
+        "x": 240,
+        "y": 1540,
+        "wires": [
+            [
+                "667310590862a3ff"
+            ],
+            [
+                "667310590862a3ff"
+            ],
+            [
+                "489e9c2dac86a67a"
+            ]
+        ]
+    },
+    {
+        "id": "489e9c2dac86a67a",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "reset msg.payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 1600,
+        "wires": [
+            [
+                "175f14d8399d2882"
+            ]
+        ]
+    },
+    {
+        "id": "667310590862a3ff",
+        "type": "template",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "create air quality query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM airquality WHERE {{{flow.download_events_date_time_query}}};",
+        "output": "str",
+        "x": 540,
+        "y": 1540,
+        "wires": [
+            [
+                "30a288d4be8df396"
+            ]
+        ]
+    },
+    {
+        "id": "30a288d4be8df396",
+        "type": "sqlite",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 810,
+        "y": 1540,
+        "wires": [
+            [
+                "997720e4050c2ba4"
+            ]
+        ]
+    },
+    {
+        "id": "997720e4050c2ba4",
+        "type": "file",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "",
+        "filename": "/db/temp/airquality.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1130,
+        "y": 1540,
+        "wires": [
+            [
+                "806dcbef48f773a2"
+            ]
+        ]
+    },
+    {
+        "id": "806dcbef48f773a2",
+        "type": "change",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "set file to download",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "airquality.json",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 1540,
+        "wires": [
+            [
+                "221addbcadd48eb6"
+            ]
+        ]
+    },
+    {
+        "id": "221addbcadd48eb6",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "air quality query finished",
+        "mode": "link",
+        "links": [
+            "388f25d362c59bf3"
+        ],
+        "x": 1565,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "175f14d8399d2882",
+        "type": "link out",
+        "z": "239d7b3ba410ad5e",
+        "g": "22f7f4e3c99ea749",
+        "name": "air quality query finished",
+        "mode": "link",
+        "links": [
+            "388f25d362c59bf3"
+        ],
+        "x": 655,
+        "y": 1600,
         "wires": []
     },
     {
