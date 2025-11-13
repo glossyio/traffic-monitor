@@ -11620,10 +11620,11 @@
         "propertyType": "msg",
         "rules": [
             {
-                "t": "null"
-            },
-            {
-                "t": "nnull"
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
             }
         ],
         "checkall": "true",
@@ -11707,7 +11708,9 @@
         "x": 1130,
         "y": 2080,
         "wires": [
-            []
+            [
+                "f27b6d01ae7836d6"
+            ]
         ]
     },
     {

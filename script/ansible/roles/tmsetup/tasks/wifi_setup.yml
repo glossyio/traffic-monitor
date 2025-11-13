@@ -10,12 +10,21 @@
     mode: '0644'
   notify: Restart NetworkManager service
 
+- name: TMSetup - WiFi Setup - Add sudoers entry to allow tmadmin to restart NetworkManager
+  become: true
+  community.general.sudoers:
+    user: "{{ tmsetup_codeowner }}"
+    name: "{{ tmsetup_codeowner }}"
+    commands: /usr/bin/systemctl restart NetworkManager.service
+    nopassword: true
+    state: present
+
 - name: TMSetup - WiFi Setup - Setup crontab
   become: true
   ansible.builtin.cron:
     name: Traffic Monitor Wifi Check
-    user: '{{ tmsetup_codeowner }}'
+    user: "{{ tmsetup_codeowner }}"
     minute: '*/5'
-    job: '/usr/bin/sudo /bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
+    job: '/bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
     state: present
 ...
