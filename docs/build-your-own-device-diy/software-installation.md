@@ -9,8 +9,8 @@ Whether you [.](./ "mention") or buy a pre-built unit, these are the instruction
 ### Preparation
 
 1. Install [Raspberry Pi OS](https://www.raspberrypi.com/software/) (lite Install) of Bookworm (latest).
-   * Lite install is the recommended default, but Full install will give you a desktop environment and other packages.&#x20;
    * Recommend using [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager) instructions and follow the [OS customization](https://www.raspberrypi.com/documentation/computers/getting-started.html#advanced-options) to set up your WiFi credentials and username and password to access the device headless; i.e. SSH with no monitor or keyboard.
+   * Raspberry Pi OS Lite (64-bit) install is the recommended default, but Full install will give you a desktop environment and other packages. Find it on RPi Imager by navigating to _Operating System > Raspberry Pi OS (other) > Raspberry Pi OS Lite (64-bit)_.
    * The first boot may take a few minutes before it is fully online.
 2. Access your Raspberry Pi via SSH credentials from step above: See [#connect-to-your-device](../setup-guide.md#connect-to-your-device "mention").
 
