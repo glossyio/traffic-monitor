@@ -5,6 +5,7 @@
   become: true
   ansible.builtin.deb822_repository:
     name: coral-edgetpu-stable
+    install_python_debian: true
     types: deb
     uris: https://packages.cloud.google.com/apt coral-edgetpu-stable main
     suites: main
