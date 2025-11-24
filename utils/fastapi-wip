@@ -4,17 +4,35 @@ import requests
 import re
 import json
 
+import datetime
+import docker
+
 app = FastAPI()
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8000)
 
+def initialize_docker_client():
+    """
+    Initialize the Docker client.
+    Returns:
+        docker.DockerClient: The initialized Docker client.
+    """
+    # Use Docker SDK for Python to interact with the Docker daemon
+    return docker.from_env()
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/listcams")
-async def list_cams(): 
+@app.get("/listsyscams")
+async def list_sys_cams(): 
+    """
+    List Raspberry Pi system cameras.
+
+    Returns:
+        dict: A dictionary containing attached cameras and their properties.
+    """
     # Run the command and capture the output
     result = subprocess.run(["rpicam-vid", "--list-cameras"], capture_output=True, text=True)
     
@@ -111,9 +129,11 @@ async def set_time(new_time: str):
         dict: A dictionary containing a message indicating that the system time has been set.
     """
     try:
-        subprocess.run(["sudo", "date", "-s", new_time], check=True)
-        return {"message": f"System time has been set to {new_time}"}
-    except subprocess.CalledProcessError as e:
+        # Sanitize the input to avoid injection attacks
+        sanitized_time = datetime.datetime.fromisoformat(new_time).isoformat()
+        subprocess.run(["sudo", "date", "-s", sanitized_time], check=True)
+        return {"message": f"System time has been set to {sanitized_time}"}
+    except (ValueError, subprocess.CalledProcessError) as e:
         return {"error": str(e)}
 
 @app.get("/gettpus")
@@ -127,3 +147,88 @@ async def get_tpus():
     lspci_output = subprocess.run(["lspci", "-nn", "|", "grep", "089a"], capture_output=True, text=True).stdout.strip()
     apex_0_exists = os.path.exists("/dev/apex_0")
     return {"lspci_output": lspci_output, "apex_0_exists": apex_0_exists}
+
+@app.get("/dockerstatus")
+async def get_docker_status():
+    """
+    Get status of all running Docker containers
+
+    Returns:
+        dict: A dictionary containing each Docker container and its status information.
+    """
+    try:
+        # Initialize the Docker client
+        client = initialize_docker_client()
+
+        # List all running containers
+        containers = client.containers.list()
+
+        # Prepare a dictionary to store container details
+        container_details = {}
+
+        for container in containers:
+            container_details[container.name] = {
+                'id': container.id,
+                'image': container.image.tags[0],
+                'status': container.status
+            }
+
+        return {"containers": container_details}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/restartdocker/{container_name}")
+async def restart_docker(container_name: str):
+    """
+    Restart a specified Docker container using the Docker API.
+
+    Args:
+        container_name (str): The name of the Docker container to restart.
+
+    Returns:
+        dict: A dictionary containing a message indicating that the container has been restarted.
+    """
+    try:
+        client = initialize_docker_client()
+
+        # Find the container by name
+        container = client.containers.get(container_name)
+
+        # Restart the container
+        container.restart()
+        return {"message": f"Docker container '{container_name}' has been restarted."}
+    except Exception as e:
+        return {"error": str(e)}
+
+# within node-red??
+    # TODO get tmdb.sqlite size
+
+    # TODO get latest deployment_id from tmdb.sqlite
+
+    # TODO enable listed/selected camera(s) in node-red config
+
+    # TODO enable listed/selected radar(s) in node-red config
+
+    # TODO Get the latest traffic-monitor repo COMMIT number (do we store this anywhere?)
+
+# with a single call to frigate/config
+# TODO grab Frigate config
+
+    # TODO display frigate cameras --> {name} --> enabled, 
+
+    # TODO display frigate detectors --> {name} --> type, 
+
+# TODO display frigate storage size
+
+# TODO display STORAGE total system size and free space (df -h??)
+
+# TODO show system network interface - either wifi or hotspot SSID, connection status
+
+# TODO show journalctl logs (argument for timeframe??)
+
+# TODO system reboot button
+
+# TODO Per Container restart buttons 
+
+# TODO how do I want to handle the WLAN status - pull this out as a separate unit from journalctl
+
