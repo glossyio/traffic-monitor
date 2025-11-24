@@ -7,9 +7,9 @@
     name: coral-edgetpu-stable
     install_python_debian: true
     types: deb
-    uris: https://packages.cloud.google.com/apt coral-edgetpu-stable main
-    suites: main
-    components: stable
+    uris: https://packages.cloud.google.com/apt
+    suites: coral-edgetpu-stable
+    components: main
     architectures: amd64
     signed_by: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
