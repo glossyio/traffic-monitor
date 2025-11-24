@@ -1,16 +1,16 @@
 ---
 # TMSetup - Coral TPU Setup tasks
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU Repository apt key
-  become: true
-  ansible.builtin.apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
 
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU apt repo
+- name: TMSetup - Coral TPU Setup - Add Coral-TPU deb apt repo and key
   become: true
-  ansible.builtin.apt_repository:
-    filename: coral-edgetpu
-    repo: 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main'
+  ansible.builtin.deb822_repository:
+    name: coral-edgetpu-stable
+    types: deb
+    uris: https://packages.cloud.google.com/apt coral-edgetpu-stable main
+    suites: main
+    components: stable
+    architectures: amd64
+    signed_by: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
 
 - name: TMSetup - Coral TPU Setup - Install runtime library
