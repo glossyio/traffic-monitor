@@ -21,7 +21,7 @@ The Traffic Monitor software is installed via an [Ansible](https://github.com/an
 #### Local installation
 
 1. Install by [connecting to your device](../setup-guide.md#id-1.-connect-to-your-device) and executing the following commands via a terminal:
-   1. `sudo apt update && sudo apt install`&#x20;
+   1. `sudo apt update && sudo apt install -y git` &#x20;
    2. `git clone https://github.com/glossyio/traffic-monitor`&#x20;
    3. `bash traffic-monitor/script/tmsetup.sh`
 
