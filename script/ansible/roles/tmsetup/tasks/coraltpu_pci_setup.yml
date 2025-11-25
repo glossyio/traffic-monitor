@@ -31,20 +31,20 @@
       become: true
       ansible.builtin.copy:
         src: gasket-builder.Dockerfile
-        dest: /tmp/gasket-builder.Dockerfile
+        dest: "{{ tmsetup_codedir }}/tmp/gasket-builder.Dockerfile"
         mode: '0644'
 
     - name: TMSetup - Coral TPU PCI Setup - Run Docker build
       become: true
       ansible.builtin.command:
-        chdir: /tmp
+        chdir: "{{ tmsetup_codedir }}/tmp"
         cmd: docker build -f gasket-builder.Dockerfile --output . .
-        creates: /tmp/gasket-dkms_1.0-18_all.deb
+        creates: "{{ tmsetup_codedir }}/tmp/gasket-dkms_1.0-18_all.deb"
 
     - name: TMSetup - Coral TPU PCI Setup - Install gasket-dkms from .deb
       become: true
       ansible.builtin.apt:
-        deb: /tmp/gasket-dkms_1.0-18_all.deb
+        deb: "{{ tmsetup_codedir }}/tmp/gasket-dkms_1.0-18_all.deb"
         state: present
       notify: TMSetup - Flag for reboot
 

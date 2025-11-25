@@ -34,6 +34,7 @@
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/services'
     - '{{ tmsetup_codedir }}/utils'
+    - '{{ tmsetup_codedir }}/tmp'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'

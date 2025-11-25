@@ -1,23 +1,20 @@
 ---
 # TMSetup - Coral TPU Setup tasks
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU Repository apt key
-  become: true
-  ansible.builtin.apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
 
-- name: TMSetup - Coral TPU Setup - Add Coral-TPU apt repo
+- name: TMSetup - Coral TPU Setup - Download the .deb package
   become: true
-  ansible.builtin.apt_repository:
-    filename: coral-edgetpu
-    repo: 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main'
-    state: present
+  ansible.builtin.get_url:
+    url: "https://github.com/feranick/libedgetpu/releases/download/16.0TF2.17.1-1/libedgetpu1-std_16.0tf2.17.1-1.bookworm_{{ tmsetup_dpkg_architecture }}.deb"
+    dest: "{{ tmsetup_codedir }}/tmp/libedgetpu1-std.deb"
+    mode: '0644'
+    force: false
 
-- name: TMSetup - Coral TPU Setup - Install runtime library
+- name: TMSetup - Coral TPU Setup - Install the .deb package with apt
   become: true
   ansible.builtin.apt:
-    update_cache: true
-    name: libedgetpu1-std
+    deb: "{{ tmsetup_codedir }}/tmp/libedgetpu1-std.deb"
     state: present
+    force: yes
+    update_cache: false
 
 ...
