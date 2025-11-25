@@ -72,4 +72,22 @@
     group: "{{ tmsetup_codegroup }}"
     mode: "0755"
 
+- name: TMSetup - Base Setup - Create journald conf directory
+  file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: TMSetup - Base Setup - Add TM journal log configuration
+  become: true
+  ansible.builtin.copy:
+    src: 81-traffic-monitor-log.conf
+    dest: /etc/systemd/journald.conf.d/81-traffic-monitor-log.conf
+    owner: root
+    group: root
+    mode: '0755'
+  notify: TMSetup - Flag for reboot
+
 ...
