@@ -16,7 +16,7 @@
     group: root
     mode: '0644'
     owner: root
-    url: "https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg"
+    url: "https://download.docker.com/linux/{{ ansible_facts['os_family'] | lower }}/gpg"
 
 - name: TMSetup - Docker Setup - Create Docker apt repo file
   become: true
@@ -24,7 +24,7 @@
     filename: docker
     repo: >-
       deb [arch={{ tmsetup_dpkg_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/{{ ansible_os_family | lower }} {{ ansible_distribution_release }} stable
+      https://download.docker.com/linux/{{ ansible_facts['os_family'] | lower }} {{ ansible_facts['distribution_release'] }} stable
     state: present
 
 - name: TMSetup - Docker Setup - Install Docker CE packages
