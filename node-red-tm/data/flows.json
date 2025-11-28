@@ -56,17 +56,17 @@
         "env": []
     },
     {
-        "id": "239d7b3ba410ad5e",
+        "id": "0fa19dea799cc41d",
         "type": "tab",
-        "label": "ui-database",
+        "label": "Dashboard 2 - Monitoring",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "0fa19dea799cc41d",
+        "id": "c17b7b1a8f280e22",
         "type": "tab",
-        "label": "Dashboard 2 - Monitoring",
+        "label": "ui-database",
         "disabled": false,
         "info": "",
         "env": []
@@ -711,50 +711,6 @@
         "h": 502
     },
     {
-        "id": "e11d3ada8d422864",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard 2 - Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "943c0adb61dbfac3",
-            "96c8b17930fcc9b9",
-            "8f0bcaf04756da4f",
-            "f27b6d01ae7836d6",
-            "e8b8e45c4bc045d8",
-            "840802d34d143ded",
-            "8d65b604e8d9e7f9",
-            "db1f35650c8d6448"
-        ],
-        "x": 44,
-        "y": 279,
-        "w": 1092,
-        "h": 202
-    },
-    {
-        "id": "d58714d193d44ae6",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard 2 - Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f7b3e11474e3626a",
-            "2ad488b2e5da088f",
-            "396c90ebe85db8c2",
-            "c629bab8eb81f07e",
-            "817efc474a9809f8",
-            "fda1f9b5367bd61d"
-        ],
-        "x": 34,
-        "y": 499,
-        "w": 752,
-        "h": 162
-    },
-    {
         "id": "30d5f95b51a19a92",
         "type": "group",
         "z": "0fa19dea799cc41d",
@@ -894,126 +850,6 @@
         "y": 199,
         "w": 1212,
         "h": 142
-    },
-    {
-        "id": "22f7f4e3c99ea749",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard - 2 Download JSON",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "6f7d5fb3603b606d",
-            "569f1d8a47fa56be",
-            "7e4b65073e92256c",
-            "01f395ea8d6b6e0f",
-            "ae6535ff0b81adbf",
-            "dd4e8c9863fa9a16",
-            "a5be1aecb83f8f98",
-            "c118b2335534c91f",
-            "4f0b5ea9ed9b1d5c",
-            "6530408d74afd2ca",
-            "bdd1f6d18092f3a1",
-            "5e5fb49751f6a65f",
-            "47db4a3d9babe67c",
-            "688ba3f9de8f633b",
-            "2902a8c762dddfb0",
-            "38a5a14c68abd667",
-            "01e5e0053b7d1a48",
-            "1ab7f73fa64a4749",
-            "d698bff47247e453",
-            "af549f1a0955192b",
-            "ff73409f58e8b833",
-            "efc641b1f57410b1",
-            "fc27759f1d9967dd",
-            "247d1b21beb5d22b",
-            "92c4a3f4ee4a9cf9",
-            "618decc931a3ab07",
-            "60ef4ac1137d7de9",
-            "e88a18626a167bd9",
-            "2a3ad002b5a411db",
-            "41b3b7d033b98c50",
-            "c2bbad7b4ed5bca3",
-            "8954f75495748fa9",
-            "7b411816a1cd1d7a",
-            "235293bf4ab1d3c3",
-            "45056fb66b0f57df",
-            "9292a34714a43a52",
-            "f26cf5cb5d05a31e",
-            "acf18a73af2d3a08",
-            "b2becdd99377ae81",
-            "d33424d512cee85a",
-            "525710dc43d5acc5",
-            "cdd2b8f5fa65aae6",
-            "d8eb428652b41aa3",
-            "1d72d9a95605c62c",
-            "388f25d362c59bf3",
-            "dc1c575b2d951d73",
-            "eba02aa136051f14",
-            "489e9c2dac86a67a",
-            "667310590862a3ff",
-            "30a288d4be8df396",
-            "997720e4050c2ba4",
-            "806dcbef48f773a2",
-            "221addbcadd48eb6",
-            "175f14d8399d2882"
-        ],
-        "x": 34,
-        "y": 699,
-        "w": 1802,
-        "h": 1102
-    },
-    {
-        "id": "c2c6204bad31b1c1",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Dashboard 2 - Compress & Download 1 or More Files",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "3bca76b97616a721",
-            "211c1170a567424f",
-            "6805125aee214043",
-            "fdda93ec10974b33",
-            "9b044e27e36842fa",
-            "622ee4aef0f2f0e5",
-            "43aa560c48e43156",
-            "0e3b2a5e34e144af",
-            "c7a5c9d83e157b3b",
-            "fd44791904f5a967",
-            "6fd8d0c9cfffbf59",
-            "aa2c381dff735b13",
-            "0853fc803aa4c7bc",
-            "fdc851cbf7608f01",
-            "f1fa95ea232fc524",
-            "495f886efa6f1019",
-            "3524b3702d879e06",
-            "eda64547ba14ee2d",
-            "cee8e5d249eaf026"
-        ],
-        "x": 34,
-        "y": 1859,
-        "w": 1332,
-        "h": 409.5
-    },
-    {
-        "id": "839f163f693aa2d9",
-        "type": "group",
-        "z": "239d7b3ba410ad5e",
-        "name": "Iniitalization",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0223975e0768d0ac",
-            "e21cfa6404c4e7df"
-        ],
-        "x": 34,
-        "y": 151.5,
-        "w": 712,
-        "h": 97
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -1439,6 +1275,170 @@
         "y": 859,
         "w": 932,
         "h": 162
+    },
+    {
+        "id": "51b4f9f6eec82b15",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "85ead2fe1cc3615e",
+            "5a16a463c494f3b9",
+            "1fbbc9119504d996",
+            "1b83e0f60d5e490b",
+            "5868a1854443a278",
+            "c739086c12d51aad",
+            "64c93cd3212b3506",
+            "322ce06e3fbc868c"
+        ],
+        "x": 44,
+        "y": 279,
+        "w": 1092,
+        "h": 202
+    },
+    {
+        "id": "52253d5735c84858",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "e6d79b5f56108473",
+            "68df4cd77d918f4f",
+            "430b15d4dc55fa23",
+            "55acb7e93fa09c1b",
+            "20df6f4008fdfc59",
+            "1569cb5899ca098d"
+        ],
+        "x": 34,
+        "y": 499,
+        "w": 752,
+        "h": 162
+    },
+    {
+        "id": "54a0d44724ba51b6",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard - 2 Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "65e850e03a309e92",
+            "d00b00635d288fdc",
+            "26139736d764beae",
+            "79fc30d993437d9a",
+            "983ed8364551e68a",
+            "41d7154219cefa60",
+            "a77d79afe1bb4de8",
+            "a8890ae2aceeef32",
+            "6be99fcd6d8afd7b",
+            "698de34e52c0943a",
+            "f94785b23a69ad0b",
+            "ad9347894b2e7928",
+            "9e3519d6f1c0a125",
+            "bdf6d9d715d866e2",
+            "3a04a85c5e35cad4",
+            "f264a0b7b2ec806a",
+            "2d0c1df4b9b39734",
+            "91979b29d5446443",
+            "2992f512c45dd56d",
+            "d2e69c0e761db100",
+            "32584116de1e24f7",
+            "7ef7a3709ff20875",
+            "fb810a0465fb5fc5",
+            "6333829f1ef0df89",
+            "4e58dae08292a766",
+            "f70e4072c1b9e1c2",
+            "c6d953ce0ea6beb6",
+            "2d877aa75c72713d",
+            "8a338bf626e0c142",
+            "045864b769b6f4cc",
+            "4a8aab2230ce18c5",
+            "7ea3d817c00b14aa",
+            "fec49a680d20027e",
+            "0b1e946c42580cf3",
+            "3b742dd1f9b3447b",
+            "c39f71a33c308681",
+            "2ad6ea519e3cb6e3",
+            "28c88539c76c9801",
+            "1fc0e48c11c0bbfa",
+            "b577bad08d1b4f65",
+            "7b7f627b93e9f3c5",
+            "956392751b01d5ed",
+            "ed0fcc7faf98dbb0",
+            "79570ebbc363d274",
+            "f838921f5647499b",
+            "ad3c4efc1861d109",
+            "daa61bfa574cf15c",
+            "c9f653c4f6f10a68",
+            "55052c813da299c9",
+            "d16fe4c215c71c73",
+            "56787eccc13dacec",
+            "25e67a89a3f964e7",
+            "9245ac0b61cb72f3",
+            "837ce5e6bb85a2b8"
+        ],
+        "x": 34,
+        "y": 699,
+        "w": 1802,
+        "h": 1102
+    },
+    {
+        "id": "0e529403dab80c69",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Compress & Download 1 or More Files",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0309814d489531fc",
+            "ddaad6aa2eb9e108",
+            "7a602df7a5e69c3e",
+            "5f9afee4d94c66ea",
+            "0c53e5cc5a118052",
+            "81033f124118f7fc",
+            "4ac80387e90476cc",
+            "a845e5248a7c1281",
+            "3d588b14f06a9513",
+            "d3a3617e640817f3",
+            "40d3dc4bf27d573d",
+            "fe72ae25c4017e66",
+            "4473c90f84a2e917",
+            "499167880916903d",
+            "9974a7476cf58f75",
+            "d556c7770b427fd5",
+            "e2de4ba1ce2c0a40",
+            "cce0af4df8683362",
+            "3474fe5ed0dc9370"
+        ],
+        "x": 34,
+        "y": 1859,
+        "w": 1332,
+        "h": 409.5
+    },
+    {
+        "id": "30a709c93555c489",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Iniitalization",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3a6d44528a137a46",
+            "604189c526167b10"
+        ],
+        "x": 34,
+        "y": 151.5,
+        "w": 712,
+        "h": 97
     },
     {
         "id": "05a58d9ee463c696",
@@ -10330,1971 +10330,6 @@
         ]
     },
     {
-        "id": "943c0adb61dbfac3",
-        "type": "ui-form",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "name": "Create New Comment",
-        "group": "d1b753e7c692d80c",
-        "label": "Create New Comment",
-        "order": 2,
-        "width": "6",
-        "height": "9",
-        "options": [
-            {
-                "label": "Effective Date (start of comment period)",
-                "key": "effective_date",
-                "type": "date",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Effective TIme",
-                "key": "effectiveTime",
-                "type": "time",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Expiration Date",
-                "key": "expiration_date",
-                "type": "date",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Expiration Time",
-                "key": "expirationTime",
-                "type": "time",
-                "required": false,
-                "rows": null
-            },
-            {
-                "label": "Comment",
-                "key": "comment",
-                "type": "multiline",
-                "required": false,
-                "rows": 3
-            },
-            {
-                "label": "Commenter Name (or Description)",
-                "key": "name",
-                "type": "text",
-                "required": true,
-                "rows": null
-            }
-        ],
-        "formValue": {
-            "effective_date": "",
-            "effectiveTime": "",
-            "expiration_date": "",
-            "expirationTime": "",
-            "comment": "",
-            "name": ""
-        },
-        "payload": "",
-        "submit": "submit",
-        "cancel": "clear",
-        "resetOnSubmit": true,
-        "topic": "topic",
-        "topicType": "msg",
-        "splitLayout": "",
-        "className": "",
-        "passthru": false,
-        "dropdownOptions": [],
-        "x": 180,
-        "y": 440,
-        "wires": [
-            [
-                "8d65b604e8d9e7f9"
-            ]
-        ]
-    },
-    {
-        "id": "f7b3e11474e3626a",
-        "type": "ui-template",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "group": "e566a6a1e878cd10",
-        "page": "",
-        "ui": "",
-        "name": "Button to trigger download request",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "head": "",
-        "format": "<template>\n  <a :href=\"`/storefiles?files=${msg.payload.filename}`\" style=\"text-decoration:none\">\n    <v-btn class=\"v-btn--block\">Download Database</v-btn>\n  </a>\n</template>",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 480,
-        "y": 620,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "2ad488b2e5da088f",
-        "type": "inject",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "name": "Set database filename",
-        "props": [
-            {
-                "p": "payload.filename",
-                "v": "TM_DATABASE_PATH_TMDB",
-                "vt": "env"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 190,
-        "y": 620,
-        "wires": [
-            [
-                "f7b3e11474e3626a",
-                "396c90ebe85db8c2"
-            ]
-        ]
-    },
-    {
-        "id": "396c90ebe85db8c2",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "name": "get db size in MB",
-        "func": "const fs = global.get(\"fs\");\nvar stats = fs.statSync(msg.payload.filename);\nvar fileSizeInBytes = stats.size;\n// Convert the file size to megabytes (optional)\nvar fileSizeInMegabytes = (fileSizeInBytes / (1024*1024)).toFixed(3);\n\nmsg.payload = fileSizeInMegabytes;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 580,
-        "wires": [
-            [
-                "c629bab8eb81f07e",
-                "fda1f9b5367bd61d"
-            ]
-        ]
-    },
-    {
-        "id": "c629bab8eb81f07e",
-        "type": "ui-text",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "group": "e566a6a1e878cd10",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Database size (MB): ",
-        "format": "{{msg.payload}}",
-        "layout": "row-left",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#717171",
-        "wrapText": false,
-        "className": "",
-        "x": 660,
-        "y": 540,
-        "wires": []
-    },
-    {
-        "id": "817efc474a9809f8",
-        "type": "ui-template",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "group": "e566a6a1e878cd10",
-        "page": "",
-        "ui": "",
-        "name": "download instructions",
-        "order": 1,
-        "width": "0",
-        "height": "0",
-        "head": "",
-        "format": "<template>\n    <text>\n        <p>Click the button below to download the entire Traffic Monitor SQLite database(s) to your computer. \n            Database will include data for all connected sensors including events, radar, air quality, and more \n            while the Traffic Monitor was deployed and capturing, only from this device.</p>\n    </text>\n</template>\n",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 160,
-        "y": 540,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "fda1f9b5367bd61d",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "d58714d193d44ae6",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "dbSize",
-                "pt": "flow",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 640,
-        "y": 580,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "96c8b17930fcc9b9",
-        "type": "ui-template",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "group": "d1b753e7c692d80c",
-        "page": "",
-        "ui": "",
-        "name": "comments instructions",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "head": "",
-        "format": "<template>\n    <div>\n        <p>Comments are date-sensitive entries about the Traffic Monitor status, deployment, location, conditions, construction, etc.\n        These comments do not directly impact any display or counts but may be used for downstream analysis. Do not include any personally identifiable information.\n        For example: Create a comment that says \"Road repaving, local access only\" with dates from June 1 through June 22.\n    </div>\n</template>",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 180,
-        "y": 400,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "6f7d5fb3603b606d",
-        "type": "ui-template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "group": "216a4109fe080851",
-        "page": "",
-        "ui": "",
-        "name": "Download JSON UI",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "head": "",
-        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Air Quality\", value: \"airquality\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
-        "storeOutMessages": true,
-        "passthru": false,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 170,
-        "y": 900,
-        "wires": [
-            [
-                "d8eb428652b41aa3"
-            ]
-        ]
-    },
-    {
-        "id": "569f1d8a47fa56be",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Setup \"Select JSON Contents\" choices per database event labels",
-        "info": "",
-        "x": 300,
-        "y": 740,
-        "wires": []
-    },
-    {
-        "id": "7e4b65073e92256c",
-        "type": "ui-control",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "when UI opens",
-        "ui": "2a8899583532edb4",
-        "events": "all",
-        "x": 140,
-        "y": 800,
-        "wires": [
-            [
-                "01f395ea8d6b6e0f"
-            ]
-        ]
-    },
-    {
-        "id": "01f395ea8d6b6e0f",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "setup SQL to get distinct event labels",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT DISTINCT label FROM events;",
-        "output": "str",
-        "x": 570,
-        "y": 800,
-        "wires": [
-            [
-                "ae6535ff0b81adbf"
-            ]
-        ]
-    },
-    {
-        "id": "ae6535ff0b81adbf",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 930,
-        "y": 800,
-        "wires": [
-            [
-                "6f7d5fb3603b606d"
-            ]
-        ]
-    },
-    {
-        "id": "dd4e8c9863fa9a16",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Download JSON UI",
-        "info": "",
-        "x": 150,
-        "y": 860,
-        "wires": []
-    },
-    {
-        "id": "a5be1aecb83f8f98",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "setup Events Query",
-        "func": "const events = msg.payload.events;\nlet query = \"SELECT * FROM events WHERE\";\nlet count = 0;\n// if \"all\" or \"events\" is selected, don't bother with individual events\nif (!(events.includes(\"all\") || events.includes(\"events\"))) {\n    events.forEach(function(event)  {\n        if (event != 'all'\n            && event != 'events'\n            && event != 'radar') {\n                if (count == 0) {\n                    query += \" (\";\n                } else {\n                    query += \" OR\";\n                }\n                query += \" label == '\" + event + \"'\";\n                count++;\n            }\n    })\n}\nif (count > 0) {\n    query += \") AND\";\n}\nif (count > 0\n    || events.includes(\"all\")\n    || events.includes(\"events\")) {\n    query += flow.get(\"download_events_date_time_query\");\n} else {\n    query = \"\"; // to tell switch that there is no events query to execute\n}\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 170,
-        "y": 1020,
-        "wires": [
-            [
-                "bdd1f6d18092f3a1"
-            ]
-        ]
-    },
-    {
-        "id": "c118b2335534c91f",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Query Events table",
-        "info": "",
-        "x": 150,
-        "y": 960,
-        "wires": []
-    },
-    {
-        "id": "4f0b5ea9ed9b1d5c",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 790,
-        "y": 1020,
-        "wires": [
-            [
-                "6530408d74afd2ca"
-            ]
-        ]
-    },
-    {
-        "id": "6530408d74afd2ca",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/events.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1060,
-        "y": 1020,
-        "wires": [
-            [
-                "688ba3f9de8f633b"
-            ]
-        ]
-    },
-    {
-        "id": "bdd1f6d18092f3a1",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "test whether events query is needed",
-        "property": "topic",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "nempty"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 450,
-        "y": 1020,
-        "wires": [
-            [
-                "4f0b5ea9ed9b1d5c"
-            ],
-            [
-                "47db4a3d9babe67c"
-            ]
-        ]
-    },
-    {
-        "id": "5e5fb49751f6a65f",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Query Radar table",
-        "info": "",
-        "x": 150,
-        "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "47db4a3d9babe67c",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "reset msg.payload",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 710,
-        "y": 1080,
-        "wires": [
-            [
-                "d33424d512cee85a"
-            ]
-        ]
-    },
-    {
-        "id": "688ba3f9de8f633b",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "set file to download",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "events.json",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1270,
-        "y": 1020,
-        "wires": [
-            [
-                "b2becdd99377ae81"
-            ]
-        ]
-    },
-    {
-        "id": "2902a8c762dddfb0",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "test whether radar query is needed",
-        "property": "payload.events",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "radar",
-                "vt": "str"
-            },
-            {
-                "t": "cont",
-                "v": "all",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "false",
-        "repair": false,
-        "outputs": 3,
-        "x": 220,
-        "y": 1200,
-        "wires": [
-            [
-                "38a5a14c68abd667",
-                "01e5e0053b7d1a48",
-                "1ab7f73fa64a4749",
-                "d698bff47247e453",
-                "af549f1a0955192b"
-            ],
-            [
-                "38a5a14c68abd667",
-                "01e5e0053b7d1a48",
-                "1ab7f73fa64a4749",
-                "d698bff47247e453",
-                "af549f1a0955192b"
-            ],
-            [
-                "cdd2b8f5fa65aae6"
-            ]
-        ]
-    },
-    {
-        "id": "38a5a14c68abd667",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Create radar_dov query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM radar_dov WHERE {{{flow.download_radar_date_time_query}}};",
-        "output": "str",
-        "x": 510,
-        "y": 1200,
-        "wires": [
-            [
-                "efc641b1f57410b1"
-            ]
-        ]
-    },
-    {
-        "id": "01e5e0053b7d1a48",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "create radar_timed_speed_counts query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM radar_timed_speed_counts WHERE {{{flow.download_radar_date_time_query}}};",
-        "output": "str",
-        "x": 560,
-        "y": 1260,
-        "wires": [
-            [
-                "fc27759f1d9967dd"
-            ]
-        ]
-    },
-    {
-        "id": "1ab7f73fa64a4749",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "create radar_raw_speed_magnitude query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM radar_raw_speed_magnitude WHERE {{{flow.download_radar_date_time_query}}};",
-        "output": "str",
-        "x": 560,
-        "y": 1320,
-        "wires": [
-            [
-                "247d1b21beb5d22b"
-            ]
-        ]
-    },
-    {
-        "id": "d698bff47247e453",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "create radar_raw_speed_magnitude_single query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM radar_raw_speed_magnitude_single WHERE {{{flow.download_radar_date_time_query}}};",
-        "output": "str",
-        "x": 590,
-        "y": 1380,
-        "wires": [
-            [
-                "92c4a3f4ee4a9cf9"
-            ]
-        ]
-    },
-    {
-        "id": "af549f1a0955192b",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "create radar_oc_payload query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM radar_oc_payload WHERE {{{flow.download_events_date_time_query}}};",
-        "output": "str",
-        "x": 530,
-        "y": 1440,
-        "wires": [
-            [
-                "618decc931a3ab07"
-            ]
-        ]
-    },
-    {
-        "id": "ff73409f58e8b833",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "download results",
-        "mode": "link",
-        "links": [
-            "9292a34714a43a52"
-        ],
-        "x": 345,
-        "y": 1280,
-        "wires": []
-    },
-    {
-        "id": "efc641b1f57410b1",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 930,
-        "y": 1200,
-        "wires": [
-            [
-                "60ef4ac1137d7de9"
-            ]
-        ]
-    },
-    {
-        "id": "fc27759f1d9967dd",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 930,
-        "y": 1260,
-        "wires": [
-            [
-                "e88a18626a167bd9"
-            ]
-        ]
-    },
-    {
-        "id": "247d1b21beb5d22b",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 930,
-        "y": 1320,
-        "wires": [
-            [
-                "2a3ad002b5a411db"
-            ]
-        ],
-        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
-    },
-    {
-        "id": "92c4a3f4ee4a9cf9",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 940,
-        "y": 1380,
-        "wires": [
-            [
-                "41b3b7d033b98c50"
-            ]
-        ]
-    },
-    {
-        "id": "618decc931a3ab07",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 940,
-        "y": 1440,
-        "wires": [
-            [
-                "c2bbad7b4ed5bca3"
-            ]
-        ]
-    },
-    {
-        "id": "60ef4ac1137d7de9",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/radar_dov.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1220,
-        "y": 1200,
-        "wires": [
-            [
-                "8954f75495748fa9"
-            ]
-        ]
-    },
-    {
-        "id": "e88a18626a167bd9",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/radar_timed_speed_counts.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1260,
-        "y": 1260,
-        "wires": [
-            [
-                "8954f75495748fa9"
-            ]
-        ]
-    },
-    {
-        "id": "2a3ad002b5a411db",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/radar_raw_speed_magnitude.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1280,
-        "y": 1320,
-        "wires": [
-            [
-                "8954f75495748fa9"
-            ]
-        ]
-    },
-    {
-        "id": "41b3b7d033b98c50",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/radar_raw_speed_magnitude_single.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1310,
-        "y": 1380,
-        "wires": [
-            [
-                "8954f75495748fa9"
-            ]
-        ]
-    },
-    {
-        "id": "c2bbad7b4ed5bca3",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/radar_oc_payload.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1260,
-        "y": 1440,
-        "wires": [
-            [
-                "8954f75495748fa9"
-            ]
-        ]
-    },
-    {
-        "id": "8954f75495748fa9",
-        "type": "join",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "wait for radar queries",
-        "mode": "custom",
-        "build": "object",
-        "property": "none",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "10",
-        "count": "5",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 1670,
-        "y": 1320,
-        "wires": [
-            [
-                "7b411816a1cd1d7a"
-            ]
-        ]
-    },
-    {
-        "id": "7b411816a1cd1d7a",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "radar files to download",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "radar_dov.json,radar_timed_speed_counts.json,radar_raw_speed_magnitude.json,radar_raw_speed_magnitude_single.json,radar_oc_payload.json",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1660,
-        "y": 1400,
-        "wires": [
-            [
-                "235293bf4ab1d3c3"
-            ]
-        ]
-    },
-    {
-        "id": "235293bf4ab1d3c3",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "radar query finished",
-        "mode": "link",
-        "links": [
-            "9292a34714a43a52"
-        ],
-        "x": 1795,
-        "y": 1400,
-        "wires": []
-    },
-    {
-        "id": "45056fb66b0f57df",
-        "type": "join",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "wait for events and radar queries",
-        "mode": "custom",
-        "build": "string",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "none",
-        "joiner": ",",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "0",
-        "count": "3",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "num",
-        "reduceFixup": "",
-        "x": 360,
-        "y": 1760,
-        "wires": [
-            [
-                "525710dc43d5acc5"
-            ]
-        ]
-    },
-    {
-        "id": "9292a34714a43a52",
-        "type": "link in",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "radar query finished (new)",
-        "links": [
-            "235293bf4ab1d3c3",
-            "ff73409f58e8b833"
-        ],
-        "x": 135,
-        "y": 1760,
-        "wires": [
-            [
-                "45056fb66b0f57df"
-            ]
-        ]
-    },
-    {
-        "id": "f26cf5cb5d05a31e",
-        "type": "link in",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "events query finished (new)",
-        "links": [
-            "b2becdd99377ae81",
-            "d33424d512cee85a"
-        ],
-        "x": 135,
-        "y": 1720,
-        "wires": [
-            [
-                "45056fb66b0f57df"
-            ]
-        ]
-    },
-    {
-        "id": "acf18a73af2d3a08",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "sync events and radar queries",
-        "info": "",
-        "x": 180,
-        "y": 1640,
-        "wires": []
-    },
-    {
-        "id": "b2becdd99377ae81",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "events query finished",
-        "mode": "link",
-        "links": [
-            "f26cf5cb5d05a31e"
-        ],
-        "x": 1395,
-        "y": 1020,
-        "wires": []
-    },
-    {
-        "id": "d33424d512cee85a",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "events query finished",
-        "mode": "link",
-        "links": [
-            "f26cf5cb5d05a31e"
-        ],
-        "x": 955,
-        "y": 1080,
-        "wires": []
-    },
-    {
-        "id": "3bca76b97616a721",
-        "type": "http in",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "Respond to download request",
-        "url": "/storefiles",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 180,
-        "y": 2000,
-        "wires": [
-            [
-                "eda64547ba14ee2d"
-            ]
-        ]
-    },
-    {
-        "id": "211c1170a567424f",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "Test for error",
-        "property": "res.statusCode",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "neq",
-                "v": "0",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 650,
-        "y": 2000,
-        "wires": [
-            [
-                "6805125aee214043",
-                "fdda93ec10974b33"
-            ],
-            [
-                "9b044e27e36842fa"
-            ]
-        ]
-    },
-    {
-        "id": "6805125aee214043",
-        "type": "ui-notification",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "ui": "2a8899583532edb4",
-        "position": "center center",
-        "colorDefault": false,
-        "color": "#f40101",
-        "displayTime": "10",
-        "showCountdown": true,
-        "outputs": 1,
-        "allowDismiss": true,
-        "dismissText": "Close",
-        "allowConfirm": false,
-        "confirmText": "Confirm",
-        "raw": false,
-        "className": "",
-        "name": "",
-        "x": 950,
-        "y": 1900,
-        "wires": [
-            [
-                "43aa560c48e43156"
-            ]
-        ]
-    },
-    {
-        "id": "fdda93ec10974b33",
-        "type": "http response",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 910,
-        "y": 1940,
-        "wires": []
-    },
-    {
-        "id": "9b044e27e36842fa",
-        "type": "exec",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "command": "tar czvf download.tar.gz ",
-        "addpay": "payload.filepath",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "60",
-        "winHide": false,
-        "oldrc": false,
-        "name": "zip files",
-        "x": 840,
-        "y": 2000,
-        "wires": [
-            [],
-            [],
-            [
-                "0e3b2a5e34e144af"
-            ]
-        ]
-    },
-    {
-        "id": "622ee4aef0f2f0e5",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "Copy error message",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "payload.message",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1240,
-        "y": 2000,
-        "wires": [
-            [
-                "6805125aee214043",
-                "fdda93ec10974b33"
-            ]
-        ]
-    },
-    {
-        "id": "43aa560c48e43156",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "show error msg",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 1900,
-        "wires": []
-    },
-    {
-        "id": "0e3b2a5e34e144af",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "test for failure",
-        "property": "payload.code",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "neq",
-                "v": "0",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 1020,
-        "y": 2000,
-        "wires": [
-            [
-                "622ee4aef0f2f0e5"
-            ],
-            [
-                "c7a5c9d83e157b3b"
-            ]
-        ]
-    },
-    {
-        "id": "c7a5c9d83e157b3b",
-        "type": "file in",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "read the zip file in chunks",
-        "filename": "\"download.tar.gz\"",
-        "filenameType": "jsonata",
-        "format": "stream",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": true,
-        "x": 270,
-        "y": 2080,
-        "wires": [
-            [
-                "fd44791904f5a967"
-            ]
-        ]
-    },
-    {
-        "id": "fd44791904f5a967",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "send chunks",
-        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 470,
-        "y": 2080,
-        "wires": [
-            [
-                "6fd8d0c9cfffbf59"
-            ]
-        ]
-    },
-    {
-        "id": "6fd8d0c9cfffbf59",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "check for end",
-        "property": "parts.count",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 660,
-        "y": 2080,
-        "wires": [
-            [
-                "aa2c381dff735b13"
-            ],
-            [
-                "0853fc803aa4c7bc",
-                "3524b3702d879e06",
-                "cee8e5d249eaf026"
-            ]
-        ]
-    },
-    {
-        "id": "aa2c381dff735b13",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "notification running",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
-        "output": "str",
-        "x": 910,
-        "y": 2080,
-        "wires": [
-            [
-                "fdc851cbf7608f01"
-            ]
-        ]
-    },
-    {
-        "id": "0853fc803aa4c7bc",
-        "type": "exec",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "command": "rm -f /db/temp/download.tar.gz",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "remove tar file",
-        "x": 900,
-        "y": 2140,
-        "wires": [
-            [],
-            [],
-            [
-                "f1fa95ea232fc524"
-            ]
-        ]
-    },
-    {
-        "id": "fdc851cbf7608f01",
-        "type": "ui-notification",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "ui": "2a8899583532edb4",
-        "position": "center center",
-        "colorDefault": true,
-        "color": "#000000",
-        "displayTime": "3",
-        "showCountdown": true,
-        "outputs": 1,
-        "allowDismiss": true,
-        "dismissText": "Close",
-        "allowConfirm": false,
-        "confirmText": "Confirm",
-        "raw": false,
-        "className": "",
-        "name": "",
-        "x": 1130,
-        "y": 2080,
-        "wires": [
-            [
-                "f27b6d01ae7836d6"
-            ]
-        ]
-    },
-    {
-        "id": "f1fa95ea232fc524",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "show rm error",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1140,
-        "y": 2140,
-        "wires": []
-    },
-    {
-        "id": "495f886efa6f1019",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "This responds to a GET .../storefiles?files=a,b,c,...-- typically invoked by an HTTP redirect",
-        "info": "",
-        "x": 370,
-        "y": 1900,
-        "wires": []
-    },
-    {
-        "id": "525710dc43d5acc5",
-        "type": "ui-template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "group": "216a4109fe080851",
-        "page": "",
-        "ui": "",
-        "name": "redirect to storefiles URL",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "head": "",
-        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/storefiles?files=${filenames}`;\n    })\n    </script>",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 750,
-        "y": 1760,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "cdd2b8f5fa65aae6",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "reset msg.payload",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 190,
-        "y": 1280,
-        "wires": [
-            [
-                "ff73409f58e8b833"
-            ]
-        ]
-    },
-    {
-        "id": "d8eb428652b41aa3",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "setup date & time part of SQL query",
-        "func": "// convert dates to Unix epoch in seconds\nconst local_start = new Date(msg.payload.start).valueOf() / 1000;\nconst local_end = new Date(msg.payload.end).valueOf() / 1000;\n\n// convert timestamps to UTC\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60; // UTC offset in seconds\nconst start = local_start - timezoneOffset;\nconst end = local_end - timezoneOffset;\n\n// the events database (and the radar_oc_payload table) have \"start_time\" and \"end_time\" columns\n// so setup a where clause for those\nlet events_date_time_query = \" start_time >= \" + start;\nevents_date_time_query += \" AND end_time < \" + end\nflow.set(\"download_events_date_time_query\", events_date_time_query);\n\n// the other radar tables have just a \"time\" column\n// so setup a different where clause for them\nlet radar_date_time_query = \" time >= \" + start;\nradar_date_time_query += \" AND time < \" + end\nflow.set(\"download_radar_date_time_query\", radar_date_time_query);\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 900,
-        "wires": [
-            [
-                "a5be1aecb83f8f98",
-                "2902a8c762dddfb0",
-                "eba02aa136051f14"
-            ]
-        ]
-    },
-    {
-        "id": "3524b3702d879e06",
-        "type": "exec",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "command": "rm -f /db/temp/*.json",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "remove json files",
-        "x": 910,
-        "y": 2220,
-        "wires": [
-            [],
-            [],
-            [
-                "f1fa95ea232fc524"
-            ]
-        ]
-    },
-    {
-        "id": "f27b6d01ae7836d6",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 640,
-        "y": 340,
-        "wires": [
-            [
-                "840802d34d143ded"
-            ]
-        ]
-    },
-    {
-        "id": "8f0bcaf04756da4f",
-        "type": "inject",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "name": "create table for comments",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
-        "x": 210,
-        "y": 320,
-        "wires": [
-            [
-                "f27b6d01ae7836d6"
-            ]
-        ]
-    },
-    {
-        "id": "e8b8e45c4bc045d8",
-        "type": "inject",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "name": "select latest 5 rows from comments",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
-        "x": 230,
-        "y": 360,
-        "wires": [
-            [
-                "f27b6d01ae7836d6"
-            ]
-        ]
-    },
-    {
-        "id": "840802d34d143ded",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "name": "sqlite select last 5 comments",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 970,
-        "y": 340,
-        "wires": []
-    },
-    {
-        "id": "8d65b604e8d9e7f9",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "name": "create comment payload",
-        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.id = entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0');\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 480,
-        "y": 440,
-        "wires": [
-            [
-                "db1f35650c8d6448"
-            ]
-        ],
-        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
-    },
-    {
-        "id": "db1f35650c8d6448",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "e11d3ada8d422864",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "prepared",
-        "sql": "INSERT INTO comments (id, effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($id, $effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
-        "name": "tmdb.comments, Prepared Statement",
-        "x": 820,
-        "y": 440,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "6fb7942fed0176ef",
-        "type": "debug",
-        "z": "239d7b3ba410ad5e",
-        "name": "catch any errors",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 260,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "f25948ce47470918",
-        "type": "catch",
-        "z": "239d7b3ba410ad5e",
-        "name": "",
-        "scope": null,
-        "uncaught": false,
-        "x": 80,
-        "y": 100,
-        "wires": [
-            [
-                "6fb7942fed0176ef"
-            ]
-        ]
-    },
-    {
-        "id": "e21cfa6404c4e7df",
-        "type": "ui-control",
-        "z": "239d7b3ba410ad5e",
-        "g": "839f163f693aa2d9",
-        "name": "when UI opens",
-        "ui": "2a8899583532edb4",
-        "events": "change",
-        "x": 140,
-        "y": 200,
-        "wires": [
-            [
-                "0223975e0768d0ac"
-            ]
-        ]
-    },
-    {
-        "id": "0223975e0768d0ac",
-        "type": "exec",
-        "z": "239d7b3ba410ad5e",
-        "g": "839f163f693aa2d9",
-        "command": "mkdir -p /db/temp",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "create /db/temp folder to temporarily hold download files",
-        "x": 510,
-        "y": 200,
-        "wires": [
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "eda64547ba14ee2d",
-        "type": "function",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 2000,
-        "wires": [
-            [
-                "211c1170a567424f"
-            ]
-        ]
-    },
-    {
-        "id": "1d72d9a95605c62c",
-        "type": "link in",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "refresh page",
-        "links": [
-            "cee8e5d249eaf026"
-        ],
-        "x": 305,
-        "y": 820,
-        "wires": [
-            [
-                "01f395ea8d6b6e0f"
-            ]
-        ]
-    },
-    {
-        "id": "cee8e5d249eaf026",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "c2c6204bad31b1c1",
-        "name": "refresh page",
-        "mode": "link",
-        "links": [
-            "1d72d9a95605c62c"
-        ],
-        "x": 665,
-        "y": 2180,
-        "wires": []
-    },
-    {
-        "id": "388f25d362c59bf3",
-        "type": "link in",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "air quality query finished",
-        "links": [
-            "221addbcadd48eb6",
-            "175f14d8399d2882"
-        ],
-        "x": 135,
-        "y": 1680,
-        "wires": [
-            [
-                "45056fb66b0f57df"
-            ]
-        ]
-    },
-    {
-        "id": "dc1c575b2d951d73",
-        "type": "comment",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "Query Air Quality table",
-        "info": "",
-        "x": 180,
-        "y": 1480,
-        "wires": []
-    },
-    {
-        "id": "eba02aa136051f14",
-        "type": "switch",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "test whether air quality query is needed",
-        "property": "payload.events",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "cont",
-                "v": "airquality",
-                "vt": "str"
-            },
-            {
-                "t": "cont",
-                "v": "all",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "false",
-        "repair": false,
-        "outputs": 3,
-        "x": 240,
-        "y": 1540,
-        "wires": [
-            [
-                "667310590862a3ff"
-            ],
-            [
-                "667310590862a3ff"
-            ],
-            [
-                "489e9c2dac86a67a"
-            ]
-        ]
-    },
-    {
-        "id": "489e9c2dac86a67a",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "reset msg.payload",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 510,
-        "y": 1600,
-        "wires": [
-            [
-                "175f14d8399d2882"
-            ]
-        ]
-    },
-    {
-        "id": "667310590862a3ff",
-        "type": "template",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "create air quality query",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "SELECT * FROM airquality WHERE {{{flow.download_events_date_time_query}}};",
-        "output": "str",
-        "x": 540,
-        "y": 1540,
-        "wires": [
-            [
-                "30a288d4be8df396"
-            ]
-        ]
-    },
-    {
-        "id": "30a288d4be8df396",
-        "type": "sqlite",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 810,
-        "y": 1540,
-        "wires": [
-            [
-                "997720e4050c2ba4"
-            ]
-        ]
-    },
-    {
-        "id": "997720e4050c2ba4",
-        "type": "file",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "",
-        "filename": "/db/temp/airquality.json",
-        "filenameType": "str",
-        "appendNewline": false,
-        "createDir": false,
-        "overwriteFile": "true",
-        "encoding": "none",
-        "x": 1130,
-        "y": 1540,
-        "wires": [
-            [
-                "806dcbef48f773a2"
-            ]
-        ]
-    },
-    {
-        "id": "806dcbef48f773a2",
-        "type": "change",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "set file to download",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "airquality.json",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1410,
-        "y": 1540,
-        "wires": [
-            [
-                "221addbcadd48eb6"
-            ]
-        ]
-    },
-    {
-        "id": "221addbcadd48eb6",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "air quality query finished",
-        "mode": "link",
-        "links": [
-            "388f25d362c59bf3"
-        ],
-        "x": 1565,
-        "y": 1540,
-        "wires": []
-    },
-    {
-        "id": "175f14d8399d2882",
-        "type": "link out",
-        "z": "239d7b3ba410ad5e",
-        "g": "22f7f4e3c99ea749",
-        "name": "air quality query finished",
-        "mode": "link",
-        "links": [
-            "388f25d362c59bf3"
-        ],
-        "x": 655,
-        "y": 1600,
-        "wires": []
-    },
-    {
         "id": "3c7e6d7cf17e8ddc",
         "type": "catch",
         "z": "0fa19dea799cc41d",
@@ -13056,5 +11091,1967 @@
                 "eb7053718706968b"
             ]
         ]
+    },
+    {
+        "id": "85ead2fe1cc3615e",
+        "type": "ui-form",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "name": "Create New Comment",
+        "group": "d1b753e7c692d80c",
+        "label": "Create New Comment",
+        "order": 2,
+        "width": "6",
+        "height": "9",
+        "options": [
+            {
+                "label": "Effective Date (start of comment period)",
+                "key": "effective_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Effective TIme",
+                "key": "effectiveTime",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Date",
+                "key": "expiration_date",
+                "type": "date",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Expiration Time",
+                "key": "expirationTime",
+                "type": "time",
+                "required": false,
+                "rows": null
+            },
+            {
+                "label": "Comment",
+                "key": "comment",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            },
+            {
+                "label": "Commenter Name (or Description)",
+                "key": "name",
+                "type": "text",
+                "required": true,
+                "rows": null
+            }
+        ],
+        "formValue": {
+            "effective_date": "",
+            "effectiveTime": "",
+            "expiration_date": "",
+            "expirationTime": "",
+            "comment": "",
+            "name": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "clear",
+        "resetOnSubmit": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "passthru": false,
+        "dropdownOptions": [],
+        "x": 180,
+        "y": 440,
+        "wires": [
+            [
+                "64c93cd3212b3506"
+            ]
+        ]
+    },
+    {
+        "id": "e6d79b5f56108473",
+        "type": "ui-template",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "group": "e566a6a1e878cd10",
+        "page": "",
+        "ui": "",
+        "name": "Button to trigger download request",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n  <a :href=\"`/storefiles?files=${msg.payload.filename}`\" style=\"text-decoration:none\">\n    <v-btn class=\"v-btn--block\">Download Database</v-btn>\n  </a>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 480,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "68df4cd77d918f4f",
+        "type": "inject",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "name": "Set database filename",
+        "props": [
+            {
+                "p": "payload.filename",
+                "v": "TM_DATABASE_PATH_TMDB",
+                "vt": "env"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 190,
+        "y": 620,
+        "wires": [
+            [
+                "e6d79b5f56108473",
+                "430b15d4dc55fa23"
+            ]
+        ]
+    },
+    {
+        "id": "430b15d4dc55fa23",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "name": "get db size in MB",
+        "func": "const fs = global.get(\"fs\");\nvar stats = fs.statSync(msg.payload.filename);\nvar fileSizeInBytes = stats.size;\n// Convert the file size to megabytes (optional)\nvar fileSizeInMegabytes = (fileSizeInBytes / (1024*1024)).toFixed(3);\n\nmsg.payload = fileSizeInMegabytes;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 580,
+        "wires": [
+            [
+                "55acb7e93fa09c1b",
+                "1569cb5899ca098d"
+            ]
+        ]
+    },
+    {
+        "id": "55acb7e93fa09c1b",
+        "type": "ui-text",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "group": "e566a6a1e878cd10",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Database size (MB): ",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 660,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "20df6f4008fdfc59",
+        "type": "ui-template",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "group": "e566a6a1e878cd10",
+        "page": "",
+        "ui": "",
+        "name": "download instructions",
+        "order": 1,
+        "width": "0",
+        "height": "0",
+        "head": "",
+        "format": "<template>\n    <text>\n        <p>Click the button below to download the entire Traffic Monitor SQLite database(s) to your computer. \n            Database will include data for all connected sensors including events, radar, air quality, and more \n            while the Traffic Monitor was deployed and capturing, only from this device.</p>\n    </text>\n</template>\n",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 160,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1569cb5899ca098d",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "52253d5735c84858",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "dbSize",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5a16a463c494f3b9",
+        "type": "ui-template",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "group": "d1b753e7c692d80c",
+        "page": "",
+        "ui": "",
+        "name": "comments instructions",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <p>Comments are date-sensitive entries about the Traffic Monitor status, deployment, location, conditions, construction, etc.\n        These comments do not directly impact any display or counts but may be used for downstream analysis. Do not include any personally identifiable information.\n        For example: Create a comment that says \"Road repaving, local access only\" with dates from June 1 through June 22.\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 180,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "65e850e03a309e92",
+        "type": "ui-template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "group": "216a4109fe080851",
+        "page": "",
+        "ui": "",
+        "name": "Download JSON UI",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Air Quality\", value: \"airquality\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 170,
+        "y": 900,
+        "wires": [
+            [
+                "ed0fcc7faf98dbb0"
+            ]
+        ]
+    },
+    {
+        "id": "d00b00635d288fdc",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Setup \"Select JSON Contents\" choices per database event labels",
+        "info": "",
+        "x": 300,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "26139736d764beae",
+        "type": "ui-control",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "when UI opens",
+        "ui": "2a8899583532edb4",
+        "events": "all",
+        "x": 140,
+        "y": 800,
+        "wires": [
+            [
+                "79fc30d993437d9a"
+            ]
+        ]
+    },
+    {
+        "id": "79fc30d993437d9a",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "setup SQL to get distinct event labels",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT DISTINCT label FROM events;",
+        "output": "str",
+        "x": 570,
+        "y": 800,
+        "wires": [
+            [
+                "983ed8364551e68a"
+            ]
+        ]
+    },
+    {
+        "id": "983ed8364551e68a",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 930,
+        "y": 800,
+        "wires": [
+            [
+                "65e850e03a309e92"
+            ]
+        ]
+    },
+    {
+        "id": "41d7154219cefa60",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Download JSON UI",
+        "info": "",
+        "x": 150,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "a77d79afe1bb4de8",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "setup Events Query",
+        "func": "const events = msg.payload.events;\nlet query = \"SELECT * FROM events WHERE\";\nlet count = 0;\n// if \"all\" or \"events\" is selected, don't bother with individual events\nif (!(events.includes(\"all\") || events.includes(\"events\"))) {\n    events.forEach(function(event)  {\n        if (event != 'all'\n            && event != 'events'\n            && event != 'radar'\n            && event != 'airquality') {\n                if (count == 0) {\n                    query += \" (\";\n                } else {\n                    query += \" OR\";\n                }\n                query += \" label == '\" + event + \"'\";\n                count++;\n            }\n    })\n}\nif (count > 0) {\n    query += \") AND\";\n}\nif (count > 0\n    || events.includes(\"all\")\n    || events.includes(\"events\")) {\n    query += flow.get(\"download_events_date_time_query\");\n} else {\n    query = \"\"; // to tell switch that there is no events query to execute\n}\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 170,
+        "y": 1020,
+        "wires": [
+            [
+                "f94785b23a69ad0b"
+            ]
+        ]
+    },
+    {
+        "id": "a8890ae2aceeef32",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Query Events table",
+        "info": "",
+        "x": 150,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "6be99fcd6d8afd7b",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 790,
+        "y": 1020,
+        "wires": [
+            [
+                "698de34e52c0943a"
+            ]
+        ]
+    },
+    {
+        "id": "698de34e52c0943a",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/events.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1060,
+        "y": 1020,
+        "wires": [
+            [
+                "bdf6d9d715d866e2"
+            ]
+        ]
+    },
+    {
+        "id": "f94785b23a69ad0b",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "test whether events query is needed",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 450,
+        "y": 1020,
+        "wires": [
+            [
+                "6be99fcd6d8afd7b"
+            ],
+            [
+                "9e3519d6f1c0a125"
+            ]
+        ]
+    },
+    {
+        "id": "ad9347894b2e7928",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Query Radar table",
+        "info": "",
+        "x": 150,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "9e3519d6f1c0a125",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "reset msg.payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 710,
+        "y": 1080,
+        "wires": [
+            [
+                "b577bad08d1b4f65"
+            ]
+        ]
+    },
+    {
+        "id": "bdf6d9d715d866e2",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "set file to download",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "events.json",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1270,
+        "y": 1020,
+        "wires": [
+            [
+                "1fc0e48c11c0bbfa"
+            ]
+        ]
+    },
+    {
+        "id": "3a04a85c5e35cad4",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "test whether radar query is needed",
+        "property": "payload.events",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "radar",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "all",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 3,
+        "x": 220,
+        "y": 1200,
+        "wires": [
+            [
+                "f264a0b7b2ec806a",
+                "2d0c1df4b9b39734",
+                "91979b29d5446443",
+                "2992f512c45dd56d",
+                "d2e69c0e761db100"
+            ],
+            [
+                "f264a0b7b2ec806a",
+                "2d0c1df4b9b39734",
+                "91979b29d5446443",
+                "2992f512c45dd56d",
+                "d2e69c0e761db100"
+            ],
+            [
+                "956392751b01d5ed"
+            ]
+        ]
+    },
+    {
+        "id": "f264a0b7b2ec806a",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Create radar_dov query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_dov WHERE {{{flow.download_radar_date_time_query}}};",
+        "output": "str",
+        "x": 510,
+        "y": 1200,
+        "wires": [
+            [
+                "7ef7a3709ff20875"
+            ]
+        ]
+    },
+    {
+        "id": "2d0c1df4b9b39734",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "create radar_timed_speed_counts query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_timed_speed_counts WHERE {{{flow.download_radar_date_time_query}}};",
+        "output": "str",
+        "x": 560,
+        "y": 1260,
+        "wires": [
+            [
+                "fb810a0465fb5fc5"
+            ]
+        ]
+    },
+    {
+        "id": "91979b29d5446443",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "create radar_raw_speed_magnitude query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_raw_speed_magnitude WHERE {{{flow.download_radar_date_time_query}}};",
+        "output": "str",
+        "x": 560,
+        "y": 1320,
+        "wires": [
+            [
+                "6333829f1ef0df89"
+            ]
+        ]
+    },
+    {
+        "id": "2992f512c45dd56d",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "create radar_raw_speed_magnitude_single query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_raw_speed_magnitude_single WHERE {{{flow.download_radar_date_time_query}}};",
+        "output": "str",
+        "x": 590,
+        "y": 1380,
+        "wires": [
+            [
+                "4e58dae08292a766"
+            ]
+        ]
+    },
+    {
+        "id": "d2e69c0e761db100",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "create radar_oc_payload query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM radar_oc_payload WHERE {{{flow.download_events_date_time_query}}};",
+        "output": "str",
+        "x": 530,
+        "y": 1440,
+        "wires": [
+            [
+                "f70e4072c1b9e1c2"
+            ]
+        ]
+    },
+    {
+        "id": "32584116de1e24f7",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "download results",
+        "mode": "link",
+        "links": [
+            "c39f71a33c308681"
+        ],
+        "x": 345,
+        "y": 1280,
+        "wires": []
+    },
+    {
+        "id": "7ef7a3709ff20875",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 930,
+        "y": 1200,
+        "wires": [
+            [
+                "c6d953ce0ea6beb6"
+            ]
+        ]
+    },
+    {
+        "id": "fb810a0465fb5fc5",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 930,
+        "y": 1260,
+        "wires": [
+            [
+                "2d877aa75c72713d"
+            ]
+        ]
+    },
+    {
+        "id": "6333829f1ef0df89",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 930,
+        "y": 1320,
+        "wires": [
+            [
+                "8a338bf626e0c142"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "4e58dae08292a766",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 940,
+        "y": 1380,
+        "wires": [
+            [
+                "045864b769b6f4cc"
+            ]
+        ]
+    },
+    {
+        "id": "f70e4072c1b9e1c2",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 940,
+        "y": 1440,
+        "wires": [
+            [
+                "4a8aab2230ce18c5"
+            ]
+        ]
+    },
+    {
+        "id": "c6d953ce0ea6beb6",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/radar_dov.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1220,
+        "y": 1200,
+        "wires": [
+            [
+                "7ea3d817c00b14aa"
+            ]
+        ]
+    },
+    {
+        "id": "2d877aa75c72713d",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/radar_timed_speed_counts.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1260,
+        "y": 1260,
+        "wires": [
+            [
+                "7ea3d817c00b14aa"
+            ]
+        ]
+    },
+    {
+        "id": "8a338bf626e0c142",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/radar_raw_speed_magnitude.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1280,
+        "y": 1320,
+        "wires": [
+            [
+                "7ea3d817c00b14aa"
+            ]
+        ]
+    },
+    {
+        "id": "045864b769b6f4cc",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/radar_raw_speed_magnitude_single.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1310,
+        "y": 1380,
+        "wires": [
+            [
+                "7ea3d817c00b14aa"
+            ]
+        ]
+    },
+    {
+        "id": "4a8aab2230ce18c5",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/radar_oc_payload.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1260,
+        "y": 1440,
+        "wires": [
+            [
+                "7ea3d817c00b14aa"
+            ]
+        ]
+    },
+    {
+        "id": "7ea3d817c00b14aa",
+        "type": "join",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "wait for radar queries",
+        "mode": "custom",
+        "build": "object",
+        "property": "none",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "10",
+        "count": "5",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 1670,
+        "y": 1320,
+        "wires": [
+            [
+                "fec49a680d20027e"
+            ]
+        ]
+    },
+    {
+        "id": "fec49a680d20027e",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "radar files to download",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "radar_dov.json,radar_timed_speed_counts.json,radar_raw_speed_magnitude.json,radar_raw_speed_magnitude_single.json,radar_oc_payload.json",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1660,
+        "y": 1400,
+        "wires": [
+            [
+                "0b1e946c42580cf3"
+            ]
+        ]
+    },
+    {
+        "id": "0b1e946c42580cf3",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "radar query finished",
+        "mode": "link",
+        "links": [
+            "c39f71a33c308681"
+        ],
+        "x": 1795,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "3b742dd1f9b3447b",
+        "type": "join",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "wait for events and radar queries",
+        "mode": "custom",
+        "build": "string",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "none",
+        "joiner": ",",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "0",
+        "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 360,
+        "y": 1760,
+        "wires": [
+            [
+                "7b7f627b93e9f3c5"
+            ]
+        ]
+    },
+    {
+        "id": "c39f71a33c308681",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "radar query finished (new)",
+        "links": [
+            "0b1e946c42580cf3",
+            "32584116de1e24f7"
+        ],
+        "x": 135,
+        "y": 1760,
+        "wires": [
+            [
+                "3b742dd1f9b3447b"
+            ]
+        ]
+    },
+    {
+        "id": "2ad6ea519e3cb6e3",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "events query finished (new)",
+        "links": [
+            "1fc0e48c11c0bbfa",
+            "b577bad08d1b4f65"
+        ],
+        "x": 135,
+        "y": 1720,
+        "wires": [
+            [
+                "3b742dd1f9b3447b"
+            ]
+        ]
+    },
+    {
+        "id": "28c88539c76c9801",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "sync events and radar queries",
+        "info": "",
+        "x": 180,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "1fc0e48c11c0bbfa",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "events query finished",
+        "mode": "link",
+        "links": [
+            "2ad6ea519e3cb6e3"
+        ],
+        "x": 1395,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "b577bad08d1b4f65",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "events query finished",
+        "mode": "link",
+        "links": [
+            "2ad6ea519e3cb6e3"
+        ],
+        "x": 955,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "0309814d489531fc",
+        "type": "http in",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "Respond to download request",
+        "url": "/storefiles",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 2000,
+        "wires": [
+            [
+                "cce0af4df8683362"
+            ]
+        ]
+    },
+    {
+        "id": "ddaad6aa2eb9e108",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "Test for error",
+        "property": "res.statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "neq",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 650,
+        "y": 2000,
+        "wires": [
+            [
+                "7a602df7a5e69c3e",
+                "5f9afee4d94c66ea"
+            ],
+            [
+                "0c53e5cc5a118052"
+            ]
+        ]
+    },
+    {
+        "id": "7a602df7a5e69c3e",
+        "type": "ui-notification",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "ui": "2a8899583532edb4",
+        "position": "center center",
+        "colorDefault": false,
+        "color": "#f40101",
+        "displayTime": "10",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "",
+        "x": 950,
+        "y": 1900,
+        "wires": [
+            [
+                "4ac80387e90476cc"
+            ]
+        ]
+    },
+    {
+        "id": "5f9afee4d94c66ea",
+        "type": "http response",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 910,
+        "y": 1940,
+        "wires": []
+    },
+    {
+        "id": "0c53e5cc5a118052",
+        "type": "exec",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "command": "tar czvf download.tar.gz ",
+        "addpay": "payload.filepath",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "60",
+        "winHide": false,
+        "oldrc": false,
+        "name": "zip files",
+        "x": 840,
+        "y": 2000,
+        "wires": [
+            [],
+            [],
+            [
+                "a845e5248a7c1281"
+            ]
+        ]
+    },
+    {
+        "id": "81033f124118f7fc",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "Copy error message",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.message",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1240,
+        "y": 2000,
+        "wires": [
+            [
+                "7a602df7a5e69c3e",
+                "5f9afee4d94c66ea"
+            ]
+        ]
+    },
+    {
+        "id": "4ac80387e90476cc",
+        "type": "debug",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "show error msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1180,
+        "y": 1900,
+        "wires": []
+    },
+    {
+        "id": "a845e5248a7c1281",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "test for failure",
+        "property": "payload.code",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "neq",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1020,
+        "y": 2000,
+        "wires": [
+            [
+                "81033f124118f7fc"
+            ],
+            [
+                "3d588b14f06a9513"
+            ]
+        ]
+    },
+    {
+        "id": "3d588b14f06a9513",
+        "type": "file in",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "read the zip file in chunks",
+        "filename": "\"download.tar.gz\"",
+        "filenameType": "jsonata",
+        "format": "stream",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": true,
+        "x": 270,
+        "y": 2080,
+        "wires": [
+            [
+                "d3a3617e640817f3"
+            ]
+        ]
+    },
+    {
+        "id": "d3a3617e640817f3",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "send chunks",
+        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 2080,
+        "wires": [
+            [
+                "40d3dc4bf27d573d"
+            ]
+        ]
+    },
+    {
+        "id": "40d3dc4bf27d573d",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "check for end",
+        "property": "parts.count",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 660,
+        "y": 2080,
+        "wires": [
+            [
+                "fe72ae25c4017e66"
+            ],
+            [
+                "4473c90f84a2e917",
+                "e2de4ba1ce2c0a40",
+                "3474fe5ed0dc9370"
+            ]
+        ]
+    },
+    {
+        "id": "fe72ae25c4017e66",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "notification running",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
+        "output": "str",
+        "x": 910,
+        "y": 2080,
+        "wires": [
+            [
+                "499167880916903d"
+            ]
+        ]
+    },
+    {
+        "id": "4473c90f84a2e917",
+        "type": "exec",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "command": "rm -f /db/temp/download.tar.gz",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "remove tar file",
+        "x": 900,
+        "y": 2140,
+        "wires": [
+            [],
+            [],
+            [
+                "9974a7476cf58f75"
+            ]
+        ]
+    },
+    {
+        "id": "499167880916903d",
+        "type": "ui-notification",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "ui": "2a8899583532edb4",
+        "position": "center center",
+        "colorDefault": true,
+        "color": "#000000",
+        "displayTime": "3",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "",
+        "x": 1130,
+        "y": 2080,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9974a7476cf58f75",
+        "type": "debug",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "show rm error",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 2140,
+        "wires": []
+    },
+    {
+        "id": "d556c7770b427fd5",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "This responds to a GET .../storefiles?files=a,b,c,...-- typically invoked by an HTTP redirect",
+        "info": "",
+        "x": 370,
+        "y": 1900,
+        "wires": []
+    },
+    {
+        "id": "7b7f627b93e9f3c5",
+        "type": "ui-template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "group": "216a4109fe080851",
+        "page": "",
+        "ui": "",
+        "name": "redirect to storefiles URL",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/storefiles?files=${filenames}`;\n    })\n    </script>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 750,
+        "y": 1760,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "956392751b01d5ed",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "reset msg.payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 190,
+        "y": 1280,
+        "wires": [
+            [
+                "32584116de1e24f7"
+            ]
+        ]
+    },
+    {
+        "id": "ed0fcc7faf98dbb0",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "setup date & time part of SQL query",
+        "func": "// convert dates to Unix epoch in seconds\nconst local_start = new Date(msg.payload.start).valueOf() / 1000;\nconst local_end = new Date(msg.payload.end).valueOf() / 1000;\n\n// convert timestamps to UTC\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60; // UTC offset in seconds\nconst start = local_start - timezoneOffset;\nconst end = local_end - timezoneOffset;\n\n// the events database (and the radar_oc_payload table) have \"start_time\" and \"end_time\" columns\n// so setup a where clause for those\nlet events_date_time_query = \" start_time >= \" + start;\nevents_date_time_query += \" AND end_time < \" + end\nflow.set(\"download_events_date_time_query\", events_date_time_query);\n\n// the radar tables have just a \"time\" column\n// so setup a different where clause for them\nlet radar_date_time_query = \" time >= \" + start;\nradar_date_time_query += \" AND time < \" + end\nflow.set(\"download_radar_date_time_query\", radar_date_time_query);\n\n// the air quality table has an \"entryDateTime\" column\nlet aq_date_time_query = `entryDateTime >= ${start} and entryDateTime < ${end}`;\nflow.set(\"download_aq_date_time_query\", aq_date_time_query);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 900,
+        "wires": [
+            [
+                "a77d79afe1bb4de8",
+                "3a04a85c5e35cad4",
+                "daa61bfa574cf15c"
+            ]
+        ]
+    },
+    {
+        "id": "e2de4ba1ce2c0a40",
+        "type": "exec",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "command": "rm -f /db/temp/*.json",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "remove json files",
+        "x": 910,
+        "y": 2220,
+        "wires": [
+            [],
+            [],
+            [
+                "9974a7476cf58f75"
+            ]
+        ]
+    },
+    {
+        "id": "1b83e0f60d5e490b",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 640,
+        "y": 340,
+        "wires": [
+            [
+                "c739086c12d51aad"
+            ]
+        ]
+    },
+    {
+        "id": "1fbbc9119504d996",
+        "type": "inject",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "name": "create table for comments",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
+        "x": 210,
+        "y": 320,
+        "wires": [
+            [
+                "1b83e0f60d5e490b"
+            ]
+        ]
+    },
+    {
+        "id": "5868a1854443a278",
+        "type": "inject",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "name": "select latest 5 rows from comments",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM comments ORDER BY entryDateTime DESC LIMIT 5;",
+        "x": 230,
+        "y": 360,
+        "wires": [
+            [
+                "1b83e0f60d5e490b"
+            ]
+        ]
+    },
+    {
+        "id": "c739086c12d51aad",
+        "type": "debug",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "name": "sqlite select last 5 comments",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "64c93cd3212b3506",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "name": "create comment payload",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\n//create effectiveDateTime, if no date, use current date, if no time, leave as default\nconst effectiveDateTime = (msg.payload.effective_date) ? new Date(msg.payload.effective_date) : new Date();\nif (msg.payload.effective_time) {\n    const effectiveTime = new Date(msg.payload.effective_time);\n    \n    effectiveDateTime.setTime(effectiveTime.getTime());\n}\n\n//create expirationDateTime, if no date, leave undefined\nconst expirationDateTime = (msg.payload.expiration_date) ? new Date(msg.payload.expiration_date) : undefined;\nif (msg.payload.expiration_time) {\n    const expirationTime = new Date(msg.payload.expiration_time);\n\n    expirationDateTime.setTime(expirationTime.getTime());\n}\n\n//create entryDateTime\nconst entryDateTime = new Date();\n\nnewMsg.payload.id = entryDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0');\nnewMsg.payload.effectiveDateTime = effectiveDateTime;\nnewMsg.payload.expirationDateTime = expirationDateTime;\nnewMsg.payload.entryDateTime = entryDateTime;\nnewMsg.payload.comment = msg.payload.comment;\nnewMsg.payload.commenter_name = msg.payload.name;\n\nconst obj = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nnewMsg.params = keyedObj;\n\nreturn newMsg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 440,
+        "wires": [
+            [
+                "322ce06e3fbc868c"
+            ]
+        ],
+        "info": "//to do each array item\n\nfor (const i in msg.payload.query_return_nonagg) {\n    newMsg.payload.radar.push({\n        type: \"DetectedObjectVelocity_nonagg_nodir\",\n        result: msg.payload.query_return_nonagg[i]\n    }\n    );\n}"
+    },
+    {
+        "id": "322ce06e3fbc868c",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "51b4f9f6eec82b15",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO comments (id, effectiveDateTime, expirationDateTime, entryDateTime, comment, commenter_name)\nVALUES ($id, $effectiveDateTime, $expirationDateTime, $entryDateTime, $comment, $commenter_name);\n",
+        "name": "tmdb.comments, Prepared Statement",
+        "x": 820,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "465cc74dd45f368b",
+        "type": "debug",
+        "z": "c17b7b1a8f280e22",
+        "name": "catch any errors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 260,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "21d92c75112714f0",
+        "type": "catch",
+        "z": "c17b7b1a8f280e22",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 80,
+        "y": 100,
+        "wires": [
+            [
+                "465cc74dd45f368b"
+            ]
+        ]
+    },
+    {
+        "id": "604189c526167b10",
+        "type": "ui-control",
+        "z": "c17b7b1a8f280e22",
+        "g": "30a709c93555c489",
+        "name": "when UI opens",
+        "ui": "2a8899583532edb4",
+        "events": "change",
+        "x": 140,
+        "y": 200,
+        "wires": [
+            [
+                "3a6d44528a137a46"
+            ]
+        ]
+    },
+    {
+        "id": "3a6d44528a137a46",
+        "type": "exec",
+        "z": "c17b7b1a8f280e22",
+        "g": "30a709c93555c489",
+        "command": "mkdir -p /db/temp",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "create /db/temp folder to temporarily hold download files",
+        "x": 510,
+        "y": 200,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "cce0af4df8683362",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "Validate filenames, setup tar",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 2000,
+        "wires": [
+            [
+                "ddaad6aa2eb9e108"
+            ]
+        ]
+    },
+    {
+        "id": "79570ebbc363d274",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "refresh page",
+        "links": [
+            "3474fe5ed0dc9370"
+        ],
+        "x": 305,
+        "y": 820,
+        "wires": [
+            [
+                "79fc30d993437d9a"
+            ]
+        ]
+    },
+    {
+        "id": "3474fe5ed0dc9370",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "refresh page",
+        "mode": "link",
+        "links": [
+            "79570ebbc363d274"
+        ],
+        "x": 665,
+        "y": 2180,
+        "wires": []
+    },
+    {
+        "id": "f838921f5647499b",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "air quality query finished",
+        "links": [
+            "9245ac0b61cb72f3",
+            "837ce5e6bb85a2b8"
+        ],
+        "x": 135,
+        "y": 1680,
+        "wires": [
+            [
+                "3b742dd1f9b3447b"
+            ]
+        ]
+    },
+    {
+        "id": "ad3c4efc1861d109",
+        "type": "comment",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "Query Air Quality table",
+        "info": "",
+        "x": 180,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "daa61bfa574cf15c",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "test whether air quality query is needed",
+        "property": "payload.events",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "airquality",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "all",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 3,
+        "x": 240,
+        "y": 1540,
+        "wires": [
+            [
+                "55052c813da299c9"
+            ],
+            [
+                "55052c813da299c9"
+            ],
+            [
+                "c9f653c4f6f10a68"
+            ]
+        ]
+    },
+    {
+        "id": "c9f653c4f6f10a68",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "reset msg.payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 1600,
+        "wires": [
+            [
+                "837ce5e6bb85a2b8"
+            ]
+        ]
+    },
+    {
+        "id": "55052c813da299c9",
+        "type": "template",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "create air quality query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "SELECT * FROM airquality WHERE {{{flow.download_aq_date_time_query}}};",
+        "output": "str",
+        "x": 540,
+        "y": 1540,
+        "wires": [
+            [
+                "d16fe4c215c71c73"
+            ]
+        ]
+    },
+    {
+        "id": "d16fe4c215c71c73",
+        "type": "sqlite",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 810,
+        "y": 1540,
+        "wires": [
+            [
+                "56787eccc13dacec"
+            ]
+        ]
+    },
+    {
+        "id": "56787eccc13dacec",
+        "type": "file",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "",
+        "filename": "/db/temp/airquality.json",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1130,
+        "y": 1540,
+        "wires": [
+            [
+                "25e67a89a3f964e7"
+            ]
+        ]
+    },
+    {
+        "id": "25e67a89a3f964e7",
+        "type": "change",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "set file to download",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "airquality.json",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1410,
+        "y": 1540,
+        "wires": [
+            [
+                "9245ac0b61cb72f3"
+            ]
+        ]
+    },
+    {
+        "id": "9245ac0b61cb72f3",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "air quality query finished",
+        "mode": "link",
+        "links": [
+            "f838921f5647499b"
+        ],
+        "x": 1565,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "837ce5e6bb85a2b8",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "54a0d44724ba51b6",
+        "name": "air quality query finished",
+        "mode": "link",
+        "links": [
+            "f838921f5647499b"
+        ],
+        "x": 655,
+        "y": 1600,
+        "wires": []
     }
 ]
