@@ -11,7 +11,7 @@
   tags:
     - always
   ansible.builtin.include_vars:
-    file: '{{ ansible_architecture }}_vars.yml'
+    file: "{{ ansible_facts['architecture'] }}_vars.yml"
 
 - name: TMSetup - Main - Set var for Raspberry Pi serial number
   ansible.builtin.slurp:
