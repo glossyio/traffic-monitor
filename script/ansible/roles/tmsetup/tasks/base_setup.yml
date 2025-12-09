@@ -88,6 +88,6 @@
     owner: root
     group: root
     mode: '0755'
-  notify: TMSetup - Flag for reboot
+  notify: Restart journald service
 
 ...
