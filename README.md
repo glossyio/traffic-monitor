@@ -25,19 +25,18 @@ Visit our official documentation at [docs.trafficmonitor.ai](https://docs.traffi
 
 See the [Getting Started](https://docs.trafficmonitor.ai/getting-started) docs for full walkthrough.
 
-1. Assemble your device (see [hardware components](#hardware-components) ⚒️).
-1. Install git if using OS Lite `sudo apt update && sudo apt install git`
-2. Run `git clone https://github.com/glossyio/traffic-monitor` into your home folder (or any folder)
-3. Run `bash traffic-monitor/script/tmsetup.sh`
-4. Access the application at the following URLs (check container status with `systemctl status tm-docker` or `docker ps`):
-    1. `http://<device_ip_address>:1880/ui` is your primary device dashboard, use it to ensure it is capturing events (Node-Red dashboard)
-    2. `http://<device_ip_address>:5000` to view the Frigate interface and make any configuration changes specific to your deployment
-5. Mount your device in a place it can capture the entire roadway in the mounting guide (coming soon).
-6. [Configure your device](#configuration)
-7. Start capturing roadway usage data!
-
-### Hardware Components 🛠️
+### Hardware Components
 The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and a variety of commidity hardware to keep it accessible, low-cost, upgradable, and repairable.  See [Recommended Hardware](https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware) docs for more information.
+
+### Software Installation
+1. Install Raspberry Pi OS 64-bit Lite with [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager)
+1. Connect to your device via SSH and [Install the TM Software](https://docs.trafficmonitor.ai/build-your-own-device-diy/software-installation).
+    1. `sudo apt update && sudo apt install -y git`
+    1. `git clone https://github.com/glossyio/traffic-monitor`
+    1. `bash traffic-monitor/script/tmsetup.sh`
+1. [Deploy and mount]([url](https://docs.trafficmonitor.ai/deployment-and-mounting-guide)) your TM
+2. [Set up]([url](https://docs.trafficmonitor.ai/setup-guide)) zones, location, and enable sensors
+7. Start capturing roadway usage data!
 
 ## Configuration ✅
 See [Setup Guide](https://docs.trafficmonitor.ai/setup-guide).
