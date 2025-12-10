@@ -10,11 +10,11 @@ Customize the hardware to fit your needs!  The core components include the compu
 
 Here are some sample sensor configurations and the data it collects:
 
-* The **camera + AI co-processor** is the lowest cost and will give you object detection and direction.
-* Add in a **radar** for the most accurate speed and direction measurements.
-* Include an **environmental sensor** to also measure air quality, gases, particulate matter, noise, temperature, and much more.
-* (_future feature_) Install **only the radar** for the most privacy-conscious built that will be capable of basic object detection, speed, and direction.
-* Add in an additional camera to monitor a second direction using the same AI co-processor.\*\*
+1. **Camera + AI co-processor** is the lowest cost and will give you object detection, direction, visual speed measurements, and much more.
+2. Add in a **radar** for the most accurate speed and direction measurements and basic object detection for nighttime detection.
+3. Include an **environmental sensor** to also measure air quality, gases, particulate matter, noise, temperature, and much more.
+4. (_future feature_) Install **only the radar** for the most privacy-conscious built that will be capable of basic object detection, speed, and direction.
+5. Add additional camera(s) to monitor more directions using the same AI co-processor.\*\*
 
 \*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware#camera-s) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.&#x20;
 
@@ -29,7 +29,9 @@ We are not affiliated with any of the stores or companies linked in this section
 * [ ] Computing Device:   [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB
   * [ ] Power: official RPi [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
   * [ ] (Recommended) CPU Cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/)
-* [ ] Storage: microSD card (≥32GB), [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA)
+* [ ] Storage: microSD card (≥32GB),&#x20;
+  * [ ] [Raspberry Pi SD Cards](https://www.raspberrypi.com/products/sd-cards/) are modern, fast, stable microSD cards.
+  * [ ] OR [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA) for larger sizes to store more videos and snapshots
 * [ ] Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/)&#x20;
   * [ ] plus the [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
 * [ ] AI co-processor: see [#ai-co-processor](recommended-hardware.md#ai-co-processor "mention") for options
@@ -53,8 +55,8 @@ The Traffic Monitor is based on the Raspberry Pi 5. The Raspberry Pi 4B and earl
 (Required) A high-quality microSD card or a SSD (see alternative). Recommend at least 32GB capacity for system files with minimal (or no) snapshot and video capture.
 
 1. _Option_: Setup has been tested and works well with the [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA).
-2. _Option_: [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) should perform particularly well but sizes only range up to 128GB.
-3. _Alternative_: There are many options on the RPi5 to use a faster, more durable NVME (M.2) drive, including those that pair with the Coral TPU, such as the Pineboards [HatDrive AI! Coral TPU bundle](https://pineboards.io/products/hatdrive-ai-coral-edge-tpu-bundle-nvme-2230-2242-gen-2-for-raspberry-pi-5).
+2. _Option_: [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) performs particularly well but sizes only range up to 128GB.
+3. _Alternative_: There are many options on the RPi5 to use a faster, more durable NVME (M.2) drive, including those that pair with the Coral TPU or other AI co-processors.
 
 ### Power&#x20;
 
@@ -65,21 +67,25 @@ The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lo
 {% endhint %}
 
 1. _Recommended Option_: The official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
-2. _Alternative_: PoE (Power over Ethernet) HATs available for the RPi 5. Raspberry Pi Foundation has not yet released an official one, but if you have a working solution suggest it in the [TM GitHub Discussion](https://github.com/glossyio/traffic-monitor/discussions/new/choose)!
+2. _Alternative_: PoE (Power over Ethernet) HATs available for the RPi 5.&#x20;
+   1. Raspberry Pi Foundation has not yet released an official one, but if you have a working solution suggest it in the [TM GitHub Discussion](https://github.com/glossyio/traffic-monitor/discussions/new/choose)!
+   2. [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) has performed well for some contributors.
 3. _(Future discussion)_ Solar panel + battery. There have been working prototypes, with caveats. Discuss it in the [TM GitHub Discussion](https://github.com/glossyio/traffic-monitor/discussions/new/choose)!
 
 ## Camera(s)
 
-(Required) For full object detection capabilties.
+(Required) For full object detection capabilities.
 
-The official, connected Raspberry Pi cameras are below recommended for compact, local object detection; however any camera that can output H.264 is conceivably compatible with the traffic monitor, so you may attach USB or even networked cameras. See more at [Frigate's recommended camera hardware](https://docs.frigate.video/frigate/hardware#cameras) for alternatives. &#x20;
+{% hint style="info" %}
+The official Raspberry Pi cameras are below recommended for low-cost, compact, local object detection; however any camera that can output H.264 is compatible with the traffic monitor, so you may attach USB or even networked cameras. See more at [Frigate's recommended camera hardware](https://docs.frigate.video/frigate/hardware#cameras) for alternatives. &#x20;
+{% endhint %}
 
 1. _Recommended_: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) (wide angle recommended)
    1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
 2. _Alternative/additional:_ [Raspberry Pi Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for faster motion capture and custom-lens based on your needs&#x20;
    1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
 
-The Raspberry Pi 5 has 2 camera transceiver slots, so you can easily attach 2 native Raspberry Pi cameras.&#x20;
+The Raspberry Pi 5 has 2 (two) camera transceiver slots, so you can easily attach 2 native Raspberry Pi cameras.&#x20;
 
 {% hint style="info" %}
 See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) for more information on tuning stream configurations based on various goals for your deployment.
@@ -106,8 +112,6 @@ The AI co-processor is used by Frigate to run the object detection model, see Fr
 (Recommended) Provides accurate speed and direction measurement.
 
 1. [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - certified with same tests as law enforcement speed radars.  Detection up to 100-meters away. &#x20;
-
-_Planned future capability_ of object detection and confirmation with the radar, which will be enabled with a software update.
 
 ## Other Sensors
 
