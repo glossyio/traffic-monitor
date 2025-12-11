@@ -59,6 +59,13 @@
   ansible.builtin.import_tasks:
     file: node-red-tm_docker_setup.yml
 
+- name: TMSetup - Main - Setup plate-recognizer
+  when: tmsetup_bool_plate_recognizer | bool
+  tags:
+    - plate-recognizer
+  ansible.builtin.import_tasks:
+    file: docker_plate_recognizer.yml
+
 - name: TMSetup - Main - Setup WiFI
   tags:
     - wifi

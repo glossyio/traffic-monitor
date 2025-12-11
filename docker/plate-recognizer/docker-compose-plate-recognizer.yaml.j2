@@ -1,0 +1,16 @@
+services:
+  plate-recognizer:
+    container_name: plate-recognizer
+    restart: unless-stopped
+    image: platerecognizer/alpr-arm
+    ports:
+      - "8080:8080"
+    env_file: "plate-recognizer.env"
+    volumes:
+      - {{ tmsetup_codedir }}/plate-recognizer/license:/license
+    user: "{{ tmsetup_codeowner_uid }}"
+    depends_on:
+      frigate:
+        condition: service_healthy
+      node-red-tm:
+        condition: service_healthy
