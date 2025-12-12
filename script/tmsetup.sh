@@ -221,7 +221,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
 ### Start of MAIN
 
 # Collect command-line options
-while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:C:" opt; do
+while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:C:" opt;
 do
   case ${opt} in
     d) # Set PATH for install
