@@ -3,8 +3,18 @@
 - name: TMSetup - WiFi Setup - Copy wifi powersave config
   become: true
   ansible.builtin.copy:
-    src: z-wifi-powersave-off.conf
-    dest: /etc/NetworkManager/conf.d/z-wifi-powersave-off.conf
+    src: utils/88-z-wifi-powersave-off.conf
+    dest: /etc/NetworkManager/conf.d/88-z-wifi-powersave-off.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart NetworkManager service
+
+- name: TMSetup - WiFi Setup - Copy network connectivity check config
+  become: true
+  ansible.builtin.copy:
+    src: utils/82-nm-connectivity-check.conf 
+    dest: /etc/NetworkManager/conf.d/82-nm-connectivity-check.conf 
     owner: root
     group: root
     mode: '0644'
