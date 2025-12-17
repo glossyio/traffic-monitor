@@ -60,7 +60,7 @@
     file: node-red-tm_docker_setup.yml
 
 - name: TMSetup - Main - Setup plate-recognizer
-  when: tmsetup_bool_plate_recognizer | bool
+  when: tmsetup_bool_plate_recognizer | default('false') | bool
   tags:
     - plate-recognizer
   ansible.builtin.import_tasks:
