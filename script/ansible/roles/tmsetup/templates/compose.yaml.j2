@@ -6,6 +6,6 @@
 include:
   - {{ tmsetup_codedir }}/frigate/docker-compose-frigate.yaml
   - {{ tmsetup_codedir }}/node-red-tm/docker-compose-node-red-tm.yaml
-{% f tmsetup_bool_plate_recognizer is defined and tmsetup_bool_plate_recognizer %}
+{% if tmsetup_bool_plate_recognizer is defined and tmsetup_bool_plate_recognizer %}
   - {{ tmsetup_codedir }}/docker/plate-recognizer/docker-compose-plate-recognizer.yaml
 {% endif %}
