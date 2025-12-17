@@ -35,4 +35,6 @@ tmsetup_reboot_now: false
 tmsetup_tmp_dir: ~/.tmsetup
 tmsetup_reboot_touch_file: "{{ tmsetup_tmpdir }}/reboot-required"
 
+tmsetup_bool_plate_recognizer: false
+
 ...
