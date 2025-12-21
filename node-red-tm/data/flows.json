@@ -12927,8 +12927,7 @@
         "y": 440,
         "wires": [
             [
-                "074231a725abbf5f",
-                "ac3f5f579ef924e5"
+                "074231a725abbf5f"
             ]
         ]
     },
@@ -12973,7 +12972,7 @@
         "type": "function",
         "z": "a6b11d5233cf65e0",
         "name": "process events",
-        "func": "// Accumulate movement information in format needed for table\n//\n// Input format: array of objects, each with a label (event type)\n// and \"entered zones\" array containing a list of zone names.\n//\n// Output format: array of objects, containing one entry for each\n// zone traversal path (i.e. zones passed through). Within each\n// array entry, a field for eacn event type. The value of the field\n// is the number of events of that type that followed that\n// traversal path.\n\n// add a zone name to the path.\n// Note: \"paths\" is passed as an object because otherwise Javascript\n// uses call by value semantics.\nfunction addZone(path, zone) {\n    if (path.length > 0) {\n        path += \"->\";\n    }\n    path += zone;\n    return path;\n}\n\n// Convert the entered_zones list to the label used in the table.\n// Include only the zones selected by the user (in msg.zones).\n// If the user selected the \"show just initial & final zones\" option, then\n// only include the first and last zone from the entered_zones path.\nfunction processPath(entered_zones) {\n    let path = \"\";\n    let last_zone = null;\n    const zones = JSON.parse(entered_zones);\n    for (const zone of zones) {\n        if (msg.zones.includes(zone)) {\n            // if the user wants to see just the initial and final zones,\n            // then add the initial zone to the path as soon as it shows up\n            // and save any other zone to be added after all zones have been\n            // processed \n            if (msg.pathOption === \"initialFinal\") {\n                if (path.length === 0) {\n                    path = addZone(path, zone);\n                } else {\n                    last_zone = zone;\n                }\n            } else {\n                path = addZone(path, zone);\n            }\n        }\n    }\n    if (last_zone) {\n        path = addZone(path, last_zone);\n    }\n    return path;\n}\n\nconst results = [];\nconst regex = new RegExp(\"->\", 'g');\nfor (const event of msg.payload) {\n    const path = processPath(event.entered_zones);\n    const matches = path.match(regex);\n    const zone_count = matches ? matches.length : 0;\n    if (zone_count > 0) { // ignore paths that don't match filters\n        const existing_result = results.find(result => result.movement == path);\n        if (existing_result === undefined) {\n            const new_result = {\n                movement: path,\n                [event.label]: 1\n            }\n            results.push(new_result);\n        } else {\n            if (Object.hasOwn(existing_result, event.label)) {\n                existing_result[event.label] ++;\n            } else {\n                existing_result[event.label] = 1;\n            }\n        } \n    }\n}\nmsg.payload = results;\nreturn msg;",
+        "func": "// Accumulate movement information in format needed for table\n//\n// Input format: array of objects, each with a label (event type)\n// and \"entered zones\" array containing a list of zone names.\n//\n// Output format: array of objects, containing one entry for each\n// zone traversal path (i.e. zones passed through). Within each\n// array entry, a field for eacn event type. The value of the field\n// is the number of events of that type that followed that\n// traversal path.\n\n// add a zone name to the path.\n// Note: \"paths\" is passed as an object because otherwise Javascript\n// uses call by value semantics.\nfunction addZone(path, zone) {\n    if (path.length > 0) {\n        path += \"->\";\n    }\n    path += zone;\n    return path;\n}\n\n// Convert the entered_zones list to the label used in the table.\n// Include only the zones selected by the user (in msg.zones).\n// If the user selected the \"show just initial & final zones\" option, then\n// only include the first and last zone from the entered_zones path.\nfunction processPath(entered_zones) {\n    let path = \"\";\n    let last_zone = null;\n    const zones = JSON.parse(entered_zones);\n    for (const zone of zones) {\n        if (msg.zones.includes(zone)) {\n            // if the user wants to see just the initial and final zones,\n            // then add the initial zone to the path as soon as it shows up\n            // and save any other zone to be added after all zones have been\n            // processed \n            if (msg.pathOption === \"initialFinal\") {\n                if (path.length === 0) {\n                    path = addZone(path, zone);\n                } else {\n                    last_zone = zone;\n                }\n            } else {\n                path = addZone(path, zone);\n            }\n        }\n    }\n    if (last_zone) {\n        path = addZone(path, last_zone);\n    }\n    return path;\n}\n\nconst results = [];\nconst regex = new RegExp(\"->\", 'g');\nfor (const event of msg.payload) {\n    const path = processPath(event.entered_zones);\n    const matches = path.match(regex);\n    const zone_count = matches ? matches.length : 0;\n    if (path.length > 0) { // ignore paths that don't match filters\n        const existing_result = results.find(result => result.movement == path);\n        if (existing_result === undefined) {\n            const new_result = {\n                movement: path,\n                [event.label]: 1\n            }\n            results.push(new_result);\n        } else {\n            if (Object.hasOwn(existing_result, event.label)) {\n                existing_result[event.label] ++;\n            } else {\n                existing_result[event.label] = 1;\n            }\n        } \n    }\n}\nmsg.payload = results;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -13148,39 +13147,5 @@
         "x": 200,
         "y": 360,
         "wires": []
-    },
-    {
-        "id": "ac3f5f579ef924e5",
-        "type": "function",
-        "z": "a6b11d5233cf65e0",
-        "name": "query dogs",
-        "func": "// convert dates to Unix epoch in seconds\nconst local_start = new Date(msg.payload.start).valueOf() / 1000;\nconst local_end = new Date(msg.payload.end).valueOf() / 1000;\n\n// convert timestamps to UTC\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60; // UTC offset in seconds\nconst start = local_start - timezoneOffset;\nconst end = local_end - timezoneOffset;\n\n// setup query for events table\nlet query = \"SELECT * FROM events WHERE start_time >= \" + start + \" AND end_time < \" + end + \" and label = 'dog'\";\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 520,
-        "wires": [
-            [
-                "12f5b5507721b638"
-            ]
-        ]
-    },
-    {
-        "id": "12f5b5507721b638",
-        "type": "sqlite",
-        "z": "a6b11d5233cf65e0",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 730,
-        "y": 520,
-        "wires": [
-            []
-        ]
     }
 ]
