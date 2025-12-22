@@ -73,6 +73,7 @@
     mode: "0755"
 
 - name: TMSetup - Base Setup - Create journald conf directory
+  become: true
   file:
     path: /etc/systemd/journald.conf.d
     state: directory
