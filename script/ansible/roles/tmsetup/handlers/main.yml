@@ -31,6 +31,13 @@
     name: tm-docker.service
     state: restarted
 
+- name: Restart journald service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: systemd-journald.service
+    state: restarted
+
 - name: TMSetup - Flag for reboot
   ansible.builtin.include_tasks:
     file: "{{ role_path }}/handlers/reboot_handler.yml"
