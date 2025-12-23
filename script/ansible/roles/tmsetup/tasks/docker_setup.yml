@@ -46,6 +46,18 @@
     groups: docker
     name: '{{ tmsetup_codeowner }}'
 
+- name: TMSetup - Docker Setup - Copy daemon.json to /etc/docker/
+  become: true
+  ansible.builtin.copy:
+    src: docker-daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+      - Build container images
+      - Restart tm-docker service
+
 - name: TMSetup - Docker Setup - Copy compose.yaml to code directories
   become: true
   ansible.builtin.template:
