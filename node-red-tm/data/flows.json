@@ -1014,6 +1014,37 @@
         "h": 97
     },
     {
+        "id": "5f2ceb5475d42c10",
+        "type": "group",
+        "z": "6a802553f327d4d1",
+        "name": "plate-recognizer",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "dbf715e81814d4d1",
+            "4f9660d1797f1d39",
+            "ca524e301a77dc26",
+            "36b5f377b7a3279e",
+            "ce5360091646c733",
+            "e0ff592e8f562a10",
+            "f76c2b5b2b99096a",
+            "d04f209cc5934385",
+            "0c9d037e4fa1a196",
+            "ea5db0d7189c3af9",
+            "fdab61cae3614bfa",
+            "068a155ef59743c4",
+            "4dc5e5c66569e020",
+            "5a13261128484d6f",
+            "3de791c3380ea762",
+            "f8cf1e58e0b17872"
+        ],
+        "x": 14,
+        "y": 319,
+        "w": 912,
+        "h": 642
+    },
+    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1437,33 +1468,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "5f2ceb5475d42c10",
-        "type": "group",
-        "z": "6a802553f327d4d1",
-        "name": "plate-recognizer",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "dbf715e81814d4d1",
-            "4f9660d1797f1d39",
-            "ca524e301a77dc26",
-            "36b5f377b7a3279e",
-            "ce5360091646c733",
-            "e0ff592e8f562a10",
-            "ae45c4abf68017a6",
-            "f76c2b5b2b99096a",
-            "d04f209cc5934385",
-            "0c9d037e4fa1a196",
-            "ea5db0d7189c3af9",
-            "fdab61cae3614bfa"
-        ],
-        "x": 34,
-        "y": 279,
-        "w": 912,
-        "h": 522
     },
     {
         "id": "05a58d9ee463c696",
@@ -2163,6 +2167,24 @@
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
+    },
+    {
+        "id": "1ea6ab39.e574b5",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "7da9517d.305a1",
+        "type": "ui_group",
+        "name": "",
+        "tab": "1ea6ab39.e574b5",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
     },
     {
         "id": "9d0f912cc84546dd",
@@ -12881,7 +12903,7 @@
         "y": 100,
         "wires": [
             [
-                "407457bbc3da74dc"
+                "b8705f8be97656d3"
             ]
         ]
     },
@@ -12890,62 +12912,23 @@
         "type": "http request",
         "z": "6a802553f327d4d1",
         "g": "5f2ceb5475d42c10",
-        "name": "plate-recognizer http api / plate-reader ",
+        "name": "plate-recognizer http api",
         "method": "POST",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://plate-recognizer:8080/v1/plate-reader/",
+        "url": "",
         "tls": "",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
-        "headers": [
-            {
-                "keyType": "Authorization",
-                "keyValue": "",
-                "valueType": "other",
-                "valueValue": "Token 62e2778777b2c33b9776885c35cf308c4e738058"
-            },
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "multipart/form-data",
-                "valueValue": ""
-            }
-        ],
-        "x": 530,
-        "y": 560,
+        "headers": [],
+        "x": 310,
+        "y": 540,
         "wires": [
             [
-                "ae45c4abf68017a6",
                 "f76c2b5b2b99096a"
-            ]
-        ]
-    },
-    {
-        "id": "407457bbc3da74dc",
-        "type": "switch",
-        "z": "6a802553f327d4d1",
-        "name": "match to Camera",
-        "property": "payload.camera",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "picam_h264",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 290,
-        "y": 100,
-        "wires": [
-            [
-                "53d832d8012b843b"
             ]
         ]
     },
@@ -12966,8 +12949,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 340,
-        "y": 140,
+        "x": 420,
+        "y": 180,
         "wires": [
             [
                 "c9d27de2291143b8"
@@ -12993,8 +12976,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 390,
-        "y": 220,
+        "x": 470,
+        "y": 260,
         "wires": [
             [
                 "dbf715e81814d4d1"
@@ -13019,7 +13002,7 @@
         "senderr": false,
         "headers": [],
         "x": 180,
-        "y": 320,
+        "y": 360,
         "wires": [
             [
                 "ca524e301a77dc26",
@@ -13047,8 +13030,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 450,
-        "y": 480,
+        "x": 270,
+        "y": 440,
         "wires": [
             [
                 "ce5360091646c733"
@@ -13068,8 +13051,8 @@
         "active": true,
         "pass": false,
         "outputs": 0,
-        "x": 820,
-        "y": 320,
+        "x": 760,
+        "y": 360,
         "wires": []
     },
     {
@@ -13080,8 +13063,8 @@
         "name": "",
         "action": "",
         "property": "payload",
-        "x": 240,
-        "y": 480,
+        "x": 200,
+        "y": 400,
         "wires": [
             [
                 "4f9660d1797f1d39"
@@ -13093,16 +13076,16 @@
         "type": "function",
         "z": "6a802553f327d4d1",
         "g": "5f2ceb5475d42c10",
-        "name": "format payload",
-        "func": "let timestamp = new Date(msg.frigate_event.frame_time * 1000).toISOString();\n\nmsg.payload = {\n\n    \"upload\": {\n        \"value\": msg.frigate_event_api_thumbnail\n    },\n    \"regions\": {\n        \"value\": JSON.stringify([\"us\", \"us-or\", \"us-wa\"])\n    },\n    \"camera_id\": {\n        \"value\": \"picam_h264\"\n    },\n    \"timestamp\": {\n        \"value\": timestamp\n    },\n    \"mmc\": {\n        \"value\": 'true'\n    },\n    \"config\": {\n        \"value\": JSON.stringify({ \"detection_mode\":\"vehicle\", \"mode\":\"fast\" })\n    }\n    \n};\n\nreturn msg;",
+        "name": "format http request",
+        "func": "let timestamp = new Date(msg.frigate_event.frame_time * 1000).toISOString();\n\nconst token = global.get(`config.addons.plate_recognizer.token`);\nconst url = global.get(`config.addons.plate_recognizer.url`);\n\nmsg.headers = {\n    \"Authorization\": \"Token \" + token,\n    \"content-type\": \"multipart/form-data\"\n}\n\nmsg.url = url + '/v1/plate-reader/'\n\nmsg.payload = {\n\n    \"upload\": {\n        \"value\": msg.frigate_event_api_thumbnail\n    },\n    \"regions\": {\n        \"value\": JSON.stringify([\"us\", \"us-or\", \"us-wa\"])\n    },\n    \"camera_id\": {\n        \"value\": \"picam_h264\"\n    },\n    \"timestamp\": {\n        \"value\": timestamp\n    },\n    \"mmc\": {\n        \"value\": 'true'\n    },\n    \"config\": {\n        \"value\": JSON.stringify({ \"detection_mode\":\"vehicle\", \"mode\":\"fast\" })\n    }\n    \n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 280,
-        "y": 560,
+        "x": 290,
+        "y": 500,
         "wires": [
             [
                 "e0ff592e8f562a10"
@@ -13126,8 +13109,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 340,
-        "y": 180,
+        "x": 420,
+        "y": 220,
         "wires": [
             [
                 "7c0c13bd8f70c07d"
@@ -13167,29 +13150,11 @@
         "wires": []
     },
     {
-        "id": "ae45c4abf68017a6",
-        "type": "debug",
-        "z": "6a802553f327d4d1",
-        "g": "5f2ceb5475d42c10",
-        "name": "debug 27",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 800,
-        "y": 560,
-        "wires": []
-    },
-    {
         "id": "f76c2b5b2b99096a",
         "type": "function",
         "z": "6a802553f327d4d1",
         "g": "5f2ceb5475d42c10",
-        "name": "write params for alpr insert",
+        "name": "write params for plate_recognizer insert",
         "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.event_id = msg.frigate_event.id;\nnewMsg.payload.filename = msg.payload?.filename ?? null;\nnewMsg.payload.timestamp = msg.payload?.timestamp ?? null;\nnewMsg.payload.camera_id = msg.payload?.camera_id ?? null;\nnewMsg.payload.processing_time = msg.payload?.processing_time ?? null;\nnewMsg.payload.plate_type = msg.payload?.results?.[0]?.plate?.type ?? null;\nnewMsg.payload.plate_score = msg.payload?.results?.[0]?.plate?.score ?? null;\nnewMsg.payload.plate_xmin = msg.payload?.results?.[0]?.plate?.box?.xmin ?? null;\nnewMsg.payload.plate_ymin = msg.payload?.results?.[0]?.plate?.box?.ymin ?? null;\nnewMsg.payload.plate_xmax = msg.payload?.results?.[0]?.plate?.box?.xmax ?? null;\nnewMsg.payload.plate_ymax = msg.payload?.results?.[0]?.plate?.box?.ymax ?? null;\nnewMsg.payload.plate_value = msg.payload?.results?.[0]?.plate?.props?.plate?.[0]?.value ?? null;\nnewMsg.payload.plate_value_score = msg.payload?.results?.[0]?.plate?.props?.plate?.[0]?.score ?? null;\nnewMsg.payload.plate_region_value = msg.payload?.results?.[0]?.plate?.props?.region?.[0]?.value ?? null;\nnewMsg.payload.plate_region_score = msg.payload?.results?.[0]?.plate?.props?.region?.[0]?.score ?? null;\nnewMsg.payload.vehicle_type = msg.payload?.results?.[0]?.vehicle?.type ?? null;\nnewMsg.payload.vehicle_score = msg.payload?.results?.[0]?.vehicle?.score ?? null;\nnewMsg.payload.vehicle_xmin = msg.payload?.results?.[0]?.vehicle?.box?.xmin ?? null;\nnewMsg.payload.vehicle_ymin = msg.payload?.results?.[0]?.vehicle?.box?.ymin ?? null;\nnewMsg.payload.vehicle_xmax = msg.payload?.results?.[0]?.vehicle?.box?.xmax ?? null;\nnewMsg.payload.vehicle_ymax = msg.payload?.results?.[0]?.vehicle?.box?.ymax ?? null;\nnewMsg.payload.vehicle_make = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.make ?? null;\nnewMsg.payload.vehicle_model = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.model ?? null;\nnewMsg.payload.vehicle_make_model_score = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.score ?? null;\nnewMsg.payload.vehicle_orientation = msg.payload?.results?.[0]?.vehicle?.props?.orientation?.[0]?.value ?? null;\nnewMsg.payload.vehicle_orientation_score = msg.payload?.results?.[0]?.vehicle?.props?.orientation?.[0]?.score ?? null;\nnewMsg.payload.vehicle_color = msg.payload?.results?.[0]?.vehicle?.props?.color?.[0]?.value ?? null;\nnewMsg.payload.vehicle_color_score = msg.payload?.results?.[0]?.vehicle?.props?.color?.[0]?.score ?? null;\nnewMsg.payload.json_payload = `${JSON.stringify(msg.payload)}`;\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -13197,8 +13162,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 420,
-        "y": 620,
+        "x": 400,
+        "y": 600,
         "wires": [
             [
                 "d04f209cc5934385"
@@ -13212,10 +13177,10 @@
         "g": "5f2ceb5475d42c10",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO alpr (event_id, filename, timestamp, camera_id, processing_time, plate_type, plate_score, plate_xmin, plate_ymin, plate_xmax, plate_ymax, plate_value, plate_value_score, plate_region_value, plate_region_score, vehicle_type, vehicle_score, vehicle_xmin, vehicle_ymin, vehicle_xmax, vehicle_ymax, vehicle_make, vehicle_model, vehicle_make_model_score, vehicle_orientation, vehicle_orientation_score, vehicle_color, vehicle_color_score, json_payload)\nVALUES ($event_id, $filename, $timestamp, $camera_id, $processing_time, $plate_type, $plate_score, $plate_xmin, $plate_ymin, $plate_xmax, $plate_ymax, $plate_value, $plate_value_score, $plate_region_value, $plate_region_score, $vehicle_type, $vehicle_score, $vehicle_xmin, $vehicle_ymin, $vehicle_xmax, $vehicle_ymax, $vehicle_make, $vehicle_model, $vehicle_make_model_score, $vehicle_orientation, $vehicle_orientation_score, $vehicle_color, $vehicle_color_score, json($json_payload));\n",
-        "name": "/data/tmdb.alpr, Prepared Statement",
-        "x": 710,
-        "y": 620,
+        "sql": "INSERT INTO plate_recognizer (event_id, filename, timestamp, camera_id, processing_time, plate_type, plate_score, plate_xmin, plate_ymin, plate_xmax, plate_ymax, plate_value, plate_value_score, plate_region_value, plate_region_score, vehicle_type, vehicle_score, vehicle_xmin, vehicle_ymin, vehicle_xmax, vehicle_ymax, vehicle_make, vehicle_model, vehicle_make_model_score, vehicle_orientation, vehicle_orientation_score, vehicle_color, vehicle_color_score, json_payload)\nVALUES ($event_id, $filename, $timestamp, $camera_id, $processing_time, $plate_type, $plate_score, $plate_xmin, $plate_ymin, $plate_xmax, $plate_ymax, $plate_value, $plate_value_score, $plate_region_value, $plate_region_score, $vehicle_type, $vehicle_score, $vehicle_xmin, $vehicle_ymin, $vehicle_xmax, $vehicle_ymax, $vehicle_make, $vehicle_model, $vehicle_make_model_score, $vehicle_orientation, $vehicle_orientation_score, $vehicle_color, $vehicle_color_score, json($json_payload));\n",
+        "name": "/data/tmdb.plate_recognizer, Prepared Statement",
+        "x": 430,
+        "y": 640,
         "wires": [
             []
         ]
@@ -13224,6 +13189,7 @@
         "id": "4dc5e5c66569e020",
         "type": "inject",
         "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
         "name": "create table alpr",
         "props": [
             {
@@ -13235,7 +13201,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS alpr (event_id TEXT PRIMARY KEY, filename TEXT NOT NULL, timestamp TEXT NOT NULL, camera_id TEXT NOT NULL, processing_time REAL, plate_type TEXT, plate_score REAL, plate_xmin INTEGER, plate_ymin INTEGER, plate_xmax INTEGER, plate_ymax INTEGER, plate_value TEXT, plate_value_score REAL, plate_region_value TEXT, plate_region_score REAL, vehicle_type TEXT, vehicle_score REAL, vehicle_xmin INTEGER, vehicle_ymin INTEGER, vehicle_xmax INTEGER, vehicle_ymax INTEGER, vehicle_make TEXT, vehicle_model TEXT, vehicle_make_model_score REAL, vehicle_orientation TEXT, vehicle_orientation_score REAL, vehicle_color TEXT, vehicle_color_score REAL, json_payload TEXT NOT NULL);",
+        "topic": "CREATE TABLE IF NOT EXISTS plate_recognizer (event_id TEXT PRIMARY KEY, filename TEXT NOT NULL, timestamp TEXT NOT NULL, camera_id TEXT NOT NULL, processing_time REAL, plate_type TEXT, plate_score REAL, plate_xmin INTEGER, plate_ymin INTEGER, plate_xmax INTEGER, plate_ymax INTEGER, plate_value TEXT, plate_value_score REAL, plate_region_value TEXT, plate_region_score REAL, vehicle_type TEXT, vehicle_score REAL, vehicle_xmin INTEGER, vehicle_ymin INTEGER, vehicle_xmax INTEGER, vehicle_ymax INTEGER, vehicle_make TEXT, vehicle_model TEXT, vehicle_make_model_score REAL, vehicle_orientation TEXT, vehicle_orientation_score REAL, vehicle_color TEXT, vehicle_color_score REAL, json_payload TEXT NOT NULL);",
         "x": 220,
         "y": 880,
         "wires": [
@@ -13248,6 +13214,7 @@
         "id": "5a13261128484d6f",
         "type": "inject",
         "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
         "name": "select latest 5 rows from alpr",
         "props": [
             {
@@ -13259,7 +13226,7 @@
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "SELECT * FROM alpr ORDER BY timestamp DESC LIMIT 5;",
+        "topic": "SELECT * FROM plate_recognizer ORDER BY timestamp DESC LIMIT 5;",
         "x": 180,
         "y": 920,
         "wires": [
@@ -13272,6 +13239,7 @@
         "id": "3de791c3380ea762",
         "type": "sqlite",
         "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
@@ -13288,6 +13256,7 @@
         "id": "f8cf1e58e0b17872",
         "type": "debug",
         "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
         "name": "sqlite select last 5 comments",
         "active": true,
         "tosidebar": true,
@@ -13305,10 +13274,11 @@
         "id": "068a155ef59743c4",
         "type": "comment",
         "z": "6a802553f327d4d1",
-        "name": "This assumes 1 result, but may be up to 3, needs to be parsed with split",
+        "g": "5f2ceb5475d42c10",
+        "name": "This takes first result, but may be up to 3 (or more??), needs to be parsed with split",
         "info": "",
-        "x": 290,
-        "y": 820,
+        "x": 530,
+        "y": 700,
         "wires": []
     },
     {
@@ -13324,7 +13294,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 760,
+        "y": 780,
         "wires": [
             [
                 "ea5db0d7189c3af9"
@@ -13349,7 +13319,7 @@
         "senderr": false,
         "headers": [],
         "x": 320,
-        "y": 760,
+        "y": 780,
         "wires": [
             [
                 "fdab61cae3614bfa"
@@ -13371,7 +13341,53 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 580,
-        "y": 760,
+        "y": 780,
         "wires": []
+    },
+    {
+        "id": "b8705f8be97656d3",
+        "type": "switch",
+        "z": "6a802553f327d4d1",
+        "name": "is camera plate_recognizer enabled?",
+        "property": "$lookup($lookup($globalContext(\"config.sensors.cameras\"), $lookup(payload, \"camera\")), \"plate_recognizer\")",
+        "propertyType": "jsonata",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "5e642eb684a874ef"
+            ]
+        ]
+    },
+    {
+        "id": "5e642eb684a874ef",
+        "type": "switch",
+        "z": "6a802553f327d4d1",
+        "name": "is there a plate_recognizer token?",
+        "property": "config.addons.plate_recognizer.token",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 360,
+        "y": 140,
+        "wires": [
+            [
+                "53d832d8012b843b"
+            ]
+        ]
     }
 ]
