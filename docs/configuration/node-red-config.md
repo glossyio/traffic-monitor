@@ -129,6 +129,8 @@ sensors:
             # Note: name needs to match one defined in `radars` section
             # Note: A single radar may be attached to multiple cameras
             camera_radar: TM_RADAR_SERIAL_PORT_00
+            # Optional, related to addons
+            plate_recognizer: false
 
     # Optional: used to specify what radars are enabled for speed/direction and detection
     radars:
@@ -157,5 +159,15 @@ time:
     # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
     # Note: for offline deployments, time will stop whenever power is disconnected
     npt_set: true
+
+addons:
+    #Optional: For additional apps / micro-services available via tmsetup
+    # See https://platerecognizer.com capabilities
+    plate_recognizer:
+        token: 
+        # base url e.g. http://plate-recognizer:8080 and api calls added via app
+        url: 
+
+
 ```
 
