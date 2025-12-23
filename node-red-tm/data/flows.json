@@ -72,6 +72,14 @@
         "env": []
     },
     {
+        "id": "6a802553f327d4d1",
+        "type": "tab",
+        "label": "plate-recognizer",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -215,7 +223,7 @@
         ],
         "x": 54,
         "y": 359,
-        "w": 1332,
+        "w": 1418,
         "h": 628
     },
     {
@@ -870,7 +878,7 @@
         ],
         "x": 134,
         "y": 539,
-        "w": 972,
+        "w": 962,
         "h": 122
     },
     {
@@ -1301,7 +1309,7 @@
         ],
         "x": 734,
         "y": 759,
-        "w": 572,
+        "w": 712,
         "h": 202
     },
     {
@@ -1429,6 +1437,33 @@
         "y": 859,
         "w": 932,
         "h": 162
+    },
+    {
+        "id": "5f2ceb5475d42c10",
+        "type": "group",
+        "z": "6a802553f327d4d1",
+        "name": "plate-recognizer",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "dbf715e81814d4d1",
+            "4f9660d1797f1d39",
+            "ca524e301a77dc26",
+            "36b5f377b7a3279e",
+            "ce5360091646c733",
+            "e0ff592e8f562a10",
+            "ae45c4abf68017a6",
+            "f76c2b5b2b99096a",
+            "d04f209cc5934385",
+            "0c9d037e4fa1a196",
+            "ea5db0d7189c3af9",
+            "fdab61cae3614bfa"
+        ],
+        "x": 34,
+        "y": 279,
+        "w": 912,
+        "h": 522
     },
     {
         "id": "05a58d9ee463c696",
@@ -4932,6 +4967,7 @@
         "name": "event payload",
         "mode": "link",
         "links": [
+            "a3cc697409ba091a",
             "c249329109ac17d5",
             "ed447e5f8becbfad"
         ],
@@ -5192,8 +5228,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1120,
-        "y": 840,
+        "x": 1260,
+        "y": 880,
         "wires": []
     },
     {
@@ -12832,5 +12868,510 @@
                 "eb7053718706968b"
             ]
         ]
+    },
+    {
+        "id": "a3cc697409ba091a",
+        "type": "link in",
+        "z": "6a802553f327d4d1",
+        "name": "from mongo event capture",
+        "links": [
+            "274f87c31437c2d7"
+        ],
+        "x": 155,
+        "y": 100,
+        "wires": [
+            [
+                "407457bbc3da74dc"
+            ]
+        ]
+    },
+    {
+        "id": "e0ff592e8f562a10",
+        "type": "http request",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "plate-recognizer http api / plate-reader ",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://plate-recognizer:8080/v1/plate-reader/",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Authorization",
+                "keyValue": "",
+                "valueType": "other",
+                "valueValue": "Token 62e2778777b2c33b9776885c35cf308c4e738058"
+            },
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "multipart/form-data",
+                "valueValue": ""
+            }
+        ],
+        "x": 530,
+        "y": 560,
+        "wires": [
+            [
+                "ae45c4abf68017a6",
+                "f76c2b5b2b99096a"
+            ]
+        ]
+    },
+    {
+        "id": "407457bbc3da74dc",
+        "type": "switch",
+        "z": "6a802553f327d4d1",
+        "name": "match to Camera",
+        "property": "payload.camera",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "picam_h264",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 290,
+        "y": 100,
+        "wires": [
+            [
+                "53d832d8012b843b"
+            ]
+        ]
+    },
+    {
+        "id": "53d832d8012b843b",
+        "type": "switch",
+        "z": "6a802553f327d4d1",
+        "name": "only zone_radar",
+        "property": "payload.entered_zones",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "zone_radar",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 340,
+        "y": 140,
+        "wires": [
+            [
+                "c9d27de2291143b8"
+            ]
+        ]
+    },
+    {
+        "id": "7c0c13bd8f70c07d",
+        "type": "change",
+        "z": "6a802553f327d4d1",
+        "name": "set frigate_event from payload",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 390,
+        "y": 220,
+        "wires": [
+            [
+                "dbf715e81814d4d1"
+            ]
+        ]
+    },
+    {
+        "id": "dbf715e81814d4d1",
+        "type": "http request",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "frigate http api for snapshot",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000//api/events/{{{frigate_event.id}}}/snapshot.jpg",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 180,
+        "y": 320,
+        "wires": [
+            [
+                "ca524e301a77dc26",
+                "36b5f377b7a3279e"
+            ]
+        ]
+    },
+    {
+        "id": "4f9660d1797f1d39",
+        "type": "change",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "set frigate_event_api_thumbnail",
+        "rules": [
+            {
+                "t": "set",
+                "p": "frigate_event_api_thumbnail",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 450,
+        "y": 480,
+        "wires": [
+            [
+                "ce5360091646c733"
+            ]
+        ]
+    },
+    {
+        "id": "ca524e301a77dc26",
+        "type": "image",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "",
+        "width": "175",
+        "data": "payload",
+        "dataType": "msg",
+        "thumbnail": false,
+        "active": true,
+        "pass": false,
+        "outputs": 0,
+        "x": 820,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "36b5f377b7a3279e",
+        "type": "base64",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 240,
+        "y": 480,
+        "wires": [
+            [
+                "4f9660d1797f1d39"
+            ]
+        ]
+    },
+    {
+        "id": "ce5360091646c733",
+        "type": "function",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "format payload",
+        "func": "let timestamp = new Date(msg.frigate_event.frame_time * 1000).toISOString();\n\nmsg.payload = {\n\n    \"upload\": {\n        \"value\": msg.frigate_event_api_thumbnail\n    },\n    \"regions\": {\n        \"value\": JSON.stringify([\"us\", \"us-or\", \"us-wa\"])\n    },\n    \"camera_id\": {\n        \"value\": \"picam_h264\"\n    },\n    \"timestamp\": {\n        \"value\": timestamp\n    },\n    \"mmc\": {\n        \"value\": 'true'\n    },\n    \"config\": {\n        \"value\": JSON.stringify({ \"detection_mode\":\"vehicle\", \"mode\":\"fast\" })\n    }\n    \n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 560,
+        "wires": [
+            [
+                "e0ff592e8f562a10"
+            ]
+        ]
+    },
+    {
+        "id": "c9d27de2291143b8",
+        "type": "switch",
+        "z": "6a802553f327d4d1",
+        "name": "only label=car",
+        "property": "payload.label",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "car",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 340,
+        "y": 180,
+        "wires": [
+            [
+                "7c0c13bd8f70c07d"
+            ]
+        ]
+    },
+    {
+        "id": "d62d1aa923bd5e25",
+        "type": "catch",
+        "z": "6a802553f327d4d1",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 100,
+        "y": 40,
+        "wires": [
+            [
+                "41fdac91ee9edce9"
+            ]
+        ]
+    },
+    {
+        "id": "41fdac91ee9edce9",
+        "type": "debug",
+        "z": "6a802553f327d4d1",
+        "name": "catch error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 280,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ae45c4abf68017a6",
+        "type": "debug",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "debug 27",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "f76c2b5b2b99096a",
+        "type": "function",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "write params for alpr insert",
+        "func": "const newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.event_id = msg.frigate_event.id;\nnewMsg.payload.filename = msg.payload?.filename ?? null;\nnewMsg.payload.timestamp = msg.payload?.timestamp ?? null;\nnewMsg.payload.camera_id = msg.payload?.camera_id ?? null;\nnewMsg.payload.processing_time = msg.payload?.processing_time ?? null;\nnewMsg.payload.plate_type = msg.payload?.results?.[0]?.plate?.type ?? null;\nnewMsg.payload.plate_score = msg.payload?.results?.[0]?.plate?.score ?? null;\nnewMsg.payload.plate_xmin = msg.payload?.results?.[0]?.plate?.box?.xmin ?? null;\nnewMsg.payload.plate_ymin = msg.payload?.results?.[0]?.plate?.box?.ymin ?? null;\nnewMsg.payload.plate_xmax = msg.payload?.results?.[0]?.plate?.box?.xmax ?? null;\nnewMsg.payload.plate_ymax = msg.payload?.results?.[0]?.plate?.box?.ymax ?? null;\nnewMsg.payload.plate_value = msg.payload?.results?.[0]?.plate?.props?.plate?.[0]?.value ?? null;\nnewMsg.payload.plate_value_score = msg.payload?.results?.[0]?.plate?.props?.plate?.[0]?.score ?? null;\nnewMsg.payload.plate_region_value = msg.payload?.results?.[0]?.plate?.props?.region?.[0]?.value ?? null;\nnewMsg.payload.plate_region_score = msg.payload?.results?.[0]?.plate?.props?.region?.[0]?.score ?? null;\nnewMsg.payload.vehicle_type = msg.payload?.results?.[0]?.vehicle?.type ?? null;\nnewMsg.payload.vehicle_score = msg.payload?.results?.[0]?.vehicle?.score ?? null;\nnewMsg.payload.vehicle_xmin = msg.payload?.results?.[0]?.vehicle?.box?.xmin ?? null;\nnewMsg.payload.vehicle_ymin = msg.payload?.results?.[0]?.vehicle?.box?.ymin ?? null;\nnewMsg.payload.vehicle_xmax = msg.payload?.results?.[0]?.vehicle?.box?.xmax ?? null;\nnewMsg.payload.vehicle_ymax = msg.payload?.results?.[0]?.vehicle?.box?.ymax ?? null;\nnewMsg.payload.vehicle_make = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.make ?? null;\nnewMsg.payload.vehicle_model = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.model ?? null;\nnewMsg.payload.vehicle_make_model_score = msg.payload?.results?.[0]?.vehicle?.props?.make_model?.[0]?.score ?? null;\nnewMsg.payload.vehicle_orientation = msg.payload?.results?.[0]?.vehicle?.props?.orientation?.[0]?.value ?? null;\nnewMsg.payload.vehicle_orientation_score = msg.payload?.results?.[0]?.vehicle?.props?.orientation?.[0]?.score ?? null;\nnewMsg.payload.vehicle_color = msg.payload?.results?.[0]?.vehicle?.props?.color?.[0]?.value ?? null;\nnewMsg.payload.vehicle_color_score = msg.payload?.results?.[0]?.vehicle?.props?.color?.[0]?.score ?? null;\nnewMsg.payload.json_payload = `${JSON.stringify(msg.payload)}`;\n\nconst obj = newMsg.payload;\n\nmsg.payload = newMsg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 620,
+        "wires": [
+            [
+                "d04f209cc5934385"
+            ]
+        ]
+    },
+    {
+        "id": "d04f209cc5934385",
+        "type": "sqlite",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO alpr (event_id, filename, timestamp, camera_id, processing_time, plate_type, plate_score, plate_xmin, plate_ymin, plate_xmax, plate_ymax, plate_value, plate_value_score, plate_region_value, plate_region_score, vehicle_type, vehicle_score, vehicle_xmin, vehicle_ymin, vehicle_xmax, vehicle_ymax, vehicle_make, vehicle_model, vehicle_make_model_score, vehicle_orientation, vehicle_orientation_score, vehicle_color, vehicle_color_score, json_payload)\nVALUES ($event_id, $filename, $timestamp, $camera_id, $processing_time, $plate_type, $plate_score, $plate_xmin, $plate_ymin, $plate_xmax, $plate_ymax, $plate_value, $plate_value_score, $plate_region_value, $plate_region_score, $vehicle_type, $vehicle_score, $vehicle_xmin, $vehicle_ymin, $vehicle_xmax, $vehicle_ymax, $vehicle_make, $vehicle_model, $vehicle_make_model_score, $vehicle_orientation, $vehicle_orientation_score, $vehicle_color, $vehicle_color_score, json($json_payload));\n",
+        "name": "/data/tmdb.alpr, Prepared Statement",
+        "x": 710,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4dc5e5c66569e020",
+        "type": "inject",
+        "z": "6a802553f327d4d1",
+        "name": "create table alpr",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "CREATE TABLE IF NOT EXISTS alpr (event_id TEXT PRIMARY KEY, filename TEXT NOT NULL, timestamp TEXT NOT NULL, camera_id TEXT NOT NULL, processing_time REAL, plate_type TEXT, plate_score REAL, plate_xmin INTEGER, plate_ymin INTEGER, plate_xmax INTEGER, plate_ymax INTEGER, plate_value TEXT, plate_value_score REAL, plate_region_value TEXT, plate_region_score REAL, vehicle_type TEXT, vehicle_score REAL, vehicle_xmin INTEGER, vehicle_ymin INTEGER, vehicle_xmax INTEGER, vehicle_ymax INTEGER, vehicle_make TEXT, vehicle_model TEXT, vehicle_make_model_score REAL, vehicle_orientation TEXT, vehicle_orientation_score REAL, vehicle_color TEXT, vehicle_color_score REAL, json_payload TEXT NOT NULL);",
+        "x": 220,
+        "y": 880,
+        "wires": [
+            [
+                "3de791c3380ea762"
+            ]
+        ]
+    },
+    {
+        "id": "5a13261128484d6f",
+        "type": "inject",
+        "z": "6a802553f327d4d1",
+        "name": "select latest 5 rows from alpr",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "SELECT * FROM alpr ORDER BY timestamp DESC LIMIT 5;",
+        "x": 180,
+        "y": 920,
+        "wires": [
+            [
+                "3de791c3380ea762"
+            ]
+        ]
+    },
+    {
+        "id": "3de791c3380ea762",
+        "type": "sqlite",
+        "z": "6a802553f327d4d1",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 480,
+        "y": 880,
+        "wires": [
+            [
+                "f8cf1e58e0b17872"
+            ]
+        ]
+    },
+    {
+        "id": "f8cf1e58e0b17872",
+        "type": "debug",
+        "z": "6a802553f327d4d1",
+        "name": "sqlite select last 5 comments",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "068a155ef59743c4",
+        "type": "comment",
+        "z": "6a802553f327d4d1",
+        "name": "This assumes 1 result, but may be up to 3, needs to be parsed with split",
+        "info": "",
+        "x": 290,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "0c9d037e4fa1a196",
+        "type": "inject",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 760,
+        "wires": [
+            [
+                "ea5db0d7189c3af9"
+            ]
+        ]
+    },
+    {
+        "id": "ea5db0d7189c3af9",
+        "type": "http request",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "plate-recognizer info",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://plate-recognizer:8080/info/",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 320,
+        "y": 760,
+        "wires": [
+            [
+                "fdab61cae3614bfa"
+            ]
+        ]
+    },
+    {
+        "id": "fdab61cae3614bfa",
+        "type": "debug",
+        "z": "6a802553f327d4d1",
+        "g": "5f2ceb5475d42c10",
+        "name": "debug: plate-recognizer info",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 760,
+        "wires": []
     }
 ]
