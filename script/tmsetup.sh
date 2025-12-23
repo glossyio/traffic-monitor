@@ -23,6 +23,7 @@ _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
 _MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
 declare _VALID_TAGS=("base" "wifi" "docker" "frigate" "node-red-tm" "go2rtc")
+declare -a _VALID_CUSTOM_VARS=("plate_recognizer")
 
 ## FUNCTIONS
 _pline() { # Print line function
@@ -48,7 +49,8 @@ printf "  %-20s%s\n" \
   "-u" "Perform system UPGRADE (apt full-upgrade) as part of installation" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
-  "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)"
+  "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)" \
+  "-C LIST Set custom boolean variables (comma‑separated) prefixed with tmsetup_bool_\n"
 # "-R" "REMOVE Traffic Monitor software" # Future addition
 }
 
@@ -219,7 +221,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
 ### Start of MAIN
 
 # Collect command-line options
-while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:" opt
+while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:C:" opt;
 do
   case ${opt} in
     d) # Set PATH for install
@@ -281,6 +283,25 @@ do
     h) # Show Usage
       _usage
       exit 2
+      ;;
+    C) # Custom boolean variables (comma‑separated)
+      IFS=',' read -r -a _custom_vars <<< "${OPTARG}"
+      for v in "${_custom_vars[@]}"; do
+        # Trim any surrounding whitespace just to be safe
+        v="${v#"${v%%[![:space:]]*}"}"   # ltrim
+        v="${v%"${v##*[![:space:]]}"}"   # rtrim
+
+        # Validate the variable name against the allowed list.
+        if [[ ! " ${_VALID_CUSTOM_VARS[*]} " =~ " ${v} " ]]; then
+          printf "Error: Custom variable '%s' is not permitted.\n" "$v"
+          printf "Valid values are:\n  %s\n" "${_VALID_CUSTOM_VARS}"
+          _usage
+          exit 1
+        fi
+
+        # If it passes validation, add it as a true boolean.
+        _add_var "tmsetup_bool_${v}" "true"
+      done
       ;;
     :) #Catch Missing arguments
       printf "Error: Option -%s requires a PATH argument. \n" "${OPTARG}"

@@ -1,0 +1,34 @@
+---
+# TMSetup - plate-recognizer Setup tasks
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/docker/plate-recognizer'
+    - '{{ tmsetup_codedir }}/docker/plate-recognizer/license'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer docker files
+  become: true
+  loop:
+    - docker/plate-recognizer/docker-compose-plate-recognizer.yaml
+    - docker/plate-recognizer/plate-recognizer.env
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify:
+    - Build container images
+    - Restart tm-docker service
+...

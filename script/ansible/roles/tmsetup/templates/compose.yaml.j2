@@ -1,9 +1,11 @@
 ################################################################################
 # common-services configuration file
-# in order:  frigate, node-red
-# this should be located in the ~/code folder, with each container's directory
+# start services in order of dependencies
 ################################################################################
 
 include:
   - {{ tmsetup_codedir }}/frigate/docker-compose-frigate.yaml
   - {{ tmsetup_codedir }}/node-red-tm/docker-compose-node-red-tm.yaml
+{% if tmsetup_bool_plate_recognizer is defined and tmsetup_bool_plate_recognizer %}
+  - {{ tmsetup_codedir }}/docker/plate-recognizer/docker-compose-plate-recognizer.yaml
+{% endif %}
