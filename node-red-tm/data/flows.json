@@ -1833,7 +1833,7 @@
     {
         "id": "2a8899583532edb4",
         "type": "ui-base",
-        "name": "Database",
+        "name": "Movements",
         "path": "/dashboard",
         "appIcon": "",
         "includeClientData": true,
@@ -13609,6 +13609,321 @@
         ],
         "x": 655,
         "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "a6b11d5233cf65e0",
+        "type": "tab",
+        "label": "ui-movements",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "ef90f85facf47af9",
+        "type": "ui-page",
+        "name": "Movements",
+        "ui": "2a8899583532edb4",
+        "path": "/movements",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 3,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "6b7a69f07b717525",
+        "type": "ui-group",
+        "name": "Movements",
+        "page": "ef90f85facf47af9",
+        "width": 6,
+        "height": 1,
+        "order": 2,
+        "showTitle": false,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "6fab6cacc8c93b10",
+        "type": "ui-group",
+        "name": "Movements Selection",
+        "page": "ef90f85facf47af9",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "44a8b86a7733445f",
+        "type": "ui-template",
+        "z": "a6b11d5233cf65e0",
+        "group": "6fab6cacc8c93b10",
+        "page": "",
+        "ui": "",
+        "name": "Show Traffic Movements",
+        "order": 1,
+        "width": "0",
+        "height": "0",
+        "head": "",
+        "format": "<template>\n    <div>\n      <fieldset class=\"wideBorder\">\n        <legend>\n          <label for=\"zones\">Which zones should be included in movement list?</label>\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"zone in this.sortedZones\" :key=\"zone\" id=\"zones\">\n            <label :for=\"zone\">{{ zone }}</label>\n            <input type=\"checkbox\" v-model=\"selectedZones\"\n                    @change=\"validateZones\"\n                    :id=\"zone\"\n                    name=\"type\"\n                    :value=\"zone\"\n                    style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n                  />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{zoneErrorMessage}}</text>\n\n      <br/>\n      <fieldset class=\"fieldSpacing wideBorder\">\n        <legend>\n          <label>Show intermediate zones in paths or just initial & final zones?</label>\n        </legend>\n          <label class=\"radio-label\">\n            <input type=\"radio\" v-model=\"pathOption\" value=\"intermediate\" />\n              Show intermediate zones\n            </label>\n          <label class=\"radio-label\">\n            <input type=\"radio\" v-model=\"pathOption\" value=\"initialFinal\" />\n              Show just initial &  final zones\n          </label>\n      </fieldset>\n\n      <br/>\n      <fieldset class=\"fieldSpacing wideBorder\">\n        <legend>\n          <label>Set start and end date for showing traffic movement.</label>\n        </legend>\n        <fieldset>\n          <legend>\n            <label for=\"start\">Start date & time (default: 7 days ago)</label>\n          </legend>\n          <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n        </fieldset>\n        <text class=\"error\">{{startErrorMessage}}</text>\n\n        <fieldset class=\"fieldSpacing\">\n          <legend>\n            <label for=\"end\">End date & time (default: now)</label>\n          </legend>\n          <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n        </fieldset>\n        <text class=\"error\">{{endErrorMessage}}</text>\n      </fieldset>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"refresh\" :disabled=\"!!zoneErrorMessage || !!startErrorMessage || !!endErrorMessage\">refresh</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            pathOption: \"initialFinal\",\n            sortedZones: [], // sorted version of msg.payload\n            selectedZones: [], // zones selected by user or by default\n            startErrorMessage: null,\n            endErrorMessage: null,\n            zoneErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        validateZones() {\n          // user selected/deselected a zone\n          const noZoneErrorMessage = \"Choose zones to include in table\";\n          this.zoneErrorMessage = (this.selectedZones.length == 0)\n            ? noZoneErrorMessage\n            : null;\n        },\n\n        refresh() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            },\n            zones: this.selectedZones,\n            pathOption: this.pathOption,\n          });\n        },\n\n        setDefaultZones() {\n          // by default, ignore the standard zones\n          const standard_zones = [\"zone_capture\", \"zone_near\", \"zone_far\", \"zone_radar\"];\n          if (this.sortedZones.length > 0) {\n            this.selectedZones = this.sortedZones.filter(zone => !standard_zones.includes(zone));\n          }\n          this.validateZones();\n        },\n        \n        reset() {\n          this.setDefaultDates();\n          this.validateStart();\n          this.setDefaultZones();\n        },\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique zone names from the database, as received via a message\n        function processOption(msg) {\n          if (msg.payload.length > 0) {\n            that.sortedZones = msg.payload.sort();\n          };\n          that.setDefaultZones();\n          if (!(this.zoneErrorMessage && this.startErrorMessage && this.endErrorMessage)) {\n            that.refresh();\n          }\n        }\n        // process zone names from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.reset();\n      }\n  }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n\n  .wideBorder {\n    border-width: 3px;\n  }\n\n  .radio-label {\n    display: block; /* Makes each label and its content stack vertically */\n    margin-bottom: 10px; /* Adds spacing between options */\n  }\n</style>\n",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 190,
+        "y": 440,
+        "wires": [
+            [
+                "074231a725abbf5f"
+            ]
+        ]
+    },
+    {
+        "id": "074231a725abbf5f",
+        "type": "function",
+        "z": "a6b11d5233cf65e0",
+        "name": "setup events query",
+        "func": "// convert dates to Unix epoch in seconds\nconst local_start = new Date(msg.payload.start).valueOf() / 1000;\nconst local_end = new Date(msg.payload.end).valueOf() / 1000;\n\n// convert timestamps to UTC\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60; // UTC offset in seconds\nconst start = local_start - timezoneOffset;\nconst end = local_end - timezoneOffset;\n\n// setup query for events table\nlet query = \"SELECT * FROM events WHERE start_time >= \" + start + \" AND end_time < \" + end;\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 440,
+        "wires": [
+            [
+                "0694d56c6bcf1f90"
+            ]
+        ]
+    },
+    {
+        "id": "0694d56c6bcf1f90",
+        "type": "sqlite",
+        "z": "a6b11d5233cf65e0",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 730,
+        "y": 440,
+        "wires": [
+            [
+                "57efe4a79d0117b2"
+            ]
+        ]
+    },
+    {
+        "id": "57efe4a79d0117b2",
+        "type": "function",
+        "z": "a6b11d5233cf65e0",
+        "name": "process events",
+        "func": "// Accumulate movement information in format needed for table\n//\n// Input format: array of objects, each with a label (event type)\n// and \"entered zones\" array containing a list of zone names.\n//\n// Output format: array of objects, containing one entry for each\n// zone traversal path (i.e. zones passed through). Within each\n// array entry, a field for eacn event type. The value of the field\n// is the number of events of that type that followed that\n// traversal path.\n\n// add a zone name to the path.\n// Note: \"paths\" is passed as an object because otherwise Javascript\n// uses call by value semantics.\nfunction addZone(path, zone) {\n    if (path.length > 0) {\n        path += \"->\";\n    }\n    path += zone;\n    return path;\n}\n\n// Convert the entered_zones list to the label used in the table.\n// Include only the zones selected by the user (in msg.zones).\n// If the user selected the \"show just initial & final zones\" option, then\n// only include the first and last zone from the entered_zones path.\nfunction processPath(entered_zones) {\n    let path = \"\";\n    let last_zone = null;\n    const zones = JSON.parse(entered_zones);\n    for (const zone of zones) {\n        if (msg.zones.includes(zone)) {\n            // if the user wants to see just the initial and final zones,\n            // then add the initial zone to the path as soon as it shows up\n            // and save any other zone to be added after all zones have been\n            // processed \n            if (msg.pathOption === \"initialFinal\") {\n                if (path.length === 0) {\n                    path = addZone(path, zone);\n                } else {\n                    last_zone = zone;\n                }\n            } else {\n                path = addZone(path, zone);\n            }\n        }\n    }\n    if (last_zone) {\n        path = addZone(path, last_zone);\n    }\n    return path;\n}\n\nconst results = [];\nconst regex = new RegExp(\"->\", 'g');\nfor (const event of msg.payload) {\n    const path = processPath(event.entered_zones);\n    const matches = path.match(regex);\n    const zone_count = matches ? matches.length : 0;\n    if (path.length > 0) { // ignore paths that don't match filters\n        const existing_result = results.find(result => result.movement == path);\n        if (existing_result === undefined) {\n            const new_result = {\n                movement: path,\n                [event.label]: 1\n            }\n            results.push(new_result);\n        } else {\n            if (Object.hasOwn(existing_result, event.label)) {\n                existing_result[event.label] ++;\n            } else {\n                existing_result[event.label] = 1;\n            }\n        } \n    }\n}\nmsg.payload = results;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1000,
+        "y": 440,
+        "wires": [
+            [
+                "e9b82a495aecb939"
+            ]
+        ]
+    },
+    {
+        "id": "bfa2c90952677fb4",
+        "type": "debug",
+        "z": "a6b11d5233cf65e0",
+        "name": "catch any errors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "bc6718df6def8716",
+        "type": "catch",
+        "z": "a6b11d5233cf65e0",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 160,
+        "y": 80,
+        "wires": [
+            [
+                "bfa2c90952677fb4"
+            ]
+        ]
+    },
+    {
+        "id": "e9b82a495aecb939",
+        "type": "ui-table",
+        "z": "a6b11d5233cf65e0",
+        "group": "6b7a69f07b717525",
+        "name": "Movements",
+        "label": "Movements",
+        "order": 1,
+        "width": "0",
+        "height": "0",
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": true,
+        "showSearch": false,
+        "deselect": true,
+        "selectionType": "none",
+        "columns": [],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "x": 1230,
+        "y": 440,
+        "wires": [
+            [
+                "5135727de424a1d3"
+            ]
+        ]
+    },
+    {
+        "id": "47bea1ba3aaef7d9",
+        "type": "comment",
+        "z": "a6b11d5233cf65e0",
+        "name": "Movements page",
+        "info": "",
+        "x": 180,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "281467473b94b123",
+        "type": "ui-control",
+        "z": "a6b11d5233cf65e0",
+        "name": "when UI opens",
+        "ui": "2a8899583532edb4",
+        "events": "all",
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "5135727de424a1d3"
+            ]
+        ]
+    },
+    {
+        "id": "5135727de424a1d3",
+        "type": "function",
+        "z": "a6b11d5233cf65e0",
+        "name": "setup events query",
+        "func": "// setup query for events table to get distinct values for entered_zones\nlet query = \"SELECT DISTINCT entered_zones FROM events\";\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 260,
+        "wires": [
+            [
+                "b0cb0468ad1b3a0c"
+            ]
+        ]
+    },
+    {
+        "id": "b0cb0468ad1b3a0c",
+        "type": "sqlite",
+        "z": "a6b11d5233cf65e0",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 710,
+        "y": 260,
+        "wires": [
+            [
+                "4cbd4e7090b58789"
+            ]
+        ]
+    },
+    {
+        "id": "4cbd4e7090b58789",
+        "type": "function",
+        "z": "a6b11d5233cf65e0",
+        "name": "find unique zone names",
+        "func": "// extract all distinct zone names\nconst zones = [];\nfor (const entry of msg.payload) {\n    const entered_zones = JSON.parse(entry.entered_zones);\n    for (const zone of entered_zones) {\n        if (!zones.includes(zone)) {\n            zones.push(zone);\n        }\n    }\n}\nconst newmsg = {payload: zones};\nreturn newmsg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 260,
+        "wires": [
+            [
+                "44a8b86a7733445f"
+            ]
+        ]
+    },
+    {
+        "id": "839944f88ec263b3",
+        "type": "comment",
+        "z": "a6b11d5233cf65e0",
+        "name": "Get names of zones for use in UI",
+        "info": "",
+        "x": 210,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "fd3245e78e0e6860",
+        "type": "comment",
+        "z": "a6b11d5233cf65e0",
+        "name": "Movements table UI & logic",
+        "info": "",
+        "x": 200,
+        "y": 360,
         "wires": []
     }
 ]
