@@ -17,9 +17,9 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/frigate'
-    - '{{ tmsetup_codedir }}/frigate/config'
-    - '{{ tmsetup_codedir }}/frigate/storage'
+    - '{{ tmsetup_codedir }}/docker/frigate'
+    - '{{ tmsetup_codedir }}/docker/frigate/config'
+    - '{{ tmsetup_codedir }}/docker/frigate/storage'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
