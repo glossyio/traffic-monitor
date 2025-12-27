@@ -31,9 +31,9 @@
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
   loop:
-    - frigate/config/config.yml
-    - frigate/docker-compose-frigate.yaml
-    - frigate/frigate.env
+    - docker/frigate/config/config.yml
+    - docker/frigate/docker-compose-frigate.yaml
+    - docker/frigate/frigate.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'

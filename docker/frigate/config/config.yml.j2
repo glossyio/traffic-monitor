@@ -57,8 +57,8 @@ objects:
       max_area: 24000000
       min_ratio: 0.2
       max_ratio: 10.0
-      min_score: 0.25
-      threshold: 0.42
+      min_score: 0.15
+      threshold: 0.25
     motorcycle:
       min_area: 0
       max_area: 24000000
@@ -68,20 +68,16 @@ objects:
       threshold: 0.8
 
 record:
-  enabled: true
-  retain:
-    days: 0
-  alerts:
-    retain:
-      days: 1
-  detections:
-    retain:
-      days: 1
+  enabled: false
+
 snapshots:
   enabled: true
   clean_copy: true
-  bounding_box: true
-  crop: false
+  timestamp: false
+  bounding_box: false
+  crop: true
+  quality: 100
   retain:
-    default: 1
-version: 0.15-1
+    default: 0.042
+
+version: 0.16-0
