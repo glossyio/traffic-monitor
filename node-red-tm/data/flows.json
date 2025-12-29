@@ -201,14 +201,12 @@
             "f20c74c0ccfd256c",
             "86c86b0d82d13028",
             "8eaa1d06a29a5d2b",
-            "86cb9478e0a2c85d",
             "3ecb4de9412819e6",
-            "9c980e0a370ae5dc",
             "e4ed310a39e7e29f"
         ],
         "x": 54,
         "y": 79,
-        "w": 862,
+        "w": 532,
         "h": 302
     },
     {
@@ -5063,7 +5061,6 @@
         "y": 180,
         "wires": [
             [
-                "86cb9478e0a2c85d",
                 "3ecb4de9412819e6"
             ]
         ]
@@ -5108,8 +5105,7 @@
         "y": 300,
         "wires": [
             [
-                "8eaa1d06a29a5d2b",
-                "9c980e0a370ae5dc"
+                "8eaa1d06a29a5d2b"
             ]
         ]
     },
@@ -5588,29 +5584,12 @@
         ]
     },
     {
-        "id": "86cb9478e0a2c85d",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "0a5faeac9fbd6d55",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 810,
-        "y": 180,
-        "wires": []
-    },
-    {
         "id": "3ecb4de9412819e6",
         "type": "switch",
         "z": "9269520ddb532b00",
         "g": "0a5faeac9fbd6d55",
-        "name": "is not stationary",
-        "property": "payload.stationary",
+        "name": "after.stationary is false",
+        "property": "payload.after.stationary",
         "propertyType": "msg",
         "rules": [
             {
@@ -5620,7 +5599,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 260,
+        "x": 240,
         "y": 220,
         "wires": [
             [
@@ -5629,29 +5608,12 @@
         ]
     },
     {
-        "id": "9c980e0a370ae5dc",
-        "type": "debug",
-        "z": "9269520ddb532b00",
-        "g": "0a5faeac9fbd6d55",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 810,
-        "y": 300,
-        "wires": []
-    },
-    {
         "id": "e4ed310a39e7e29f",
         "type": "switch",
         "z": "9269520ddb532b00",
         "g": "0a5faeac9fbd6d55",
-        "name": "position_changes > 0",
-        "property": "payload.position_changes",
+        "name": "after.position_changes > 0",
+        "property": "payload.after.position_changes",
         "propertyType": "msg",
         "rules": [
             {
@@ -5663,7 +5625,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 240,
+        "x": 260,
         "y": 260,
         "wires": [
             [
