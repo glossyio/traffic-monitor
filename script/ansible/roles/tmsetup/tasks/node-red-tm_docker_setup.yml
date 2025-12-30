@@ -32,10 +32,10 @@
 - name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
   become: true
   loop:
-    - node-red-tm/data/flows_cred.json
-    - node-red-tm/data/flows.json
-    - node-red-tm/data/README.md
-    - node-red-tm/data/settings.js
+    - docker/node-red-tm/data/flows_cred.json
+    - docker/node-red-tm/data/flows.json
+    - docker/node-red-tm/data/README.md
+    - docker/node-red-tm/data/settings.js
   ansible.builtin.copy:
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     group: '{{ tmsetup_codegroup }}'
@@ -43,12 +43,11 @@
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}'
 
-- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files 1/2
   become: true
   loop:
-    - node-red-tm/Dockerfile
-    - node-red-tm/docker-compose-node-red-tm.yaml
-    - node-red-tm/data/package.json
+    - docker/node-red-tm/Dockerfile.j2
+    - docker/node-red-tm/docker-compose-node-red-tm.yaml.j2
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -56,7 +55,7 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0644'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}.j2'
+    src: '{{ item }}'
   notify:
     - Build container images
     - Restart tm-docker service
@@ -64,8 +63,8 @@
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
   become: true
   loop:
-    - node-red-tm/config/config.yml
-    - node-red-tm/node-red-tm.env
+    - docker/node-red-tm/config/config.yml.j2
+    - docker/node-red-tm/node-red-tm.env.j2
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -73,6 +72,6 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}.j2'
+    src: '{{ item }}'
   notify: Restart tm-docker service
 ...
