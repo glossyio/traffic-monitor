@@ -24,6 +24,7 @@ ffmpeg:
 cameras:
   picam_h264:
     enabled: true
+    type: "generic"
     ffmpeg:
       inputs:
         - path: rtsp://172.18.0.1:8554/picam_h264
@@ -49,6 +50,7 @@ objects:
     - bicycle
     - person
     - car
+    - bus
     - motorcycle
     - dog
   filters:
@@ -66,6 +68,13 @@ objects:
       max_ratio: 10.0
       min_score: 0.5
       threshold: 0.8
+    person:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.4
+      threshold: 0.5
 
 record:
   enabled: false
