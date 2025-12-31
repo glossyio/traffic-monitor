@@ -232,3 +232,10 @@ async def restart_docker(container_name: str):
 
 # TODO how do I want to handle the WLAN status - pull this out as a separate unit from journalctl
 
+# TODO more ai coprocessor info - hailo and coral, see https://docs.frigate.video/frigate/installation/#hailo-8
+    # TODO see if device exists:  `lspci -nn | grep -i hailo` and `lspci -nn | grep -i coral` will return line like
+        #    `0001:01:00.0 Co-processor [0b40]: Hailo Technologies Ltd. Hailo-8 AI Processor [1e60:2864] (rev 01)`
+        # or `0001:01:00.0 System peripheral [0880]: Global Unichip Corp. Coral Edge TPU [1ac1:089a]`
+    # TODO get device logs with `dmesg | grep -i hailo` or `dmesg | grep -i coral`, just show it
+    # TODO  check if *drivers* are loaded:  `lsmod | grep -i hailo` or `lsmod | grep -i apex`
+    # TODO verify device is available: `ls -l /dev/hailo0` or `ls -l /dev/apex0`
