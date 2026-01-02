@@ -11,7 +11,7 @@
   become: true
   community.docker.docker_compose_v2:
     files:
-      - compose.yaml
+      - ./docker/compose.yaml
     project_src: "{{ tmsetup_codedir }}"
     state: absent
     remove_images: all
@@ -21,7 +21,7 @@
   community.docker.docker_compose_v2:
     build: always
     files:
-      - compose.yaml
+      - ./docker/compose.yaml
     project_src: "{{ tmsetup_codedir }}"
     recreate: always
     state: stopped

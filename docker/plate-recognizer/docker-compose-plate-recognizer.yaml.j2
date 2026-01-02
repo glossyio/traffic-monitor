@@ -7,7 +7,7 @@ services:
       - "8080:8080"
     env_file: "plate-recognizer.env"
     volumes:
-      - {{ tmsetup_codedir }}/plate-recognizer/license:/license
+      - {{ tmsetup_codedir }}/docker/plate-recognizer/license:/license
     user: "{{ tmsetup_codeowner_uid }}"
     depends_on:
       frigate:

@@ -5,6 +5,7 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/docker'
     - '{{ tmsetup_codedir }}/docker/plate-recognizer'
     - '{{ tmsetup_codedir }}/docker/plate-recognizer/license'
   ansible.builtin.file:

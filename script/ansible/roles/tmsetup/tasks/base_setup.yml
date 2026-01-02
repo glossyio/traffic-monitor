@@ -32,6 +32,7 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/docker'
     - '{{ tmsetup_codedir }}/services'
     - '{{ tmsetup_codedir }}/utils'
     - '{{ tmsetup_codedir }}/tmp'
