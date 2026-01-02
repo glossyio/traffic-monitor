@@ -61,7 +61,7 @@
 - name: TMSetup - Docker Setup - Copy compose.yaml to code directories
   become: true
   ansible.builtin.template:
-    dest: '{{ tmsetup_codedir }}/compose.yaml'
+    dest: '{{ tmsetup_codedir }}/docker/compose.yaml'
     force: true
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'

@@ -11,7 +11,7 @@ Restart=always
 User=root
 Group={{ tmsetup_codegroup }}
 TimeoutStopSec=15
-WorkingDirectory={{ tmsetup_codedir }}
+WorkingDirectory={{ tmsetup_codedir }}/docker/
 ExecStart=/usr/bin/docker compose -f compose.yaml up
 ExecStop=/usr/bin/docker compose -f compose.yaml down
 

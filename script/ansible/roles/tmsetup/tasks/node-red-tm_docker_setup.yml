@@ -17,10 +17,11 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/node-red-tm'
-    - '{{ tmsetup_codedir }}/node-red-tm/config'
-    - '{{ tmsetup_codedir }}/node-red-tm/data'
-    - '{{ tmsetup_codedir }}/node-red-tm/db'
+    - '{{ tmsetup_codedir }}/docker'
+    - '{{ tmsetup_codedir }}/docker/node-red-tm'
+    - '{{ tmsetup_codedir }}/docker/node-red-tm/config'
+    - '{{ tmsetup_codedir }}/docker/node-red-tm/data'
+    - '{{ tmsetup_codedir }}/docker/node-red-tm/db'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0755'
