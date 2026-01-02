@@ -32,9 +32,9 @@
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
   loop:
-    - docker/frigate/config/config.yml.j2
-    - docker/frigate/docker-compose-frigate.yaml.j2
-    - docker/frigate/frigate.env.j2
+    - docker/frigate/config/config.yml
+    - docker/frigate/docker-compose-frigate.yaml
+    - docker/frigate/frigate.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -42,7 +42,7 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}'
+    src: '{{ item }}.j2'
   notify:
     - Build container images
     - Restart tm-docker service
