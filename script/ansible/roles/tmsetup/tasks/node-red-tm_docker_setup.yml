@@ -47,8 +47,8 @@
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM docker files 1/2
   become: true
   loop:
-    - docker/node-red-tm/Dockerfile.j2
-    - docker/node-red-tm/docker-compose-node-red-tm.yaml.j2
+    - docker/node-red-tm/Dockerfile
+    - docker/node-red-tm/docker-compose-node-red-tm.yaml
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -56,7 +56,7 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0644'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}'
+    src: '{{ item }}.j2'
   notify:
     - Build container images
     - Restart tm-docker service
@@ -64,8 +64,8 @@
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
   become: true
   loop:
-    - docker/node-red-tm/config/config.yml.j2
-    - docker/node-red-tm/node-red-tm.env.j2
+    - docker/node-red-tm/config/config.yml
+    - docker/node-red-tm/node-red-tm.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -73,6 +73,6 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}'
+    src: '{{ item }}.j2'
   notify: Restart tm-docker service
 ...
