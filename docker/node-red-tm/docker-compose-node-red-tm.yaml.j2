@@ -18,9 +18,9 @@ services:
       - "1883:1883"                     #aedes mqtt broker port 
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - {{ tmsetup_codedir }}/node-red-tm/config:/config
-      - {{ tmsetup_codedir }}/node-red-tm/data:/data
-      - {{ tmsetup_codedir }}/node-red-tm/db:/db
+      - {{ tmsetup_codedir }}/docker/node-red-tm/config:/config
+      - {{ tmsetup_codedir }}/docker/node-red-tm/data:/data
+      - {{ tmsetup_codedir }}/docker/node-red-tm/db:/db
 {% if tmsetup_radars_confirmed is defined and tmsetup_radars_confirmed is iterable %}
     devices:
 {% for rad in tmsetup_radars_confirmed %}
