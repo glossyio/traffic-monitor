@@ -7,12 +7,21 @@
     name: go2rtc_server.service
     state: restarted
 
+- name: Tear down existing container images
+  become: true
+  community.docker.docker_compose_v2:
+    files:
+      - ./docker/compose.yaml
+    project_src: "{{ tmsetup_codedir }}"
+    state: absent
+    remove_images: all
+
 - name: Build container images
   become: true
   community.docker.docker_compose_v2:
     build: always
     files:
-      - compose.yaml
+      - ./docker/compose.yaml
     project_src: "{{ tmsetup_codedir }}"
     recreate: always
     state: stopped
