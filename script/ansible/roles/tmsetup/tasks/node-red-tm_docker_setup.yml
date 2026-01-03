@@ -30,7 +30,7 @@
     state: directory
   notify: Restart tm-docker service
 
-- name: TMSetup - Node Red Setup - Copy relevant static files for node red deployment
+- name: TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment
   become: true
   loop:
     - docker/node-red-tm/data/flows_cred.json
