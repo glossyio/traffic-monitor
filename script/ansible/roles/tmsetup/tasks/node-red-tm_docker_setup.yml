@@ -37,6 +37,7 @@
     - docker/node-red-tm/data/flows.json
     - docker/node-red-tm/data/README.md
     - docker/node-red-tm/data/settings.js
+    - docker/node-red-tm/data/package.json
   ansible.builtin.copy:
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     group: '{{ tmsetup_codegroup }}'
