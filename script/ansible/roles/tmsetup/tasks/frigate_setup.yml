@@ -17,9 +17,10 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/frigate'
-    - '{{ tmsetup_codedir }}/frigate/config'
-    - '{{ tmsetup_codedir }}/frigate/storage'
+    - '{{ tmsetup_codedir }}/docker'
+    - '{{ tmsetup_codedir }}/docker/frigate'
+    - '{{ tmsetup_codedir }}/docker/frigate/config'
+    - '{{ tmsetup_codedir }}/docker/frigate/storage'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
@@ -31,9 +32,9 @@
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
   loop:
-    - frigate/config/config.yml
-    - frigate/docker-compose-frigate.yaml
-    - frigate/frigate.env
+    - docker/frigate/config/config.yml
+    - docker/frigate/docker-compose-frigate.yaml
+    - docker/frigate/frigate.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'

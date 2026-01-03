@@ -72,6 +72,22 @@
         "env": []
     },
     {
+        "id": "c17b7b1a8f280e22",
+        "type": "tab",
+        "label": "ui-database",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "a6b11d5233cf65e0",
+        "type": "tab",
+        "label": "ui-movements",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -184,12 +200,14 @@
             "76911cc7f28e7da2",
             "f20c74c0ccfd256c",
             "86c86b0d82d13028",
-            "8eaa1d06a29a5d2b"
+            "8eaa1d06a29a5d2b",
+            "3ecb4de9412819e6",
+            "e4ed310a39e7e29f"
         ],
         "x": 54,
-        "y": 99,
+        "y": 79,
         "w": 532,
-        "h": 242
+        "h": 302
     },
     {
         "id": "71c085648c20e329",
@@ -214,7 +232,7 @@
             "a8aeffd2e5bc17f2"
         ],
         "x": 54,
-        "y": 359,
+        "y": 399,
         "w": 1418,
         "h": 628
     },
@@ -883,6 +901,170 @@
         "h": 642
     },
     {
+        "id": "51b4f9f6eec82b15",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "85ead2fe1cc3615e",
+            "5a16a463c494f3b9",
+            "1fbbc9119504d996",
+            "1b83e0f60d5e490b",
+            "5868a1854443a278",
+            "c739086c12d51aad",
+            "64c93cd3212b3506",
+            "322ce06e3fbc868c"
+        ],
+        "x": 44,
+        "y": 279,
+        "w": 1092,
+        "h": 202
+    },
+    {
+        "id": "52253d5735c84858",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "e6d79b5f56108473",
+            "68df4cd77d918f4f",
+            "430b15d4dc55fa23",
+            "55acb7e93fa09c1b",
+            "20df6f4008fdfc59",
+            "1569cb5899ca098d"
+        ],
+        "x": 34,
+        "y": 499,
+        "w": 752,
+        "h": 162
+    },
+    {
+        "id": "54a0d44724ba51b6",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard - 2 Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "65e850e03a309e92",
+            "d00b00635d288fdc",
+            "26139736d764beae",
+            "79fc30d993437d9a",
+            "983ed8364551e68a",
+            "41d7154219cefa60",
+            "a77d79afe1bb4de8",
+            "a8890ae2aceeef32",
+            "6be99fcd6d8afd7b",
+            "698de34e52c0943a",
+            "f94785b23a69ad0b",
+            "ad9347894b2e7928",
+            "9e3519d6f1c0a125",
+            "bdf6d9d715d866e2",
+            "3a04a85c5e35cad4",
+            "f264a0b7b2ec806a",
+            "2d0c1df4b9b39734",
+            "91979b29d5446443",
+            "2992f512c45dd56d",
+            "d2e69c0e761db100",
+            "32584116de1e24f7",
+            "7ef7a3709ff20875",
+            "fb810a0465fb5fc5",
+            "6333829f1ef0df89",
+            "4e58dae08292a766",
+            "f70e4072c1b9e1c2",
+            "c6d953ce0ea6beb6",
+            "2d877aa75c72713d",
+            "8a338bf626e0c142",
+            "045864b769b6f4cc",
+            "4a8aab2230ce18c5",
+            "7ea3d817c00b14aa",
+            "fec49a680d20027e",
+            "0b1e946c42580cf3",
+            "3b742dd1f9b3447b",
+            "c39f71a33c308681",
+            "2ad6ea519e3cb6e3",
+            "28c88539c76c9801",
+            "1fc0e48c11c0bbfa",
+            "b577bad08d1b4f65",
+            "7b7f627b93e9f3c5",
+            "956392751b01d5ed",
+            "ed0fcc7faf98dbb0",
+            "79570ebbc363d274",
+            "f838921f5647499b",
+            "ad3c4efc1861d109",
+            "daa61bfa574cf15c",
+            "c9f653c4f6f10a68",
+            "55052c813da299c9",
+            "d16fe4c215c71c73",
+            "56787eccc13dacec",
+            "25e67a89a3f964e7",
+            "9245ac0b61cb72f3",
+            "837ce5e6bb85a2b8"
+        ],
+        "x": 34,
+        "y": 699,
+        "w": 1802,
+        "h": 1102
+    },
+    {
+        "id": "0e529403dab80c69",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Dashboard 2 - Compress & Download 1 or More Files",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "0309814d489531fc",
+            "ddaad6aa2eb9e108",
+            "7a602df7a5e69c3e",
+            "5f9afee4d94c66ea",
+            "0c53e5cc5a118052",
+            "81033f124118f7fc",
+            "4ac80387e90476cc",
+            "a845e5248a7c1281",
+            "3d588b14f06a9513",
+            "d3a3617e640817f3",
+            "40d3dc4bf27d573d",
+            "fe72ae25c4017e66",
+            "4473c90f84a2e917",
+            "499167880916903d",
+            "9974a7476cf58f75",
+            "d556c7770b427fd5",
+            "e2de4ba1ce2c0a40",
+            "cce0af4df8683362",
+            "3474fe5ed0dc9370"
+        ],
+        "x": 34,
+        "y": 1859,
+        "w": 1332,
+        "h": 409.5
+    },
+    {
+        "id": "30a709c93555c489",
+        "type": "group",
+        "z": "c17b7b1a8f280e22",
+        "name": "Iniitalization",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3a6d44528a137a46",
+            "604189c526167b10"
+        ],
+        "x": 34,
+        "y": 151.5,
+        "w": 712,
+        "h": 97
+    },
+    {
         "id": "9b9e4fc50b744fc3",
         "type": "group",
         "z": "28627559bebdc324",
@@ -1177,7 +1359,7 @@
             "674346683479762a"
         ],
         "x": 734,
-        "y": 759,
+        "y": 799,
         "w": 712,
         "h": 202
     },
@@ -1444,7 +1626,7 @@
         "z": "9269520ddb532b00",
         "g": "b7398c4e0bc743e5",
         "x": 760,
-        "y": 800,
+        "y": 840,
         "wires": [
             [
                 "b08a42e270ab5a4f",
@@ -2023,6 +2205,70 @@
         "disp": true,
         "width": "6",
         "collapse": false
+    },
+    {
+        "id": "ef90f85facf47af9",
+        "type": "ui-page",
+        "name": "Movements",
+        "ui": "2a8899583532edb4",
+        "path": "/movements",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 3,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "6b7a69f07b717525",
+        "type": "ui-group",
+        "name": "Movements",
+        "page": "ef90f85facf47af9",
+        "width": 6,
+        "height": 1,
+        "order": 2,
+        "showTitle": false,
+        "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "6fab6cacc8c93b10",
+        "type": "ui-group",
+        "name": "Movements Selection",
+        "page": "ef90f85facf47af9",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -4735,7 +4981,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 150,
-        "y": 140,
+        "y": 120,
         "wires": [
             [
                 "86c86b0d82d13028",
@@ -4758,7 +5004,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 400,
-        "y": 140,
+        "y": 120,
         "wires": []
     },
     {
@@ -4812,10 +5058,10 @@
         "repair": false,
         "outputs": 1,
         "x": 240,
-        "y": 200,
+        "y": 180,
         "wires": [
             [
-                "76911cc7f28e7da2"
+                "3ecb4de9412819e6"
             ]
         ]
     },
@@ -4832,7 +5078,7 @@
             "ed447e5f8becbfad"
         ],
         "x": 995,
-        "y": 800,
+        "y": 840,
         "wires": []
     },
     {
@@ -4856,7 +5102,7 @@
         "to": "",
         "reg": false,
         "x": 320,
-        "y": 240,
+        "y": 300,
         "wires": [
             [
                 "8eaa1d06a29a5d2b"
@@ -4877,7 +5123,7 @@
         "finalize": "",
         "libs": [],
         "x": 620,
-        "y": 440,
+        "y": 480,
         "wires": [
             [
                 "2c7c7df250289562"
@@ -4904,7 +5150,7 @@
         "repair": false,
         "outputs": 2,
         "x": 260,
-        "y": 440,
+        "y": 480,
         "wires": [
             [
                 "7992eb250ae9d20f"
@@ -4935,7 +5181,7 @@
         "to": "",
         "reg": false,
         "x": 1190,
-        "y": 660,
+        "y": 700,
         "wires": [
             [
                 "a8aeffd2e5bc17f2"
@@ -4956,7 +5202,7 @@
         "finalize": "",
         "libs": [],
         "x": 610,
-        "y": 660,
+        "y": 700,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -5010,7 +5256,7 @@
         "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, $radarName);",
         "name": "tmdb.events, Prepared Statement",
         "x": 960,
-        "y": 920,
+        "y": 960,
         "wires": [
             []
         ]
@@ -5029,7 +5275,7 @@
         "finalize": "",
         "libs": [],
         "x": 930,
-        "y": 880,
+        "y": 920,
         "wires": [
             [
                 "61d6a19c99c60e0b"
@@ -5089,7 +5335,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 1260,
-        "y": 880,
+        "y": 920,
         "wires": []
     },
     {
@@ -5106,7 +5352,7 @@
         "finalize": "",
         "libs": [],
         "x": 1030,
-        "y": 480,
+        "y": 520,
         "wires": [
             [
                 "7f50d9d83bdb7f14"
@@ -5123,7 +5369,7 @@
         "sql": "",
         "name": "query radar readings around event time",
         "x": 1080,
-        "y": 520,
+        "y": 560,
         "wires": [
             [
                 "c123fc5ed5e14e8a"
@@ -5144,7 +5390,7 @@
         "finalize": "",
         "libs": [],
         "x": 1130,
-        "y": 560,
+        "y": 600,
         "wires": [
             [
                 "673e45159a2dfccf"
@@ -5165,7 +5411,7 @@
         "finalize": "",
         "libs": [],
         "x": 1090,
-        "y": 600,
+        "y": 640,
         "wires": [
             [
                 "cbef8a3acc3d1495"
@@ -5186,7 +5432,7 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 300,
+        "y": 340,
         "wires": [
             [
                 "627ba0f672680054"
@@ -5210,7 +5456,7 @@
         "repair": false,
         "outputs": 1,
         "x": 170,
-        "y": 400,
+        "y": 440,
         "wires": [
             [
                 "7f063afdbac396ce"
@@ -5237,7 +5483,7 @@
         "repair": false,
         "outputs": 2,
         "x": 740,
-        "y": 480,
+        "y": 520,
         "wires": [
             [
                 "b39062019fac1a66"
@@ -5301,7 +5547,7 @@
         "finalize": "",
         "libs": [],
         "x": 1260,
-        "y": 700,
+        "y": 740,
         "wires": [
             [
                 "674346683479762a"
@@ -5329,11 +5575,61 @@
         "to": "",
         "reg": false,
         "x": 870,
-        "y": 800,
+        "y": 840,
         "wires": [
             [
                 "274f87c31437c2d7",
                 "7f0ef976c7b79245"
+            ]
+        ]
+    },
+    {
+        "id": "3ecb4de9412819e6",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "after.stationary is false",
+        "property": "payload.after.stationary",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "false"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 240,
+        "y": 220,
+        "wires": [
+            [
+                "e4ed310a39e7e29f"
+            ]
+        ]
+    },
+    {
+        "id": "e4ed310a39e7e29f",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "after.position_changes > 0",
+        "property": "payload.after.position_changes",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "0",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 260,
+        "y": 260,
+        "wires": [
+            [
+                "76911cc7f28e7da2"
             ]
         ]
     },
@@ -11478,178 +11774,6 @@
         ]
     },
     {
-        "id": "c17b7b1a8f280e22",
-        "type": "tab",
-        "label": "ui-database",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "51b4f9f6eec82b15",
-        "type": "group",
-        "z": "c17b7b1a8f280e22",
-        "name": "Dashboard 2 - Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "85ead2fe1cc3615e",
-            "5a16a463c494f3b9",
-            "1fbbc9119504d996",
-            "1b83e0f60d5e490b",
-            "5868a1854443a278",
-            "c739086c12d51aad",
-            "64c93cd3212b3506",
-            "322ce06e3fbc868c"
-        ],
-        "x": 44,
-        "y": 279,
-        "w": 1092,
-        "h": 202
-    },
-    {
-        "id": "52253d5735c84858",
-        "type": "group",
-        "z": "c17b7b1a8f280e22",
-        "name": "Dashboard 2 - Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "e6d79b5f56108473",
-            "68df4cd77d918f4f",
-            "430b15d4dc55fa23",
-            "55acb7e93fa09c1b",
-            "20df6f4008fdfc59",
-            "1569cb5899ca098d"
-        ],
-        "x": 34,
-        "y": 499,
-        "w": 752,
-        "h": 162
-    },
-    {
-        "id": "54a0d44724ba51b6",
-        "type": "group",
-        "z": "c17b7b1a8f280e22",
-        "name": "Dashboard - 2 Download JSON",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "65e850e03a309e92",
-            "d00b00635d288fdc",
-            "26139736d764beae",
-            "79fc30d993437d9a",
-            "983ed8364551e68a",
-            "41d7154219cefa60",
-            "a77d79afe1bb4de8",
-            "a8890ae2aceeef32",
-            "6be99fcd6d8afd7b",
-            "698de34e52c0943a",
-            "f94785b23a69ad0b",
-            "ad9347894b2e7928",
-            "9e3519d6f1c0a125",
-            "bdf6d9d715d866e2",
-            "3a04a85c5e35cad4",
-            "f264a0b7b2ec806a",
-            "2d0c1df4b9b39734",
-            "91979b29d5446443",
-            "2992f512c45dd56d",
-            "d2e69c0e761db100",
-            "32584116de1e24f7",
-            "7ef7a3709ff20875",
-            "fb810a0465fb5fc5",
-            "6333829f1ef0df89",
-            "4e58dae08292a766",
-            "f70e4072c1b9e1c2",
-            "c6d953ce0ea6beb6",
-            "2d877aa75c72713d",
-            "8a338bf626e0c142",
-            "045864b769b6f4cc",
-            "4a8aab2230ce18c5",
-            "7ea3d817c00b14aa",
-            "fec49a680d20027e",
-            "0b1e946c42580cf3",
-            "3b742dd1f9b3447b",
-            "c39f71a33c308681",
-            "2ad6ea519e3cb6e3",
-            "28c88539c76c9801",
-            "1fc0e48c11c0bbfa",
-            "b577bad08d1b4f65",
-            "7b7f627b93e9f3c5",
-            "956392751b01d5ed",
-            "ed0fcc7faf98dbb0",
-            "79570ebbc363d274",
-            "f838921f5647499b",
-            "ad3c4efc1861d109",
-            "daa61bfa574cf15c",
-            "c9f653c4f6f10a68",
-            "55052c813da299c9",
-            "d16fe4c215c71c73",
-            "56787eccc13dacec",
-            "25e67a89a3f964e7",
-            "9245ac0b61cb72f3",
-            "837ce5e6bb85a2b8"
-        ],
-        "x": 34,
-        "y": 699,
-        "w": 1802,
-        "h": 1102
-    },
-    {
-        "id": "0e529403dab80c69",
-        "type": "group",
-        "z": "c17b7b1a8f280e22",
-        "name": "Dashboard 2 - Compress & Download 1 or More Files",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "0309814d489531fc",
-            "ddaad6aa2eb9e108",
-            "7a602df7a5e69c3e",
-            "5f9afee4d94c66ea",
-            "0c53e5cc5a118052",
-            "81033f124118f7fc",
-            "4ac80387e90476cc",
-            "a845e5248a7c1281",
-            "3d588b14f06a9513",
-            "d3a3617e640817f3",
-            "40d3dc4bf27d573d",
-            "fe72ae25c4017e66",
-            "4473c90f84a2e917",
-            "499167880916903d",
-            "9974a7476cf58f75",
-            "d556c7770b427fd5",
-            "e2de4ba1ce2c0a40",
-            "cce0af4df8683362",
-            "3474fe5ed0dc9370"
-        ],
-        "x": 34,
-        "y": 1859,
-        "w": 1332,
-        "h": 409.5
-    },
-    {
-        "id": "30a709c93555c489",
-        "type": "group",
-        "z": "c17b7b1a8f280e22",
-        "name": "Iniitalization",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "3a6d44528a137a46",
-            "604189c526167b10"
-        ],
-        "x": 34,
-        "y": 151.5,
-        "w": 712,
-        "h": 97
-    },
-    {
         "id": "85ead2fe1cc3615e",
         "type": "ui-form",
         "z": "c17b7b1a8f280e22",
@@ -13610,78 +13734,6 @@
         "x": 655,
         "y": 1600,
         "wires": []
-    },
-    {
-        "id": "a6b11d5233cf65e0",
-        "type": "tab",
-        "label": "ui-movements",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "ef90f85facf47af9",
-        "type": "ui-page",
-        "name": "Movements",
-        "ui": "2a8899583532edb4",
-        "path": "/movements",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "14550b211f0fccc6",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 3,
-        "className": "",
-        "visible": "true",
-        "disabled": "false"
-    },
-    {
-        "id": "6b7a69f07b717525",
-        "type": "ui-group",
-        "name": "Movements",
-        "page": "ef90f85facf47af9",
-        "width": 6,
-        "height": 1,
-        "order": 2,
-        "showTitle": false,
-        "className": "section-title, section-body",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
-    },
-    {
-        "id": "6fab6cacc8c93b10",
-        "type": "ui-group",
-        "name": "Movements Selection",
-        "page": "ef90f85facf47af9",
-        "width": 6,
-        "height": 1,
-        "order": 1,
-        "showTitle": true,
-        "className": "",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
     },
     {
         "id": "44a8b86a7733445f",
