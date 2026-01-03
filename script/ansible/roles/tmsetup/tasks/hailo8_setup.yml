@@ -1,0 +1,96 @@
+---
+# Converted from https://docs.frigate.video/frigate/installation/#hailo-8 shell script
+
+- name: TMSetup - Hailo-8 Setup - Enable PCIe connector at bootup
+  become: true
+  ansible.builtin.blockinfile:
+    path: /boot/firmware/config.txt
+    block: |
+      # Enable PCIe Gen3
+      dtparam=pciex1_gen=3
+    append_newline: true
+    prepend_newline: true
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    state: present
+  notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Hailo-8 Setup - Clone HailoRT driver repository (skip if exists)
+  become: true
+  git:
+    repo: "{{ driver_repo }}"
+    dest: "{{ tmsetup_hailo_driver_dir }}"
+    version: "v{{ hailo_version }}"
+    depth: 1
+    force: no
+  when: not (tmsetup_hailo_driver_dir is exists)
+
+- name: TMSetup - Hailo-8 Setup - Build the driver
+  become: true
+  make:
+    chdir: "{{ tmsetup_hailo_driver_dir }}/linux/pcie"
+    target: all
+  environment:
+    MAKEFLAGS: "-j{{ ansible_processor_vcpus | default(1) }}"
+
+- name: TMSetup - Hailo-8 Setup - Install the driver
+  become: true
+  make:
+    chdir: "{{ tmsetup_hailo_driver_dir }}/linux/pcie"
+    target: install
+
+- name: TMSetup - Hailo-8 Setup - Load hailo_pci kernel module
+  become: true
+  command: modprobe hailo_pci
+  register: modprobe_result
+  ignore_errors: true
+
+- name: TMSetup - Hailo-8 Setup - Fail if hailo_pci could not be loaded
+  become: true
+  fail:
+    msg: |
+      Unable to load hailo_pci module. Common reasons:
+      - Secure Boot is enabled and blocks unsigned modules.
+      - Permissions are not set up correctly.
+  when: modprobe_result.rc != 0
+
+- name: TMSetup - Hailo-8 Setup - Run firmware download script
+  become: true
+  command: ./download_firmware.sh
+  args:
+    chdir: "{{ tmsetup_hailo_driver_dir }}/.."
+
+- name: TMSetup - Hailo-8 Setup - Ensure firmware directory exists
+  become: true
+  file:
+    path: /lib/firmware/hailo
+    state: directory
+    mode: "0644"
+
+- name: TMSetup - Hailo-8 Setup - Copy firmware binary to final location
+  become: true
+  ansible.builtin.copy:
+    src: "{{ tmsetup_hailo_driver_dir }}/../hailo8_fw.*.bin"
+    dest: /lib/firmware/hailo/hailo8_fw.bin
+    mode: '0644'
+
+- name: TMSetup - Hailo-8 Setup - Install udev rules
+  become: true
+  ansible.builtin.copy:
+    src: "{{ tmsetup_hailo_driver_dir }}/linux/pcie/51-hailo-udev.rules"
+    dest: /etc/udev/rules.d/51-hailo-udev.rules
+    mode: "0644"
+
+- name: TMSetup - Hailo-8 Setup - Reload udev rules and trigger
+  become: true
+  command: udevadm control --reload-rules && udevadm trigger
+
+- name: TMSetup - Hailo-8 Setup - Print completion message
+  debug:
+    msg: |
+      HailoRT driver installation complete.
+      Reboot your system to load the firmware!
+
+...

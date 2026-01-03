@@ -21,7 +21,7 @@
     state: present
   notify: TMSetup - Flag for reboot
 
-- name: TMSetup - Corap TPU PCI setup - Get package facts
+- name: TMSetup - Coral TPU PCI Setup - Get package facts
   ansible.builtin.package_facts:
 
 - name: TMSetup - Coral TPU PCI Setup - Build and install gasket-dkms if not already installed

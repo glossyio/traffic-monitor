@@ -1,9 +1,12 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.4.0-pre'
+tmsetup_tm_version: '0.4.1-pre'
 tmsetup_go2rtc_version: 'v1.8.5'
 tmsetup_frigate_version: '0.16.3'
 tmsetup_node_red_tm_version: '4.0.9'
+tmsetup_hailo_version: "4.21.0"
+tmsetup_hailo_driver_repo: "https://github.com/hailo-ai/hailort-drivers.git"
+tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 
 tmsetup_remove_packages:
   - rpicam-apps-lite
@@ -14,6 +17,7 @@ tmsetup_packages:
   - host
   - screen
   - build-essential
+  - cmake
   - cron
   - rpicam-apps
 
