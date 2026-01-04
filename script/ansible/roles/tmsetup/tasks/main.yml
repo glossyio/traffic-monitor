@@ -31,72 +31,46 @@
     - docker
     - frigate
     - node-red-tm
-    - coraltpu
   ansible.builtin.import_tasks:
     file: docker_setup.yml
 
-# detect and set up Hailo: https://github.com/hailo-ai/hailo-apps/blob/main/scripts/check_installed_packages.sh
-- name: Find Hailo device
-  become: true
-  shell: lspci -nn | grep -i hailo
-  register: hailo_cmd
-  changed_when: false
-  ignore_errors: true
+- name: TMSetup - Main - Check for attached Detectors
+  tags:
+    - docker
+    - frigate
+  ansible.builtin.import_tasks:
+    file: detectors_check.yml
 
-- name: Parse Hailo output
-  become: true
-  set_fact:
-    hailo_exists: "{{ hailo_cmd.stdout != '' }}"
-    hailo_dev: >-
-      {{ (hailo_cmd.stdout | regex_search('^([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\\.[0-9])')) | default('') }}
-  when: hailo_exists
-  block: 
-    - name: TMSetup - Main - Setup Hailo-8
-      tags:
-        - hailo8
+- name: TMSetup - Main - Check for Hailo-8
+  tags:
+    - docker
+    - frigate
+  when: tmsetup_detectors.hailo8l.enabled | default(false)
+  block:
+    - name: TMsetup - Main - Setup Hailo-8 Firmware and Drivers
       ansible.builtin.import_tasks:
         file: hailo8_setup.yml
 
-    # Reset Hailo device (if found)
-    - name: Reset Hailo device
-      shell: setpci -s {{ hailo_dev }} COMMAND=0x06
-      when: hailo_exists
-      register: hailo_reset
+    - name: TMSetup - Main - Reset Hailo device
+      shell: setpci -s {{ tmsetup_detectors.hailo8l.dev_address }} COMMAND=0x06
       changed_when: true
 
-# detect and set up Coral TPU
-- name: Find Coral device
-  become: true
-  shell: lspci -nn | grep -i coral
-  register: coral_cmd
-  changed_when: false
-  ignore_errors: true
-
-- name: Parse Coral output
-  become: true
-  set_fact:
-    coral_exists: "{{ coral_cmd.stdout != '' }}"
-    coral_dev: >-
-      {{ (coral_cmd.stdout | regex_search('^([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\\.[0-9])')) | default('') }}
-  when: coral_exists
+- name: TMSetup - Main - Check for PCIe Coral TPU
+  tags:
+    - docker
+    - frigate
+  when: tmsetup_detectors.edgetpu_pci.enabled | default(false)
   block: 
     - name: TMSetup - Main - Setup Coral TPU Runtime Library
-      tags:
-        - coraltpu
       ansible.builtin.import_tasks:
         file: coraltpu_setup.yml
 
     - name: TMSetup - Main - Setup PCI Coral TPU Drivers
-      tags:
-        - coraltpu
       ansible.builtin.import_tasks:
         file: coraltpu_pci_setup.yml
-
-    # Reset Coral device (if found)
-    - name: Reset Coral device
-      shell: setpci -s {{ coral_dev }} COMMAND=0x06
-      when: coral_exists
-      register: coral_reset
+        
+    - name: TMSetup - Main - Reset PCIe Coral device
+      shell: setpci -s {{ tmsetup_detectors.edgetpu_pci.dev_address }} COMMAND=0x06
       changed_when: true
 
 - name: TMSetup - Main - Setup Frigate

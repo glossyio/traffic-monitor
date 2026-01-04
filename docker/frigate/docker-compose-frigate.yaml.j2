@@ -4,13 +4,13 @@ services:
     privileged: false
     restart: unless-stopped
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
-    shm_size: "256MB"
+    shm_size: "512mb"
     devices:
-      - /dev/bus/usb:/dev/bus/usb 
-{% if tmsetup_pcietpus_confirmed is defined and tmsetup_pcietpus_confirmed is iterable %}
-{% for tpu in tmsetup_pcietpus_confirmed %}
-      - {{ tpu }}:{{ tpu }}
-{% endfor %}
+{% if tmsetup_detectors.edgetpu_pci.enabled | default(false) %}
+      - {{ tmsetup_detectors.edgetpu_pci.dev_path }}:{{ tmsetup_detectors.edgetpu_pci.dev_path }}
+{% endif %}
+{% if tmsetup_detectors.hailo8l.enabled | default(false) %}
+      - {{ tmsetup_detectors.hailo8l.dev_path }}:{{ tmsetup_detectors.hailo8l.dev_path }}
 {% endif %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -21,7 +21,8 @@ services:
         tmpfs:
           size: 1000000000
     ports:
-      - "5000:5000"
+      - "8971:8971"
+      - "5000:5000" # Internal unauthenticated access. Expose carefully.
       - "1964:1984" # go2rtc api
       - "8564:8554" # RTSP feeds
       - "8565:8555/tcp" # WebRTC over tcp

@@ -9,21 +9,25 @@ mqtt:
 {% endraw %}
 
 detectors:
-#  coralpci:
-#    type: edgetpu
-#    device: pci
-#  coralusb:
-#    type: edgetpu
-#    device: usb
-  mycpu:
-    type: cpu
+#  mycpu:
+#    type: cpu
+{% if tmsetup_detectors.edgetpu_pci.enabled | default(false) %}
+  coral: 
+    type: {{ tmsetup_detectors.edgetpu_pci.frigate_type }}
+    device: {{ tmsetup_detectors.edgetpu_pci.frigate_device }}
+{% endif %}
+{% if tmsetup_detectors.hailo8l.enabled | default(false) %}
+  hailo:
+    type: {{ tmsetup_detectors.hailo8l.frigate_type }}
+    device: {{ tmsetup_detectors.hailo8l.frigate_device }}
+{% endif %}
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264
 
 cameras:
   picam_h264:
-    enabled: true
+    enabled: false
     type: "generic"
     ffmpeg:
       inputs:

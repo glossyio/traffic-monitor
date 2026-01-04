@@ -1,0 +1,32 @@
+---
+- name: TMSetup - Detectors Check - Run existence check for each detector
+  command: "{{ item.check_exists }}"
+  register: check_result
+  ignore_errors: true
+  changed_when: false
+  loop: "{{ _raw_tmsetup_detectors }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: TMSetup - Detectors Check - Build a dict of detector enabled flags and addresses
+  set_fact:
+    tmsetup_detectors: >-
+      {{
+        (tmsetup_detectors | default([]))
+        + [ item.item
+            | combine({
+                'enabled': (item.rc == 0),
+                'dev_address': (
+                  (item.rc == 0) and (item.item.frigate_device | lower == 'pci')
+                ) | ternary(
+                  (item.stdout | regex_search('^\\s*([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\\.\\d)')),
+                  None
+                )
+              })
+          ]
+      }}
+  loop: "{{ check_result.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+...
