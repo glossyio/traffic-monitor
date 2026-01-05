@@ -1,5 +1,6 @@
 FROM nodered/node-red:{{ tmsetup_node_red_tm_version }}
 WORKDIR /usr/src/node-red
 COPY data/package.json package.json
-RUN apt-get update && apt-get install -y tar
+RUN apt update
+RUN apt install tar
 RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
