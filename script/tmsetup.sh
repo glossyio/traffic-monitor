@@ -84,11 +84,6 @@ _install_ansible_local() { # check and install python3-venv and setup venv
   return 0
 }
 
-_install_tar() { # replace busybox tar with real tar
-  sudo apt install tar
-  return 0
-}
-
 _install_ansible_remote() { # check and install python3-venv and setup venv
   local _venvd=$1
   local _script_dir=$2
@@ -169,7 +164,6 @@ _tmsetup_local(){ # Installation on localhost only
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
   [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
   _install_ansible_local "${VENV_DIR}" "${_SCRIPT_DIR}"
-  _install_tar
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
   . "${VENV_DIR}/bin/activate"
   cd "${_SCRIPT_DIR}/ansible"
