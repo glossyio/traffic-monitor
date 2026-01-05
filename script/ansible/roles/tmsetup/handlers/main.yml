@@ -7,6 +7,12 @@
     name: go2rtc_server.service
     state: restarted
 
+- name: Add the real "tar" command, instead of busybox tar
+  become: true
+  ansible.builtin.apt:
+    name: tar
+    state: present
+
 - name: Build container images
   become: true
   community.docker.docker_compose_v2:
