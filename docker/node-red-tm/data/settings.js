@@ -62,7 +62,7 @@ module.exports = {
     palette: {
     },
     projects: {
-      enabled: true,
+      enabled: false,
       workflow: {
         mode: "manual",
       },
