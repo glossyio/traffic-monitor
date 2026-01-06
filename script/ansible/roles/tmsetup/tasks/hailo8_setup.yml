@@ -1,5 +1,6 @@
 ---
-# Converted from https://docs.frigate.video/frigate/installation/#hailo-8 shell script
+# Converted from https://docs.frigate.video/frigate/installation/#hailo-8 shell script:
+#   https://github.com/blakeblackshear/frigate/blob/dev/docker/hailo8l/user_installation.sh
 
 - name: TMSetup - Hailo-8 Setup - Enable PCIe connector at bootup
   become: true
@@ -91,6 +92,5 @@
   debug:
     msg: |
       HailoRT driver installation complete.
-      Reboot your system to load the firmware!
 
 ...

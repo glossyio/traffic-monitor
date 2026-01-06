@@ -42,10 +42,11 @@
     file: detectors_check.yml
 
 - name: TMSetup - Main - Check for Hailo-8
+  become: true
+  when: tmsetup_detectors.hailo8l.enabled | default(false, boolean=False)
   tags:
     - docker
     - frigate
-  when: tmsetup_detectors.hailo8l.enabled | default(false)
   block:
     - name: TMsetup - Main - Setup Hailo-8 Firmware and Drivers
       ansible.builtin.import_tasks:
@@ -56,10 +57,11 @@
       changed_when: true
 
 - name: TMSetup - Main - Check for PCIe Coral TPU
+  become: true
+  when: tmsetup_detectors.edgetpu_pci.enabled | default(false, boolean=False)
   tags:
     - docker
     - frigate
-  when: tmsetup_detectors.edgetpu_pci.enabled | default(false)
   block: 
     - name: TMSetup - Main - Setup Coral TPU Runtime Library
       ansible.builtin.import_tasks:

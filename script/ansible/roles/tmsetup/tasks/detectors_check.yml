@@ -4,11 +4,11 @@
   register: check_result
   ignore_errors: true
   changed_when: false
-  loop: "{{ _raw_tmsetup_detectors }}"
+  loop: "{{ tmsetup_detectors }}"
   loop_control:
     label: "{{ item.name }}"
 
-- name: TMSetup - Detectors Check - Build a dict of detector enabled flags and addresses
+- name: TMSetup - Detectors Check - Build a dict of detector enabled flags and addresses [for PCIe devices]
   set_fact:
     tmsetup_detectors: >-
       {{

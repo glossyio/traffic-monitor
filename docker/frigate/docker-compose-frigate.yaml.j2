@@ -6,12 +6,11 @@ services:
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
     shm_size: "512mb"
     devices:
-{% if tmsetup_detectors.edgetpu_pci.enabled | default(false) %}
-      - {{ tmsetup_detectors.edgetpu_pci.dev_path }}:{{ tmsetup_detectors.edgetpu_pci.dev_path }}
-{% endif %}
-{% if tmsetup_detectors.hailo8l.enabled | default(false) %}
-      - {{ tmsetup_detectors.hailo8l.dev_path }}:{{ tmsetup_detectors.hailo8l.dev_path }}
-{% endif %}
+  {% for name, detector in tmsetup_detectors.items() %}
+    {% if detector.enabled | default(false) %}
+      - {{ detector.dev_path }}:{{ detector.dev_path }}
+    {% endif %}
+  {% endfor %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - {{ tmsetup_codedir }}/docker/frigate/config:/config

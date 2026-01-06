@@ -11,16 +11,13 @@ mqtt:
 detectors:
 #  mycpu:
 #    type: cpu
-{% if tmsetup_detectors.edgetpu_pci.enabled | default(false) %}
-  coral: 
-    type: {{ tmsetup_detectors.edgetpu_pci.frigate_type }}
-    device: {{ tmsetup_detectors.edgetpu_pci.frigate_device }}
-{% endif %}
-{% if tmsetup_detectors.hailo8l.enabled | default(false) %}
-  hailo:
-    type: {{ tmsetup_detectors.hailo8l.frigate_type }}
-    device: {{ tmsetup_detectors.hailo8l.frigate_device }}
-{% endif %}
+{% for name, detector in tmsetup_detectors.items() %}
+  {% if detector.enabled | default(false) %}
+    {{ name }}:
+      type:   {{ detector.frigate_type }}
+      device: {{ detector.frigate_device }}
+  {% endif %}
+{% endfor %}
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264
