@@ -41,9 +41,15 @@
   ansible.builtin.import_tasks:
     file: detectors_check.yml
 
-- name: TMSetup - Main - Check for Hailo-8
+- name: TMSetup - Main - Check Hailo-8 exists and not installed
   become: true
-  when: tmsetup_detectors.hailo8l.enabled | default(false, boolean=False)
+  when: >
+    tmsetup_detectors
+    | selectattr('hailo8l', 'defined')
+    | map(attribute='hailo8l')
+    | first
+    | default({'enabled': false, 'installed': false})
+    | json_query('enabled && !installed')
   tags:
     - docker
     - frigate
@@ -56,9 +62,15 @@
       shell: setpci -s {{ tmsetup_detectors.hailo8l.dev_address }} COMMAND=0x06
       changed_when: true
 
-- name: TMSetup - Main - Check for PCIe Coral TPU
+- name: TMSetup - Main - Check PCIe Coral TPU exists and not installed
   become: true
-  when: tmsetup_detectors.edgetpu_pci.enabled | default(false, boolean=False)
+  when: >
+    tmsetup_detectors
+    | selectattr('edgetpu_pci', 'defined')
+    | map(attribute='edgetpu_pci')
+    | first
+    | default({'enabled': false, 'installed': false})
+    | json_query('enabled && !installed')
   tags:
     - docker
     - frigate

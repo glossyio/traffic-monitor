@@ -8,6 +8,14 @@
   loop_control:
     label: "{{ item.name }}"
 
+- name: TMSetup - Detectors Check - Stat the device path for each detector
+  stat:
+    path: "{{ item.dev_path }}"
+  register: path_stat
+  loop: "{{ tmsetup_detectors }}"
+  loop_control:
+    label: "{{ item.name }}"
+
 - name: TMSetup - Detectors Check - Build a dict of detector enabled flags and addresses [for PCIe devices]
   set_fact:
     tmsetup_detectors: >-
@@ -16,6 +24,7 @@
         + [ item.item
             | combine({
                 'enabled': (item.rc == 0),
+                'installed': (path_stat.results[loop.index0].stat.exists | default(false)),
                 'dev_address': (
                   (item.rc == 0) and (item.item.frigate_device | lower == 'pci')
                 ) | ternary(
@@ -29,4 +38,17 @@
   loop_control:
     label: "{{ item.item.name }}"
 
+- name: TMSetup - Detectors Check - Show enabled / installed status for each detector
+  debug:
+    msg: |
+      Detector {{ item.name }}:
+        enabled:   {{ item.enabled }}
+        installed: {{ item.installed }}
+        {% if item.dev_address is defined and item.dev_address %}
+        PCIe address: {{ item.dev_address }}
+        {% endif %}
+  loop: "{{ tmsetup_detectors }}"
+  loop_control:
+    label: "{{ item.name }}"
+    
 ...
