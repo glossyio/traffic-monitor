@@ -56,15 +56,4 @@
   loop_control:
     label: "{{ item.item.key }}"
 
-- name: TMSetup - Detectors Check - Show enabled / installed status for each detector
-  ansible.builtin.debug:
-    msg: |
-      {{ item.key }} -
-      exists: {{ item.value.exists }},
-      driver_installed: {{ item.value.driver_installed }},
-      device_address: {{ item.value.device_address | default('N/A') }}
-  loop: "{{ tmsetup_detectors | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
-
 ...

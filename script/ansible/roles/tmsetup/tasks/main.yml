@@ -34,12 +34,12 @@
   ansible.builtin.import_tasks:
     file: docker_setup.yml
 
-- name: TMSetup - Main - Detector - Check for attached Detectors
+- name: TMSetup - Main - Detector - Check for attached Detectors to run installs
   tags:
     - docker
     - frigate
   ansible.builtin.import_tasks:
-    file: detectors_check.yml
+    file: ../handlers/check_detectors.yml
 
 - name: TMSetup - Main - Detector - Check Hailo-8 exists and not installed
   become: true
@@ -54,10 +54,7 @@
     - name: TMsetup - Main - Detector - Setup Hailo-8 Firmware and Drivers
       ansible.builtin.import_tasks:
         file: hailo8_setup.yml
-
-    - name: TMSetup - Main - Detector - Reset Hailo device
-      ansible.builtin.shell: setpci -s {{ tmsetup_detectors.hailo8l.device_address }} COMMAND=0x06
-      changed_when: true
+      notify: TMSetup - Check detectors
 
 - name: TMSetup - Main - Detector - Check PCIe Coral TPU exists and not installed
   become: true
@@ -76,10 +73,7 @@
     - name: TMSetup - Main - Detector - Setup PCI Coral TPU Drivers
       ansible.builtin.import_tasks:
         file: coraltpu_pci_setup.yml
-        
-    - name: TMSetup - Main - Detector - Reset PCIe Coral device
-      shell: setpci -s {{ tmsetup_detectors.edgetpu_pci.device_address }} COMMAND=0x06
-      changed_when: true
+      notify: TMSetup - Check detectors
 
 - name: TMSetup - Main - Setup Frigate
   tags:
