@@ -73,7 +73,7 @@
 - name: TMSetup - Hailo-8 Setup - Copy firmware binary to final location
   become: true
   ansible.builtin.copy:
-    src: "{{ tmsetup_hailo_driver_dir }}/hailo8_fw.*.bin"
+    src: "{{ tmsetup_hailo_driver_dir }}/hailo8_fw.{{ tmsetup_hailo_version }}.bin"
     dest: /lib/firmware/hailo/hailo8_fw.bin
     mode: '0644'
 
