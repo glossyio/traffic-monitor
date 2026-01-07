@@ -12,7 +12,8 @@ detectors:
 #  mycpu:
 #    type: cpu
 {% for name, detector in tmsetup_detectors.items() %}
-  {% if detector.enabled | default(false) %}
+  {% if detector.driver_installed | default(false)
+        and detector.exists | default(false) %}
     {{ name }}:
       type:   {{ detector.frigate_type }}
       device: {{ detector.frigate_device }}

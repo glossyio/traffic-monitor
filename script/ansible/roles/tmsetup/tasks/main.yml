@@ -48,8 +48,8 @@
     | selectattr('hailo8l', 'defined')
     | map(attribute='hailo8l')
     | first
-    | default({'enabled': false, 'installed': false})
-    | json_query('enabled && !installed')
+    | default({'exists': false, 'driver_installed': false})
+    | json_query('exists && !driver_installed')
   tags:
     - docker
     - frigate
@@ -59,7 +59,7 @@
         file: hailo8_setup.yml
 
     - name: TMSetup - Main - Reset Hailo device
-      shell: setpci -s {{ tmsetup_detectors.hailo8l.dev_address }} COMMAND=0x06
+      ansible.builtin.shell: setpci -s {{ tmsetup_detectors.hailo8l.device_address }} COMMAND=0x06
       changed_when: true
 
 - name: TMSetup - Main - Check PCIe Coral TPU exists and not installed
@@ -69,8 +69,8 @@
     | selectattr('edgetpu_pci', 'defined')
     | map(attribute='edgetpu_pci')
     | first
-    | default({'enabled': false, 'installed': false})
-    | json_query('enabled && !installed')
+    | default({'exists': false, 'driver_installed': false})
+    | json_query('exists && !driver_installed')
   tags:
     - docker
     - frigate
@@ -84,7 +84,7 @@
         file: coraltpu_pci_setup.yml
         
     - name: TMSetup - Main - Reset PCIe Coral device
-      shell: setpci -s {{ tmsetup_detectors.edgetpu_pci.dev_address }} COMMAND=0x06
+      shell: setpci -s {{ tmsetup_detectors.edgetpu_pci.device_address }} COMMAND=0x06
       changed_when: true
 
 - name: TMSetup - Main - Setup Frigate

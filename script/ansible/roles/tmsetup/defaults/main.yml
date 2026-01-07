@@ -13,17 +13,17 @@ tmsetup_frigate_mqtt_password: mqtt_pass
 # see https://docs.frigate.video/configuration/object_detectors
 # will add enabled and dev_address when read and detected
 tmsetup_detectors: 
-  - edgetpu_usb:
+  edgetpu_usb:
     dev_path: /dev/bus/usb
     check_exists: lsusb | grep -i 1a6e:089a
     frigate_type: edgetpu
     frigate_device: usb
-  - edgetpu_pci:
+  edgetpu_pci:
     dev_path: /dev/apex_0
     check_exists: lspci -nn | grep -i coral
     frigate_type: edgetpu
     frigate_device: pci
-  - hailo8l:
+  hailo8l:
     dev_path: /dev/hailo0
     check_exists: lspci -nn | grep -i hailo
     frigate_type: hailo8l  

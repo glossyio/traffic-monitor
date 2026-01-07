@@ -1,54 +1,70 @@
 ---
-- name: TMSetup - Detectors Check - Run existence check for each detector
-  command: "{{ item.check_exists }}"
+- name: TMSetup - Detectors Check - (exists) Check if plugged in and powered
+  ansible.builtin.shell: "{{ item.value.check_exists }} 2>/dev/null"
   register: check_result
   ignore_errors: true
+  failed_when: false
   changed_when: false
-  loop: "{{ tmsetup_detectors }}"
+  loop: "{{ tmsetup_detectors | dict2items }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.key }}"
 
-- name: TMSetup - Detectors Check - Stat the device path for each detector
-  stat:
-    path: "{{ item.dev_path }}"
-  register: path_stat
-  loop: "{{ tmsetup_detectors }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: TMSetup - Detectors Check - Build a dict of detector enabled flags and addresses [for PCIe devices]
-  set_fact:
-    tmsetup_detectors: >-
+- name: TMSetup - Detectors Check - (device_address) Extract bus, device, function number
+  ansible.builtin.set_fact:
+    device_address: >-
       {{
-        (tmsetup_detectors | default([]))
-        + [ item.item
-            | combine({
-                'enabled': (item.rc == 0),
-                'installed': (path_stat.results[loop.index0].stat.exists | default(false)),
-                'dev_address': (
-                  (item.rc == 0) and (item.item.frigate_device | lower == 'pci')
-                ) | ternary(
-                  (item.stdout | regex_search('^\\s*([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\\.\\d)')),
-                  None
-                )
-              })
-          ]
+        (item.stdout
+          | regex_search('([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F])')
+        ) | default('')
       }}
   loop: "{{ check_result.results }}"
   loop_control:
-    label: "{{ item.item.name }}"
+    label: "{{ item.item.key }}"
+  register: address_extraction
+
+- name: TMSetup - Detectors Check - (driver_installed) Stat for path to check for driver/firmware
+  ansible.builtin.stat:
+    path: "{{ item.value.dev_path }}"
+  register: path_stat
+  ignore_errors: true
+  loop: "{{ tmsetup_detectors | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: TMSetup - Detectors Check - Merge exists, device_address, driver_installed
+  ansible.builtin.set_fact:
+    tmsetup_detectors: >-
+      {{
+        tmsetup_detectors | default({}) |
+        combine({
+          item.item.key: tmsetup_detectors[item.item.key] |
+            combine({
+              'exists': (item.rc == 0),
+              'driver_installed': path_stat.results
+                | selectattr('item.key', 'equalto', item.item.key)
+                | map(attribute='stat')
+                | map(attribute='exists')
+                | first,
+              'device_address': (address_extraction.results
+                | selectattr('item.item.key', 'equalto', item.item.key)
+                | map(attribute='ansible_facts.device_address')
+                | first) | default('')
+            })
+        })
+      }}
+  loop: "{{ check_result.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
 
 - name: TMSetup - Detectors Check - Show enabled / installed status for each detector
-  debug:
+  ansible.builtin.debug:
     msg: |
-      Detector {{ item.name }}:
-        enabled:   {{ item.enabled }}
-        installed: {{ item.installed }}
-        {% if item.dev_address is defined and item.dev_address %}
-        PCIe address: {{ item.dev_address }}
-        {% endif %}
-  loop: "{{ tmsetup_detectors }}"
+      {{ item.key }} -
+      exists: {{ item.value.exists }},
+      driver_installed: {{ item.value.driver_installed }},
+      device_address: {{ item.value.device_address | default('N/A') }}
+  loop: "{{ tmsetup_detectors | dict2items }}"
   loop_control:
-    label: "{{ item.name }}"
-    
+    label: "{{ item.key }}"
+
 ...

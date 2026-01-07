@@ -7,7 +7,8 @@ services:
     shm_size: "512mb"
     devices:
   {% for name, detector in tmsetup_detectors.items() %}
-    {% if detector.enabled | default(false) %}
+    {% if detector.driver_installed | default(false)
+          and detector.exists | default(false) %}
       - {{ detector.dev_path }}:{{ detector.dev_path }}
     {% endif %}
   {% endfor %}
