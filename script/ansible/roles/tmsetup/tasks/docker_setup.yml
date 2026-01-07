@@ -39,12 +39,6 @@
     state: present
   notify: Restart tm-docker service
 
-- name: TMSetup - Docker Setup - Add the real "tar" command, instead of busybox tar
-  become: true
-  ansible.builtin.apt:
-    name: tar
-    state: present
-
 - name: TMSetup - Docker Setup - Add TM user to docker group
   become: true
   ansible.builtin.user:
