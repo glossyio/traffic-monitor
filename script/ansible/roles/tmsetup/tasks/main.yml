@@ -44,12 +44,9 @@
 - name: TMSetup - Main - Detector - Check Hailo-8 exists and not installed
   become: true
   when: >
-    tmsetup_detectors
-    | selectattr('hailo8l', 'defined')
-    | map(attribute='hailo8l')
-    | first
-    | default({'exists': false, 'driver_installed': false})
-    | json_query('exists && !driver_installed')
+    (tmsetup_detectors.hailo8l is defined) and
+    tmsetup_detectors.hailo8l.exists and
+    not tmsetup_detectors.hailo8l.driver_installed
   tags:
     - docker
     - frigate
@@ -65,12 +62,9 @@
 - name: TMSetup - Main - Detector - Check PCIe Coral TPU exists and not installed
   become: true
   when: >
-    tmsetup_detectors
-    | selectattr('edgetpu_pci', 'defined')
-    | map(attribute='edgetpu_pci')
-    | first
-    | default({'exists': false, 'driver_installed': false})
-    | json_query('exists && !driver_installed')
+    (tmsetup_detectors.edgetpu_pci is defined) and
+    tmsetup_detectors.edgetpu_pci.exists and
+    not tmsetup_detectors.edgetpu_pci.driver_installed
   tags:
     - docker
     - frigate
