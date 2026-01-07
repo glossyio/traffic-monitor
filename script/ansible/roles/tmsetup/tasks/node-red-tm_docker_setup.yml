@@ -51,6 +51,7 @@
     - node-red-tm/data/package.json
   ansible.builtin.template:
     backup: true
+    force: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     force: true
     group: '{{ tmsetup_codegroup }}'
