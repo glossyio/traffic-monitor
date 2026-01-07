@@ -1,5 +1,9 @@
 FROM nodered/node-red:{{ tmsetup_node_red_tm_version }}
-RUN apt update && apt install tar
+RUN apk update && \
+    apk add --no-cache tar && \
+    rm -f /bin/tar && \
+    ln -s /usr/bin/tar /bin/tar && \
+    rm -rf /var/cache/apk/*
 WORKDIR /usr/src/node-red
 COPY data/package.json package.json
 RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
