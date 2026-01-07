@@ -21,9 +21,9 @@
 - name: TMSetup - Hailo-8 Setup - Clone HailoRT driver repository (skip if exists)
   become: true
   git:
-    repo: "{{ driver_repo }}"
+    repo: "{{ tmsetup_hailo_driver_repo }}"
     dest: "{{ tmsetup_hailo_driver_dir }}"
-    version: "v{{ hailo_version }}"
+    version: "v{{ tmsetup_hailo_version }}"
     depth: 1
     force: no
   when: not (tmsetup_hailo_driver_dir is exists)
