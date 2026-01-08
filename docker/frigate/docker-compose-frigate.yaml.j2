@@ -6,16 +6,9 @@ services:
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
     shm_size: "512mb"
     devices:
-
-  {% for name, detector in tmsetup_detectors.items() %}
-    {% if detector.driver_installed | default(false)
-          and detector.exists | default(false) %}
-
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
       - {{ detector.dev_path }}:{{ detector.dev_path }}
-
-    {% endif %}
-  {% endfor %}
-
+{% endif %}{% endfor %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - {{ tmsetup_codedir }}/docker/frigate/config:/config

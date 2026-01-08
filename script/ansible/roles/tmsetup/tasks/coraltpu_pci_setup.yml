@@ -68,9 +68,4 @@
     groups: apex
     append: true
 
-        
-- name: TMSetup - Main - Detector - Reset PCIe Coral device
-  ansible.builtin.shell: setpci -s {{ tmsetup_detectors.edgetpu_pci.device_address }} COMMAND=0x06
-  changed_when: true
-
 ...

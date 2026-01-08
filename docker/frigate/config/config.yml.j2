@@ -11,17 +11,11 @@ mqtt:
 detectors:
 #  mycpu:
 #    type: cpu
-
-{% for name, detector in tmsetup_detectors.items() %}
-  {% if detector.driver_installed | default(false)
-        and detector.exists | default(false) %}
-
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
   {{ name }}:
     type:   {{ detector.frigate_type }}
     device: {{ detector.frigate_device }}
-
-  {% endif %}
-{% endfor %}
+{% endif %}{% endfor %}
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264

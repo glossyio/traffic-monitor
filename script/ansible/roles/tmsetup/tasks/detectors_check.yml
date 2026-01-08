@@ -22,7 +22,7 @@
     label: "{{ item.item.key }}"
   register: address_extraction
 
-- name: TMSetup - Detectors Check - (driver_installed) Stat for path to check for driver/firmware
+- name: TMSetup - Detectors Check - (dev_path_available) Stat for path to check for driver/firmware
   ansible.builtin.stat:
     path: "{{ item.value.dev_path }}"
   register: path_stat
@@ -31,22 +31,22 @@
   loop_control:
     label: "{{ item.key }}"
 
-- name: TMSetup - Detectors Check - Merge exists, device_address, driver_installed
+- name: TMSetup - Detectors Check - Merge exists, device_address, dev_path_available
   ansible.builtin.set_fact:
     tmsetup_detectors: >-
       {{
         tmsetup_detectors | default({}) |
         combine({
-          item.item.key: tmsetup_detectors[item.item.key] |
+          found_detector.item.key: tmsetup_detectors[found_detector.item.key] |
             combine({
-              'exists': (item.rc == 0),
-              'driver_installed': path_stat.results
-                | selectattr('item.key', 'equalto', item.item.key)
+              'exists': (found_detector.rc == 0),
+              'dev_path_available': path_stat.results
+                | selectattr('item.key', 'equalto', found_detector.item.key)
                 | map(attribute='stat')
                 | map(attribute='exists')
                 | first,
               'device_address': (address_extraction.results
-                | selectattr('item.item.key', 'equalto', item.item.key)
+                | selectattr('item.item.key', 'equalto', found_detector.item.key)
                 | map(attribute='ansible_facts.device_address')
                 | first) | default('')
             })
@@ -54,6 +54,7 @@
       }}
   loop: "{{ check_result.results }}"
   loop_control:
-    label: "{{ item.item.key }}"
+    label: "{{ found_detector.item.key }}"
+    loop_var: found_detector
 
 ...

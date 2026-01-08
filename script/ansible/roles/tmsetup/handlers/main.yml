@@ -51,8 +51,4 @@
   ansible.builtin.include_tasks:
     file: "{{ role_path }}/handlers/reboot_handler.yml"
 
-- name: TMSetup - Check detectors
-  ansible.builtin.include_tasks:
-    file: "{{ role_path }}/handlers/check_detectors.yml"
-
 ...

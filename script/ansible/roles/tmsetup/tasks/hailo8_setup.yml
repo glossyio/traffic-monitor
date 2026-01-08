@@ -20,52 +20,42 @@
 
 - name: TMSetup - Hailo-8 Setup - Clone HailoRT driver repository (skip if exists)
   become: true
-  git:
+  ansible.builtin.git:
     repo: "{{ tmsetup_hailo_driver_repo }}"
     dest: "{{ tmsetup_hailo_driver_dir }}"
     version: "v{{ tmsetup_hailo_version }}"
     depth: 1
-    force: no
+    force: false
   when: not (tmsetup_hailo_driver_dir is exists)
 
 - name: TMSetup - Hailo-8 Setup - Build the driver
   become: true
-  make:
+  community.general.make:
     chdir: "{{ tmsetup_hailo_driver_dir }}/linux/pcie"
     target: all
   environment:
-    MAKEFLAGS: "-j{{ ansible_processor_vcpus | default(1) }}"
+    MAKEFLAGS: "-j{{ ansible_facts['processor_vcpus'] | default(1) }}"
 
 - name: TMSetup - Hailo-8 Setup - Install the driver
   become: true
-  make:
+  community.general.make:
     chdir: "{{ tmsetup_hailo_driver_dir }}/linux/pcie"
     target: install
 
 - name: TMSetup - Hailo-8 Setup - Load hailo_pci kernel module
   become: true
-  command: modprobe hailo_pci
-  register: modprobe_result
-  ignore_errors: true
-
-- name: TMSetup - Hailo-8 Setup - Fail if hailo_pci could not be loaded
-  become: true
-  fail:
-    msg: |
-      Unable to load hailo_pci module. Common reasons:
-      - Secure Boot is enabled and blocks unsigned modules.
-      - Permissions are not set up correctly.
-  when: modprobe_result.rc != 0
+  community.general.modprobe: hailo_pci
+  persistent: present
 
 - name: TMSetup - Hailo-8 Setup - Run firmware download script
   become: true
-  command: ./download_firmware.sh
+  ansible.builtin.shell: download_firmware.sh
   args:
     chdir: "{{ tmsetup_hailo_driver_dir }}"
 
 - name: TMSetup - Hailo-8 Setup - Ensure firmware directory exists
   become: true
-  file:
+  ansible.builtin.file:
     path: /lib/firmware/hailo
     state: directory
     mode: "0644"
@@ -89,9 +79,5 @@
 - name: TMSetup - Hailo-8 Setup - Reload udev rules and trigger
   become: true
   ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
-
-- name: TMSetup - Hailo-8 Setup - Reset Hailo device
-  ansible.builtin.shell: setpci -s {{ tmsetup_detectors.hailo8l.device_address }} COMMAND=0x06
-  changed_when: true
 
 ...
