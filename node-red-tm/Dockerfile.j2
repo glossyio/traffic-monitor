@@ -3,7 +3,4 @@ WORKDIR /usr/src/node-red
 COPY data/package.json package.json
 RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
 RUN apk update && \
-    apk add --no-cache tar && \
-    rm -f /bin/tar && \
-    ln -s /usr/bin/tar /bin/tar && \
-    rm -rf /var/cache/apk/*
+    apk add --no-cache tar
