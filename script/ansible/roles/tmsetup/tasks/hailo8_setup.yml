@@ -44,14 +44,15 @@
 
 - name: TMSetup - Hailo-8 Setup - Load hailo_pci kernel module
   become: true
-  community.general.modprobe: hailo_pci
-  persistent: present
+  community.general.modprobe: 
+    name: hailo_pci
 
 - name: TMSetup - Hailo-8 Setup - Run firmware download script
   become: true
-  ansible.builtin.shell: download_firmware.sh
+  ansible.builtin.shell: ./download_firmware.sh
   args:
     chdir: "{{ tmsetup_hailo_driver_dir }}"
+    creates: hailo8_fw.{{ tmsetup_hailo_version }}.bin
 
 - name: TMSetup - Hailo-8 Setup - Ensure firmware directory exists
   become: true
@@ -65,7 +66,6 @@
   ansible.builtin.copy:
     src: "{{ tmsetup_hailo_driver_dir }}/hailo8_fw.{{ tmsetup_hailo_version }}.bin"
     dest: /lib/firmware/hailo/hailo8_fw.bin
-    mode: '0644'
     remote_src: true
 
 - name: TMSetup - Hailo-8 Setup - Install udev rules
@@ -73,11 +73,7 @@
   ansible.builtin.copy:
     src: "{{ tmsetup_hailo_driver_dir }}/linux/pcie/51-hailo-udev.rules"
     dest: /etc/udev/rules.d/51-hailo-udev.rules
-    mode: "0644"
     remote_src: true
-
-- name: TMSetup - Hailo-8 Setup - Reload udev rules and trigger
-  become: true
-  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+  notify: Reload udev rules and trigger
 
 ...

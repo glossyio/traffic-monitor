@@ -38,6 +38,7 @@
   tags:
     - docker
     - frigate
+    - detectors
   ansible.builtin.import_tasks:
     file: detectors_check.yml
 
@@ -50,6 +51,7 @@
   tags:
     - docker
     - frigate
+    - detectors
   notify: TMSetup - Flag for reboot
   block:
     - name: TMsetup - Main - Detector - Setup Hailo-8 Firmware and Drivers
@@ -80,6 +82,7 @@
   tags:
     - docker
     - frigate
+    - detectors
   notify: TMSetup - Flag for reboot
   block: 
     - name: TMSetup - Main - Detector - Setup Coral TPU Runtime Library
@@ -136,7 +139,7 @@
     - docker
     - frigate
     - node-red-tm
-    - nodered
+    - plate-recognizer
     - go2rtc
   ansible.builtin.import_tasks:
     file: start_services.yml

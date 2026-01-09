@@ -7,6 +7,10 @@
     name: go2rtc_server.service
     state: restarted
 
+- name: Reload udev rules and trigger
+  become: true
+  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+
 - name: Tear down existing container images
   become: true
   community.docker.docker_compose_v2:
@@ -26,6 +30,13 @@
     recreate: always
     state: stopped
 
+- name: Restart journald service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: systemd-journald.service
+    state: restarted
+
 - name: Restart NetworkManager service
   become: true
   ansible.builtin.systemd_service:
@@ -38,13 +49,6 @@
   ansible.builtin.systemd_service:
     daemon_reload: true
     name: tm-docker.service
-    state: restarted
-
-- name: Restart journald service
-  become: true
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: systemd-journald.service
     state: restarted
 
 - name: TMSetup - Flag for reboot
