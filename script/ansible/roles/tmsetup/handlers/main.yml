@@ -19,6 +19,7 @@
     project_src: "{{ tmsetup_codedir }}"
     state: absent
     remove_images: all
+    remove_orphans: true
 
 - name: Build container images
   become: true
