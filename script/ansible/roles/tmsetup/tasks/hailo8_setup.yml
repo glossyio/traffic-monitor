@@ -42,6 +42,12 @@
     chdir: "{{ tmsetup_hailo_driver_dir }}/linux/pcie"
     target: install
 
+- name: TMSetup - Hailo-8 Setup - Copy modprobe hailo_pci.conf
+  become: true
+  ansible.builtin.copy:
+    src: 81-hailo_pci.conf
+    dest: /etc/modprobe.d/hailo_pci.conf
+
 - name: TMSetup - Hailo-8 Setup - Load hailo_pci kernel module
   become: true
   community.general.modprobe: 
