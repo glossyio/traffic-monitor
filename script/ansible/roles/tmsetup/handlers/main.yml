@@ -29,7 +29,7 @@
       - ./docker/compose.yaml
     project_src: "{{ tmsetup_codedir }}"
     recreate: always
-    state: stopped
+    state: absent
 
 - name: Restart journald service
   become: true
@@ -51,9 +51,6 @@
     daemon_reload: true
     name: tm-docker.service
     state: restarted
-  notify: 
-    - Tear down existing container images
-    - Build container images
 
 - name: TMSetup - Flag for reboot
   ansible.builtin.include_tasks:
