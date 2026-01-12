@@ -11,9 +11,10 @@ Type=notify
 Restart=always
 User=root
 Group={{ tmsetup_codegroup }}
-TimeoutStopSec=15
+TimeoutStopSec=30
 WorkingDirectory={{ tmsetup_codedir }}/docker
 
+ExecStartPre=/usr/bin/docker compose -f compose.yaml build
 ExecStart=/usr/bin/docker compose -f compose.yaml up --force-recreate
 ExecStopPost=/usr/bin/docker compose -f compose.yaml down --remove-orphans
 

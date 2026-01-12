@@ -133,7 +133,7 @@
   ansible.builtin.import_tasks:
     file: wifi_setup.yml
 
-- name: TMSetup - Main - Start Services
+- name: TMSetup - Main - Start Services and build Docker images (may take a while...)
   tags:
     - wifi
     - docker
