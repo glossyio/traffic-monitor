@@ -1,5 +1,5 @@
 # /etc/systemd/system/tm-docker.service
-# to run: sudo systemctl stop|start|restart|enable|disable tm-dockedr
+# to run: sudo systemctl stop|start|restart|enable|disable tm-docker
 
 [Unit]
 Description=tm-docker
@@ -7,13 +7,15 @@ Requires=docker.service
 After=docker.service go2rtc_server.service
 
 [Service]
+Type=notify
 Restart=always
 User=root
 Group={{ tmsetup_codegroup }}
 TimeoutStopSec=15
 WorkingDirectory={{ tmsetup_codedir }}/docker
-ExecStart=/usr/bin/docker compose -f compose.yaml up
-ExecStop=/usr/bin/docker compose -f compose.yaml down
+
+ExecStart=/usr/bin/docker compose -f compose.yaml up --force-recreate
+ExecStopPost=/usr/bin/docker compose -f compose.yaml down --remove-orphans
 
 [Install]
 WantedBy=multi-user.target
