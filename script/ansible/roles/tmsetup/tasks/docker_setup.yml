@@ -55,6 +55,7 @@
     group: root
     mode: '0644'
   notify:
+      - Build container images
       - Restart tm-docker service
 
 - name: TMSetup - Docker Setup - Copy compose.yaml to code directories
@@ -67,6 +68,7 @@
     owner: '{{ tmsetup_codeowner }}'
     src: compose.yaml.j2
   notify:
+    - Build container images
     - Restart tm-docker service
 
 - name: TMSetup - Docker Setup - Create Systemd unit file for tm-docker

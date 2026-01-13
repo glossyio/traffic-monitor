@@ -133,7 +133,28 @@
   ansible.builtin.import_tasks:
     file: wifi_setup.yml
 
-- name: TMSetup - Main - Start Services and build Docker images (may take a while...)
+- name: TMSetup - Base Setup - Check if reboot needed
+  tags:
+    - always
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: tmsetup_reboot_required_stat_register
+
+- name: Check if restart is required
+  when: >-
+    (tmsetup_detectors.values() |
+      map(attribute='fresh_install') |
+      select('equalto', true) |
+      list | length > 0)
+    or
+    (tmsetup_reboot_required_stat_register.stat is defined and
+      tmsetup_reboot_required_stat_register.stat.exists)
+  ansible.builtin.set_fact:
+    tmsetup_restart_required: true
+  changed_when: tmsetup_restart_required
+  notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Main - Start Services
   tags:
     - wifi
     - docker
@@ -143,14 +164,5 @@
     - go2rtc
   ansible.builtin.import_tasks:
     file: start_services.yml
-
-- name: TMSetup - Base Setup - Check if reboot needed
-  tags:
-    - always
-  ansible.builtin.stat:
-    path: /var/run/reboot-required
-  register: tmsetup_reboot_required_stat_register
-  changed_when: tmsetup_reboot_required_stat_register.stat.exists
-  notify: TMSetup - Flag for reboot
 
 ...

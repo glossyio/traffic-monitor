@@ -11,6 +11,6 @@
     daemon_reload: true
     enabled: true
     name: "{{ item }}"
-    state: started
+    state: "{{ 'stopped' if tmsetup_restart_required else 'started' }}"
 
 ...

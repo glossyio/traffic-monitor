@@ -25,12 +25,33 @@
     name: NetworkManager.service
     state: restarted
 
+- name: Build container images
+  become: true
+  block:
+    - name: Pull and Build Docker compose stack as stopped
+      community.docker.docker_compose_v2:
+        build: always
+        files:
+          - ./docker/compose.yaml
+        project_src: "{{ tmsetup_codedir }}"
+        recreate: always
+        state: stopped
+
+    - name: Remove named containers to make ready
+      community.docker.docker_compose_v2:
+        build: always
+        files:
+          - ./docker/compose.yaml
+        project_src: "{{ tmsetup_codedir }}"
+        recreate: always
+        state: absent
+
 - name: Restart tm-docker service
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true
     name: tm-docker.service
-    state: restarted
+    state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
 
 - name: TMSetup - Flag for reboot
   ansible.builtin.include_tasks:
