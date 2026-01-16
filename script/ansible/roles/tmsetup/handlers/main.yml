@@ -27,24 +27,24 @@
 
 - name: Build container images
   become: true
-  block:
-    - name: Pull and Build Docker compose stack as stopped
-      community.docker.docker_compose_v2:
-        build: always
-        files:
-          - ./docker/compose.yaml
-        project_src: "{{ tmsetup_codedir }}"
-        recreate: always
-        state: stopped
+  community.docker.docker_compose_v2:
+    build: always
+    files:
+      - ./docker/compose.yaml
+    project_src: "{{ tmsetup_codedir }}"
+    recreate: always
+    state: stopped
+  notify: Remove named containers
 
-    - name: Remove named containers to make ready
-      community.docker.docker_compose_v2:
-        build: always
-        files:
-          - ./docker/compose.yaml
-        project_src: "{{ tmsetup_codedir }}"
-        recreate: always
-        state: absent
+- name: Remove named containers
+  become: true
+  community.docker.docker_compose_v2:
+    build: always
+    files:
+      - ./docker/compose.yaml
+    project_src: "{{ tmsetup_codedir }}"
+    recreate: always
+    state: absent
 
 - name: Restart tm-docker service
   become: true
@@ -52,6 +52,8 @@
     daemon_reload: true
     name: tm-docker.service
     state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
+  async: 600
+  poll: 0
 
 - name: TMSetup - Flag for reboot
   ansible.builtin.include_tasks:
