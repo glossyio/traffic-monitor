@@ -7,7 +7,7 @@ Requires=docker.service
 After=docker.service go2rtc_server.service
 
 [Service]
-Type=notify
+Type=oneshot
 Restart=always
 User=root
 Group={{ tmsetup_codegroup }}
