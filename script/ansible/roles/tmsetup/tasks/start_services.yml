@@ -1,5 +1,13 @@
 ---
 # task file to start all services
+- name: TMSetup - Start Services - Enable only
+  become: true
+  loop:
+    - tm-docker-build.service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: "{{ item }}"
 
 - name: TMSetup - Start Services - Start and enable all services
   become: true
