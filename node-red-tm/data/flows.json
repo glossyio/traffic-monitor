@@ -842,7 +842,7 @@
         ],
         "x": 134,
         "y": 539,
-        "w": 962,
+        "w": 972,
         "h": 122
     },
     {
@@ -1053,11 +1053,15 @@
             "a2523de935172143",
             "2228b88368f9748e",
             "e261d6fad8c5ed4f",
-            "b8eee40599bdc3c8"
+            "b8eee40599bdc3c8",
+            "45eb80236a2b2e5c",
+            "d3d856c678ff50b2",
+            "448dd344ed6f13dd",
+            "36cfd151e98573f0"
         ],
-        "x": 14,
+        "x": 4,
         "y": 1859,
-        "w": 1392,
+        "w": 1402,
         "h": 722
     },
     {
@@ -1081,7 +1085,7 @@
         "id": "173cdef0ad9fac1a",
         "type": "group",
         "z": "c17b7b1a8f280e22",
-        "name": "For testing",
+        "name": "For testing - enable the \"Test\" node - requires a file named '/op/traffic-monitor/node-red-tm/dbtmdb-db-salal-2025-12-28.sqlite'",
         "style": {
             "label": true
         },
@@ -1094,7 +1098,7 @@
             "b23ac8bf091c4220"
         ],
         "x": 14,
-        "y": 2599,
+        "y": 2619,
         "w": 932,
         "h": 122
     },
@@ -2309,7 +2313,7 @@
         "type": "ui-group",
         "name": "Compressing File(s)",
         "page": "6599f3821baa508f",
-        "width": 6,
+        "width": "6",
         "height": 1,
         "order": 4,
         "showTitle": true,
@@ -12915,7 +12919,7 @@
         "type": "exec",
         "z": "c17b7b1a8f280e22",
         "g": "0e529403dab80c69",
-        "command": "tar czvf download.tar.gz ",
+        "command": "tar czvf  download.tar.gz --checkpoint=1000",
         "addpay": "payload.filepath",
         "append": "",
         "useSpawn": "true",
@@ -12927,10 +12931,12 @@
         "y": 2000,
         "wires": [
             [],
-            [],
             [
-                "a845e5248a7c1281",
-                "4d772a4403b760a7"
+                "36cfd151e98573f0"
+            ],
+            [
+                "4d772a4403b760a7",
+                "a845e5248a7c1281"
             ]
         ]
     },
@@ -13831,7 +13837,7 @@
         "links": [
             "de0eec15483ab6c5"
         ],
-        "x": 995,
+        "x": 965,
         "y": 2040,
         "wires": []
     },
@@ -13917,9 +13923,9 @@
         "group": "c94066909cea70f6",
         "name": "Cancel",
         "label": "Cancel",
-        "order": 1,
-        "width": 0,
-        "height": 0,
+        "order": 2,
+        "width": "3",
+        "height": "1",
         "emulateClick": false,
         "tooltip": "",
         "color": "",
@@ -14013,7 +14019,6 @@
         "id": "2ec299b81ca6ed02",
         "type": "ui-button",
         "z": "c17b7b1a8f280e22",
-        "d": true,
         "g": "173cdef0ad9fac1a",
         "group": "216a4109fe080851",
         "name": "Test",
@@ -14043,7 +14048,7 @@
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
         "x": 90,
-        "y": 2640,
+        "y": 2660,
         "wires": [
             [
                 "8f556ba97d19dbfb"
@@ -14056,7 +14061,7 @@
         "z": "c17b7b1a8f280e22",
         "g": "173cdef0ad9fac1a",
         "name": "setup test",
-        "func": "// setup test source & downloaded filenames\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.payload.filepath = ' -C /db tmdb-db-salal-2025-12-28.sqlite';\nconst filename = \"test.tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "func": "// setup test source & downloaded filenames\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.payload.filepath = ' -C /db tmdb-db-salal-2025-12-28a.sqlite tmdb-db-salal-2025-12-28b.sqlite';\nconst filename = \"test.tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -14064,7 +14069,7 @@
         "finalize": "",
         "libs": [],
         "x": 780,
-        "y": 2640,
+        "y": 2660,
         "wires": [
             [
                 "354fec7272d97cc6",
@@ -14092,7 +14097,7 @@
         "templateScope": "local",
         "className": "",
         "x": 260,
-        "y": 2640,
+        "y": 2660,
         "wires": [
             []
         ]
@@ -14108,7 +14113,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 550,
-        "y": 2640,
+        "y": 2660,
         "wires": [
             [
                 "e1802aa6a284ba8b"
@@ -14126,7 +14131,7 @@
             "b8eee40599bdc3c8"
         ],
         "x": 895,
-        "y": 2640,
+        "y": 2660,
         "wires": []
     },
     {
@@ -14157,8 +14162,83 @@
             "7062543ad8dc2060"
         ],
         "x": 905,
-        "y": 2680,
+        "y": 2700,
         "wires": []
+    },
+    {
+        "id": "45eb80236a2b2e5c",
+        "type": "ui-text",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "group": "c94066909cea70f6",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "name": "Progress",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-center",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 140,
+        "y": 2420,
+        "wires": []
+    },
+    {
+        "id": "d3d856c678ff50b2",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "progress",
+        "links": [
+            "448dd344ed6f13dd"
+        ],
+        "x": 45,
+        "y": 2420,
+        "wires": [
+            [
+                "45eb80236a2b2e5c"
+            ]
+        ]
+    },
+    {
+        "id": "448dd344ed6f13dd",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "progress",
+        "mode": "link",
+        "links": [
+            "d3d856c678ff50b2"
+        ],
+        "x": 1345,
+        "y": 2080,
+        "wires": []
+    },
+    {
+        "id": "36cfd151e98573f0",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "extract progress data",
+        "func": "const regex = /\\d+/;\nmsg.payload = msg.payload.match(regex);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1180,
+        "y": 2080,
+        "wires": [
+            [
+                "448dd344ed6f13dd"
+            ]
+        ]
     },
     {
         "id": "44a8b86a7733445f",
