@@ -76,10 +76,15 @@ _apt_upgrade(){ # perform full upgrade on local installs
 _install_ansible_local() { # check and install python3-venv and setup venv
   local _venvd=$1
   local _script_dir=$2
-  dpkg -S python3-venv || ( sudo apt update && sudo apt install python3-venv )
-  while ! . "${_venvd}/bin/activate" ;do 
-    python3 -m venv "${_venvd}"  || return 1
-  done
+  dpkg -s python3-venv >/dev/null 2>&1 || {
+      sudo apt update && sudo apt install -y python3-venv
+  }  
+  if [[ ! -f "${_venvd}/bin/activate" ]]; then
+      echo "Virtual Environment does not exist and will be created at the following location:"
+      echo "    ${_venvd}"
+      python3 -m venv "${_venvd}" || return 1
+  fi
+  . "${_venvd}/bin/activate" || return 1
   pip3 install -r "${_script_dir}/requirements" || return 1
   return 0
 }
