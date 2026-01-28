@@ -1,7 +1,7 @@
 ---
 - name: TMSetup - Detectors Check - (exists) Check if plugged in and powered
   ansible.builtin.shell: "{{ item.value.check_exists }} 2>/dev/null"
-  register: check_result
+  register: tmsetup_detectors_check_exists_register
   ignore_errors: true
   failed_when: false
   changed_when: false
@@ -17,15 +17,15 @@
           | regex_search('([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F])')
         ) | default('')
       }}
-  loop: "{{ check_result.results }}"
+  loop: "{{ tmsetup_detectors_check_exists_register.results }}"
   loop_control:
     label: "{{ item.item.key }}"
-  register: address_extraction
+  register: tmsetup_detectors_check_address_register
 
 - name: TMSetup - Detectors Check - (dev_path_available) Stat for path to check for driver/firmware
   ansible.builtin.stat:
     path: "{{ item.value.dev_path }}"
-  register: path_stat
+  register: tmsetup_detectors_check_path_register
   ignore_errors: true
   loop: "{{ tmsetup_detectors | dict2items }}"
   loop_control:
@@ -40,19 +40,19 @@
           found_detector.item.key: tmsetup_detectors[found_detector.item.key] |
             combine({
               'exists': (found_detector.rc == 0),
-              'dev_path_available': path_stat.results
+              'dev_path_available': tmsetup_detectors_check_path_register.results
                 | selectattr('item.key', 'equalto', found_detector.item.key)
                 | map(attribute='stat')
                 | map(attribute='exists')
                 | first,
-              'device_address': (address_extraction.results
+              'device_address': (tmsetup_detectors_check_address_register.results
                 | selectattr('item.item.key', 'equalto', found_detector.item.key)
                 | map(attribute='ansible_facts.device_address')
                 | first) | default('')
             })
         })
       }}
-  loop: "{{ check_result.results }}"
+  loop: "{{ tmsetup_detectors_check_exists_register.results }}"
   loop_control:
     label: "{{ found_detector.item.key }}"
     loop_var: found_detector

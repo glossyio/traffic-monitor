@@ -9,7 +9,7 @@
 
 - name: Reload udev rules and trigger
   become: true
-  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+  ansible.builtin.shell: udevadm control --reload && udevadm trigger
 
 - name: Restart journald service
   become: true
