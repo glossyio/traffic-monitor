@@ -20,10 +20,15 @@
 
 - name: Restart NetworkManager service
   become: true
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: NetworkManager.service
-    state: restarted
+  block: 
+  - name: Restart the service
+    ansible.builtin.systemd_service:
+      daemon_reload: true
+      name: NetworkManager.service
+      state: restarted
+  - name: Pause for 10 seconds to complete network restart
+    ansible.builtin.pause:
+      seconds: 10
 
 - name: Build container images
   become: true
