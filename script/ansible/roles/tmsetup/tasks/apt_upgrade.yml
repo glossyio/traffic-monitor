@@ -5,4 +5,11 @@
     update_cache: true
     upgrade: full
 
+- name: TMSetup - Update Raspberry Pi EEPROM firmware (rpi-eeprom-update)
+  become: true
+  ansible.builtin.shell: rpi-eeprom-update -a
+  register: tmsetup_update_eeprom_result_register
+  changed_when: "'Updating' in tmsetup_update_eeprom_result_register.stdout"
+  notify: TMSetup - Flag for reboot
+
 ...

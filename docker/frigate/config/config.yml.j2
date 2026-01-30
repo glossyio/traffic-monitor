@@ -9,21 +9,20 @@ mqtt:
 {% endraw %}
 
 detectors:
-#  coralpci:
-#    type: edgetpu
-#    device: pci
-#  coralusb:
-#    type: edgetpu
-#    device: usb
-  mycpu:
-    type: cpu
+#  mycpu:
+#    type: cpu
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+  {{ name }}:
+    type:   {{ detector.frigate_type }}
+    device: {{ detector.frigate_device }}
+{% endif %}{% endfor %}
 
 ffmpeg:
   hwaccel_args: preset-rpi-64-h264
 
 cameras:
   picam_h264:
-    enabled: true
+    enabled: false
     type: "generic"
     ffmpeg:
       inputs:

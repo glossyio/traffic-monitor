@@ -75,5 +75,6 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}.j2'
-  notify: Restart tm-docker service
+  notify: 
+    - Restart tm-docker service
 ...

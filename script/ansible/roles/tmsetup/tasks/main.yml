@@ -4,7 +4,7 @@
   tags:
     - always
   ansible.builtin.import_tasks:
-    file: 'set_vars.yml'
+    file: set_vars.yml
 
 - name: TMSetup - Main - Setup base
   tags:
@@ -31,21 +31,24 @@
     - docker
     - frigate
     - node-red-tm
-    - coraltpu
   ansible.builtin.import_tasks:
     file: docker_setup.yml
 
-- name: TMSetup - Main - Setup Coral TPU Runtime Library
+- name: TMSetup - Main - Detector - Check for attached Detectors to run installs
   tags:
-    - coraltpu
+    - docker
+    - frigate
+    - detectors
   ansible.builtin.import_tasks:
-    file: coraltpu_setup.yml
+    file: detectors_check.yml
 
-- name: TMSetup - Main - Setup PCI Coral TPU Drivers
+- name: TMSetup - Main - Detector - Install Detectors
   tags:
-    - coraltpu
+    - docker
+    - frigate
+    - detectors
   ansible.builtin.import_tasks:
-    file: coraltpu_pci_setup.yml
+    file: detectors_install.yml
 
 - name: TMSetup - Main - Setup Frigate
   tags:
@@ -72,24 +75,36 @@
   ansible.builtin.import_tasks:
     file: wifi_setup.yml
 
-- name: TMSetup - Main - Start Services
-  tags:
-    - wifi
-    - docker
-    - frigate
-    - node-red-tm
-    - nodered
-    - go2rtc
-  ansible.builtin.import_tasks:
-    file: start_services.yml
-
 - name: TMSetup - Base Setup - Check if reboot needed
   tags:
     - always
   ansible.builtin.stat:
     path: /var/run/reboot-required
   register: tmsetup_reboot_required_stat_register
-  changed_when: tmsetup_reboot_required_stat_register.stat.exists
+
+- name: Check if restart is required
+  when: >-
+    (tmsetup_detectors.values() |
+      map(attribute='fresh_install') |
+      select('equalto', true) |
+      list | length > 0)
+    or
+    (tmsetup_reboot_required_stat_register.stat is defined and
+      tmsetup_reboot_required_stat_register.stat.exists)
+  ansible.builtin.set_fact:
+    tmsetup_restart_required: true
+  changed_when: tmsetup_restart_required
   notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Main - Start Services
+  tags:
+    - wifi
+    - docker
+    - frigate
+    - node-red-tm
+    - plate-recognizer
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: start_services.yml
 
 ...

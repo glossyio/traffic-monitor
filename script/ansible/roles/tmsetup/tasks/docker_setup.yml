@@ -71,6 +71,24 @@
     - Build container images
     - Restart tm-docker service
 
+- name: TMSetup - Docker Build Setup - Create Systemd unit file for tm-docker
+  become: true
+  ansible.builtin.template:
+    dest: "{{ tmsetup_codedir }}/services/tm-docker-build.service"
+    group: root
+    mode: '0644'
+    owner: root
+    src: services/tm-docker-build.service.j2
+  notify: Restart tm-docker service
+
+- name: TMSetup - Docker Build Setup - Link tm-docker-build.service into systemd
+  become: true
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system/tm-docker-build.service
+    src: "{{ tmsetup_codedir }}/services/tm-docker-build.service"
+    state: link
+  notify: Restart tm-docker service
+
 - name: TMSetup - Docker Setup - Create Systemd unit file for tm-docker
   become: true
   ansible.builtin.template:

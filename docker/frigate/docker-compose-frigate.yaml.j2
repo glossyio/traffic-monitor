@@ -4,14 +4,11 @@ services:
     privileged: false
     restart: unless-stopped
     image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
-    shm_size: "256MB"
+    shm_size: "512mb"
     devices:
-      - /dev/bus/usb:/dev/bus/usb 
-{% if tmsetup_pcietpus_confirmed is defined and tmsetup_pcietpus_confirmed is iterable %}
-{% for tpu in tmsetup_pcietpus_confirmed %}
-      - {{ tpu }}:{{ tpu }}
-{% endfor %}
-{% endif %}
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+      - {{ detector.dev_path }}:{{ detector.dev_path }}
+{% endif %}{% endfor %}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - {{ tmsetup_codedir }}/docker/frigate/config:/config
@@ -21,7 +18,8 @@ services:
         tmpfs:
           size: 1000000000
     ports:
-      - "5000:5000"
+      - "8971:8971"
+      - "5000:5000" # Internal unauthenticated access. Expose carefully.
       - "1964:1984" # go2rtc api
       - "8564:8554" # RTSP feeds
       - "8565:8555/tcp" # WebRTC over tcp

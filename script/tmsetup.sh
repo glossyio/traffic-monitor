@@ -22,7 +22,7 @@ _CONFIRM=false
 _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
 _MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
-declare _VALID_TAGS=("base" "wifi" "docker" "frigate" "node-red-tm" "go2rtc")
+declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "docker" "frigate" "node-red-tm" "plate-recognizer")
 declare -a _VALID_CUSTOM_VARS=("plate_recognizer")
 
 ## FUNCTIONS
