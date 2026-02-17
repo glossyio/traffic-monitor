@@ -15,6 +15,12 @@
 * [Frigate Config](configuration/frigate-config.md)
 * [Node-RED Config](configuration/node-red-config.md)
 
+## User Interface <a href="#ui" id="ui"></a>
+
+* [Monitoring](ui/monitoring.md)
+* [Movements](ui/movements.md)
+* [Database](ui/database.md)
+
 ## Development
 
 * [Dev Environment](development/dev-environment.md)

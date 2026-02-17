@@ -1,6 +1,6 @@
 ---
-icon: user-helmet-safety
 description: Traffic Monitor details and assembly instructions
+icon: user-helmet-safety
 ---
 
 # Build Your Own Device (DIY)
@@ -15,4 +15,4 @@ Assemble the components: [assembly-instructions.md](assembly-instructions.md "me
 
 See [software-installation.md](software-installation.md "mention")
 
-\
+<br>
