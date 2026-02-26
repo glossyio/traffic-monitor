@@ -1057,7 +1057,8 @@
             "45eb80236a2b2e5c",
             "d3d856c678ff50b2",
             "448dd344ed6f13dd",
-            "36cfd151e98573f0"
+            "36cfd151e98573f0",
+            "03fb34f8a25b78e3"
         ],
         "x": 4,
         "y": 1859,
@@ -2311,7 +2312,7 @@
     {
         "id": "c94066909cea70f6",
         "type": "ui-group",
-        "name": "Compressing File(s)",
+        "name": "Processing File(s)",
         "page": "6599f3821baa508f",
         "width": "6",
         "height": 1,
@@ -13203,7 +13204,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/storefiles?files=${filenames}`;\n    })\n    </script>",
+        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/teststorefiles?files=${filenames}`;\n    })\n    </script>",
         "storeOutMessages": true,
         "passthru": true,
         "resendOnRefresh": true,
@@ -13750,7 +13751,8 @@
         "name": "hide compressing file(s) window",
         "links": [
             "4d772a4403b760a7",
-            "00ac1c1b44b14a84"
+            "00ac1c1b44b14a84",
+            "04afc875c88ea0d9"
         ],
         "x": 575,
         "y": 2440,
@@ -13765,13 +13767,13 @@
         "type": "change",
         "z": "c17b7b1a8f280e22",
         "g": "0e529403dab80c69",
-        "name": "setup to hide compressing file(s)",
+        "name": "setup to hide processing file(s)",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "{\"groups\":{\"hide\":[\"Compressing File(s)\"]}}",
+                "to": "{\"groups\":{\"hide\":[\"Processing File(s)\"]}}",
                 "tot": "json"
             }
         ],
@@ -13846,13 +13848,13 @@
         "type": "change",
         "z": "c17b7b1a8f280e22",
         "g": "0e529403dab80c69",
-        "name": "setup to show compressing file(s)",
+        "name": "setup to show processing file(s)",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "{\"groups\":{\"show\":[\"Compressing File(s)\"]}}",
+                "to": "{\"groups\":{\"show\":[\"Processing File(s)\"]}}",
                 "tot": "json"
             }
         ],
@@ -13861,7 +13863,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 320,
+        "x": 310,
         "y": 2540,
         "wires": [
             [
@@ -13874,10 +13876,10 @@
         "type": "ui-control",
         "z": "c17b7b1a8f280e22",
         "g": "0e529403dab80c69",
-        "name": "Show compressing file(s) window",
+        "name": "Show processing file(s) window",
         "ui": "2a8899583532edb4",
         "events": "all",
-        "x": 620,
+        "x": 610,
         "y": 2540,
         "wires": [
             []
@@ -13891,7 +13893,8 @@
         "name": "setup to show compressing file(s)",
         "links": [
             "53292cf65b8e813e",
-            "b23ac8bf091c4220"
+            "b23ac8bf091c4220",
+            "691ba2abe1b0dab3"
         ],
         "x": 145,
         "y": 2540,
@@ -14009,7 +14012,8 @@
         "name": "kill zip command",
         "mode": "link",
         "links": [
-            "2228b88368f9748e"
+            "2228b88368f9748e",
+            "4e812539bbfa22d0"
         ],
         "x": 505,
         "y": 2460,
@@ -14072,8 +14076,8 @@
         "y": 2660,
         "wires": [
             [
-                "354fec7272d97cc6",
-                "b23ac8bf091c4220"
+                "b23ac8bf091c4220",
+                "b503d2996657bc59"
             ]
         ]
     },
@@ -14174,17 +14178,17 @@
         "order": 1,
         "width": "3",
         "height": "1",
-        "name": "Progress",
-        "label": "",
+        "name": "Processing Files",
+        "label": "Processing ",
         "format": "{{msg.payload}}",
-        "layout": "row-center",
+        "layout": "row-left",
         "style": false,
         "font": "",
         "fontSize": 16,
         "color": "#717171",
         "wrapText": false,
         "className": "",
-        "x": 140,
+        "x": 440,
         "y": 2420,
         "wires": []
     },
@@ -14195,13 +14199,15 @@
         "g": "0e529403dab80c69",
         "name": "progress",
         "links": [
-            "448dd344ed6f13dd"
+            "448dd344ed6f13dd",
+            "049332f1b5f36fd2",
+            "1932a740edb76b76"
         ],
         "x": 45,
         "y": 2420,
         "wires": [
             [
-                "45eb80236a2b2e5c"
+                "03fb34f8a25b78e3"
             ]
         ]
     },
@@ -14237,6 +14243,307 @@
         "wires": [
             [
                 "448dd344ed6f13dd"
+            ]
+        ]
+    },
+    {
+        "id": "568ebabacd8678a7",
+        "type": "http in",
+        "z": "c17b7b1a8f280e22",
+        "name": "Respond to download request",
+        "url": "/teststorefiles",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 2880,
+        "wires": [
+            [
+                "691ba2abe1b0dab3",
+                "983fe2f9053fb830"
+            ]
+        ]
+    },
+    {
+        "id": "b2c845bb18cee795",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "name": "Test for error",
+        "property": "res.statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 710,
+        "y": 2880,
+        "wires": [
+            [
+                "b503d2996657bc59"
+            ],
+            [
+                "5a54a54ce34d4ac1",
+                "5f4fb07e6bda5353"
+            ]
+        ]
+    },
+    {
+        "id": "b503d2996657bc59",
+        "type": "exec",
+        "z": "c17b7b1a8f280e22",
+        "command": "tar czvf  - --checkpoint=1000",
+        "addpay": "payload.filepath",
+        "append": "",
+        "useSpawn": "true",
+        "timer": "0",
+        "winHide": false,
+        "oldrc": false,
+        "name": "zip files",
+        "x": 900,
+        "y": 2880,
+        "wires": [
+            [
+                "94b1b84d6cf10f33"
+            ],
+            [
+                "9420e9f396c34485"
+            ],
+            [
+                "04afc875c88ea0d9",
+                "19539ed7db6f2093"
+            ]
+        ]
+    },
+    {
+        "id": "983fe2f9053fb830",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "name": "Validate filenames, setup tar",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 2880,
+        "wires": [
+            [
+                "b2c845bb18cee795"
+            ]
+        ]
+    },
+    {
+        "id": "04afc875c88ea0d9",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "name": "hide compressing file(s)",
+        "mode": "link",
+        "links": [
+            "de0eec15483ab6c5"
+        ],
+        "x": 1025,
+        "y": 2940,
+        "wires": []
+    },
+    {
+        "id": "691ba2abe1b0dab3",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "name": "setup to show compressing file(s)",
+        "mode": "link",
+        "links": [
+            "7062543ad8dc2060"
+        ],
+        "x": 395,
+        "y": 2920,
+        "wires": []
+    },
+    {
+        "id": "4e812539bbfa22d0",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "name": "kill zip command",
+        "links": [
+            "e261d6fad8c5ed4f"
+        ],
+        "x": 765,
+        "y": 2920,
+        "wires": [
+            [
+                "b503d2996657bc59"
+            ]
+        ]
+    },
+    {
+        "id": "94b1b84d6cf10f33",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "name": "download chunks",
+        "func": "msg.res._res.write(msg.payload);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1130,
+        "y": 2860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "19539ed7db6f2093",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "name": "handle end of file or error",
+        "func": "if (Object.hasOwn(msg.payload, \"code\")) {\n    if (msg.payload.code == 0) {\n        msg.res._res.end(); // send end-of-file\n        msg.payload = null; // to indicate success to next switch node\n    } else {\n        node.error(\"unexpected tar error: \" + msg.payload.message + \", return code: \" + msg.payload.code);\n        if (Object.hasOwn(msg.payload, \"message\")) {        \n            msg.payload = msg.payload.message;\n        } else {\n            msg.payload = \"unknown error\";\n        }\n    }\n} else {\n    msg.payload = null;\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 3060,
+        "wires": [
+            [
+                "778307a758584231"
+            ]
+        ]
+    },
+    {
+        "id": "5a54a54ce34d4ac1",
+        "type": "http response",
+        "z": "c17b7b1a8f280e22",
+        "name": "return error message to user",
+        "statusCode": "",
+        "headers": {},
+        "x": 1100,
+        "y": 3060,
+        "wires": []
+    },
+    {
+        "id": "778307a758584231",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "name": "check result",
+        "property": "payload.code",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 630,
+        "y": 3060,
+        "wires": [
+            [],
+            [
+                "5a54a54ce34d4ac1",
+                "5f4fb07e6bda5353"
+            ]
+        ]
+    },
+    {
+        "id": "5f4fb07e6bda5353",
+        "type": "ui-notification",
+        "z": "c17b7b1a8f280e22",
+        "ui": "2a8899583532edb4",
+        "position": "center center",
+        "colorDefault": false,
+        "color": "#f40101",
+        "displayTime": "10",
+        "showCountdown": true,
+        "outputs": 1,
+        "allowDismiss": true,
+        "dismissText": "Close",
+        "allowConfirm": false,
+        "confirmText": "Confirm",
+        "raw": false,
+        "className": "",
+        "name": "show error message",
+        "x": 880,
+        "y": 3000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9420e9f396c34485",
+        "type": "function",
+        "z": "c17b7b1a8f280e22",
+        "name": "extract progress data",
+        "func": "const regex = /\\d+/;\nmsg.payload = msg.payload.match(regex);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1140,
+        "y": 2900,
+        "wires": [
+            [
+                "1932a740edb76b76"
+            ]
+        ]
+    },
+    {
+        "id": "1932a740edb76b76",
+        "type": "link out",
+        "z": "c17b7b1a8f280e22",
+        "name": "progress",
+        "mode": "link",
+        "links": [
+            "d3d856c678ff50b2"
+        ],
+        "x": 1295,
+        "y": 2900,
+        "wires": []
+    },
+    {
+        "id": "03fb34f8a25b78e3",
+        "type": "switch",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "test for non-null msg",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 200,
+        "y": 2420,
+        "wires": [
+            [],
+            [
+                "45eb80236a2b2e5c"
             ]
         ]
     },
