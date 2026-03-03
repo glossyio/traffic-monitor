@@ -142,7 +142,7 @@
         ],
         "x": 334,
         "y": 699,
-        "w": 902,
+        "w": 892,
         "h": 162
     },
     {
@@ -568,9 +568,9 @@
             "8e8edd5176fc9a71",
             "46e349af1bed1834"
         ],
-        "x": 404,
+        "x": 414,
         "y": 1779,
-        "w": 1142,
+        "w": 1132,
         "h": 282
     },
     {
@@ -579,7 +579,9 @@
         "z": "1c71c8f26f5b7b19",
         "name": "collect radarInfo, initialize",
         "style": {
-            "label": true
+            "label": true,
+            "fill": "#bfdbef",
+            "fill-opacity": "0.5"
         },
         "nodes": [
             "6a21bd2e9204bac0",
@@ -596,8 +598,8 @@
         ],
         "x": 54,
         "y": 439,
-        "w": 2522,
-        "h": 162
+        "w": 1162,
+        "h": 202
     },
     {
         "id": "2df66c6bc991dbf4",
@@ -650,9 +652,9 @@
             "c1adf5e2bd669713",
             "c13f03809fbd9809"
         ],
-        "x": 24,
+        "x": 14,
         "y": 1999,
-        "w": 1268,
+        "w": 1278,
         "h": 408
     },
     {
@@ -1399,9 +1401,9 @@
             "76e813b1b7a4b63e",
             "5cf61952cb6823de"
         ],
-        "x": 384,
+        "x": 394,
         "y": 2259,
-        "w": 882,
+        "w": 872,
         "h": 122
     },
     {
@@ -1493,7 +1495,7 @@
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 500,
+        "x": 460,
         "y": 120,
         "wires": [
             [
@@ -1554,8 +1556,8 @@
         "id": "05e485cfcada03a3",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 1780,
-        "y": 360,
+        "x": 1960,
+        "y": 440,
         "wires": [
             [
                 "314e74cc3f8d050c",
@@ -2456,7 +2458,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "func": "// construct time zone elements for radar\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n  hours.toString().padStart(2, '0') +\n  minutes.toString().padStart(2, '0')\n\nconst opt_api_commands_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      const parseOptCommands = str => {\n        if (!str || typeof str !== 'string') return [];\n        return str\n          .split(',')\n          .map(s => s.replace(/^\\s+/, '')) // remove leading whitespace only; preserve trailing and \"\\n\"\n          .filter(s => s.length > 0)\n      };\n      \n      const optCommands = (typeof sensor.opt_api_commands === 'string' && sensor.opt_api_commands.length)\n        ? parseOptCommands(sensor.opt_api_commands)\n        : opt_api_commands_default;\n                    \n      // create radar initial setup commands array\n      sensor.api_commands = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"C=\" + Math.ceil(date.getTime() / 1000) + \"\\n\",\n        \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...optCommands,\n        \"PA\", \"A!\"\n      ]\n\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2867,8 +2869,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1390,
-        "y": 120,
+        "x": 1790,
+        "y": 160,
         "wires": [
             [
                 "fbf61ec935e282ae"
@@ -2888,8 +2890,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1940,
-        "y": 360,
+        "x": 180,
+        "y": 700,
         "wires": []
     },
     {
@@ -2916,8 +2918,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 1090,
-        "y": 120,
+        "x": 1590,
+        "y": 160,
         "wires": [
             [
                 "c744236bdcd86cf3"
@@ -2930,8 +2932,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 890,
-        "y": 120,
+        "x": 1390,
+        "y": 160,
         "wires": []
     },
     {
@@ -3008,7 +3010,7 @@
         "id": "0cdaafdd0b8921be",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set radar time (in seconds), repeat 60-min",
+        "name": "init: sync radar time, every 60-min",
         "props": [
             {
                 "p": "payload"
@@ -3025,8 +3027,8 @@
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
-        "x": 240,
-        "y": 320,
+        "x": 200,
+        "y": 200,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -3699,8 +3701,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1540,
-        "y": 120,
+        "x": 1840,
+        "y": 200,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3713,8 +3715,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 890,
-        "y": 200,
+        "x": 1390,
+        "y": 240,
         "wires": []
     },
     {
@@ -3723,8 +3725,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 890,
-        "y": 280,
+        "x": 1390,
+        "y": 320,
         "wires": []
     },
     {
@@ -3733,8 +3735,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_03",
         "serial": "9436149d39191450",
-        "x": 890,
-        "y": 360,
+        "x": 1390,
+        "y": 400,
         "wires": []
     },
     {
@@ -3743,8 +3745,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 1090,
-        "y": 200,
+        "x": 1590,
+        "y": 240,
         "wires": [
             [
                 "b9d0ad874b671281"
@@ -3759,8 +3761,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1390,
-        "y": 200,
+        "x": 1790,
+        "y": 240,
         "wires": [
             [
                 "5ca9d7d0dac757f4"
@@ -3793,8 +3795,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1540,
-        "y": 200,
+        "x": 1840,
+        "y": 280,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3807,8 +3809,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 1090,
-        "y": 280,
+        "x": 1590,
+        "y": 320,
         "wires": [
             [
                 "c733b3b6871f335b"
@@ -3823,8 +3825,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1390,
-        "y": 280,
+        "x": 1790,
+        "y": 320,
         "wires": [
             [
                 "787b21d91c5a25b1"
@@ -3857,8 +3859,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1540,
-        "y": 280,
+        "x": 1840,
+        "y": 360,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3871,8 +3873,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_03",
         "serial": "9436149d39191450",
-        "x": 1090,
-        "y": 360,
+        "x": 1590,
+        "y": 400,
         "wires": [
             [
                 "be612a06e6fce8b1"
@@ -3887,8 +3889,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1390,
-        "y": 360,
+        "x": 1790,
+        "y": 400,
         "wires": [
             [
                 "9c5feff0083f6fef"
@@ -3921,8 +3923,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1540,
-        "y": 360,
+        "x": 1840,
+        "y": 440,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3944,11 +3946,12 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1260,
-        "y": 120,
+        "x": 1640,
+        "y": 200,
         "wires": [
             [
-                "31581da0d3b6358a"
+                "31581da0d3b6358a",
+                "5fab57ddafa5e6af"
             ]
         ]
     },
@@ -3967,8 +3970,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1260,
-        "y": 200,
+        "x": 1640,
+        "y": 280,
         "wires": [
             [
                 "0d53bc6696f96c48"
@@ -3990,8 +3993,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1260,
-        "y": 280,
+        "x": 1640,
+        "y": 360,
         "wires": [
             [
                 "9e504ae365417be4"
@@ -4013,8 +4016,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1260,
-        "y": 360,
+        "x": 1640,
+        "y": 440,
         "wires": [
             [
                 "1d905e0c54b723b5"
@@ -4039,7 +4042,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 660,
+        "x": 580,
         "y": 120,
         "wires": [
             [
@@ -4068,7 +4071,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 660,
+        "x": 580,
         "y": 200,
         "wires": [
             [
@@ -4097,7 +4100,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 660,
+        "x": 580,
         "y": 280,
         "wires": [
             [
@@ -4126,7 +4129,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 660,
+        "x": 580,
         "y": 360,
         "wires": [
             [
@@ -4156,7 +4159,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 690,
+        "x": 610,
         "y": 160,
         "wires": [
             [
@@ -4183,7 +4186,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 690,
+        "x": 610,
         "y": 240,
         "wires": [
             [
@@ -4210,7 +4213,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 690,
+        "x": 610,
         "y": 320,
         "wires": [
             [
@@ -4237,7 +4240,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 690,
+        "x": 610,
         "y": 400,
         "wires": [
             [
@@ -4652,7 +4655,7 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 1930,
+        "x": 890,
         "y": 520,
         "wires": [
             [
@@ -4687,8 +4690,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 920,
-        "y": 520,
+        "x": 500,
+        "y": 600,
         "wires": [
             [
                 "c113788ccfa879b4"
@@ -4747,7 +4750,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1870,
+        "x": 710,
         "y": 480,
         "wires": [
             [
@@ -4768,8 +4771,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2110,
-        "y": 520,
+        "x": 990,
+        "y": 560,
         "wires": [
             [
                 "9e95f569494a21dc",
@@ -4797,8 +4800,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 2400,
-        "y": 560,
+        "x": 1040,
+        "y": 600,
         "wires": [
             []
         ]
@@ -4813,8 +4816,8 @@
         "links": [
             "66bace5cf805a4fb"
         ],
-        "x": 2275,
-        "y": 520,
+        "x": 1175,
+        "y": 560,
         "wires": []
     },
     {
@@ -4823,7 +4826,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
         "name": "init: query each setting, and clear buffer, takes ~9.0-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"PA\"]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 500; // 500 ms delay\nconst delay_short = 100;\n//500+100 = 600 ms per attribute\n\nnode.send({payload:hexCode});\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({payload:attribute_array[i]});\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({payload:hexCode});\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\",, \"^?\", \"PA\"]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 500; // 500 ms delay\nconst delay_short = 100;\n//500+100 = 600 ms per attribute\n\nnode.send({payload:hexCode});\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({payload:attribute_array[i]});\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({payload:hexCode});\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4855,8 +4858,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 650,
-        "y": 560,
+        "x": 250,
+        "y": 600,
         "wires": [
             [
                 "ae11d5c9948bf4e1"
@@ -4878,20 +4881,20 @@
         "id": "a0b880e68f9b7198",
         "type": "function",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set initial settings, takes ~6.9-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "name": "init: set initial settings, takes ~7-sec",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"^/+0.00\\n\",\"^/-0.00\\n\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 230,
-        "y": 240,
+        "x": 220,
+        "y": 280,
         "wires": [
             [
-                "05a58d9ee463c696",
-                "09952039b0ab86aa"
+                "09952039b0ab86aa",
+                "8e41b93f6de3614f"
             ]
         ]
     },
@@ -4929,14 +4932,19 @@
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
         "name": "init: set initial radar settings",
-        "props": [],
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
+        "onceDelay": "1",
+        "topic": "init_settings",
         "x": 180,
-        "y": 200,
+        "y": 240,
         "wires": [
             [
                 "a0b880e68f9b7198"
@@ -4958,13 +4966,254 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 350,
-        "y": 280,
+        "x": 290,
+        "y": 320,
         "wires": [
             [
                 "3e9d121913d7feae"
             ]
         ]
+    },
+    {
+        "id": "9c43aed7096c670e",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init: set initial settings",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = msg.payload\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 120,
+        "wires": [
+            [
+                "a9099db075b10bcf",
+                "c0fa8abb2878f6a0",
+                "7c7577ee1b447bf6"
+            ]
+        ],
+        "info": "takes ~7-sec"
+    },
+    {
+        "id": "a94df5462b3d4457",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init?",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "init_settings",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 730,
+        "y": 120,
+        "wires": [
+            [
+                "d3e76edd87e0ad7f"
+            ],
+            [
+                "7c7577ee1b447bf6"
+            ]
+        ]
+    },
+    {
+        "id": "d3e76edd87e0ad7f",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "set api_commands",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.api_commands",
+                "tot": "global"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 80,
+        "wires": [
+            [
+                "9c43aed7096c670e",
+                "7f20bb08244a3b07"
+            ]
+        ]
+    },
+    {
+        "id": "a9099db075b10bcf",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "complete?",
+        "property": "complete",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1110,
+        "y": 80,
+        "wires": [
+            [
+                "4ab94d1bb811dc03"
+            ]
+        ]
+    },
+    {
+        "id": "fd4ded0125e592a6",
+        "type": "join",
+        "z": "1c71c8f26f5b7b19",
+        "name": "init complete",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": false,
+        "accumulate": false,
+        "timeout": "30",
+        "count": "4",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "3e9d121913d7feae"
+            ]
+        ]
+    },
+    {
+        "id": "4ab94d1bb811dc03",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "parts",
+                "pt": "msg",
+                "to": "1",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "complete",
+                "pt": "msg",
+                "to": "false",
+                "tot": "bool"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1200,
+        "y": 120,
+        "wires": [
+            [
+                "fd4ded0125e592a6"
+            ]
+        ]
+    },
+    {
+        "id": "c0fa8abb2878f6a0",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1370,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "5fab57ddafa5e6af",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1850,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "7f20bb08244a3b07",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 20,
+        "wires": []
+    },
+    {
+        "id": "8e41b93f6de3614f",
+        "type": "debug",
+        "z": "1c71c8f26f5b7b19",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 410,
+        "y": 260,
+        "wires": []
     },
     {
         "id": "f20c74c0ccfd256c",
