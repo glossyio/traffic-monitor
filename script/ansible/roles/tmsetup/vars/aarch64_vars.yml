@@ -1,0 +1,4 @@
+---
+# tmsetup specific vars for aarch64 architecture
+tmsetup_dpkg_architecture: arm64
+...

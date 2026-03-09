@@ -1,0 +1,16 @@
+# /etc/systemd/system/tm-docker-build.service
+[Unit]
+Description=Build tm-docker image
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group={{ tmsetup_codegroup }}
+WorkingDirectory={{ tmsetup_codedir }}/docker
+ExecStart=/usr/bin/docker compose -f compose.yaml build
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

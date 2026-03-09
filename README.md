@@ -25,24 +25,18 @@ Visit our official documentation at [docs.trafficmonitor.ai](https://docs.traffi
 
 See the [Getting Started](https://docs.trafficmonitor.ai/getting-started) docs for full walkthrough.
 
-1. Assemble your device (see [hardware components](#hardware-components) ⚒️).
-1. Install [Raspberry Pi OS](https://www.raspberrypi.com/software/) (Full Install) Bookworm (latest) using the [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager)
-1. Access your Raspberry Pi: See [Connect to your Device](https://docs.trafficmonitor.ai/setup-guide#connect-to-your-device).
-1. Install the Traffic Monitor software:
-    1. Run `git clone https://github.com/glossyio/traffic-monitor` into your home folder (or any folder)
-    1. Run `cd traffic-monitor` 
-    1. Run `sudo chmod +x script/*` to enable scripts
-    1. Run `./script/bootstrap` to fulfill dependencies. *Note*: System will reboot after this script.
-    1. After reboot, log into the device and `cd traffic-monitor` to continue.
-    1. Run `./script/setup` to set up project in an initial state
-    1. Run `./script/server` to start the application
-        - `./script/update` is not required on initial setup but may be used if you change Docker configurations. This *does not* yet automatically update the traffic monitor.
-1. Deploy your device:  See the [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/deployment-and-mounting-guide).
-1. Set up zones, location, and enable your sensors: See [Setup Guide](https://docs.trafficmonitor.ai/setup-guide).
-1. Start capturing roadway usage data!
-
-### Hardware Components 🛠️
+### Hardware Components
 The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and a variety of commidity hardware to keep it accessible, low-cost, upgradable, and repairable.  See [Recommended Hardware](https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware) docs for more information.
+
+### Software Installation
+1. Install Raspberry Pi OS 64-bit Lite with [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager)
+1. Connect to your device via SSH and [Install the TM Software](https://docs.trafficmonitor.ai/build-your-own-device-diy/software-installation).
+    1. `sudo apt update && sudo apt install -y git`
+    1. `git clone https://github.com/glossyio/traffic-monitor`
+    1. `bash traffic-monitor/script/tmsetup.sh`
+1. [Deploy and mount]([url](https://docs.trafficmonitor.ai/deployment-and-mounting-guide)) your TM
+2. [Set up]([url](https://docs.trafficmonitor.ai/setup-guide)) zones, location, and enable sensors
+7. Start capturing roadway usage data!
 
 ## Configuration ✅
 See [Setup Guide](https://docs.trafficmonitor.ai/setup-guide).

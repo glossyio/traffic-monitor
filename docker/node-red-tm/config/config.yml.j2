@@ -1,0 +1,30 @@
+thingsboard:
+    enabled: false
+    host: {{ tmsetup_thingsboard_server }}
+    protocol: {{ tmsetup_thingsboard_protocol }}
+    port: {{ tmsetup_thingsboard_port }}
+    access_token: {{ tmsetup_thingsboard_api_key }}
+
+deployment:
+    lat: {{ tmsetup_latitude }}
+    lon: {{ tmsetup_longitude }}
+    bearing: {{ tmsetup_bearing }}
+
+sensors:
+    cameras:
+        picam_h264:
+            enabled: false
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+
+    radars:
+        TM_RADAR_SERIAL_PORT_00:
+            enabled: false
+
+    airquality_monitors:
+        sensorname01:
+            enabled: false
+            mqtt_topic_incoming: readings
+
+time:
+    timezone: {{ tmsetup_timezone }}
+    npt_set: true

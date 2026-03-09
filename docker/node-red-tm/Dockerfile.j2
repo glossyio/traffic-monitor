@@ -1,0 +1,4 @@
+FROM nodered/node-red:{{ tmsetup_node_red_tm_version }}
+WORKDIR /usr/src/node-red
+COPY data/package.json package.json
+RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production

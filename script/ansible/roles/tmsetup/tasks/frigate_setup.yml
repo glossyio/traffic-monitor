@@ -1,0 +1,37 @@
+---
+# TMSetup - Frigate Setup tasks
+
+- name: TMSetup - Frigate Setup - Create Frigate Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/docker'
+    - '{{ tmsetup_codedir }}/docker/frigate'
+    - '{{ tmsetup_codedir }}/docker/frigate/config'
+    - '{{ tmsetup_codedir }}/docker/frigate/storage'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart tm-docker service
+
+- name: TMSetup - Frigate Setup - Create Frigate docker files
+  become: true
+  loop:
+    - docker/frigate/config/config.yml
+    - docker/frigate/docker-compose-frigate.yaml
+    - docker/frigate/frigate.env
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: '{{ item }}.j2'
+  notify:
+    - Build container images
+    - Restart tm-docker service
+...

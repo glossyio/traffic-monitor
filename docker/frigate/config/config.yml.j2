@@ -1,0 +1,91 @@
+# see https://docs.frigate.video/configuration/reference
+mqtt:
+  enabled: true
+  host: 172.18.0.1
+  port: 1883
+{% raw %}
+  user: '{FRIGATE_MQTT_USER}'
+  password: '{FRIGATE_MQTT_PASSWORD}'
+{% endraw %}
+
+detectors:
+#  mycpu:
+#    type: cpu
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+  {{ name }}:
+    type:   {{ detector.frigate_type }}
+    device: {{ detector.frigate_device }}
+{% endif %}{% endfor %}
+
+ffmpeg:
+  hwaccel_args: preset-rpi-64-h264
+
+cameras:
+  picam_h264:
+    enabled: false
+    type: "generic"
+    ffmpeg:
+      inputs:
+        - path: rtsp://172.18.0.1:8554/picam_h264
+          roles:
+            - detect
+    detect:
+      enabled: false
+      width: 2304
+      height: 1296
+      fps: 10
+    zones:
+      zone_capture:
+        coordinates: 2304,1296,0,1296,0,493,998,268,2304,475
+      zone_far:
+        coordinates: 1248,556,926,497,231,657,477,769
+      zone_near:
+        coordinates: 1690,695,1355,563,429,754,825,982
+      zone_radar:
+        coordinates: 390,634,1039,464,1891,684,1087,1029
+
+objects:
+  track:
+    - bicycle
+    - person
+    - car
+    - bus
+    - motorcycle
+    - dog
+  filters:
+    bicycle:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.15
+      threshold: 0.25
+    motorcycle:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.5
+      threshold: 0.8
+    person:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.4
+      threshold: 0.5
+
+record:
+  enabled: false
+
+snapshots:
+  enabled: true
+  clean_copy: true
+  timestamp: false
+  bounding_box: false
+  crop: true
+  quality: 100
+  retain:
+    default: 0.042
+
+version: 0.16-0

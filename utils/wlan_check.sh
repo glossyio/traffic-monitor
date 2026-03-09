@@ -17,7 +17,7 @@ while getopts "q" opt; do
 done
 
 ERROR=false
-NETRESTARTCMD="systemctl restart NetworkManager"
+NETRESTARTCMD="sudo /usr/bin/systemctl restart NetworkManager.service"
 
 
 _logallways() {

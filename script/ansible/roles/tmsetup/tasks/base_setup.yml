@@ -1,0 +1,96 @@
+---
+# TMSetup - Base Setup tasks
+- name: TMSetup - Base Setup - Add TM user to sudo group
+  become: true
+  ansible.builtin.user:
+    append: true
+    groups: sudo
+    name: '{{ tmsetup_codeowner }}'
+
+- name: TMSetup - Base Setup - Create code owner
+  become: true
+  ansible.builtin.user:
+    append: true
+    groups: '{{ tmsetup_codegroup }}'
+    name: '{{ tmsetup_codeowner }}'
+    state: present
+  register: tmsetup_base_register_user_codeowner
+
+- name: TMSetup - Base Setup - Set var for codeowner home directory
+  ansible.builtin.set_fact:
+    tmsetup_codeowner_homedir: '{{ tmsetup_base_register_user_codeowner.home }}'
+    tmsetup_codeowner_uid: '{{ tmsetup_base_register_user_codeowner.uid }}'
+    tmsetup_codeowner_gid: '{{ tmsetup_base_register_user_codeowner.group }}'
+
+
+- name: TMSetup - Base Setup - Set timezone
+  become: true
+  community.general.timezone:
+    name: '{{ tmsetup_timezone }}'
+
+- name: TMSetup - Base Setup - Create Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/docker'
+    - '{{ tmsetup_codedir }}/services'
+    - '{{ tmsetup_codedir }}/utils'
+    - '{{ tmsetup_codedir }}/tmp'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+
+- name: TMSetup - Base Setup - Install aptitude for better package management
+  become: true
+  ansible.builtin.apt:
+    name: aptitude
+    state: present
+    update_cache: true
+
+- name: TMSetup - Base Setup - Remove conflicting packages
+  become: true
+  ansible.builtin.apt:
+    autoremove: true
+    name: '{{ tmsetup_remove_packages }}'
+    purge: true
+    state: absent
+
+- name: TMSetup - Base Setup - Install required packages
+  become: true
+  ansible.builtin.apt:
+    name: '{{ tmsetup_packages }}'
+    state: present
+    update_cache: false
+
+- name: TMSetup - Base Setup - Copy utils files to codedir
+  become: true
+  ansible.builtin.copy:
+    src: utils/
+    dest: "{{ tmsetup_codedir }}/utils/"
+    owner: "{{ tmsetup_codeowner }}"
+    group: "{{ tmsetup_codegroup }}"
+    mode: "0755"
+
+- name: TMSetup - Base Setup - Create journald conf directory
+  become: true
+  file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: TMSetup - Base Setup - Add TM journal log configuration
+  become: true
+  ansible.builtin.copy:
+    src: 81-traffic-monitor-log.conf
+    dest: /etc/systemd/journald.conf.d/81-traffic-monitor-log.conf
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart journald service
+
+...

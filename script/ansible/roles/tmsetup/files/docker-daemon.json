@@ -1,0 +1,34 @@
+{
+    "builder": {
+        "gc": {
+            "enabled": true,
+            "policy": [
+                {
+                    "reservedSpace": "2.764GB",
+                    "keepDuration": "48h",
+                    "filter": [
+                        "type=source.local,type=exec.cachemount,type=source.git.checkout"
+                    ]
+                },
+                {
+                    "reservedSpace": "5GB",
+                    "keepDuration": [
+                        "96h"
+                    ]
+                },
+                {
+                    "reservedSpace": "5GB"
+                },
+                {
+                    "reservedSpace": "10GB",
+                    "all": true
+                }
+            ]
+        }
+    },
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "10m",
+        "max-file": "5"
+    }
+}

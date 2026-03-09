@@ -1,0 +1,40 @@
+---
+# tmsetup wifi setup tasks
+- name: TMSetup - WiFi Setup - Copy wifi powersave config
+  become: true
+  ansible.builtin.copy:
+    src: utils/88-z-wifi-powersave-off.conf
+    dest: /etc/NetworkManager/conf.d/88-z-wifi-powersave-off.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart NetworkManager service
+
+- name: TMSetup - WiFi Setup - Copy network connectivity check config
+  become: true
+  ansible.builtin.copy:
+    src: utils/82-nm-connectivity-check.conf 
+    dest: /etc/NetworkManager/conf.d/82-nm-connectivity-check.conf 
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart NetworkManager service
+
+- name: TMSetup - WiFi Setup - Add sudoers entry to allow tmadmin to restart NetworkManager
+  become: true
+  community.general.sudoers:
+    user: "{{ tmsetup_codeowner }}"
+    name: "{{ tmsetup_codeowner }}"
+    commands: /usr/bin/systemctl restart NetworkManager.service
+    nopassword: true
+    state: present
+
+- name: TMSetup - WiFi Setup - Setup crontab
+  become: true
+  ansible.builtin.cron:
+    name: Traffic Monitor Wifi Check
+    user: "{{ tmsetup_codeowner }}"
+    minute: '*/5'
+    job: '/bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
+    state: present
+...

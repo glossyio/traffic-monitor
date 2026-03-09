@@ -1,2 +1,0 @@
-# Run the wlan_check script every 5 minutes
-*/5 * * * * sudo /bin/bash ${PWD}/code/utils/wlan_check.sh -q

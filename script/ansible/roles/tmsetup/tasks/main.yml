@@ -1,0 +1,110 @@
+---
+# TMSetup - Main tasks
+- name: TMSetup - Main - Set variables
+  tags:
+    - always
+  ansible.builtin.import_tasks:
+    file: set_vars.yml
+
+- name: TMSetup - Main - Setup base
+  tags:
+    - base
+    - always
+  ansible.builtin.import_tasks:
+    file: base_setup.yml
+
+- name: TMSetup - Main - Apt Full Upgrade (for remote hosts)
+  tags:
+    - full_upgrade
+  when: tmsetup_perform_apt_upgrade | bool
+  ansible.builtin.import_tasks:
+    file: apt_upgrade.yml
+
+- name: TMSetup - Main - Setup go2rtc driver
+  tags:
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: go2rtc_setup.yml
+
+- name: TMSetup - Main - Setup Docker
+  tags:
+    - docker
+    - frigate
+    - node-red-tm
+  ansible.builtin.import_tasks:
+    file: docker_setup.yml
+
+- name: TMSetup - Main - Detector - Check for attached Detectors to run installs
+  tags:
+    - docker
+    - frigate
+    - detectors
+  ansible.builtin.import_tasks:
+    file: detectors_check.yml
+
+- name: TMSetup - Main - Detector - Install Detectors
+  tags:
+    - docker
+    - frigate
+    - detectors
+  ansible.builtin.import_tasks:
+    file: detectors_install.yml
+
+- name: TMSetup - Main - Setup Frigate
+  tags:
+    - frigate
+  ansible.builtin.import_tasks:
+    file: frigate_setup.yml
+
+- name: TMSetup - Main - Setup Node-Red-TM
+  tags:
+    - node-red-tm
+  ansible.builtin.import_tasks:
+    file: node-red-tm_docker_setup.yml
+
+- name: TMSetup - Main - Setup plate-recognizer
+  when: tmsetup_bool_plate_recognizer | default('false') | bool
+  tags:
+    - plate-recognizer
+  ansible.builtin.import_tasks:
+    file: docker_plate_recognizer.yml
+
+- name: TMSetup - Main - Setup WiFI
+  tags:
+    - wifi
+  ansible.builtin.import_tasks:
+    file: wifi_setup.yml
+
+- name: TMSetup - Base Setup - Check if reboot needed
+  tags:
+    - always
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: tmsetup_reboot_required_stat_register
+
+- name: Check if restart is required
+  when: >-
+    (tmsetup_detectors.values() |
+      map(attribute='fresh_install') |
+      select('equalto', true) |
+      list | length > 0)
+    or
+    (tmsetup_reboot_required_stat_register.stat is defined and
+      tmsetup_reboot_required_stat_register.stat.exists)
+  ansible.builtin.set_fact:
+    tmsetup_restart_required: true
+  changed_when: tmsetup_restart_required
+  notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Main - Start Services
+  tags:
+    - wifi
+    - docker
+    - frigate
+    - node-red-tm
+    - plate-recognizer
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: start_services.yml
+
+...

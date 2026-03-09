@@ -1,0 +1,27 @@
+services:
+  frigate:
+    container_name: frigate
+    privileged: false
+    restart: unless-stopped
+    image: ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
+    shm_size: "512mb"
+    devices:
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+      - {{ detector.dev_path }}:{{ detector.dev_path }}
+{% endif %}{% endfor %}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ tmsetup_codedir }}/docker/frigate/config:/config
+      - {{ tmsetup_codedir }}/docker/frigate/storage:/media/frigate
+      - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "8971:8971"
+      - "5000:5000" # Internal unauthenticated access. Expose carefully.
+      - "1964:1984" # go2rtc api
+      - "8564:8554" # RTSP feeds
+      - "8565:8555/tcp" # WebRTC over tcp
+      - "8565:8555/udp" # WebRTC over udp
+    env_file: "frigate.env"

@@ -117,6 +117,7 @@ See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) 
 {% endhint %}
 
 ## AI Co-processor
+## AI Co-processor
 
 (Required with camera) The AI co-processor is an efficient way to run the object detection model, much more efficient than CPU-alone.
 

@@ -1,6 +1,7 @@
 # Table of contents
 
 * [Welcome to smart city traffic monitoring](README.md)
+* [Welcome to smart city traffic monitoring](README.md)
 * [Getting Started](getting-started.md)
 * [Build Your Own Device (DIY)](build-your-own-device-diy/README.md)
   * [Recommended Hardware](recommended-hardware.md)
@@ -8,9 +9,11 @@
 * [Software Installation](software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
 * [Setup Guide](setup-guide.md)
+* [Setup Guide](setup-guide.md)
 
 ## Configuration
 
+* [Config Overview](configuration/overview.md)
 * [Config Overview](configuration/overview.md)
 * [Frigate Config](configuration/frigate-config.md)
 * [Node-RED Config](configuration/node-red-config.md)
