@@ -182,6 +182,10 @@ The sensor includes the ability to detect reductive (RED), oxidative (OXI), and 
 
 The [BME280](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf) temperature, pressure, humidity sensor with I2S digital output.
 
+{% hint style="info" %}
+The Raspberry Pi and AI co-processor generate a substantial amount of heat that may affect the temperature and humidity readings. The [Traffic Monitor enclosure](../recommended-hardware.md#enclosure-weather-resistant-box) attempts to isolate the AQ sensors by physically separating the hardware, but further adjustments may need to be made.&#x20;
+{% endhint %}
+
 #### Software notes
 
 * `Temp` (temperature) and `Hum` (humidity) have cubic polynomial compensation factors applied to raw readings

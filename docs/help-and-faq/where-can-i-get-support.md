@@ -18,6 +18,12 @@ The [Traffic Monitor docs](https://docs.trafficmonitor.ai) have a wealth of know
 
 After the docs the best place to start is the  [Traffic Monitor project repository](https://github.com/glossyio/traffic-monitor). Look for the search bar in the _upper right corner_ and then filtering for matching discussions, issues, or even code (filter is on the left side of the screen).
 
+## Chat with us
+
+To foster an interactive community, we have a [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/) ([Zulip values](https://zulip.com/values/) aligns with ours and it is open source).  Ask question, suggest ideas, and get in touch!
+
+This is also where project developers will discuss code contributions, so it is a good place to get started if you are interested in [contributing.md](../development/contributing.md "mention").
+
 ## Post on GitHub discussions
 
 The [Traffic Monitor repo discussions](https://github.com/glossyio/traffic-monitor/discussions) board is the next best place to interact with the community.  Hit New Discussion and there are a variety of category templates:&#x20;
@@ -36,8 +42,4 @@ To open a [Traffic Monitor GitHub issue](https://github.com/glossyio/traffic-mon
 * 💡 [Feature Request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=\&labels=\&projects=\&template=feature_request.md\&title=) - Suggest an idea for this project
 
 Sometimes, a GitHub issue may be closed without a full resolution. This does not imply a lack of concern or interest from the maintainers. Issues may be closed for various reasons, such as duplicate reports, inactivity, or because they are being addressed elsewhere. We encourage continuous community engagement and collaboration to ensure all significant matters are acknowledged and acted upon.
-
-## Chat with us
-
-To foster an interactive community, we also have a [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/).  This is often where project developers will discuss code contributions, so it is a good place to get started if you are interested in [contributing.md](../development/contributing.md "mention").
 

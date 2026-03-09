@@ -12,19 +12,21 @@ Refer to [Frigate Configuration](https://docs.frigate.video/configuration/) docs
 
 The recommended Traffic Monitor settings attempts to optimize the Frigate config for **object detection on roadways**. Each deployment presents unique scenarios and challenges with accurate and precise object detection.&#x20;
 
-View [frigate-config.yml](https://github.com/glossyio/traffic-monitor/blob/main/docker-frigate/frigate-config.yaml) for the sample.
+View our [default frigate config.yml](https://github.com/glossyio/traffic-monitor/blob/main/docker/frigate/config/config.yml.j2) for a sample configuration.
 
 {% hint style="info" %}
-Many settings will need to be uniquely tailored to your specific deployment.  See [deployment-and-mounting-guide.md](../deployment-and-mounting-guide.md "mention") for optimizing your placement.
+Many settings will need to be uniquely tailored to your specific deployment. &#x20;
+
+See [deployment-and-mounting-guide.md](../deployment-and-mounting-guide.md "mention") for optimizing your placement.
 {% endhint %}
 
 ## Optimizing Object Detection
 
-You can more easily determine how your object detection is working through Frigate's Debug interface by going to **Frigate > Settings > Debug**.&#x20;
+Go to **Frigate > Settings > Debug** to more easily determine how your object detection is working.&#x20;
 
 <figure><img src="../.gitbook/assets/Screenshot_20250307_143756.png" alt=""><figcaption><p>Frigate > Settings > Debug to see how your object detection settings are working</p></figcaption></figure>
 
-Fine-tuning object can help you with the following:
+Fine-tuning can help you with the following:
 
 * detection (are you missing bikes or pedestrians?)
 * reducing cross-classification (is an ebike being called a motorcycle?)
@@ -38,7 +40,7 @@ The generalized model available in the base version works well at a variety of a
 
 The most relevant section of the Frigate config for fine-tuning object detection is the following. &#x20;
 
-In this sample, bicycle threshold is set very low to detect most types of bikes encountered on the roadway while motorcycle threshold is set high so even large ebikes don't get cross-classified as motorcycles:
+In this sample, bicycle `min_score` and `threshold` are set low to detect most types of bikes encountered on the roadway while motorcycle `threshold` is set high so even large ebikes don't get misclassified as motorcycles:
 
 ```yaml
 objects:
@@ -74,13 +76,19 @@ objects:
 
 ## Defining Masks
 
-Another tool for reducing false-positives, creating private areas, and refining your configuration.  To access this capability, log into your Frigate interface and go to [Frigate > Settings > Motion Masks](https://docs.frigate.video/guides/getting_started/#step-5-setup-motion-masks).
+Optional step for reducing false-positives, creating private areas, and refining your configuration.  To access this capability, log into your Frigate interface and go to [Frigate > Settings > Motion Masks](https://docs.frigate.video/guides/getting_started/#step-5-setup-motion-masks).
 
 {% hint style="warning" %}
-Use masks sparingly. _Over-masking will make it more difficult for objects to be tracked._  See [Frigate masks](https://docs.frigate.video/configuration/masks).
+Use masks sparingly. _Over-masking will make it more difficult for objects to be tracked._ Motion masks should not be used to mark out areas where you do not want objects to be detected or to reduce false positives.
+
+If you are getting many false positives, e.g. a tree that gets detected as a person, we recommend first modifying [object filters](https://docs.frigate.video/configuration/object_filters/) such as `threshold` and `min_score`.
 {% endhint %}
 
 1. **Motion Masks**:  may be designated to prevent unwanted types of motion from triggering detection.
 2. **Object filter masks**: filter out false positives for a given object type based on location.
 
 For detailed information visit [Frigate > Masks](https://docs.frigate.video/configuration/masks).
+
+## Improved Models
+
+Check out the premium [Frigate+](https://docs.frigate.video/plus/) for fine-tuned models that may increase accuracy and efficiency.
