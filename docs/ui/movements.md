@@ -24,6 +24,6 @@ The Movements tab allows operators to see counts of objects through zones. This 
 
 A complex intersection provides potentially dozens of combinations of turning behaviors and movement. The movements tab provides the ability to confirm against manual counts.
 
-<figure><img src="../.gitbook/assets/image.png" alt="Screen shot of Frigate zones configured with 12 zones drawn on a busy 5-way intersection"><figcaption><p>Frigate zones configured with 12 zones drawn on a busy 5-way intersection</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (2).png" alt="Screen shot of Frigate zones configured with 12 zones drawn on a busy 5-way intersection"><figcaption><p>Frigate zones configured with 12 zones drawn on a busy 5-way intersection</p></figcaption></figure>
 
-<figure><img src="../.gitbook/assets/image (1).png" alt="Slide of two manual hand-written counts for traffic movement through area"><figcaption><p>Example of manual, hand-written confirmation counts through various intersections (left image matches above zones)</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1).png" alt="Slide of two manual hand-written counts for traffic movement through area"><figcaption><p>Example of manual, hand-written confirmation counts through various intersections (left image matches above zones)</p></figcaption></figure>

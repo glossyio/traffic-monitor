@@ -47,4 +47,4 @@ A couple of relevant discussions:
 
 Some illustration of this. I have a quiet road today, but when the sun is casting shadows through the trees, Frigate is doing a lot of work to send various regions (green boxes) to object detection to "see" if any of that shadow motion is an object. The following image has more than 18 regions (that I can count) it is sending to object detection PLUS the 9(??) labeled objects it is tracking and sending. My inference speed was still sitting around 9ms, so the object detector could handle many more. The CPU spikes because of the video decoding and motion tracking, but with the RPi5 we still had quite a bit of overhead.
 
-<figure><img src="../.gitbook/assets/image (2).png" alt=""><figcaption><p>Roadway with many regions being sent to be checked for object detection because of motion and shadows.</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (2) (1).png" alt=""><figcaption><p>Roadway with many regions being sent to be checked for object detection because of motion and shadows.</p></figcaption></figure>

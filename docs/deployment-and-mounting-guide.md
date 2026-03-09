@@ -19,7 +19,7 @@ Ensure you are mounting the traffic monitor in an approved area to comply with l
 When selecting what mount method to use, an important consideration is how to make fine adjustments, especially for fine-tuning the radar angle and position.
 {% endhint %}
 
-The [3D printed enclosure](recommended-hardware.md#enclosure-weather-resistant-box) has multiple built-in methods for mounting, depending on the variant, including:
+The open source, 3D printed [#enclosure-weather-resistant-box](recommended-hardware.md#enclosure-weather-resistant-box "mention") has multiple built-in methods for mounting, depending on the variant, including:
 
 * 1/4"-20 screw insert hole on bottom and/or back for camera-style and trail camera mounting hardware
 * VESA mount -compatible holes (75 and 100 mm)
@@ -67,20 +67,23 @@ Ideal mounting locations will vary based on the use case and sensors. High-level
 
 ### **Camera considerations**
 
-**The camera** needs an unobstructed view of the roadway for the best performance, but it is able to perform object detection anywhere in the camera frame.&#x20;
+**The camera** works best with an unobstructed view of the roadway for the best performance, but it is able to perform object detection anywhere in the camera frame.&#x20;
 
-Focus on covering the entire area-of-interest, even if the camera is not centered on the roadway.
+Focus on covering the entire area-of-interest, even if the camera is not centered on the roadway or area-of-interest.
+
+<figure><img src=".gitbook/assets/image.png" alt="screen shot of Frigate debug interface with detections highlighted"><figcaption><p>Detection events may occur anywhere in the camera field-of-view (FOV)</p></figcaption></figure>
 
 ### **Radar considerations**
 
-**The radar** has a narrower field-of-view (FOV) than most cameras and requires specific angles to the roadway for the most accurate speed measurements. You can test this by having someone hold the radar unit (outside of the case) and watching the **red/blue blinking LEDs on the front of the radar** as you move towards and away from the unit. Watch the LEDs as objects move through the view and determine the boundaries for drawing the zone.
+**The radar** has a narrower field-of-view (FOV) than most cameras and requires specific angles to the roadway for the most accurate speed measurements.&#x20;
+
+Test the radar's capture area by having someone hold the radar unit (outside of the case) and watching the **red/blue blinking LEDs on the front of the radar** as you move towards and away from the unit. Watch the LEDs as objects move through the view and determine the boundaries for drawing the zone.
 
 Optimizing speed measurements:
 
-* The Traffic Monitor and radar should be at an **acute angle to the direction of travel** for desired objects (ideally 45-degrees or less).  See [Omnipresense Field of View calculator](https://omnipresense.com/ops243-field-of-view-calculator/) for more info on cosine correction.
+* The Traffic Monitor and radar should be at an **acute angle to the direction of travel** for desired objects (ideally 45-degrees or less). &#x20;
+* See [Omnipresense Field of View calculator](https://omnipresense.com/ops243-field-of-view-calculator/) for more info on cosine correction.
 * Object movement direction will be labeled as `inbound` and `outbound`, so consider locating the radar with objects coming towards the radar in a way that makes sense for those movements.
-
-\[link to omnipresence installation]
 
 ## Next Steps
 
