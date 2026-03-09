@@ -4,9 +4,9 @@ description: Commodity hardware to enable object detection and speed/direction m
 
 # Recommended Hardware
 
-Customize the hardware to fit your needs!  The core components include the computing device, storage, camera, and co-processor. Feel free to mix-and-match components but most of the documentation and default configuration assumes using the hardware recommended below.
+Customize the hardware to fit your needs!  The core components include the computing device, storage, camera, and co-processor. Feel free to mix-and-match components, but most of the documentation and default configuration assumes using the hardware recommended below.
 
-## Sample Configurations
+## Sample Hardware Configurations
 
 Here are some sample sensor configurations and the data it collects:
 
@@ -17,6 +17,8 @@ Here are some sample sensor configurations and the data it collects:
 5. Add additional camera(s) to monitor more directions using the same AI co-processor.\*\*
 
 \*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware#camera-s) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.&#x20;
+
+<figure><img src=".gitbook/assets/tm-mark1-exploded-description-bg_grey-text_white.png" alt=""><figcaption></figcaption></figure>
 
 ## Hardware Check List - Bill of Materials (BOM)
 
@@ -39,6 +41,9 @@ We are not affiliated with any of the stores or companies linked in this section
 * [ ] Enclosure: See [#enclosure-weather-resistant-box](recommended-hardware.md#enclosure-weather-resistant-box "mention") for options
 * [ ] (_Optional_) Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) with [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/)
   * [ ] AQ sensor will need a [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/) with the TM enclosure
+* [ ] Screws: various M3 sizes for mounting board and enclosure, M2.5x10mm for Raspberry Pi mount
+
+<figure><img src=".gitbook/assets/Screenshot_20260217_143355.png" alt=""><figcaption></figcaption></figure>
 
 ## Computing Device
 
@@ -47,7 +52,9 @@ We are not affiliated with any of the stores or companies linked in this section
 Also pick up a (very cheap) official CPU cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/) which helps prevent overheating on very hot days.
 
 {% hint style="warning" %}
-The Traffic Monitor is based on the Raspberry Pi 5. The Raspberry Pi 4B and earlier units are not recommended as they have experienced detrimental performance due to not meeting the power requirements on the peripherals (USB) for the TPU and radar for this setup.  However, many have been successful with earlier versions of the Raspberry Pi for object detection, so your mileage may vary.
+The Traffic Monitor is based on the Raspberry Pi 5.&#x20;
+
+The Raspberry Pi 4B and earlier units are not recommended as they have experienced detrimental performance due to not meeting the power requirements on the peripherals (USB) for the TPU and radar for this setup.  However, many have been successful with earlier versions of the Raspberry Pi for object detection, so your mileage may vary.
 {% endhint %}
 
 ### Storage
@@ -58,7 +65,7 @@ The Traffic Monitor is based on the Raspberry Pi 5. The Raspberry Pi 4B and earl
 2. _Option_: [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) performs particularly well but sizes only range up to 128GB.
 3. _Alternative_: There are many options on the RPi5 to use a faster, more durable NVME (M.2) drive, including those that pair with the Coral TPU or other AI co-processors.
 
-### Power&#x20;
+### Power Supply
 
 (Required) To run the Traffic Monitor and components.
 
@@ -70,13 +77,15 @@ The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lo
 2. _(Alternative)_ PoE (Power over Ethernet) HATs available for the RPi 5.&#x20;
    1. [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) or [Waveshare PoE M.2 HAT+](https://www.waveshare.com/PoE-M.2-HAT-Plus.htm) has performed well for some contributors.
    2. You will need a PoE+ power supply, such as a [PoE+ Power Injector](https://www.raspberrypi.com/products/poe-plus-injector/).
-3. (_Alternative_) Battery for off-grid.
+3. (_Optional_) Battery for short-term off-grid--i.e. a few hours--we recommend a portable power station such as a [Jackery](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station) and plug in the official 27W USB-C Power Supply.&#x20;
+   1. A 300-Watt-hours portlable power station should be able to last \~24-hours. (see calculation in custom battery below)
+4. (_Optional_) Custom battery for longer-term off-grid use.
    1. Required components:&#x20;
       1. [Buck converter](https://en.wikipedia.org/wiki/Buck_converter) (step-down converter) to step down a 12v (or 24v) battery to 5v@5A for the Raspberry Pi 5
       2. &#x20;[LFP](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) (LiFePO<sub>4</sub>) battery at 12v or 24v with Amp-hours (Ah) to last desired time frame.
    2. Sample battery calculation (YMMV[^1]): the TM consumes \~13-watts, running it for 24-hour will require 13\*24=312 Wh (Watt-hours), the LFP battery needs to be 312/12= 26, which would be 12-volts @ 30-Ah.
-4. _(Prototypes)_ Solar panel + battery.&#x20;
-   1. Components: Same as battery above plus [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) (PV) panel and [solar charge controller](https://en.wikipedia.org/wiki/Charge_controller)
+5. _(Prototype)_ Solar panel + battery.&#x20;
+   1. Components: Same as custom battery above plus [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) (PV) panel and [solar charge controller](https://en.wikipedia.org/wiki/Charge_controller)
    2. Sample calculation:&#x20;
       1. Find your daily [Solar PV potential](https://profilesolar.com/countries/US/); e.g. Portland, OR has 7.15 and 1.42 kWh[^2]/day potential in an optimum summer and winter, respectively.
       2. Choose your PV panel size and calculate potential energy generation for the lowest time of year (winter in northern hemisphere).
@@ -86,7 +95,6 @@ The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lo
       4. Calculate battery size requirements as above.&#x20;
       5. _Note_: **This is not enough to run the TM and charge a battery**. You would require 3-times that amount, closer to a 300-watt PV in a Portland, OR winter.
    3. (_Caveat)_ Solar production is very dependent on the amount of sun you are able to harvest. You need to consider factors like orientation/angle of panels, non-optimal days (cloudy, rainy), anything that blocks the sun such as trees, and more.
-   4. Discuss more on the [TM GitHub Discussion](https://github.com/glossyio/traffic-monitor/discussions/new/choose)!
 
 ## Camera(s)
 
@@ -125,23 +133,24 @@ The below AI co-processors or detectors are capable of 100+ FPS with millisecond
 
 ## Radar
 
-(Recommended) Provides accurate speed and direction measurement.
+(_Recommended_) Provides accurate speed and direction measurement.
 
 1. [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - certified with same tests as law enforcement speed radars.  Detection up to 100-meters away. &#x20;
 
 ## Other Sensors
 
-(Optional) For additional environmental data.
+(_Optional_) For additional environmental data.
 
 1. Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) paired with the (recommended) [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/).  Also pick up a longer ribbon cable, we recommend the [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/).&#x20;
 
 {% hint style="info" %}
-Get AQ sensor details and capabilities on the [air-quality-aq-payload.md](sensor-payloads/air-quality-aq-payload.md "mention") page.
+Get AQ sensor details and capabilities on the [air-quality-aq-payload.md](data-and-payloads/air-quality-aq-payload.md "mention") page.
 {% endhint %}
 
 ## Enclosure (weather-resistant box)
 
 * _Print it yourself_:  We offer a 3D printable model so you can build the truly open source Traffic Monitor.  Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.
+  * ![](.gitbook/assets/Screenshot_20260217_135531.png)![](.gitbook/assets/Screenshot_20260217_135645.png)
 * _Purchase_: _(coming soon)_ Purchase the box or a kit to assemble yourself.&#x20;
 * _Alternative DIY_: There are many waterproof electrical junction boxes that may be modified to fit your needs with the traffic monitor. Rough dimensions to fit the Traffic Monitor components including the camera and radar should be around 9"x7"x4" such as the [TICONN IP67 ABS Enclosure](https://www.amazon.com/gp/product/B0B87X944Z).
 

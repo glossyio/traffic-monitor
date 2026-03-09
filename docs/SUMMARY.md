@@ -5,7 +5,7 @@
 * [Build Your Own Device (DIY)](build-your-own-device-diy/README.md)
   * [Recommended Hardware](recommended-hardware.md)
   * [Assembly Instructions](build-your-own-device-diy/assembly-instructions.md)
-  * [Software Installation](build-your-own-device-diy/software-installation.md)
+* [Software Installation](software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
 * [Setup Guide](setup-guide.md)
 
@@ -18,13 +18,15 @@
 ## User Interface <a href="#ui" id="ui"></a>
 
 * [Monitoring](ui/monitoring.md)
-* [Movements](ui/movements.md)
 * [Database](ui/database.md)
+* [Movements](ui/movements.md)
 
-## Development
+## Data and Payloads
 
-* [Dev Environment](development/dev-environment.md)
-* [Contributing](development/contributing.md)
+* [Data Overview](data-and-payloads/data-overview.md)
+* [Events Payload](data-and-payloads/events-payload.md)
+* [Radar Payload](data-and-payloads/radar-payload.md)
+* [Air Quality (AQ) Payload](data-and-payloads/air-quality-aq-payload.md)
 
 ## Help & FAQ
 
@@ -32,8 +34,7 @@
 * [Where can I get support?](help-and-faq/where-can-i-get-support.md)
 * [Use Cases and Scenarios](help-and-faq/use-cases-and-scenarios.md)
 
-## Sensor Payloads
+## Development
 
-* [Events Payload](sensor-payloads/events-payload.md)
-* [Radar Payload](sensor-payloads/radar-payload.md)
-* [Air Quality (AQ) Payload](sensor-payloads/air-quality-aq-payload.md)
+* [Dev Environment](development/dev-environment.md)
+* [Contributing](development/contributing.md)

@@ -6,7 +6,7 @@ description: Is it possible to do this...
 
 We are only as powerful as the story we tell.  What can we do with the data we collect?  What can the traffic monitor do?
 
-The TrafficMonitor.ai collects an extensive amount of data, depending on the sensors installed. For details on payloads, check out [events-payload.md](../sensor-payloads/events-payload.md "mention"), [radar-payload.md](../sensor-payloads/radar-payload.md "mention"), and [air-quality-aq-payload.md](../sensor-payloads/air-quality-aq-payload.md "mention").
+The TrafficMonitor.ai collects an extensive amount of data, depending on the sensors installed. For details on payloads, check out [events-payload.md](../data-and-payloads/events-payload.md "mention"), [radar-payload.md](../data-and-payloads/radar-payload.md "mention"), and [air-quality-aq-payload.md](../data-and-payloads/air-quality-aq-payload.md "mention").
 
 ## How can I perform a "near miss" analysis using this hardware?
 

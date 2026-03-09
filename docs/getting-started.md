@@ -7,7 +7,7 @@ icon: play
 
 ## Step 1: Get your Traffic Monitor
 
-The traffic monitor requires the [Recommended Hardware](recommended-hardware.md) and [software installation](build-your-own-device-diy/software-installation.md) before you can begin capturing roadway data.
+The traffic monitor requires the [Recommended Hardware](recommended-hardware.md) and [software installation](software-installation.md) before you can begin capturing roadway data.
 
 There are two ways to get started:
 
@@ -22,10 +22,6 @@ The traffic monitor must be placed with a good view of the roadway. See the [dep
 
 ## Step 3: Set up your Device
 
-{% hint style="info" %}
-Before you set up the device, be sure to follow the [software-installation.md](build-your-own-device-diy/software-installation.md "mention")guide.
-{% endhint %}
-
 After you have your traffic monitor built, software installed, and physically set up (mounted), it is time to boot it up!  To get the best data and most out of the device, follow these steps:
 
 1. [setup-guide.md](setup-guide.md "mention")
@@ -38,6 +34,6 @@ The traffic monitor will now run 24/7 collecting the data you set up. It will au
 
 You can view the on-device dashboards, review event snapshots and clips in Frigate, download the local database, or view data shared with another data provider.
 
-There are other projects out there that even pair the Traffic Monitor with physical displays to show daily counts of cars, bikes, and pedestrians.  The sky is the limit!  Learn more and share via the [TM GitHub Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or our [TM Zulip chat](https://trafficmonitor.zulipchat.com/).
+Consider pairing the Traffic Monitor with physical displays to show daily counts of cars, bikes, and pedestrians.  The sky is the limit!  Learn more and share via the [TM GitHub Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or our [TM Zulip chat](https://trafficmonitor.zulipchat.com/).
 
 <figure><img src=".gitbook/assets/tm-display-pic01.jpg" alt=""><figcaption><p>LED Display showing daily counts capture with the traffic monitor</p></figcaption></figure>

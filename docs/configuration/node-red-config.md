@@ -14,23 +14,13 @@ See [frigate-config.md](frigate-config.md "mention") for controlling object dete
 
 ## Environment File
 
-The environment file defines variables that can be used during Node-RED start-up in the [settings file](https://nodered.org/docs/user-guide/runtime/settings-file) and within a flows' node properties.
-
-A sample script can be found at [node-red-project/environment](https://github.com/glossyio/traffic-monitor/blob/main/node-red-project/environment).
-
-The environment file is loaded by the `systemd` service `node-red.service` that is set up during by the [Node-RED Rapsberry Pi Install script](https://nodered.org/docs/getting-started/raspberrypi). It shall be located in the user node-red directory, by default at `~/.node-red/environment`.  Changes to the environment file must be applied by restarting the Node-RED service by executing the command `node-red-restart` in the terminal.
+The environment file defines variables are accessible by the node-red-tm docker container.
 
 ```sh
 ########
 # This file contains node-red environment variables loaded by node-red.service
 #   Read more at https://nodered.org/docs/user-guide/environment-variables
 #     and https://fedoraproject.org/wiki/Packaging:Systemd
-#  
-# This file shall be located at the root node-red directory, usually `~/.node-red`
-#   this file is loaded by `systemd`, changes can be applied 
-#   by running the command `node-red-restart` in the terminal
-#   read more at https://nodered.org/docs/getting-started/raspberrypi
-#
 # Uses:
 #   - variables can be used in settings.js by calling `process.env.ENV_VAR`
 #   - node property can be set by calling `${ENV_VAR}
@@ -38,14 +28,14 @@ The environment file is loaded by the `systemd` service `node-red.service` that 
 ########
 
 # traffic monitor open source software release version
-TM_VERSION='0.3.0'
+TM_VERSION='0.5.0'
 
 # used in settings.js for credentialSecret 
 NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
 
 # database locations, relative to user directory defined in settings.js
 #  will be relative path to store SQLite databases
-TM_DATABASE_PATH_TMDB='code/nodered/db/tmdb.sqlite'
+TM_DATABASE_PATH_TMDB='/db/tmdb.sqlite'
 
 # mqtt broker for incoming Frigate events 
 #  Settings below set up the aedes broker node
@@ -66,9 +56,13 @@ TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
 
 ## Config File
 
-The Traffic Monitor Node-RED config file changes definitions to various services and functionality.&#x20;
+The Traffic Monitor Node-RED config file changes definitions to various services and functionality.
 
-The config file is loaded whenever the TM flows restart.  It is located in the user node-red directory,`~/.node-red/config.yml`.
+The config file is loaded whenever the TM flows restart.&#x20;
+
+The location is defined by the tmsetup script, with default location at:
+
+&#x20;`/opt/traffic-monitor/docker/node-red-tm/config/config.yml`
 
 {% hint style="info" %}
 It is _not necessary_ to copy this full configuration file. Default values are specified below.
@@ -85,7 +79,7 @@ thingsboard:
     # Optional: enable connection to backend thingsboard server (default: shown below)
     enabled: false
     # Required: host name, without protocol or port number
-    host: tb.server.com
+    host: tb.example.com
     # Required: thingsboard telemetry protocol (default: shown below), 
     # NOTE: only http(s) currently supported, mqtt coming soon
     #  see https://thingsboard.io/docs/reference/protocols/
@@ -158,4 +152,3 @@ time:
     # Note: for offline deployments, time will stop whenever power is disconnected
     npt_set: true
 ```
-

@@ -1,8 +1,8 @@
 ---
-icon: hand-wave
 description: >-
   The Traffic Monitor is an open source platform to capture holistic roadway
   usage.
+icon: hand-wave
 ---
 
 # Welcome to smart city traffic monitoring
@@ -29,5 +29,6 @@ Made possible thanks to these incredible, unaffiliated projects:
 
 * [Frigate NVR project](https://github.com/blakeblackshear/frigate) (core Object Detection application)
 * [Node-RED](https://nodered.org/) (low-code programming environment)
+* [Zulip](https://zulip.com/) for hosting the [Traffic Monitor chat](https://trafficmonitor.zulipchat.com/)&#x20;
 
 We also have integration with the open source [ThingsBoard](https://thingsboard.io/) IoT Platform to monitor your device(s) and share data.
