@@ -1021,49 +1021,40 @@
             "label": true
         },
         "nodes": [
-            "0309814d489531fc",
-            "ddaad6aa2eb9e108",
-            "7a602df7a5e69c3e",
-            "5f9afee4d94c66ea",
-            "0c53e5cc5a118052",
-            "81033f124118f7fc",
-            "4ac80387e90476cc",
-            "a845e5248a7c1281",
-            "3d588b14f06a9513",
-            "d3a3617e640817f3",
-            "40d3dc4bf27d573d",
-            "fe72ae25c4017e66",
-            "4473c90f84a2e917",
-            "499167880916903d",
-            "9974a7476cf58f75",
             "d556c7770b427fd5",
-            "e2de4ba1ce2c0a40",
-            "cce0af4df8683362",
-            "3474fe5ed0dc9370",
             "de0eec15483ab6c5",
             "a72c4d2db1c9e250",
             "1422d99809bb77a2",
             "fc9cba48d996f050",
-            "4d772a4403b760a7",
             "0d08a6dd58497ba5",
             "5665f885f9f4a70f",
             "7062543ad8dc2060",
-            "53292cf65b8e813e",
             "e2d355298c86de4c",
             "a2523de935172143",
-            "2228b88368f9748e",
             "e261d6fad8c5ed4f",
-            "b8eee40599bdc3c8",
             "45eb80236a2b2e5c",
             "d3d856c678ff50b2",
-            "448dd344ed6f13dd",
-            "36cfd151e98573f0",
-            "03fb34f8a25b78e3"
+            "03fb34f8a25b78e3",
+            "94b1b84d6cf10f33",
+            "568ebabacd8678a7",
+            "b2c845bb18cee795",
+            "b503d2996657bc59",
+            "983fe2f9053fb830",
+            "04afc875c88ea0d9",
+            "691ba2abe1b0dab3",
+            "4e812539bbfa22d0",
+            "19539ed7db6f2093",
+            "5a54a54ce34d4ac1",
+            "778307a758584231",
+            "5f4fb07e6bda5353",
+            "9420e9f396c34485",
+            "1932a740edb76b76",
+            "e4dba100d2d87433"
         ],
         "x": 4,
         "y": 1859,
-        "w": 1402,
-        "h": 722
+        "w": 1272,
+        "h": 582
     },
     {
         "id": "30a709c93555c489",
@@ -1099,8 +1090,8 @@
             "b23ac8bf091c4220"
         ],
         "x": 14,
-        "y": 2619,
-        "w": 932,
+        "y": 2499,
+        "w": 972,
         "h": 122
     },
     {
@@ -12043,7 +12034,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const now = new Date();\n          const utcStart = new Date(this.start).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcStartFormatted = new Date(utcStart).toISOString().substring(0,16);\n          const utcEnd = new Date(this.end).valueOf() + (now.getTimezoneOffset() * 60000);\n          const utcEndFormatted = new Date(utcEnd).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Air Quality\", value: \"airquality\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
+        "format": "<template>\n    <div>\n      <em>Use this to download data in JSON format.</em>\n      <br/><br/>\n      <fieldset>\n        <legend>\n          Select Event Types\n        </legend>\n        <ul style=\"list-style-type: none;\">\n          <li v-for=\"label in labels\" :key=\"label.value\">\n            <label :for=\"label.value\">{{ label.label }}</label>\n            <input type=\"checkbox\" v-model=\"selectedLabels\" \n              @change=\"validateSelection\"\n              :id=\"label.value\" \n              name=\"type\" \n              :value=\"label.value\" \n              style=\"float: left; margin-right: 5px; margin-top: 2px;\"\n            />\n          </li>\n        </ul>\n      </fieldset>\n      <text class=\"error\">{{selectionErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"start\">Start date & time (default: 7 days ago)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"start\" @change=\"validateStart\" id=\"start\" name=\"start\"/></p>\n      </fieldset>\n      <text class=\"error\">{{startErrorMessage}}</text>\n\n      <fieldset class=\"fieldSpacing\">\n        <legend>\n          <label for=\"end\">End date & time (default: now)</label>\n        </legend>\n        <p><input type=\"datetime-local\" v-model=\"end\" @change=\"validateEnd\" id=\"end\" name=\"end\"></p>\n      </fieldset>\n      <text class=\"error\">{{endErrorMessage}}</text>\n\n      <div class=\"fieldSpacing\">\n        <v-btn width=\"15%\" margin-bottom=\"20px\" @click=\"download\" :disabled=\"!!selectionErrorMessage || !!startErrorMessage || !!endErrorMessage\">download</v-btn>\n        <v-btn @click=\"reset\" class=\"ml-4\" width=\"15%\" variant=\"outlined\"> reset </v-btn>\n      </div>\n    </div>\n</template>\n\n<script>\n    export default {\n      data() {\n        return {\n            start: null,\n            end: null,\n            labels: null,\n            selectedLabels: [],\n            selectionErrorMessage: null,\n            startErrorMessage: null,\n            endErrorMessage: null,\n        };\n      },\n\n      methods: {\n        setDefaultDates() {\n          // set default start and end dates & times\n          const now = new Date();\n          let d = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));\n          d.setDate(d.getDate() - 7);\n          this.start = d.toISOString()\n            .slice(0, 16);\n          this.end = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))\n            .toISOString()\n            .slice(0, 16);\n        },\n\n        validateSelection() {\n          // user selected/deselected an event type\n          const noSelectionErrorMessage = \"Choose event types to include in download\";\n          this.selectionErrorMessage = (this.selectedLabels.length == 0)\n            ? noSelectionErrorMessage\n            : null;\n        },\n\n        validateStart() {\n          // validate that the start date is not null\n          const startRequired = \"Start date is required\";\n          this.startErrorMessage = !!this.start\n             ? null\n             : startRequired;\n        },\n\n        validateEnd() {\n          // validate that the end date is not null and is after start date\n          const endRequired = \"End date is required\";\n          const endMustBeAfterStart = \"End date & time must be after start date and time\";\n          if (!this.end) {\n            this.endErrorMessage = endRequired;\n          } else if (this.end <= this.start) {\n            this.endErrorMessage = endMustBeAfterStart;\n          } else {\n            this.endErrorMessage = null;\n          }\n        },\n\n        download() {\n          // convert dates to UTC timezone and SQL date-time literal format\n          const utcStartFormatted = new Date(this.start.valueOf()).toISOString().substring(0,16);\n          const utcEndFormatted = new Date(this.end.valueOf()).toISOString().substring(0,16);\n          this.send({\n            payload: {\n              events: this.selectedLabels,\n              start: utcStartFormatted,\n              end: utcEndFormatted,\n            }\n          });\n        },\n        \n        reset() {\n          this.selectedLabels = [];\n          this.setDefaultDates();\n          this.validateSelection();\n          this.validateStart();\n        }\n      },\n\n      mounted() {\n        const that = this;\n        // process the unique event labels from the database, as received via a message\n        function processOption(msg) {\n          // setup JSON default selection options\n          const labels = [\n            {label: \"Everything\", value: \"all\"},\n            {label: \"All Event Types\", value: \"events\"},\n            {label: \"Air Quality\", value: \"airquality\"},\n            {label: \"Radar\", value: \"radar\"}\n          ];\n          if (msg.payload.length > 0) {\n            const sortedPayload = msg.payload.sort((a, b) => a.label.localeCompare(b.label));\n            sortedPayload.forEach(function(entry) {\n              const label = entry.label;\n              const initialLabel = label.charAt(0).toUpperCase()+ label.slice(1);\n              const choice = { label: initialLabel, value: label};\n              labels.push(choice);\n            });\n          }\n          that.labels = labels;\n        }\n        // process list of JSON labels from msg input\n        this.$socket.on('msg-input:' + this.id, processOption);\n        this.setDefaultDates(); // set default dates\n        this.validateSelection(); // initialize selection error message\n        this.validateStart(); // initialize start date error message\n      },\n    }\n</script>\n\n<style scoped>\n\n  fieldset {\n  border: 2px solid #ccc;\n  padding: 10px;\n  }\n  \n  legend {\n  /* Adjust styling for the legend text */\n  padding: 0 5px; /* Add some padding around the text */\n  background-color: white; /* Match background to \"cut out\" the border */\n  }\n\n  .error {\n    color: red;\n  }\n\n  .fieldSpacing {\n    margin-top: 10px;\n  }\n</style>\n",
         "storeOutMessages": true,
         "passthru": false,
         "resendOnRefresh": true,
@@ -12825,369 +12816,13 @@
         "wires": []
     },
     {
-        "id": "0309814d489531fc",
-        "type": "http in",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "Respond to download request",
-        "url": "/storefiles",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 160,
-        "y": 2000,
-        "wires": [
-            [
-                "53292cf65b8e813e",
-                "cce0af4df8683362"
-            ]
-        ]
-    },
-    {
-        "id": "ddaad6aa2eb9e108",
-        "type": "switch",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "Test for error",
-        "property": "res.statusCode",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "neq",
-                "v": "0",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 690,
-        "y": 2000,
-        "wires": [
-            [
-                "7a602df7a5e69c3e",
-                "5f9afee4d94c66ea"
-            ],
-            [
-                "0c53e5cc5a118052"
-            ]
-        ]
-    },
-    {
-        "id": "7a602df7a5e69c3e",
-        "type": "ui-notification",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "ui": "2a8899583532edb4",
-        "position": "center center",
-        "colorDefault": false,
-        "color": "#f40101",
-        "displayTime": "10",
-        "showCountdown": true,
-        "outputs": 1,
-        "allowDismiss": true,
-        "dismissText": "Close",
-        "allowConfirm": false,
-        "confirmText": "Confirm",
-        "raw": false,
-        "className": "",
-        "name": "",
-        "x": 990,
-        "y": 1900,
-        "wires": [
-            [
-                "4ac80387e90476cc"
-            ]
-        ]
-    },
-    {
-        "id": "5f9afee4d94c66ea",
-        "type": "http response",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 950,
-        "y": 1940,
-        "wires": []
-    },
-    {
-        "id": "0c53e5cc5a118052",
-        "type": "exec",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "command": "tar czvf  download.tar.gz --checkpoint=1000",
-        "addpay": "payload.filepath",
-        "append": "",
-        "useSpawn": "true",
-        "timer": "0",
-        "winHide": false,
-        "oldrc": false,
-        "name": "zip files",
-        "x": 880,
-        "y": 2000,
-        "wires": [
-            [],
-            [
-                "36cfd151e98573f0"
-            ],
-            [
-                "4d772a4403b760a7",
-                "a845e5248a7c1281"
-            ]
-        ]
-    },
-    {
-        "id": "81033f124118f7fc",
-        "type": "change",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "Copy error message",
-        "rules": [
-            {
-                "t": "set",
-                "p": "payload",
-                "pt": "msg",
-                "to": "payload.message",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1280,
-        "y": 2000,
-        "wires": [
-            [
-                "7a602df7a5e69c3e",
-                "5f9afee4d94c66ea"
-            ]
-        ]
-    },
-    {
-        "id": "4ac80387e90476cc",
-        "type": "debug",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "show error msg",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1220,
-        "y": 1900,
-        "wires": []
-    },
-    {
-        "id": "a845e5248a7c1281",
-        "type": "switch",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "test for failure",
-        "property": "payload.code",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "neq",
-                "v": "0",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 1060,
-        "y": 2000,
-        "wires": [
-            [
-                "81033f124118f7fc"
-            ],
-            [
-                "3d588b14f06a9513"
-            ]
-        ]
-    },
-    {
-        "id": "3d588b14f06a9513",
-        "type": "file in",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "read the zip file in chunks",
-        "filename": "\"download.tar.gz\"",
-        "filenameType": "jsonata",
-        "format": "stream",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "none",
-        "allProps": true,
-        "x": 330,
-        "y": 2220,
-        "wires": [
-            [
-                "d3a3617e640817f3"
-            ]
-        ]
-    },
-    {
-        "id": "d3a3617e640817f3",
-        "type": "function",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "send chunks",
-        "func": "msg.res._res.write(msg.payload)\n\n// the last buffer contains an count value in the parts hash.\n// if the count is set, then send an end response to the client.\nif ( \"count\" in msg.parts ) {\n    msg.res._res.end()\n}\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 2220,
-        "wires": [
-            [
-                "40d3dc4bf27d573d"
-            ]
-        ]
-    },
-    {
-        "id": "40d3dc4bf27d573d",
-        "type": "switch",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "check for end",
-        "property": "parts.count",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "null"
-            },
-            {
-                "t": "nnull"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 720,
-        "y": 2220,
-        "wires": [
-            [
-                "fe72ae25c4017e66"
-            ],
-            [
-                "4473c90f84a2e917",
-                "e2de4ba1ce2c0a40",
-                "3474fe5ed0dc9370"
-            ]
-        ]
-    },
-    {
-        "id": "fe72ae25c4017e66",
-        "type": "template",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "notification running",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "Database Download Running\nFile size (MB): {{flow.dbSize}}",
-        "output": "str",
-        "x": 970,
-        "y": 2220,
-        "wires": [
-            [
-                "499167880916903d"
-            ]
-        ]
-    },
-    {
-        "id": "4473c90f84a2e917",
-        "type": "exec",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "command": "rm -f /db/temp/download.tar.gz",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "remove tar file",
-        "x": 960,
-        "y": 2280,
-        "wires": [
-            [],
-            [],
-            [
-                "9974a7476cf58f75"
-            ]
-        ]
-    },
-    {
-        "id": "499167880916903d",
-        "type": "ui-notification",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "ui": "2a8899583532edb4",
-        "position": "center center",
-        "colorDefault": true,
-        "color": "#000000",
-        "displayTime": "3",
-        "showCountdown": true,
-        "outputs": 1,
-        "allowDismiss": true,
-        "dismissText": "Close",
-        "allowConfirm": false,
-        "confirmText": "Confirm",
-        "raw": false,
-        "className": "",
-        "name": "",
-        "x": 1190,
-        "y": 2220,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "9974a7476cf58f75",
-        "type": "debug",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "show rm error",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1200,
-        "y": 2280,
-        "wires": []
-    },
-    {
         "id": "d556c7770b427fd5",
         "type": "comment",
         "z": "c17b7b1a8f280e22",
         "g": "0e529403dab80c69",
         "name": "This responds to a GET .../storefiles?files=a,b,c,...-- typically invoked by an HTTP redirect",
         "info": "",
-        "x": 410,
+        "x": 350,
         "y": 1900,
         "wires": []
     },
@@ -13204,7 +12839,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/teststorefiles?files=${filenames}`;\n    })\n    </script>",
+        "format": "    <script>\n    this.$socket.on('msg-input:' + this.id, (msg) => {\n        // Omit any empty filenames. This happens when the users select just events or just radar.  The flow sets the unselected events/radar filename(s) to blank to allow the wait node to proceed.\n        // Now we have to filter out the blank filenames.\n        const filenames = msg.payload.split(',').filter(element => element).join(',');\n        window.location.href = `/storefiles?files=${filenames}`;\n    })\n    </script>",
         "storeOutMessages": true,
         "passthru": true,
         "resendOnRefresh": true,
@@ -13264,29 +12899,6 @@
                 "a77d79afe1bb4de8",
                 "3a04a85c5e35cad4",
                 "daa61bfa574cf15c"
-            ]
-        ]
-    },
-    {
-        "id": "e2de4ba1ce2c0a40",
-        "type": "exec",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "command": "rm -f /db/temp/*.json",
-        "addpay": "",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "remove json files",
-        "x": 970,
-        "y": 2360,
-        "wires": [
-            [],
-            [],
-            [
-                "9974a7476cf58f75"
             ]
         ]
     },
@@ -13482,27 +13094,6 @@
         ]
     },
     {
-        "id": "cce0af4df8683362",
-        "type": "function",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 460,
-        "y": 2000,
-        "wires": [
-            [
-                "ddaad6aa2eb9e108"
-            ]
-        ]
-    },
-    {
         "id": "79570ebbc363d274",
         "type": "link in",
         "z": "c17b7b1a8f280e22",
@@ -13518,20 +13109,6 @@
                 "79fc30d993437d9a"
             ]
         ]
-    },
-    {
-        "id": "3474fe5ed0dc9370",
-        "type": "link out",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "refresh page",
-        "mode": "link",
-        "links": [
-            "79570ebbc363d274"
-        ],
-        "x": 725,
-        "y": 2320,
-        "wires": []
     },
     {
         "id": "f838921f5647499b",
@@ -13755,7 +13332,7 @@
             "04afc875c88ea0d9"
         ],
         "x": 575,
-        "y": 2440,
+        "y": 2300,
         "wires": [
             [
                 "a72c4d2db1c9e250"
@@ -13783,7 +13360,7 @@
         "to": "",
         "reg": false,
         "x": 750,
-        "y": 2460,
+        "y": 2320,
         "wires": [
             [
                 "1422d99809bb77a2"
@@ -13799,7 +13376,7 @@
         "ui": "2a8899583532edb4",
         "events": "all",
         "x": 1050,
-        "y": 2460,
+        "y": 2320,
         "wires": [
             []
         ]
@@ -13826,21 +13403,7 @@
         "name": "dynamic UI that appears only while compressing files for download",
         "info": "",
         "x": 280,
-        "y": 2380,
-        "wires": []
-    },
-    {
-        "id": "4d772a4403b760a7",
-        "type": "link out",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "hide compressing file(s)",
-        "mode": "link",
-        "links": [
-            "de0eec15483ab6c5"
-        ],
-        "x": 965,
-        "y": 2040,
+        "y": 2240,
         "wires": []
     },
     {
@@ -13864,7 +13427,7 @@
         "to": "",
         "reg": false,
         "x": 310,
-        "y": 2540,
+        "y": 2400,
         "wires": [
             [
                 "5665f885f9f4a70f"
@@ -13880,7 +13443,7 @@
         "ui": "2a8899583532edb4",
         "events": "all",
         "x": 610,
-        "y": 2540,
+        "y": 2400,
         "wires": [
             []
         ]
@@ -13897,26 +13460,12 @@
             "691ba2abe1b0dab3"
         ],
         "x": 145,
-        "y": 2540,
+        "y": 2400,
         "wires": [
             [
                 "0d08a6dd58497ba5"
             ]
         ]
-    },
-    {
-        "id": "53292cf65b8e813e",
-        "type": "link out",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "setup to show compressing file(s)",
-        "mode": "link",
-        "links": [
-            "7062543ad8dc2060"
-        ],
-        "x": 375,
-        "y": 2040,
-        "wires": []
     },
     {
         "id": "e2d355298c86de4c",
@@ -13951,7 +13500,7 @@
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
         "x": 140,
-        "y": 2460,
+        "y": 2320,
         "wires": [
             [
                 "a2523de935172143"
@@ -13979,28 +13528,11 @@
         "to": "",
         "reg": false,
         "x": 330,
-        "y": 2460,
+        "y": 2320,
         "wires": [
             [
                 "e261d6fad8c5ed4f",
                 "a72c4d2db1c9e250"
-            ]
-        ]
-    },
-    {
-        "id": "2228b88368f9748e",
-        "type": "link in",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "kill zip command",
-        "links": [
-            "e261d6fad8c5ed4f"
-        ],
-        "x": 745,
-        "y": 2040,
-        "wires": [
-            [
-                "0c53e5cc5a118052"
             ]
         ]
     },
@@ -14016,13 +13548,14 @@
             "4e812539bbfa22d0"
         ],
         "x": 505,
-        "y": 2460,
+        "y": 2320,
         "wires": []
     },
     {
         "id": "2ec299b81ca6ed02",
         "type": "ui-button",
         "z": "c17b7b1a8f280e22",
+        "d": true,
         "g": "173cdef0ad9fac1a",
         "group": "216a4109fe080851",
         "name": "Test",
@@ -14052,7 +13585,7 @@
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
         "x": 90,
-        "y": 2660,
+        "y": 2560,
         "wires": [
             [
                 "8f556ba97d19dbfb"
@@ -14072,12 +13605,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
-        "y": 2660,
+        "x": 820,
+        "y": 2560,
         "wires": [
             [
                 "b23ac8bf091c4220",
-                "b503d2996657bc59"
+                "354fec7272d97cc6"
             ]
         ]
     },
@@ -14101,7 +13634,7 @@
         "templateScope": "local",
         "className": "",
         "x": 260,
-        "y": 2660,
+        "y": 2560,
         "wires": [
             []
         ]
@@ -14117,7 +13650,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 550,
-        "y": 2660,
+        "y": 2560,
         "wires": [
             [
                 "e1802aa6a284ba8b"
@@ -14132,28 +13665,11 @@
         "name": "start test",
         "mode": "link",
         "links": [
-            "b8eee40599bdc3c8"
+            "e4dba100d2d87433"
         ],
-        "x": 895,
-        "y": 2660,
+        "x": 945,
+        "y": 2540,
         "wires": []
-    },
-    {
-        "id": "b8eee40599bdc3c8",
-        "type": "link in",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "start test",
-        "links": [
-            "354fec7272d97cc6"
-        ],
-        "x": 735,
-        "y": 1940,
-        "wires": [
-            [
-                "0c53e5cc5a118052"
-            ]
-        ]
     },
     {
         "id": "b23ac8bf091c4220",
@@ -14165,8 +13681,8 @@
         "links": [
             "7062543ad8dc2060"
         ],
-        "x": 905,
-        "y": 2700,
+        "x": 945,
+        "y": 2580,
         "wires": []
     },
     {
@@ -14189,7 +13705,7 @@
         "wrapText": false,
         "className": "",
         "x": 440,
-        "y": 2420,
+        "y": 2280,
         "wires": []
     },
     {
@@ -14200,11 +13716,10 @@
         "name": "progress",
         "links": [
             "448dd344ed6f13dd",
-            "049332f1b5f36fd2",
             "1932a740edb76b76"
         ],
         "x": 45,
-        "y": 2420,
+        "y": 2280,
         "wires": [
             [
                 "03fb34f8a25b78e3"
@@ -14212,51 +13727,17 @@
         ]
     },
     {
-        "id": "448dd344ed6f13dd",
-        "type": "link out",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "progress",
-        "mode": "link",
-        "links": [
-            "d3d856c678ff50b2"
-        ],
-        "x": 1345,
-        "y": 2080,
-        "wires": []
-    },
-    {
-        "id": "36cfd151e98573f0",
-        "type": "function",
-        "z": "c17b7b1a8f280e22",
-        "g": "0e529403dab80c69",
-        "name": "extract progress data",
-        "func": "const regex = /\\d+/;\nmsg.payload = msg.payload.match(regex);\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1180,
-        "y": 2080,
-        "wires": [
-            [
-                "448dd344ed6f13dd"
-            ]
-        ]
-    },
-    {
         "id": "568ebabacd8678a7",
         "type": "http in",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "Respond to download request",
-        "url": "/teststorefiles",
+        "url": "/storefiles",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 180,
-        "y": 2880,
+        "x": 160,
+        "y": 1980,
         "wires": [
             [
                 "691ba2abe1b0dab3",
@@ -14268,6 +13749,7 @@
         "id": "b2c845bb18cee795",
         "type": "switch",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "Test for error",
         "property": "res.statusCode",
         "propertyType": "msg",
@@ -14284,8 +13766,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 710,
-        "y": 2880,
+        "x": 670,
+        "y": 1980,
         "wires": [
             [
                 "b503d2996657bc59"
@@ -14300,6 +13782,7 @@
         "id": "b503d2996657bc59",
         "type": "exec",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "command": "tar czvf  - --checkpoint=1000",
         "addpay": "payload.filepath",
         "append": "",
@@ -14308,8 +13791,8 @@
         "winHide": false,
         "oldrc": false,
         "name": "zip files",
-        "x": 900,
-        "y": 2880,
+        "x": 860,
+        "y": 1980,
         "wires": [
             [
                 "94b1b84d6cf10f33"
@@ -14327,6 +13810,7 @@
         "id": "983fe2f9053fb830",
         "type": "function",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "Validate filenames, setup tar",
         "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
         "outputs": 1,
@@ -14335,8 +13819,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 2880,
+        "x": 440,
+        "y": 1980,
         "wires": [
             [
                 "b2c845bb18cee795"
@@ -14347,38 +13831,41 @@
         "id": "04afc875c88ea0d9",
         "type": "link out",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "hide compressing file(s)",
         "mode": "link",
         "links": [
             "de0eec15483ab6c5"
         ],
-        "x": 1025,
-        "y": 2940,
+        "x": 955,
+        "y": 2040,
         "wires": []
     },
     {
         "id": "691ba2abe1b0dab3",
         "type": "link out",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "setup to show compressing file(s)",
         "mode": "link",
         "links": [
             "7062543ad8dc2060"
         ],
-        "x": 395,
-        "y": 2920,
+        "x": 325,
+        "y": 2020,
         "wires": []
     },
     {
         "id": "4e812539bbfa22d0",
         "type": "link in",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "kill zip command",
         "links": [
             "e261d6fad8c5ed4f"
         ],
-        "x": 765,
-        "y": 2920,
+        "x": 695,
+        "y": 1940,
         "wires": [
             [
                 "b503d2996657bc59"
@@ -14389,6 +13876,7 @@
         "id": "94b1b84d6cf10f33",
         "type": "function",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "download chunks",
         "func": "msg.res._res.write(msg.payload);\nreturn msg;",
         "outputs": 1,
@@ -14397,8 +13885,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1130,
-        "y": 2860,
+        "x": 1090,
+        "y": 1960,
         "wires": [
             []
         ]
@@ -14407,6 +13895,7 @@
         "id": "19539ed7db6f2093",
         "type": "function",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "handle end of file or error",
         "func": "if (Object.hasOwn(msg.payload, \"code\")) {\n    if (msg.payload.code == 0) {\n        msg.res._res.end(); // send end-of-file\n        msg.payload = null; // to indicate success to next switch node\n    } else {\n        node.error(\"unexpected tar error: \" + msg.payload.message + \", return code: \" + msg.payload.code);\n        if (Object.hasOwn(msg.payload, \"message\")) {        \n            msg.payload = msg.payload.message;\n        } else {\n            msg.payload = \"unknown error\";\n        }\n    }\n} else {\n    msg.payload = null;\n}\nreturn msg;",
         "outputs": 1,
@@ -14415,8 +13904,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
-        "y": 3060,
+        "x": 230,
+        "y": 2100,
         "wires": [
             [
                 "778307a758584231"
@@ -14427,17 +13916,19 @@
         "id": "5a54a54ce34d4ac1",
         "type": "http response",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "return error message to user",
         "statusCode": "",
         "headers": {},
-        "x": 1100,
-        "y": 3060,
+        "x": 1080,
+        "y": 2120,
         "wires": []
     },
     {
         "id": "778307a758584231",
         "type": "switch",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "check result",
         "property": "payload.code",
         "propertyType": "msg",
@@ -14452,8 +13943,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 630,
-        "y": 3060,
+        "x": 490,
+        "y": 2100,
         "wires": [
             [],
             [
@@ -14466,6 +13957,7 @@
         "id": "5f4fb07e6bda5353",
         "type": "ui-notification",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "ui": "2a8899583532edb4",
         "position": "center center",
         "colorDefault": false,
@@ -14480,8 +13972,8 @@
         "raw": false,
         "className": "",
         "name": "show error message",
-        "x": 880,
-        "y": 3000,
+        "x": 1060,
+        "y": 2160,
         "wires": [
             []
         ]
@@ -14490,6 +13982,7 @@
         "id": "9420e9f396c34485",
         "type": "function",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "extract progress data",
         "func": "const regex = /\\d+/;\nmsg.payload = msg.payload.match(regex);\nreturn msg;",
         "outputs": 1,
@@ -14498,8 +13991,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1140,
-        "y": 2900,
+        "x": 1100,
+        "y": 2000,
         "wires": [
             [
                 "1932a740edb76b76"
@@ -14510,13 +14003,14 @@
         "id": "1932a740edb76b76",
         "type": "link out",
         "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
         "name": "progress",
         "mode": "link",
         "links": [
             "d3d856c678ff50b2"
         ],
-        "x": 1295,
-        "y": 2900,
+        "x": 1235,
+        "y": 2000,
         "wires": []
     },
     {
@@ -14539,11 +14033,28 @@
         "repair": false,
         "outputs": 2,
         "x": 200,
-        "y": 2420,
+        "y": 2280,
         "wires": [
             [],
             [
                 "45eb80236a2b2e5c"
+            ]
+        ]
+    },
+    {
+        "id": "e4dba100d2d87433",
+        "type": "link in",
+        "z": "c17b7b1a8f280e22",
+        "g": "0e529403dab80c69",
+        "name": "start test",
+        "links": [
+            "354fec7272d97cc6"
+        ],
+        "x": 765,
+        "y": 1920,
+        "wires": [
+            [
+                "b503d2996657bc59"
             ]
         ]
     },
