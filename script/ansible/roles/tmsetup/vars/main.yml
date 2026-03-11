@@ -1,6 +1,6 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.4.1-pre'
+tmsetup_tm_version: '0.5.0'
 tmsetup_go2rtc_version: 'v1.8.5'
 tmsetup_frigate_version: '0.16.3'
 tmsetup_node_red_tm_version: '4.0.9'
