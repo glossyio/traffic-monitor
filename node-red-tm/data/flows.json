@@ -1005,8 +1005,7 @@
             "25e67a89a3f964e7",
             "9245ac0b61cb72f3",
             "837ce5e6bb85a2b8",
-            "00ac1c1b44b14a84",
-            "16d4e3d18211086c"
+            "00ac1c1b44b14a84"
         ],
         "x": 34,
         "y": 699,
@@ -12899,8 +12898,7 @@
             [
                 "a77d79afe1bb4de8",
                 "3a04a85c5e35cad4",
-                "daa61bfa574cf15c",
-                "16d4e3d18211086c"
+                "daa61bfa574cf15c"
             ]
         ]
     },
@@ -13101,9 +13099,7 @@
         "z": "c17b7b1a8f280e22",
         "g": "54a0d44724ba51b6",
         "name": "refresh page",
-        "links": [
-            "3474fe5ed0dc9370"
-        ],
+        "links": [],
         "x": 305,
         "y": 820,
         "wires": [
@@ -13329,7 +13325,6 @@
         "g": "0e529403dab80c69",
         "name": "hide compressing file(s) window",
         "links": [
-            "4d772a4403b760a7",
             "00ac1c1b44b14a84",
             "04afc875c88ea0d9"
         ],
@@ -13457,7 +13452,6 @@
         "g": "0e529403dab80c69",
         "name": "setup to show compressing file(s)",
         "links": [
-            "53292cf65b8e813e",
             "b23ac8bf091c4220",
             "691ba2abe1b0dab3"
         ],
@@ -13546,7 +13540,6 @@
         "name": "kill zip command",
         "mode": "link",
         "links": [
-            "2228b88368f9748e",
             "4e812539bbfa22d0"
         ],
         "x": 505,
@@ -13600,7 +13593,7 @@
         "z": "c17b7b1a8f280e22",
         "g": "173cdef0ad9fac1a",
         "name": "setup test",
-        "func": "// setup test source & downloaded filenames\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.payload.filepath = ' -C /db tmdb-db-salal-2025-12-28a.sqlite tmdb-db-salal-2025-12-28b.sqlite';\nconst filename = \"test.tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "func": "// setup test source & downloaded filenames\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.payload.filepath = ' -C /db tmdb-db-salal-2025-12-28a.sqlite';\nconst filename = \"test.tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -13717,14 +13710,14 @@
         "g": "0e529403dab80c69",
         "name": "progress",
         "links": [
-            "448dd344ed6f13dd",
             "1932a740edb76b76"
         ],
         "x": 45,
         "y": 2280,
         "wires": [
             [
-                "03fb34f8a25b78e3"
+                "03fb34f8a25b78e3",
+                "e2d355298c86de4c"
             ]
         ]
     },
@@ -14059,23 +14052,6 @@
                 "b503d2996657bc59"
             ]
         ]
-    },
-    {
-        "id": "16d4e3d18211086c",
-        "type": "debug",
-        "z": "c17b7b1a8f280e22",
-        "g": "54a0d44724ba51b6",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 840,
-        "y": 900,
-        "wires": []
     },
     {
         "id": "44a8b86a7733445f",
