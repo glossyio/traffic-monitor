@@ -6,63 +6,18 @@ description: Traffic Monitor Node-RED configuration logic
 
 {% hint style="info" %}
 This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.
-{% endhint %}
 
-{% hint style="info" %}
 See [frigate-config.md](frigate-config.md "mention") for controlling object detection parameters.
 {% endhint %}
-
-## Environment File
-
-The environment file defines variables are accessible by the node-red-tm docker container.
-
-```sh
-########
-# This file contains node-red environment variables loaded by node-red.service
-#   Read more at https://nodered.org/docs/user-guide/environment-variables
-#     and https://fedoraproject.org/wiki/Packaging:Systemd
-# Uses:
-#   - variables can be used in settings.js by calling `process.env.ENV_VAR`
-#   - node property can be set by calling `${ENV_VAR}
-#
-########
-
-# traffic monitor open source software release version
-TM_VERSION='0.5.0'
-
-# used in settings.js for credentialSecret 
-NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
-
-# database locations, relative to user directory defined in settings.js
-#  will be relative path to store SQLite databases
-TM_DATABASE_PATH_TMDB='/db/tmdb.sqlite'
-
-# mqtt broker for incoming Frigate events 
-#  Settings below set up the aedes broker node
-TM_MQTT_BROKER_HOST='localhost'
-TM_MQTT_BROKER_PORT='1883'
-# mqtt user, leave blank for no authentication
-TM_MQTT_BROKER_USERNAME=''
-# mqtt password, leave blank for no authentication
-TM_MQTT_BROKER_PASSWORD=''
-
-# defines system USB serial port for radar
-# run `ls -lat /sys/class/tty/ttyACM*` to list devices
-TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
-TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
-TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
-TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
-```
 
 ## Config File
 
 The Traffic Monitor Node-RED config file changes definitions to various services and functionality.
 
-The config file is loaded whenever the TM flows restart.&#x20;
+* Installed path:   `/opt/traffic-monitor/docker/node-red-tm/config/config.yml`
+* [Repo path](https://github.com/glossyio/traffic-monitor/blob/main/docker/node-red-tm/config/config.yml.j2): `docker/node-red-tm/config/config.yml.j2`
 
-The location is defined by the tmsetup script, with default location at:
-
-&#x20;`/opt/traffic-monitor/docker/node-red-tm/config/config.yml`
+The config file is loaded whenever the TM flows restart.
 
 {% hint style="info" %}
 It is _not necessary_ to copy this full configuration file. Default values are specified below.
@@ -164,3 +119,46 @@ addons:
 
 
 ```
+
+## Environment File
+
+The environment file defines variables are accessible by the node-red-tm docker container.
+
+<pre class="language-sh"><code class="lang-sh">########
+# This file contains node-red environment variables loaded by node-red.service
+#   Read more at https://nodered.org/docs/user-guide/environment-variables
+#     and https://fedoraproject.org/wiki/Packaging:Systemd
+# Uses:
+#   - variables can be used in settings.js by calling `process.env.ENV_VAR`
+#   - node property can be set by calling `${ENV_VAR}
+#
+########
+
+# traffic monitor open source software release version
+TM_VERSION='0.5.0'
+
+# used in settings.js for credentialSecret 
+NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
+
+# database locations, relative to user directory defined in settings.js
+#  will be relative path to store SQLite databases
+TM_DATABASE_PATH_TMDB='/db/tmdb.sqlite'
+
+# mqtt broker for incoming Frigate events 
+#  Settings below set up the aedes broker node
+TM_MQTT_BROKER_HOST='localhost'
+TM_MQTT_BROKER_PORT='1883'
+# mqtt user, leave blank for no authentication
+TM_MQTT_BROKER_USERNAME=''
+# mqtt password, leave blank for no authentication
+TM_MQTT_BROKER_PASSWORD=''
+
+# defines system USB serial port for radar
+# run `ls -lat /sys/class/tty/ttyACM*` to list devices
+<strong>TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
+</strong>TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
+TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
+TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
+</code></pre>
+
+`/opt/traffic-monitor/docker/node-red-tm/config/config.yml`
