@@ -1,5 +1,4 @@
 ---
-icon: house-day
 description: Permanent and temporary physical placement suggestions.
 icon: house-day
 ---
