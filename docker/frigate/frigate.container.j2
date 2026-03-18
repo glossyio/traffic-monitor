@@ -1,0 +1,28 @@
+[Unit]
+Description=Frigate container for Traffic Monitor
+After=podman.socket
+
+[Container]
+ContainerName=frigate
+Image=ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
+ShmSize=512m
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+AddDevice={{ detector.dev_path }}:{{ detector.dev_path }}
+{% endif %}{% endfor %}
+Volume=/etc/localtime:/etc/localtime:ro
+Volume={{ tmsetup_codedir }}/docker/frigate/config:/config
+Volume={{ tmsetup_codedir }}/docker/frigate/storage:/media/frigate
+Tmpfs=/tmp/cache:size=1g,rw,mode=1777
+PublishPort=8971:8971
+PublishPort=5000:5000
+PublishPort=1964:1984
+PublishPort=8564:8554
+PublishPort=8565:8555/tcp
+PublishPort=8566:8555/udp
+EnvironmentFile={{ tmsetup_codedir }}/docker/frigate/frigate.env
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target,node-red-tm.service

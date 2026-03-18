@@ -32,7 +32,7 @@
     - frigate
     - node-red-tm
   ansible.builtin.import_tasks:
-    file: docker_setup.yml
+    file: podman_setup.yml
 
 - name: TMSetup - Main - Detector - Check for attached Detectors to run installs
   tags:
@@ -60,14 +60,14 @@
   tags:
     - node-red-tm
   ansible.builtin.import_tasks:
-    file: node-red-tm_docker_setup.yml
+    file: node-red-tm_setup.yml
 
 - name: TMSetup - Main - Setup plate-recognizer
   when: tmsetup_bool_plate_recognizer | default('false') | bool
   tags:
     - plate-recognizer
   ansible.builtin.import_tasks:
-    file: docker_plate_recognizer.yml
+    file: plate-recognizer_setup.yml
 
 - name: TMSetup - Main - Setup WiFI
   tags:

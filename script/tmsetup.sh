@@ -34,6 +34,7 @@ _usage() { # Print usage function
 printf "%s [-d PATH][-o USER][-z TIMEZONE][-f|h|y] \n" "${_THIS_SCRIPT}"
 printf "Install Traffic Monitor software for Raspberry Pi\n\n"
 printf "  %-20s%s\n" \
+  "-a ARG" "Add a customer argument to the ansible-playbook run (do not include opening hyphen '-')" \
   "-d PATH" "Set PATH for traffic-monitor installation (default /opt/traffic-monitor)" \
   "-f" "FORCE to overwrite any existing configs with fresh copies from template" \
   "-g GROUP" "Set the GROUP owner of traffic-monitor files an processes (default tmadmin)" \
@@ -50,7 +51,7 @@ printf "  %-20s%s\n" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)" \
-  "-C LIST Set custom boolean variables (comma‑separated) prefixed with tmsetup_bool_\n"
+  "-C BOOL1[,BOOL2]" "Set custom boolean variables (comma‑separated) prefixed with tmsetup_bool_"
 # "-R" "REMOVE Traffic Monitor software" # Future addition
 }
 
@@ -93,6 +94,7 @@ _install_ansible_remote() { # check and install python3-venv and setup venv
   local _venvd=$1
   local _script_dir=$2
   if python3 -m venv ${_venvd} ; then
+    . "${_venvd}/bin/activate" || return 1
     pip3 install -r "${_script_dir}/requirements" || return 1
   else
     cat << EOF
@@ -226,9 +228,12 @@ _tmsetup_remote(){ # Installation on Remote hosts
 ### Start of MAIN
 
 # Collect command-line options
-while getopts ":fhkKTuvyd:g:H:l:L:o:t:z:C:" opt;
+while getopts ":fhkKTuvya:d:g:H:l:L:o:t:z:C:" opt;
 do
   case ${opt} in
+    a) # Add customer argumnet to ansible-playbook
+      _add_arg "-${OPTARG}"
+      ;;
     d) # Set PATH for install
       _add_var tmsetup_codedir "${OPTARG}"
       ;;

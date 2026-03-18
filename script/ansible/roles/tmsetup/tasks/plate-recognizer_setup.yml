@@ -14,22 +14,28 @@
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item }}'
     state: directory
-  notify: Restart tm-docker service
+  notify: Restart plate-recognizer.service
 
-- name: TMSetup - plate-recognizer Setup - Create plate-recognizer docker files
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer environment file
   become: true
-  loop:
-    - docker/plate-recognizer/docker-compose-plate-recognizer.yaml
-    - docker/plate-recognizer/plate-recognizer.env
   ansible.builtin.template:
     backup: true
-    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    dest: '{{ tmsetup_codedir }}/docker/plate-recognizer/plate-recognizer.env'
     force: '{{ tmsetup_force_configs }}'
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}.j2'
-  notify:
-    - Build container images
-    - Restart tm-docker service
+    src: docker/plate-recognizer/plate-recognizer.env.j2
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer container quadlet
+  become: true
+  ansible.builtin.template:
+    backup: true
+    dest: /etc/containers/systemd/plate-recognizer.container
+    group: root
+    mode: '0640'
+    owner: root
+    src: docker/plate-recognizer/plate-recognizer.container.j2
+  notify: Restart plate-recognizer.service
 ...

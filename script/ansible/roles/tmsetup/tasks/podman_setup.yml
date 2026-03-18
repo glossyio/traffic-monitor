@@ -1,0 +1,13 @@
+---
+# TMSetup - Podman Setup tasks
+- name: TMSetup - Podman Setup - Install Podman packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - podman-docker
+      - podman-compose
+    state: present
+  notify:
+    - Restart frigate.service
+    - Restart node-red-tm.service
+...

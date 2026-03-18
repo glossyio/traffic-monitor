@@ -15,13 +15,12 @@
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item }}'
     state: directory
-  notify: Restart tm-docker service
+  notify: Restart frigate.service
 
 - name: TMSetup - Frigate Setup - Create Frigate docker files
   become: true
   loop:
     - docker/frigate/config/config.yml
-    - docker/frigate/docker-compose-frigate.yaml
     - docker/frigate/frigate.env
   ansible.builtin.template:
     backup: true
@@ -31,7 +30,16 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: '{{ item }}.j2'
-  notify:
-    - Build container images
-    - Restart tm-docker service
+  notify: Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Create frigate container file
+  become: true
+  ansible.builtin.template:
+    dest: /etc/containers/systemd/frigate.container
+    group: root
+    mode: '0644'
+    owner: root
+    src: docker/frigate/frigate.container.j2
+  notify: Restart frigate.service
+
 ...

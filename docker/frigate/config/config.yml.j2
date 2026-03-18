@@ -1,7 +1,7 @@
 # see https://docs.frigate.video/configuration/reference
 mqtt:
   enabled: true
-  host: 172.18.0.1
+  host: host.containers.internal
   port: 1883
 {% raw %}
   user: '{FRIGATE_MQTT_USER}'
@@ -26,7 +26,7 @@ cameras:
     type: "generic"
     ffmpeg:
       inputs:
-        - path: rtsp://172.18.0.1:8554/picam_h264
+        - path: rtsp://host.containers.internal:8554/picam_h264
           roles:
             - detect
     detect:

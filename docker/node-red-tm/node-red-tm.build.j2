@@ -1,0 +1,8 @@
+[Unit]
+Description=Build of Traffic Monitor Node Red image
+
+[Build]
+SetWorkingDirectory={{ tmsetup_codedir }}/docker/node-red-tm
+File=Dockerfile
+Pull=newer
+ImageTag=localhost/node-red-tm:latest
