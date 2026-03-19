@@ -15,7 +15,7 @@
     - tmnet.network
     - traffic-monitor.pod
   ansible.builtin.template:
-    dest: "/etc/containers/{{ item }}"
+    dest: "/etc/containers/systemd/{{ item }}"
     group: root
     mode: '0644'
     owner: root
