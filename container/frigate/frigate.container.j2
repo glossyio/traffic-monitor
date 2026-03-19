@@ -1,6 +1,7 @@
 [Unit]
 Description=Frigate container for Traffic Monitor
-After=podman.socket
+After=traffic-monitor.target go2rtc_server.service podman.socket
+Wants=go2rtc_server.service
 
 [Container]
 ContainerName=frigate
@@ -25,4 +26,4 @@ EnvironmentFile={{ tmsetup_codedir }}/frigate/frigate.env
 Restart=on-failure
 
 [Install]
-WantedBy=default.target,node-red-tm.service
+WantedBy=default.target node-red-tm.service

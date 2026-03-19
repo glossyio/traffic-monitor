@@ -1,6 +1,6 @@
 [Unit]
 Description=Traffic Monitor Node Red container
-After=frigate.service
+After=traffic-monitor.target frigate.service
 Wants=frigate.service
 
 [Container]
@@ -27,4 +27,4 @@ AddDevice={{ rad }}
 Restart=on-failure
 
 [Install]
-WantedBy=default.target
+WantedBy=default.target plate-recognizer.service

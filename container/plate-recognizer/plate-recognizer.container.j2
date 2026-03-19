@@ -1,6 +1,6 @@
 [Unit]
 Description=Plate Recognizer container for Traffic Monitor
-After=frigate.service node-red-tm.service
+After=traffic-monitor.target frigate.service node-red-tm.service
 Wants=frigate.service node-red-tm.service
 
 
