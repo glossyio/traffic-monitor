@@ -30,7 +30,6 @@
 - name: TMSetup - plate-recognizer Setup - Create plate-recognizer container quadlet
   become: true
   ansible.builtin.template:
-    backup: true
     dest: /etc/containers/systemd/plate-recognizer.container
     group: root
     mode: '0640'
