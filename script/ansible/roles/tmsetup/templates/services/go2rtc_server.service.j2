@@ -3,8 +3,7 @@
 
 [Unit]
 Description=go2rtc
-After=network.target rc-local.service traffic-monitor.target
-PartOf=traffic-monitor.target
+After=network.target rc-local.service
 
 [Service]
 Restart=always
@@ -12,4 +11,4 @@ WorkingDirectory=/var/lib/go2rtc/
 ExecStart=/var/lib/go2rtc/go2rtc_linux_{{ tmsetup_dpkg_architecture }}
 
 [Install]
-WantedBy=multi-user.target frigate.service
+WantedBy=multi-user.target frigate.service traffic-monitor.service

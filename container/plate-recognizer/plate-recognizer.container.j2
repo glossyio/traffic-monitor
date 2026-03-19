@@ -1,14 +1,13 @@
 [Unit]
 Description=Plate Recognizer container for Traffic Monitor
-After=traffic-monitor.target frigate.service node-red-tm.service
+After=frigate.service node-red-tm.service
 Wants=frigate.service node-red-tm.service
-
 
 [Container]
 ContainerName=plate-recognizer
 Image=docker.io/platerecognizer/alpr-arm
+Pod=traffic-monitor.pod
 Volume={{ tmsetup_codedir }}/plate-recognizer/license:/license
-PublishPort=8080:8080
 EnvironmentFile={{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env
 User={{ tmsetup_codeowner_uid }}
 

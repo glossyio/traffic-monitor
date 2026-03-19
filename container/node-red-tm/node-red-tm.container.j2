@@ -1,13 +1,12 @@
 [Unit]
 Description=Traffic Monitor Node Red container
-After=traffic-monitor.target frigate.service
+After=frigate.service
 Wants=frigate.service
 
 [Container]
 ContainerName=node-red-tm
 Image=node-red-tm.build
-PublishPort=1880:1880
-PublishPort=1883:1883
+Pod=traffic-monitor.pod
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/node-red-tm/config:/config
 Volume={{ tmsetup_codedir }}/node-red-tm/data:/data

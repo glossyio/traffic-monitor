@@ -7,7 +7,18 @@
       - podman-docker
       - podman-compose
     state: present
-  notify:
-    - Restart frigate.service
-    - Restart node-red-tm.service
+  notify: Restart traffic-monitor.service
+
+- name: TMSetup - Podman Setup - Install parent unit files
+  become: true
+  loop:
+    - tmnet.network
+    - traffic-monitor.pod
+  ansible.builtin.template:
+    dest: "/etc/containers/{{ item }}"
+    group: root
+    mode: '0644'
+    owner: root
+    src: "container/{{ item }}.j2"
+  notify: Restart traffic-monitor.service
 ...

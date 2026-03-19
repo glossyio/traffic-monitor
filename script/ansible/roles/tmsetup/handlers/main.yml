@@ -1,12 +1,5 @@
 ---
 # tmsetup handlers
-- name: Restart go2rtc_server service
-  become: true
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: go2rtc_server.service
-    state: restarted
-
 - name: Reload udev rules and trigger
   become: true
   ansible.builtin.shell: udevadm control --reload && udevadm trigger
@@ -25,6 +18,13 @@
     name: NetworkManager.service
     state: restarted
   notify: Pause for 10 seconds
+
+- name: Restart go2rtc_server service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: go2rtc_server.service
+    state: restarted
 
 - name: Pause for 10 seconds
   ansible.builtin.pause:
@@ -53,6 +53,15 @@
   ansible.builtin.systemd_service:
     daemon_reload: true
     name: plate-recognizer.service
+    state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
+  async: 600
+  poll: 0
+
+- name: Restart traffic-monitor.service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: traffic-monitor.service
     state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
   async: 600
   poll: 0
