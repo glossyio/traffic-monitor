@@ -7,9 +7,9 @@ Wants=frigate.service node-red-tm.service
 [Container]
 ContainerName=plate-recognizer
 Image=docker.io/platerecognizer/alpr-arm
-Volume={{ tmsetup_codedir }}/docker/plate-recognizer/license:/license
+Volume={{ tmsetup_codedir }}/plate-recognizer/license:/license
 PublishPort=8080:8080
-EnvironmentFile={{ tmsetup_codedir }}/docker/plate-recognizer/plate-recognizer.env
+EnvironmentFile={{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env
 User={{ tmsetup_codeowner_uid }}
 
 [Service]

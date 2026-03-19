@@ -5,10 +5,9 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/docker'
-    - '{{ tmsetup_codedir }}/docker/frigate'
-    - '{{ tmsetup_codedir }}/docker/frigate/config'
-    - '{{ tmsetup_codedir }}/docker/frigate/storage'
+    - '{{ tmsetup_codedir }}/frigate'
+    - '{{ tmsetup_codedir }}/frigate/config'
+    - '{{ tmsetup_codedir }}/frigate/storage'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
@@ -17,11 +16,11 @@
     state: directory
   notify: Restart frigate.service
 
-- name: TMSetup - Frigate Setup - Create Frigate docker files
+- name: TMSetup - Frigate Setup - Create Frigate container configuration files
   become: true
   loop:
-    - docker/frigate/config/config.yml
-    - docker/frigate/frigate.env
+    - frigate/config/config.yml
+    - frigate/frigate.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -29,7 +28,7 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}.j2'
+    src: 'container/{{ item }}.j2'
   notify: Restart frigate.service
 
 - name: TMSetup - Frigate Setup - Create frigate container file
@@ -39,7 +38,7 @@
     group: root
     mode: '0644'
     owner: root
-    src: docker/frigate/frigate.container.j2
+    src: container/frigate/frigate.container.j2
   notify: Restart frigate.service
 
 ...

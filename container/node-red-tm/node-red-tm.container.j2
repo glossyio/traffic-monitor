@@ -9,13 +9,13 @@ Image=node-red-tm.build
 PublishPort=1880:1880
 PublishPort=1883:1883
 Volume=/etc/localtime:/etc/localtime:ro
-Volume={{ tmsetup_codedir }}/docker/node-red-tm/config:/config
-Volume={{ tmsetup_codedir }}/docker/node-red-tm/data:/data
-Volume={{ tmsetup_codedir }}/docker/node-red-tm/db:/db
+Volume={{ tmsetup_codedir }}/node-red-tm/config:/config
+Volume={{ tmsetup_codedir }}/node-red-tm/data:/data
+Volume={{ tmsetup_codedir }}/node-red-tm/db:/db
 GroupAdd=dialout
 GroupAdd={{ tmsetup_codeowner_uid }}
 User={{ tmsetup_codeowner_uid }}
-EnvironmentFile={{ tmsetup_codedir }}/docker/node-red-tm/node-red-tm.env
+EnvironmentFile={{ tmsetup_codedir }}/node-red-tm/node-red-tm.env
 {% if tmsetup_radars_confirmed is defined and tmsetup_radars_confirmed is iterable %}
 {% for rad in tmsetup_radars_confirmed %}
 AddDevice={{ rad }}

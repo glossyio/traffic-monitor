@@ -26,9 +26,9 @@
   ansible.builtin.import_tasks:
     file: go2rtc_setup.yml
 
-- name: TMSetup - Main - Setup Docker
+- name: TMSetup - Main - Setup Podman
   tags:
-    - docker
+    - podman
     - frigate
     - node-red-tm
   ansible.builtin.import_tasks:
@@ -36,7 +36,7 @@
 
 - name: TMSetup - Main - Detector - Check for attached Detectors to run installs
   tags:
-    - docker
+    - podman
     - frigate
     - detectors
   ansible.builtin.import_tasks:
@@ -44,7 +44,7 @@
 
 - name: TMSetup - Main - Detector - Install Detectors
   tags:
-    - docker
+    - podman
     - frigate
     - detectors
   ansible.builtin.import_tasks:
@@ -99,7 +99,7 @@
 - name: TMSetup - Main - Start Services
   tags:
     - wifi
-    - docker
+    - podman
     - frigate
     - node-red-tm
     - plate-recognizer

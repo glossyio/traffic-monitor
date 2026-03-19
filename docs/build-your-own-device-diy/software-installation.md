@@ -24,7 +24,7 @@ Find it on RPi Imager by navigating to _Operating System > Raspberry Pi OS (othe
 ### Install the Traffic Monitor software
 
 {% hint style="warning" %}
-_An internet connection_ is required to install system dependencies, build the required Docker containers, download drivers, and more.  After installation, the traffic monitor can run fully offline.
+_An internet connection_ is required to install system dependencies, build the required Podman containers, download drivers, and more.  After installation, the traffic monitor can run fully offline.
 {% endhint %}
 
 {% hint style="info" %}

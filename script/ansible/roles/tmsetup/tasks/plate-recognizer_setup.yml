@@ -5,9 +5,8 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/docker'
-    - '{{ tmsetup_codedir }}/docker/plate-recognizer'
-    - '{{ tmsetup_codedir }}/docker/plate-recognizer/license'
+    - '{{ tmsetup_codedir }}/plate-recognizer'
+    - '{{ tmsetup_codedir }}/plate-recognizer/license'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
@@ -20,12 +19,12 @@
   become: true
   ansible.builtin.template:
     backup: true
-    dest: '{{ tmsetup_codedir }}/docker/plate-recognizer/plate-recognizer.env'
+    dest: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
     force: '{{ tmsetup_force_configs }}'
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: docker/plate-recognizer/plate-recognizer.env.j2
+    src: container/plate-recognizer/plate-recognizer.env.j2
   notify: Restart plate-recognizer.service
 
 - name: TMSetup - plate-recognizer Setup - Create plate-recognizer container quadlet
@@ -36,6 +35,6 @@
     group: root
     mode: '0640'
     owner: root
-    src: docker/plate-recognizer/plate-recognizer.container.j2
+    src: container/plate-recognizer/plate-recognizer.container.j2
   notify: Restart plate-recognizer.service
 ...
