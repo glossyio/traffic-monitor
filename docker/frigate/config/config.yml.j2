@@ -3,22 +3,25 @@ mqtt:
   enabled: true
   host: 172.18.0.1
   port: 1883
-{% raw %}
-  user: {FRIGATE_MQTT_USER}
-  password: {FRIGATE_MQTT_PASSWORD}
-{% endraw %}
+  user: {{ '{FRIGATE_MQTT_USER}' }}
+  password: {{ '{FRIGATE_MQTT_PASSWORD}' }}
 
 detectors:
 #  mycpu:
 #    type: cpu
-{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+{% for name, detector in tmsetup_detectors.items() %}
+{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
   {{ name }}:
-    type:   {{ detector.frigate_type }}
+    type: {{ detector.frigate_type }}
     device: {{ detector.frigate_device }}
-{% endif %}{% endfor %}
+{% endif %}
+{% endfor %}
 
-{% if (tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false) | 
-      (tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false) %}
+{% set pci_detector = tmsetup_detectors.get('edgetpu_pci', {}) %}
+{% set usb_detector = tmsetup_detectors.get('edgetpu_usb', {}) %}
+{% set pci_available = (pci_detector.dev_path_available | default(false) and  pci_detector.exists | default(false)) or pci_detector.fresh_install | default(false) %}
+{% set usb_available = (usb_detector.dev_path_available | default(false) and  usb_detector.exists | default(false)) or usb_detector.fresh_install | default(false) %}
+{% if pci_available or usb_available %}
 model:
   model_type: yolo-generic
   width: 512
@@ -101,15 +104,15 @@ objects:
       threshold: 0.4
 
 record:
- enabled: true
- alerts:
-   retain:
-     days: 0.042
-     mode: active_objects
- detections:
-   retain:
-     days: 0.042
-     mode: active_objects
+  enabled: true
+  alerts:
+    retain:
+      days: 0.042
+      mode: active_objects
+  detections:
+    retain:
+      days: 0.042
+      mode: active_objects
 
 snapshots:
   enabled: true
