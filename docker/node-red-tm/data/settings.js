@@ -62,7 +62,7 @@ module.exports = {
     palette: {
     },
     projects: {
-      enabled: false,
+      enabled: true,
       workflow: {
         mode: "manual",
       },
@@ -82,6 +82,7 @@ module.exports = {
     multiplayer: {
       enabled: false,
     },
+    tours: false,
   },
 
   functionExternalModules: true,
