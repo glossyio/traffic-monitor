@@ -18,7 +18,7 @@ We have not implemented a testing framework. Help us by suggesting or creating o
 
 ## Submitting changes
 
-Please send a [GitHub Pull Request to this repo](https://github.com/glossyio/traffic-monitor/compare) with a clear list of what you have done (read more about [pull requests](http://help.github.com/pull-requests/)). Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit).
+Please send a [GitHub Pull Request to this repo](https://github.com/glossyio/traffic-monitor/compare/dev...bugfix/yourfix) to the `dev` branch with a clear list of what you have done (read more about [pull requests](http://help.github.com/pull-requests/)). Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit), or we will squash commits.
 
 Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
 
@@ -33,7 +33,9 @@ See our current code to help you get the hang of it:
 - We use Linux line endings (see [GitHub Docs - About line endings](https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings))
 
 ## Branching strategy / git workflow
-We currently employ the `main` branch as default for PRs and maintain it as the development branch and create tagged released for general consumption. Remember when you perform a `git clone` it will pull down the `main` branch by default with all the development code. We recommend you only use tagged releases for non-development deployments.
+Contributors submit PRs against `dev`. 
+
+When a user performs a `git clone`, it will pull down the `main` branch, which shall be tied to the latest stable release. We still recommend you use tagged releases for production deployments.
 
 ![Git flow branching strategy diagram](static/img/gitflow-trans-dark.drawio.png)
 
