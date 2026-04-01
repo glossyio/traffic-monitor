@@ -93,6 +93,7 @@ _install_ansible_remote() { # check and install python3-venv and setup venv
   local _venvd=$1
   local _script_dir=$2
   if python3 -m venv ${_venvd} ; then
+  . "${_venvd}/bin/activate" || return 1
     pip3 install -r "${_script_dir}/requirements" || return 1
   else
     cat << EOF
