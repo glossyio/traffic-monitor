@@ -7,6 +7,7 @@
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/frigate'
     - '{{ tmsetup_codedir }}/frigate/config'
+    - '{{ tmsetup_codedir }}/frigate/config/model_cache'
     - '{{ tmsetup_codedir }}/frigate/storage'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
@@ -41,4 +42,24 @@
     src: container/frigate/frigate.container.j2
   notify: Restart frigate.service
 
+
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model
+  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
+        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/dbro/frigate-detector-edgetpu-yolo9/releases/download/v1.5/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    dest: "{{ tmsetup_codedir }}/frigate/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    mode: '0644'
+    force: false
+
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model
+  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
+        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/dbro/frigate-detector-edgetpu-yolo9/refs/heads/main/labels-coco17.txt"
+    dest: "{{ tmsetup_codedir }}/frigate/config/labels-coco17.txt"
+    mode: '0644'
+    force: false
 ...
