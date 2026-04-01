@@ -3,8 +3,10 @@ mqtt:
   enabled: true
   host: localhost
   port: 1883
-  user: {{ '{FRIGATE_MQTT_USER}' }}
-  password: {{ '{FRIGATE_MQTT_PASSWORD}' }}
+{% raw %}
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+{% endraw %}
 
 detectors:
 #  mycpu:
