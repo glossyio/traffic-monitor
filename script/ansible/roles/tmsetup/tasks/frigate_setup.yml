@@ -32,16 +32,38 @@
     src: 'container/{{ item }}.j2'
   notify: Restart frigate.service
 
-- name: TMSetup - Frigate Setup - Create frigate container file
+- name: TMSetup - Frigate Setup - Create Frigate-TM Container file
   become: true
   ansible.builtin.template:
-    dest: /etc/containers/systemd/frigate.container
+    backup: true
+    dest: '{{ tmsetup_codedir }}/frigate/Containerfile'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: container/frigate/Containerfile.j2
+
+- name: TMSetup - Frigate Setup - Create Podman container and build Quadlets for frigate
+  loop:
+    - frigate-tm.build
+    - frigate.container
+  become: true
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
     group: root
     mode: '0644'
     owner: root
-    src: container/frigate/frigate.container.j2
+    src: 'container/frigate/{{ item }}.j2'
   notify: Restart frigate.service
 
+- name: TMSetup - Frigate Setup - Build Frigate-TM image (this can take a while)
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: frigate-tm-build.service
+    state: started
+  notify: Restart frigate.service
 
 - name: TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model
   when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 

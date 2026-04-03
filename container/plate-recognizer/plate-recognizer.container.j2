@@ -5,7 +5,7 @@ Wants=frigate.service node-red-tm.service
 
 [Container]
 ContainerName=plate-recognizer
-Image=docker.io/platerecognizer/alpr-arm
+Image=plate-recognizer-tm.build
 Pod=traffic-monitor.pod
 Volume={{ tmsetup_codedir }}/plate-recognizer/license:/license
 EnvironmentFile={{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env

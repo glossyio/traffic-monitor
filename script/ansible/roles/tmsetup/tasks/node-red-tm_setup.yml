@@ -83,4 +83,14 @@
     owner: root
     src: 'container/node-red-tm/{{ item }}.j2'
   notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Build node-red-tm image (this can take a while)
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: node-red-tm-build.service
+    state: started
+  notify: Restart node-red-tm.service
+
 ...
