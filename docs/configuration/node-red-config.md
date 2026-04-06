@@ -14,7 +14,7 @@ See [frigate-config.md](frigate-config.md "mention") for controlling object dete
 
 ## Environment File
 
-The environment file defines variables are accessible by the node-red-tm docker container.
+The environment file defines variables are accessible by the node-red-tm podman container.
 
 ```sh
 ########
@@ -62,7 +62,7 @@ The config file is loaded whenever the TM flows restart.&#x20;
 
 The location is defined by the tmsetup script, with default location at:
 
-&#x20;`/opt/traffic-monitor/docker/node-red-tm/config/config.yml`
+&#x20;`/opt/traffic-monitor/node-red-tm/config/config.yml`
 
 {% hint style="info" %}
 It is _not necessary_ to copy this full configuration file. Default values are specified below.

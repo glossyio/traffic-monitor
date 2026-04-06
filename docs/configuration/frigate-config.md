@@ -12,7 +12,7 @@ Refer to [Frigate Configuration](https://docs.frigate.video/configuration/) docs
 
 The recommended Traffic Monitor settings attempts to optimize the Frigate config for **object detection on roadways**. Each deployment presents unique scenarios and challenges with accurate and precise object detection.&#x20;
 
-View our [default frigate config.yml](https://github.com/glossyio/traffic-monitor/blob/main/docker/frigate/config/config.yml.j2) for a sample configuration.
+View our [default frigate config.yml](https://github.com/glossyio/traffic-monitor/blob/main/frigate/config/config.yml.j2) for a sample configuration.
 
 {% hint style="info" %}
 Many settings will need to be uniquely tailored to your specific deployment. &#x20;

@@ -36,5 +36,5 @@ For tables related to sensors that are not installed, they will simply contain n
 ## How to access data
 
 * Traffic Monitor Database:  On-device dashboard: [database.md](../ui/database.md "mention") UI tab
-* Frigate data: [Recording](https://docs.frigate.video/configuration/record) and [Snapshots](https://docs.frigate.video/configuration/record) follow [configuration](../configuration/frigate-config.md) policies at `{{ tmsetup_codedir }}/docker/frigate/storage`
+* Frigate data: [Recording](https://docs.frigate.video/configuration/record) and [Snapshots](https://docs.frigate.video/configuration/record) follow [configuration](../configuration/frigate-config.md) policies at `{{ tmsetup_codedir }}/frigate/storage`
 * Other apps, plugins, and sensors may also store data for their own operation

@@ -1,0 +1,24 @@
+---
+# TMSetup - Podman Setup tasks
+- name: TMSetup - Podman Setup - Install Podman packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - podman-docker
+      - podman-compose
+    state: present
+  notify: Restart traffic-monitor.service
+
+- name: TMSetup - Podman Setup - Install parent unit files
+  become: true
+  loop:
+    - tmnet.network
+    - traffic-monitor.pod
+  ansible.builtin.template:
+    dest: "/etc/containers/systemd/{{ item }}"
+    group: root
+    mode: '0644'
+    owner: root
+    src: "container/{{ item }}.j2"
+  notify: Restart traffic-monitor.service
+...

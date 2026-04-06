@@ -1,20 +1,18 @@
 ---
 # task file to start all services
-- name: TMSetup - Start Services - Enable only
+- name: TMSetup - Start Services - Start and enable NetworkManager.service
   become: true
-  loop:
-    - tm-docker-build.service
   ansible.builtin.systemd_service:
     daemon_reload: true
     enabled: true
-    name: "{{ item }}"
+    name: NetworkManager.service
+    state: started
 
-- name: TMSetup - Start Services - Start and enable all services
+- name: TMSetup - Start Services - Start and enable traffic-monitor services
   become: true
   loop:
-    - NetworkManager.service
     - go2rtc_server.service
-    - tm-docker.service
+    - traffic-monitor.service
   ansible.builtin.systemd_service:
     daemon_reload: true
     enabled: true

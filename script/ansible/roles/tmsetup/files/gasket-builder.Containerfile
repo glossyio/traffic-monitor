@@ -1,4 +1,4 @@
-# Thank you to jnicolson for providing this Dockerfile to fix Gasket-DKMS build issues
+# Thank you to jnicolson for providing this Containerfile to fix Gasket-DKMS build issues
 # https://github.com/jnicolson/gasket-builder
 
 FROM ubuntu:24.04 AS build-stage

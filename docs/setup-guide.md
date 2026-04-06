@@ -95,8 +95,8 @@ Node-RED controls most of the workflow logic and data collection.
 
 You will need to [#connect-to-your-device](setup-guide.md#connect-to-your-device "mention") to edit the [node-red-config.md](configuration/node-red-config.md "mention") files.
 
-1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/docker/node-red-tm/config/config.yml`&#x20;
-   1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/docker/node-red-tm/config/config.yml`
+1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`&#x20;
+   1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml`
 2. Change the deployment location information to represent the current deployment. Get your latitude and longitude from any map service, such as Google Maps and enter bearing with the single-letter cardinal direction the traffic monitor is facing.
 
 ```yaml
@@ -122,4 +122,4 @@ sensors:
 4. To save changes, press Ctr+o (hold control and o)
 5. To exit, press Ctr+x (hold control and x)
 
-These settings should take immediate effect, if not, restart Node-RED by running: `sudo docker restart node-red-tm` .
+These settings should take immediate effect, if not, restart Node-RED by running: `sudo systemctl restart node-red-tm.service` .

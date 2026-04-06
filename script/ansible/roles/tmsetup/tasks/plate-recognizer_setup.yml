@@ -1,0 +1,63 @@
+---
+# TMSetup - plate-recognizer Setup tasks
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/plate-recognizer'
+    - '{{ tmsetup_codedir }}/plate-recognizer/license'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer environment file
+  become: true
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: container/plate-recognizer/plate-recognizer.env.j2
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Create Plate-Recognizer-TM Container file
+  become: true
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/plate-recognizer/Containerfile'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: container/plate-recognizer/Containerfile.j2
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Create plate-recognizer container quadlet
+  become: true
+  loop:
+    - plate-recognizer.container
+    - plate-recognizer-tm.build
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0640'
+    owner: root
+    src: 'container/plate-recognizer/{{ item }}.j2'
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Build Plate-Recognizer-TM image (this can take a while)
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: plate-recognizer-tm-build.service
+    state: started
+  notify: Restart plate-recognizer.service
+...
