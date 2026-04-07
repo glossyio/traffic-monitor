@@ -12,6 +12,9 @@
       kernel=kernel8.img
       # Enable Pineboards Hat Ai
       dtoverlay=pineboards-hat-ai
+      # Enable DRM VC4 V3D driver
+      dtoverlay=vc4-kms-v3d,cma-512
+      max_framebuffers=2
     append_newline: true
     prepend_newline: true
     create: true

@@ -113,7 +113,7 @@ sensors:
     # if not set, no cameras will be used
     cameras:
         # camera name must match Frigate configuration camera names
-        picam_h264:
+        picam_h265:
             # Optional Enable/disable the camera (default: shown below).
             # if disabled, any Frigate events for specified camera will be ignored
             # Note: this will not impact Frigate's system

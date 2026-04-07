@@ -9,6 +9,9 @@
     block: |
       # Enable PCIe Gen3
       dtparam=pciex1_gen=3
+      # Enable DRM VC4 V3D driver
+      dtoverlay=vc4-kms-v3d,cma-512
+      max_framebuffers=2
     append_newline: true
     prepend_newline: true
     create: true

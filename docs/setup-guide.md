@@ -111,7 +111,7 @@ deployment:
 ```yaml
 sensors:
     cameras:
-        picam_h264:
+        picam_h265:
             enabled: true
             camera_radar: TM_RADAR_SERIAL_PORT_00
     radars:

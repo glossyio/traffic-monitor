@@ -1,4 +1,4 @@
 # /var/lib/go2rtc/go2rtc.yaml
 streams:
-  picam_h264: exec:rpicam-vid --camera 0 --mode 2304:1296 --framerate 15 --exposure sport --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -
-  picam_gs_h264: exec:rpicam-vid --camera 1 --mode 1456:1088 --framerate 15 --exposure sport --hdr --timeout 0 --nopreview --codec h264 --libav-video-codec h264 --libav-format h264 --inline -o -
+  #low quality but CPU-lite h265 (hevc) encoding for detection; decrease the libav-codec-opts crf value for higher quality/bitrate
+  picam_h265_detect: exec:rpicam-vid --camera 0 --mode 1536:864 --width 1280 --height 720 --framerate 10 --exposure sport --hdr --timeout 0 --nopreview --codec libav --libav-format hevc --libav-video-codec libx265 --libav-video-codec-opts "preset=ultrafast;threads=1;tune=fastdecode;crf=30;bf=0;g=60;x265-params=rd=1:ref=1:me=1:subme=1:analyse=0:no-asm=0" -o -
