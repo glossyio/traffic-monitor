@@ -1526,14 +1526,11 @@
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 440,
-        "y": 120,
+        "x": 380,
+        "y": 140,
         "wires": [
             [
-                "998194b1b9bc29ba",
-                "6603f07036f13602",
-                "99c67a76992c8de8",
-                "2ea13e7fb927749d"
+                "e9bd400bfc06d988"
             ]
         ]
     },
@@ -1587,7 +1584,7 @@
         "id": "05e485cfcada03a3",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 1360,
+        "x": 1420,
         "y": 400,
         "wires": [
             [
@@ -2915,7 +2912,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1190,
+        "x": 1250,
         "y": 120,
         "wires": [
             [
@@ -2964,7 +2961,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 990,
+        "x": 1050,
         "y": 120,
         "wires": [
             [
@@ -2978,7 +2975,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 790,
+        "x": 850,
         "y": 120,
         "wires": []
     },
@@ -3732,7 +3729,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1240,
+        "x": 1300,
         "y": 160,
         "wires": [
             [
@@ -3746,7 +3743,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 790,
+        "x": 850,
         "y": 200,
         "wires": []
     },
@@ -3756,7 +3753,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 790,
+        "x": 850,
         "y": 280,
         "wires": []
     },
@@ -3766,7 +3763,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_03",
         "serial": "9436149d39191450",
-        "x": 790,
+        "x": 850,
         "y": 360,
         "wires": []
     },
@@ -3776,7 +3773,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 990,
+        "x": 1050,
         "y": 200,
         "wires": [
             [
@@ -3792,7 +3789,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1190,
+        "x": 1250,
         "y": 200,
         "wires": [
             [
@@ -3826,7 +3823,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1240,
+        "x": 1300,
         "y": 240,
         "wires": [
             [
@@ -3840,7 +3837,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 990,
+        "x": 1050,
         "y": 280,
         "wires": [
             [
@@ -3856,7 +3853,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1190,
+        "x": 1250,
         "y": 280,
         "wires": [
             [
@@ -3890,7 +3887,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1240,
+        "x": 1300,
         "y": 320,
         "wires": [
             [
@@ -3904,7 +3901,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_03",
         "serial": "9436149d39191450",
-        "x": 990,
+        "x": 1050,
         "y": 360,
         "wires": [
             [
@@ -3920,7 +3917,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1190,
+        "x": 1250,
         "y": 360,
         "wires": [
             [
@@ -3954,7 +3951,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1240,
+        "x": 1300,
         "y": 400,
         "wires": [
             [
@@ -3977,7 +3974,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1040,
+        "x": 1100,
         "y": 160,
         "wires": [
             [
@@ -4000,7 +3997,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1040,
+        "x": 1100,
         "y": 240,
         "wires": [
             [
@@ -4023,7 +4020,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1040,
+        "x": 1100,
         "y": 320,
         "wires": [
             [
@@ -4046,7 +4043,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1040,
+        "x": 1100,
         "y": 400,
         "wires": [
             [
@@ -4072,7 +4069,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 560,
+        "x": 640,
         "y": 120,
         "wires": [
             [
@@ -4101,7 +4098,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 560,
+        "x": 640,
         "y": 200,
         "wires": [
             [
@@ -4130,7 +4127,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 560,
+        "x": 640,
         "y": 280,
         "wires": [
             [
@@ -4159,7 +4156,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 560,
+        "x": 640,
         "y": 360,
         "wires": [
             [
@@ -4189,7 +4186,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 590,
+        "x": 670,
         "y": 160,
         "wires": [
             [
@@ -4216,7 +4213,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 590,
+        "x": 670,
         "y": 240,
         "wires": [
             [
@@ -4243,7 +4240,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 590,
+        "x": 670,
         "y": 320,
         "wires": [
             [
@@ -4270,7 +4267,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 590,
+        "x": 670,
         "y": 400,
         "wires": [
             [
@@ -4855,7 +4852,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
         "name": "init: query radar settings, ~4.5-sec each",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // Keep attribute_array as-is (no api_commands included)\n        const attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \n            \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"^?\", \"PA\"];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 200; // in ms\n        const delay_short = 50;\n        // 200+50 = 250 ms per attribute\n\n        node.send({ payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // Keep attribute_array as-is (no api_commands included)\n        const attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \n            \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"^?\", \"PA\"];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 200; // in ms\n        const delay_short = 50;\n        // 200+50 = 250 ms per attribute\n\n        node.send({ topic: radarName, payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ topic: radarName, payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ topic: radarName, payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4911,7 +4908,7 @@
         "type": "function",
         "z": "1c71c8f26f5b7b19",
         "name": "init: radar settings, ~4-sec each",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // construct time zone elements\n        const date = new Date();\n        const offsetInMinutes = date.getTimezoneOffset();\n        const hours = Math.abs(Math.floor(offsetInMinutes / 60));\n        const minutes = Math.abs(offsetInMinutes % 60);\n        const offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n            hours.toString().padStart(2, '0') +\n            minutes.toString().padStart(2, '0');\n\n        // Build attribute_array with all api_commands from this radar\n        const attribute_array = [\n            \"PI\",\n            \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n            \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n            ...radarConfig.api_commands || [],  // Spread all api_commands\n            \"PA\", \n            \"A!\"\n        ];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 100; // ms delay\n        const delay_short = 50; // 150 ms per attribute\n\n        node.send({ payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // construct time zone elements\n        const date = new Date();\n        const offsetInMinutes = date.getTimezoneOffset();\n        const hours = Math.abs(Math.floor(offsetInMinutes / 60));\n        const minutes = Math.abs(offsetInMinutes % 60);\n        const offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n            hours.toString().padStart(2, '0') +\n            minutes.toString().padStart(2, '0');\n\n        // Build attribute_array with all api_commands from this radar\n        const attribute_array = [\n            \"PI\",\n            \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n            \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n            ...radarConfig.api_commands || [],  // Spread all api_commands\n            \"PA\", \n            \"A!\"\n        ];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 100; // ms delay\n        const delay_short = 50; // 150 ms per attribute\n\n        node.send({ topic: radarName, payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ topic: radarName, payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ topic: radarName, payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5036,6 +5033,55 @@
         "wires": [
             [
                 "a0b880e68f9b7198"
+            ]
+        ]
+    },
+    {
+        "id": "e9bd400bfc06d988",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "radar director",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "TM_RADAR_SERIAL_PORT_00",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "TM_RADAR_SERIAL_PORT_01",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "TM_RADAR_SERIAL_PORT_02",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "TM_RADAR_SERIAL_PORT_03",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 4,
+        "x": 470,
+        "y": 140,
+        "wires": [
+            [
+                "998194b1b9bc29ba"
+            ],
+            [
+                "6603f07036f13602"
+            ],
+            [
+                "99c67a76992c8de8"
+            ],
+            [
+                "2ea13e7fb927749d"
             ]
         ]
     },
