@@ -1,0 +1,18 @@
+[Unit]
+Description=Plate Recognizer container for Traffic Monitor
+After=frigate.service node-red-tm.service
+Wants=frigate.service node-red-tm.service
+
+[Container]
+ContainerName=plate-recognizer
+Image=plate-recognizer-tm.build
+Pod=traffic-monitor.pod
+Volume={{ tmsetup_codedir }}/plate-recognizer/license:/license
+EnvironmentFile={{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env
+User={{ tmsetup_codeowner_uid }}
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

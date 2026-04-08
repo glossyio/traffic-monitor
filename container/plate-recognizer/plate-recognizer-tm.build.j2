@@ -1,0 +1,8 @@
+[Unit]
+Description=Build of Traffic Monitor Plate Recognizer image
+
+[Build]
+SetWorkingDirectory={{ tmsetup_codedir }}/plate-recognizer
+File=Containerfile
+Pull=newer
+ImageTag=localhost/plate-recognizer-tm:latest

@@ -5,24 +5,23 @@
   become: true
   loop:
     - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/docker'
-    - '{{ tmsetup_codedir }}/docker/frigate'
-    - '{{ tmsetup_codedir }}/docker/frigate/config'
-    - '{{ tmsetup_codedir }}/docker/frigate/storage'
+    - '{{ tmsetup_codedir }}/frigate'
+    - '{{ tmsetup_codedir }}/frigate/config'
+    - '{{ tmsetup_codedir }}/frigate/config/model_cache'
+    - '{{ tmsetup_codedir }}/frigate/storage'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item }}'
     state: directory
-  notify: Restart tm-docker service
+  notify: Restart frigate.service
 
-- name: TMSetup - Frigate Setup - Create Frigate docker files
+- name: TMSetup - Frigate Setup - Create Frigate container configuration files
   become: true
   loop:
-    - docker/frigate/config/config.yml
-    - docker/frigate/docker-compose-frigate.yaml
-    - docker/frigate/frigate.env
+    - frigate/config/config.yml
+    - frigate/frigate.env
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/{{ item }}'
@@ -30,8 +29,59 @@
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: '{{ item }}.j2'
-  notify:
-    - Build container images
-    - Restart tm-docker service
+    src: 'container/{{ item }}.j2'
+  notify: Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Create Frigate-TM Container file
+  become: true
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/frigate/Containerfile'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: container/frigate/Containerfile.j2
+
+- name: TMSetup - Frigate Setup - Create Podman container and build Quadlets for frigate
+  loop:
+    - frigate-tm.build
+    - frigate.container
+  become: true
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0644'
+    owner: root
+    src: 'container/frigate/{{ item }}.j2'
+  notify: Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Build Frigate-TM image (this can take a while)
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: frigate-tm-build.service
+    state: started
+  notify: Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model
+  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
+        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/dbro/frigate-detector-edgetpu-yolo9/releases/download/v1.5/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    dest: "{{ tmsetup_codedir }}/frigate/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    mode: '0644'
+    force: false
+
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model
+  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
+        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/dbro/frigate-detector-edgetpu-yolo9/refs/heads/main/labels-coco17.txt"
+    dest: "{{ tmsetup_codedir }}/frigate/config/labels-coco17.txt"
+    mode: '0644'
+    force: false
 ...

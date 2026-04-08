@@ -7,7 +7,7 @@
     - tmsetup_detectors.hailo8l.exists
     - not tmsetup_detectors.hailo8l.dev_path_available
   tags:
-    - docker
+    - podman
     - frigate
     - detectors
   notify: TMSetup - Flag for reboot
@@ -18,7 +18,7 @@
 
     - name: TMSetup - Main - Detector - Check for attached Detectors to run installs
       tags:
-        - docker
+        - podman
         - frigate
       ansible.builtin.import_tasks:
         file: detectors_check.yml
@@ -38,22 +38,18 @@
     - tmsetup_detectors.edgetpu_pci.exists
     - not tmsetup_detectors.edgetpu_pci.dev_path_available
   tags:
-    - docker
+    - podman
     - frigate
     - detectors
   notify: TMSetup - Flag for reboot
   block: 
-    - name: TMSetup - Main - Detector - Setup Coral TPU Runtime Library
-      ansible.builtin.import_tasks:
-        file: coraltpu_setup.yml
-
     - name: TMSetup - Main - Detector - Setup PCI Coral TPU Drivers
       ansible.builtin.import_tasks:
         file: coraltpu_pci_setup.yml
 
     - name: TMSetup - Main - Detector - Check for attached Detectors to run installs
       tags:
-        - docker
+        - podman
         - frigate
       ansible.builtin.import_tasks:
         file: detectors_check.yml

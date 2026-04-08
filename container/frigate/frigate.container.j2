@@ -1,0 +1,24 @@
+[Unit]
+Description=Frigate container for Traffic Monitor
+After=go2rtc_server.service podman.socket
+Wants=go2rtc_server.service
+
+[Container]
+ContainerName=frigate
+Image=frigate-tm.build
+Pod=traffic-monitor.pod
+ShmSize=512m
+{% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
+AddDevice={{ detector.dev_path }}:{{ detector.dev_path }}
+{% endif %}{% endfor %}
+Volume=/etc/localtime:/etc/localtime:ro
+Volume={{ tmsetup_codedir }}/frigate/config:/config
+Volume={{ tmsetup_codedir }}/frigate/storage:/media/frigate
+Tmpfs=/tmp/cache:size=1g,rw,mode=1777
+EnvironmentFile={{ tmsetup_codedir }}/frigate/frigate.env
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target node-red-tm.service

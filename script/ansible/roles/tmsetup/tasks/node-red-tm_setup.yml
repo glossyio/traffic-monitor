@@ -1,0 +1,96 @@
+---
+# TMSetup - Node-RED-TM Setup tasks
+
+- name: TMSetup - Node-RED-TM Setup - Check for radars
+  loop: "{{ tmsetup_radar_paths }}"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: tmsetup_radarpath_stat_register
+
+- name: TMSetup Node-RED-TM Setup - Add existing radars to list
+  loop: "{{ tmsetup_radarpath_stat_register.results }}"
+  when: item['stat']['exists'] | bool
+  ansible.builtin.set_fact:
+    tmsetup_radars_confirmed: "{{ tmsetup_radars_confirmed | default([]) + [item['stat']['path']] }}"
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Directories
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/node-red-tm'
+    - '{{ tmsetup_codedir }}/node-red-tm/config'
+    - '{{ tmsetup_codedir }}/node-red-tm/data'
+    - '{{ tmsetup_codedir }}/node-red-tm/db'
+  ansible.builtin.file:
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0755'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment
+  become: true
+  loop:
+    - node-red-tm/data/flows_cred.json
+    - node-red-tm/data/flows.json
+    - node-red-tm/data/README.md
+    - node-red-tm/data/settings.js
+    - node-red-tm/data/package.json
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item }}'
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Container files
+  become: true
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/node-red-tm/Containerfile'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: container/node-red-tm/Containerfile.j2
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
+  become: true
+  loop:
+    - config/config.yml
+    - node-red-tm.env
+  ansible.builtin.template:
+    backup: true
+    dest: '{{ tmsetup_codedir }}/node-red-tm/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/node-red-tm/{{ item }}.j2'
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red
+  become: true
+  loop:
+    - node-red-tm.build
+    - node-red-tm.container
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0644'
+    owner: root
+    src: 'container/node-red-tm/{{ item }}.j2'
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Build node-red-tm image (this can take a while)
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: node-red-tm-build.service
+    state: started
+  notify: Restart node-red-tm.service
+
+...

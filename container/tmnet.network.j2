@@ -1,0 +1,15 @@
+[Unit]
+Description=Traffic Monitor network
+
+[Network]
+DisableDNS=false
+Driver=bridge
+NetworkName=tmnet
+Subnet=172.18.0.0/24
+IPRange=172.18.0.0/25
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

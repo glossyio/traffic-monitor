@@ -1,0 +1,8 @@
+[Unit]
+Description=Build of Traffic Monitor Frigate image
+
+[Build]
+SetWorkingDirectory={{ tmsetup_codedir }}/frigate
+File=Containerfile
+Pull=newer
+ImageTag=localhost/frigate-tm:{{ tmsetup_frigate_version }}
