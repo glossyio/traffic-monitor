@@ -8,7 +8,7 @@ thingsboard:
 deployment:
     lat: {{ tmsetup_latitude }}
     lon: {{ tmsetup_longitude }}
-    bearing: {{ tmsetup_bearing }}
+    bearing: '{{ tmsetup_bearing }}'
 
 sensors:
     cameras:
@@ -19,6 +19,7 @@ sensors:
     radars:
         TM_RADAR_SERIAL_PORT_00:
             enabled: false
+            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
 
     airquality_monitors:
         sensorname01:
