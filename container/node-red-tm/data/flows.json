@@ -3066,7 +3066,7 @@
         "crontab": "",
         "once": true,
         "onceDelay": "30",
-        "topic": "",
+        "topic": "ALL_RADARS",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
         "x": 180,
@@ -3095,7 +3095,7 @@
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "",
+        "topic": "ALL_RADARS",
         "payload": "\"PI\"",
         "payloadType": "jsonata",
         "x": 170,
@@ -4942,7 +4942,7 @@
         "crontab": "",
         "once": false,
         "onceDelay": "20",
-        "topic": "",
+        "topic": "ALL_RADARS",
         "payload": "\"PA\"",
         "payloadType": "jsonata",
         "x": 180,
@@ -5063,11 +5063,16 @@
                 "t": "eq",
                 "v": "TM_RADAR_SERIAL_PORT_03",
                 "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "ALL_RADARS",
+                "vt": "str"
             }
         ],
         "checkall": "false",
         "repair": false,
-        "outputs": 4,
+        "outputs": 5,
         "x": 470,
         "y": 140,
         "wires": [
@@ -5081,6 +5086,12 @@
                 "99c67a76992c8de8"
             ],
             [
+                "2ea13e7fb927749d"
+            ],
+            [
+                "998194b1b9bc29ba",
+                "6603f07036f13602",
+                "99c67a76992c8de8",
                 "2ea13e7fb927749d"
             ]
         ]
