@@ -133,6 +133,11 @@ sensors:
         TM_RADAR_SERIAL_PORT_00:
             # Optional: Enable/disable the radar (default: shown below).
             enabled: false
+            # Optional: additional Radar API commands to execute on startup (default: shown below)
+            # must be defined as a string in JSON array format
+            # these commands will override any that come before it
+            # e.g. '["^/+0.00\n", "^/-0.00\n"]' will set cosine correction
+            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
 
     # Optional: used to specify air quality monitor sensor name(s)
     # Note: air quality configuration file is separate from the node-red config, based on the aq device
