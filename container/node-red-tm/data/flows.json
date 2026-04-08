@@ -584,7 +584,6 @@
             "fill-opacity": "0.5"
         },
         "nodes": [
-            "6a21bd2e9204bac0",
             "c113788ccfa879b4",
             "ae11d5c9948bf4e1",
             "c4a024def66c8499",
@@ -596,9 +595,9 @@
             "7eb7b4b61d38b789",
             "3e9d121913d7feae"
         ],
-        "x": 54,
-        "y": 439,
-        "w": 1162,
+        "x": 94,
+        "y": 459,
+        "w": 1232,
         "h": 202
     },
     {
@@ -901,6 +900,202 @@
         "y": 319,
         "w": 912,
         "h": 642
+    },
+    {
+        "id": "2fedf545ef1a2008",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "185db28c3b65f6fc",
+            "e175c8bb6f24e4ba",
+            "49f8992b46fbe1b7",
+            "686d46c2bf6797a4",
+            "5fb1a87c22d5683b",
+            "e638af4d80889930",
+            "e90591f39c2e3807",
+            "b261fa0f810dca01"
+        ],
+        "x": 44,
+        "y": 279,
+        "w": 1092,
+        "h": 202
+    },
+    {
+        "id": "059914d601392262",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "26223a9168dd0050",
+            "5258fa4e4f4f2fc1",
+            "134adeb5116e8cea",
+            "40dd0997123be423",
+            "138179c5e9949f4f",
+            "270334674a87d50f"
+        ],
+        "x": 34,
+        "y": 499,
+        "w": 752,
+        "h": 162
+    },
+    {
+        "id": "f6c8e6dca3b6f8c7",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard - 2 Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "5b38db870275158e",
+            "abaee04dd4a9efbc",
+            "32c504ceff1f2eea",
+            "dd7350cac191ec14",
+            "6b9149118de8e956",
+            "c9cb6e2cdaab9772",
+            "f9371ff86345fb63",
+            "0d9ae87190daa1bb",
+            "7cb78da13dcf9f6b",
+            "06328c7870fda6f2",
+            "803c18b9398a2fab",
+            "d7806fe758b8da06",
+            "399d3b8cb1efa748",
+            "7eefacd664774cbb",
+            "794aa23fc76f788f",
+            "5e4e066b5708a188",
+            "e8d8654f3705e015",
+            "4388d2caa49bfddc",
+            "4ecea52179addd3f",
+            "ccb4ad8ef7c1a512",
+            "135b827c4e19f085",
+            "107c6d6c4e062bb7",
+            "de4bdc9a91c47a77",
+            "1e8b974031e3457c",
+            "38abef4bc69e7017",
+            "b4667615dfe1a22c",
+            "e9b18b60bb19ad57",
+            "b411d16dceb774e4",
+            "4ad930136e3906fc",
+            "6c2e04cb7b4e1fa4",
+            "525cae22210ee82c",
+            "8d296e669d96770f",
+            "5c1d6c3bad7c2da4",
+            "21e51254d274d71a",
+            "6b97da79317ee1c9",
+            "917d15d0cb28b72c",
+            "f596687d8f7e2465",
+            "474ba835cdcb7f66",
+            "9ae82d57ad16f214",
+            "d88e02a995c6b691",
+            "70073189458c7166",
+            "caa0d9c9aad32b4e",
+            "dbe100b9e5311dc4",
+            "5be57f13db580fca",
+            "a7c146ddaa9186e1",
+            "5d459526c6ecc88c",
+            "93a97ba5050b4274",
+            "89df368e4126d892",
+            "22296afc8f514175",
+            "2d04d7190d47ea34",
+            "774e27f2e4ddc076",
+            "ee88006f22f12d3a",
+            "77c47edda09419eb",
+            "a5f613c642ba3b6f",
+            "4ddeeb500b7b62ea"
+        ],
+        "x": 34,
+        "y": 699,
+        "w": 1802,
+        "h": 1102
+    },
+    {
+        "id": "c3e71a6b79637b6f",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Compress & Download 1 or More Files",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a8870e9b54112eff",
+            "6cf0708bd6ada7bd",
+            "40e153d5160cefdd",
+            "39a63360b7aa7e3d",
+            "9a411062daa909fe",
+            "4c93a2b1d9eb1868",
+            "954d4942fd36e01c",
+            "1dbc43751f3cf907",
+            "fa14e8e0d2755cdd",
+            "88d154342ef138bf",
+            "635a1a57798cb598",
+            "13d475e20f6dae50",
+            "519de562acfcd8f1",
+            "c43f82c564c16be8",
+            "857384c653c6a46c",
+            "d6503c258431b152",
+            "04630be97890045c",
+            "30d1dd9d6d580fa4",
+            "2398aa8b9ca25816",
+            "8f8958d08aa3a85d",
+            "0f590ba5f62f89bc",
+            "3948096e595acf1d",
+            "41deab2c99a209b8",
+            "8a12d83e700bcaa6",
+            "513356e9f9a779df",
+            "9297900926075b54",
+            "b5bcea3d8a40c33b",
+            "5f1603d1e44fcab7",
+            "c5bbedde83cba5a7"
+        ],
+        "x": 4,
+        "y": 1859,
+        "w": 1272,
+        "h": 582
+    },
+    {
+        "id": "0d230b9662cd5805",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Iniitalization",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "145469a0eb6a496d",
+            "3427a294414bf4d8"
+        ],
+        "x": 34,
+        "y": 151.5,
+        "w": 712,
+        "h": 97
+    },
+    {
+        "id": "92451286ca48378d",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "For testing - enable the \"Test\" node - requires a file named '/op/traffic-monitor/node-red-tm/dbtmdb-db-salal-2025-12-28.sqlite'",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "827ffad569be93c2",
+            "3141bbce81b4c183",
+            "8d68fe6fbf1738bb",
+            "269abc62167c9e88",
+            "6a75524927564063",
+            "203c4785923732d5"
+        ],
+        "x": 14,
+        "y": 2499,
+        "w": 972,
+        "h": 122
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -1328,206 +1523,10 @@
         "h": 162
     },
     {
-        "id": "2fedf545ef1a2008",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "185db28c3b65f6fc",
-            "e175c8bb6f24e4ba",
-            "49f8992b46fbe1b7",
-            "686d46c2bf6797a4",
-            "5fb1a87c22d5683b",
-            "e638af4d80889930",
-            "e90591f39c2e3807",
-            "b261fa0f810dca01"
-        ],
-        "x": 44,
-        "y": 279,
-        "w": 1092,
-        "h": 202
-    },
-    {
-        "id": "059914d601392262",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "26223a9168dd0050",
-            "5258fa4e4f4f2fc1",
-            "134adeb5116e8cea",
-            "40dd0997123be423",
-            "138179c5e9949f4f",
-            "270334674a87d50f"
-        ],
-        "x": 34,
-        "y": 499,
-        "w": 752,
-        "h": 162
-    },
-    {
-        "id": "f6c8e6dca3b6f8c7",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard - 2 Download JSON",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "5b38db870275158e",
-            "abaee04dd4a9efbc",
-            "32c504ceff1f2eea",
-            "dd7350cac191ec14",
-            "6b9149118de8e956",
-            "c9cb6e2cdaab9772",
-            "f9371ff86345fb63",
-            "0d9ae87190daa1bb",
-            "7cb78da13dcf9f6b",
-            "06328c7870fda6f2",
-            "803c18b9398a2fab",
-            "d7806fe758b8da06",
-            "399d3b8cb1efa748",
-            "7eefacd664774cbb",
-            "794aa23fc76f788f",
-            "5e4e066b5708a188",
-            "e8d8654f3705e015",
-            "4388d2caa49bfddc",
-            "4ecea52179addd3f",
-            "ccb4ad8ef7c1a512",
-            "135b827c4e19f085",
-            "107c6d6c4e062bb7",
-            "de4bdc9a91c47a77",
-            "1e8b974031e3457c",
-            "38abef4bc69e7017",
-            "b4667615dfe1a22c",
-            "e9b18b60bb19ad57",
-            "b411d16dceb774e4",
-            "4ad930136e3906fc",
-            "6c2e04cb7b4e1fa4",
-            "525cae22210ee82c",
-            "8d296e669d96770f",
-            "5c1d6c3bad7c2da4",
-            "21e51254d274d71a",
-            "6b97da79317ee1c9",
-            "917d15d0cb28b72c",
-            "f596687d8f7e2465",
-            "474ba835cdcb7f66",
-            "9ae82d57ad16f214",
-            "d88e02a995c6b691",
-            "70073189458c7166",
-            "caa0d9c9aad32b4e",
-            "dbe100b9e5311dc4",
-            "5be57f13db580fca",
-            "a7c146ddaa9186e1",
-            "5d459526c6ecc88c",
-            "93a97ba5050b4274",
-            "89df368e4126d892",
-            "22296afc8f514175",
-            "2d04d7190d47ea34",
-            "774e27f2e4ddc076",
-            "ee88006f22f12d3a",
-            "77c47edda09419eb",
-            "a5f613c642ba3b6f",
-            "4ddeeb500b7b62ea"
-        ],
-        "x": 34,
-        "y": 699,
-        "w": 1802,
-        "h": 1102
-    },
-    {
-        "id": "c3e71a6b79637b6f",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Compress & Download 1 or More Files",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "a8870e9b54112eff",
-            "6cf0708bd6ada7bd",
-            "40e153d5160cefdd",
-            "39a63360b7aa7e3d",
-            "9a411062daa909fe",
-            "4c93a2b1d9eb1868",
-            "954d4942fd36e01c",
-            "1dbc43751f3cf907",
-            "fa14e8e0d2755cdd",
-            "88d154342ef138bf",
-            "635a1a57798cb598",
-            "13d475e20f6dae50",
-            "519de562acfcd8f1",
-            "c43f82c564c16be8",
-            "857384c653c6a46c",
-            "d6503c258431b152",
-            "04630be97890045c",
-            "30d1dd9d6d580fa4",
-            "2398aa8b9ca25816",
-            "8f8958d08aa3a85d",
-            "0f590ba5f62f89bc",
-            "3948096e595acf1d",
-            "41deab2c99a209b8",
-            "8a12d83e700bcaa6",
-            "513356e9f9a779df",
-            "9297900926075b54",
-            "b5bcea3d8a40c33b",
-            "5f1603d1e44fcab7",
-            "c5bbedde83cba5a7"
-        ],
-        "x": 4,
-        "y": 1859,
-        "w": 1272,
-        "h": 582
-    },
-    {
-        "id": "0d230b9662cd5805",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Iniitalization",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "145469a0eb6a496d",
-            "3427a294414bf4d8"
-        ],
-        "x": 34,
-        "y": 151.5,
-        "w": 712,
-        "h": 97
-    },
-    {
-        "id": "92451286ca48378d",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "For testing - enable the \"Test\" node - requires a file named '/op/traffic-monitor/node-red-tm/dbtmdb-db-salal-2025-12-28.sqlite'",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "827ffad569be93c2",
-            "3141bbce81b4c183",
-            "8d68fe6fbf1738bb",
-            "269abc62167c9e88",
-            "6a75524927564063",
-            "203c4785923732d5"
-        ],
-        "x": 14,
-        "y": 2499,
-        "w": 972,
-        "h": 122
-    },
-    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 460,
+        "x": 440,
         "y": 120,
         "wires": [
             [
@@ -1588,8 +1587,8 @@
         "id": "05e485cfcada03a3",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
-        "x": 1960,
-        "y": 440,
+        "x": 1360,
+        "y": 400,
         "wires": [
             [
                 "314e74cc3f8d050c",
@@ -1646,7 +1645,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
         "x": 120,
-        "y": 540,
+        "y": 560,
         "wires": [
             [
                 "c4a024def66c8499",
@@ -2022,6 +2021,69 @@
         "className": ""
     },
     {
+        "id": "1ea6ab39.e574b5",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "7da9517d.305a1",
+        "type": "ui_group",
+        "name": "",
+        "tab": "1ea6ab39.e574b5",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "2a8899583532edb4",
+        "type": "ui-base",
+        "name": "Movements",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "temporary",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": "1",
+        "showDisconnectNotification": true,
+        "allowInstall": true
+    },
+    {
+        "id": "2f60c1ab30a6fc8f",
+        "type": "sqlitedb",
+        "db": "${TM_DATABASE_PATH_TMDB}",
+        "mode": "RWC"
+    },
+    {
+        "id": "14550b211f0fccc6",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
         "id": "37da1871896b31d3",
         "type": "ui-page",
         "name": "Monitoring",
@@ -2100,24 +2162,6 @@
         "groupType": "default"
     },
     {
-        "id": "1ea6ab39.e574b5",
-        "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
-        "disabled": false,
-        "hidden": false
-    },
-    {
-        "id": "7da9517d.305a1",
-        "type": "ui_group",
-        "name": "",
-        "tab": "1ea6ab39.e574b5",
-        "order": 1,
-        "disp": true,
-        "width": "6",
-        "collapse": false
-    },
-    {
         "id": "ef90f85facf47af9",
         "type": "ui-page",
         "name": "Movements",
@@ -2182,6 +2226,56 @@
         "groupType": "default"
     },
     {
+        "id": "6599f3821baa508f",
+        "type": "ui-page",
+        "name": "Database",
+        "ui": "2a8899583532edb4",
+        "path": "/database",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "c94066909cea70f6",
+        "type": "ui-group",
+        "name": "Processing File(s)",
+        "page": "6599f3821baa508f",
+        "width": "6",
+        "height": 1,
+        "order": 4,
+        "showTitle": true,
+        "className": "",
+        "visible": "false",
+        "disabled": "false",
+        "groupType": "dialog"
+    },
+    {
         "id": "d1b753e7c692d80c",
         "type": "ui-group",
         "name": "Create Local Comments",
@@ -2222,101 +2316,6 @@
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
-    },
-    {
-        "id": "2a8899583532edb4",
-        "type": "ui-base",
-        "name": "Movements",
-        "path": "/dashboard",
-        "appIcon": "",
-        "includeClientData": true,
-        "acceptsClientConfig": [
-            "ui-notification",
-            "ui-control"
-        ],
-        "showPathInSidebar": false,
-        "headerContent": "page",
-        "navigationStyle": "temporary",
-        "titleBarStyle": "default",
-        "showReconnectNotification": true,
-        "notificationDisplayTime": "1",
-        "showDisconnectNotification": true,
-        "allowInstall": true
-    },
-    {
-        "id": "2f60c1ab30a6fc8f",
-        "type": "sqlitedb",
-        "db": "${TM_DATABASE_PATH_TMDB}",
-        "mode": "RWC"
-    },
-    {
-        "id": "6599f3821baa508f",
-        "type": "ui-page",
-        "name": "Database",
-        "ui": "2a8899583532edb4",
-        "path": "/database",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "14550b211f0fccc6",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 1,
-        "className": "",
-        "visible": true,
-        "disabled": false
-    },
-    {
-        "id": "14550b211f0fccc6",
-        "type": "ui-theme",
-        "name": "Default Theme",
-        "colors": {
-            "surface": "#ffffff",
-            "primary": "#0094CE",
-            "bgPage": "#eeeeee",
-            "groupBg": "#ffffff",
-            "groupOutline": "#cccccc"
-        },
-        "sizes": {
-            "density": "default",
-            "pagePadding": "12px",
-            "groupGap": "12px",
-            "groupBorderRadius": "4px",
-            "widgetGap": "12px"
-        }
-    },
-    {
-        "id": "c94066909cea70f6",
-        "type": "ui-group",
-        "name": "Processing File(s)",
-        "page": "6599f3821baa508f",
-        "width": "6",
-        "height": 1,
-        "order": 4,
-        "showTitle": true,
-        "className": "",
-        "visible": "false",
-        "disabled": "false",
-        "groupType": "dialog"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -2504,7 +2503,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "// construct time zone elements for radar\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n  hours.toString().padStart(2, '0') +\n  minutes.toString().padStart(2, '0')\n\nconst opt_api_commands_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      const parseOptCommands = str => {\n        if (!str || typeof str !== 'string') return [];\n        return str\n          .split(',')\n          .map(s => s.replace(/^\\s+/, '')) // remove leading whitespace only; preserve trailing and \"\\n\"\n          .filter(s => s.length > 0)\n      };\n      \n      const optCommands = (typeof sensor.opt_api_commands === 'string' && sensor.opt_api_commands.length)\n        ? parseOptCommands(sensor.opt_api_commands)\n        : opt_api_commands_default;\n                    \n      // create radar initial setup commands array\n      sensor.api_commands = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"C=\" + Math.ceil(date.getTime() / 1000) + \"\\n\",\n        \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...optCommands,\n        \"PA\", \"A!\"\n      ]\n\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2873,7 +2872,8 @@
         "name": "init-config link out",
         "mode": "link",
         "links": [
-            "c49d311e5668de52"
+            "c49d311e5668de52",
+            "a6b986e24a80c93b"
         ],
         "x": 865,
         "y": 340,
@@ -2903,7 +2903,7 @@
         "z": "1c71c8f26f5b7b19",
         "name": "AN-10 API Interface",
         "info": "https://omnipresense.com/wp-content/uploads/2023/11/AN-010-Z_API_Interface.pdf",
-        "x": 170,
+        "x": 230,
         "y": 40,
         "wires": []
     },
@@ -2915,8 +2915,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1790,
-        "y": 160,
+        "x": 1190,
+        "y": 120,
         "wires": [
             [
                 "fbf61ec935e282ae"
@@ -2928,7 +2928,7 @@
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
         "name": "debug-radar-all-output",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -2937,7 +2937,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 180,
-        "y": 700,
+        "y": 720,
         "wires": []
     },
     {
@@ -2964,8 +2964,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 1590,
-        "y": 160,
+        "x": 990,
+        "y": 120,
         "wires": [
             [
                 "c744236bdcd86cf3"
@@ -2978,8 +2978,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_00",
         "serial": "6739e78652771a41",
-        "x": 1390,
-        "y": 160,
+        "x": 790,
+        "y": 120,
         "wires": []
     },
     {
@@ -3007,7 +3007,7 @@
         "name": "catch - flow-radar",
         "scope": null,
         "uncaught": false,
-        "x": 380,
+        "x": 440,
         "y": 40,
         "wires": [
             [
@@ -3028,7 +3028,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 590,
+        "x": 650,
         "y": 40,
         "wires": []
     },
@@ -3036,16 +3036,15 @@
         "id": "6a21bd2e9204bac0",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
-        "g": "805c5feafbb3610b",
-        "name": "query all settings, manually",
+        "name": "query radar settings, manually",
         "props": [],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": "4",
         "topic": "",
-        "x": 210,
-        "y": 480,
+        "x": 160,
+        "y": 420,
         "wires": [
             [
                 "3e9d121913d7feae"
@@ -3069,12 +3068,12 @@
         "repeat": "3600",
         "crontab": "",
         "once": true,
-        "onceDelay": "20",
+        "onceDelay": "30",
         "topic": "",
         "payload": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
         "payloadType": "jsonata",
-        "x": 200,
-        "y": 200,
+        "x": 180,
+        "y": 120,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -3102,8 +3101,8 @@
         "topic": "",
         "payload": "\"PI\"",
         "payloadType": "jsonata",
-        "x": 190,
-        "y": 120,
+        "x": 170,
+        "y": 160,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -3148,7 +3147,7 @@
         "repair": false,
         "outputs": 5,
         "x": 180,
-        "y": 780,
+        "y": 840,
         "wires": [
             [
                 "3faf0dcbc24ef11c"
@@ -3630,20 +3629,6 @@
         ]
     },
     {
-        "id": "fb779ea25c6cdfb5",
-        "type": "link in",
-        "z": "1c71c8f26f5b7b19",
-        "name": "query OPS",
-        "links": [],
-        "x": 335,
-        "y": 80,
-        "wires": [
-            [
-                "998194b1b9bc29ba"
-            ]
-        ]
-    },
-    {
         "id": "01307f2f13f465f2",
         "type": "link out",
         "z": "1c71c8f26f5b7b19",
@@ -3747,8 +3732,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1840,
-        "y": 200,
+        "x": 1240,
+        "y": 160,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3761,8 +3746,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 1390,
-        "y": 240,
+        "x": 790,
+        "y": 200,
         "wires": []
     },
     {
@@ -3771,8 +3756,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 1390,
-        "y": 320,
+        "x": 790,
+        "y": 280,
         "wires": []
     },
     {
@@ -3781,8 +3766,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "send to RADAR_03",
         "serial": "9436149d39191450",
-        "x": 1390,
-        "y": 400,
+        "x": 790,
+        "y": 360,
         "wires": []
     },
     {
@@ -3791,8 +3776,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_01",
         "serial": "d4f8fcd8e734b75f",
-        "x": 1590,
-        "y": 240,
+        "x": 990,
+        "y": 200,
         "wires": [
             [
                 "b9d0ad874b671281"
@@ -3807,8 +3792,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1790,
-        "y": 240,
+        "x": 1190,
+        "y": 200,
         "wires": [
             [
                 "5ca9d7d0dac757f4"
@@ -3841,8 +3826,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1840,
-        "y": 280,
+        "x": 1240,
+        "y": 240,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3855,8 +3840,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_02",
         "serial": "8fcc984759daf862",
-        "x": 1590,
-        "y": 320,
+        "x": 990,
+        "y": 280,
         "wires": [
             [
                 "c733b3b6871f335b"
@@ -3871,8 +3856,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1790,
-        "y": 320,
+        "x": 1190,
+        "y": 280,
         "wires": [
             [
                 "787b21d91c5a25b1"
@@ -3905,8 +3890,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1840,
-        "y": 360,
+        "x": 1240,
+        "y": 320,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3919,8 +3904,8 @@
         "z": "1c71c8f26f5b7b19",
         "name": "receive RADAR_03",
         "serial": "9436149d39191450",
-        "x": 1590,
-        "y": 400,
+        "x": 990,
+        "y": 360,
         "wires": [
             [
                 "be612a06e6fce8b1"
@@ -3935,8 +3920,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 1790,
-        "y": 400,
+        "x": 1190,
+        "y": 360,
         "wires": [
             [
                 "9c5feff0083f6fef"
@@ -3969,8 +3954,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1840,
-        "y": 440,
+        "x": 1240,
+        "y": 400,
         "wires": [
             [
                 "05e485cfcada03a3"
@@ -3992,12 +3977,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1640,
-        "y": 200,
+        "x": 1040,
+        "y": 160,
         "wires": [
             [
-                "31581da0d3b6358a",
-                "5fab57ddafa5e6af"
+                "31581da0d3b6358a"
             ]
         ]
     },
@@ -4016,8 +4000,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1640,
-        "y": 280,
+        "x": 1040,
+        "y": 240,
         "wires": [
             [
                 "0d53bc6696f96c48"
@@ -4039,8 +4023,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1640,
-        "y": 360,
+        "x": 1040,
+        "y": 320,
         "wires": [
             [
                 "9e504ae365417be4"
@@ -4062,8 +4046,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 1640,
-        "y": 440,
+        "x": 1040,
+        "y": 400,
         "wires": [
             [
                 "1d905e0c54b723b5"
@@ -4088,7 +4072,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 580,
+        "x": 560,
         "y": 120,
         "wires": [
             [
@@ -4117,7 +4101,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 580,
+        "x": 560,
         "y": 200,
         "wires": [
             [
@@ -4146,7 +4130,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 580,
+        "x": 560,
         "y": 280,
         "wires": [
             [
@@ -4175,7 +4159,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 580,
+        "x": 560,
         "y": 360,
         "wires": [
             [
@@ -4205,7 +4189,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 590,
         "y": 160,
         "wires": [
             [
@@ -4232,7 +4216,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 590,
         "y": 240,
         "wires": [
             [
@@ -4259,7 +4243,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 590,
         "y": 320,
         "wires": [
             [
@@ -4286,7 +4270,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 610,
+        "x": 590,
         "y": 400,
         "wires": [
             [
@@ -4702,7 +4686,7 @@
         "reduceInitType": "",
         "reduceFixup": "",
         "x": 890,
-        "y": 520,
+        "y": 540,
         "wires": [
             [
                 "59d61701c38da429"
@@ -4736,8 +4720,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 500,
-        "y": 600,
+        "x": 680,
+        "y": 620,
         "wires": [
             [
                 "c113788ccfa879b4"
@@ -4772,10 +4756,9 @@
         "to": "",
         "reg": false,
         "x": 290,
-        "y": 520,
+        "y": 540,
         "wires": [
             [
-                "05a58d9ee463c696",
                 "c113788ccfa879b4"
             ]
         ]
@@ -4797,7 +4780,7 @@
         "repair": false,
         "outputs": 1,
         "x": 710,
-        "y": 480,
+        "y": 500,
         "wires": [
             [
                 "c113788ccfa879b4"
@@ -4817,8 +4800,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 990,
-        "y": 560,
+        "x": 1090,
+        "y": 540,
         "wires": [
             [
                 "9e95f569494a21dc",
@@ -4846,8 +4829,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1040,
-        "y": 600,
+        "x": 1160,
+        "y": 580,
         "wires": [
             []
         ]
@@ -4862,8 +4845,8 @@
         "links": [
             "66bace5cf805a4fb"
         ],
-        "x": 1175,
-        "y": 560,
+        "x": 1275,
+        "y": 540,
         "wires": []
     },
     {
@@ -4871,16 +4854,16 @@
         "type": "function",
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
-        "name": "init: query each setting, and clear buffer, takes ~9.0-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\",, \"^?\", \"PA\"]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 500; // 500 ms delay\nconst delay_short = 100;\n//500+100 = 600 ms per attribute\n\nnode.send({payload:hexCode});\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({payload:attribute_array[i]});\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({payload:hexCode});\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "name": "init: query radar settings, ~4.5-sec each",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // Keep attribute_array as-is (no api_commands included)\n        const attribute_array = [\"PI\", \"?P\", \"?N\", \"?D\", \"?V\", \"?B\", \"??\", \n            \"U?\", \"u?\", \"F?\", \"O?\", \"?F\", \"t?\", \"s?\", \"^?\", \"PA\"];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 200; // in ms\n        const delay_short = 50;\n        // 200+50 = 250 ms per attribute\n\n        node.send({ payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 340,
-        "y": 560,
+        "x": 300,
+        "y": 580,
         "wires": [
             [
                 "05a58d9ee463c696",
@@ -4893,7 +4876,7 @@
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
         "g": "805c5feafbb3610b",
-        "name": "complete?",
+        "name": "radar query complete?",
         "property": "complete",
         "propertyType": "msg",
         "rules": [
@@ -4904,8 +4887,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 250,
-        "y": 600,
+        "x": 400,
+        "y": 620,
         "wires": [
             [
                 "ae11d5c9948bf4e1"
@@ -4927,20 +4910,20 @@
         "id": "a0b880e68f9b7198",
         "type": "function",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set initial settings, takes ~7-sec",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = [\"PI\", \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\n    \"OU\", \"OT\", \"Oh\", \"Oc\",\n    \"@O\", \"@|300\\n\",\n    \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n    \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n    \"OM\", \"M>20\\n\", \"OS\", \"R>5\\n\", \"O3\",\n    \"^/+0.00\\n\",\"^/-0.00\\n\",\n    \"PA\", \"A!\"\n]\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
+        "name": "init: radar settings, ~4-sec each",
+        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\nconst myRadars = global.get('config.sensors.radars');\n\nfor (let radarName in myRadars) {\n    if (myRadars.hasOwnProperty(radarName)) {\n        const radarConfig = myRadars[radarName];\n        \n        // Skip disabled radars\n        if (!radarConfig.enabled) continue;\n        \n        // construct time zone elements\n        const date = new Date();\n        const offsetInMinutes = date.getTimezoneOffset();\n        const hours = Math.abs(Math.floor(offsetInMinutes / 60));\n        const minutes = Math.abs(offsetInMinutes % 60);\n        const offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n            hours.toString().padStart(2, '0') +\n            minutes.toString().padStart(2, '0');\n\n        // Build attribute_array with all api_commands from this radar\n        const attribute_array = [\n            \"PI\",\n            \"C=\" + Math.ceil(date.getTime()/1000) + \"\\n\",\n            \"CZ\" + \"GMT\" + offsetString + \"\\n\",\n            ...radarConfig.api_commands || [],  // Spread all api_commands\n            \"PA\", \n            \"A!\"\n        ];\n\n        // send each, clear it with ctr+c which is hex code 0x03\n        const hexCode = '\\x03'; // 0x03 hex code\n        const delay = 100; // ms delay\n        const delay_short = 50; // 150 ms per attribute\n\n        node.send({ payload: hexCode });\n        await new Promise(resolve => setTimeout(resolve, delay_short));\n\n        for (let i = 0; i < attribute_array.length; i++) {\n            node.send({ payload: attribute_array[i] });\n            await new Promise(resolve => setTimeout(resolve, delay));\n            node.send({ payload: hexCode });\n            await new Promise(resolve => setTimeout(resolve, delay_short));\n        }\n    }\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 220,
-        "y": 280,
+        "x": 250,
+        "y": 320,
         "wires": [
             [
                 "09952039b0ab86aa",
-                "8e41b93f6de3614f"
+                "05a58d9ee463c696"
             ]
         ]
     },
@@ -4965,8 +4948,8 @@
         "topic": "",
         "payload": "\"PA\"",
         "payloadType": "jsonata",
-        "x": 200,
-        "y": 160,
+        "x": 180,
+        "y": 200,
         "wires": [
             [
                 "05a58d9ee463c696"
@@ -4977,18 +4960,13 @@
         "id": "cca525a755c918da",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set initial radar settings",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "init: set initial radar settings, manual",
+        "props": [],
         "repeat": "",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": "1",
-        "topic": "init_settings",
+        "topic": "",
         "x": 180,
         "y": 240,
         "wires": [
@@ -5001,7 +4979,7 @@
         "id": "09952039b0ab86aa",
         "type": "switch",
         "z": "1c71c8f26f5b7b19",
-        "name": "complete?",
+        "name": "radar init complete?",
         "property": "complete",
         "propertyType": "msg",
         "rules": [
@@ -5012,8 +4990,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 290,
-        "y": 320,
+        "x": 310,
+        "y": 360,
         "wires": [
             [
                 "3e9d121913d7feae"
@@ -5021,71 +4999,31 @@
         ]
     },
     {
-        "id": "9c43aed7096c670e",
-        "type": "function",
+        "id": "a6b986e24a80c93b",
+        "type": "link in",
         "z": "1c71c8f26f5b7b19",
-        "name": "init: set initial settings",
-        "func": "//send parameters to query, start with PI (idle) and end with PA (active)\n// required as a long string of these commands will sometimes not report back\n// clear buffer between each command with ctr+c (hex \\x03)\n\nmsg.complete = false;\n\n// construct time zone elements\nconst date = new Date()\nconst offsetInMinutes = date.getTimezoneOffset()\nconst hours = Math.abs(Math.floor(offsetInMinutes / 60))\nconst minutes = Math.abs(offsetInMinutes % 60)\nconst offsetString = (offsetInMinutes >= 0 ? \"-\" : \"+\") +\n    hours.toString().padStart(2, '0') +\n    minutes.toString().padStart(2, '0')\n\nconst attribute_array = msg.payload\n\n// send each, clear it with ctr+c which is hex code 0x03\nconst hexCode = '\\x03'; // 0x03 hex code\nconst delay = 200; // ms delay\nconst delay_short = 100;  //300 ms per attribute\n\nnode.send({ payload: hexCode });\nawait new Promise(resolve => setTimeout(resolve, delay_short));\n\nfor (let i = 0; i < attribute_array.length; i++) {\n    node.send({ payload: attribute_array[i] });\n    await new Promise(resolve => setTimeout(resolve, delay));\n    node.send({ payload: hexCode });\n    await new Promise(resolve => setTimeout(resolve, delay_short));\n}\n\nmsg.complete = true;\nnode.done();\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 920,
-        "y": 120,
+        "name": "init-config link in",
+        "links": [
+            "2fa46892748adc43"
+        ],
+        "x": 135,
+        "y": 280,
         "wires": [
             [
-                "a9099db075b10bcf",
-                "c0fa8abb2878f6a0",
-                "7c7577ee1b447bf6"
-            ]
-        ],
-        "info": "takes ~7-sec"
-    },
-    {
-        "id": "a94df5462b3d4457",
-        "type": "switch",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init?",
-        "property": "topic",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "init_settings",
-                "vt": "str"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 730,
-        "y": 120,
-        "wires": [
-            [
-                "d3e76edd87e0ad7f"
-            ],
-            [
-                "7c7577ee1b447bf6"
+                "365eb222a89dd7bd"
             ]
         ]
     },
     {
-        "id": "d3e76edd87e0ad7f",
+        "id": "365eb222a89dd7bd",
         "type": "change",
         "z": "1c71c8f26f5b7b19",
-        "name": "set api_commands",
+        "name": "delete msg.payload",
         "rules": [
             {
-                "t": "set",
+                "t": "delete",
                 "p": "payload",
-                "pt": "msg",
-                "to": "config.sensors.radars.TM_RADAR_SERIAL_PORT_00.api_commands",
-                "tot": "global"
+                "pt": "msg"
             }
         ],
         "action": "",
@@ -5093,173 +5031,13 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 890,
-        "y": 80,
+        "x": 270,
+        "y": 280,
         "wires": [
             [
-                "9c43aed7096c670e",
-                "7f20bb08244a3b07"
+                "a0b880e68f9b7198"
             ]
         ]
-    },
-    {
-        "id": "a9099db075b10bcf",
-        "type": "switch",
-        "z": "1c71c8f26f5b7b19",
-        "name": "complete?",
-        "property": "complete",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "true"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1110,
-        "y": 80,
-        "wires": [
-            [
-                "4ab94d1bb811dc03"
-            ]
-        ]
-    },
-    {
-        "id": "fd4ded0125e592a6",
-        "type": "join",
-        "z": "1c71c8f26f5b7b19",
-        "name": "init complete",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "useparts": false,
-        "accumulate": false,
-        "timeout": "30",
-        "count": "4",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "",
-        "reduceFixup": "",
-        "x": 140,
-        "y": 400,
-        "wires": [
-            [
-                "3e9d121913d7feae"
-            ]
-        ]
-    },
-    {
-        "id": "4ab94d1bb811dc03",
-        "type": "change",
-        "z": "1c71c8f26f5b7b19",
-        "name": "",
-        "rules": [
-            {
-                "t": "set",
-                "p": "parts",
-                "pt": "msg",
-                "to": "1",
-                "tot": "str"
-            },
-            {
-                "t": "set",
-                "p": "complete",
-                "pt": "msg",
-                "to": "false",
-                "tot": "bool"
-            },
-            {
-                "t": "set",
-                "p": "topic",
-                "pt": "msg",
-                "to": "",
-                "tot": "str"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1200,
-        "y": 120,
-        "wires": [
-            [
-                "fd4ded0125e592a6"
-            ]
-        ]
-    },
-    {
-        "id": "c0fa8abb2878f6a0",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1370,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "5fab57ddafa5e6af",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1850,
-        "y": 40,
-        "wires": []
-    },
-    {
-        "id": "7f20bb08244a3b07",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1070,
-        "y": 20,
-        "wires": []
-    },
-    {
-        "id": "8e41b93f6de3614f",
-        "type": "debug",
-        "z": "1c71c8f26f5b7b19",
-        "name": "debug 4",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 410,
-        "y": 260,
-        "wires": []
     },
     {
         "id": "f20c74c0ccfd256c",
