@@ -1,0 +1,25 @@
+### Traffic Monitor system configurationg file
+
+## Camera configuration
+# Enable DRM VC4 V3D driver
+dtoverlay=vc4-kms-v3d,cma-512
+max_framebuffers=2
+
+{% if tmsetup_detectors.edgetpu_pci is defined and
+  tmsetup_detectors.edgetpu_pci.exists | bool
+%}
+## PCIE Coral TPU Configuration
+# Enable the PCIe External connector.
+dtparam=pciex1
+kernel=kernel8.img
+# Enable Pineboards Hat Ai
+dtoverlay=pineboards-hat-ai
+{% endif %}
+
+{% if tmsetup_detectors.hailo8l is defined and
+  tmsetup_detectors.hailo8l.exists | bool
+%}
+## Hailo8 Requirements
+# Enable PCIe Gen3
+dtparam=pciex1_gen=3
+{% endif %}

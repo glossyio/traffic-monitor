@@ -22,23 +22,6 @@
     tmsetup_codeowner_uid: '{{ tmsetup_base_register_user_codeowner.uid }}'
     tmsetup_codeowner_gid: '{{ tmsetup_base_register_user_codeowner.group }}'
 
-- name: TMSetup - Base Setup - Set global config.txt settings
-  become: true
-  ansible.builtin.blockinfile:
-    path: /boot/firmware/config.txt
-    block: |
-      # Enable DRM VC4 V3D driver
-      dtoverlay=vc4-kms-v3d,cma-512
-      max_framebuffers=2
-    append_newline: true
-    prepend_newline: true
-    create: true
-    owner: root
-    group: root
-    mode: '0644'
-    state: present
-  notify: TMSetup - Flag for reboot
-
 - name: TMSetup - Base Setup - Set timezone
   become: true
   community.general.timezone:
@@ -91,7 +74,7 @@
 
 - name: TMSetup - Base Setup - Create journald conf directory
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/systemd/journald.conf.d
     state: directory
     owner: root

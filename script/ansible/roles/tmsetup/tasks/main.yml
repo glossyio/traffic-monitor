@@ -75,7 +75,38 @@
   ansible.builtin.import_tasks:
     file: wifi_setup.yml
 
-- name: TMSetup - Base Setup - Check if reboot needed
+- name: TMsetup - Main - Copy firmware configuration
+  become: true
+  tags:
+    - detectors
+  ansible.builtin.template:
+    dest: /boot/firmware/traffic-monitor-config.txt
+    group: root
+    mode: '0644'
+    owner: root
+    src: traffic-monitor-config.txt.j2
+  notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Main - Include firmware configuration in global config
+  become: true
+  tags:
+    - detectors
+  ansible.builtin.blockinfile:
+    append_newline: true
+    block: |
+      # Include Traffic Monitor specific configurations
+      include traffic-monitor-config.txt
+    create: true
+    group: root
+    insertafter: EOF
+    mode: '0644'
+    owner: root
+    path: /boot/firmware/config.txt
+    prepend_newline: true
+    state: present
+  notify: TMSetup - Flag for reboot
+
+- name: TMSetup - Main - Check if reboot needed
   tags:
     - always
   ansible.builtin.stat:
