@@ -771,7 +771,7 @@
             "463d933f207505c2"
         ],
         "x": 134,
-        "y": 999,
+        "y": 1079,
         "w": 872,
         "h": 142
     },
@@ -795,7 +795,7 @@
             "4ac7575557241d3e"
         ],
         "x": 134,
-        "y": 839,
+        "y": 919,
         "w": 912,
         "h": 142
     },
@@ -816,12 +816,17 @@
             "ca26a14eb3961c1f",
             "52c59e6d6d990e41",
             "b641d9844dc739cd",
-            "fa5d96e6ffb70fcf"
+            "fa5d96e6ffb70fcf",
+            "4e83c4bbbe3abfae",
+            "abdfc4da936895bb",
+            "3dd4fa12f5b371f5",
+            "a4431e8ab196ec31",
+            "7e198bbc9e3cfb45"
         ],
         "x": 134,
         "y": 679,
-        "w": 912,
-        "h": 142
+        "w": 1012,
+        "h": 202
     },
     {
         "id": "dc5a88bd7605f321",
@@ -844,7 +849,7 @@
         ],
         "x": 134,
         "y": 539,
-        "w": 962,
+        "w": 972,
         "h": 122
     },
     {
@@ -899,6 +904,202 @@
         "y": 319,
         "w": 912,
         "h": 642
+    },
+    {
+        "id": "2fedf545ef1a2008",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Comments Section",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "185db28c3b65f6fc",
+            "e175c8bb6f24e4ba",
+            "49f8992b46fbe1b7",
+            "686d46c2bf6797a4",
+            "5fb1a87c22d5683b",
+            "e638af4d80889930",
+            "e90591f39c2e3807",
+            "b261fa0f810dca01"
+        ],
+        "x": 44,
+        "y": 279,
+        "w": 1092,
+        "h": 202
+    },
+    {
+        "id": "059914d601392262",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Download Database",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "26223a9168dd0050",
+            "5258fa4e4f4f2fc1",
+            "134adeb5116e8cea",
+            "40dd0997123be423",
+            "138179c5e9949f4f",
+            "270334674a87d50f"
+        ],
+        "x": 34,
+        "y": 499,
+        "w": 752,
+        "h": 162
+    },
+    {
+        "id": "f6c8e6dca3b6f8c7",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard - 2 Download JSON",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "5b38db870275158e",
+            "abaee04dd4a9efbc",
+            "32c504ceff1f2eea",
+            "dd7350cac191ec14",
+            "6b9149118de8e956",
+            "c9cb6e2cdaab9772",
+            "f9371ff86345fb63",
+            "0d9ae87190daa1bb",
+            "7cb78da13dcf9f6b",
+            "06328c7870fda6f2",
+            "803c18b9398a2fab",
+            "d7806fe758b8da06",
+            "399d3b8cb1efa748",
+            "7eefacd664774cbb",
+            "794aa23fc76f788f",
+            "5e4e066b5708a188",
+            "e8d8654f3705e015",
+            "4388d2caa49bfddc",
+            "4ecea52179addd3f",
+            "ccb4ad8ef7c1a512",
+            "135b827c4e19f085",
+            "107c6d6c4e062bb7",
+            "de4bdc9a91c47a77",
+            "1e8b974031e3457c",
+            "38abef4bc69e7017",
+            "b4667615dfe1a22c",
+            "e9b18b60bb19ad57",
+            "b411d16dceb774e4",
+            "4ad930136e3906fc",
+            "6c2e04cb7b4e1fa4",
+            "525cae22210ee82c",
+            "8d296e669d96770f",
+            "5c1d6c3bad7c2da4",
+            "21e51254d274d71a",
+            "6b97da79317ee1c9",
+            "917d15d0cb28b72c",
+            "f596687d8f7e2465",
+            "474ba835cdcb7f66",
+            "9ae82d57ad16f214",
+            "d88e02a995c6b691",
+            "70073189458c7166",
+            "caa0d9c9aad32b4e",
+            "dbe100b9e5311dc4",
+            "5be57f13db580fca",
+            "a7c146ddaa9186e1",
+            "5d459526c6ecc88c",
+            "93a97ba5050b4274",
+            "89df368e4126d892",
+            "22296afc8f514175",
+            "2d04d7190d47ea34",
+            "774e27f2e4ddc076",
+            "ee88006f22f12d3a",
+            "77c47edda09419eb",
+            "a5f613c642ba3b6f",
+            "4ddeeb500b7b62ea"
+        ],
+        "x": 34,
+        "y": 699,
+        "w": 1802,
+        "h": 1102
+    },
+    {
+        "id": "c3e71a6b79637b6f",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Dashboard 2 - Compress & Download 1 or More Files",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a8870e9b54112eff",
+            "6cf0708bd6ada7bd",
+            "40e153d5160cefdd",
+            "39a63360b7aa7e3d",
+            "9a411062daa909fe",
+            "4c93a2b1d9eb1868",
+            "954d4942fd36e01c",
+            "1dbc43751f3cf907",
+            "fa14e8e0d2755cdd",
+            "88d154342ef138bf",
+            "635a1a57798cb598",
+            "13d475e20f6dae50",
+            "519de562acfcd8f1",
+            "c43f82c564c16be8",
+            "857384c653c6a46c",
+            "d6503c258431b152",
+            "04630be97890045c",
+            "30d1dd9d6d580fa4",
+            "2398aa8b9ca25816",
+            "8f8958d08aa3a85d",
+            "0f590ba5f62f89bc",
+            "3948096e595acf1d",
+            "41deab2c99a209b8",
+            "8a12d83e700bcaa6",
+            "513356e9f9a779df",
+            "9297900926075b54",
+            "b5bcea3d8a40c33b",
+            "5f1603d1e44fcab7",
+            "c5bbedde83cba5a7"
+        ],
+        "x": 4,
+        "y": 1859,
+        "w": 1272,
+        "h": 582
+    },
+    {
+        "id": "0d230b9662cd5805",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "Iniitalization",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "145469a0eb6a496d",
+            "3427a294414bf4d8"
+        ],
+        "x": 34,
+        "y": 151.5,
+        "w": 712,
+        "h": 97
+    },
+    {
+        "id": "92451286ca48378d",
+        "type": "group",
+        "z": "7c7dba965ad4a266",
+        "name": "For testing - enable the \"Test\" node - requires a file named '/op/traffic-monitor/node-red-tm/dbtmdb-db-salal-2025-12-28.sqlite'",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "827ffad569be93c2",
+            "3141bbce81b4c183",
+            "8d68fe6fbf1738bb",
+            "269abc62167c9e88",
+            "6a75524927564063",
+            "203c4785923732d5"
+        ],
+        "x": 14,
+        "y": 2499,
+        "w": 972,
+        "h": 122
     },
     {
         "id": "9b9e4fc50b744fc3",
@@ -1324,202 +1525,6 @@
         "y": 859,
         "w": 932,
         "h": 162
-    },
-    {
-        "id": "2fedf545ef1a2008",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Comments Section",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "185db28c3b65f6fc",
-            "e175c8bb6f24e4ba",
-            "49f8992b46fbe1b7",
-            "686d46c2bf6797a4",
-            "5fb1a87c22d5683b",
-            "e638af4d80889930",
-            "e90591f39c2e3807",
-            "b261fa0f810dca01"
-        ],
-        "x": 44,
-        "y": 279,
-        "w": 1092,
-        "h": 202
-    },
-    {
-        "id": "059914d601392262",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Download Database",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "26223a9168dd0050",
-            "5258fa4e4f4f2fc1",
-            "134adeb5116e8cea",
-            "40dd0997123be423",
-            "138179c5e9949f4f",
-            "270334674a87d50f"
-        ],
-        "x": 34,
-        "y": 499,
-        "w": 752,
-        "h": 162
-    },
-    {
-        "id": "f6c8e6dca3b6f8c7",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard - 2 Download JSON",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "5b38db870275158e",
-            "abaee04dd4a9efbc",
-            "32c504ceff1f2eea",
-            "dd7350cac191ec14",
-            "6b9149118de8e956",
-            "c9cb6e2cdaab9772",
-            "f9371ff86345fb63",
-            "0d9ae87190daa1bb",
-            "7cb78da13dcf9f6b",
-            "06328c7870fda6f2",
-            "803c18b9398a2fab",
-            "d7806fe758b8da06",
-            "399d3b8cb1efa748",
-            "7eefacd664774cbb",
-            "794aa23fc76f788f",
-            "5e4e066b5708a188",
-            "e8d8654f3705e015",
-            "4388d2caa49bfddc",
-            "4ecea52179addd3f",
-            "ccb4ad8ef7c1a512",
-            "135b827c4e19f085",
-            "107c6d6c4e062bb7",
-            "de4bdc9a91c47a77",
-            "1e8b974031e3457c",
-            "38abef4bc69e7017",
-            "b4667615dfe1a22c",
-            "e9b18b60bb19ad57",
-            "b411d16dceb774e4",
-            "4ad930136e3906fc",
-            "6c2e04cb7b4e1fa4",
-            "525cae22210ee82c",
-            "8d296e669d96770f",
-            "5c1d6c3bad7c2da4",
-            "21e51254d274d71a",
-            "6b97da79317ee1c9",
-            "917d15d0cb28b72c",
-            "f596687d8f7e2465",
-            "474ba835cdcb7f66",
-            "9ae82d57ad16f214",
-            "d88e02a995c6b691",
-            "70073189458c7166",
-            "caa0d9c9aad32b4e",
-            "dbe100b9e5311dc4",
-            "5be57f13db580fca",
-            "a7c146ddaa9186e1",
-            "5d459526c6ecc88c",
-            "93a97ba5050b4274",
-            "89df368e4126d892",
-            "22296afc8f514175",
-            "2d04d7190d47ea34",
-            "774e27f2e4ddc076",
-            "ee88006f22f12d3a",
-            "77c47edda09419eb",
-            "a5f613c642ba3b6f",
-            "4ddeeb500b7b62ea"
-        ],
-        "x": 34,
-        "y": 699,
-        "w": 1802,
-        "h": 1102
-    },
-    {
-        "id": "c3e71a6b79637b6f",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Dashboard 2 - Compress & Download 1 or More Files",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "a8870e9b54112eff",
-            "6cf0708bd6ada7bd",
-            "40e153d5160cefdd",
-            "39a63360b7aa7e3d",
-            "9a411062daa909fe",
-            "4c93a2b1d9eb1868",
-            "954d4942fd36e01c",
-            "1dbc43751f3cf907",
-            "fa14e8e0d2755cdd",
-            "88d154342ef138bf",
-            "635a1a57798cb598",
-            "13d475e20f6dae50",
-            "519de562acfcd8f1",
-            "c43f82c564c16be8",
-            "857384c653c6a46c",
-            "d6503c258431b152",
-            "04630be97890045c",
-            "30d1dd9d6d580fa4",
-            "2398aa8b9ca25816",
-            "8f8958d08aa3a85d",
-            "0f590ba5f62f89bc",
-            "3948096e595acf1d",
-            "41deab2c99a209b8",
-            "8a12d83e700bcaa6",
-            "513356e9f9a779df",
-            "9297900926075b54",
-            "b5bcea3d8a40c33b",
-            "5f1603d1e44fcab7",
-            "c5bbedde83cba5a7"
-        ],
-        "x": 4,
-        "y": 1859,
-        "w": 1272,
-        "h": 582
-    },
-    {
-        "id": "0d230b9662cd5805",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "Iniitalization",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "145469a0eb6a496d",
-            "3427a294414bf4d8"
-        ],
-        "x": 34,
-        "y": 151.5,
-        "w": 712,
-        "h": 97
-    },
-    {
-        "id": "92451286ca48378d",
-        "type": "group",
-        "z": "7c7dba965ad4a266",
-        "name": "For testing - enable the \"Test\" node - requires a file named '/op/traffic-monitor/node-red-tm/dbtmdb-db-salal-2025-12-28.sqlite'",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "827ffad569be93c2",
-            "3141bbce81b4c183",
-            "8d68fe6fbf1738bb",
-            "269abc62167c9e88",
-            "6a75524927564063",
-            "203c4785923732d5"
-        ],
-        "x": 14,
-        "y": 2499,
-        "w": 972,
-        "h": 122
     },
     {
         "id": "05a58d9ee463c696",
@@ -2020,6 +2025,69 @@
         "className": ""
     },
     {
+        "id": "1ea6ab39.e574b5",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "7da9517d.305a1",
+        "type": "ui_group",
+        "name": "",
+        "tab": "1ea6ab39.e574b5",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "2a8899583532edb4",
+        "type": "ui-base",
+        "name": "Movements",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "temporary",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": "1",
+        "showDisconnectNotification": true,
+        "allowInstall": true
+    },
+    {
+        "id": "2f60c1ab30a6fc8f",
+        "type": "sqlitedb",
+        "db": "${TM_DATABASE_PATH_TMDB}",
+        "mode": "RWC"
+    },
+    {
+        "id": "14550b211f0fccc6",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
         "id": "37da1871896b31d3",
         "type": "ui-page",
         "name": "Monitoring",
@@ -2098,24 +2166,6 @@
         "groupType": "default"
     },
     {
-        "id": "1ea6ab39.e574b5",
-        "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
-        "disabled": false,
-        "hidden": false
-    },
-    {
-        "id": "7da9517d.305a1",
-        "type": "ui_group",
-        "name": "",
-        "tab": "1ea6ab39.e574b5",
-        "order": 1,
-        "disp": true,
-        "width": "6",
-        "collapse": false
-    },
-    {
         "id": "ef90f85facf47af9",
         "type": "ui-page",
         "name": "Movements",
@@ -2180,6 +2230,56 @@
         "groupType": "default"
     },
     {
+        "id": "6599f3821baa508f",
+        "type": "ui-page",
+        "name": "Database",
+        "ui": "2a8899583532edb4",
+        "path": "/database",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "14550b211f0fccc6",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "c94066909cea70f6",
+        "type": "ui-group",
+        "name": "Processing File(s)",
+        "page": "6599f3821baa508f",
+        "width": "6",
+        "height": 1,
+        "order": 4,
+        "showTitle": true,
+        "className": "",
+        "visible": "false",
+        "disabled": "false",
+        "groupType": "dialog"
+    },
+    {
         "id": "d1b753e7c692d80c",
         "type": "ui-group",
         "name": "Create Local Comments",
@@ -2220,101 +2320,6 @@
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
-    },
-    {
-        "id": "2a8899583532edb4",
-        "type": "ui-base",
-        "name": "Movements",
-        "path": "/dashboard",
-        "appIcon": "",
-        "includeClientData": true,
-        "acceptsClientConfig": [
-            "ui-notification",
-            "ui-control"
-        ],
-        "showPathInSidebar": false,
-        "headerContent": "page",
-        "navigationStyle": "temporary",
-        "titleBarStyle": "default",
-        "showReconnectNotification": true,
-        "notificationDisplayTime": "1",
-        "showDisconnectNotification": true,
-        "allowInstall": true
-    },
-    {
-        "id": "2f60c1ab30a6fc8f",
-        "type": "sqlitedb",
-        "db": "${TM_DATABASE_PATH_TMDB}",
-        "mode": "RWC"
-    },
-    {
-        "id": "6599f3821baa508f",
-        "type": "ui-page",
-        "name": "Database",
-        "ui": "2a8899583532edb4",
-        "path": "/database",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "14550b211f0fccc6",
-        "breakpoints": [
-            {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "order": 1,
-        "className": "",
-        "visible": true,
-        "disabled": false
-    },
-    {
-        "id": "14550b211f0fccc6",
-        "type": "ui-theme",
-        "name": "Default Theme",
-        "colors": {
-            "surface": "#ffffff",
-            "primary": "#0094CE",
-            "bgPage": "#eeeeee",
-            "groupBg": "#ffffff",
-            "groupOutline": "#cccccc"
-        },
-        "sizes": {
-            "density": "default",
-            "pagePadding": "12px",
-            "groupGap": "12px",
-            "groupBorderRadius": "4px",
-            "widgetGap": "12px"
-        }
-    },
-    {
-        "id": "c94066909cea70f6",
-        "type": "ui-group",
-        "name": "Processing File(s)",
-        "page": "6599f3821baa508f",
-        "width": "6",
-        "height": 1,
-        "order": 4,
-        "showTitle": true,
-        "className": "",
-        "visible": "false",
-        "disabled": "false",
-        "groupType": "dialog"
     },
     {
         "id": "9d0f912cc84546dd",
@@ -10676,7 +10681,7 @@
             "4c66b12f99b8cb1b"
         ],
         "x": 185,
-        "y": 780,
+        "y": 840,
         "wires": [
             [
                 "fa5d96e6ffb70fcf"
@@ -10689,15 +10694,15 @@
         "z": "0fa19dea799cc41d",
         "g": "ace8ea830f3a6877",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\n// In order to get consistent colors across charts, the first few entries\n// in the results array must match the types listed above. So we build up a new\n// array containing results for the types in the types array, with either a count of\n// zero or the actual count. Then we replace the actual entries in the results array.\nconst replacementResults = [];\nlet resultIndex = 0;\nlet firstDate = results[0].date;\nfor (const [typeIndex, type] of types.entries()) {\n  // check whether this type exists **anywhere** in the results, and ignore if not\n  const existingResult = results.find(element => type == element.type);\n  if (!(existingResult === undefined)\n      && resultIndex < results.length) {\n    const result = results[resultIndex];\n    // insert new entry with zero count for any missing result type\n    if (result.type !== type) {\n        replacementResults.push({type, date: firstDate, count: 0});\n      } else if (firstDate <= result.date) {\n        // type already exists in results, so use it\n        replacementResults.push(results[resultIndex++]);\n      }\n  }\n}\nconst indexOfNextResultDate = results.findIndex(element => firstDate < element.date);\nresults.splice(0, replacementResults.length, ...replacementResults);\n\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    types.push(label);\n    reorganize(data[index], label);\n  }\n}\n\n// ensure every hour has an entry for every type, filling in zero counts for missing types.\n// This is needed to make the hours come out in the correct order on the x-axis.\n// Fix provided by johnbenj928\nconst allHours = [...new Set(results.map(r => r.date.getTime()))].sort((a, b) => a - b);\nconst activeTypes = types.filter(type => results.some(r => r.type === type));\nfor (const ts of allHours) {\n  for (const type of activeTypes) {\n    const exists = results.find(r => r.date.getTime() === ts && r.type === type);\n    if (!exists) {\n      results.push({ type, date: new Date(ts), count: 0 });\n    }\n  }\n}\n\n// sort results by date and type\nresults.sort((a, b) => {\n  if (a.date.getTime() !== b.date.getTime()) {\n    return a.date.getTime() - b.date.getTime(); // sort by hour first\n  }\n  return types.indexOf(a.type) - types.indexOf(b.type); // then by type order\n});\n\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\n\n// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n    \"chartOptions\": {\n        \"xAxis\": {\n            \"axisLabel\": {\n                \"rotate\": 45\n            }\n        }\n    }\n};\nreturn {payload: results, ui_update: chartOptions};",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 440,
-        "y": 780,
+        "x": 360,
+        "y": 840,
         "wires": [
             [
                 "b641d9844dc739cd"
@@ -10710,7 +10715,7 @@
         "z": "0fa19dea799cc41d",
         "g": "793988735b710932",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\n// In order to get consistent colors across charts, the first few entries\n// in the results array must match the types listed above. So we build up a new\n// array containing results for the types in the types array, with either a count of\n// zero or the actual count. Then we replace the actual entries in the results array.\nconst replacementResults = [];\nlet resultIndex = 0;\nlet firstDate = results[0].date;\nfor (const [typeIndex, type] of types.entries()) {\n  // check whether this type exists **anywhere** in the results, and ignore if not\n  const existingResult = results.find(element => type == element.type);\n  if (!(existingResult === undefined)\n    && resultIndex < results.length) {\n    const result = results[resultIndex];\n    // insert new entry with zero count for any missing result type\n    if (result.type !== type) {\n      replacementResults.push({ type, date: firstDate, count: 0 });\n    } else if (firstDate <= result.date) {\n      // type already exists in results, so use it\n      replacementResults.push(results[resultIndex++]);\n    }\n  }\n}\nconst indexOfNextResultDate = results.findIndex(element => firstDate < element.date);\nresults.splice(0, replacementResults.length, ...replacementResults);\n\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// Ensure every day has an entry for every type, filling in zero counts for missing types.\n// This is needed to make the days come out in the right order on the X axis.\n// this fix from johnbenj928\nconst allDays = [...new Set(results.map(r => r.date.getTime()))].sort((a, b) => a - b);\nconst activeTypes = types.filter(type => results.some(r => r.type === type));\nfor (const ts of allDays) {\n  for (const type of activeTypes) {\n    const exists = results.find(r => r.date.getTime() === ts && r.type === type);\n    if (!exists) {\n      results.push({ type, date: new Date(ts), count: 0 });\n    }\n  }\n}\n\n// sort results by date and type\nresults.sort((a, b) => {\n  if (a.date.getTime() !== b.date.getTime()) {\n    return a.date.getTime() - b.date.getTime(); // sort by date first\n  }\n  return types.indexOf(a.type) - types.indexOf(b.type); // then by type order\n});\n\n// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n  \"chartOptions\": {\n    \"xAxis\": {\n      \"axisLabel\": {\n        \"rotate\": 45\n      }\n    }\n  }\n};\nreturn { payload: results, ui_update: chartOptions };",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -10718,7 +10723,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 940,
+        "y": 1020,
         "wires": [
             [
                 "b73ab00e77148f62"
@@ -10735,7 +10740,7 @@
             "872601ee6be93e1a"
         ],
         "x": 185,
-        "y": 940,
+        "y": 1020,
         "wires": [
             [
                 "7500f6780dee6eb1"
@@ -10750,7 +10755,7 @@
         "name": "Observations by Type for Each Day for the Last 10 Days",
         "info": "",
         "x": 360,
-        "y": 880,
+        "y": 960,
         "wires": []
     },
     {
@@ -10761,7 +10766,7 @@
         "name": "dashboard-2 Latest Observations",
         "info": "",
         "x": 290,
-        "y": 1040,
+        "y": 1120,
         "wires": []
     },
     {
@@ -10774,7 +10779,7 @@
             "3ac45430055698aa"
         ],
         "x": 195,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             [
                 "cac9b4933417e60c"
@@ -10795,7 +10800,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             [
                 "463d933f207505c2"
@@ -10825,7 +10830,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -10888,7 +10893,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -10922,8 +10927,8 @@
         "height": "5",
         "className": "section-border section-title",
         "interpolation": "linear",
-        "x": 810,
-        "y": 780,
+        "x": 770,
+        "y": 840,
         "wires": [
             []
         ]
@@ -10951,7 +10956,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -10986,7 +10991,7 @@
         "className": "section-border section-title",
         "interpolation": "linear",
         "x": 810,
-        "y": 940,
+        "y": 1020,
         "wires": [
             []
         ]
@@ -11060,7 +11065,7 @@
         "templateScope": "local",
         "className": "section-border",
         "x": 800,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             []
         ]
@@ -11319,6 +11324,110 @@
                 "eb7053718706968b"
             ]
         ]
+    },
+    {
+        "id": "a4431e8ab196ec31",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "function 1",
+        "func": "// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n    \"chartOptions\": {\n        \"xAxis\": {\n            \"axisLabel\": {\n                \"rotate\": 45\n            }\n        }\n    }\n};\nreturn { ui_update: chartOptions };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 780,
+        "wires": [
+            [
+                "b641d9844dc739cd"
+            ]
+        ]
+    },
+    {
+        "id": "4e83c4bbbe3abfae",
+        "type": "ui-control",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "detect page reload",
+        "ui": "2a8899583532edb4",
+        "events": "change",
+        "x": 610,
+        "y": 780,
+        "wires": [
+            [
+                "abdfc4da936895bb"
+            ]
+        ]
+    },
+    {
+        "id": "abdfc4da936895bb",
+        "type": "switch",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "change",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 790,
+        "y": 780,
+        "wires": [
+            [
+                "3dd4fa12f5b371f5"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "3dd4fa12f5b371f5",
+        "type": "switch",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "",
+        "property": "name",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Monitoring",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 930,
+        "y": 780,
+        "wires": [
+            [
+                "a4431e8ab196ec31"
+            ]
+        ]
+    },
+    {
+        "id": "7e198bbc9e3cfb45",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "Hack to reset x-axis label rotation on page load",
+        "info": "",
+        "x": 880,
+        "y": 740,
+        "wires": []
     },
     {
         "id": "a3cc697409ba091a",
