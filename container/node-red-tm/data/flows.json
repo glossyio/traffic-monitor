@@ -772,7 +772,7 @@
             "463d933f207505c2"
         ],
         "x": 134,
-        "y": 999,
+        "y": 1079,
         "w": 872,
         "h": 142
     },
@@ -796,7 +796,7 @@
             "4ac7575557241d3e"
         ],
         "x": 134,
-        "y": 839,
+        "y": 919,
         "w": 912,
         "h": 142
     },
@@ -817,12 +817,17 @@
             "ca26a14eb3961c1f",
             "52c59e6d6d990e41",
             "b641d9844dc739cd",
-            "fa5d96e6ffb70fcf"
+            "fa5d96e6ffb70fcf",
+            "4e83c4bbbe3abfae",
+            "abdfc4da936895bb",
+            "3dd4fa12f5b371f5",
+            "a4431e8ab196ec31",
+            "7e198bbc9e3cfb45"
         ],
         "x": 134,
         "y": 679,
-        "w": 912,
-        "h": 142
+        "w": 1012,
+        "h": 202
     },
     {
         "id": "dc5a88bd7605f321",
@@ -845,7 +850,7 @@
         ],
         "x": 134,
         "y": 539,
-        "w": 962,
+        "w": 972,
         "h": 122
     },
     {
@@ -10767,7 +10772,7 @@
             "4c66b12f99b8cb1b"
         ],
         "x": 185,
-        "y": 780,
+        "y": 840,
         "wires": [
             [
                 "fa5d96e6ffb70fcf"
@@ -10780,15 +10785,15 @@
         "z": "0fa19dea799cc41d",
         "g": "ace8ea830f3a6877",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\n// In order to get consistent colors across charts, the first few entries\n// in the results array must match the types listed above. So we build up a new\n// array containing results for the types in the types array, with either a count of\n// zero or the actual count. Then we replace the actual entries in the results array.\nconst replacementResults = [];\nlet resultIndex = 0;\nlet firstDate = results[0].date;\nfor (const [typeIndex, type] of types.entries()) {\n  // check whether this type exists **anywhere** in the results, and ignore if not\n  const existingResult = results.find(element => type == element.type);\n  if (!(existingResult === undefined)\n      && resultIndex < results.length) {\n    const result = results[resultIndex];\n    // insert new entry with zero count for any missing result type\n    if (result.type !== type) {\n        replacementResults.push({type, date: firstDate, count: 0});\n      } else if (firstDate <= result.date) {\n        // type already exists in results, so use it\n        replacementResults.push(results[resultIndex++]);\n      }\n  }\n}\nconst indexOfNextResultDate = results.findIndex(element => firstDate < element.date);\nresults.splice(0, replacementResults.length, ...replacementResults);\n\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {hour, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [hour, type, count]\n// rather than [[hour, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const hourEntry of entry) {\n    const date = new Date(hourEntry.x);\n    const count = hourEntry.y;\n    results.push({ type, date, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n      && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    types.push(label);\n    reorganize(data[index], label);\n  }\n}\n\n// ensure every hour has an entry for every type, filling in zero counts for missing types.\n// This is needed to make the hours come out in the correct order on the x-axis.\n// Fix provided by johnbenj928\nconst allHours = [...new Set(results.map(r => r.date.getTime()))].sort((a, b) => a - b);\nconst activeTypes = types.filter(type => results.some(r => r.type === type));\nfor (const ts of allHours) {\n  for (const type of activeTypes) {\n    const exists = results.find(r => r.date.getTime() === ts && r.type === type);\n    if (!exists) {\n      results.push({ type, date: new Date(ts), count: 0 });\n    }\n  }\n}\n\n// sort results by date and type\nresults.sort((a, b) => {\n  if (a.date.getTime() !== b.date.getTime()) {\n    return a.date.getTime() - b.date.getTime(); // sort by hour first\n  }\n  return types.indexOf(a.type) - types.indexOf(b.type); // then by type order\n});\n\n// convert to local time and extract the weekday and hour to minimize clutter in the chart legend\nconst shortTimeStyle = new Intl.DateTimeFormat(undefined, { timeStyle: \"short\", });\nconst weekdayStyle = new Intl.DateTimeFormat(undefined, { weekday: \"short\" });\nresults.forEach((result) => result.hour = weekdayStyle.format(result.date) + ' ' + shortTimeStyle.format(result.date));\n\n// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n    \"chartOptions\": {\n        \"xAxis\": {\n            \"axisLabel\": {\n                \"rotate\": 45\n            }\n        }\n    }\n};\nreturn {payload: results, ui_update: chartOptions};",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 440,
-        "y": 780,
+        "x": 360,
+        "y": 840,
         "wires": [
             [
                 "b641d9844dc739cd"
@@ -10801,7 +10806,7 @@
         "z": "0fa19dea799cc41d",
         "g": "793988735b710932",
         "name": "format data for chart",
-        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// sort results by date to get the earliest first\nresults.sort(function(a, b) {\n  return a.date.valueOf() - b.date.valueOf();\n});\n\n// In order to get consistent colors across charts, the first few entries\n// in the results array must match the types listed above. So we build up a new\n// array containing results for the types in the types array, with either a count of\n// zero or the actual count. Then we replace the actual entries in the results array.\nconst replacementResults = [];\nlet resultIndex = 0;\nlet firstDate = results[0].date;\nfor (const [typeIndex, type] of types.entries()) {\n  // check whether this type exists **anywhere** in the results, and ignore if not\n  const existingResult = results.find(element => type == element.type);\n  if (!(existingResult === undefined)\n    && resultIndex < results.length) {\n    const result = results[resultIndex];\n    // insert new entry with zero count for any missing result type\n    if (result.type !== type) {\n      replacementResults.push({ type, date: firstDate, count: 0 });\n    } else if (firstDate <= result.date) {\n      // type already exists in results, so use it\n      replacementResults.push(results[resultIndex++]);\n    }\n  }\n}\nconst indexOfNextResultDate = results.findIndex(element => firstDate < element.date);\nresults.splice(0, replacementResults.length, ...replacementResults);\n\nreturn {payload: results};",
+        "func": "// input format: [{series (e.g. object types), [array with entry per type as {date, day, count}]}]\nconst series = msg.payload[0].series;\nconst data = msg.payload[0].data;\nconst results = [];\n\n// reorganize input data so that it is in the format [date, day, type, count]\n// rather than [[date, day, count]] where the outer array is ordered by type\nfunction reorganize(entry, type) {\n  for (const dayEntry of entry) {\n    const date = dayEntry.x;\n    const count = dayEntry.y;\n    const day = dayEntry.day;\n    results.push({ type, date, day, count });\n  }\n}\n\n//process types in this order to get consistent colors across charts\nconst types = ['bicycle', 'person', 'car', 'dog', 'motorcycle', 'bus', 'truck'];\nfor (const type of types) {\n  const index = series.findIndex(element => element === type);\n  if (index >= 0\n    && index < data.length) {\n    reorganize(data[index], type);\n  }\n}\n\n// we don't want to ignore any other types, so add them to the end\nfor (const [index, label] of series.entries()) {\n  const type = types.find(type => type == label);\n  if (type == undefined) {\n    reorganize(data[index], label);\n  }\n}\n\n// Ensure every day has an entry for every type, filling in zero counts for missing types.\n// This is needed to make the days come out in the right order on the X axis.\n// this fix from johnbenj928\nconst allDays = [...new Set(results.map(r => r.date.getTime()))].sort((a, b) => a - b);\nconst activeTypes = types.filter(type => results.some(r => r.type === type));\nfor (const ts of allDays) {\n  for (const type of activeTypes) {\n    const exists = results.find(r => r.date.getTime() === ts && r.type === type);\n    if (!exists) {\n      results.push({ type, date: new Date(ts), count: 0 });\n    }\n  }\n}\n\n// sort results by date and type\nresults.sort((a, b) => {\n  if (a.date.getTime() !== b.date.getTime()) {\n    return a.date.getTime() - b.date.getTime(); // sort by date first\n  }\n  return types.indexOf(a.type) - types.indexOf(b.type); // then by type order\n});\n\n// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n  \"chartOptions\": {\n    \"xAxis\": {\n      \"axisLabel\": {\n        \"rotate\": 45\n      }\n    }\n  }\n};\nreturn { payload: results, ui_update: chartOptions };",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -10809,7 +10814,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 940,
+        "y": 1020,
         "wires": [
             [
                 "b73ab00e77148f62"
@@ -10826,7 +10831,7 @@
             "872601ee6be93e1a"
         ],
         "x": 185,
-        "y": 940,
+        "y": 1020,
         "wires": [
             [
                 "7500f6780dee6eb1"
@@ -10841,7 +10846,7 @@
         "name": "Observations by Type for Each Day for the Last 10 Days",
         "info": "",
         "x": 360,
-        "y": 880,
+        "y": 960,
         "wires": []
     },
     {
@@ -10852,7 +10857,7 @@
         "name": "dashboard-2 Latest Observations",
         "info": "",
         "x": 290,
-        "y": 1040,
+        "y": 1120,
         "wires": []
     },
     {
@@ -10865,7 +10870,7 @@
             "3ac45430055698aa"
         ],
         "x": 195,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             [
                 "cac9b4933417e60c"
@@ -10886,7 +10891,7 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             [
                 "463d933f207505c2"
@@ -10916,7 +10921,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -10979,7 +10984,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -11013,8 +11018,8 @@
         "height": "5",
         "className": "section-border section-title",
         "interpolation": "linear",
-        "x": 810,
-        "y": 780,
+        "x": 770,
+        "y": 840,
         "wires": [
             []
         ]
@@ -11042,7 +11047,7 @@
         "yAxisLabel": "Count",
         "yAxisProperty": "count",
         "yAxisPropertyType": "property",
-        "ymin": "",
+        "ymin": "0",
         "ymax": "",
         "bins": 10,
         "action": "replace",
@@ -11077,7 +11082,7 @@
         "className": "section-border section-title",
         "interpolation": "linear",
         "x": 810,
-        "y": 940,
+        "y": 1020,
         "wires": [
             []
         ]
@@ -11151,7 +11156,7 @@
         "templateScope": "local",
         "className": "section-border",
         "x": 800,
-        "y": 1100,
+        "y": 1180,
         "wires": [
             []
         ]
@@ -11410,6 +11415,110 @@
                 "eb7053718706968b"
             ]
         ]
+    },
+    {
+        "id": "a4431e8ab196ec31",
+        "type": "function",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "function 1",
+        "func": "// set eCharts option to rotate x-axis labels so they all fit\nconst chartOptions = {\n    \"chartOptions\": {\n        \"xAxis\": {\n            \"axisLabel\": {\n                \"rotate\": 45\n            }\n        }\n    }\n};\nreturn { ui_update: chartOptions };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 780,
+        "wires": [
+            [
+                "b641d9844dc739cd"
+            ]
+        ]
+    },
+    {
+        "id": "4e83c4bbbe3abfae",
+        "type": "ui-control",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "detect page reload",
+        "ui": "2a8899583532edb4",
+        "events": "change",
+        "x": 610,
+        "y": 780,
+        "wires": [
+            [
+                "abdfc4da936895bb"
+            ]
+        ]
+    },
+    {
+        "id": "abdfc4da936895bb",
+        "type": "switch",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "change",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 790,
+        "y": 780,
+        "wires": [
+            [
+                "3dd4fa12f5b371f5"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "3dd4fa12f5b371f5",
+        "type": "switch",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "",
+        "property": "name",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "Monitoring",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 930,
+        "y": 780,
+        "wires": [
+            [
+                "a4431e8ab196ec31"
+            ]
+        ]
+    },
+    {
+        "id": "7e198bbc9e3cfb45",
+        "type": "comment",
+        "z": "0fa19dea799cc41d",
+        "g": "ace8ea830f3a6877",
+        "name": "Hack to reset x-axis label rotation on page load",
+        "info": "",
+        "x": 880,
+        "y": 740,
+        "wires": []
     },
     {
         "id": "a3cc697409ba091a",
