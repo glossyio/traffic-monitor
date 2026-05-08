@@ -1,4 +1,4 @@
---- 
+---
 
 - name: TMSetup - Main - Detector - Check Hailo-8 exists and not installed
   become: true
@@ -25,11 +25,11 @@
 
     - name: TMSetup - Main - Detector - set tmsetup_detectors.hailo8l.fresh_install is true
       ansible.builtin.set_fact:
-        tmsetup_detectors: "{{ tmsetup_detectors | default({}) | combine({
-          'hailo8l': (tmsetup_detectors.hailo8l | default({})) | combine({
-            'fresh_install': true
-            })
-          }) }}"
+        tmsetup_detectors: "{{ tmsetup_detectors |
+                              default({}) |
+                              combine({'hailo8l': (tmsetup_detectors.hailo8l |
+                                default({})) |
+                                combine({'fresh_install': true})}) }}"
 
 - name: TMSetup - Main - Detector - Check PCIe Coral TPU exists and not installed
   become: true
@@ -42,7 +42,7 @@
     - frigate
     - detectors
   notify: TMSetup - Flag for reboot
-  block: 
+  block:
     - name: TMSetup - Main - Detector - Setup PCI Coral TPU Drivers
       ansible.builtin.import_tasks:
         file: coraltpu_pci_setup.yml
@@ -56,10 +56,10 @@
 
     - name: TMSetup - Main - Detector - set tmsetup_detectors.edgetpu_pci.fresh_install is true
       ansible.builtin.set_fact:
-        tmsetup_detectors: "{{ tmsetup_detectors | default({}) | combine({
-          'edgetpu_pci': (tmsetup_detectors.edgetpu_pci | default({})) | combine({
-            'fresh_install': true
-            })
-          }) }}"
+        tmsetup_detectors: "{{ tmsetup_detectors |
+                              default({}) |
+                              combine({'edgetpu_pci': (tmsetup_detectors.edgetpu_pci |
+                                default({})) |
+                                combine({'fresh_install': true})}) }}"
 
 ...

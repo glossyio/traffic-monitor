@@ -101,7 +101,7 @@ The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lo
 (Required) For full object detection capabilities.
 
 {% hint style="info" %}
-The official Raspberry Pi cameras are below recommended for low-cost, compact, local object detection; however any camera that can output H.264 is compatible with the traffic monitor, so you may attach USB or even networked cameras.  &#x20;
+The official Raspberry Pi cameras are below recommended for low-cost, compact, local object detection; however cameras that output H.265 (h265, HEVC) are preferrable due to RPi5 hardware encoding but even H.264 (h264) will work with software decoding in lower volume environments.  &#x20;
 {% endhint %}
 
 1. _(Recommended)_ [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) (wide angle recommended)

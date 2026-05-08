@@ -2,7 +2,7 @@ thingsboard:
     enabled: false
     host: {{ tmsetup_thingsboard_server }}
     protocol: {{ tmsetup_thingsboard_protocol }}
-    port: {{ tmsetup_thingsboard_port }}
+    # port: {{ tmsetup_thingsboard_port }}
     access_token: {{ tmsetup_thingsboard_api_key }}
 
 deployment:
@@ -12,13 +12,13 @@ deployment:
 
 sensors:
     cameras:
-        picam_h264:
-            enabled: false
+        picam_h265:
+            enabled: true
             camera_radar: TM_RADAR_SERIAL_PORT_00
 
     radars:
         TM_RADAR_SERIAL_PORT_00:
-            enabled: false
+            enabled: true
             opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
 
     airquality_monitors:

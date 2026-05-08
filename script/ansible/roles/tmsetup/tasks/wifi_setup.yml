@@ -13,8 +13,8 @@
 - name: TMSetup - WiFi Setup - Copy network connectivity check config
   become: true
   ansible.builtin.copy:
-    src: utils/82-nm-connectivity-check.conf 
-    dest: /etc/NetworkManager/conf.d/82-nm-connectivity-check.conf 
+    src: utils/82-nm-connectivity-check.conf
+    dest: /etc/NetworkManager/conf.d/82-nm-connectivity-check.conf
     owner: root
     group: root
     mode: '0644'
