@@ -46,9 +46,6 @@
   args:
     chdir: "{{ tmsetup_hailo_driver_dir }}"
     creates: hailo8_fw.{{ tmsetup_hailo_version }}.bin
-    owner: root
-    group: root
-    mode: '0644'
 
 - name: TMSetup - Hailo-8 Setup - Ensure firmware directory exists
   become: true
