@@ -71,7 +71,7 @@ def db():
 @pytest.fixture
 def db_with_deployment(db):
     db.execute(
-        "INSERT INTO deployment (id, lable, bearing, created_at) VALUES (?,?,?,?)",
+        "INSERT INTO deployment (id, label, bearing, created_at) VALUES (?,?,?,?)",
         ("deploy-001", "Front Street North", 0.0, int(time.time())),
     )
     db.commit()
