@@ -1,0 +1,64 @@
+server {
+    listen 80;
+    server_name _;  # This will match any hostname
+
+    #Logs for Nginx access and errors
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    # Node-RED admin console
+    location {{ tmsetup_base_path_nodered }}/ {
+        proxy_pass http://traffic-monitor:1880/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_cache_bypass  $http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    #nodered dashboard 2.0
+    location {{ tmsetup_base_path_dashboard }}/ {
+        proxy_pass http://traffic-monitor:1880/dashboard/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Referer "";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+     }
+
+   #legacy nodered dashboard ui
+    location {{ tmsetup_base_path_legacydash }}/ {
+        proxy_pass http://traffic-monitor:1880/ui/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+   #frigate, requires X-Ingress-Path
+    location {{ tmsetup_base_path_frigate }}/ {
+        proxy_pass http://traffic-monitor:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Ingress-Path "{{ tmsetup_base_path_frigate }}";
+        proxy_set_header X-Forwarded-Scheme $scheme;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+   #go2rtc webui to view camera feeds directly
+    location {{ tmsetup_base_path_go2rtc }}/ {
+        proxy_pass http://host.containers.internal:1984/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+}

@@ -1,6 +1,6 @@
 [Unit]
 Description=Frigate container for Traffic Monitor
-After=go2rtc_server.service podman.socket
+After=go2rtc_server.service
 Wants=go2rtc_server.service
 
 [Container]
@@ -23,4 +23,4 @@ EnvironmentFile={{ tmsetup_codedir }}/frigate/frigate.env
 Restart=on-failure
 
 [Install]
-WantedBy=default.target node-red-tm.service
+WantedBy=default.target node-red-tm.service nginx-rproxy-tm.service

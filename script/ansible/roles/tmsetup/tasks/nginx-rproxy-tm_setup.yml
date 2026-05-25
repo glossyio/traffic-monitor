@@ -1,0 +1,51 @@
+---
+- name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx directory
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}'
+    - '{{ tmsetup_codedir }}/nginx-rproxy-tm'
+  ansible.builtin.file:
+    mode: '0750'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item }}'
+    state: directory
+  notify: Restart nginx-rproxy-tm.service
+
+- name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx config file
+  become: true
+  loop:
+    - nginx-rproxy-tm/Containerfile
+    - nginx-rproxy-tm/nginx.conf
+  ansible.builtin.template:
+    backup: false
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    force: '{{ tmsetup_force_configs }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item }}.j2'
+  notify: Restart nginx-rproxy-tm.service
+
+- name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx quadlets
+  become: true
+  loop:
+    - nginx-rproxy-tm.build
+    - nginx-rproxy-tm.container
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0644'
+    owner: root
+    src: 'container/nginx-rproxy-tm/{{ item }}.j2'
+  notify: Restart nginx-rproxy-tm.service
+
+- name: TMSetup - NGinx-RProxy-TM Setup - Build container
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: nginx-rproxy-tm-build.service
+    state: started
+  notify: Restart nginx-rproxy-tm.service
+
+...

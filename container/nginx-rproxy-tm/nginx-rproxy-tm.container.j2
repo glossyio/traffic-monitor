@@ -1,0 +1,16 @@
+[Unit]
+Description=Traffic Monitor NGinx Reverse Proxy container
+After=frigate.service node-red-tm.service go2rtc_server.service
+Wants=frigate.service node-red-tm.service go2rtc_server.service
+
+[Container]
+ContainerName=nginx-rproxy-tm
+Image=nginx-rproxy-tm.build
+Pod=traffic-monitor.pod
+Volume=/etc/localtime:/etc/localtime:ro
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

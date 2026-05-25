@@ -69,6 +69,12 @@
   ansible.builtin.import_tasks:
     file: plate-recognizer_setup.yml
 
+- name: TMSetup - Main - Setup NGinx Reverse Proxy
+  tags:
+    - nginx
+  ansible.builtin.import_tasks:
+    file: nginx-rproxy-tm_setup.yml
+
 - name: TMSetup - Main - Setup WiFI
   tags:
     - wifi
@@ -135,6 +141,7 @@
     - node-red-tm
     - plate-recognizer
     - go2rtc
+    - nginx
   ansible.builtin.import_tasks:
     file: start_services.yml
 

@@ -1,13 +1,21 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.5.1-pre'
+tmsetup_tm_version: '0.6.0'
 tmsetup_go2rtc_version: 'v1.8.5'
 tmsetup_frigate_version: '0.17.1'
 tmsetup_node_red_tm_version: '4.0.9'
 tmsetup_hailo_version: '4.21.0'
+tmsetup_nginx_version: '1.31.0'
 tmsetup_hailo_driver_repo: "https://github.com/hailo-ai/hailort-drivers.git"
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 tmsetup_restart_required: false
+
+# Proxy base paths
+tmsetup_base_path_frigate: /frigate
+tmsetup_base_path_nodered: /nr
+tmsetup_base_path_dashboard: /dash
+tmsetup_base_path_legacydash: /ui
+tmsetup_base_path_go2rtc: /feeds
 
 tmsetup_remove_packages:
   - rpicam-apps-lite

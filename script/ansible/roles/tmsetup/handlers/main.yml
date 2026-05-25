@@ -57,6 +57,15 @@
   async: 600
   poll: 0
 
+- name: Restart nginx-rproxy-tm.service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: nginx-rproxy-tm.service
+    state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
+  async: 600
+  poll: 0
+
 - name: Restart traffic-monitor.service
   become: true
   ansible.builtin.systemd_service:

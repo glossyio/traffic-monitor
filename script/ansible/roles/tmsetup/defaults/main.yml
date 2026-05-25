@@ -11,7 +11,7 @@ tmsetup_frigate_mqtt_user: mqtt_user
 tmsetup_frigate_mqtt_password: mqtt_pass
 
 # see https://docs.frigate.video/configuration/object_detectors
-tmsetup_detectors: 
+tmsetup_detectors:
   edgetpu_usb:
     dev_path: /dev/bus/usb
     check_exists: lsusb | grep -i 1a6e:089a
@@ -33,7 +33,7 @@ tmsetup_detectors:
   hailo8l:
     dev_path: /dev/hailo0
     check_exists: lspci -nn | grep -i hailo
-    frigate_type: hailo8l  
+    frigate_type: hailo8l
     frigate_device: PCIe
     exists: false
     dev_path_available: false
