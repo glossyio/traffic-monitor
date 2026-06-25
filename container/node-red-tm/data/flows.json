@@ -142,7 +142,7 @@
         ],
         "x": 334,
         "y": 699,
-        "w": 892,
+        "w": 902,
         "h": 162
     },
     {
@@ -651,9 +651,9 @@
             "c1adf5e2bd669713",
             "c13f03809fbd9809"
         ],
-        "x": 14,
-        "y": 1999,
-        "w": 1278,
+        "x": 34,
+        "y": 2339,
+        "w": 1268,
         "h": 408
     },
     {
@@ -672,8 +672,8 @@
         ],
         "x": 94,
         "y": 1353,
-        "w": 1398,
-        "h": 674
+        "w": 1418,
+        "h": 894
     },
     {
         "id": "23636f4163fa6e3b",
@@ -1125,12 +1125,14 @@
             "0f65ceafe3f7c069",
             "f5d2d92d50d18ce2",
             "c2270f3050bf35ab",
-            "3ac45430055698aa"
+            "3ac45430055698aa",
+            "94b99ae799155546",
+            "9f091bce2c15ef2b"
         ],
         "x": 194,
         "y": 1379,
         "w": 1252,
-        "h": 362
+        "h": 482
     },
     {
         "id": "453513c49e4b1b60",
@@ -1153,8 +1155,8 @@
             "98571c77b9801a83",
             "42a095ee9445e33b"
         ],
-        "x": 194,
-        "y": 1759,
+        "x": 214,
+        "y": 1979,
         "w": 1272,
         "h": 242
     },
@@ -1438,8 +1440,8 @@
             "5cf61952cb6823de"
         ],
         "x": 394,
-        "y": 2259,
-        "w": 872,
+        "y": 2599,
+        "w": 882,
         "h": 122
     },
     {
@@ -1526,6 +1528,24 @@
         "y": 859,
         "w": 932,
         "h": 162
+    },
+    {
+        "id": "94b99ae799155546",
+        "type": "group",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "read radar magnitude & speed values",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "616017bc1f3c28d0",
+            "4a5875fffe7ca55e"
+        ],
+        "x": 594,
+        "y": 1559,
+        "w": 652,
+        "h": 82
     },
     {
         "id": "05a58d9ee463c696",
@@ -1703,8 +1723,8 @@
         "type": "junction",
         "z": "28627559bebdc324",
         "g": "7c19b3698bb02613",
-        "x": 360,
-        "y": 2040,
+        "x": 370,
+        "y": 2380,
         "wires": [
             [
                 "12df4fdffa628238",
@@ -8630,7 +8650,7 @@
         "repair": false,
         "outputs": 1,
         "x": 1020,
-        "y": 1620,
+        "y": 1740,
         "wires": [
             [
                 "c788d632f5e93a73"
@@ -8677,7 +8697,7 @@
         "finalize": "",
         "libs": [],
         "x": 1050,
-        "y": 1660,
+        "y": 1780,
         "wires": [
             [
                 "4c087723a1d698e9"
@@ -8698,10 +8718,11 @@
         "finalize": "",
         "libs": [],
         "x": 1030,
-        "y": 1580,
+        "y": 1700,
         "wires": [
             [
-                "c36c71706e494b5e"
+                "c36c71706e494b5e",
+                "9f091bce2c15ef2b"
             ]
         ]
     },
@@ -8746,7 +8767,7 @@
         "templateScope": "local",
         "className": "",
         "x": 1270,
-        "y": 1580,
+        "y": 1700,
         "wires": [
             [
                 "3ac45430055698aa"
@@ -8864,7 +8885,7 @@
         "finalize": "",
         "libs": [],
         "x": 470,
-        "y": 1700,
+        "y": 1820,
         "wires": [
             [
                 "5b307e65106f3540"
@@ -8890,7 +8911,7 @@
         "fontSize": "10",
         "color": "#000000",
         "x": 1290,
-        "y": 1700,
+        "y": 1820,
         "wires": []
     },
     {
@@ -8910,7 +8931,7 @@
         "templateScope": "local",
         "className": "",
         "x": 1300,
-        "y": 1660,
+        "y": 1780,
         "wires": [
             []
         ]
@@ -8999,8 +9020,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1280,
-        "y": 1840,
+        "x": 1300,
+        "y": 2060,
         "wires": [
             []
         ]
@@ -9020,8 +9041,8 @@
         "correl": "",
         "expiry": "",
         "broker": "a5d65dd0e3566daa",
-        "x": 1360,
-        "y": 1960,
+        "x": 1380,
+        "y": 2180,
         "wires": []
     },
     {
@@ -9030,7 +9051,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "format last N radar event for output",
-        "func": "\n\nconst newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\nnewMsg.payload.frame_time_datestring = new Date(msg.frigate_event.frame_time * 1000).toLocaleString();\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = msg.frigate_event.direction_calc;\nnewMsg.payload.speed_calc = msg.frigate_event.speed_calc;\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = msg.frigate_event.location;\n\nreturn newMsg;\n\n\nreturn msg;",
+        "func": "\n\nconst newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\nnewMsg.payload.frame_time_datestring = new Date(msg.frigate_event.frame_time * 1000).toLocaleString();\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = msg.frigate_event.direction_calc;\nnewMsg.payload.speed_calc = msg.frigate_event.speed_calc;\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = msg.frigate_event.location;\n\n// read through radar values for this event; save max and min magnitude and speed\n// reformat radar values to save memory and store with the payload\nnewMsg.payload.max_magnitude = 0;\nnewMsg.payload.min_magnitude = 9999;\nnewMsg.payload.max_speed = 0;\nnewMsg.payload.min_speed = 999;\nnewMsg.payload.radar_values = [];\nlet count = 0;\ntry {\nmsg.payload.forEach(radar_value => {\n    const radar = {\n        magnitudes: [],\n        speeds:  [],\n        time: radar_value.time\n    };\n    const magnitudes = JSON.parse(radar_value.magnitude); // array of numbers formatted as strings\n    magnitudes.forEach(magnitude => { // magnitude is a number formatted as a string\n        const numeric_magnitude = Number(magnitude);\n        newMsg.payload.max_magnitude = Math.max(newMsg.payload.max_magnitude, numeric_magnitude);\n        newMsg.payload.min_magnitude = Math.min(newMsg.payload.min_magnitude, numeric_magnitude);\n        radar.magnitudes.push(numeric_magnitude);\n        if (Object.is(newMsg.payload.max_magnitude, NaN) && count++ == 0) {\n            node.error(\"max magnitude got NaN; magnitudes are: \" + radar_value.magnitude);\n        }\n    });\n    const speeds = JSON.parse(radar_value.speed);  // array of numbers formatted as strings\n    speeds.forEach(speed => { // magnitude is a number formatted as a string\n        const numeric_speed = Number(speed);\n        newMsg.payload.max_speed = Math.max(newMsg.payload.max_speed, numeric_speed);\n        newMsg.payload.min_speed = Math.min(newMsg.payload.min_speed, numeric_speed);\n        radar.speeds.push(numeric_speed);\n        if (Object.is(newMsg.payload.max_speed, NaN) && count++ == 0) {\n            node.error(\"max speed got NaN; speeds are: \" + radar_value.speed);\n        }\n    });\n    newMsg.payload.radar_values.push(radar);\n})\n} catch(error) {if (count++ == 0) {node.error(\"caught error: \" + error)}}\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9038,7 +9059,7 @@
         "finalize": "",
         "libs": [],
         "x": 740,
-        "y": 1580,
+        "y": 1700,
         "wires": [
             [
                 "e5391514131a2b5a",
@@ -9088,8 +9109,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 320,
-        "y": 1800,
+        "x": 340,
+        "y": 2020,
         "wires": [
             [
                 "d23be15251ed6d73"
@@ -9116,8 +9137,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 380,
-        "y": 1840,
+        "x": 400,
+        "y": 2060,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -9136,8 +9157,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 430,
-        "y": 1900,
+        "x": 450,
+        "y": 2120,
         "wires": [
             [
                 "170ddffb726db9e0"
@@ -9194,7 +9215,7 @@
         "y": 1500,
         "wires": [
             [
-                "0f65ceafe3f7c069"
+                "616017bc1f3c28d0"
             ]
         ]
     },
@@ -9449,8 +9470,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 1800,
+        "x": 760,
+        "y": 2020,
         "wires": [
             [
                 "befe91e6862c72db"
@@ -9466,8 +9487,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 860,
-        "y": 1840,
+        "x": 880,
+        "y": 2060,
         "wires": [
             [
                 "13a061996f9322f3",
@@ -9489,8 +9510,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1230,
-        "y": 1800,
+        "x": 1250,
+        "y": 2020,
         "wires": [
             [
                 "6d738ed81fefbedc"
@@ -9510,8 +9531,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1250,
-        "y": 1920,
+        "x": 1270,
+        "y": 2140,
         "wires": [
             [
                 "d856c68660eb2202"
@@ -10083,8 +10104,8 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 200,
-        "y": 2040,
+        "x": 210,
+        "y": 2380,
         "wires": [
             [
                 "34361a18f847df07"
@@ -10130,8 +10151,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1120,
-        "y": 2040,
+        "x": 1130,
+        "y": 2380,
         "wires": [
             []
         ]
@@ -10149,8 +10170,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 530,
-        "y": 2040,
+        "x": 540,
+        "y": 2380,
         "wires": [
             [
                 "9d1978d68c96feb9"
@@ -10166,8 +10187,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 560,
-        "y": 2080,
+        "x": 570,
+        "y": 2420,
         "wires": [
             [
                 "2227d1c8d929c91d",
@@ -10191,8 +10212,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 2040,
+        "x": 870,
+        "y": 2380,
         "wires": [
             [
                 "e5ed08571761bd2c"
@@ -10212,8 +10233,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 2300,
+        "x": 620,
+        "y": 2640,
         "wires": [
             [
                 "6a292f3905fe5405"
@@ -10229,8 +10250,8 @@
         "sqlquery": "msg.topic",
         "sql": "",
         "name": "",
-        "x": 680,
-        "y": 2340,
+        "x": 690,
+        "y": 2680,
         "wires": [
             [
                 "76e813b1b7a4b63e"
@@ -10250,8 +10271,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1050,
-        "y": 2300,
+        "x": 1060,
+        "y": 2640,
         "wires": [
             [
                 "5cf61952cb6823de"
@@ -10297,8 +10318,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1120,
-        "y": 2340,
+        "x": 1130,
+        "y": 2680,
         "wires": [
             []
         ]
@@ -10342,8 +10363,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1120,
-        "y": 2080,
+        "x": 1130,
+        "y": 2420,
         "wires": [
             []
         ]
@@ -10361,8 +10382,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 2080,
+        "x": 870,
+        "y": 2420,
         "wires": [
             [
                 "f920233df1bbb23f"
@@ -10408,8 +10429,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1140,
-        "y": 2120,
+        "x": 1150,
+        "y": 2460,
         "wires": [
             []
         ]
@@ -10427,8 +10448,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 880,
-        "y": 2120,
+        "x": 890,
+        "y": 2460,
         "wires": [
             [
                 "b8342af470189c50"
@@ -10474,8 +10495,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1120,
-        "y": 2160,
+        "x": 1130,
+        "y": 2500,
         "wires": [
             []
         ]
@@ -10493,8 +10514,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 2160,
+        "x": 870,
+        "y": 2500,
         "wires": [
             [
                 "8a82204bdfcdddb9"
@@ -10540,8 +10561,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 1120,
-        "y": 2200,
+        "x": 1130,
+        "y": 2540,
         "wires": [
             []
         ]
@@ -10559,8 +10580,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 2200,
+        "x": 870,
+        "y": 2540,
         "wires": [
             [
                 "c1adf5e2bd669713"
@@ -10616,11 +10637,9 @@
         "g": "9b9e4fc50b744fc3",
         "name": "Latest Observations",
         "mode": "link",
-        "links": [
-            "b4c9b122afb34876"
-        ],
-        "x": 1335,
-        "y": 1620,
+        "links": [],
+        "x": 1405,
+        "y": 1700,
         "wires": []
     },
     {
@@ -10633,8 +10652,8 @@
         "links": [
             "8c5ad4dc749b0552"
         ],
-        "x": 1185,
-        "y": 1880,
+        "x": 1205,
+        "y": 2100,
         "wires": []
     },
     {
@@ -10652,6 +10671,58 @@
                 "a20d5f859bf5c14d"
             ]
         ]
+    },
+    {
+        "id": "616017bc1f3c28d0",
+        "type": "function",
+        "z": "28627559bebdc324",
+        "g": "94b99ae799155546",
+        "name": "setup to read radar values for event",
+        "func": "// setup to read raw radar data\nlet query = `SELECT * \n    FROM radar_raw_speed_magnitude \n    WHERE time BETWEEN ${(Math.floor(msg.frigate_event.start_time) - 2)} AND ${(Math.ceil(msg.frigate_event.end_time) + 2)} \n        AND radarName=\"${msg.frigate_event.radarName}\"\n;`;\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 1600,
+        "wires": [
+            [
+                "4a5875fffe7ca55e"
+            ]
+        ]
+    },
+    {
+        "id": "4a5875fffe7ca55e",
+        "type": "sqlite",
+        "z": "28627559bebdc324",
+        "g": "94b99ae799155546",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 1090,
+        "y": 1600,
+        "wires": [
+            [
+                "0f65ceafe3f7c069"
+            ]
+        ]
+    },
+    {
+        "id": "9f091bce2c15ef2b",
+        "type": "link out",
+        "z": "28627559bebdc324",
+        "g": "9b9e4fc50b744fc3",
+        "name": "latest observations with radar magnitude & speed",
+        "mode": "link",
+        "links": [
+            "b4c9b122afb34876"
+        ],
+        "x": 1245,
+        "y": 1660,
+        "wires": []
     },
     {
         "id": "3c7e6d7cf17e8ddc",
@@ -10867,7 +10938,7 @@
         "g": "9a78c94293803e49",
         "name": "dashboard-2 Latest Observations",
         "links": [
-            "3ac45430055698aa"
+            "9f091bce2c15ef2b"
         ],
         "x": 195,
         "y": 1180,
@@ -11149,7 +11220,7 @@
         "width": "0",
         "height": "0",
         "head": "",
-        "format": "<template>\n    <div>\n        <p class=\"section-title\">Latest Observations</p>\n    </div>\n    <div class=\"container\">\n        <div v-for=\"item in msg.payload\" :key=\"item.details.id\" class=\"item\">\n            <v-img\n                height=\"2in\"\n                position=\"10px\"\n                :src=\"item.img\">\n            </v-img>\n            <table style=\"position:relative;left:10px;right:10px;\">\n                <tbody>\n                    <tr><td class=\"tbl-caption\">id:</td><td class=\"tbl-value\">{{item.details.id}}</td></tr>\n                    <tr><td class=\"tbl-caption\">type:</td><td class=\"tbl-value\">{{item.details.label}}</td></tr>\n                    <tr><td class=\"tbl-caption\">time:</td><td class=\"tbl-value\">{{item.details.frame_time_datestring}}</td></tr>\n                    <tr><td class=\"tbl-caption\">direction:</td><td class=\"tbl-value\">{{item.details.direction_calc}}</td></tr>\n                    <tr><td class=\"tbl-caption\">speed:</td><td class=\"tbl-value\">{{item.details.speed_calc}}</td></tr>\n                </tbody>\n            </table>\n        </div>\n    </div>\n</template>\n\n<style scoped>\n    .container {\n        /* Styling for the whole image area */\n        display: flex; /* Use flexbox to arrange items horizontally */\n        flex-wrap: wrap; /* Make items from wrap to the next line */\n        overflow-x: auto; /* Enable horizontal scrolling if necessary */\n    }\n\n    .item {\n        /* Styling for each item */\n        max-width: 2.5in;\n        min-width: 2.5in; /* Ensure items don't collapse if content is small */\n    }\n\n    .tbl-caption {\n         width: 25%;\n    }\n    \n    .tbl-value {\n        width: 75%;\n        word-wrap: break-word;\n    }\n</style>",
+        "format": "<template>\n    <div>\n        <p class=\"section-title\">Latest Observations</p>\n    </div>\n    <div class=\"container\">\n        <div v-for=\"item in msg.payload\" :key=\"item.id\" class=\"item\">\n            <v-img\n                height=\"2in\"\n                position=\"10px\"\n                :src=\"item.img\">\n            </v-img>\n            <table style=\"position:relative;left:10px;right:10px;\">\n                <tbody>\n                    <tr><td class=\"tbl-caption\">id:</td><td class=\"tbl-value\">{{item.details.id}}</td></tr>\n                    <tr><td class=\"tbl-caption\">type:</td><td class=\"tbl-value\">{{item.details.label}}</td></tr>\n                    <tr><td class=\"tbl-caption\">time:</td><td class=\"tbl-value\">{{item.details.frame_time_datestring}}</td></tr>\n                    <tr><td class=\"tbl-caption\">direction:</td><td class=\"tbl-value\">{{item.details.direction_calc}}</td></tr>\n                    <tr><td class=\"tbl-caption\">speed:</td><td class=\"tbl-value\">{{item.details.speed_calc}}</td></tr>\n                    <tr><td class=\"tbl-caption\">magnitude:</td><td class=\"tbl-value\">{{item.details.min_magnitude}} to {{item.details.max_magnitude}}</td></tr>\n                    <tr><td class=\"tbl-caption\">speed:</td><td class=\"tbl-value\">{{item.details.min_speed}} to {{item.details.max_speed}}</td></tr>\n                </tbody>\n            </table>\n        </div>\n    </div>\n</template>\n\n<style scoped>\n    .container {\n        /* Styling for the whole image area */\n        display: flex; /* Use flexbox to arrange items horizontally */\n        flex-wrap: wrap; /* Make items from wrap to the next line */\n        overflow-x: auto; /* Enable horizontal scrolling if necessary */\n    }\n\n    .item {\n        /* Styling for each item */\n        max-width: 2.5in;\n        min-width: 2.5in; /* Ensure items don't collapse if content is small */\n    }\n\n    .tbl-caption {\n         width: 25%;\n    }\n    \n    .tbl-value {\n        width: 75%;\n        word-wrap: break-word;\n    }\n</style>",
         "storeOutMessages": true,
         "passthru": true,
         "resendOnRefresh": true,
