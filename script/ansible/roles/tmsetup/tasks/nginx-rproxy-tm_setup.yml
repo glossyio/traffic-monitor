@@ -15,7 +15,7 @@
   become: true
   loop:
     - nginx-rproxy-tm/Containerfile
-    - nginx-rproxy-tm/nginx.conf
+    - nginx-rproxy-tm/rproxy-tm.conf
   ansible.builtin.template:
     backup: false
     dest: '{{ tmsetup_codedir }}/{{ item }}'
