@@ -13,7 +13,7 @@ tmsetup_restart_required: false
 # Proxy base paths
 tmsetup_base_path_frigate: /frigate
 tmsetup_base_path_nodered: /nr
-tmsetup_base_path_dashboard: /dash
+tmsetup_base_path_dashboard: /dashboard
 tmsetup_base_path_legacydash: /ui
 tmsetup_base_path_go2rtc: /feeds
 
