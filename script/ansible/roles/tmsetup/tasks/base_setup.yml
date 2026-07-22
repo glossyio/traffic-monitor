@@ -91,4 +91,23 @@
     mode: '0755'
   notify: Restart journald service
 
+- name: TMSetup - Base Setup - Enable sysstat collection
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/default/sysstat
+    state: present
+    backrefs: true
+    regexp: '^ENABLED="false"'
+    line: 'ENABLED="true"'
+
+- name: TMSetup - Base Setup - Create logrotate configuration for sysstat
+  become: true
+  ansible.builtin.copy:
+    src: logrotate-systat
+    dest: /etc/logrotate.d/sysstat
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart sysstat service
+
 ...
