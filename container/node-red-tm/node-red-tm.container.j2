@@ -1,7 +1,5 @@
 [Unit]
 Description=Traffic Monitor Node Red container
-After=frigate.service
-Wants=frigate.service
 
 [Container]
 ContainerName=node-red-tm
@@ -26,4 +24,4 @@ AddDevice={{ rad }}
 Restart=on-failure
 
 [Install]
-WantedBy=default.target plate-recognizer.service nginx-rproxy-tm.service
+WantedBy=default.target plate-recognizer.service

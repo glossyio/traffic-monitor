@@ -1,7 +1,5 @@
 [Unit]
 Description=Traffic Monitor NGinx Reverse Proxy container
-After=frigate.service node-red-tm.service go2rtc_server.service
-Wants=frigate.service node-red-tm.service go2rtc_server.service
 
 [Container]
 ContainerName=nginx-rproxy-tm
