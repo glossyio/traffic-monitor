@@ -1,37 +1,38 @@
-1	---
-2	- name: TMSetup - Main - Perform minimum ansible fact gathering
-3	  tags:
-4	    - always
-5	  ansible.builtin.setup:
-6	    gather_subset: min
-7	  when: not ansible_facts.keys() | list |
-8	    intersect(tmsetup_base_required_facts) == tmsetup_base_required_facts
-9
-10	- name: TMSetup - Main - Set Architecture specific variables
-11	  tags:
-12	    - always
-13	  ansible.builtin.include_vars:
-14	    file: "{{ ansible_facts['architecture'] }}_vars.yml"
-15
-16	- name: TMSetup - Main - Set var for Raspberry Pi serial number
-17	  ansible.builtin.slurp:
-18	    src: /sys/firmware/devicetree/base/serial-number
-19	  register: __tmsetup_slurp_devtree_register
-20
-21	- name: TMSetup - Main - Set RPi serial number fact
-22	  ansible.builtin.set_fact:
-23	    tmsetup_raspberry_pi_serial: "{{ (__tmsetup_slurp_devtree_register['content'] | b64decode)[:-1] }}"
-24
-25	- name: TMSetup - Main - Find HEVC hardware device
-26	  become: true
-27	  shell: /bin/bash files/utils/find_hevc_device.sh
-28	  register: hevc_device_scan
-29	  changed_when: false
-30	  ignore_errors: true
-31
-32	- name: TMSetup - Main - Set HEVC device fact
-33	  ansible.builtin.set_fact:
-34	    tmsetup_hevc_device: "{{ hevc_device_scan.stdout | trim if hevc_device_scan.stdout != '' else tmsetup_hevc_device }}"
-35	  when: hevc_device_scan.stdout != ''
-36
-37	...
+---
+- name: TMSetup - Main - Perform minimum ansible fact gathering
+  tags:
+    - always
+  ansible.builtin.setup:
+    gather_subset: min
+  when: not ansible_facts.keys() | list |
+    intersect(tmsetup_base_required_facts) == tmsetup_base_required_facts
+
+- name: TMSetup - Main - Set Architecture specific variables
+  tags:
+    - always
+  ansible.builtin.include_vars:
+    file: "{{ ansible_facts['architecture'] }}_vars.yml"
+
+- name: TMSetup - Main - Set var for Raspberry Pi serial number
+  ansible.builtin.slurp:
+    src: /sys/firmware/devicetree/base/serial-number
+  register: __tmsetup_slurp_devtree_register
+
+- name: TMSetup - Main - Set RPi serial number fact
+  ansible.builtin.set_fact:
+    tmsetup_raspberry_pi_serial: "{{ (__tmsetup_slurp_devtree_register['content'] | b64decode)[:-1] }}"
+
+- name: TMSetup - Main - Find HEVC hardware device
+  become: true
+  ansible.builtin.script:
+        cmd: files/utils/find_hevc_device.sh
+  register: hevc_device_scan
+  changed_when: false
+  ignore_errors: true
+
+- name: TMSetup - Main - Set HEVC device fact
+  ansible.builtin.set_fact:
+    tmsetup_hevc_device: "{{ hevc_device_scan.stdout | trim if hevc_device_scan.stdout != '' else tmsetup_hevc_device }}"
+  when: hevc_device_scan.stdout != ''
+
+...
