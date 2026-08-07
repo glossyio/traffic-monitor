@@ -2,30 +2,30 @@
 - name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx directory
   become: true
   loop:
-    - '{{ tmsetup_codedir }}'
-    - '{{ tmsetup_codedir }}/nginx-rproxy-tm'
-    - '{{ tmsetup_codedir }}/nginx-rproxy-tm/html'
+    - { path: '{{ tmsetup_codedir }}', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/nginx-rproxy-tm', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/nginx-rproxy-tm/html', mode: '0755' }
   ansible.builtin.file:
-    mode: '0750'
+    mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
-    path: '{{ item }}'
+    path: '{{ item["path"] }}'
     state: directory
   notify: Restart nginx-rproxy-tm.service
 
 - name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx config file
   become: true
   loop:
-    - nginx-rproxy-tm/Containerfile
-    - nginx-rproxy-tm/nginx.conf
-    - nginx-rproxy-tm/html/index.html
+    - { path: 'nginx-rproxy-tm/Containerfile', mode: '0640' }
+    - { path: 'nginx-rproxy-tm/nginx.conf', mode: '0640' }
+    - { path: 'nginx-rproxy-tm/html/index.html', mode: '0644' }
   ansible.builtin.template:
     backup: false
-    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    dest: '{{ tmsetup_codedir }}/{{ item["path"] }}'
     force: true
     group: '{{ tmsetup_codegroup }}'
-    mode: '0640'
+    mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
-    src: 'container/{{ item }}.j2'
+    src: 'container/{{ item["path"] }}.j2'
   notify: Restart nginx-rproxy-tm.service
 
 - name: TMSetup - NGinx-RProxy-TM Setup - Create NGinx quadlets
