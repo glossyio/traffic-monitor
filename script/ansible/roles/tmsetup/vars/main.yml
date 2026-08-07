@@ -6,16 +6,71 @@ tmsetup_frigate_version: '0.17.1'
 tmsetup_node_red_tm_version: '4.0.9'
 tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
-tmsetup_hailo_driver_repo: "https://github.com/hailo-ai/hailort-drivers.git"
+tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 tmsetup_restart_required: false
+tmsetup_base_path_frigate: /frigate
 
 # Proxy base paths
-tmsetup_base_path_frigate: /frigate
-tmsetup_base_path_nodered: /nr
-tmsetup_base_path_dashboard: /dashboard
-tmsetup_base_path_legacydash: /ui
-tmsetup_base_path_go2rtc: /feeds
+tmsetup_proxies:
+  - name: dashboard
+    base_path: /dashboard
+    label: Dashboard
+    pass: http://127.0.0.1:1880/dashboard/
+    http_version: 1.1
+    cache_bypass: $http_upgrade
+    set_headers:
+      - Host $host
+      - X-Real-IP $remote_addr
+      - X-Forwarded-For $proxy_add_x_forwarded_for
+      - X-Forwarded-Proto $scheme
+      - Upgrade $http_upgrade
+      - Connection "upgrade"
+      - Referer ""
+  - name: frigate
+    base_path: "{{ tmsetup_base_path_frigate }}"
+    label: Frigate
+    pass: http://127.0.0.1:5000/
+    http_version: 1.1
+    set_headers:
+      - Host $host
+      - X-Forwarded-For $proxy_add_x_forwarded_for
+      - X-Forwarded-Proto $scheme
+      - X-Forwarded-Scheme $scheme
+      - Upgrade $http_upgrade
+      - Connection "upgrade"
+      - X-Ingress-Path "{{ tmsetup_base_path_frigate }}"
+  - name: legacy_dashboard
+    base_path: /ui
+    label: Legacy Dashboard
+    pass: http://127.0.0.1:1880/ui/
+    http_version: 1.1
+    cache_bypass: $http_upgrade
+    set_headers:
+      - Host $host
+      - X-Real-IP $remote_addr
+  - name: nodered
+    base_path: /nr
+    label: Node-RED admin console
+    pass: http://127.0.0.1:1880/
+    http_version: 1.1
+    cache_bypass: $http_upgrade
+    set_headers:
+      - Host $host
+      - X-Real-IP $remote_addr
+      - X-Forwarded-For $proxy_add_x_forwarded_for
+      - X-Forwarded-Proto $scheme
+      - Upgrade $http_upgrade
+      - Connection "upgrade"
+  - name: go2rtc
+    base_path: /feeds
+    label: Go2RTC Feeds
+    pass: http://host.containers.internal:1984/
+    set_headers:
+      - Host $host
+      - X-Real-IP $remote_addr
+      - Upgrade $http_upgrade
+      - Connection "upgrade"
 
 tmsetup_remove_packages:
   - rpicam-apps-lite
@@ -31,13 +86,13 @@ tmsetup_packages:
   - rpicam-apps
 
 tmsetup_base_required_facts:
-  - 'os_family'
-  - 'distribution'
-  - 'distribution_major_version'
-  - 'distribution_version'
-  - 'architecture'
-  - 'user_id'
-  - 'user_dir'
-  - 'hostname'
+  - os_family
+  - distribution
+  - distribution_major_version
+  - distribution_version
+  - architecture
+  - user_id
+  - user_dir
+  - hostname
 
 ...

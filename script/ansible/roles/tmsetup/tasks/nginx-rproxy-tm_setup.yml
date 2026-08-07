@@ -4,6 +4,7 @@
   loop:
     - '{{ tmsetup_codedir }}'
     - '{{ tmsetup_codedir }}/nginx-rproxy-tm'
+    - '{{ tmsetup_codedir }}/nginx-rproxy-tm/html'
   ansible.builtin.file:
     mode: '0750'
     owner: '{{ tmsetup_codeowner }}'
@@ -16,10 +17,11 @@
   loop:
     - nginx-rproxy-tm/Containerfile
     - nginx-rproxy-tm/nginx.conf
+    - nginx-rproxy-tm/html/index.html
   ansible.builtin.template:
     backup: false
     dest: '{{ tmsetup_codedir }}/{{ item }}'
-    force: '{{ tmsetup_force_configs }}'
+    force: true
     group: '{{ tmsetup_codegroup }}'
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'

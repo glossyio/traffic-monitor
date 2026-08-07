@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic-Monitor Home</title>
+    <style>
+        body {
+            background-color: black;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        a {
+            color: #00ff00;
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+            margin: 10px 0;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+            color: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: #00ff00;">Traffic-Monitor Home</h1>
+
+    <ul style="list-style: none; padding: 0;">
+        {% for proxy in tmsetup_proxies %}
+        <li><a href="{{ proxy['base_path'] }}/">{{ proxy['label'] }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
