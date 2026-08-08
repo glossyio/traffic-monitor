@@ -73,7 +73,7 @@
   tags:
     - nginx
   ansible.builtin.import_tasks:
-    file: nginx-rproxy-tm_setup.yml
+    file: revproxy_setup.yml
 
 - name: TMSetup - Main - Setup WiFI
   tags:

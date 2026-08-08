@@ -2,8 +2,8 @@
 Description=Traffic Monitor NGinx Reverse Proxy container
 
 [Container]
-ContainerName=nginx-rproxy-tm
-Image=nginx-rproxy-tm.build
+ContainerName=revproxy
+Image=revproxy.build
 Pod=traffic-monitor.pod
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/nginx-rproxy-tm/html:/usr/share/nginx/html:ro

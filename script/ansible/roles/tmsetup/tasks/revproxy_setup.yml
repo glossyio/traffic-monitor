@@ -1,0 +1,53 @@
+---
+- name: TMSetup - revproxy Setup - Create NGinx directory
+  become: true
+  loop:
+    - { path: '{{ tmsetup_codedir }}', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/html', mode: '0755' }
+  ansible.builtin.file:
+    mode: '{{ item["mode"] }}'
+    owner: '{{ tmsetup_codeowner }}'
+    path: '{{ item["path"] }}'
+    state: directory
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Create NGinx config file
+  become: true
+  loop:
+    - { path: 'revproxy/Containerfile', mode: '0640' }
+    - { path: 'revproxy/nginx.conf', mode: '0640' }
+    - { path: 'revproxy/html/index.html', mode: '0644' }
+  ansible.builtin.template:
+    backup: false
+    dest: '{{ tmsetup_codedir }}/{{ item["path"] }}'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '{{ item["mode"] }}'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item["path"] }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Create NGinx quadlets
+  become: true
+  loop:
+    - revproxy.build
+    - revproxy.container
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0644'
+    owner: root
+    src: 'container/revproxy/{{ item }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Build container
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: revproxy-build.service
+    state: started
+  notify: Restart revproxy.service
+
+...
