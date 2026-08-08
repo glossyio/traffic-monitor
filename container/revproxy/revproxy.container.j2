@@ -6,7 +6,7 @@ ContainerName=revproxy
 Image=revproxy.build
 Pod=traffic-monitor.pod
 Volume=/etc/localtime:/etc/localtime:ro
-Volume={{ tmsetup_codedir }}/nginx-rproxy-tm/html:/usr/share/nginx/html:ro
+Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
 
 [Service]
 Restart=on-failure
