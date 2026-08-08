@@ -6,14 +6,14 @@
     <title>Traffic-Monitor Home</title>
     <style>
         body {
-            background-color: black;
+            background-color: {{ tmsetup_homepage_colors['background'] }};
             margin: 0;
             padding: 20px;
-            font-family: Arial, sans-serif;
+            font-family: {{ tmsetup_homepage_font }}, sans-serif;
         }
         
         a {
-            color: #00ff00;
+            color: {{ tmsetup_homepage_colors['body_text'] }};
             text-decoration: none;
             font-size: 18px;
             display: block;
@@ -22,12 +22,12 @@
         
         a:hover {
             text-decoration: underline;
-            color: #00cc00;
+            color: {{ tmsetup_homepage_colors['link_hover_text'] }};
         }
     </style>
 </head>
 <body>
-    <h1 style="color: #00ff00;">Traffic-Monitor Home</h1>
+    <h1 style="color: {{ tmsetup_homepage_colors['header_text'] }};">Traffic-Monitor Home</h1>
 
     <ul style="list-style: none; padding: 0;">
         {% for proxy in tmsetup_proxies %}

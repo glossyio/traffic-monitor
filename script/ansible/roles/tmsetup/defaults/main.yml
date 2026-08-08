@@ -63,4 +63,10 @@ tmsetup_reboot_touch_file: "{{ tmsetup_tmpdir }}/reboot-required"
 
 tmsetup_bool_plate_recognizer: false
 
+tmsetup_homepage_font: 'Helvetica'
+tmsetup_homepage_colors:
+  background: '#0C1120'
+  header_text: '#3a82ff'
+  body_text: '#f8fafc'
+  link_hover_text: '#8895a7S'
 ...
