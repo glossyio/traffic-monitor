@@ -21,6 +21,7 @@ tmsetup_packages:
   - cmake
   - cron
   - rpicam-apps
+  - sysstat
 
 tmsetup_base_required_facts:
   - 'os_family'

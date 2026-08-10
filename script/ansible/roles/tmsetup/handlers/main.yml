@@ -19,6 +19,13 @@
     state: restarted
   notify: Pause for 10 seconds
 
+- name: Restart sysstat service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: sysstat.service
+    state: restarted
+
 - name: Restart go2rtc_server service
   become: true
   ansible.builtin.systemd_service:
