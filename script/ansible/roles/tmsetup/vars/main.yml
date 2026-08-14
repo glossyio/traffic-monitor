@@ -1,8 +1,8 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.6.0'
+tmsetup_tm_version: '0.6.1'
 tmsetup_go2rtc_version: 'v1.8.5'
-tmsetup_frigate_version: '0.17.1'
+tmsetup_frigate_version: '0.17.2'
 tmsetup_node_red_tm_version: '4.0.9'
 tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
@@ -22,6 +22,7 @@ tmsetup_packages:
   - cmake
   - cron
   - rpicam-apps
+  - sysstat
 
 tmsetup_base_required_facts:
   - os_family
