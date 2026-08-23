@@ -10678,7 +10678,7 @@
         "z": "28627559bebdc324",
         "g": "94b99ae799155546",
         "name": "setup to read radar values for event",
-        "func": "// setup to read raw radar data\nlet query = `SELECT * \n    FROM radar_raw_speed_magnitude_single\n    WHERE time BETWEEN ${(Math.floor(msg.frigate_event.start_time) - 2)} AND ${(Math.ceil(msg.frigate_event.end_time) + 2)} \n        AND radarName=\"${msg.frigate_event.radarName}\"\n        ORDER BY time\n;`;\nmsg.topic = query;\nreturn msg;",
+        "func": "// setup to read raw radar data\nlet query = `SELECT * \n    FROM radar_raw_speed_magnitude_single\n    WHERE time BETWEEN ${msg.frigate_event.start_time} AND ${msg.frigate_event.end_time} \n        AND radarName=\"${msg.frigate_event.radarName}\"\n        ORDER BY time\n;`;\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
