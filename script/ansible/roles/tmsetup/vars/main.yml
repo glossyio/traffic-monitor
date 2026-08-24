@@ -34,4 +34,6 @@ tmsetup_base_required_facts:
   - user_dir
   - hostname
 
+# Set base path for Frigate
+tmsetup_base_path_frigate: /frigate
 ...

@@ -47,6 +47,7 @@
     name: aptitude
     state: present
     update_cache: true
+    autoremove: true
 
 - name: TMSetup - Base Setup - Remove conflicting packages
   become: true

@@ -1,7 +1,4 @@
 ---
-# Set base path for Frigate
-tmsetup_base_path_frigate: /frigate
-
 # Proxy base paths
 tmsetup_proxies:
   - name: dashboard

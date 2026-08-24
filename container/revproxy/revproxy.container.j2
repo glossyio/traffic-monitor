@@ -9,7 +9,7 @@ Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
 
 [Service]
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=default.target
