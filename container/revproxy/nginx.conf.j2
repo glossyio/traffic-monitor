@@ -1,0 +1,62 @@
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    server {
+        listen 80;
+        server_name _;  # This will match any hostname
+
+        #Logs for Nginx access and errors
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        # Home Page
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+{% for proxy in tmsetup_proxies %}
+        # {{ proxy['name'] }} - {{ proxy['label'] }}
+        location {{ proxy['base_path'] }}/ {{ '{' }}
+            proxy_pass {{ proxy['pass'] }};
+{% if proxy['http_version'] is defined %}
+            proxy_http_version {{ proxy['http_version'] }};
+{% endif %}
+{% if proxy['cache_bypass'] is defined %}
+            proxy_cache_bypass {{ proxy['cache_bypass'] }};
+{% endif %}
+{% if proxy['set_headers'] is defined and proxy['set_headers'] is iterable %}
+{% for header in proxy['set_headers'] %}
+            proxy_set_header {{ header }};
+{% endfor %}
+{% endif %}
+        {{ '}' }}
+{% endfor %}
+    }
+    include /etc/nginx/conf.d/*.conf;
+}
