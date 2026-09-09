@@ -71,7 +71,7 @@
 
 - name: TMSetup - Main - Setup NGinx Reverse Proxy
   tags:
-    - nginx
+    - revproxy
   ansible.builtin.import_tasks:
     file: revproxy_setup.yml
 
@@ -141,7 +141,7 @@
     - node-red-tm
     - plate-recognizer
     - go2rtc
-    - nginx
+    - revproxy
   ansible.builtin.import_tasks:
     file: start_services.yml
 
