@@ -769,8 +769,7 @@
             "0a16f2a32973e96e",
             "b4c9b122afb34876",
             "cac9b4933417e60c",
-            "463d933f207505c2",
-            "d3cc9dd8a26bf201"
+            "463d933f207505c2"
         ],
         "x": 134,
         "y": 1079,
@@ -9049,7 +9048,7 @@
         "z": "28627559bebdc324",
         "g": "9b9e4fc50b744fc3",
         "name": "format last N radar event for output",
-        "func": "\n\nconst newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\nnewMsg.payload.frame_time_datestring = new Date(msg.frigate_event.frame_time * 1000).toLocaleString();\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = msg.frigate_event.direction_calc;\nnewMsg.payload.speed_calc = msg.frigate_event.speed_calc;\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = msg.frigate_event.location;\n\n// read through radar values for this event; save max and min magnitude and speed\n// reformat radar values to save memory and store with the payload\nnewMsg.payload.max_magnitude = 0;\nnewMsg.payload.min_magnitude = 9999;\nnewMsg.payload.max_speed = 0;\nnewMsg.payload.min_speed = 999;\nnewMsg.payload.radar_values = [];\nlet count = 0;\ntry {\n    msg.payload.forEach(radar_value => {\n        const radar = {\n            magnitude: radar_value.magnitude,\n            speed: radar_value.speed,\n            time: radar_value.time\n        };\n        newMsg.payload.max_magnitude = Math.max(newMsg.payload.max_magnitude, radar_value.magnitude);\n        newMsg.payload.min_magnitude = Math.min(newMsg.payload.min_magnitude, radar_value.magnitude);\n        newMsg.payload.max_speed = Math.max(newMsg.payload.max_speed, radar_value.speed);\n        newMsg.payload.min_speed = Math.min(newMsg.payload.min_speed, radar_value.speed);\n        newMsg.payload.radar_values.push(radar);\n    })\n} catch(error) {if (count++ == 0) {node.error(\"caught error: \" + error)}}\n\nreturn newMsg;",
+        "func": "\n\nconst newMsg = {};\nnewMsg.payload = {}; // contain everything going into a DB record, single record\n\nnewMsg.payload.id = msg.frigate_event.id;\nnewMsg.payload.camera = msg.frigate_event.camera;\nnewMsg.payload.label = msg.frigate_event.label;\nnewMsg.payload.sub_label = msg.frigate_event.sub_label;\nnewMsg.payload.top_score = msg.frigate_event.top_score;\n\nnewMsg.payload.frame_time_datestring = new Date(msg.frigate_event.frame_time * 1000).toLocaleString();\nnewMsg.payload.frame_time = msg.frigate_event.frame_time;\nnewMsg.payload.start_time = msg.frigate_event.start_time;\nnewMsg.payload.end_time = msg.frigate_event.end_time;\n\nnewMsg.payload.entered_zones = msg.frigate_event.entered_zones; //array\nnewMsg.payload.direction_calc = msg.frigate_event.direction_calc;\nnewMsg.payload.speed_calc = msg.frigate_event.speed_calc;\n\nnewMsg.payload.thumbnail_base64jpg = msg.frigate_event_api_thumbnail;\n\nnewMsg.payload.location = msg.frigate_event.location;\n\n// read through radar values for this event; save max and min magnitude and speed\n// reformat radar values to save memory and store with the payload\nnewMsg.payload.max_magnitude = 0;\nnewMsg.payload.min_magnitude = 9999;\nnewMsg.payload.max_speed = 0;\nnewMsg.payload.min_speed = 999;\nnewMsg.payload.radar_values = [];\nmsg.payload.radar_value = Object.hasOwn(msg.payload, \"radar_value\")\n    ? msg.payload.radar_value\n    : [];\nlet count = 0;\ntry {\n    msg.payload.forEach(radar_value => {\n        const radar = {\n            magnitude: radar_value.magnitude,\n            speed: radar_value.speed,\n            time: radar_value.time\n        };\n        newMsg.payload.max_magnitude = Math.max(newMsg.payload.max_magnitude, radar_value.magnitude);\n        newMsg.payload.min_magnitude = Math.min(newMsg.payload.min_magnitude, radar_value.magnitude);\n        newMsg.payload.max_speed = Math.max(newMsg.payload.max_speed, radar_value.speed);\n        newMsg.payload.min_speed = Math.min(newMsg.payload.min_speed, radar_value.speed);\n        newMsg.payload.radar_values.push(radar);\n    })\n} catch(error) {if (count++ == 0) {node.error(\"caught error: \" + error)}}\n\nreturn newMsg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -10930,8 +10929,7 @@
         "y": 1180,
         "wires": [
             [
-                "cac9b4933417e60c",
-                "d3cc9dd8a26bf201"
+                "cac9b4933417e60c"
             ]
         ]
     },
@@ -11576,24 +11574,6 @@
         "info": "",
         "x": 880,
         "y": 740,
-        "wires": []
-    },
-    {
-        "id": "d3cc9dd8a26bf201",
-        "type": "debug",
-        "z": "0fa19dea799cc41d",
-        "g": "9a78c94293803e49",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 530,
-        "y": 1120,
         "wires": []
     },
     {
