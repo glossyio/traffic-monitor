@@ -6,14 +6,14 @@
     <title>Traffic-Monitor Home</title>
     <style>
         body {
-            background-color: #0C1120;
+            background-color: {{ tmsetup_homepage_colors['background'] }};
             margin: 0;
             padding: 20px;
-            font-family: Helvetica, sans-serif;
+            font-family: {{ tmsetup_homepage_font }}, sans-serif;
         }
         
         a {
-            color: #f8fafc;
+            color: {{ tmsetup_homepage_colors['body_text'] }};
             text-decoration: none;
             font-size: 18px;
             display: block;
@@ -22,19 +22,17 @@
         
         a:hover {
             text-decoration: underline;
-            color: #8895a7S;
+            color: {{ tmsetup_homepage_colors['link_hover_text'] }};
         }
     </style>
 </head>
 <body>
-    <h1 style="color: #3a82ff;">Traffic-Monitor Home</h1>
+    <h1 style="color: {{ tmsetup_homepage_colors['header_text'] }};">Traffic-Monitor Home</h1>
 
     <ul style="list-style: none; padding: 0;">
-                <li><a href="/dashboard/">Dashboard</a></li>
-                <li><a href="{{ tmsetup_base_path_frigate }}/">Frigate</a></li>
-                <li><a href="/ui/">Legacy Dashboard</a></li>
-                <li><a href="/nr/">Node-RED admin console</a></li>
-                <li><a href="/feeds/">Go2RTC Feeds</a></li>
-            </ul>
+        {% for proxy in tmsetup_proxies %}
+        <li><a href="{{ proxy['base_path'] }}/">{{ proxy['label'] }}</a></li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
