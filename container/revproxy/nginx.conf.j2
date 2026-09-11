@@ -40,23 +40,59 @@ http {
             root /usr/share/nginx/html;
             index index.html;
         }
-{% for proxy in tmsetup_proxies %}
-        # {{ proxy['name'] }} - {{ proxy['label'] }}
-        location {{ proxy['base_path'] }}/ {{ '{' }}
-            proxy_pass {{ proxy['pass'] }};
-{% if proxy['http_version'] is defined %}
-            proxy_http_version {{ proxy['http_version'] }};
-{% endif %}
-{% if proxy['cache_bypass'] is defined %}
-            proxy_cache_bypass {{ proxy['cache_bypass'] }};
-{% endif %}
-{% if proxy['set_headers'] is defined and proxy['set_headers'] is iterable %}
-{% for header in proxy['set_headers'] %}
-            proxy_set_header {{ header }};
-{% endfor %}
-{% endif %}
-        {{ '}' }}
-{% endfor %}
+        # dashboard - Dashboard
+        location /dashboard/ {
+            proxy_pass http://127.0.0.1:1880/dashboard/;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Referer "";
+        }
+        # frigate - Frigate
+        location {{ tmsetup_base_path_frigate }}/ {
+            proxy_pass http://127.0.0.1:5000/;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Scheme $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header X-Ingress-Path "{{ tmsetup_base_path_frigate }}";
+        }
+        # legacy_dashboard - Legacy Dashboard
+        location /ui/ {
+            proxy_pass http://127.0.0.1:1880/ui/;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        # nodered - Node-RED admin console
+        location /nr/ {
+            proxy_pass http://127.0.0.1:1880/;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+        # go2rtc - Go2RTC Feeds
+        location /feeds/ {
+            proxy_pass http://host.containers.internal:1984/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
     }
     include /etc/nginx/conf.d/*.conf;
 }
