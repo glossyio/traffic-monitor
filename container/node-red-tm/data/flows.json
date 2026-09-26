@@ -568,9 +568,9 @@
             "8e8edd5176fc9a71",
             "46e349af1bed1834"
         ],
-        "x": 414,
+        "x": 404,
         "y": 1779,
-        "w": 1132,
+        "w": 1142,
         "h": 282
     },
     {
@@ -597,7 +597,7 @@
         ],
         "x": 94,
         "y": 459,
-        "w": 1232,
+        "w": 1242,
         "h": 202
     },
     {
@@ -2376,12 +2376,12 @@
         "z": "3dae026ab340962a",
         "g": "9e0b1edd49eb4244",
         "name": "debug: Broker status events",
-        "active": false,
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 420,
@@ -2398,8 +2398,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 420,
@@ -11574,6 +11574,130 @@
         "info": "",
         "x": 880,
         "y": 740,
+        "wires": []
+    },
+    {
+        "id": "f5e22ad87b07485e",
+        "type": "inject",
+        "z": "0fa19dea799cc41d",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 220,
+        "y": 1360,
+        "wires": [
+            [
+                "34d3ceeb2f17f731"
+            ]
+        ]
+    },
+    {
+        "id": "34d3ceeb2f17f731",
+        "type": "sqlite",
+        "z": "0fa19dea799cc41d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "fixed",
+        "sql": "CREATE INDEX IF NOT EXISTS index_radar_singleton_time ON radar_raw_speed_magnitude_single(time);",
+        "name": "create index on radar_raw_speed_magnitude_single  db table",
+        "x": 580,
+        "y": 1360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "07b900acde5db2f2",
+        "type": "inject",
+        "z": "0fa19dea799cc41d",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 220,
+        "y": 1480,
+        "wires": [
+            [
+                "73ef2d65080653da"
+            ]
+        ]
+    },
+    {
+        "id": "80af7b17ed2cb1c3",
+        "type": "sqlite",
+        "z": "0fa19dea799cc41d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "show indexes",
+        "x": 780,
+        "y": 1480,
+        "wires": [
+            [
+                "65f1794fd4e88a25"
+            ]
+        ]
+    },
+    {
+        "id": "73ef2d65080653da",
+        "type": "template",
+        "z": "0fa19dea799cc41d",
+        "name": "setup show indexes command",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "PRAGMA index_list(radar_raw_speed_magnitude_single);",
+        "output": "str",
+        "x": 490,
+        "y": 1480,
+        "wires": [
+            [
+                "80af7b17ed2cb1c3"
+            ]
+        ]
+    },
+    {
+        "id": "65f1794fd4e88a25",
+        "type": "debug",
+        "z": "0fa19dea799cc41d",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 1480,
         "wires": []
     },
     {
