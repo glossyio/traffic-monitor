@@ -1,11 +1,12 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.5.1-pre'
+tmsetup_tm_version: '0.6.1'
 tmsetup_go2rtc_version: 'v1.8.5'
-tmsetup_frigate_version: '0.17.1'
+tmsetup_frigate_version: '0.17.2'
 tmsetup_node_red_tm_version: '4.0.9'
 tmsetup_hailo_version: '4.21.0'
-tmsetup_hailo_driver_repo: "https://github.com/hailo-ai/hailort-drivers.git"
+tmsetup_nginx_version: '1.31.0'
+tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 tmsetup_restart_required: false
 
@@ -21,15 +22,18 @@ tmsetup_packages:
   - cmake
   - cron
   - rpicam-apps
+  - sysstat
 
 tmsetup_base_required_facts:
-  - 'os_family'
-  - 'distribution'
-  - 'distribution_major_version'
-  - 'distribution_version'
-  - 'architecture'
-  - 'user_id'
-  - 'user_dir'
-  - 'hostname'
+  - os_family
+  - distribution
+  - distribution_major_version
+  - distribution_version
+  - architecture
+  - user_id
+  - user_dir
+  - hostname
 
+# Set base path for Frigate
+tmsetup_base_path_frigate: /frigate
 ...

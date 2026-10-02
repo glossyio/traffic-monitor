@@ -1,0 +1,15 @@
+[Unit]
+Description=Traffic Monitor NGinx Reverse Proxy container
+
+[Container]
+ContainerName=revproxy
+Image=revproxy.build
+Pod=traffic-monitor.pod
+Volume=/etc/localtime:/etc/localtime:ro
+Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

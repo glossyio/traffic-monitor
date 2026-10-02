@@ -23,7 +23,7 @@
     - '{{ tmsetup_codedir }}/node-red-tm/db'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
-    mode: '0755'
+    mode: '0750'
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item }}'
     state: directory
