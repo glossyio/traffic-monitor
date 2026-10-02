@@ -246,10 +246,8 @@
         },
         "nodes": [
             "510b389597efaf1b",
-            "b77bb1c374a198e4",
             "e256d5e89eb39332",
             "d8786159d48401b9",
-            "6b08c9332096b857",
             "3731dfc3716b1167"
         ],
         "x": 54,
@@ -365,14 +363,12 @@
         "nodes": [
             "f04e243ae46cc4c3",
             "50dcead7cf35b74f",
-            "c44b652eda2b8a8c",
             "a198505b2b0fd7c1",
             "866e0c814ea2b4da",
             "cbe24d38e9f03394",
             "22234193104332f6",
             "4094c101f6b59d95",
             "de7bc8103f7ca3c6",
-            "f9a458c786e4bb84",
             "8ccadc734d8ab769"
         ],
         "x": 354,
@@ -391,14 +387,12 @@
         "nodes": [
             "7139490bca7e56ca",
             "ca182659939320ce",
-            "7c9292601a625445",
             "1867db9744bd3c1f",
             "5514c5ab4bed552c",
             "c6fcbfb9341f189b",
             "1acba66197b7b0fa",
             "01307f2f13f465f2",
             "3faf0dcbc24ef11c",
-            "1ef2418fe536aad5",
             "1db11b98d771c791"
         ],
         "x": 354,
@@ -417,14 +411,12 @@
         "nodes": [
             "16572734c7e02e30",
             "a3dddf65b65ca371",
-            "9ba47db34d626ef9",
             "74df2509f68a2d6e",
             "9de4885ad8ef8485",
             "81522ee190374834",
             "7e4a607265a272c2",
             "080fd00489701aa1",
             "a489601d43802b82",
-            "8d4953609399d75e",
             "2aac5b4f344a86e8"
         ],
         "x": 354,
@@ -442,15 +434,13 @@
         },
         "nodes": [
             "a3924864154eaefb",
-            "a8dff32b84fbd72a",
             "8773b251c9ee9539",
             "cdc947bb9cd47c63",
             "252e2f5b95aeb8da",
             "83065a55697cc160",
             "95186b0fee06a3f5",
             "07cdbeafa34a565e",
-            "303ea9d25d718231",
-            "a18940845d6c5a2e"
+            "303ea9d25d718231"
         ],
         "x": 414,
         "y": 1499,
@@ -489,13 +479,9 @@
         },
         "nodes": [
             "35d0362b1f8a5e1a",
-            "ad3b1bd4bcdd6731",
             "e063e562cca50f31",
             "9ec2c67401c5aebc",
-            "d61da5053d3a100e",
             "e13414feb4f512b8",
-            "f1530cb4468b517b",
-            "f11bc2c9463f8c85",
             "3ac16ca7857d43a0",
             "88e51d22037ef437"
         ],
@@ -554,7 +540,6 @@
         },
         "nodes": [
             "ca4ed8761a4ded27",
-            "fbde266909bc0ca7",
             "09369d5e4816364f",
             "4ffa919935494b14",
             "45801cdcc5094abc",
@@ -562,7 +547,6 @@
             "edcc237df962c31a",
             "59a9c9a7ba535641",
             "07d558da50af5ae4",
-            "1bdec3d0b912f792",
             "14ec91d93285b0fb",
             "9b57af73505cbb61",
             "8e8edd5176fc9a71",
@@ -896,7 +880,6 @@
             "ea5db0d7189c3af9",
             "fdab61cae3614bfa",
             "068a155ef59743c4",
-            "4dc5e5c66569e020",
             "5a13261128484d6f",
             "3de791c3380ea762",
             "f8cf1e58e0b17872"
@@ -917,7 +900,6 @@
         "nodes": [
             "185db28c3b65f6fc",
             "e175c8bb6f24e4ba",
-            "49f8992b46fbe1b7",
             "686d46c2bf6797a4",
             "5fb1a87c22d5683b",
             "e638af4d80889930",
@@ -1514,11 +1496,9 @@
         },
         "nodes": [
             "8a6d4593a661c3df",
-            "ff28acdecfc4ebb1",
             "751ff2049a663e9c",
             "3cdbccf5dbcb1c4e",
             "f9a2f4f97e3ba1cf",
-            "ba3b41519066f03a",
             "f111096594207360",
             "c25adb99d55eb890"
         ],
@@ -2555,26 +2535,6 @@
         ]
     },
     {
-        "id": "ff28acdecfc4ebb1",
-        "type": "inject",
-        "z": "3dae026ab340962a",
-        "g": "a2b2e69319628779",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 250,
-        "y": 900,
-        "wires": [
-            [
-                "ba3b41519066f03a"
-            ]
-        ]
-    },
-    {
         "id": "751ff2049a663e9c",
         "type": "inject",
         "z": "3dae026ab340962a",
@@ -2803,26 +2763,6 @@
         "wires": [
             [
                 "f6ecdd18d8e03f91"
-            ]
-        ]
-    },
-    {
-        "id": "ba3b41519066f03a",
-        "type": "template",
-        "z": "3dae026ab340962a",
-        "g": "a2b2e69319628779",
-        "name": "create table deployment",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS deployment (\n    id TEXT PRIMARY KEY, \n    entryStartDateTime REAL, \n    entryEndDateTime REAL, \n    lat REAL, \n    lon REAL, \n    bearing TEXT, \n    sensorType TEXT, \n    sensorName TEXT, \n    deviceName TEXT\n    );",
-        "output": "str",
-        "x": 530,
-        "y": 900,
-        "wires": [
-            [
-                "8a6d4593a661c3df"
             ]
         ]
     },
@@ -3204,26 +3144,6 @@
         ]
     },
     {
-        "id": "7c9292601a625445",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "1eebfe6a2eca8ad4",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 550,
-        "y": 860,
-        "wires": [
-            [
-                "1ef2418fe536aad5"
-            ]
-        ]
-    },
-    {
         "id": "1867db9744bd3c1f",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
@@ -3311,26 +3231,6 @@
         "wires": [
             [
                 "866e0c814ea2b4da"
-            ]
-        ]
-    },
-    {
-        "id": "c44b652eda2b8a8c",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "dea1b8828f8e501f",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 550,
-        "y": 1120,
-        "wires": [
-            [
-                "f9a458c786e4bb84"
             ]
         ]
     },
@@ -3426,26 +3326,6 @@
         ]
     },
     {
-        "id": "9ba47db34d626ef9",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "047f05d7650ba3cc",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 550,
-        "y": 1380,
-        "wires": [
-            [
-                "8d4953609399d75e"
-            ]
-        ]
-    },
-    {
         "id": "74df2509f68a2d6e",
         "type": "inject",
         "z": "1c71c8f26f5b7b19",
@@ -3533,26 +3413,6 @@
         "wires": [
             [
                 "cdc947bb9cd47c63"
-            ]
-        ]
-    },
-    {
-        "id": "a8dff32b84fbd72a",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 550,
-        "y": 1680,
-        "wires": [
-            [
-                "a18940845d6c5a2e"
             ]
         ]
     },
@@ -4281,26 +4141,6 @@
         ]
     },
     {
-        "id": "1ef2418fe536aad5",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "1eebfe6a2eca8ad4",
-        "name": "create radar_dov table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_dov (\n    time REAL, \n    unit TEXT, \n    direction TEXT, \n    velocity REAL, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
-        "output": "str",
-        "x": 940,
-        "y": 860,
-        "wires": [
-            [
-                "ca182659939320ce"
-            ]
-        ]
-    },
-    {
         "id": "1db11b98d771c791",
         "type": "template",
         "z": "1c71c8f26f5b7b19",
@@ -4321,26 +4161,6 @@
         ]
     },
     {
-        "id": "f9a458c786e4bb84",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "dea1b8828f8e501f",
-        "name": "create radar_timedspeedcounts table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_timed_speed_counts (\n    time REAL, \n    direction TEXT, \n    units TEXT, \n    count INTEGER, \n    average REAL, \n    radarName TEXT, \n    deployment_id TEXT\n);",
-        "output": "str",
-        "x": 890,
-        "y": 1120,
-        "wires": [
-            [
-                "50dcead7cf35b74f"
-            ]
-        ]
-    },
-    {
         "id": "8ccadc734d8ab769",
         "type": "template",
         "z": "1c71c8f26f5b7b19",
@@ -4357,26 +4177,6 @@
         "wires": [
             [
                 "50dcead7cf35b74f"
-            ]
-        ]
-    },
-    {
-        "id": "8d4953609399d75e",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "047f05d7650ba3cc",
-        "name": "create radar_raw_speed_magnitude table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude (\n    time REAL, \n    unit TEXT, \n    magnitude TEXT, \n    speed TEXT, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
-        "output": "str",
-        "x": 880,
-        "y": 1380,
-        "wires": [
-            [
-                "a3dddf65b65ca371"
             ]
         ]
     },
@@ -4421,26 +4221,6 @@
         ]
     },
     {
-        "id": "a18940845d6c5a2e",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "name": "create radar_raw_speed_magnitude_single table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (\n    time REAL, \n    unit TEXT, \n    magnitude REAL, \n    speed REAL, \n    radarName TEXT, \n    deployment_id TEXT\n    );",
-        "output": "str",
-        "x": 890,
-        "y": 1680,
-        "wires": [
-            [
-                "a3924864154eaefb"
-            ]
-        ]
-    },
-    {
         "id": "ca4ed8761a4ded27",
         "type": "debug",
         "z": "1c71c8f26f5b7b19",
@@ -4457,26 +4237,6 @@
         "x": 810,
         "y": 1860,
         "wires": []
-    },
-    {
-        "id": "fbde266909bc0ca7",
-        "type": "inject",
-        "z": "1c71c8f26f5b7b19",
-        "g": "da1c8c74261a93a4",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 550,
-        "y": 1980,
-        "wires": [
-            [
-                "1bdec3d0b912f792"
-            ]
-        ]
     },
     {
         "id": "09369d5e4816364f",
@@ -4597,26 +4357,6 @@
         "output": "str",
         "x": 870,
         "y": 2020,
-        "wires": [
-            [
-                "09369d5e4816364f"
-            ]
-        ]
-    },
-    {
-        "id": "1bdec3d0b912f792",
-        "type": "template",
-        "z": "1c71c8f26f5b7b19",
-        "g": "da1c8c74261a93a4",
-        "name": "create radar_oc_payload table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS radar_oc_payload (\n    start_time REAL,\n    end_time REAL,\n    delta_time_msec REAL,\n    direction TEXT,\n    frames_count REAL,\n    velocity_max REAL,\n    velocity_min REAL,\n    magnitude_max REAL,\n    magnitude_mean REAL,\n    velocity_change REAL,\n    frames_per_velocity REAL,\n    object_length REAL,\n    units TEXT,\n    object_label TEXT,\n    radarName TEXT,\n    deployment_id TEXT\n);",
-        "output": "str",
-        "x": 910,
-        "y": 1980,
         "wires": [
             [
                 "09369d5e4816364f"
@@ -5369,26 +5109,6 @@
         ]
     },
     {
-        "id": "b77bb1c374a198e4",
-        "type": "inject",
-        "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 190,
-        "y": 1080,
-        "wires": [
-            [
-                "6b08c9332096b857"
-            ]
-        ]
-    },
-    {
         "id": "61d6a19c99c60e0b",
         "type": "sqlite",
         "z": "9269520ddb532b00",
@@ -5636,26 +5356,6 @@
         ]
     },
     {
-        "id": "6b08c9332096b857",
-        "type": "template",
-        "z": "9269520ddb532b00",
-        "g": "53e4faf6d3ece28c",
-        "name": "create table events",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS events (\n    id TEXT PRIMARY KEY,\n    camera TEXT,\n    label TEXT,\n    sub_label TEXT,\n    top_score REAL,\n    frame_time REAL,\n    start_time REAL,\n    end_time REAL,\n    entered_zones TEXT,\n    score REAL,\n    area REAL,\n    ratio REAL,\n    motionless_count REAL,\n    position_changes REAL,\n    attributes TEXT,\n    direction_calc TEXT,\n    speed_calc REAL,\n    provenance TEXT, \n    deployment_id TEXT DEFAULT NULL,\n    radarName TEXT DEFAULT NULL\n    );",
-        "output": "str",
-        "x": 510,
-        "y": 1080,
-        "wires": [
-            [
-                "510b389597efaf1b"
-            ]
-        ]
-    },
-    {
         "id": "3731dfc3716b1167",
         "type": "template",
         "z": "9269520ddb532b00",
@@ -5832,26 +5532,6 @@
         ]
     },
     {
-        "id": "ad3b1bd4bcdd6731",
-        "type": "inject",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "inject after 0.1 sec",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 210,
-        "y": 580,
-        "wires": [
-            [
-                "d61da5053d3a100e"
-            ]
-        ]
-    },
-    {
         "id": "e063e562cca50f31",
         "type": "inject",
         "z": "b1fde507a4b80c79",
@@ -5922,26 +5602,6 @@
         "wires": [
             [
                 "8cae4cba37aecc0d"
-            ]
-        ]
-    },
-    {
-        "id": "d61da5053d3a100e",
-        "type": "template",
-        "z": "b1fde507a4b80c79",
-        "g": "672f3b07194c5dd5",
-        "name": "create airquality table",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "CREATE TABLE IF NOT EXISTS airquality (\n    entryDateTime REAL,\n    gas_calibrated INTEGER,\n    temp REAL,\n    bar REAL,\n    hum REAL,\n    dew REAL,\n    temp_raw REAL,\n    bar_raw REAL,\n    hum_raw REAL,\n    pm01 REAL,\n    pm025 REAL,\n    pm10 REAL,\n    gas_red REAL,\n    gas_oxi REAL,\n    gas_nh3 REAL,\n    gas_red_raw REAL,\n    gas_oxi_raw REAL,\n    gas_nh3_raw REAL,\n    lux REAL,\n    lux_raw REAL,\n    proximity REAL,\n    sensorName TEXT,\n    deployment_id TEXT\n);",
-        "output": "str",
-        "x": 600,
-        "y": 580,
-        "wires": [
-            [
-                "35d0362b1f8a5e1a"
             ]
         ]
     },
@@ -6088,48 +5748,6 @@
         "wires": [
             [
                 "014464d29b72fa53"
-            ]
-        ]
-    },
-    {
-        "id": "f1530cb4468b517b",
-        "type": "inject",
-        "z": "b1fde507a4b80c79",
-        "d": true,
-        "g": "672f3b07194c5dd5",
-        "name": "inject manually",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 200,
-        "y": 660,
-        "wires": [
-            [
-                "f11bc2c9463f8c85"
-            ]
-        ]
-    },
-    {
-        "id": "f11bc2c9463f8c85",
-        "type": "template",
-        "z": "b1fde507a4b80c79",
-        "d": true,
-        "g": "672f3b07194c5dd5",
-        "name": "drop",
-        "field": "topic",
-        "fieldType": "msg",
-        "format": "sql",
-        "syntax": "mustache",
-        "template": "DROP TABLE airquality;",
-        "output": "str",
-        "x": 470,
-        "y": 660,
-        "wires": [
-            [
-                "35d0362b1f8a5e1a"
             ]
         ]
     },
@@ -11815,31 +11433,6 @@
         ]
     },
     {
-        "id": "4dc5e5c66569e020",
-        "type": "inject",
-        "z": "6a802553f327d4d1",
-        "g": "5f2ceb5475d42c10",
-        "name": "create table alpr",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS plate_recognizer (event_id TEXT PRIMARY KEY, filename TEXT NOT NULL, timestamp TEXT NOT NULL, camera_id TEXT NOT NULL, processing_time REAL, plate_type TEXT, plate_score REAL, plate_xmin INTEGER, plate_ymin INTEGER, plate_xmax INTEGER, plate_ymax INTEGER, plate_value TEXT, plate_value_score REAL, plate_region_value TEXT, plate_region_score REAL, vehicle_type TEXT, vehicle_score REAL, vehicle_xmin INTEGER, vehicle_ymin INTEGER, vehicle_xmax INTEGER, vehicle_ymax INTEGER, vehicle_make TEXT, vehicle_model TEXT, vehicle_make_model_score REAL, vehicle_orientation TEXT, vehicle_orientation_score REAL, vehicle_color TEXT, vehicle_color_score REAL, json_payload TEXT NOT NULL);",
-        "x": 220,
-        "y": 880,
-        "wires": [
-            [
-                "3de791c3380ea762"
-            ]
-        ]
-    },
-    {
         "id": "5a13261128484d6f",
         "type": "inject",
         "z": "6a802553f327d4d1",
@@ -13411,31 +13004,6 @@
         "wires": [
             [
                 "e638af4d80889930"
-            ]
-        ]
-    },
-    {
-        "id": "49f8992b46fbe1b7",
-        "type": "inject",
-        "z": "7c7dba965ad4a266",
-        "g": "2fedf545ef1a2008",
-        "name": "create table for comments",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, effectiveDateTime TIMESTAMP, expirationDateTime TIMESTAMP, entryDateTime TIMESTAMP, comment TEXT, commenter_name TEXT);",
-        "x": 210,
-        "y": 320,
-        "wires": [
-            [
-                "686d46c2bf6797a4"
             ]
         ]
     },
