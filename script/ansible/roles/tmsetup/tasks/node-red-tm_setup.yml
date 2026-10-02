@@ -21,6 +21,8 @@
     - '{{ tmsetup_codedir }}/node-red-tm/config'
     - '{{ tmsetup_codedir }}/node-red-tm/data'
     - '{{ tmsetup_codedir }}/node-red-tm/db'
+    - '{{ tmsetup_codedir }}/node-red-tm/schema'
+    - '{{ tmsetup_codedir }}/node-red-tm/schema/migrations'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
@@ -43,6 +45,21 @@
     mode: '0644'
     owner: '{{ tmsetup_codeowner }}'
     src: 'container/{{ item }}'
+
+- name: TMSetup - Node-RED-TM Setup - Copy tmdb schema runner and migrations
+  become: true
+  loop:
+    - node-red-tm/schema/tmdb_migrate.py
+    - node-red-tm/schema/schema.sql
+    - node-red-tm/schema/README.md
+    - node-red-tm/schema/migrations/
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item }}'
+  notify: Restart node-red-tm.service
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Container files
   become: true
