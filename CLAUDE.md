@@ -14,15 +14,16 @@ Traffic Monitor turns a Raspberry Pi 5 with a camera, OmniPreSense Doppler radar
 
 ## Commands
 
-There is no test suite or CI (see CONTRIBUTING.md). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
+There's no CI. The only automated tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
 
 Local checks (any Linux box):
 
 ```bash
-# Ansible isn't vendored; reuse the venv tmsetup.sh creates. Activate it in the same shell invocation.
-python3 -m venv ~/.tmsetup/tm_venv && ~/.tmsetup/tm_venv/bin/pip install -r script/requirements
-. ~/.tmsetup/tm_venv/bin/activate
+# One dev venv (Ansible + pytest, from script/requirements-dev) for every check. Activate it in the same shell invocation.
+python3 -m venv .venv && .venv/bin/pip install -r script/requirements-dev
+. .venv/bin/activate
 
+python -m pytest container/node-red-tm/schema/tests  # schema runner, migrations, and flows.json SQL vs. schema
 (cd script/ansible && ansible-playbook -i localhost setup.yml --syntax-check)  # task/YAML structure; does not render templates
 (cd script/ansible && ansible-playbook -i localhost setup.yml --list-tags)
 python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files '*.j2')
