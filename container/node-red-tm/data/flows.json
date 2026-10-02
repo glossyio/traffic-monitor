@@ -9265,7 +9265,7 @@
         "z": "28627559bebdc324",
         "g": "0a6e123f5e53c029",
         "name": "query events, daily summary last 10 days in zone_capture",
-        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch', 'localtime') as day,\n    label,\n    camera,\n    COUNT(*) as count,\n    trunc((unixepoch('now') / 86400)) - trunc(frame_time / 86400) as difference,\n    frame_time\nFROM\n    events\nWHERE\n    difference < 9\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n\nconst query = `\nSELECT\n    date(frame_time, 'unixepoch', 'localtime') as day,\n    label,\n    camera,\n    COUNT(*) as count,\n    MAX(frame_time) as frame_time\nFROM\n    events\nWHERE\n    date(frame_time, 'unixepoch', 'localtime') >= date('now', 'localtime', '-9 days')\n    AND camera = '${flow.get(\"camera_selection\")}'\n    AND entered_zones LIKE '%zone_capture%'\nGROUP BY\n    label, date(frame_time, 'unixepoch', 'localtime'), camera\nORDER BY\n    label, day, camera;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
