@@ -32,7 +32,6 @@
 
 - name: TMSetup - Main - Set HEVC device fact
   ansible.builtin.set_fact:
-    tmsetup_hevc_device: "{{ hevc_device_scan.stdout | trim if hevc_device_scan.stdout != '' else tmsetup_hevc_device }}"
-  when: hevc_device_scan.stdout != ''
+    tmsetup_hevc_device: "{{ hevc_device_scan.tdout | default(tmsetup_default_hevc_device) | trim }}"
 
 ...
