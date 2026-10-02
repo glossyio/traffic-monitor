@@ -64,6 +64,18 @@
     state: present
     update_cache: false
 
+- name: TMSetup - Base Setup - Add backports repository
+  ansible.builtin.apt_repository:
+    repo: "deb http://deb.debian.org/debian {{ ansible_facts['lsb']['codename'] }}-backports main"
+    filename: backports
+    state: present
+
+- name: TMSetup - Base Setup - Install required packages from backports
+  ansible.builtin.apt:
+    name: '{{ tmsetup_packages_backports }}'
+    update_cache: yes
+    default_release: "{{ ansible_facts['lsb']['codename'] }}-backports"
+
 - name: TMSetup - Base Setup - Copy utils files to codedir
   become: true
   ansible.builtin.copy:
@@ -110,5 +122,15 @@
     group: root
     mode: '0644'
   notify: Restart sysstat service
+
+- name: TMSetup - Base Setup - Add cockpit configuration
+  become: true
+  ansible.builtin.copy:
+    src: cockpit.conf
+    dest: /etc/cockpit/cockpit.conf
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart cockpit service
 
 ...
