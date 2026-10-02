@@ -11,6 +11,7 @@ TMP_INVENTORY_PATH="${TM_TMP_DIR}/inventory"
 
 # INTERNAL VARIABLES
 _THIS_SCRIPT=$0
+_ARGS=("$@")
 _SCRIPT_DIR=$(dirname "$_THIS_SCRIPT")
 _START_DIR=$(pwd)
 _APT_UPGRADE=false
@@ -166,6 +167,28 @@ _print_result(){
   _pline
 }
 
+_run_ansible() { # Run ANSIBLE_CMD; if sudo wanted a password Ansible didn't have, suggest -K
+  local _output _status
+  _output=$(mktemp "${TM_TMP_DIR}/ansible-output.XXXXXX")
+  # Copy the output to check for the sudo error; PIPESTATUS keeps the playbook's exit status
+  ${ANSIBLE_CMD} 2>&1 | tee -i "${_output}"
+  _status=${PIPESTATUS[0]}
+  if [[ ${_status} -ne 0 ]] && grep -q -E 'sudo: a password is required|Missing sudo password' "${_output}"; then
+    printf "\n"
+    _pline
+    printf "Ansible stopped because sudo asked for a password.\n"
+    printf "Run tmsetup.sh again with -K, and enter your sudo password when Ansible asks for it:\n\n"
+    printf "    bash %s -K" "${_THIS_SCRIPT}"
+    if [[ ${#_ARGS[@]} -gt 0 ]]; then
+      printf " %q" "${_ARGS[@]}"
+    fi
+    printf "\n"
+    _pline
+  fi
+  rm -f "${_output}"
+  return "${_status}"
+}
+
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
@@ -181,7 +204,7 @@ _tmsetup_local(){ # Installation on localhost only
   _pline
   ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
-  ${ANSIBLE_CMD}
+  _run_ansible
   _EXIT_STATUS="$?"
   cd "${_START_DIR}"
   printf "\n\n"
@@ -217,7 +240,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
   _pline
   ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
-  ${ANSIBLE_CMD}
+  _run_ansible
   _EXIT_STATUS="$?"
   cd "${_START_DIR}"
   printf "\n\n"
