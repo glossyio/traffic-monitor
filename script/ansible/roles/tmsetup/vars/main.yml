@@ -24,6 +24,12 @@ tmsetup_packages:
   - rpicam-apps
   - sysstat
 
+tmsetup_packages_backports:
+  - cockpit
+  - cockpit-files
+  - cockpit-podman
+  - cockpit-sosreport
+
 tmsetup_base_required_facts:
   - os_family
   - distribution

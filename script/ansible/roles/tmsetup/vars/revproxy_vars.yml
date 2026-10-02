@@ -59,4 +59,18 @@ tmsetup_proxies:
       - X-Real-IP $remote_addr
       - Upgrade $http_upgrade
       - Connection "upgrade"
+  - name: cockpit
+    base_path: /system
+    label: Cockpit-Project system administration
+    pass: http://127.0.0.1:9090/system/
+    http_version: 1.1
+    set_headers:
+      - Host $host;
+      - X-Forwarded-Proto $scheme
+      - X-Forwarded-For $remote_addr
+      - X-Real-IP $remote_addr
+      - Upgrade $http_upgrade
+      - Connection "upgrade"
+    proxy_buffering: off
+    gzip: off
 ...
