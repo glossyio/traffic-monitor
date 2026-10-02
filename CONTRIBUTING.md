@@ -14,7 +14,16 @@ Important resources (many coming soon):
 
 ## Testing
 
-We have not implemented a testing framework. Help us by suggesting or creating one!  
+There's no CI yet, and most of the project is tested by installing it on a Raspberry Pi. The database schema has an automated test suite that runs on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
+
+    python3 -m venv .venv
+    .venv/bin/pip install -r script/requirements-dev
+
+Then run the tests:
+
+    .venv/bin/python -m pytest container/node-red-tm/schema/tests
+
+Add new development tools to `script/requirements-dev` so everyone uses the same environment. Help us extend testing to the rest of the project!
 
 ## Submitting changes
 
