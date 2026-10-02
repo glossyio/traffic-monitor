@@ -129,3 +129,23 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - Role variables are prefixed `tmsetup_`, and registered results end in `_register`.
   - Modules use FQCNs (`ansible.builtin.*`, `community.general.*`).
   - `become: true` is set per task.
+
+## AI use in this repository
+
+The policy is "Use of AI tools" in CONTRIBUTING.md: AI may draft, but a person reviews, tests, and owns every change.
+
+- Keep drafts small enough for a person to review line by line, and say what you're unsure about.
+- Device data follows "Use of AI tools" in CONTRIBUTING.md. Never read images, video clips, or plate reads. Before reading a copy of `tmdb.sqlite`, confirm with the user that the device operator consented and that plate recognition was never enabled. Never ask for real passwords, API keys, or tokens; work with placeholders. Don't read anything under `/opt/traffic-monitor` on a Pi. `.claude/settings.json` blocks that path and asks before database reads.
+- End commit messages with this trailer block instead of `Co-Authored-By`; in this repo `Co-authored-by` means a human co-author. Take the version from `claude --version` and the model from your own model ID. If you don't know the interface or effort level, ask; never guess a value.
+
+  ```text
+  Assisted-by: Claude Code <version> (<CLI | VS Code | JetBrains | desktop app | web>)
+  AI-Model: <model name> (<model id>)
+  AI-Effort: <effort level>
+  AI-Role: drafted | review only
+  ```
+
+  Don't use Claude Code's `attribution` setting for this: empty strings there turn off all commit attribution, this block included.
+
+- In pull requests, fill in the template's "AI assistance" section instead of adding a "Generated with Claude Code" footer.
+- Don't add AI-provenance comments to code.
