@@ -24,3 +24,28 @@ To get started developing:&#x20;
 3. Change `flows.json` and `package.json` to the `node-red-tm/data` directory locations so changes will be incorporated
 4. Commit changes to the \[forked] repo in a new branch.
 5. PR changes following the [contributing.md](contributing.md "mention") guidelines.
+
+## Database schema
+
+The tables in the Traffic Monitor database are defined by numbered SQL migrations in `container/node-red-tm/schema/migrations/`, not by the Node-RED flows. Every time `node-red-tm.service` starts, it applies the migrations the database doesn't have yet, before Node-RED opens it. The schema directory's `README.md` describes the full process, from writing a migration to testing the upgrade on a Pi and opening the PR.
+
+To change the schema:
+
+1. Add the next numbered migration, regenerate `schema.sql`, and update the table docs in [data-and-payloads](../data-and-payloads/data-overview.md).
+2. Run the tests, using the dev environment from [contributing.md](contributing.md "mention"):
+
+   ```bash
+   .venv/bin/python -m pytest container/node-red-tm/schema/tests
+   ```
+
+To try a migration on a dev device, apply it while Node-RED is stopped. Deploying from the Node-RED editor doesn't restart the service, so it doesn't apply migrations. These commands use the default code owner (`tmadmin`) and install directory (`/opt/traffic-monitor`), and run the migration script from your Node-RED project's clone:
+
+```bash
+sudo systemctl stop node-red-tm.service
+sudo runuser -u tmadmin -- python3 \
+    /opt/traffic-monitor/node-red-tm/data/projects/<project>/container/node-red-tm/schema/tmdb_migrate.py \
+    --db /opt/traffic-monitor/node-red-tm/db/tmdb.sqlite
+sudo systemctl start node-red-tm.service
+```
+
+The database records each migration it applies. If you change a migration after applying it, restore the copy saved in `/opt/traffic-monitor/node-red-tm/db/backup/` and apply it again.

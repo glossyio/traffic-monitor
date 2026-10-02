@@ -1,6 +1,6 @@
 # tmdb schema
 
-The schema of the Traffic Monitor database (`tmdb.sqlite`) lives here as numbered SQL migrations. `tmdb_migrate.py` applies the ones a database doesn't have yet and records the version in SQLite's `PRAGMA user_version`. Node-RED reads and writes the tables.
+The schema of the Traffic Monitor database (`tmdb.sqlite`) lives here as numbered SQL migrations. `tmdb_migrate.py` applies the ones a database doesn't have yet and records the version in SQLite's `PRAGMA user_version`. Node-RED reads and writes the tables but doesn't create them.
 
 | Path | Purpose |
 |---|---|
@@ -11,15 +11,30 @@ The schema of the Traffic Monitor database (`tmdb.sqlite`) lives here as numbere
 
 ## Changing the schema
 
-1. Add `migrations/NNNN_short_name.sql` with the next number.
-2. Regenerate `schema.sql`:
+Work on a branch from `dev`. Ship the migration in the same PR as the flow changes that use it, because a device applies the migration on the same restart that loads the new flows.
+
+1. **Plan the change.** Prefer additive changes (see the rules below). On devices you can reach, check for drift first:
+
+   ```bash
+   sudo journalctl -u node-red-tm.service -b | grep 'tmdb-migrate: DRIFT'
+   ```
+
+2. **Write the migration** as `migrations/NNNN_short_name.sql`, using the next number.
+3. **Regenerate `schema.sql`:**
 
    ```bash
    python3 container/node-red-tm/schema/tmdb_migrate.py --dump-schema > container/node-red-tm/schema/schema.sql
    ```
 
-3. Update the table docs in `docs/data-and-payloads/`.
-4. Run the tests.
+4. **Update the flows and docs.** Change the nodes that write or read the new table or column, usually a prepared `INSERT` and the function node that builds its `$params`. Update the table docs in `docs/data-and-payloads/`.
+5. **Run the tests** (see [Running the tests](#running-the-tests)).
+   - They don't see SQL that function nodes build in JavaScript, so check those queries on the Pi.
+   - If the migration transforms data, as a table rebuild or backfill does, add a test that migrates a synthetic database from the previous version and checks the rows.
+6. **Test the upgrade on a Pi** (see [Testing on a Pi](#testing-on-a-pi)).
+7. **Open the PR to `dev`.** In the template's Testing section, include:
+   - the `tmdb-migrate` log lines and the `--check` result from the Pi
+   - how long a heavy migration took
+   - whether the change is additive or destructive; a destructive change also needs a line in the release notes
 
 Rules for migrations:
 
@@ -46,6 +61,63 @@ The tests check:
 - that `schema.sql` matches the migrations
 
 They use synthetic data only. Never add a copy of a device's database.
+
+## On the device
+
+`tmsetup.sh -t node-red-tm` copies `tmdb_migrate.py`, `migrations/`, `schema.sql`, and this README to `{{ tmsetup_codedir }}/node-red-tm/schema/` and overwrites them on every run.
+
+- `node-red-tm.service` runs the script as `ExecStartPre`, as the code owner, so the tables are current before any flow runs.
+- If a migration fails, it's rolled back, and Node-RED starts anyway on the previous version.
+- Deploying from the Node-RED editor doesn't restart the service, so it doesn't apply migrations. See "Database schema" in `docs/development/dev-environment.md`.
+
+Read the runner's output:
+
+```bash
+sudo journalctl -u node-red-tm.service -b | grep tmdb-migrate
+```
+
+Check a database without changing it (default code owner and install directory shown):
+
+```bash
+sudo runuser -u tmadmin -- python3 /opt/traffic-monitor/node-red-tm/schema/tmdb_migrate.py \
+    --db /opt/traffic-monitor/node-red-tm/db/tmdb.sqlite --check
+```
+
+## Testing on a Pi
+
+Use a test Pi, not a field device. It should run the current `dev` with a database that has data, so you test the upgrade from the previous version. It shouldn't have an active Node-RED project, or Node-RED loads the project's flows instead of the deployed ones. The paths below use the default install directory.
+
+1. Run the `--check` command from [On the device](#on-the-device). Expect `up to date at version <N-1>` and exit code 0.
+2. In the Pi's clone of the repo, check out your branch: `git fetch && git switch <branch>`.
+3. If the migration is heavy, such as an index or table rebuild on a `radar_*` table, time it on a copy of the database. The time includes the backup the device makes first, and it must stay well under the service's 30-minute start timeout. Put the copy on the SD card, because `/tmp` may be in RAM:
+
+   ```bash
+   mkdir -p ~/tmdb-timing
+   sudo systemctl stop node-red-tm.service
+   sudo cp /opt/traffic-monitor/node-red-tm/db/tmdb.sqlite ~/tmdb-timing/
+   sudo systemctl start node-red-tm.service
+   sudo chown -R "$USER": ~/tmdb-timing
+   time python3 container/node-red-tm/schema/tmdb_migrate.py \
+       --db ~/tmdb-timing/tmdb.sqlite --backup-dir ~/tmdb-timing/backup
+   rm -rf ~/tmdb-timing
+   ```
+
+4. Deploy with `bash script/tmsetup.sh -t node-red-tm`.
+5. Read the runner's output (see [On the device](#on-the-device)).
+   - Expect `backed up … tmdb-v<N-1>-….sqlite`, then `applied NNNN_short_name.sql`, then `migrated … from version <N-1> to <N>`, and no new `DRIFT` lines.
+   - An `ERROR` line means the migration was rolled back and Node-RED is running on the previous schema.
+6. Run `--check` again. Expect `up to date at version <N>` and exit code 0.
+7. Check that data arrives.
+   - In the Node-RED editor, click the `select latest 5 rows from <table>` inject on the table's tab and read the debug sidebar. New rows should fill the new column.
+   - Also open the dashboards that read the table.
+8. Restart with `sudo systemctl restart node-red-tm.service`. The log should say `up to date at version <N>`, and `db/backup/` should still hold just the one backup.
+
+Before you switch the test Pi to a branch without your migration, clean up by hand. The deploy copies migration files but never deletes them, and the runner leaves a database alone when it's newer than its migrations.
+
+1. Stop `node-red-tm.service`.
+2. Delete your migration from `/opt/traffic-monitor/node-red-tm/schema/migrations/`.
+3. If you need the previous schema back, copy the pre-migration backup from `/opt/traffic-monitor/node-red-tm/db/backup/` over `tmdb.sqlite`, as `tmadmin`. Rows written since the migration are lost.
+4. Deploy the other branch, then start `node-red-tm.service`.
 
 ## Command line
 
