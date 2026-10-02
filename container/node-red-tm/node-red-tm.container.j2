@@ -22,6 +22,11 @@ AddDevice={{ rad }}
 
 [Service]
 Restart=on-failure
+# Apply tmdb.sqlite schema migrations before Node-RED opens the database (see {{ tmsetup_codedir }}/node-red-tm/schema/README.md).
+# The leading "-" starts Node-RED even if a migration fails; that migration is rolled back and logged.
+ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/python3 {{ tmsetup_codedir }}/node-red-tm/schema/tmdb_migrate.py --db {{ tmsetup_codedir }}/node-red-tm/db/tmdb.sqlite
+# Backing up and migrating a large database can take minutes.
+TimeoutStartSec=30min
 
 [Install]
 WantedBy=default.target plate-recognizer.service
