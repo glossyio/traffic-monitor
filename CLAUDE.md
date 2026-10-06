@@ -131,7 +131,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - `become: true` is set per task.
 - Shell style (`script/tmsetup.sh`):
   - `_lowercase` names are functions, `UPPERCASE` are user-editable variables (the `TUNEABLE VARIABLES` block), and `_UPPERCASE` are internal-only variables.
-  - Local variables inside functions are plain `lowercase` (`local output status`). A leading underscore would make them read like function calls. Some older functions still use `_`-prefixed locals; don't copy that in new code.
+  - Local variables inside functions are plain `lowercase` (`local output status`). A leading underscore would make them read like function calls. Declare them `local`, or they become globals.
 
 ## AI use in this repository
 

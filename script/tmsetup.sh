@@ -17,6 +17,7 @@ _THIS_SCRIPT=$0
 _ARGS=("$@")
 _SCRIPT_DIR=$(dirname "$_THIS_SCRIPT")
 _START_DIR=$(pwd)
+_ANSIBLE_CMD=""
 _APT_UPGRADE=false
 _BIN_PATH=${VENV_DIR}/bin
 _EXIT_STATUS=0
@@ -28,6 +29,7 @@ _MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy")
 declare -a _VALID_CUSTOM_VARS=("plate_recognizer")
+declare -a _CUSTOM_VARS=()
 
 ## FUNCTIONS
 _pline() { # Print line function
@@ -79,27 +81,27 @@ _apt_upgrade(){ # perform full upgrade on local installs
 }
 
 _install_ansible_local() { # check and install python3-venv and setup venv
-  local _venvd=$1
-  local _script_dir=$2
+  local venvd=$1
+  local script_dir=$2
   dpkg -s python3-venv >/dev/null 2>&1 || {
       sudo apt update && sudo apt install -y python3-venv
   }  
-  if [[ ! -f "${_venvd}/bin/activate" ]]; then
+  if [[ ! -f "${venvd}/bin/activate" ]]; then
       echo "Virtual Environment does not exist and will be created at the following location:"
-      echo "    ${_venvd}"
-      python3 -m venv "${_venvd}" || return 1
+      echo "    ${venvd}"
+      python3 -m venv "${venvd}" || return 1
   fi
-  . "${_venvd}/bin/activate" || return 1
-  pip3 install -r "${_script_dir}/requirements" || return 1
+  . "${venvd}/bin/activate" || return 1
+  pip3 install -r "${script_dir}/requirements" || return 1
   return 0
 }
 
 _install_ansible_remote() { # check and install python3-venv and setup venv
-  local _venvd=$1
-  local _script_dir=$2
-  if python3 -m venv ${_venvd} ; then
-    . "${_venvd}/bin/activate" || return 1
-    pip3 install -r "${_script_dir}/requirements" || return 1
+  local venvd=$1
+  local script_dir=$2
+  if python3 -m venv ${venvd} ; then
+    . "${venvd}/bin/activate" || return 1
+    pip3 install -r "${script_dir}/requirements" || return 1
   else
     cat << EOF
 ERROR: Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
@@ -117,50 +119,51 @@ EOF
 }
 
 _log_check() { # Check if Log Path exists and create if not or exit
-local _logfil=$1
-[[ -d "$(dirname "${_logfil}")" ]] || mkdir -p "$(dirname "${_logfil}")" || return 1
+local logfil=$1
+[[ -d "$(dirname "${logfil}")" ]] || mkdir -p "$(dirname "${logfil}")" || return 1
 
 # Create log file or exit
-touch "${_logfil}" || ( printf "Unable to write to log file: %s\n" "${_logfil}" && return 1 )
+touch "${logfil}" || ( printf "Unable to write to log file: %s\n" "${logfil}" && return 1 )
 }
 
 _confirm_cont() { # Request to confirm continuation
-local _cnftxt=$1
-local _contin=''
+local cnftxt=$1
+local contin=''
 if [[ "${_CONFIRM}" == false ]]
 then
-  while ! [[ "${_contin}" =~ ^[YyNn]$ ]] ;do
-    read -p "${_cnftxt}" -n 1 -r _contin
+  while ! [[ "${contin}" =~ ^[YyNn]$ ]] ;do
+    read -p "${cnftxt}" -n 1 -r contin
     printf '\n'
-    [[ "${_contin}" =~ ^[Nn]$ ]] && return 2
+    [[ "${contin}" =~ ^[Nn]$ ]] && return 2
   done
 fi
 return 0
 }
 
 _init_reboot_touchfile() { # Initialize the reboot touchfile 
-  local _tchfil=$1
-  if [[ -n ${_tchfil} ]] ;then
-    _add_var tmsetup_reboot_touch_file "${_tchfil}"
-    printf '0' > ${_tchfil} || return 1
+  local tchfil=$1
+  if [[ -n ${tchfil} ]] ;then
+    _add_var tmsetup_reboot_touch_file "${tchfil}"
+    printf '0' > ${tchfil} || return 1
   fi
   return 0
 }
 
 _set_tmp_ansible_inv() { # Setup ansible inventory for remote hosts
-  local _rhosts=$1
-  local _tmpinv=$2
-  if [[ -n "${_rhosts}" ]];then
-    IFS=',' read -r -a _hosts_array <<< ${_rhosts}
-    printf "[all]\n" > "${_tmpinv}"
-    printf "%s\n" ${_hosts_array[@]} >> "${_tmpinv}"
+  local rhosts=$1
+  local tmpinv=$2
+  local -a hosts_array
+  if [[ -n "${rhosts}" ]];then
+    IFS=',' read -r -a hosts_array <<< ${rhosts}
+    printf "[all]\n" > "${tmpinv}"
+    printf "%s\n" ${hosts_array[@]} >> "${tmpinv}"
   fi
 }
 
 _print_result(){
-  local _exitst=$1
+  local exitst=$1
   _pline
-  if [[ "${_exitst}" -eq 0 ]]
+  if [[ "${exitst}" -eq 0 ]]
   then
     printf "Setup completed SUCCESFULLY!\n"
   else
@@ -170,11 +173,11 @@ _print_result(){
   _pline
 }
 
-_run_ansible() { # Run ANSIBLE_CMD; if sudo wanted a password Ansible didn't have, suggest -K
+_run_ansible() { # Run _ANSIBLE_CMD; if sudo wanted a password Ansible didn't have, suggest -K
   local output status
   output=$(mktemp "${TM_TMP_DIR}/ansible-output.XXXXXX")
   # Copy the output to check for the sudo error; PIPESTATUS keeps the playbook's exit status
-  ${ANSIBLE_CMD} 2>&1 | tee -i "${output}"
+  ${_ANSIBLE_CMD} 2>&1 | tee -i "${output}"
   status=${PIPESTATUS[0]}
   if [[ ${status} -ne 0 ]] && grep -q -E 'sudo: a password is required|Missing sudo password' "${output}"; then
     printf "\n"
@@ -205,8 +208,8 @@ _tmsetup_local(){ # Installation on localhost only
   _pline
   printf "Running Ansible playbook to setup Traffic Monitor\n"
   _pline
-  ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
-  printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
+  _ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
+  printf "\n\n%s\n\n" "${_ANSIBLE_CMD}"
   _run_ansible
   _EXIT_STATUS="$?"
   cd "${_START_DIR}"
@@ -227,22 +230,22 @@ _tmsetup_local(){ # Installation on localhost only
 }
 
 _tmsetup_remote(){ # Installation on Remote hosts
-  local _rhosts=$1
-  printf "This will install the traffic monitor software on these devices:\n\t%s\n" "${_rhosts}"
+  local rhosts=$1
+  printf "This will install the traffic monitor software on these devices:\n\t%s\n" "${rhosts}"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
   [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
   _install_ansible_remote "${VENV_DIR}" "${_SCRIPT_DIR}"
   . "${VENV_DIR}/bin/activate"
   cd "${_SCRIPT_DIR}/ansible"
-  _set_tmp_ansible_inv "${_rhosts}" "${TMP_INVENTORY_PATH}"
+  _set_tmp_ansible_inv "${rhosts}" "${TMP_INVENTORY_PATH}"
   [[ "${_APT_UPGRADE}" == "true" ]] && _add_var tmsetup_perform_apt_upgrade true
   printf "\n\n"
   _pline
   printf "Running Ansible playbook to setup Traffic Monitor on the following remote hosts:\n"
-  printf "\t%s\n" "${_rhosts}"
+  printf "\t%s\n" "${rhosts}"
   _pline
-  ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
-  printf "\n\n%s\n\n" "${ANSIBLE_CMD}"
+  _ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
+  printf "\n\n%s\n\n" "${_ANSIBLE_CMD}"
   _run_ansible
   _EXIT_STATUS="$?"
   cd "${_START_DIR}"
@@ -321,8 +324,8 @@ do
       exit 2
       ;;
     C) # Custom boolean variables (comma‑separated)
-      IFS=',' read -r -a _custom_vars <<< "${OPTARG}"
-      for v in "${_custom_vars[@]}"; do
+      IFS=',' read -r -a _CUSTOM_VARS <<< "${OPTARG}"
+      for v in "${_CUSTOM_VARS[@]}"; do
         # Trim any surrounding whitespace just to be safe
         v="${v#"${v%%[![:space:]]*}"}"   # ltrim
         v="${v%"${v##*[![:space:]]}"}"   # rtrim
