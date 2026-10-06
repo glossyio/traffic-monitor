@@ -3,6 +3,9 @@
 
 set -e
 
+# NAMING: _lowercase for functions, UPPERCASE for user-editable variables,
+# _UPPERCASE for internal-only variables, and plain lowercase for local variables inside functions
+
 # TUNEABLE VARIABLES
 TM_TMP_DIR=~/.tmsetup
 VENV_DIR="${TM_TMP_DIR}/tm_venv"
@@ -168,12 +171,12 @@ _print_result(){
 }
 
 _run_ansible() { # Run ANSIBLE_CMD; if sudo wanted a password Ansible didn't have, suggest -K
-  local _output _status
-  _output=$(mktemp "${TM_TMP_DIR}/ansible-output.XXXXXX")
+  local output status
+  output=$(mktemp "${TM_TMP_DIR}/ansible-output.XXXXXX")
   # Copy the output to check for the sudo error; PIPESTATUS keeps the playbook's exit status
-  ${ANSIBLE_CMD} 2>&1 | tee -i "${_output}"
-  _status=${PIPESTATUS[0]}
-  if [[ ${_status} -ne 0 ]] && grep -q -E 'sudo: a password is required|Missing sudo password' "${_output}"; then
+  ${ANSIBLE_CMD} 2>&1 | tee -i "${output}"
+  status=${PIPESTATUS[0]}
+  if [[ ${status} -ne 0 ]] && grep -q -E 'sudo: a password is required|Missing sudo password' "${output}"; then
     printf "\n"
     _pline
     printf "Ansible stopped because sudo asked for a password.\n"
@@ -185,8 +188,8 @@ _run_ansible() { # Run ANSIBLE_CMD; if sudo wanted a password Ansible didn't hav
     printf "\n"
     _pline
   fi
-  rm -f "${_output}"
-  return "${_status}"
+  rm -f "${output}"
+  return "${status}"
 }
 
 _tmsetup_local(){ # Installation on localhost only
