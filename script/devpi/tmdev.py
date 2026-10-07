@@ -62,9 +62,9 @@ def ssh_command(name, hostvars):
     return ["ssh", *options], f"{user}@{host}" if user else host
 
 
-def stream(argv, save_to=None, shell=False):
+def stream(argv, save_to=None, shell=False, cwd=None):
     """Run argv, echo its redacted output, optionally save that output too, and return the exit code."""
-    with (subprocess.Popen(argv, shell=shell, executable="/bin/bash" if shell else None,
+    with (subprocess.Popen(argv, shell=shell, executable="/bin/bash" if shell else None, cwd=cwd,
                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            text=True, errors="replace") as proc,
           open(save_to, "w") if save_to else nullcontext() as saved):
@@ -75,6 +75,16 @@ def stream(argv, save_to=None, shell=False):
             if saved:
                 saved.write(line)
     return proc.returncode
+
+
+def source_tree(path):
+    """A checkout to deploy or check instead of this one: the top of a git work tree with script/tmsetup.sh."""
+    path = Path(path).expanduser().resolve()
+    top = subprocess.run(["git", "-C", str(path), "rev-parse", "--show-toplevel"],
+                         capture_output=True, text=True).stdout.strip()
+    if not top or Path(top) != path or not (path / "script" / "tmsetup.sh").is_file():
+        raise DevPiError(f"{path} isn't the top of a traffic-monitor checkout (a git work tree with script/tmsetup.sh)")
+    return path
 
 
 # --- PR checks -------------------------------------------------------------------------------
@@ -92,6 +102,12 @@ def active_check():
         marker.unlink()
         return None
     return devlog.Run.load(directory)
+
+
+def check_source():
+    """The open check's --src checkout, or None."""
+    run = active_check()
+    return Path(run.meta["src"]) if run and run.meta.get("src") else None
 
 
 def require_active():
@@ -121,6 +137,7 @@ def write_checklist(run):
         f"- Host: {meta['host']}",
         f"- Run directory: {run.dir}",
         f"- Code: {devlog.code_label(meta['code'])} ({meta['code']['worktree']})",
+        *([f"- Tools: {devlog.code_label(meta['tool'])} ({meta['tool']['worktree']})"] if meta.get("tool") else []),
         f"- Opened: {meta['started']}" + (f", closed: {meta['finished']}" if meta.get("finished") else ""),
         f"- Last deploy to this host when the check opened: {devlog.deploy_label(meta.get('deploy'))}",
     ]
@@ -142,7 +159,9 @@ def check_start(args):
         raise DevPiError(f"a check is already open ({run.dir}); end it first")
     if args.host != "local":
         get_host(args.host)
-    run = devlog.Run.start("check", args.host, pr=args.pr, title=args.title, deploy=devlog.last_deploy(args.host))
+    src = source_tree(args.src) if args.src else None
+    run = devlog.Run.start("check", args.host, pr=args.pr, code=devlog.code_state(src) if src else None,
+                           src=str(src) if src else None, title=args.title, deploy=devlog.last_deploy(args.host))
     active_marker().write_text(str(run.dir.relative_to(devlog.log_dir())))
     write_checklist(run)
     log(f"check open: {run.dir}")
@@ -283,13 +302,16 @@ def cmd_hosts(args):
 def cmd_run(args):
     """Run a command on a dev Pi, or on this machine with host 'local', and log it.
 
-    The log goes to the open check if there is one, otherwise to adhoc/<date>/.
+    The log goes to the open check if there is one, otherwise to adhoc/<date>/. A local command
+    runs in the open check's --src checkout if it has one, otherwise in the current directory.
     """
     command = " ".join(args.extra)
     if not command:
         raise DevPiError("no command given; put it after --, e.g. tmdev.py run tm-dev-01 -- uptime")
+    cwd = None
     if args.host == "local":
-        where, argv, shell = f"local:{os.getcwd()}", command, True
+        cwd = check_source() or os.getcwd()
+        where, argv, shell = f"local:{cwd}", command, True
     else:
         ssh, destination = ssh_command(args.host, get_host(args.host))
         where, argv, shell = args.host, [*ssh, destination, command], False
@@ -298,7 +320,7 @@ def cmd_run(args):
     directory.mkdir(parents=True, exist_ok=True)
     name = f"cmd-{len(list(directory.glob('cmd-*.out'))) + 1:03d}"
     started, clock = devlog.utc_now(), time.monotonic()
-    code = stream(argv, directory / f"{name}.out", shell)
+    code = stream(argv, directory / f"{name}.out", shell, cwd)
     with open(directory / "commands.log", "a") as commands:
         commands.write(f"{name}  {devlog.stamp(started)}  {where}  exit={code}  {time.monotonic() - clock:.1f}s\n"
                        f"    $ {devlog.redact(command)}\n")
@@ -306,9 +328,9 @@ def cmd_run(args):
     return code
 
 
-def deploy_remote(name, hostvars, tmsetup_args, log_file):
-    """Run this checkout's tmsetup.sh against the Pi over SSH, using the inventory's connection details."""
-    argv = ["bash", str(devlog.REPO_ROOT / "script" / "tmsetup.sh"), "-y", "-L", str(log_file),
+def deploy_remote(name, hostvars, src, tmsetup_args, log_file):
+    """Run src's tmsetup.sh against the Pi over SSH, using the inventory's connection details."""
+    argv = ["bash", str(src / "script" / "tmsetup.sh"), "-y", "-L", str(log_file),
             "-H", hostvars.get("ansible_host", name)]
     if user := hostvars.get("ansible_user"):
         argv += ["-l", user]
@@ -321,11 +343,11 @@ def deploy_remote(name, hostvars, tmsetup_args, log_file):
     return stream(argv + tmsetup_args)
 
 
-def deploy_on_pi(name, hostvars, tmsetup_args, log_file):
-    """Copy this working tree to ~/tm-src on the Pi and run tmsetup.sh there, as a local install."""
+def deploy_on_pi(name, hostvars, src, tmsetup_args, log_file):
+    """Copy the src working tree to ~/tm-src on the Pi and run tmsetup.sh there, as a local install."""
     ssh, destination = ssh_command(name, hostvars)
     rsync = ["rsync", "-a", "--delete", "--filter=:- .gitignore", *(f"--exclude={path}" for path in ON_PI_EXCLUDES),
-             "-e", shlex.join(ssh), f"{devlog.REPO_ROOT}/", f"{destination}:{ON_PI_DIR}/"]
+             "-e", shlex.join(ssh), f"{src}/", f"{destination}:{ON_PI_DIR}/"]
     code = stream(rsync, log_file.with_name("rsync.log"))
     if code:
         log(f"rsync to {name} failed with exit {code}")
@@ -337,12 +359,17 @@ def deploy_on_pi(name, hostvars, tmsetup_args, log_file):
 
 
 def cmd_deploy(args):
+    """Deploy --src, else the open check's --src, else this checkout; --pr defaults to the open check's."""
     hostvars = get_host(args.host)
-    run = devlog.Run.start("deploy", args.host, pr=args.pr, mode="on-pi" if args.on_pi else "remote",
-                           tmsetup_args=args.extra, previous_deploy=devlog.last_deploy(args.host))
+    check = active_check()
+    src = source_tree(args.src) if args.src else check_source() or devlog.REPO_ROOT
+    pr = args.pr or (check.meta["pr"] if check else None)
+    run = devlog.Run.start("deploy", args.host, pr=pr, code=devlog.code_state(src),
+                           mode="on-pi" if args.on_pi else "remote", tmsetup_args=args.extra,
+                           previous_deploy=devlog.last_deploy(args.host))
     log(f"deploying {devlog.code_label(run.meta['code'])} to {args.host} ({run.meta['mode']}); log: {run.dir}")
     deploy = deploy_on_pi if args.on_pi else deploy_remote
-    code = deploy(args.host, hostvars, args.extra, run.dir / "tmsetup.log")
+    code = deploy(args.host, hostvars, src, args.extra, run.dir / "tmsetup.log")
     run.finish("pass" if code == 0 else f"fail (exit {code})", code == 0)
     log(f"deploy {run.meta['result']}; logged in {run.dir}")
     return code
@@ -384,11 +411,13 @@ def main(argv=None):
     pi_login.add_argument("--shell", action="store_true", help="print shell commands for a Pi that's already running")
     commands.add_parser("hosts", help="list the dev Pis in the inventory")
     deploy = commands.add_parser("deploy",
-                                 help="run this checkout's tmsetup.sh for a dev Pi; tmsetup.sh options go after --")
+                                 help="run a checkout's tmsetup.sh for a dev Pi; tmsetup.sh options go after --")
     deploy.add_argument("host")
+    deploy.add_argument("--src", metavar="DIR",
+                        help="checkout to deploy (default: the open check's --src, else this checkout)")
     deploy.add_argument("--on-pi", action="store_true",
                         help=f"copy the working tree to ~/{ON_PI_DIR} on the Pi and run tmsetup.sh there")
-    deploy.add_argument("--pr", type=int, help="PR number to show in the log")
+    deploy.add_argument("--pr", type=int, help="PR number to show in the log (default: the open check's)")
     run = commands.add_parser("run", help="run a command and log it; the command goes after --")
     run.add_argument("host", help="inventory host name, or 'local' for this machine")
     check = commands.add_parser("check", help="record a PR check (start, item, status, end, reopen)")
@@ -397,6 +426,9 @@ def main(argv=None):
     start.add_argument("--host", required=True, help="inventory host name, or 'local' for off-device checks")
     start.add_argument("--pr", type=int)
     start.add_argument("--title", required=True)
+    start.add_argument("--src", metavar="DIR",
+                       help="checkout under test, e.g. a worktree of the PR's branch (default: this checkout); "
+                            "deploys and local commands in the check use it")
     item = actions.add_parser("item", help="record a checklist item; recording it again replaces its status")
     item.add_argument("text")
     item.add_argument("status", choices=STATUSES, help="'manual' means waiting on the developer")

@@ -121,6 +121,24 @@ The check's result is:
 - **pending** if any item is still `manual`;
 - **pass** otherwise.
 
+### Testing another branch
+
+The tools can test a branch that doesn't contain them, such as an open PR that this one isn't based on. Add a worktree for that branch and open the check with `--src`:
+
+```bash
+git worktree add ../tm-pr210 feature/switch_nginxconf_from_dict
+$T check start --host tm-dev-01 --pr 210 --title "revproxy location files" --src ../tm-pr210
+$T deploy tm-dev-01 -- -t revproxy          # deploys ../tm-pr210, logged as PR 210
+$T run local -- bash -n script/tmsetup.sh   # local commands run in ../tm-pr210
+```
+
+While that check is open:
+- `deploy` uses its `--src` checkout and PR number, unless you pass `--src` or `--pr`.
+- `run local` runs in that checkout.
+- `checklist.md` names the code under test, and also the checkout the tools ran from.
+
+`--src` must be the top of a git work tree containing `script/tmsetup.sh`.
+
 Reading `tmdb.sqlite` while Node-RED runs can make a Node-RED write fail if it lands at the same moment, because `node-red-node-sqlite` sets no busy timeout. That includes `tmdb_migrate.py --check`. It's acceptable on a bench unit, but keep reads short.
 
 ## The run log
@@ -134,7 +152,7 @@ Every message and `checklist.md` gives the full path of its run directory. The `
   LOG.md          one row per deploy, check, or test run, newest last
   runs.jsonl      the same rows as JSON lines
   runs/<UTC time>-<kind>-<host>[-pr<N>]/
-    meta.json     host, code (branch, commit, uncommitted files), arguments, result
+    meta.json     host, code under test (branch, commit, uncommitted files), tools if they differ, arguments, result
     tmsetup.log   deploys (on-Pi deploys also keep rsync.log)
     checklist.md  checks, with commands.log and cmd-NNN.out
   adhoc/<date>/   commands run while no check was open
