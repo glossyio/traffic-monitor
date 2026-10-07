@@ -1,0 +1,8 @@
+# cockpit - Cockpit system administration (runs on the host, not in the pod)
+location /system/ {
+    proxy_pass http://host.containers.internal:9090/system/;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+    # Per Cockpit's nginx guidance: stream responses, and keep ETags (gzip drops them)
+    proxy_buffering off;
+    gzip off;
+}

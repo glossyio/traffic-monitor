@@ -24,6 +24,12 @@ tmsetup_packages:
   - rpicam-apps
   - sysstat
 
+tmsetup_packages_backports:
+  - cockpit
+  - cockpit-files
+  - cockpit-podman
+  - cockpit-sosreport
+
 tmsetup_base_required_facts:
   - os_family
   - distribution
@@ -37,6 +43,7 @@ tmsetup_base_required_facts:
 # Reverse proxy location files, one per app (container/revproxy/tm/locations).
 # Deployed location files not listed here are removed from the device.
 tmsetup_revproxy_locations:
+  - cockpit.conf
   - dashboard.conf
   - frigate.conf
   - go2rtc.conf
