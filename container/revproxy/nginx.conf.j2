@@ -54,7 +54,7 @@ http {
             proxy_set_header Referer "";
         }
         # frigate - Frigate
-        location {{ tmsetup_base_path_frigate }}/ {
+        location /frigate/ {
             proxy_pass http://127.0.0.1:5000/;
             proxy_http_version 1.1;
             proxy_set_header Host $host;
@@ -63,7 +63,7 @@ http {
             proxy_set_header X-Forwarded-Scheme $scheme;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
-            proxy_set_header X-Ingress-Path "{{ tmsetup_base_path_frigate }}";
+            proxy_set_header X-Ingress-Path "/frigate";
         }
         # legacy_dashboard - Legacy Dashboard
         location /ui/ {
