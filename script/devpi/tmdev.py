@@ -9,6 +9,7 @@ repo's dev venv, from any directory:
     .venv/bin/python script/devpi/tmdev.py hosts
     .venv/bin/python script/devpi/tmdev.py deploy tm-dev-01 -- -t revproxy
     .venv/bin/python script/devpi/tmdev.py run tm-dev-01 -- systemctl is-active frigate.service
+    .venv/bin/python script/devpi/tmdev.py test tm-dev-01
 """
 
 import argparse
@@ -375,6 +376,17 @@ def cmd_deploy(args):
     return code
 
 
+def cmd_test(args):
+    """Run the device tests against one host, or the whole tm_dev group; pytest options go after --."""
+    if args.host != devlog.INVENTORY_GROUP:
+        get_host(args.host)
+    env = dict(os.environ, TM_DEV_HOSTS=args.host, TM_DEV_DISRUPTIVE="1" if args.disruptive else "0")
+    # No pytest cache: its entries would name the host inside the repo.
+    argv = [sys.executable, "-m", "pytest", str(Path(__file__).resolve().parent / "tests"),
+            "-p", "no:cacheprovider", "-rfEs", *args.extra]
+    return subprocess.run(argv, env=env, stdin=subprocess.DEVNULL).returncode
+
+
 def cmd_log(args):
     root = devlog.log_dir()
     if args.path:
@@ -438,6 +450,10 @@ def main(argv=None):
     actions.add_parser("end", help="close the check and add its row to the log")
     reopen = actions.add_parser("reopen", help="reopen a closed check, e.g. to record manual results")
     reopen.add_argument("run_dir")
+    test = commands.add_parser("test", help="run the device tests and log the results; pytest options go after --")
+    test.add_argument("host", nargs="?", default=devlog.INVENTORY_GROUP,
+                      help=f"inventory host name (default: every host in {devlog.INVENTORY_GROUP})")
+    test.add_argument("--disruptive", action="store_true", help="also restart the pod and reboot the Pi")
     show = commands.add_parser("log", help="show the newest rows of the run log")
     show.add_argument("-n", type=int, default=20, help="number of rows (default 20)")
     show.add_argument("--path", action="store_true", help="print the log directory and exit")
@@ -445,7 +461,7 @@ def main(argv=None):
     args.extra = extra
 
     handlers = {"pi-login": cmd_pi_login, "hosts": cmd_hosts, "deploy": cmd_deploy, "run": cmd_run,
-                "log": cmd_log,
+                "test": cmd_test, "log": cmd_log,
                 "check": lambda a: {"start": check_start, "item": check_item, "status": check_status,
                                     "end": check_end, "reopen": check_reopen}[a.action](a)}
     try:

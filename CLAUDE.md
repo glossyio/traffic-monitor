@@ -14,7 +14,7 @@ Traffic Monitor turns a Raspberry Pi 5 with a camera, OmniPreSense Doppler radar
 
 ## Commands
 
-There's no CI. The only automated tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
+There's no CI. The off-device tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Device tests (`script/devpi/tests`) check a bench Pi over SSH and run only through `tmdev.py test` (or with `TM_DEV_HOSTS` set). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
 
 Local checks (any Linux box):
 
@@ -55,10 +55,11 @@ From a dev machine, against a bench Pi defined in the local dev-Pi inventory (`s
 .venv/bin/python script/devpi/tmdev.py deploy <host> [--on-pi] -- -t <tag>     # tmsetup.sh with -y; may reboot the Pi
 .venv/bin/python script/devpi/tmdev.py run <host>|local -- <command>           # run and log a command
 .venv/bin/python script/devpi/tmdev.py check start|item|status|end ...         # record a PR's Pi test plan
+.venv/bin/python script/devpi/tmdev.py test <host> [--disruptive] [-- -k <expr>]  # device tests vs. the host's tm_expect
 .venv/bin/python script/devpi/tmdev.py log                                     # newest rows of the run log
 ```
 
-The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH.
+The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH. Device tests that read `config.yml` or `tmdb.sqlite` run only on hosts marked `tm_expect.pii_free: true`.
 
 Containers run as rootful, Quadlet-generated systemd units:
 
