@@ -105,14 +105,14 @@ def load_hosts():
     return {name: hostvars.get(name, {}) for name in names}
 
 
-def code_state():
-    """Branch, commit, and uncommitted changes of the checkout this module runs from."""
+def code_state(root=REPO_ROOT):
+    """Branch, commit, and uncommitted changes of a checkout; by default, the one this module runs from."""
     def git(*args):
-        return subprocess.run(["git", "-C", str(REPO_ROOT), *args], capture_output=True, text=True).stdout.strip()
+        return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True).stdout.strip()
 
     changes = git("status", "--short").splitlines()
     return {
-        "worktree": str(REPO_ROOT),
+        "worktree": str(root),
         "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
         "commit": git("rev-parse", "--short=10", "HEAD"),
         "dirty": bool(changes),
@@ -154,7 +154,9 @@ class Run:
         self.meta = meta
 
     @classmethod
-    def start(cls, kind, host, pr=None, **extra):
+    def start(cls, kind, host, pr=None, code=None, **extra):
+        """Create the run directory. code is the code under test (default: this checkout); when it's
+        another checkout, the meta also records this one as tool."""
         now = utc_now()
         name = f"{now:%Y%m%dT%H%M%SZ}-{kind}-{host}" + (f"-pr{pr}" if pr else "")
         directory = log_dir() / "runs" / name
@@ -163,8 +165,12 @@ class Run:
             suffix += 1
             directory = directory.with_name(f"{name}-{suffix}")
         directory.mkdir()
-        run = cls(directory, {"kind": kind, "host": host, "pr": pr, "started": stamp(now), "code": code_state(),
-                              **extra})
+        tool = code_state()
+        code = code or tool
+        meta = {"kind": kind, "host": host, "pr": pr, "started": stamp(now), "code": code}
+        if code["worktree"] != tool["worktree"]:
+            meta["tool"] = tool
+        run = cls(directory, {**meta, **extra})
         run.save()
         return run
 
@@ -178,7 +184,8 @@ class Run:
 
     def finish(self, result, ok):
         """Record the outcome and add this run's row to both indexes."""
-        self.meta.update(finished=stamp(utc_now()), result=result, ok=ok, code_at_finish=code_state())
+        self.meta.update(finished=stamp(utc_now()), result=result, ok=ok,
+                         code_at_finish=code_state(self.meta["code"]["worktree"]))
         self.save()
         relative = self.dir.relative_to(log_dir())
         row = {key: self.meta.get(key) for key in ("kind", "host", "pr", "started", "finished", "result", "ok")}
