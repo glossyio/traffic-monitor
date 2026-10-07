@@ -1,0 +1,7 @@
+# frigate - Frigate
+location /frigate/ {
+    proxy_pass http://127.0.0.1:5000/;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+    proxy_set_header X-Forwarded-Scheme $scheme;
+    proxy_set_header X-Ingress-Path "/frigate";
+}

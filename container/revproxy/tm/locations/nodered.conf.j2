@@ -1,0 +1,5 @@
+# nodered - Node-RED admin console
+location /nr/ {
+    proxy_pass http://127.0.0.1:1880/;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+}

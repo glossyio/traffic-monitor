@@ -34,4 +34,12 @@ tmsetup_base_required_facts:
   - user_dir
   - hostname
 
+# Reverse proxy location files, one per app (container/revproxy/tm/locations)
+tmsetup_revproxy_locations:
+  - dashboard.conf
+  - frigate.conf
+  - go2rtc.conf
+  - legacy-ui.conf
+  - nodered.conf
+
 ...
