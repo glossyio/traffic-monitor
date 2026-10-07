@@ -85,4 +85,18 @@
     state: started
   notify: Restart revproxy.service
 
+# Fail before the restart handler runs if the rendered config is invalid, so
+# the running proxy keeps its last good config. --add-host lets nginx resolve
+# the go2rtc upstream inside this throwaway container.
+- name: TMSetup - revproxy Setup - Check NGinx config
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      podman run --rm --entrypoint nginx
+      --add-host host.containers.internal:127.0.0.1
+      --volume {{ tmsetup_codedir }}/revproxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      --volume {{ tmsetup_codedir }}/revproxy/tm:/etc/nginx/tm:ro
+      localhost/revproxy:latest -t
+  changed_when: false
+
 ...
