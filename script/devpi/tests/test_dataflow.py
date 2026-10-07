@@ -19,6 +19,10 @@ def pii_free_only(expect):
 def test_schema_current(host, codedir, codeowner):
     """tmdb_migrate.py --check exits 0: no pending migrations and no drift."""
     runner = f"{codedir}/node-red-tm/schema/tmdb_migrate.py"
+    # Code from before the migrations (#208) leaves no ExecStartPre; a runner left by an
+    # earlier deploy would then report the unmigrated database as pending.
+    if runner not in host.file("/etc/containers/systemd/node-red-tm.container").content_string:
+        pytest.skip("the deployed node-red-tm.container doesn't run tmdb_migrate.py (code from before #208)")
     with host.sudo():
         result = host.run(f"runuser -u {codeowner} -- python3 {runner} "
                           f"--db {codedir}/node-red-tm/db/tmdb.sqlite --check")

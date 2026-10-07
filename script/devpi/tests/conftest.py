@@ -94,7 +94,10 @@ def pytest_runtest_makereport(item, call):
     if logged and (report.when == "call" or not report.passed):
         if SUITE not in config.stash:
             host = os.environ["TM_DEV_HOSTS"]
-            run = devlog.Run.start("suite", host.replace(",", "+"), deploy=devlog.last_deploy(host),
+            deploy = devlog.last_deploy(host)
+            # The code under test is what the last deploy put on the Pi, not this checkout.
+            code = devlog.Run.load(devlog.log_dir() / deploy["run"]).meta["code"] if deploy else None
+            run = devlog.Run.start("suite", host.replace(",", "+"), code=code, deploy=deploy,
                                    disruptive=os.environ.get("TM_DEV_DISRUPTIVE") == "1",
                                    pytest_args=list(config.invocation_params.args))
             config.stash[SUITE] = {"run": run, "results": []}
@@ -119,7 +122,10 @@ def pytest_sessionfinish(session, exitstatus):
         f"# Device tests: {run.meta['host']}",
         "",
         f"- Run directory: {run.dir}",
-        f"- Code: {devlog.code_label(run.meta['code'])} ({run.meta['code']['worktree']})",
+        f"- Code: {devlog.code_label(run.meta['code'])} ({run.meta['code']['worktree']}; "
+        + ("from the last deploy)" if run.meta["deploy"] else "no deploy logged, so this checkout)"),
+        *([f"- Tests: {devlog.code_label(run.meta['tool'])} ({run.meta['tool']['worktree']})"]
+          if run.meta.get("tool") else []),
         f"- Started: {run.meta['started']}",
         f"- Last deploy to this host: {devlog.deploy_label(run.meta['deploy'])}",
         f"- Disruptive tests: {'included' if run.meta['disruptive'] else 'skipped'}",
