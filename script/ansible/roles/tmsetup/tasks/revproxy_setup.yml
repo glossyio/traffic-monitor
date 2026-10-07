@@ -46,6 +46,23 @@
     src: 'container/revproxy/tm/locations/{{ item }}.j2'
   notify: Restart revproxy.service
 
+- name: TMSetup - revproxy Setup - Find deployed NGinx location files
+  become: true
+  ansible.builtin.find:
+    paths: '{{ tmsetup_codedir }}/revproxy/tm/locations'
+    patterns: '*.conf'
+  register: tmsetup_revproxy_locations_find_register
+
+# A renamed or removed location file left behind would keep proxying, or
+# duplicate a location and stop nginx from starting.
+- name: TMSetup - revproxy Setup - Remove unlisted NGinx location files
+  become: true
+  loop: "{{ tmsetup_revproxy_locations_find_register['files'] | map(attribute='path') | map('basename') | difference(tmsetup_revproxy_locations) }}"
+  ansible.builtin.file:
+    path: '{{ tmsetup_codedir }}/revproxy/tm/locations/{{ item }}'
+    state: absent
+  notify: Restart revproxy.service
+
 - name: TMSetup - revproxy Setup - Create NGinx quadlets
   become: true
   loop:
