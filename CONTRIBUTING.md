@@ -25,6 +25,8 @@ Then run the tests:
 
 Add new development tools to `script/requirements-dev` so everyone uses the same environment. Help us extend testing to the rest of the project!
 
+To deploy to a bench Pi from your dev machine and keep a log of what you tested on it, see [script/devpi/README.md](script/devpi/README.md).
+
 ## Submitting changes
 
 Please send a [GitHub Pull Request to this repo](https://github.com/glossyio/traffic-monitor/compare/dev...bugfix/yourfix) to the `dev` branch with a clear list of what you have done (read more about [pull requests](http://help.github.com/pull-requests/)). Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit), or we will squash commits.

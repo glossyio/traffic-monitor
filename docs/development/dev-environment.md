@@ -49,3 +49,13 @@ sudo systemctl start node-red-tm.service
 ```
 
 The database records each migration it applies. If you change a migration after applying it, restore the copy saved in `/opt/traffic-monitor/node-red-tm/db/backup/` and apply it again.
+
+## Testing on a dev Pi
+
+`script/devpi/tmdev.py` deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.
+
+The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repo. `script/devpi/README.md` covers setup and use.
+
+{% hint style="warning" %}
+Use these tools only with bench units, not field devices. Deploys pass `-y` to `tmsetup.sh`, so the Pi reboots when the installer needs it.
+{% endhint %}
