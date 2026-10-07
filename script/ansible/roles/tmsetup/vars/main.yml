@@ -34,7 +34,8 @@ tmsetup_base_required_facts:
   - user_dir
   - hostname
 
-# Reverse proxy location files, one per app (container/revproxy/tm/locations)
+# Reverse proxy location files, one per app (container/revproxy/tm/locations).
+# Deployed location files not listed here are removed from the device.
 tmsetup_revproxy_locations:
   - dashboard.conf
   - frigate.conf
