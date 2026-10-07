@@ -27,8 +27,13 @@ http {
 
     #gzip  on;
 
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
     server {
-        listen 80;
+        listen 80 default_server;
         server_name _;  # This will match any hostname
 
         #Logs for Nginx access and errors
@@ -40,59 +45,8 @@ http {
             root /usr/share/nginx/html;
             index index.html;
         }
-        # dashboard - Dashboard
-        location /dashboard/ {
-            proxy_pass http://127.0.0.1:1880/dashboard/;
-            proxy_http_version 1.1;
-            proxy_cache_bypass $http_upgrade;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Referer "";
-        }
-        # frigate - Frigate
-        location /frigate/ {
-            proxy_pass http://127.0.0.1:5000/;
-            proxy_http_version 1.1;
-            proxy_set_header Host $host;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Scheme $scheme;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header X-Ingress-Path "/frigate";
-        }
-        # legacy_dashboard - Legacy Dashboard
-        location /ui/ {
-            proxy_pass http://127.0.0.1:1880/ui/;
-            proxy_http_version 1.1;
-            proxy_cache_bypass $http_upgrade;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        # nodered - Node-RED admin console
-        location /nr/ {
-            proxy_pass http://127.0.0.1:1880/;
-            proxy_http_version 1.1;
-            proxy_cache_bypass $http_upgrade;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-        }
-        # go2rtc - Go2RTC Feeds
-        location /feeds/ {
-            proxy_pass http://host.containers.internal:1984/;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-        }
+
+        # One file per app, listed in tmsetup_revproxy_locations
+        include /etc/nginx/tm/locations/*.conf;
     }
-    include /etc/nginx/conf.d/*.conf;
 }

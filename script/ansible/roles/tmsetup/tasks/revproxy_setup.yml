@@ -6,6 +6,9 @@
     - { path: '{{ tmsetup_codedir }}', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy/html', mode: '0755' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm/locations', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm/snippets', mode: '0750' }
   ansible.builtin.file:
     mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
@@ -19,6 +22,7 @@
     - { path: 'revproxy/Containerfile', mode: '0640' }
     - { path: 'revproxy/nginx.conf', mode: '0640' }
     - { path: 'revproxy/html/index.html', mode: '0644' }
+    - { path: 'revproxy/tm/snippets/proxy-common.conf', mode: '0640' }
   ansible.builtin.template:
     backup: false
     dest: '{{ tmsetup_codedir }}/{{ item["path"] }}'
@@ -27,6 +31,19 @@
     mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
     src: 'container/{{ item["path"] }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Create NGinx location files
+  become: true
+  loop: '{{ tmsetup_revproxy_locations }}'
+  ansible.builtin.template:
+    backup: false
+    dest: '{{ tmsetup_codedir }}/revproxy/tm/locations/{{ item }}'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/revproxy/tm/locations/{{ item }}.j2'
   notify: Restart revproxy.service
 
 - name: TMSetup - revproxy Setup - Create NGinx quadlets
