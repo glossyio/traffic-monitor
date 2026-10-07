@@ -34,6 +34,13 @@ tmsetup_base_required_facts:
   - user_dir
   - hostname
 
-# Set base path for Frigate
-tmsetup_base_path_frigate: /frigate
+# Reverse proxy location files, one per app (container/revproxy/tm/locations).
+# Deployed location files not listed here are removed from the device.
+tmsetup_revproxy_locations:
+  - dashboard.conf
+  - frigate.conf
+  - go2rtc.conf
+  - legacy-ui.conf
+  - nodered.conf
+
 ...

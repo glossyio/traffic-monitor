@@ -27,8 +27,13 @@ http {
 
     #gzip  on;
 
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
     server {
-        listen 80;
+        listen 80 default_server;
         server_name _;  # This will match any hostname
 
         #Logs for Nginx access and errors
@@ -40,23 +45,8 @@ http {
             root /usr/share/nginx/html;
             index index.html;
         }
-{% for proxy in tmsetup_proxies %}
-        # {{ proxy['name'] }} - {{ proxy['label'] }}
-        location {{ proxy['base_path'] }}/ {{ '{' }}
-            proxy_pass {{ proxy['pass'] }};
-{% if proxy['http_version'] is defined %}
-            proxy_http_version {{ proxy['http_version'] }};
-{% endif %}
-{% if proxy['cache_bypass'] is defined %}
-            proxy_cache_bypass {{ proxy['cache_bypass'] }};
-{% endif %}
-{% if proxy['set_headers'] is defined and proxy['set_headers'] is iterable %}
-{% for header in proxy['set_headers'] %}
-            proxy_set_header {{ header }};
-{% endfor %}
-{% endif %}
-        {{ '}' }}
-{% endfor %}
+
+        # One file per app, listed in tmsetup_revproxy_locations
+        include /etc/nginx/tm/locations/*.conf;
     }
-    include /etc/nginx/conf.d/*.conf;
 }

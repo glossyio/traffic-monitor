@@ -88,7 +88,11 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - go2rtc runs on the host, not in the pod (`go2rtc_server.service`, config from `roles/tmsetup/files/go2rtc.yaml`), because it runs `rpicam-vid` to reach the Pi camera. Frigate reads `rtsp://host.containers.internal:8554/picam_h265_detect`. The pod's port 1984 (Frigate's bundled go2rtc) is published as host port 1964 because the host go2rtc already uses 1984.
 - The Frigate image adds a Raspberry Pi ffmpeg fork compiled for hardware HEVC decoding (`-hwaccel drm`, `/dev/media3`, `/dev/video19`).
 - UIs: Node-RED editor `:1880` (admin/password), legacy dashboard `:1880/ui`, Dashboard 2.0 `:1880/dashboard`, Frigate `:5000`, host go2rtc `:1984`.
-- nginx (`revproxy`) serves a home page on `:80` and proxies `/dashboard`, `/frigate`, `/ui`, `/nr`, and `/feeds`. The `location` blocks and the home-page links are both generated from `tmsetup_proxies` in `vars/revproxy_vars.yml`. Frigate runs under a base path set by `FRIGATE_BASE_PATH` and `X-Ingress-Path`.
+- nginx (`revproxy`) serves a home page on `:80` and proxies `/dashboard`, `/frigate`, `/ui`, `/nr`, and `/feeds`. Its config is plain nginx, bind-mounted into the container rather than built into the image:
+  - Each app's `location` block is its own file in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations` (`vars/main.yml`). Each one includes `tm/snippets/proxy-common.conf` for the forwarding and WebSocket headers.
+  - Setup deletes location files on the device that aren't in the list, then runs `nginx -t` before the restart handler.
+  - To proxy a new app, add its location file, list it, and add a link to the hand-written `html/index.html.j2`.
+  - Frigate runs under `/frigate`, set by `FRIGATE_BASE_PATH` and `X-Ingress-Path`.
 
 ### Node-RED flows (application logic)
 

@@ -1,0 +1,5 @@
+# go2rtc - Go2RTC Feeds (runs on the host, not in the pod)
+location /feeds/ {
+    proxy_pass http://host.containers.internal:1984/;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+}
