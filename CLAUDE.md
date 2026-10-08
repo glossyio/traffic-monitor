@@ -47,6 +47,19 @@ bash script/tmsetup.sh -H <ip>[,<ip>] -l <user> -k    # from a dev machine: inst
 
 Always use `tmsetup.sh` rather than calling `ansible-playbook` directly. The script supplies extra vars the role depends on (e.g. `tmsetup_reboot_touch_file`) and handles the reboot prompt.
 
+From a dev machine, against a bench Pi defined in the local dev-Pi inventory (`script/devpi/README.md`):
+
+```bash
+.venv/bin/python script/devpi/tmdev.py pi-login [--key <name>] [--shell]       # tmdev login for a new card (cloud-init) or running Pi
+.venv/bin/python script/devpi/tmdev.py hosts                                   # dev Pis in the inventory
+.venv/bin/python script/devpi/tmdev.py deploy <host> [--on-pi] -- -t <tag>     # tmsetup.sh with -y; may reboot the Pi
+.venv/bin/python script/devpi/tmdev.py run <host>|local -- <command>           # run and log a command
+.venv/bin/python script/devpi/tmdev.py check start|item|status|end ...         # record a PR's Pi test plan
+.venv/bin/python script/devpi/tmdev.py log                                     # newest rows of the run log
+```
+
+The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH.
+
 Containers run as rootful, Quadlet-generated systemd units:
 
 ```bash

@@ -1,0 +1,43 @@
+# Dev-Pi inventory template for script/devpi/tmdev.py and the device tests.
+#
+# Copy it outside the repo and fill it in; the copy names real devices, so never commit it:
+#   mkdir -p ~/.config/traffic-monitor
+#   cp script/devpi/dev-pis.example.yml ~/.config/traffic-monitor/dev-pis.yml
+#   chmod 600 ~/.config/traffic-monitor/dev-pis.yml
+# Set TM_DEV_INVENTORY to use another path. The tools refuse a path inside a git work tree.
+#
+# It's a standard Ansible inventory: one entry per dev Pi under the tm_dev group, with
+# Ansible's connection variables plus tm_expect, the hardware the Pi should have. The tests
+# compare tm_expect against what they find, so a mismatch shows whether the cause is the
+# hardware, the expectation, or the installer.
+all:
+  children:
+    tm_dev:
+      hosts:
+        tm-dev-01:                                  # name used in tmdev commands and the run log
+          ansible_host: 192.0.2.10                  # IP address or hostname
+          ansible_user: tmdev                       # key-only login with passwordless sudo; see tmdev.py pi-login
+          ansible_ssh_private_key_file: ~/.ssh/tm_dev
+          # ansible_port: 22
+          # tmsetup_codedir: /opt/traffic-monitor   # only if installed elsewhere; passed to tmsetup.sh -d
+          tm_expect:
+            # true only for a bench unit that has never recorded real-world data and never had
+            # plate recognition enabled. Turns on the checks that read config.yml and tmdb.sqlite.
+            pii_free: false
+            # true if the unit faces real traffic, so new radar and event rows are expected.
+            live_traffic: false
+            # none | edgetpu_usb | edgetpu_pci | hailo8l | hailo8
+            # (hailo8 is set up like hailo8l by tmsetup.sh; the names match tmsetup_detectors)
+            ai_coprocessor: none
+            radars:                                 # [] if none; up to 4
+              - port: /dev/ttyACM0
+                env_name: TM_RADAR_SERIAL_PORT_00   # key under sensors.radars in config.yml
+                model: OPS243-A
+            cameras:
+              - name: picam_h265                    # Frigate camera name, also sensors.cameras in config.yml
+                source: csi                         # csi (Pi camera port) | rtsp
+                csi_port: 0
+                sensor: imx708                      # Camera Module 3: imx708 (wide: imx708_wide); Global Shutter: imx296
+            environmental:                          # [] if none
+              - name: sensorname01                  # key under sensors.airquality_monitors in config.yml
+                model: enviroplus-pms5003
