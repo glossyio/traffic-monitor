@@ -3,3 +3,4 @@
 #   python3 -m venv .venv && .venv/bin/pip install -r script/requirements-dev
 -r requirements
 pytest>=8
+pytest-testinfra>=10
