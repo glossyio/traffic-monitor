@@ -440,8 +440,7 @@
             "83065a55697cc160",
             "95186b0fee06a3f5",
             "07cdbeafa34a565e",
-            "303ea9d25d718231",
-            "80fef27582607521"
+            "303ea9d25d718231"
         ],
         "x": 414,
         "y": 1499,
@@ -4865,23 +4864,6 @@
                 "6603f07036f13602",
                 "99c67a76992c8de8",
                 "2ea13e7fb927749d"
-            ]
-        ]
-    },
-    {
-        "id": "80fef27582607521",
-        "type": "sqlite",
-        "z": "1c71c8f26f5b7b19",
-        "g": "fcbf8999ca05a371",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "fixed",
-        "sql": "CREATE INDEX IF NOT EXISTS index_radar_singleton_time ON radar_raw_speed_magnitude_single(time);",
-        "name": "create index on table",
-        "x": 1140,
-        "y": 1680,
-        "wires": [
-            [
-                "a3924864154eaefb"
             ]
         ]
     },
