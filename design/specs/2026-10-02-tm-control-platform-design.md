@@ -1,6 +1,6 @@
 # tm-control: Traffic Monitor control app, platform design
 
-- **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13 (see "Builds on open PRs").
+- **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13. Re-checked on 2026-10-14 after #197, #218, #219, #220, and #222 merged into `dev` (see "Builds on open PRs").
 - **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), #185 (Cockpit), D#94 (FastAPI for host calls), D#199 (captive portal)
 - **Scope:** this spec covers the **platform**. Features built on it, such as Wi-Fi/hotspot and camera rename, get their own specs.
 
@@ -9,14 +9,15 @@
 Several PRs were open, most of them drafts, when this was written. The design builds on their approach. Their code may still change, so each milestone's plan re-checks what has merged before it starts.
 
 ```
-dev
+dev (now includes #197, #218, #219, #220, #222)
 └─ #202 feature/ai-use-policy (CLAUDE.md, AI-use policy)
    ├─ #205 bugfix/tmsetup-sudo-hint/mz
    ├─ #206 refactor/tmdb-schema-migrations/mz → #208 refactor/tmdb-schema-activate/mz
    │     → #214 feature/devpi-tooling/mz → #215 feature/devpi-tests/mz
    └─ #210 feature/switch_nginxconf_from_dict → #212 feature/185-cockpit
-#197 feature/175_radar_measurements_for_dev (flows.json)
 ```
+
+On 2026-10-14 every open branch above contained the latest `dev`, and all four stacks merged together without conflicts.
 
 | PR | What this design takes from it |
 |---|---|
@@ -25,8 +26,16 @@ dev
 | #206, #208 | The dev venv (`script/requirements-dev`) and pytest layout for off-device tests. The `runuser` pattern for commands that run as the code owner. Flows that no longer create tables. |
 | #210 | **The nginx layout:** one `location` file per app in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations`. Shared headers come from `tm/snippets/proxy-common.conf`. The config is bind-mounted, checked with `nginx -t` before restarting, and `/frigate` is hardcoded. tm-control's nginx changes are location files and snippets in this layout. |
 | #212 | Cockpit at `/system/`, from backports, with `AllowUnencrypted` and `LoginTo = false`. It keeps its own login and listens on `:9090`, which is the rescue console. |
-| #214, #215 | **Pi checks** run through `script/devpi/tmdev.py` (`deploy`, `check`, `test`). Device tests in `script/devpi/tests` compare a bench Pi against its expected hardware. Each milestone adds device tests there. |
-| #197 | Changes `flows.json`. tm-control's `/tm-internal/` endpoints must be added without conflicting with it. |
+| #214, #215 | **Pi checks** run through `script/devpi/tmdev.py` (`deploy`, `check`, `test`). `--src` points a check or deploy at another checkout, such as a milestone's worktree. Device tests in `script/devpi/tests` compare a bench Pi against its expected hardware. Tests that stop services go in `test_disruptive.py` and run only with `test --disruptive`. Each milestone adds device tests there. |
+
+**Merged into `dev` on 2026-10-14**
+
+| PR | What changes for this design |
+|---|---|
+| #197 | Radar measurements in `flows.json`. #208 adds its radar time index to the schema baseline. tm-control's `/tm-internal/` endpoints go on top of the merged flows. |
+| #218, #219 | Frigate gets the HEVC decoder that `utils/find_hevc_device.sh` finds (`tmsetup_hevc_device`, falling back to `/dev/media3`). M3's hardware checks add it as a probe. |
+| #220 | Frigate 0.18.1, Node-RED 5.0.8, and go2rtc 1.9.14 with a checksummed download. go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API, and can limit which modules load and which commands `exec` runs. M1 uses both limits. Frigate 0.18 rewrites an older `config.yml` to `version: 0.18-0` on its first start, keeping a `backup_config.yaml`. |
+| #222 | When no accelerator is found, Frigate's `config.yml` gets a `cpu` detector. M3 reports that as a warning, not a failure. |
 
 ## Context
 
@@ -82,6 +91,7 @@ Phone / laptop ──HTTP :80──▶ nginx (revproxy, host network)
   /api/             tm-control   127.0.0.1:8090                         tm-control checks its own cookie
   /frigate/         Frigate      127.0.0.1:8971 (TLS off)               auth_request, any role
   /dashboard/ /ui/  Node-RED     127.0.0.1:1880                         auth_request, any role
+  /storefiles       Node-RED     127.0.0.1:1880 (data export download)  auth_request, admin
   /nr/              Node-RED editor                                     auth_request, admin
   /feeds/           go2rtc       127.0.0.1:1984 (viewing paths only)    auth_request, admin; config API/editor denied
   /system/          Cockpit      127.0.0.1:9090                         auth_request, admin + Cockpit login
@@ -93,6 +103,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot D
   - Each app's `location` is its own file in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations`.
   - Moving to the host network keeps #210's bind mounts and its pre-restart `nginx -t`.
   - `go2rtc.conf` and `cockpit.conf` change from `host.containers.internal` to `127.0.0.1`. The pod-app locations already use `127.0.0.1`.
+  - A new `storefiles.conf` proxies `/storefiles` to Node-RED. The Dashboard's database page links to `/storefiles?files=…` from the site root, so through the proxy its downloads already return 404. Today they work only on port 1880, which M1 closes. A whole `tmdb.sqlite` can be several GB, so the location turns off proxy buffering.
 - **Pod** (`container/traffic-monitor.pod.j2`):
   - Publish 5000, 8971, 1880, and 1883 as `127.0.0.1:<port>:<port>`.
   - Drop 80, which moves to the host-network nginx.
@@ -100,11 +111,13 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot D
 - **go2rtc** (`files/go2rtc.yaml` becomes a template):
   - `api.listen: 127.0.0.1:1984`.
   - RTSP username and password come from a generated secret. Frigate inputs use `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@`. These are new variables, so a `FRIGATE_RTSP_PASSWORD` that operators already use for their own cameras is left alone.
-  - WebRTC is off by default, and players fall back to MSE.
+  - `app.modules` loads only the modules TM uses: `api`, `ws`, `rtsp`, `exec`, `ffmpeg`, `mp4`, `hls`, and `mjpeg`. Leaving out `webrtc` turns WebRTC off. `webrtc.listen: ""` alone would only drop the fixed :8555 port, and WebRTC could still negotiate on random UDP ports. Players fall back to MSE (Safari 17 and later through ManagedMediaSource), or to HLS on older iPhones.
+  - `exec.allow_paths: [rpicam-vid]`: stream sources can run only the camera command.
   - `go2rtc.conf` exposes only go2rtc's viewing paths:
     - It accepts only GET.
-    - `src` must be a plain stream name, so a `src` that's a URL or an `exec:` source is refused.
-    - A sibling location denies API paths other than the ones the players use: `location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg))$)" { return 403; }`.
+    - `src` must be a plain stream name. go2rtc itself already refuses `exec:` sources from its API. This rule also blocks URL sources, which would make the device connect to other hosts, and `ffmpeg:` sources.
+    - A sibling location denies API paths other than the ones the players use: `location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" { return 403; }`.
+  - go2rtc doesn't ask for its API or RTSP credentials from localhost. nginx connects from localhost, so nginx's rules are the API's real limit.
 - **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login.
 - **MQTT 1883:**
   - Loopback by default.
@@ -157,7 +170,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot D
 - A new version prompts again.
 
 **Frigate**
-These keys exist since 0.14. Confirm them on 0.18; the 0.18 version bump is separate work.
+Frigate is on 0.18.1 (#220). Its config schema has every key below, and `proxy.auth_secret` is an `EnvString`, so `{FRIGATE_…}` substitution works there. How they behave at runtime still needs a Pi (see Risks).
 - `auth.enabled: false`.
 - `proxy.header_map.user/role` and `proxy.auth_secret`.
 - `proxy.default_role: viewer`, so a missing header means least privilege.
@@ -167,7 +180,7 @@ These keys exist since 0.14. Confirm them on 0.18; the 0.18 version bump is sepa
 - Node-RED (`frigate:5000`) and tm-control (`127.0.0.1:5000`) keep using the internal port.
 
 **Node-RED editor**
-- `adminAuth` gets `tokens()` and `tokenHeader`.
+- `adminAuth` gets `tokens()` and `tokenHeader`. Node-RED 5.0.8 (#220) still supports both.
 - The token is short-lived, HMAC-signed by tm-control, and carries the user and role. `settings.js` verifies it.
 - The built-in editor user is removed.
 - Dashboards and http-in routes are gated by nginx only.
@@ -222,7 +235,7 @@ tm-control/
   - Component versions from `vars/main.yml`.
   - The installing user (`ansible_user_id`, or `-l` for remote installs).
   - Enabled options.
-  - Probe definitions from `tmsetup_detectors` and `tmsetup_radar_paths`.
+  - Probe definitions from `tmsetup_detectors` and `tmsetup_radar_paths`, and the HEVC decoder in `tmsetup_hevc_device`.
   - The drivers and firmware tmsetup installed, with versions.
   - `tmsetup_revproxy_locations`, which tells tm-control which apps are proxied. For example, Cockpit's tile appears only when `cockpit.conf` is listed.
 
@@ -267,6 +280,8 @@ tm-control/
   5. working, according to `/api/stats`
 
   The first failing layer names the fix.
+- With no accelerator, Frigate runs its `cpu` detector (#222). The detector check reports that as a warning ("detecting on the CPU, slow"), not an error.
+- The HEVC decoder (#218) gets two layers: present, and passed to Frigate.
 - The fix actions ship in the detector feature spec: "Use in Frigate", an "Install support" job running `tmsetup.sh -t detectors -t frigate`, and "Switch detector". The platform ships the checks and a restart button.
 - #215's device tests check the same layers from the dev machine: expected, present, configured, and working. M3 uses the same layer names and the same probe commands, so a failure reads the same in both.
 - **Open question for M3 planning:** should #215's device tests assert against tm-control's `/api/v1/status` instead of keeping their own probes? That would remove duplication, but the tests would then depend on tm-control working.
@@ -306,7 +321,7 @@ tm-control/
      - Frigate: reachable, version, and detector stats.
      - Node-RED: reachable, and its config-load errors (D#151).
      - go2rtc: streams producing.
-   - **Hardware:** layered detector checks, radars present and visible, disk, and temperature and throttling.
+   - **Hardware:** layered detector checks, the HEVC decoder, radars present and visible, disk, and temperature and throttling.
    - **Contracts:**
      - Frigate cameras match `sensors.cameras`.
      - Each enabled camera has `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`.
@@ -340,8 +355,9 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 **M1: edge and ports.** Auth stays as it is today.
 - revproxy moves to `Network=host` and out of the pod. The `go2rtc.conf` and `cockpit.conf` upstreams move to `127.0.0.1`.
 - Pod ports move to loopback, and the unused ones are dropped.
-- go2rtc: API on loopback, RTSP credentials, WebRTC off. `go2rtc.conf` limits `/feeds/` to viewing paths.
-- Device tests in `script/devpi/tests` check that the direct ports are closed to the network and that `/feeds/` is restricted.
+- go2rtc: API on loopback, RTSP credentials, only the modules TM uses (so no WebRTC), and `exec` limited to `rpicam-vid`. `go2rtc.conf` limits `/feeds/` to viewing paths.
+- A `storefiles.conf` location, so the Dashboard's data export downloads through the proxy.
+- Device tests in `script/devpi/tests` check that the direct ports are closed to the network, that `/feeds/` is restricted, and (disruptive) that the home page survives a stopped pod.
 - Secrets are generated on the device.
 - A tm-control package skeleton, with its venv and the `tm-control migrate` CLI. The CLI adds RTSP credentials to existing Frigate camera inputs; it edits round trip, makes a backup, and is idempotent.
 - `/frigate/` stays on 127.0.0.1:5000, and the Node-RED editor keeps its current login until M2.
@@ -349,7 +365,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 **M2: core and login.**
 - `tm-control.service`, with its sandbox, polkit rules, job runner, state, and manifest.
 - Auth (claim, login, users, verify) and the EULA.
-- nginx `auth_request`, through the `auth-viewer` and `auth-admin` snippets that each location file includes. tm-control's `/api/`, `/_auth`, and UI-root location files are added to `tmsetup_revproxy_locations`.
+- nginx `auth_request`, through the `auth-viewer` and `auth-admin` snippets that each location file includes. `storefiles.conf` uses `auth-admin` for now, because it can download the whole `tmdb.sqlite`. Revisit if viewers need data export. tm-control's `/api/`, `/_auth`, and UI-root location files are added to `tmsetup_revproxy_locations`.
 - Frigate switches to port 8971 with proxy auth, and `migrate` adds the `proxy:`, `tls:`, and `auth:` keys.
 - The Node-RED editor switches to proxy tokens, and its built-in user is removed.
 - The system-password job.
@@ -369,6 +385,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 - `script/ansible/roles/tmsetup/tasks/tm-control_setup.yml`.
 - `script/ansible/roles/tmsetup/templates/tm-control/`: the unit, job units, and polkit rules.
 - `container/revproxy/tm/snippets/auth-viewer.conf.j2` and `auth-admin.conf.j2` (M2).
+- `container/revproxy/tm/locations/storefiles.conf.j2` (M1).
 - `container/revproxy/tm/locations/` files for tm-control's `/api/`, `/_auth`, and UI root (M2).
 - Device tests in `script/devpi/tests` for each milestone.
 - `script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2`, which replaces `files/go2rtc.yaml`.
@@ -440,12 +457,12 @@ These are spikes in the M1 and M2 plans.
 5. Clean up with `sed -i '/# watch-test/d'` and re-run `tmsetup.sh -t node-red-tm`.
 
 **Other risks**
-- The Node-RED editor loads with no login dialog when nginx injects the `tokenHeader`.
-- Frigate 0.18:
-  - the exact `proxy` and `auth` keys
+- The Node-RED 5.0.8 editor loads with no login dialog when nginx injects the `tokenHeader`.
+- Frigate 0.18.1. 0.18.1's source already confirms the keys and the `auth_secret` env substitution. Still to check on a Pi:
   - the role header is honored with `auth.enabled: false`
-  - env substitution works in `proxy.auth_secret`
   - `logout_url` behaves as expected
+- On a device still on Frigate 0.17, `tm-control migrate` edits `config.yml` before Frigate 0.18's own migration rewrites it. The credentialed input must survive that rewrite.
+- With `app.modules` trimmed, go2rtc still serves the camera to Frigate and `/feeds/` still plays, and no go2rtc UDP socket opens during playback.
 - Safari on iOS and macOS: Frigate live view and Dashboard 2.0 WebSockets work through `auth_request` with the cookie.
 - Frigate reads go2rtc RTSP via `host.containers.internal` with credentials. With WebRTC off, MSE fallback works in Frigate and in `/feeds`.
 - The OS baseline is Raspberry Pi OS Trixie (Podman 5.4), which `.build` Quadlets and `AddDevice=-` need.
@@ -474,12 +491,13 @@ Run these through `tmdev.py`:
 Keep device names and addresses out of the PR.
 
 *M1*
-- From another machine, `nmap -p- <pi>` shows only 22, 80, 9090 (if Cockpit is present), 8554, and mDNS.
+- From another machine, `nmap -p- <pi>` shows only TCP 22, 80, 9090 (if Cockpit is present), and 8554. On the Pi, `ss -ulnp` shows no go2rtc UDP sockets, even while `/feeds/` plays.
 - Direct connections to 5000, 1880, and 1984 are refused.
 - RTSP without credentials gets 401.
 - `/feeds/api/config` returns 403.
 - Frigate live view and Dashboard 2.0 work through the proxy.
-- Stopping `traffic-monitor.service` leaves the home page up.
+- A data export from the Dashboard's database page downloads through the proxy.
+- Stopping `traffic-monitor.service` leaves the home page up (a disruptive device test).
 - The watch-node test passes.
 
 *M2*
@@ -487,7 +505,7 @@ Keep device names and addresses out of the PR.
 - `/frigate/` redirects to `/welcome` before the EULA is accepted.
 - After logging in on iPhone Safari, Frigate live view and Dashboard 2.0 live updates work.
 - The Node-RED editor opens without a second login.
-- A viewer gets 403 on `/nr/` and `/feeds/`.
+- A viewer gets 403 on `/nr/`, `/feeds/`, and `/storefiles`.
 - Logging out also ends Frigate access.
 - With tm-control stopped, app paths fail closed with a rescue message, and Cockpit on `:9090` still works.
 - The system-password job changes the Linux password. Check by logging in over SSH.
@@ -499,6 +517,7 @@ Keep device names and addresses out of the PR.
 - Unplugging a radar or detector fails the right layer, with the right explanation.
 - Re-plugging it, re-scanning, and restarting brings it back.
 - An in-use Coral USB (`18d1:9302`) shows as present.
+- A unit with no accelerator shows a warning for the CPU detector, not an error.
 - **Set from this browser**, while offline, matches the device time to the browser.
 - A timezone change restarts the containers, and the times shown are correct.
 - A renamed Frigate camera trips the contract check.
