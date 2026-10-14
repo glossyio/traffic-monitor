@@ -1,4 +1,5 @@
--- Baseline: the tables Node-RED created with CREATE TABLE IF NOT EXISTS nodes up to TM 0.6.1.
+-- Baseline: the tables Node-RED created with CREATE TABLE IF NOT EXISTS nodes up to TM 0.6.1,
+-- plus the radar_raw_speed_magnitude_single time index the flows added after it (#197).
 -- IF NOT EXISTS lets existing devices adopt this version without changing their tables;
 -- tmdb_migrate.py reports any table that differs from this shape as drift.
 
@@ -73,6 +74,10 @@ CREATE TABLE IF NOT EXISTS radar_raw_speed_magnitude_single (
     radarName TEXT,
     deployment_id TEXT
 );
+
+-- Speeds up looking up an event's radar readings by time range. #197's flows created it
+-- under this name, so devices that ran them keep theirs.
+CREATE INDEX IF NOT EXISTS index_radar_singleton_time ON radar_raw_speed_magnitude_single(time);
 
 CREATE TABLE IF NOT EXISTS radar_oc_payload (
     start_time REAL,

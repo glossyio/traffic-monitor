@@ -73,6 +73,23 @@ def test_baseline_creates_the_same_columns_as_the_old_flows(db_path, tmp_path):
         assert query(db_path, f"PRAGMA table_info({table})") == query(legacy_path, f"PRAGMA table_info({table})"), table
 
 
+@pytest.mark.parametrize("had_flow_index", [False, True])
+def test_baseline_adds_or_keeps_the_radar_time_index(db_path, had_flow_index):
+    # TM 0.6.1 databases don't have this index; #197's flows created it on databases that ran them.
+    legacy_db(db_path)
+    if had_flow_index:
+        con = sqlite3.connect(db_path)
+        con.execute("CREATE INDEX index_radar_singleton_time ON radar_raw_speed_magnitude_single(time)")
+        con.commit()
+        con.close()
+
+    assert migrate("--db", db_path) == 0
+
+    assert user_version(db_path) == 1
+    assert query(db_path, "SELECT name FROM sqlite_master WHERE type = 'index' "
+                          "AND tbl_name = 'radar_raw_speed_magnitude_single'") == [("index_radar_singleton_time",)]
+
+
 def test_up_to_date_database_is_not_migrated_again(db_path, make_migrations):
     # Without IF NOT EXISTS, a second application of 0001 would fail.
     migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);"})

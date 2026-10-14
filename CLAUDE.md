@@ -68,7 +68,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - `*.env.j2` and `config/config.yml.j2` hold user-editable settings.
 
   Other rendered files land in `{{ tmsetup_codedir }}/<svc>/` (default `/opt/traffic-monitor`). When adding a component, copy `revproxy`, the newest complete example. That means a task file, an import in `tasks/main.yml` with its tag, a `Restart <svc>.service` handler, and the tag added to the `start_services.yml` import and to `_VALID_TAGS`.
-- **Overwrite semantics:** the `config.yml` and `*.env` templates use `force: '{{ tmsetup_force_configs }}'`, so they're written only on first install or with `-f`. Changes to those templates won't reach existing devices otherwise. Containerfiles, Quadlet units, nginx files, and Node-RED `flows.json`/`settings.js`/`package.json` are overwritten on every run. Flow edits made in a device's Node-RED editor are lost unless they're committed back here.
+- **Overwrite semantics:** the `config.yml` and `*.env` templates use `force: '{{ tmsetup_force_configs }}'`, so they're written only on first install or with `-f`. Changes to those templates won't reach existing devices otherwise. Containerfiles, Quadlet units, nginx files, Node-RED `flows.json`/`settings.js`/`package.json`, and the tmdb schema files from `container/node-red-tm/schema/` (all but `tests/`) are overwritten on every run. Flow edits made in a device's Node-RED editor are lost unless they're committed back here.
 - **Hardware is detected at install time** and baked into rendered files.
   - `detectors_check.yml` probes for Coral USB/PCIe and Hailo-8L (`tmsetup_detectors` in `defaults/main.yml`). The results drive Frigate's `AddDevice` lines, the `detectors:`/`model:` sections of Frigate's `config.yml`, and `/boot/firmware/traffic-monitor-config.txt`.
   - Radars present at `/dev/ttyACM0-3` become `AddDevice` lines for node-red-tm.
@@ -106,7 +106,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - UI tabs:
   - `ui-monitoring` is the legacy node-red-dashboard (`/ui`) and also feeds the Dashboard 2.0 tabs.
   - `Dashboard 2 - Monitoring`, `ui-movements`, and `ui-database` are FlowFuse Dashboard 2.0 pages under `/dashboard`. The `ui-database` page handles data export and download.
-- Storage is one SQLite DB at `/db/tmdb.sqlite` in the container (`TM_DATABASE_PATH_TMDB`). Each tab creates its tables with `CREATE TABLE IF NOT EXISTS` nodes. There are no migrations, so schema changes need explicit handling for existing devices. Tables and payloads are documented in `docs/data-and-payloads/`; keep them in sync.
+- Storage is one SQLite DB at `/db/tmdb.sqlite` in the container (`TM_DATABASE_PATH_TMDB`). The schema is defined by numbered SQL migrations in `container/node-red-tm/schema/migrations/`, not by the flows. `tmdb_migrate.py` applies pending ones as `ExecStartPre` of `node-red-tm.service`, before Node-RED opens the DB, and records the version in `PRAGMA user_version` (see that directory's README). A schema change needs a new migration and a regenerated `schema.sql`; never add `CREATE`/`ALTER TABLE` nodes to the flows. Tables and payloads are documented in `docs/data-and-payloads/`; keep them in sync.
 
 **Cross-component name contracts.** A mismatch fails silently:
 - Frigate camera names (default `picam_h265`) must match `sensors.cameras.<name>` in the Node-RED `config.yml`. Events from cameras that are missing or disabled there are not recorded.
