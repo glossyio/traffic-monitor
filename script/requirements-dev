@@ -1,0 +1,5 @@
+# Development and test tools (not needed on the device).
+# Set up the repo's dev venv:
+#   python3 -m venv .venv && .venv/bin/pip install -r script/requirements-dev
+-r requirements
+pytest>=8
