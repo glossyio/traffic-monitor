@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Traffic-Monitor Home</title>
+    <title>{{ ansible_facts['hostname'] }} | Traffic Monitor Home</title>
     <style>
         body {
             background-color: {{ tmsetup_homepage_colors['background'] }};
@@ -34,7 +34,8 @@
                 <li><a href="/frigate/">Frigate</a></li>
                 <li><a href="/ui/">Legacy Dashboard</a></li>
                 <li><a href="/nr/">Node-RED admin console</a></li>
-                <li><a href="/feeds/">Go2RTC Feeds</a></li> 
+                <li><a href="/feeds/">Go2RTC Feeds</a></li>
+                <li><a href="/system/">Cockpit-Project system administration</a></li>
             </ul>
 </body>
 </html>
