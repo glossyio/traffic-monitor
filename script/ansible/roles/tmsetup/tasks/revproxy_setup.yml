@@ -1,15 +1,14 @@
 ---
 
-- name: TMSetup - revproxy Setup - Include vars for proxy config
-  ansible.builtin.include_vars:
-    file: revproxy_vars.yml
-
 - name: TMSetup - revproxy Setup - Create NGinx directory
   become: true
   loop:
     - { path: '{{ tmsetup_codedir }}', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy/html', mode: '0755' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm/locations', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/tm/snippets', mode: '0750' }
   ansible.builtin.file:
     mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
@@ -23,6 +22,7 @@
     - { path: 'revproxy/Containerfile', mode: '0640' }
     - { path: 'revproxy/nginx.conf', mode: '0640' }
     - { path: 'revproxy/html/index.html', mode: '0644' }
+    - { path: 'revproxy/tm/snippets/proxy-common.conf', mode: '0640' }
   ansible.builtin.template:
     backup: false
     dest: '{{ tmsetup_codedir }}/{{ item["path"] }}'
@@ -31,6 +31,36 @@
     mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
     src: 'container/{{ item["path"] }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Create NGinx location files
+  become: true
+  loop: '{{ tmsetup_revproxy_locations }}'
+  ansible.builtin.template:
+    backup: false
+    dest: '{{ tmsetup_codedir }}/revproxy/tm/locations/{{ item }}'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/revproxy/tm/locations/{{ item }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Find deployed NGinx location files
+  become: true
+  ansible.builtin.find:
+    paths: '{{ tmsetup_codedir }}/revproxy/tm/locations'
+    patterns: '*.conf'
+  register: tmsetup_revproxy_locations_find_register
+
+# A renamed or removed location file left behind would keep proxying, or
+# duplicate a location and stop nginx from starting.
+- name: TMSetup - revproxy Setup - Remove unlisted NGinx location files
+  become: true
+  loop: "{{ tmsetup_revproxy_locations_find_register['files'] | map(attribute='path') | map('basename') | difference(tmsetup_revproxy_locations) }}"
+  ansible.builtin.file:
+    path: '{{ tmsetup_codedir }}/revproxy/tm/locations/{{ item }}'
+    state: absent
   notify: Restart revproxy.service
 
 - name: TMSetup - revproxy Setup - Create NGinx quadlets
@@ -54,5 +84,19 @@
     name: revproxy-build.service
     state: started
   notify: Restart revproxy.service
+
+# Fail before the restart handler runs if the rendered config is invalid, so
+# the running proxy keeps its last good config. --add-host lets nginx resolve
+# the go2rtc upstream inside this throwaway container.
+- name: TMSetup - revproxy Setup - Check NGinx config
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      podman run --rm --entrypoint nginx
+      --add-host host.containers.internal:127.0.0.1
+      --volume {{ tmsetup_codedir }}/revproxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      --volume {{ tmsetup_codedir }}/revproxy/tm:/etc/nginx/tm:ro
+      localhost/revproxy:latest -t
+  changed_when: false
 
 ...
