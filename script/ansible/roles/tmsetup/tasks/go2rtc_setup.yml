@@ -11,7 +11,9 @@
 
 - name: TMSetup - Go2rtc Setup - Install go2rtc driver
   become: true
+  # The checksum makes get_url replace an existing binary from another version, and verifies the download.
   ansible.builtin.get_url:
+    checksum: 'sha256:{{ tmsetup_go2rtc_sha256[tmsetup_dpkg_architecture] }}'
     dest: '/var/lib/go2rtc/go2rtc_linux_{{ tmsetup_dpkg_architecture }}'
     group: root
     mode: '0755'
