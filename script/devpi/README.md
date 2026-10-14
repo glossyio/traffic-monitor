@@ -1,6 +1,6 @@
 # Dev-Pi tools
 
-`tmdev.py` deploys this checkout to development Raspberry Pis over SSH and runs commands on them. It also records PR checks. Everything it does is written to a run log on your machine, so you can see later what ran on which Pi, from which code, and how it went.
+`tmdev.py` deploys this checkout to development Raspberry Pis over SSH and runs commands on them. It also records PR checks and runs the device tests in `tests/`. Everything it does is written to a run log on your machine, so you can see later what ran on which Pi, from which code, and how it went.
 
 Use these tools only with bench units, not field devices.
 
@@ -28,7 +28,7 @@ Keep device names, addresses, and log contents out of commits and PR text. Use p
 
    These steps use the name `tm_dev`, but any name works. With another name, pass it to `pi-login` as `--key <name>`, and set the inventory's `ansible_ssh_private_key_file` to it.
 
-3. Give each Pi a `tmdev` login. It logs in with that key only (it has no password) and runs `sudo` without a password. `tmsetup.sh` needs root but can't type a password over SSH, and Raspberry Pi OS 6.2 and later asks for one by default. Your own account doesn't change and keeps its sudo password.
+3. Give each Pi a `tmdev` login. It logs in with that key only (it has no password) and runs `sudo` without a password. `tmsetup.sh` and the tests need root but can't type a password over SSH, and Raspberry Pi OS 6.2 and later asks for one by default. Your own account doesn't change and keeps its sudo password.
 
    - **New card** (Raspberry Pi OS Trixie images from 24 November 2025 on, written with Raspberry Pi Imager 2.0 or later): set up the card in Imager as usual. Then, before the Pi's first boot, open the card's boot partition and add the `tmdev` entry to the `users:` list in `user-data`. Cloud-init creates the login at first boot, so you never have to log in to the Pi.
 
@@ -46,7 +46,7 @@ Keep device names, addresses, and log contents out of commits and PR text. Use p
      .venv/bin/python script/devpi/tmdev.py pi-login --shell [--key <name>]
      ```
 
-   Then check from your machine. This also accepts the Pi's host key, so do it before the first deploy. Deploys and `run` won't accept a new host key on their own:
+   Then check from your machine. This also accepts the Pi's host key, so do it before the first deploy. Deploys, `run`, and the tests won't accept a new host key on their own:
 
    ```bash
    ssh -i ~/.ssh/tm_dev tmdev@<pi> sudo -n true && echo ok      # use your key's name
@@ -141,11 +141,51 @@ While that check is open:
 
 Reading `tmdb.sqlite` while Node-RED runs can make a Node-RED write fail if it lands at the same moment, because `node-red-node-sqlite` sets no busy timeout. That includes `tmdb_migrate.py --check`. It's acceptable on a bench unit, but keep reads short.
 
+## Device tests
+
+The tests in `tests/` compare a Pi with its `tm_expect` entry. Each one checks some of the following:
+- **Expected:** what the inventory says the Pi has.
+- **Present:** what's actually attached.
+- **Configured:** what the installer rendered.
+- **Working:** the runtime APIs and data.
+
+A failure therefore tells you whether to look at the hardware, the inventory, or the installer.
+
+```bash
+.venv/bin/python script/devpi/tmdev.py test tm-dev-01                          # one Pi
+.venv/bin/python script/devpi/tmdev.py test                                    # every Pi in the inventory
+.venv/bin/python script/devpi/tmdev.py test tm-dev-01 -- -k radar              # pytest options after --
+.venv/bin/python script/devpi/tmdev.py test tm-dev-01 --disruptive             # also restart the pod and reboot the Pi
+```
+
+| Module | Checks |
+|---|---|
+| `test_platform.py` | Pi 5, 64-bit OS, no throttling or under-voltage, free space, SoC temperature |
+| `test_services.py` | Host services and pod containers active, image builds succeeded, no crash restarts, no Plate Recognizer on `pii_free` units |
+| `test_web.py` | `nginx -t`; every location in the running proxy config answers; Node-RED, Frigate, and go2rtc ports; the home page from your machine |
+| `test_ai_coprocessor.py` | The expected co-processor and no other, its device and driver, Frigate's `AddDevice`, and inference running |
+| `test_radars.py` | Expected serial ports and no extras, Node-RED's `AddDevice` lines, and the `TM_RADAR_SERIAL_PORT_*` names in `node-red-tm.env` and `config.yml` |
+| `test_cameras.py` | CSI sensors, the HEVC decoder passed to Frigate, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
+| `test_environmental.py` | Air-quality monitors enabled in `config.yml` and writing recent readings |
+| `test_dataflow.py` | `tmdb_migrate.py --check` passes (skipped for code from before #208), no plate reads, and new radar and event rows (with `live_traffic`) |
+| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot (`--disruptive` only) |
+
+Some checks need a particular setup. Without it they're skipped, and the summary says why:
+- **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`.
+- **`live_traffic`:** checks for new radar and event rows.
+- **The relevant hardware in `tm_expect`:** the radar, camera, and environmental checks.
+
+Each run is logged as `summary.md` and `results.jsonl`. Their code is what the last deploy to that host put on the Pi, which can be another checkout (see [Testing another branch](#testing-another-branch)). `tmdev.py test` turns off pytest's cache, because its entries would name the host inside the repo.
+
+The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it; if you run pytest yourself, set it. Otherwise every device test is skipped, so running the repo's other tests never touches a Pi.
+
+Before any test runs, each host is checked once for an SSH connection and passwordless sudo. If either is missing, that host's tests fail right away with the reason.
+
 ## The run log
 
 The log lives on your machine, outside the repo, at `~/.local/state/traffic-monitor/dev-tests/` by default. It follows `$XDG_STATE_HOME` if you set that, and `TM_DEV_LOG_DIR` overrides it. Run `tmdev.py log --path` to print the exact location.
 
-Every message and `checklist.md` gives the full path of its run directory. The `runs/...` links in `LOG.md` are relative to the log directory.
+Every message, `summary.md`, and `checklist.md` gives the full path of its run directory. The `runs/...` links in `LOG.md` are relative to the log directory.
 
 ```text
 ~/.local/state/traffic-monitor/dev-tests/
@@ -154,10 +194,11 @@ Every message and `checklist.md` gives the full path of its run directory. The `
   runs/<UTC time>-<kind>-<host>[-pr<N>]/
     meta.json     host, code under test (branch, commit, uncommitted files), tools if they differ, arguments, result
     tmsetup.log   deploys (on-Pi deploys also keep rsync.log)
+    summary.md    device-test runs, with results.jsonl
     checklist.md  checks, with commands.log and cmd-NNN.out
   adhoc/<date>/   commands run while no check was open
 ```
 
 To see how a Pi did:
 - **Latest rows:** `tmdev.py log` shows them, and `tmdev.py log --path` prints where the log is.
-- **One run:** open the row's directory. Each `checklist.md` also names the last deploy to that host, so you can tell which code the Pi was running.
+- **One run:** open the row's directory. Each `summary.md` and `checklist.md` also names the last deploy to that host, so you can tell which code the Pi was running.
