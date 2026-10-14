@@ -10,11 +10,11 @@
 - go2rtc's API binds to loopback, its RTSP server requires a generated password, and nginx forwards only go2rtc's viewing paths.
 - Existing devices are brought up to date by `tm-control migrate`, a small Python command (the first piece of the tm-control backend). It edits Frigate's `config.yml` round-trip, keeping comments.
 
-**Tech Stack:** Ansible (tmsetup role), Podman Quadlet, nginx, go2rtc 1.8.5, Python 3.11+ with ruamel.yaml 0.19.1, pytest.
+**Tech Stack:** Ansible (tmsetup role), Podman Quadlet, nginx 1.31.0, go2rtc 1.9.14, Frigate 0.18.1, Node-RED 5.0.8, Python 3.11+ with ruamel.yaml 0.19.1, pytest.
 
 **Spec:** `design/specs/2026-10-02-tm-control-platform-design.md`, section "Milestones → M1". Read it with this plan.
 
-**Status:** written 2026-10-02 and aligned with the open PRs on 2026-10-13. The spec's "Builds on open PRs" section describes them. This plan assumes their files:
+**Status:** written 2026-10-02 and aligned with the open PRs on 2026-10-13. Re-checked on 2026-10-14 against `dev` after #197, #218, #219, #220, and #222 merged, and against the open stacks' latest pushes. That pass ran Tasks 1, 2, 4, and 5 against a merge of all the stacks, and their expected counts below come from that run. The spec's "Builds on open PRs" section describes the PRs. This plan assumes their files:
 - #210's nginx location files
 - #212's Cockpit
 - #206's dev venv and pytest layout
@@ -74,16 +74,17 @@ Don't start until those have merged. Task 0 checks.
 
 These are the five likeliest failures for a person upgrading or using a device. Each one has a test in the task that owns it.
 
-1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. Tests in Task 7: the migration produces exactly the URL that new installs get, and `frigate.env` gains both credential lines.
+1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. The device's config may still be Frigate 0.17's: Frigate 0.18 rewrites it on its first start, after `tm-control migrate` has run. Tests in Tasks 4 and 5 run on both a 0.17 and a 0.18 config. Tests in Task 7 check that the migration produces exactly the URL that new installs get, and that `frigate.env` gains both credential lines.
 2. **Re-running `tmsetup.sh`.** The generated secrets must never be regenerated, because the go2rtc and Frigate sides would drift apart. They must never appear in the install log. Tests in Task 3.
 3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying.
 4. **Crafted `/feeds/` requests.** These must get 403:
    - methods other than GET
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
-   - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`)
+   - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`). The viewing set includes HLS's `hls/` paths, which iPhones older than iOS 17 use.
 
    Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 9 send the same requests to a Pi.
 5. **A hand-edited Frigate config that reads go2rtc by LAN IP instead of `host.containers.internal`.** The migration can't rewrite it, so it must warn loudly instead of silently leaving the camera dark. Test in Task 5.
+6. **Data export after port 1880 closes.** The Dashboard's database page downloads from `/storefiles?files=…` at the site root. Through the proxy that path already returns 404. It works today only on port 1880, so without its own location M1 would leave no way to download data. Test in Task 2. On a Pi, #215's `test_proxied_locations_respond` and a Task 9 test cover it.
 
 ---
 
@@ -122,7 +123,12 @@ git show $B:container/revproxy/tm/locations/cockpit.conf.j2
 git show $B:script/ansible/roles/tmsetup/tasks/revproxy_setup.yml | grep -n -A8 'Check NGinx config'
 git show $B:script/tmsetup.sh | grep -n -E '_VALID_TAGS=|_VALID_CUSTOM_VARS=|Valid values'
 git show $B:script/devpi/tests/test_web.py | head -20
+git show $B:script/devpi/tests/test_disruptive.py | head -40
+git show $B:script/ansible/roles/tmsetup/files/go2rtc.yaml | grep -o 'exec:[A-Za-z0-9_-]*' | sort -u   # Task 7's exec.allow_paths
+git show $B:script/ansible/roles/tmsetup/vars/main.yml | grep -E 'go2rtc_version|frigate_version|node_red_tm_version'
 ```
+
+On 2026-10-14 all of this matched. The only `exec` command was `rpicam-vid`, and the versions were go2rtc v1.9.14, Frigate 0.18.1, and Node-RED 5.0.8.
 
 - [ ] **Step 3: Create the branch and bring the design docs**
 
@@ -305,6 +311,8 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
 - Modify: `container/revproxy/revproxy.container.j2`
 - Modify: `container/revproxy/tm/locations/go2rtc.conf.j2`
 - Modify: `container/revproxy/tm/locations/cockpit.conf.j2`
+- Create: `container/revproxy/tm/locations/storefiles.conf.j2`
+- Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`storefiles.conf` in `tmsetup_revproxy_locations`)
 - Modify: `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml` (the "Check NGinx config" task)
 - Modify: `script/ansible/roles/tmsetup/handlers/main.yml` (move `Restart revproxy.service` after `Restart traffic-monitor.service`)
 - Modify: `script/ansible/roles/tmsetup/tasks/start_services.yml` (start `revproxy.service`)
@@ -313,7 +321,9 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
 
 **Interfaces:**
 - Consumes: `render` and `load_role_yaml` from Task 1.
-- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 9's device tests check this on a Pi.
+- Produces:
+  - `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 9's device tests check this on a Pi.
+  - `/storefiles` reaches Node-RED, so data export works through the proxy.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -363,6 +373,15 @@ def test_host_apps_are_proxied_on_loopback():
     assert "proxy_pass http://127.0.0.1:9090/system/;" in location("cockpit.conf")
 
 
+def test_data_export_downloads_are_proxied_to_node_red():
+    """ui-database's download links are root-relative (/storefiles?files=...), so they need their own location."""
+    assert "storefiles.conf" in LOCATIONS
+    conf = location("storefiles.conf")
+    assert "location /storefiles {" in conf
+    assert "proxy_pass http://127.0.0.1:1880;" in conf
+    assert "proxy_buffering off;" in conf
+
+
 def test_feeds_accepts_only_get_and_plain_stream_names():
     conf = location("go2rtc.conf")
     assert "limit_except GET { deny all; }" in conf
@@ -388,6 +407,10 @@ def src_pattern():
         ("/feeds/api/frame.jpeg", False),
         ("/feeds/api/stream.mp4", False),
         ("/feeds/api/stream.m3u8", False),
+        ("/feeds/api/hls/playlist.m3u8", False),
+        ("/feeds/api/hls/segment.ts", False),
+        ("/feeds/api/hls/segment.m4s", False),
+        ("/feeds/api/hls/init.mp4", False),
         ("/feeds/api", True),
         ("/feeds/api/", True),
         ("/feeds/api/config", True),
@@ -397,6 +420,7 @@ def src_pattern():
         ("/feeds/api/webrtc", True),
         ("/feeds/api/streams/extra", True),
         ("/feeds/api/streamsX", True),
+        ("/feeds/api/hls/", True),
     ],
 )
 def test_feeds_denies_go2rtc_api_paths_beyond_viewing(path, denied):
@@ -446,7 +470,13 @@ def test_start_services_starts_the_reverse_proxy_after_the_pod():
 
 Run: `.venv/bin/python -m pytest script/tests -v`
 
-Expected: most new tests FAIL. `go2rtc.conf` and `cockpit.conf` still use `host.containers.internal`, `Network=host` is missing, there's no deny location, and `revproxy.service` isn't in the start loop. On #212's files, 33 of the 39 tests fail.
+Expected: most new tests FAIL:
+- `go2rtc.conf` and `cockpit.conf` still use `host.containers.internal`.
+- `Network=host` is missing.
+- There's no deny location and no `storefiles.conf`.
+- `revproxy.service` isn't in the start loop.
+
+On the 2026-10-14 merge of the stacks, with Task 1 done, it was 38 failed, 7 passed.
 
 - [ ] **Step 3: Move revproxy to the host network**
 
@@ -485,7 +515,7 @@ Replace `container/revproxy/tm/locations/go2rtc.conf.j2` with:
 
 ```
 # go2rtc - Go2RTC Feeds (runs on the host; nginx shares the host network)
-# View streams only. go2rtc's API can add stream sources that run commands, so refuse every
+# View streams only. go2rtc's API can add stream sources and change its config, so refuse every
 # method but GET, any src that isn't a plain stream name, and API paths the players don't use.
 location /feeds/ {
     limit_except GET { deny all; }
@@ -493,12 +523,31 @@ location /feeds/ {
     proxy_pass http://127.0.0.1:1984/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
 }
-location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg))$)" {
+location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" {
     return 403;
 }
 ```
 
 The regex location is a sibling, not nested. nginx checks regex locations after picking the longest prefix, so for `/feeds/api/config` it wins over `/feeds/` and returns 403. #215's `test_web.py` collects only prefix locations, so it skips this one.
+
+Why the `src` rule is still needed: go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API. A `src` can still be a URL, which makes the device connect to another host, or an `ffmpeg:` source. The `hls/` paths are HLS segments for iPhones older than iOS 17, which can't use MSE.
+
+Create `container/revproxy/tm/locations/storefiles.conf.j2`:
+
+```
+# storefiles - data export downloads from the Dashboard's database page (an http-in node on Node-RED's root).
+# The page links to /storefiles?files=... from the site root, so it needs its own location.
+location /storefiles {
+    proxy_pass http://127.0.0.1:1880;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+    # Stream the download as Node-RED writes it; a whole tmdb.sqlite can be several GB.
+    proxy_buffering off;
+}
+```
+
+It's a prefix location, not `location =`, so #215's `test_proxied_locations_respond` covers it. A bare `GET /storefiles` gets Node-RED's 400 "No files specified", which that test accepts.
+
+In `script/ansible/roles/tmsetup/vars/main.yml`, add `- storefiles.conf` to `tmsetup_revproxy_locations`, after `- nodered.conf`.
 
 In `container/revproxy/tm/locations/cockpit.conf.j2`, change the comment and upstream to:
 
@@ -534,15 +583,18 @@ Run:
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass (39 so far), then `exit 0`. The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 9.
+Expected: all tests pass (46 so far), then `exit 0`.
+
+The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 9. For an earlier check, render the config into a scratch directory and run `nginx -t` in `docker.io/library/nginx:1.31.0` with no `--add-host`. On 2026-10-14 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above and proxied every allowed path and `/storefiles`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add container/revproxy/revproxy.container.j2 container/revproxy/tm/locations/go2rtc.conf.j2 \
-    container/revproxy/tm/locations/cockpit.conf.j2 script/ansible/roles/tmsetup/tasks/revproxy_setup.yml \
+    container/revproxy/tm/locations/cockpit.conf.j2 container/revproxy/tm/locations/storefiles.conf.j2 \
+    script/ansible/roles/tmsetup/vars/main.yml script/ansible/roles/tmsetup/tasks/revproxy_setup.yml \
     script/ansible/roles/tmsetup/handlers/main.yml script/ansible/roles/tmsetup/tasks/start_services.yml script/tests/
-git commit -m "Run the reverse proxy on the host network; limit /feeds to viewing" -m "<trailer block>"
+git commit -m "Run the reverse proxy on the host network; limit /feeds to viewing; proxy data export" -m "<trailer block>"
 ```
 
 ---
@@ -704,7 +756,7 @@ git commit -m "Generate device secrets once and keep them out of the install log
 - Create: `tm-control/backend/tm_control/adapters/yamlfile.py`
 - Create: `tm-control/backend/tm_control/core/__init__.py` (empty)
 - Create: `tm-control/backend/tests/conftest.py`
-- Create: `tm-control/backend/tests/fixtures/frigate_config_v0.17.yml` (generated in step 1)
+- Create: `tm-control/backend/tests/fixtures/frigate_config_v0.17.yml` and `frigate_config_v0.18.yml` (generated in step 1)
 - Create: `tm-control/backend/tests/test_yamlfile.py`
 - Modify: `script/requirements-dev`
 
@@ -717,7 +769,7 @@ git commit -m "Generate device secrets once and keep them out of the install log
   - `class ConcurrentEditError(RuntimeError)`
   - `write_atomic(path: Path, text: str) -> None`
   - `backup_path(path: Path, now: datetime | None = None) -> Path`: returns `<name>.<YYYYMMDDTHHMMSSZ>.bak`.
-- Produces the pytest fixture `frigate_config`: a `Path` to a 0640 copy of the fixture in `tmp_path/config/config.yml`.
+- Produces the pytest fixture `frigate_config`: a `Path` to a 0640 copy of a fixture in `tmp_path/config/config.yml`. It's parametrized, so every test that uses it runs once on the Frigate 0.17 config and once on the 0.18 config.
 
 - [ ] **Step 1: Add the dependency and the test fixture**
 
@@ -736,30 +788,42 @@ In `script/requirements-dev`, add this line after `-r requirements`:
 
 Install it: `.venv/bin/pip install -r script/requirements-dev`
 
-Generate the fixture from the Frigate template as it is now, before Task 7 changes it. It represents an existing device's config:
+Generate two fixtures before Task 7 changes the template. They stand for the two kinds of existing device:
+- `frigate_config_v0.17.yml`: the template from just before #220's Frigate 0.18 bump (`8f3ed72^`), with a Coral USB. Most devices in the field have this config.
+- `frigate_config_v0.18.yml`: today's template with no accelerator, which gives #222's `cpu` detector.
 
 ```bash
 mkdir -p tm-control/backend/tests/fixtures
 .venv/bin/python - <<'EOF'
+import subprocess
 import sys
 sys.path.insert(0, "script/tests")
-from tmsetup_render import render
+from tmsetup_render import _environment, render
 
-detectors = {
-    "edgetpu_usb": {"dev_path": "/dev/bus/usb", "frigate_type": "edgetpu", "frigate_device": "usb",
-                    "exists": True, "dev_path_available": True, "fresh_install": False},
-    "edgetpu_pci": {"dev_path": "/dev/apex_0", "frigate_type": "edgetpu", "frigate_device": "pci",
+
+def detectors(accelerator):
+    return {
+        "edgetpu_usb": {"dev_path": "/dev/bus/usb", "frigate_type": "edgetpu", "frigate_device": "usb",
+                        "exists": accelerator, "dev_path_available": accelerator, "fresh_install": False},
+        "edgetpu_pci": {"dev_path": "/dev/apex_0", "frigate_type": "edgetpu", "frigate_device": "pci",
+                        "exists": False, "dev_path_available": False, "fresh_install": False},
+        "hailo8l": {"dev_path": "/dev/hailo0", "frigate_type": "hailo8l", "frigate_device": "PCIe",
                     "exists": False, "dev_path_available": False, "fresh_install": False},
-    "hailo8l": {"dev_path": "/dev/hailo0", "frigate_type": "hailo8l", "frigate_device": "PCIe",
-                "exists": False, "dev_path_available": False, "fresh_install": False},
-}
-text = render("container/frigate/config/config.yml.j2", tmsetup_detectors=detectors)
-open("tm-control/backend/tests/fixtures/frigate_config_v0.17.yml", "w").write(text)
+    }
+
+
+fixtures = "tm-control/backend/tests/fixtures"
+v017 = subprocess.check_output(["git", "show", "8f3ed72^:container/frigate/config/config.yml.j2"], text=True)
+open(f"{fixtures}/frigate_config_v0.17.yml", "w").write(
+    _environment().from_string(v017).render(tmsetup_detectors=detectors(True)))
+open(f"{fixtures}/frigate_config_v0.18.yml", "w").write(
+    render("container/frigate/config/config.yml.j2", tmsetup_detectors=detectors(False)))
 EOF
-grep -n 'path: rtsp://host.containers.internal:8554/picam_h265_detect' tm-control/backend/tests/fixtures/frigate_config_v0.17.yml
+grep -c 'path: rtsp://host.containers.internal:8554/picam_h265_detect$' tm-control/backend/tests/fixtures/*.yml
+grep -h '^version:' tm-control/backend/tests/fixtures/*.yml
 ```
 
-Expected: one matching line, with no credentials in it. Don't regenerate this fixture after Task 7.
+Expected: a count of 1 for each file, with no credentials in the path. Then `version: 0.17-0` and `version: 0.18-0`. Don't regenerate these fixtures after Task 7.
 
 - [ ] **Step 2: Write the failing tests**
 
@@ -778,12 +842,15 @@ sys.path.insert(0, str(BACKEND_DIR))
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
-@pytest.fixture
-def frigate_config(tmp_path):
-    """A copy of Frigate's config.yml as tmsetup rendered it before go2rtc RTSP credentials (synthetic)."""
+@pytest.fixture(params=["frigate_config_v0.17.yml", "frigate_config_v0.18.yml"])
+def frigate_config(request, tmp_path):
+    """A copy of Frigate's config.yml as tmsetup rendered it before go2rtc RTSP credentials (synthetic).
+
+    v0.17 is from before Frigate 0.18 (#220), with a Coral USB; v0.18 is from after, with the CPU detector (#222).
+    """
     (tmp_path / "config").mkdir()
     path = tmp_path / "config" / "config.yml"
-    shutil.copy(FIXTURES / "frigate_config_v0.17.yml", path)
+    shutil.copy(FIXTURES / request.param, path)
     path.chmod(0o640)
     return path
 ```
@@ -830,7 +897,9 @@ def test_save_changes_only_the_edited_line_and_keeps_comments_and_quotes(frigate
     assert len(old_lines) == len(new_lines)
     assert changed == [("      fps: 10", "      fps: 5")]
     assert '  password: "{FRIGATE_MQTT_PASSWORD}"' in new_lines
-    assert "#  mycpu:" in new_lines
+    comments = [line for line in old_lines if line.lstrip().startswith("#")]
+    assert len(comments) >= 2
+    assert comments == [line for line in new_lines if line.lstrip().startswith("#")]
 
 
 def test_save_backs_up_the_previous_file(frigate_config):
@@ -988,13 +1057,13 @@ class RoundTripFile:
         return backup
 ```
 
-`mapping_indent=2` with `sequence=4, offset=2` reproduces tmsetup's Frigate config byte for byte. Node-RED's `config.yml` uses 4-space mappings, and M2 passes `mapping_indent=4` for it.
+`mapping_indent=2` with `sequence=4, offset=2` reproduces tmsetup's Frigate config byte for byte, for both the 0.17 and the 0.18 template. These are also the settings Frigate 0.18's own config migration uses. Node-RED's `config.yml` uses 4-space mappings, and M2 passes `mapping_indent=4` for it.
 
 - [ ] **Step 5: Run the tests to check they pass**
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
-Expected: 8 passed.
+Expected: 16 passed (8 tests, each on both fixtures).
 
 - [ ] **Step 6: Commit**
 
@@ -1302,7 +1371,7 @@ def main(argv=None):
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
-Expected: 20 passed.
+Expected: 36 passed. The tests that use `frigate_config` run on both fixtures.
 
 - [ ] **Step 5: Commit**
 
@@ -1568,15 +1637,27 @@ SECRETS = {"go2rtc_rtsp_password": "s3cret"}
 CREDENTIALED_INPUT = "rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect"
 
 
-def test_go2rtc_api_is_loopback_only_and_rtsp_needs_credentials():
-    config = yaml.safe_load(render(
+def go2rtc_config():
+    return yaml.safe_load(render(
         "script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2",
         tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
     ))
+
+
+def test_go2rtc_api_is_loopback_only_and_rtsp_needs_credentials():
+    config = go2rtc_config()
     assert config["api"] == {"listen": "127.0.0.1:1984"}
     assert config["rtsp"] == {"listen": ":8554", "username": "frigate", "password": "s3cret"}
-    assert config["webrtc"] == {"listen": ""}
     assert set(config["streams"]) == {"picam_h265_detect", "picam_h265_detect_hr"}
+
+
+def test_go2rtc_loads_no_webrtc_and_runs_only_allowed_commands():
+    config = go2rtc_config()
+    assert "webrtc" not in config["app"]["modules"]
+    assert "webrtc" not in config
+    for name, source in config["streams"].items():
+        if source.startswith("exec:"):
+            assert source[len("exec:"):].split()[0] in config["exec"]["allow_paths"], name
 
 
 def test_new_frigate_configs_read_go2rtc_with_credentials():
@@ -1589,7 +1670,7 @@ def test_frigate_env_carries_the_go2rtc_credentials():
         "container/frigate/frigate.env.j2",
         tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
         tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
-        tmsetup_frigate_version="0.17.2",
+        tmsetup_frigate_version="0.18.1",
         tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
     ).splitlines()
     assert "FRIGATE_GO2RTC_RTSP_USER=frigate" in lines
@@ -1646,6 +1727,10 @@ Create `script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2` with this header.
 
 ```yaml
 # /var/lib/go2rtc/go2rtc.yaml - written by tmsetup.sh (go2rtc tag); edits here are overwritten
+app:
+  # Load only what the camera, Frigate, and /feeds use. Without the webrtc module, WebRTC is off
+  # (webrtc.listen: "" would only drop the fixed port), and players use MSE through the proxy.
+  modules: [api, ws, rtsp, exec, ffmpeg, mp4, hls, mjpeg]
 api:
   # Only this device can reach the API and web UI; the reverse proxy serves the viewing pages at /feeds/.
   listen: "127.0.0.1:1984"
@@ -1654,11 +1739,13 @@ rtsp:
   listen: ":8554"
   username: "{{ tmsetup_go2rtc_rtsp_user }}"
   password: "{{ tmsetup_secrets['go2rtc_rtsp_password'] }}"
-webrtc:
-  # No fixed WebRTC port; players use MSE through the proxy.
-  listen: ""
+exec:
+  # Streams may only run rpicam-vid. go2rtc already refuses exec sources sent through its API.
+  allow_paths: [rpicam-vid]
 streams:
 ```
+
+`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 9 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
 
 Then remove the old file: `git rm script/ansible/roles/tmsetup/files/go2rtc.yaml`
 
@@ -1766,7 +1853,7 @@ git add -A script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2 script/ansible/
     script/ansible/roles/tmsetup/tasks/go2rtc_setup.yml script/ansible/roles/tmsetup/tasks/frigate_setup.yml \
     script/ansible/roles/tmsetup/vars/main.yml container/frigate/config/config.yml.j2 container/frigate/frigate.env.j2 \
     script/tests/ tm-control/backend/tests/
-git commit -m "Bind go2rtc's API to loopback and require RTSP credentials for the camera stream" -m "<trailer block>"
+git commit -m "Bind go2rtc's API to loopback, require RTSP credentials, and load only the modules TM uses" -m "<trailer block>"
 ```
 
 ---
@@ -1815,7 +1902,7 @@ Every app on the Traffic Monitor is reached through the home page on port 80. Th
 | 5353 (UDP) | `<hostname>.local` names (mDNS) |
 | 9090 | Cockpit, when installed |
 
-The camera feeds page shows the camera streams. It doesn't offer go2rtc's config editor or stream management.
+The camera feeds page shows the camera streams. It doesn't offer go2rtc's config editor, stream management, or WebRTC. Players use MSE, or HLS on older iPhones.
 
 ### Camera stream credentials
 
@@ -1845,6 +1932,7 @@ Without step 1, anyone on the network can publish to the broker and add false da
 * Ports 1880, 1883, 1984, 5000, and 8971 aren't reachable from other computers anymore. Use the paths above.
 * Frigate's restream ports (8564–8566) and the Plate Recognizer port (8080) aren't published anymore.
 * The camera stream on port 8554 needs the username and password above.
+* Data export downloads from the dashboard's database page now work through the home page address.
 ````
 
 In `docs/SUMMARY.md`, under `## Configuration`, after `* [Node-RED Config](configuration/node-red-config.md)`, add:
@@ -1899,7 +1987,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
    - Replace the sentence about Frigate reading the stream and port 1964 with:
 
      ```
-     Its API listens on 127.0.0.1:1984. Its RTSP server needs credentials. Frigate reads `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect`; the values are in `frigate.env`, and the password comes from `/etc/traffic-monitor/secrets/` (generated by `tasks/secrets.yml`).
+     Its API listens on 127.0.0.1:1984. Its RTSP server needs credentials. Frigate reads `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect`; the values are in `frigate.env`, and the password comes from `/etc/traffic-monitor/secrets/` (generated by `tasks/secrets.yml`). `app.modules` leaves out `webrtc`, and `exec.allow_paths` allows only `rpicam-vid`; a new stream command must be added there.
      ```
 
 5. **"Runtime topology"**: replace the UIs bullet (#212's version ends with `host Cockpit \`:9090\``) with:
@@ -1919,6 +2007,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
      ```markdown
      - `go2rtc.conf` and `cockpit.conf` proxy to `127.0.0.1`. `go2rtc.conf` also limits `/feeds` to viewing: GET only, plain stream names as `src`, and a sibling regex location that returns 403 for go2rtc API paths the players don't use.
+     - `storefiles.conf` proxies `/storefiles`, the Dashboard database page's root-relative download links, to Node-RED.
      ```
 
 7. **Node-RED flows, `init-config` bullet**: replace `The config is read only when the flows start.` with:
@@ -1966,10 +2055,11 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
 
 **Files:**
 - Modify: `script/devpi/tests/test_web.py`
+- Modify: `script/devpi/tests/test_disruptive.py`
 
 **Interfaces:**
 - Consumes:
-  - #215's `host` and `hostvars` fixtures
+  - #215's `host` and `hostvars` fixtures, and `wait_until_ready` in `test_disruptive.py`
   - #214's `tmdev.py` commands: `check start|item|status|end`, `deploy`, `run`, and `test`
   - Task 2's `/feeds/` rules
   - Task 7's RTSP credentials
@@ -2020,6 +2110,11 @@ def test_feeds_is_view_only_from_this_machine(host, hostvars, path, method, expe
     assert status_from_this_machine(host, hostvars, path, method) == expected
 
 
+def test_data_export_reaches_node_red_from_this_machine(host, hostvars):
+    """Node-RED answers a download with no files with 400; without the storefiles location nginx answers 404."""
+    assert status_from_this_machine(host, hostvars, "/storefiles") == 400
+
+
 def test_camera_stream_needs_credentials(host, hostvars):
     """go2rtc's RTSP server answers a DESCRIBE without credentials with 401."""
     address = pi_address(host, hostvars)
@@ -2032,16 +2127,39 @@ def test_camera_stream_needs_credentials(host, hostvars):
 
 #215's `test_direct_port_responds` stays as it is. It checks the same ports on the Pi's `localhost`, where the apps still answer.
 
+Append to `script/devpi/tests/test_disruptive.py`, which is already marked `disruptive`:
+
+```python
+def proxy_status(host, address, path):
+    # Host header as a browser's would be, so the nginx image's stock default.conf (server_name localhost) doesn't answer
+    return host.check_output(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 -H 'Host: {address}' http://localhost{path}")
+
+
+def test_home_page_survives_a_stopped_pod(host, hostvars):
+    """nginx runs outside the pod, so with the pod stopped the home page loads and the apps answer 502."""
+    address = hostvars.get("ansible_host", host.backend.hostname)
+    with host.sudo():
+        host.check_output("systemctl stop traffic-monitor.service")
+    try:
+        assert proxy_status(host, address, "/") == "200"
+        assert proxy_status(host, address, "/frigate/") == "502"
+    finally:
+        with host.sudo():
+            host.check_output("systemctl start traffic-monitor.service")
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+```
+
 - [ ] **Step 2: Check the tests are collected and skip without a dev Pi**
 
 Run:
 
 ```bash
 .venv/bin/python -m pytest -q -p no:cacheprovider script/devpi/tests
-.venv/bin/python -m pytest -q -p no:cacheprovider --collect-only script/devpi/tests/test_web.py | grep -c -E 'closed_to_the_network|view_only|needs_credentials'
+.venv/bin/python -m pytest -q -p no:cacheprovider --collect-only script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py \
+    | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `14`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `16`.
 
 - [ ] **Step 3: Open the check and record the baseline**
 
@@ -2049,10 +2167,10 @@ Run these while the Pi still runs the code from before M1:
 
 ```bash
 $T check start --host <host> --title "M1: edge and ports"        # add --pr <n> once the PR exists
-$T test <host> -- -k "closed_to_the_network or view_only or needs_credentials"
+$T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export"
 ```
 
-Expected: the new tests fail, because ports are open, `/feeds/api/config` answers, and RTSP needs no login. That shows they catch the problem. Record it:
+Expected: the new tests fail, because ports are open, `/feeds/api/config` answers, RTSP needs no login, and `/storefiles` gets nginx's 404. That shows they catch the problem. Record it:
 
 ```bash
 $T check item "New device tests fail before M1 is deployed" pass --evidence cmd-NNN
@@ -2075,8 +2193,8 @@ $T test <host>
 ```
 
 Expected:
-- All pass, including #215's existing ones: `nginx -t`, every proxied location answers, the direct ports answer on the Pi's `localhost`, and the home page loads from this machine.
-- The 14 new tests pass.
+- All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL.
+- The 15 new non-disruptive tests pass.
 
 Record an item.
 
@@ -2094,7 +2212,7 @@ Expected: apart from `127.0.0.1` and `[::1]`, the only listeners are:
 - `:9090`, if Cockpit is installed
 - DHCP/DNS, only in hotspot mode
 
-Nothing listens on 1880, 1883, 1984, 5000, 8555, or 8971. Record an item.
+Nothing listens on 1880, 1883, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 9). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
 
 - [ ] **Step 7: Check that re-runs keep the secrets and keep them out of the log**
 
@@ -2116,26 +2234,24 @@ Record an item.
 
 - [ ] **Step 8: Check the home page survives the pod**
 
-Ask the person first: this stops data capture for under a minute.
+Ask the person first: this stops data capture for a few minutes.
 
 ```bash
-$T run <host> -- sudo systemctl stop traffic-monitor.service
-$T run local -- curl -s -o /dev/null -w '%{http_code}\n' http://<address>/            # expect 200
-$T run local -- curl -s -o /dev/null -w '%{http_code}\n' http://<address>/frigate/    # expect 502
-$T run <host> -- sudo systemctl start traffic-monitor.service
+$T test <host> --disruptive -- -k survives_a_stopped_pod
 $T run <host> -- sh -c "sudo journalctl -u frigate.service -b | grep -i -E '401|unauthorized' || echo none"
 ```
 
-Expected: `200`, `502`, and finally `none`, meaning Frigate reads the camera with the credentials. Record an item.
+Expected: the test passes, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
 
 - [ ] **Step 9: Record what needs a person**
 
 These need eyes or the Node-RED editor, so record them as `manual`:
 
 ```bash
-$T check item "/feeds/stream.html?src=picam_h265_detect plays in a browser (MSE)" manual
+$T check item "/feeds/stream.html?src=picam_h265_detect plays in a desktop browser and on an iPhone (MSE)" manual
 $T check item "/frigate/ shows the camera live, not offline" manual
 $T check item "/dashboard/ updates live, /ui/ loads, /nr/ asks for the editor login" manual
+$T check item "A data export from the /dashboard/ database page downloads through the proxy" manual
 $T check item "Node-RED watch test: in-place, then two atomic edits of config.yml each log event 'update'" manual \
     --note "Spec, Risks to verify early"
 ```
@@ -2149,8 +2265,8 @@ When the person reports back, reopen the check with `$T check reopen <run_dir>` 
 ```bash
 $T check status
 $T check end
-git add script/devpi/tests/test_web.py
-git commit -m "Add device tests for closed app ports and the view-only /feeds" -m "<trailer block>"
+git add script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py
+git commit -m "Add device tests for closed app ports, the view-only /feeds, and the proxy outliving the pod" -m "<trailer block>"
 ```
 
 - [ ] **Step 11: Open the PR to `dev`**
@@ -2161,5 +2277,6 @@ Ask the person first. Fill in:
   - Direct app ports are closed; use the `/…` paths.
   - Frigate's restream ports and port 8080 aren't published.
   - The camera stream needs credentials.
+  - Data export downloads now work through the proxy.
   - Upgrade with a full `tmsetup.sh` run.
 - **AI assistance:** fill in the template's section.
