@@ -22,6 +22,14 @@
 
 Don't start until those have merged. Task 0 checks.
 
+**Already done:** the `/storefiles` fix for #211 was made early, on `feature/edge-ports/201` based on #210's head (`579084a`), and was checked on a dev Pi on 2026-10-14. That commit added:
+- `container/revproxy/tm/locations/storefiles.conf.j2` and its `tmsetup_revproxy_locations` entry
+- `script/tests/tmsetup_render.py` (Task 1 Step 1)
+- `script/tests/test_tmsetup_templates.py`, with `LOCATIONS`, `location()`, and the storefiles test
+- the CLAUDE.md mention
+
+Tasks 1, 2, 8, and 9 below build on those files instead of creating them.
+
 ## Global Constraints
 
 **Logins stay as they are.** M1 changes no logins: `/frigate/` keeps proxying to `127.0.0.1:5000`, and the Node-RED editor keeps its own login. Both change in M2.
@@ -84,7 +92,7 @@ These are the five likeliest failures for a person upgrading or using a device. 
 
    Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 9 send the same requests to a Pi.
 5. **A hand-edited Frigate config that reads go2rtc by LAN IP instead of `host.containers.internal`.** The migration can't rewrite it, so it must warn loudly instead of silently leaving the camera dark. Test in Task 5.
-6. **Data export after port 1880 closes.** The Dashboard's database page downloads from `/storefiles?files=…` at the site root. Through the proxy that path already returns 404. It works today only on port 1880, so without its own location M1 would leave no way to download data. Test in Task 2. On a Pi, #215's `test_proxied_locations_respond` and a Task 9 test cover it.
+6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 9 test cover it.
 
 ---
 
@@ -130,20 +138,25 @@ git show $B:script/ansible/roles/tmsetup/vars/main.yml | grep -E 'go2rtc_version
 
 On 2026-10-14 all of this matched. The only `exec` command was `rpicam-vid`, and the versions were go2rtc v1.9.14, Frigate 0.18.1, and Node-RED 5.0.8.
 
-- [ ] **Step 3: Create the branch and bring the design docs**
+- [ ] **Step 3: Move the branch onto the base**
+
+`feature/edge-ports/201` already exists. It's #210's head (`579084a`), plus the design docs merged in, plus the storefiles commit. Replay everything after `579084a` onto the base. That works whether #210 merged as-is or squashed:
 
 ```bash
-git switch -c feature/edge-ports/201 $B
-git merge --no-ff origin/feature/tm-control-design/102   # or cherry-pick its commits if #202 is already in dev
+git switch feature/edge-ports/201
+git rebase --onto $B 579084a
+git log --oneline $B..HEAD   # the design-doc commits and the storefiles commit, nothing from #210
 ```
+
+If the design docs changed on `origin/feature/tm-control-design/102` after the branch was made, bring those commits too.
 
 ---
 
 ### Task 1: Template test harness, pod ports on loopback, opt-in LAN MQTT
 
 **Files:**
-- Create: `script/tests/tmsetup_render.py`
-- Create: `script/tests/test_tmsetup_templates.py`
+- Exists: `script/tests/tmsetup_render.py` (from the storefiles commit)
+- Modify: `script/tests/test_tmsetup_templates.py` (from the storefiles commit)
 - Modify: `container/traffic-monitor.pod.j2`
 - Modify: `script/ansible/roles/tmsetup/defaults/main.yml` (after `tmsetup_bool_plate_recognizer: false`)
 - Modify: `script/tmsetup.sh` (`_VALID_CUSTOM_VARS` and the `-C` error message)
@@ -154,9 +167,9 @@ git merge --no-ff origin/feature/tm-control-design/102   # or cherry-pick its co
   - `load_role_yaml(relative_path: str)`: loads a YAML file under `script/ansible/roles/tmsetup/`.
 - Produces the install variable `tmsetup_bool_mqtt_lan`, set with `tmsetup.sh -C mqtt_lan`.
 
-- [ ] **Step 1: Write the render helper**
+- [ ] **Step 1: The render helper (already on the branch)**
 
-`script/tests/tmsetup_render.py`:
+The storefiles commit added `script/tests/tmsetup_render.py` with this content. Check it still matches, and don't rewrite it:
 
 ```python
 """Render tmsetup role templates the way Ansible's template module does, so tests can check them off-device.
@@ -199,12 +212,9 @@ def load_role_yaml(relative_path):
 
 - [ ] **Step 2: Write the failing pod tests**
 
-`script/tests/test_tmsetup_templates.py`:
+Append to `script/tests/test_tmsetup_templates.py`, which already has the module docstring, `from tmsetup_render import load_role_yaml, render`, `LOCATIONS`, `location()`, and the storefiles test:
 
 ```python
-"""Render tmsetup templates and check what the device gets. Off-device; no Ansible run needed."""
-
-from tmsetup_render import render
 
 
 def published_ports(unit_text):
@@ -232,7 +242,7 @@ def test_pod_opens_mqtt_to_the_network_only_when_opted_in():
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v`
 
-Expected: both FAIL, because the current pod publishes `1880:1880`, `1964:1984`, `80:80`, and so on.
+Expected: `test_pod_publishes_app_ports_on_loopback_only` FAILS, because the current pod publishes `1880:1880`, `1964:1984`, `80:80`, and so on. The MQTT opt-in test and the storefiles test already pass, since today's pod publishes 1883 on all interfaces. The opt-in test guards the `{% if %}` branch once Step 4 adds it.
 
 - [ ] **Step 4: Bind the pod's ports to loopback**
 
@@ -291,12 +301,12 @@ to:
 
 Run: `.venv/bin/python -m pytest script/tests -v && bash -n script/tmsetup.sh && echo OK`
 
-Expected: 2 passed, then `OK`.
+Expected: 3 passed, then `OK`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add script/tests/tmsetup_render.py script/tests/test_tmsetup_templates.py container/traffic-monitor.pod.j2 \
+git add script/tests/test_tmsetup_templates.py container/traffic-monitor.pod.j2 \
     script/ansible/roles/tmsetup/defaults/main.yml script/tmsetup.sh
 git commit -m "Publish pod ports on loopback only; add opt-in LAN MQTT" -m "<trailer block>"
 ```
@@ -311,8 +321,6 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
 - Modify: `container/revproxy/revproxy.container.j2`
 - Modify: `container/revproxy/tm/locations/go2rtc.conf.j2`
 - Modify: `container/revproxy/tm/locations/cockpit.conf.j2`
-- Create: `container/revproxy/tm/locations/storefiles.conf.j2`
-- Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`storefiles.conf` in `tmsetup_revproxy_locations`)
 - Modify: `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml` (the "Check NGinx config" task)
 - Modify: `script/ansible/roles/tmsetup/handlers/main.yml` (move `Restart revproxy.service` after `Restart traffic-monitor.service`)
 - Modify: `script/ansible/roles/tmsetup/tasks/start_services.yml` (start `revproxy.service`)
@@ -320,27 +328,17 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
 - Test: create `script/tests/test_tmsetup_tasks.py`
 
 **Interfaces:**
-- Consumes: `render` and `load_role_yaml` from Task 1.
-- Produces:
-  - `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 9's device tests check this on a Pi.
-  - `/storefiles` reaches Node-RED, so data export works through the proxy.
+- Consumes:
+  - `render` and `load_role_yaml` from `tmsetup_render.py`
+  - `LOCATIONS` and `location()` from `test_tmsetup_templates.py`
+  - `storefiles.conf` from the storefiles commit. It proxies to `127.0.0.1:1880`, so the host network needs no change to it.
+- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 9's device tests check this on a Pi.
 
 - [ ] **Step 1: Write the failing tests**
 
-At the top of `script/tests/test_tmsetup_templates.py`:
-- Add `import re` and `import pytest`.
-- Change `from tmsetup_render import render` to `from tmsetup_render import load_role_yaml, render`.
-
-Then append:
+At the top of `script/tests/test_tmsetup_templates.py`, add `import re` and `import pytest`. The `tmsetup_render` import already includes `load_role_yaml`. Then append:
 
 ```python
-LOCATIONS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_locations"]
-
-
-def location(name):
-    return render(f"container/revproxy/tm/locations/{name}.j2")
-
-
 def revproxy_unit():
     return render("container/revproxy/revproxy.container.j2", tmsetup_codedir="/opt/traffic-monitor").splitlines()
 
@@ -371,15 +369,6 @@ def test_no_location_goes_through_host_containers_internal(name):
 def test_host_apps_are_proxied_on_loopback():
     assert "proxy_pass http://127.0.0.1:1984/;" in location("go2rtc.conf")
     assert "proxy_pass http://127.0.0.1:9090/system/;" in location("cockpit.conf")
-
-
-def test_data_export_downloads_are_proxied_to_node_red():
-    """ui-database's download links are root-relative (/storefiles?files=...), so they need their own location."""
-    assert "storefiles.conf" in LOCATIONS
-    conf = location("storefiles.conf")
-    assert "location /storefiles {" in conf
-    assert "proxy_pass http://127.0.0.1:1880;" in conf
-    assert "proxy_buffering off;" in conf
 
 
 def test_feeds_accepts_only_get_and_plain_stream_names():
@@ -473,10 +462,10 @@ Run: `.venv/bin/python -m pytest script/tests -v`
 Expected: most new tests FAIL:
 - `go2rtc.conf` and `cockpit.conf` still use `host.containers.internal`.
 - `Network=host` is missing.
-- There's no deny location and no `storefiles.conf`.
+- There's no deny location.
 - `revproxy.service` isn't in the start loop.
 
-On the 2026-10-14 merge of the stacks, with Task 1 done, it was 38 failed, 7 passed.
+On the 2026-10-14 merge of the stacks, with Task 1 and the storefiles commit done, it was 37 failed, 9 passed.
 
 - [ ] **Step 3: Move revproxy to the host network**
 
@@ -532,23 +521,6 @@ The regex location is a sibling, not nested. nginx checks regex locations after 
 
 Why the `src` rule is still needed: go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API. A `src` can still be a URL, which makes the device connect to another host, or an `ffmpeg:` source. The `hls/` paths are HLS segments for iPhones older than iOS 17, which can't use MSE.
 
-Create `container/revproxy/tm/locations/storefiles.conf.j2`:
-
-```
-# storefiles - data export downloads from the Dashboard's database page (an http-in node on Node-RED's root).
-# The page links to /storefiles?files=... from the site root, so it needs its own location.
-location /storefiles {
-    proxy_pass http://127.0.0.1:1880;
-    include /etc/nginx/tm/snippets/proxy-common.conf;
-    # Stream the download as Node-RED writes it; a whole tmdb.sqlite can be several GB.
-    proxy_buffering off;
-}
-```
-
-It's a prefix location, not `location =`, so #215's `test_proxied_locations_respond` covers it. A bare `GET /storefiles` gets Node-RED's 400 "No files specified", which that test accepts.
-
-In `script/ansible/roles/tmsetup/vars/main.yml`, add `- storefiles.conf` to `tmsetup_revproxy_locations`, after `- nodered.conf`.
-
 In `container/revproxy/tm/locations/cockpit.conf.j2`, change the comment and upstream to:
 
 ```
@@ -591,10 +563,9 @@ The real `nginx -t` runs on the Pi during deploy, in #210's check task, and agai
 
 ```bash
 git add container/revproxy/revproxy.container.j2 container/revproxy/tm/locations/go2rtc.conf.j2 \
-    container/revproxy/tm/locations/cockpit.conf.j2 container/revproxy/tm/locations/storefiles.conf.j2 \
-    script/ansible/roles/tmsetup/vars/main.yml script/ansible/roles/tmsetup/tasks/revproxy_setup.yml \
+    container/revproxy/tm/locations/cockpit.conf.j2 script/ansible/roles/tmsetup/tasks/revproxy_setup.yml \
     script/ansible/roles/tmsetup/handlers/main.yml script/ansible/roles/tmsetup/tasks/start_services.yml script/tests/
-git commit -m "Run the reverse proxy on the host network; limit /feeds to viewing; proxy data export" -m "<trailer block>"
+git commit -m "Run the reverse proxy on the host network; limit /feeds to viewing" -m "<trailer block>"
 ```
 
 ---
@@ -2007,8 +1978,9 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
      ```markdown
      - `go2rtc.conf` and `cockpit.conf` proxy to `127.0.0.1`. `go2rtc.conf` also limits `/feeds` to viewing: GET only, plain stream names as `src`, and a sibling regex location that returns 403 for go2rtc API paths the players don't use.
-     - `storefiles.conf` proxies `/storefiles`, the Dashboard database page's root-relative download links, to Node-RED.
      ```
+
+     The storefiles commit already added `/storefiles` to this bullet's list of proxied paths.
 
 7. **Node-RED flows, `init-config` bullet**: replace `The config is read only when the flows start.` with:
 
@@ -2111,8 +2083,9 @@ def test_feeds_is_view_only_from_this_machine(host, hostvars, path, method, expe
 
 
 def test_data_export_reaches_node_red_from_this_machine(host, hostvars):
-    """Node-RED answers a download with no files with 400; without the storefiles location nginx answers 404."""
-    assert status_from_this_machine(host, hostvars, "/storefiles") == 400
+    """Node-RED answers a download with no files with a message; without the storefiles location nginx answers 404 (#211)."""
+    with urllib.request.urlopen(f"http://{pi_address(host, hostvars)}/storefiles", timeout=10) as response:
+        assert response.read().decode(errors="replace").strip() == "No files specified"
 
 
 def test_camera_stream_needs_credentials(host, hostvars):
@@ -2170,7 +2143,7 @@ $T check start --host <host> --title "M1: edge and ports"        # add --pr <n> 
 $T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export"
 ```
 
-Expected: the new tests fail, because ports are open, `/feeds/api/config` answers, RTSP needs no login, and `/storefiles` gets nginx's 404. That shows they catch the problem. Record it:
+Expected: the new tests fail, because ports are open, `/feeds/api/config` answers, RTSP needs no login, and `/storefiles` gets nginx's 404. That shows they catch the problem. The data-export test passes instead if the Pi already runs the storefiles commit (tm-dev units got it on 2026-10-14). Record it:
 
 ```bash
 $T check item "New device tests fail before M1 is deployed" pass --evidence cmd-NNN
