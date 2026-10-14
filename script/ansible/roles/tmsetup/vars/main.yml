@@ -1,9 +1,13 @@
 ---
 # TMSetup Variables (non-configurable)
 tmsetup_tm_version: '0.6.1'
-tmsetup_go2rtc_version: 'v1.8.5'
-tmsetup_frigate_version: '0.17.2'
-tmsetup_node_red_tm_version: '4.0.9'
+tmsetup_go2rtc_version: 'v1.9.14'
+# sha256 of each go2rtc_linux_<arch> release asset; change these with tmsetup_go2rtc_version
+tmsetup_go2rtc_sha256:
+  amd64: '32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6'
+  arm64: '359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50'
+tmsetup_frigate_version: '0.18.1'
+tmsetup_node_red_tm_version: '5.0.8'
 tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
 tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
