@@ -1953,7 +1953,7 @@ What it changes:
   - Either way, the message goes to the Dashboard notification. Cancel gives "Download stopped", without a Node-RED error.
 - **"check result"** is removed.
 
-GNU `tar` exits 1 when a file changes while it's being read, and a large `tmdb.sqlite` on a busy device can change during a download. That case now fails with "tar exited with code 1" instead of hanging. Downloading a consistent copy, for example by running SQLite's backup before `tar`, is separate work. Open an issue if it shows up.
+GNU `tar` exits 1 when a file changes while it's being read, and a large `tmdb.sqlite` on a busy device can change during a download. That counts as a failed download, because the copy may be inconsistent; this was decided on 2026-10-14, so don't treat exit 1 as success. It now fails with "tar exited with code 1" instead of hanging. Downloading a consistent copy, for example by running SQLite's backup before `tar`, is separate work. Open an issue if it shows up.
 
 - [ ] **Step 4: Run the checks**
 
