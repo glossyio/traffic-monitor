@@ -152,6 +152,14 @@ git log --oneline $B..HEAD   # the design-doc commits and the storefiles commit,
 
 If the design docs changed on `origin/feature/tm-control-design/102` after the branch was made, bring those commits too.
 
+Draft PR #224 is this branch, and it targets #210's branch. The repo doesn't delete branches on merge, so GitHub won't retarget it. Ask the person before force-pushing, then:
+
+```bash
+git push --force-with-lease origin feature/edge-ports/201
+gh pr edit 224 --base dev
+gh pr view 224 --json baseRefName,commits --jq '.baseRefName, (.commits | length)'   # dev, and only this branch's commits
+```
+
 ---
 
 ### Task 1: Template test harness, pod ports on loopback, opt-in LAN MQTT
@@ -2330,7 +2338,7 @@ Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `20`.
 Run these while the Pi still runs the code from before M1:
 
 ```bash
-$T check start --host <host> --title "M1: edge and ports"        # add --pr <n> once the PR exists
+$T check start --host <host> --pr 224 --title "M1: edge and ports"
 $T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export"
 ```
 
@@ -2440,9 +2448,9 @@ git add script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py
 git commit -m "Add device tests for closed app ports, the view-only /feeds, download errors, and the proxy outliving the pod" -m "<trailer block>"
 ```
 
-- [ ] **Step 11: Open the PR to `dev`**
+- [ ] **Step 11: Update PR #224 and mark it ready**
 
-Ask the person first. Fill in:
+Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), rewrite its description for the finished M1, and mark it ready with `gh pr ready 224`. Fill in:
 - **Testing:** the check's checklist, with device names and addresses replaced by placeholders, plus the off-device results. Never include secret values.
 - **Release notes:**
   - Direct app ports are closed; use the `/…` paths.
