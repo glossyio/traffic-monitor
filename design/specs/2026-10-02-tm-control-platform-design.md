@@ -1,7 +1,7 @@
 # tm-control: Traffic Monitor control app, platform design
 
 - **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13. Re-checked on 2026-10-14 after #197, #218, #219, #220, and #222 merged into `dev` (see "Builds on open PRs").
-- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), #185 (Cockpit), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy)
+- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), #185 (Cockpit), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy), #223 (data download errors return 200)
 - **Scope:** this spec covers the **platform**. Features built on it, such as Wi-Fi/hotspot and camera rename, get their own specs.
 
 ## Builds on open PRs
@@ -103,7 +103,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot D
   - Each app's `location` is its own file in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations`.
   - Moving to the host network keeps #210's bind mounts and its pre-restart `nginx -t`.
   - `go2rtc.conf` and `cockpit.conf` change from `host.containers.internal` to `127.0.0.1`. The pod-app locations already use `127.0.0.1`.
-  - A new `storefiles.conf` proxies `/storefiles` to Node-RED. The Dashboard's database page links both its downloads, the JSON export and the database, to `/storefiles?files=…` from the site root, so through the proxy they return 404 (#211). Today they work only on port 1880, which M1 closes. A whole `tmdb.sqlite` can be several GB, so the location turns off proxy buffering.
+  - A new `storefiles.conf` proxies `/storefiles` to Node-RED. The Dashboard's database page links both its downloads, the JSON export and the database, to `/storefiles?files=…` from the site root, so through the proxy they return 404 (#211). Today they work only on port 1880, which M1 closes. A whole `tmdb.sqlite` can be several GB, so the location turns off proxy buffering. M1 also fixes the Node-RED side (#223). Its download errors come back as 200, and a `tar` failure leaves the download open.
 - **Pod** (`container/traffic-monitor.pod.j2`):
   - Publish 5000, 8971, 1880, and 1883 as `127.0.0.1:<port>:<port>`.
   - Drop 80, which moves to the host-network nginx.

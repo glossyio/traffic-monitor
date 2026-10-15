@@ -28,7 +28,9 @@ Don't start until those have merged. Task 0 checks.
 - `script/tests/test_tmsetup_templates.py`, with `LOCATIONS`, `location()`, and the storefiles test
 - the CLAUDE.md mention
 
-Tasks 1, 2, 8, and 9 below build on those files instead of creating them.
+Tasks 1, 2, 9, and 10 below build on those files instead of creating them.
+
+**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edits `flows.json`, though not these nodes. On 2026-10-14, Task 8's edit merged cleanly with #208, #215, and `dev`.
 
 ## Global Constraints
 
@@ -56,7 +58,7 @@ Tasks 1, 2, 8, and 9 below build on those files instead of creating them.
   - A fixed value shared by several tasks or templates goes in `vars/main.yml`, like `tmsetup_hailo_driver_dir`. That covers `tmsetup_secrets_dir`, `tmsetup_secret_names`, `tmsetup_tm_control_dir`, and `tmsetup_go2rtc_rtsp_user`.
   - A value an operator may change goes in `defaults/main.yml`, with `-C` for booleans, like `tmsetup_bool_mqtt_lan`.
   - A literal used once, in one file, is hardcoded, like `/frigate`.
-- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 9). Keep device names and addresses out of commits and PR text.
+- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 10). Keep device names and addresses out of commits and PR text.
 - **Python:** indented with 4 spaces, with a docstring for each module. No AI-provenance comments.
 - **Tests:**
   - Synthetic data only.
@@ -80,7 +82,7 @@ Tasks 1, 2, 8, and 9 below build on those files instead of creating them.
 
 ## Review Focus
 
-These are the five likeliest failures for a person upgrading or using a device. Each one has a test in the task that owns it.
+These are the likeliest failures for a person upgrading or using a device. Each one has a test in the task that owns it.
 
 1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. The device's config may still be Frigate 0.17's: Frigate 0.18 rewrites it on its first start, after `tm-control migrate` has run. Tests in Tasks 4 and 5 run on both a 0.17 and a 0.18 config. Tests in Task 7 check that the migration produces exactly the URL that new installs get, and that `frigate.env` gains both credential lines.
 2. **Re-running `tmsetup.sh`.** The generated secrets must never be regenerated, because the go2rtc and Frigate sides would drift apart. They must never appear in the install log. Tests in Task 3.
@@ -90,9 +92,9 @@ These are the five likeliest failures for a person upgrading or using a device. 
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
    - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`). The viewing set includes HLS's `hls/` paths, which iPhones older than iOS 17 use.
 
-   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 9 send the same requests to a Pi.
+   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 10 send the same requests to a Pi.
 5. **A hand-edited Frigate config that reads go2rtc by LAN IP instead of `host.containers.internal`.** The migration can't rewrite it, so it must warn loudly instead of silently leaving the camera dark. Test in Task 5.
-6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 9 test cover it.
+6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 10 test cover it. The endpoint's errors also came back as 200, and a `tar` failure left the download open (#223). Task 8 fixes both, and Task 10 tests them on a Pi.
 
 ---
 
@@ -332,7 +334,7 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
   - `render` and `load_role_yaml` from `tmsetup_render.py`
   - `LOCATIONS` and `location()` from `test_tmsetup_templates.py`
   - `storefiles.conf` from the storefiles commit. It proxies to `127.0.0.1:1880`, so the host network needs no change to it.
-- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 9's device tests check this on a Pi.
+- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 10's device tests check this on a Pi.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -557,7 +559,7 @@ Run:
 
 Expected: all tests pass (46 so far), then `exit 0`.
 
-The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 9. For an earlier check, render the config into a scratch directory and run `nginx -t` in `docker.io/library/nginx:1.31.0` with no `--add-host`. On 2026-10-14 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above and proxied every allowed path and `/storefiles`.
+The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 10. For an earlier check, render the config into a scratch directory and run `nginx -t` in `docker.io/library/nginx:1.31.0` with no `--add-host`. On 2026-10-14 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above and proxied every allowed path and `/storefiles`.
 
 - [ ] **Step 7: Commit**
 
@@ -1716,7 +1718,7 @@ exec:
 streams:
 ```
 
-`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 9 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
+`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 10 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
 
 Then remove the old file: `git rm script/ansible/roles/tmsetup/files/go2rtc.yaml`
 
@@ -1829,7 +1831,163 @@ git commit -m "Bind go2rtc's API to loopback, require RTSP credentials, and load
 
 ---
 
-### Task 8: Docs and CLAUDE.md
+### Task 8: Data download errors (#223)
+
+The Dashboard database page's downloads are served by `GET /storefiles` in the `ui-database` flow, in the group "Dashboard 2 - Compress & Download 1 or More Files". #223 has two bugs there:
+- **Validation errors come back as 200.** "Validate filenames, setup tar" sets `msg.res.statusCode`. The `http response` node only reads its own setting, then `msg.statusCode`, then falls back to 200.
+- **A `tar` failure never ends the download.**
+  - "handle end of file or error" turns `msg.payload` into a string.
+  - The "check result" switch then tests `msg.payload.code`, which is always undefined by that point. So the error branch can't be reached, and nothing ends the response.
+  - On 2026-10-14, a bench Pi asked for a file Node-RED couldn't read. `tar` exited 2, and the Pi sent the 200 headers, then held the download open until curl gave up.
+  - The Cancel button sets `msg.kill = "SIGKILL"`, and that lands on the same path.
+
+The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted `/db/temp-other/…`, and also `.`, which is the whole temp folder. The Dashboard only sends file names in `/db/temp` and `/db/tmdb.sqlite`, so requiring a path separator after the folder breaks no download.
+
+**Files:**
+- Modify: `container/node-red-tm/data/flows.json`. The download group's nodes change, along with "setup test", which belongs to the `/test` endpoint.
+- Create: `script/tests/test_node_red_flows.py`
+
+**Interfaces:**
+- Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. Task 10's device tests check this on a Pi.
+
+- [ ] **Step 1: Write the failing test**
+
+`script/tests/test_node_red_flows.py`:
+
+```python
+"""Check Node-RED's flows.json off-device."""
+
+import json
+from pathlib import Path
+
+FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
+
+
+def test_http_errors_set_msg_status_code():
+    """The http response node takes its status from msg.statusCode. A status put on msg.res is ignored, so the reply is a 200 (#223)."""
+    flows = json.loads(FLOWS.read_text())
+    offenders = [node["name"] for node in flows if node["type"] == "function" and "msg.res.statusCode" in node["func"]]
+    assert offenders == []
+```
+
+- [ ] **Step 2: Run it to check it fails**
+
+Run: `.venv/bin/python -m pytest script/tests/test_node_red_flows.py -v`
+
+Expected: FAIL. The assertion names "setup test" and "Validate filenames, setup tar".
+
+- [ ] **Step 3: Edit the flows**
+
+Make the edit with a script and write the file back the way Node-RED does (see CLAUDE.md). Run this once from the repo root; don't commit the script. Each `swap` asserts that its text appears exactly once, so the script stops if the merged nodes differ from what's quoted here.
+
+```bash
+python3 - <<'EOF'
+import json
+from pathlib import Path
+
+FLOWS = Path("container/node-red-tm/data/flows.json")
+flows = json.loads(FLOWS.read_text())
+by_id = {node["id"]: node for node in flows}
+
+
+def swap(node, old, new):
+    assert node["func"].count(old) == 1, (node["name"], old)
+    node["func"] = node["func"].replace(old, new)
+
+
+validate = by_id["2398aa8b9ca25816"]  # "Validate filenames, setup tar"
+for code in (400, 403, 404):
+    swap(validate, f"msg.res.statusCode = {code};", f"msg.statusCode = {code};")
+swap(validate, "if (!filePath.startsWith(baseDir)) {", "if (!filePath.startsWith(baseDir + path.sep)) {")
+swap(validate, "msg.res.statusCode = 0;\n", "")
+swap(by_id["3141bbce81b4c183"], "msg.res.statusCode = 0;\n", "")  # "setup test", the /test endpoint
+
+test_for_error = by_id["04630be97890045c"]  # switch: tar on success, error response otherwise
+test_for_error["property"] = "statusCode"
+test_for_error["rules"] = [{"t": "null"}, {"t": "else"}]
+
+handle_end = by_id["41deab2c99a209b8"]  # "handle end of file or error"
+handle_end["func"] = """\
+// tar has finished. The exec node gives its exit code as msg.payload.code (0 means the archive
+// is complete), and msg.payload.signal when it was stopped, as the Cancel button does.
+if (msg.payload.code === 0) {
+    msg.res._res.end(); // send end-of-file
+    return null;
+}
+
+if (msg.payload.signal) {
+    msg.payload = "Download stopped";
+} else {
+    msg.payload = "Download failed: tar exited with code " + msg.payload.code;
+    node.error(msg.payload);
+}
+
+// Output 1 sends an HTTP error, output 2 shows the message on the Dashboard.
+if (msg.res._res.headersSent) {
+    // Part of the archive already went out with status 200. Closing the connection makes
+    // the browser mark the download as failed instead of saving a cut-off file.
+    msg.res._res.destroy();
+    return [null, msg];
+}
+msg.statusCode = 500;
+return [msg, msg];"""
+handle_end["outputs"] = 2
+handle_end["wires"] = [["8a12d83e700bcaa6"], ["9297900926075b54"]]  # http response; ui-notification
+
+check_result = "513356e9f9a779df"  # switch on msg.payload.code, which is never set by then
+flows.remove(by_id[check_result])
+by_id[handle_end["g"]]["nodes"].remove(check_result)
+
+FLOWS.write_text(json.dumps(flows, indent=4, ensure_ascii=False))
+EOF
+```
+
+What it changes:
+- **"Validate filenames, setup tar"** sets `msg.statusCode` for 400, 403, and 404. Its folder check requires `baseDir + path.sep`, and it drops the `msg.res.statusCode = 0` success flag.
+- **"setup test"** drops the same flag. It goes straight to `tar` and never used the flag.
+- **"Test for error"** routes on `msg.statusCode`: unset goes to `tar`, set goes to the error response.
+- **"handle end of file or error"** is rewritten with two outputs:
+  - On success, it ends the response.
+  - On a failure where part of the archive has already gone out, it closes the connection, so the browser marks the download failed.
+  - On a failure before anything was sent, it answers 500.
+  - Either way, the message goes to the Dashboard notification. Cancel gives "Download stopped", without a Node-RED error.
+- **"check result"** is removed.
+
+GNU `tar` exits 1 when a file changes while it's being read, and a large `tmdb.sqlite` on a busy device can change during a download. That case now fails with "tar exited with code 1" instead of hanging. Downloading a consistent copy, for example by running SQLite's backup before `tar`, is separate work. Open an issue if it shows up.
+
+- [ ] **Step 4: Run the checks**
+
+Run:
+
+```bash
+.venv/bin/python -m pytest script/tests -v
+python3 -m json.tool container/node-red-tm/data/flows.json >/dev/null && echo "flows ok"
+git diff --stat container/node-red-tm/data/flows.json
+```
+
+Expected:
+- all pass
+- `flows ok`
+- `1 file changed, 10 insertions(+), 39 deletions(-)`
+
+There's no Node.js in the dev tools, so Task 10 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
+- 400, 403, or 404 for no files, a missing file, `../tmdb.sqlite`, `../temp-other.json`, and `.`;
+- no status for the Dashboard's own requests;
+- end on exit 0;
+- 500 when nothing had been sent;
+- the connection closed when data had gone out;
+- "Download stopped" for Cancel.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add container/node-red-tm/data/flows.json script/tests/test_node_red_flows.py
+git commit -m "Return real HTTP errors from data downloads, and end a download when tar fails (#223)" -m "<trailer block>"
+```
+
+---
+
+### Task 9: Docs and CLAUDE.md
 
 **Files:**
 - Create: `docs/configuration/network-access.md`
@@ -2016,7 +2174,7 @@ git commit -m "Document network access through the reverse proxy" -m "<trailer b
 
 ---
 
-### Task 9: Device tests and the Pi test plan, through tmdev
+### Task 10: Device tests and the Pi test plan, through tmdev
 
 This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare a bench Pi with its expected hardware. Run the Pi test plan before committing this task and before opening the PR:
 - Use a dev Pi from the local inventory, never a field device.
@@ -2031,10 +2189,11 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
 
 **Interfaces:**
 - Consumes:
-  - #215's `host` and `hostvars` fixtures, and `wait_until_ready` in `test_disruptive.py`
+  - #215's `host`, `hostvars`, `expect`, `codedir`, and `codeowner` fixtures, and `wait_until_ready` in `test_disruptive.py`
   - #214's `tmdev.py` commands: `check start|item|status|end`, `deploy`, `run`, and `test`
   - Task 2's `/feeds/` rules
   - Task 7's RTSP credentials
+  - Task 8's download errors
 
 - [ ] **Step 1: Write the device tests**
 
@@ -2082,10 +2241,42 @@ def test_feeds_is_view_only_from_this_machine(host, hostvars, path, method, expe
     assert status_from_this_machine(host, hostvars, path, method) == expected
 
 
-def test_data_export_reaches_node_red_from_this_machine(host, hostvars):
-    """Node-RED answers a download with no files with a message; without the storefiles location nginx answers 404 (#211)."""
-    with urllib.request.urlopen(f"http://{pi_address(host, hostvars)}/storefiles", timeout=10) as response:
-        assert response.read().decode(errors="replace").strip() == "No files specified"
+@pytest.mark.parametrize(
+    "query, expected",
+    [
+        ("", 400),
+        ("?files=tmdev-missing.json", 404),
+        ("?files=../tmdb.sqlite", 403),
+        ("?files=../temp-other.json", 403),
+    ],
+)
+def test_data_export_errors_from_this_machine(host, hostvars, query, expected):
+    """Node-RED's download endpoint answers through the proxy with real error statuses (#211, #223)."""
+    assert status_from_this_machine(host, hostvars, f"/storefiles{query}") == expected
+
+
+def test_failed_data_export_ends_the_download(host, expect, codedir, codeowner):
+    """When tar fails, Node-RED ends the download instead of leaving it open (#223)."""
+    if not expect["pii_free"]:
+        pytest.skip("writes a file into the Pi's data folder; set tm_expect.pii_free: true (bench units only)")
+    if codeowner == "root":
+        pytest.skip("Node-RED runs as root, so it can read the planted file")
+    temp = f"{codedir}/node-red-tm/db/temp"
+    with host.sudo():
+        if host.run(f"test -d {temp}").rc != 0:
+            pytest.skip("Node-RED hasn't created db/temp yet")
+        # An empty file only root can read: it exists, so validation passes, and tar fails on it.
+        host.check_output(f"install -m 000 /dev/null {temp}/tmdev-unreadable.json")
+    try:
+        # Straight to Node-RED on the Pi, so nginx's read timeout can't end a download that Node-RED left open.
+        result = host.run("curl -s -o /dev/null -w '%{http_code}' --max-time 20 "
+                          "'http://localhost:1880/storefiles?files=tmdev-unreadable.json'")
+    finally:
+        with host.sudo():
+            host.check_output(f"rm -f {temp}/tmdev-unreadable.json")
+    # 500 if tar failed before sending anything; otherwise the connection is cut mid-download (curl exit 18).
+    # Before #223's fix the download stayed open until curl gave up (exit 28).
+    assert (result.rc, result.stdout) in {(0, "500"), (18, "200")}, (result.rc, result.stdout)
 
 
 def test_camera_stream_needs_credentials(host, hostvars):
@@ -2132,7 +2323,7 @@ Run:
     | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `16`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `20`.
 
 - [ ] **Step 3: Open the check and record the baseline**
 
@@ -2143,7 +2334,14 @@ $T check start --host <host> --title "M1: edge and ports"        # add --pr <n> 
 $T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export"
 ```
 
-Expected: the new tests fail, because ports are open, `/feeds/api/config` answers, RTSP needs no login, and `/storefiles` gets nginx's 404. That shows they catch the problem. The data-export test passes instead if the Pi already runs the storefiles commit (tm-dev units got it on 2026-10-14). Record it:
+Expected: the new tests fail, which shows they catch the problem:
+- the ports are open;
+- `/feeds/api/config` answers;
+- RTSP needs no login;
+- `/storefiles` errors come back as 200. A Pi without the storefiles commit gives nginx's 404 instead, so there the 404 case passes.
+- On a `pii_free` unit, the failed-download test fails with curl's exit 28, because the download stays open. Elsewhere it's skipped.
+
+Record it:
 
 ```bash
 $T check item "New device tests fail before M1 is deployed" pass --evidence cmd-NNN
@@ -2167,7 +2365,7 @@ $T test <host>
 
 Expected:
 - All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL.
-- The 15 new non-disruptive tests pass.
+- The 19 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass and the failed-download test is skipped.
 
 Record an item.
 
@@ -2239,7 +2437,7 @@ When the person reports back, reopen the check with `$T check reopen <run_dir>` 
 $T check status
 $T check end
 git add script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py
-git commit -m "Add device tests for closed app ports, the view-only /feeds, and the proxy outliving the pod" -m "<trailer block>"
+git commit -m "Add device tests for closed app ports, the view-only /feeds, download errors, and the proxy outliving the pod" -m "<trailer block>"
 ```
 
 - [ ] **Step 11: Open the PR to `dev`**
@@ -2250,6 +2448,7 @@ Ask the person first. Fill in:
   - Direct app ports are closed; use the `/…` paths.
   - Frigate's restream ports and port 8080 aren't published.
   - The camera stream needs credentials.
-  - Data export downloads now work through the proxy.
+  - Data export downloads now work through the proxy (#211).
+  - Download errors return their HTTP status, and a download that fails partway ends instead of hanging (#223).
   - Upgrade with a full `tmsetup.sh` run.
 - **AI assistance:** fill in the template's section.
