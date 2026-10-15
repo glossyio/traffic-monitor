@@ -46,5 +46,6 @@ tmsetup_revproxy_locations:
   - go2rtc.conf
   - legacy-ui.conf
   - nodered.conf
+  - storefiles.conf
 
 ...
