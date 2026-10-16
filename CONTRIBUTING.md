@@ -37,6 +37,8 @@ Contributors submit PRs against `dev`.
 
 When a user performs a `git clone`, it will pull down the `main` branch, which shall be tied to the latest stable release. We still recommend you use tagged releases for production deployments.
 
+Maintainers: to release, fast-forward `main` to `dev` with `git fetch origin && git push origin origin/dev:main`, then tag the release on `main`. GitHub marks the release PR as merged when the push lands. Don't use the PR's merge button: every merge method adds a commit to `main` that `dev` doesn't have, which also keeps the release tag out of `dev`'s history.
+
 ![Git flow branching strategy diagram](static/img/gitflow-trans-dark.drawio.png)
 
 ## Git naming convention / branch naming
