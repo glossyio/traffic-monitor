@@ -22,9 +22,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INVENTORY = "~/.config/traffic-monitor/dev-pis.yml"
 INVENTORY_GROUP = "tm_dev"
-# KEY=value or "key": value pairs whose key looks like a secret; the value is replaced.
+# KEY=value or "key": value pairs where one part of the key, split at _ . -, names a secret
+# (FRIGATE_MQTT_PASSWORD, api_key, access_token, but not keyboard, bypass, or a private_key_file path).
+SECRET_WORD = r"(?:password|passwd|pass|pwd|secret|token|api[_-]?key|access[_-]?key|credentials?)"
 SECRET_PAIR = re.compile(
-    r"""(?i)(["']?[\w.-]*(?:pass|secret|token|key)[\w.-]*["']?[ \t]*[:=][ \t]*)("[^"]*"|'[^']*'|[^\s;,'"]+)""")
+    rf"""(?i)(?<![\w.-])(["']?(?:[\w.-]*[_.-])?{SECRET_WORD}(?:[_.-][\w.-]*)?["']?[ \t]*[:=][ \t]*)("[^"]*"|'[^']*'|[^\s;,'"]+)""")
+# Authorization headers ("Authorization: Bearer abc") and passwords in URLs (mqtt://user:pw@host)
+AUTH_HEADER = re.compile(r"(?i)(\bauthorization[ \t]*[:=][ \t]*(?:[\w-]+[ \t]+)?|\bbearer[ \t]+)[^\s'\"]+")
+URL_PASSWORD = re.compile(r"(?i)(\b[a-z][a-z0-9+.-]*://[^\s/:@]+:)[^\s/@]+(@)")
 LOG_TABLE = "| When (UTC) | Kind | Host | Code | PR | Result | Run |\n|---|---|---|---|---|---|---|\n"
 LOG_HEADER = """# Dev-Pi run log
 
@@ -42,7 +47,9 @@ class DevPiError(Exception):
 
 
 def redact(text):
-    return SECRET_PAIR.sub(r"\1<redacted>", text)
+    text = SECRET_PAIR.sub(r"\1<redacted>", text)
+    text = AUTH_HEADER.sub(r"\1<redacted>", text)
+    return URL_PASSWORD.sub(r"\1<redacted>\2", text)
 
 
 def utc_now():

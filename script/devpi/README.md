@@ -89,14 +89,19 @@ Both modes:
 
 ```bash
 .venv/bin/python script/devpi/tmdev.py run tm-dev-01 -- 'systemctl is-active frigate.service node-red-tm.service'
-.venv/bin/python script/devpi/tmdev.py run local -- .venv/bin/python -m pytest container/node-red-tm/schema/tests
+.venv/bin/python script/devpi/tmdev.py run local -- python -m pytest container/node-red-tm/schema/tests
 ```
 
-`run` behaves like `ssh`: the command goes to the Pi's shell. With the host `local`, it runs on your machine instead.
+`run` behaves like `ssh`: the words after `--` are joined with spaces and go to the Pi's shell, so quote a compound command as one word (`-- 'cmd1; cmd2'`). With the host `local`, bash runs it on your machine instead, with tmdev's venv first on `PATH`, so `python` is the dev venv's even in a `--src` worktree that has no `.venv`.
 
 Each command's output is shown and also saved as `cmd-NNN.out`. A line in `commands.log` records the command, the time, and the exit code. The files go into the open PR check, or into `adhoc/<date>/` when no check is open. `tmdev.py` exits with the command's exit code.
 
-Output and logged commands have values that look like secrets replaced with `<redacted>`. That covers `KEY=value` and `"key": value` pairs whose key contains `pass`, `secret`, `token`, or `key`. It's a safety net, not a filter, so don't print secrets on purpose.
+Output, logged commands, and saved deploy logs have values that look like secrets replaced with `<redacted>`. That covers:
+- `KEY=value` and `"key": value` pairs where a part of the key, split at `_`, `.`, or `-`, is `password`, `pass`, `pwd`, `secret`, `token`, `api_key`, `access_key`, or `credential`;
+- `Authorization:` headers and `Bearer` tokens;
+- passwords in URLs, such as `mqtt://user:<redacted>@host`.
+
+It's a safety net, not a filter, so don't print secrets on purpose.
 
 ## PR checks
 
