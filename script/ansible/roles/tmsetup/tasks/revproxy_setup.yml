@@ -99,18 +99,33 @@
         src: 'container/revproxy/{{ item }}.j2'
       changed_when: false
 
-    # --add-host lets nginx resolve the go2rtc upstream inside this throwaway container.
+    # Runs nginx -t in a throwaway container and waits for it; a non-zero exit fails the task.
+    # etc_hosts lets nginx resolve the go2rtc upstream inside the container.
     - name: TMSetup - revproxy Setup - Check NGinx config
       become: true
-      ansible.builtin.command:
-        cmd: >-
-          podman run --rm --entrypoint nginx
-          --add-host host.containers.internal:127.0.0.1
-          {% for mount in tmsetup_revproxy_config_mounts %}
-          --volume {{ tmsetup_revproxy_check_dir_register["path"] }}/{{ mount["path"] }}:{{ mount["target"] }}:ro
-          {% endfor %}
-          {{ tmsetup_revproxy_image }} -t
+      containers.podman.podman_container:
+        command: -t
+        detach: false
+        entrypoint: nginx
+        etc_hosts:
+          host.containers.internal: 127.0.0.1
+        image: '{{ tmsetup_revproxy_image }}'
+        name: revproxy-nginx-check
+        rm: true
+        state: started
+        volume: '{{ tmsetup_revproxy_check_volumes }}'
       changed_when: false
+      vars:
+        # The shared mounts, read-only from the check directory, e.g.
+        # <check dir>/nginx.conf:/etc/nginx/nginx.conf:ro
+        tmsetup_revproxy_check_volumes: >-
+          {{ tmsetup_revproxy_config_mounts
+             | map(attribute='path')
+             | map('regex_replace', '^', tmsetup_revproxy_check_dir_register['path'] ~ '/')
+             | zip(tmsetup_revproxy_config_mounts | map(attribute='target'))
+             | map('join', ':')
+             | map('regex_replace', '$', ':ro')
+             | list }}
   always:
     - name: TMSetup - revproxy Setup - Remove NGinx check directory
       become: true
