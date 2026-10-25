@@ -27,7 +27,7 @@ Calls I made, for the user to check:
 3. **Images** move from `docs/.gitbook/assets/` to `docs/assets/images/`, with spaces and parentheses removed from filenames. MkDocs skips folders whose names start with a dot. Images nothing references are dropped and listed in the PR.
 4. **Front matter:** drop GitBook's `icon:` (its icon names don't exist in Material). Keep `description:`, and keep it visible under the title as GitBook does.
 5. **Old URLs:** a root `404.html` sends any unversioned path to `/latest/<path>`, plus a small map for pages that moved. GitHub Pages has no server-side redirects, so this is a JavaScript redirect.
-6. **Branch:** `hotfix/docs-site/<issue>` off `main`, which is v0.7.0. Per CONTRIBUTING.md, `hotfix` is the branch type that targets `main`.
+6. **Branch:** `hotfix/docs-site/233` off `main`, which is v0.7.0. Per CONTRIBUTING.md, `hotfix` is the branch type that targets `main`.
 7. **v0.7.1 bumps `tmsetup_tm_version` to `'0.7.1'`**, so the tag and the version a device reports match. This is the release's only change outside the docs.
 8. No analytics at launch.
 9. **Zensical compatibility is a preference, not a rule.** The outdated banner (a theme override) and the mike plugin (for canonical links to `/latest/`) stay. Zensical's mike page says the version settings and the outdated warning keep working, and the switch PR re-checks both.
@@ -115,7 +115,7 @@ Each path P maps to `/latest/P/`, with these exceptions:
    - Open an issue.
    - Confirm that GitBook's Git Sync panel shows the space in sync with `docs/gitbook-sync`.
    - Freeze editing in GitBook. GitBook keeps serving the domain until step 6.
-1. Run `git fetch origin` (local refs are behind; `dev` has moved), then branch `hotfix/docs-site/<issue>` from `origin/main`. The first commit adds this design and the plan under `design/`.
+1. Run `git fetch origin` (local refs are behind; `dev` has moved), then branch `hotfix/docs-site/233` from `origin/main`. The first commit adds this design and the plan under `design/`.
 2. **Reconcile GitBook content, docs files only.**
    - Do a 3-way merge per file: merge-base `5d34f8a` vs `main` vs `origin/docs/gitbook-sync`.
    - Add the GitBook-only files: 4 screenshots and `docs/software-installation.md`.
@@ -129,7 +129,7 @@ Each path P maps to `/latest/P/`, with these exceptions:
 5. **Release v0.7.1 (user approves each outward step):**
    1. Bump `tmsetup_tm_version`.
    2. Open the PR into `main`. The check job runs.
-   3. Fast-forward `main` with `git push origin origin/hotfix/docs-site/<issue>:main`. `main`'s ruleset requires a PR and a review, but the API reports you can always bypass it (that's how #225 merged). This is the first release done the documented fast-forward way.
+   3. Fast-forward `main` with `git push origin origin/hotfix/docs-site/233:main`. `main`'s ruleset requires a PR and a review, but the API reports you can always bypass it (that's how #225 merged). This is the first release done the documented fast-forward way.
    4. Tag and push `v0.7.1`, and publish a GitHub Release for it.
    5. The tag push runs the first deploy, which creates `gh-pages` with `/v0.7.1/`, `/latest/`, and the root files. A manual run can't come first: GitHub only allows one once the workflow is on `main`. If the tag doesn't start a run, start one manually on the tag.
    6. Settings → Pages → Source: deploy from branch `gh-pages`, at the root (it's "GitHub Actions" today). Smoke-test at glossyio.github.io/traffic-monitor/; readers still see GitBook.
