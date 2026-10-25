@@ -38,6 +38,9 @@ extra:
 plugins:
   - search
   - mike:
+      # Copy the release to /latest/ rather than symlinking it, so it doesn't
+      # depend on the host following symlinks.
+      alias_type: copy
       canonical_version: latest
       version_selector: false
 
