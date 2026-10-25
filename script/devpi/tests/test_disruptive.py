@@ -6,23 +6,28 @@ These stop the pod or the whole Pi, so they run only with tmdev.py test --disrup
 import time
 
 import pytest
+from devpi_checks import RESTARTING_UNITS
 
 pytestmark = pytest.mark.disruptive
 
-UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate.service", "node-red-tm.service",
-         "revproxy.service"]
-# Answers with plain text (the version), so only the HTTP status is checked.
-FRIGATE_UP = "curl -fsS -o /dev/null --max-time 10 http://localhost:5000/api/version"
+# A unit is active before its app answers; node-red-tm runs tmdb_migrate.py and then boots Node-RED.
+# Only the HTTP status is checked.
+APPS_UP = [
+    ("Frigate API on port 5000", "curl -fsS -o /dev/null --max-time 10 http://localhost:5000/api/version"),
+    ("Node-RED on port 1880", "curl -fsS -o /dev/null --max-time 10 http://localhost:1880/"),
+    ("nginx on port 80", "curl -fsS -o /dev/null --max-time 10 http://localhost/"),
+]
 RESTART_TIMEOUT_SECONDS = 5 * 60
 REBOOT_TIMEOUT_SECONDS = 10 * 60
 
 
 def not_ready(host):
-    """What isn't back yet, or an empty list once every unit is active and Frigate's API answers."""
+    """What isn't back yet, or an empty list once every unit is active and Frigate, Node-RED, and nginx answer."""
     try:
-        waiting = [unit for unit in UNITS if host.run(f"systemctl is-active {unit}").stdout.strip() != "active"]
-        if not waiting and host.run(FRIGATE_UP).rc != 0:
-            waiting = ["Frigate API on port 5000"]
+        waiting = [unit for unit in RESTARTING_UNITS
+                   if host.run(f"systemctl is-active {unit}").stdout.strip() != "active"]
+        if not waiting:
+            waiting = [app for app, probe in APPS_UP if host.run(probe).rc != 0]
         return waiting
     except RuntimeError:  # testinfra's SSH failure while the Pi reboots
         return ["SSH (the Pi is still booting)"]

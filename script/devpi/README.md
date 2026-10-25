@@ -159,6 +159,7 @@ A failure therefore tells you whether to look at the hardware, the inventory, or
 ```bash
 .venv/bin/python script/devpi/tmdev.py test tm-dev-01                          # one Pi
 .venv/bin/python script/devpi/tmdev.py test                                    # every Pi in the inventory
+.venv/bin/python script/devpi/tmdev.py test tm-dev-01,tm-dev-02                # several Pis
 .venv/bin/python script/devpi/tmdev.py test tm-dev-01 -- -k radar              # pytest options after --
 .venv/bin/python script/devpi/tmdev.py test tm-dev-01 --disruptive             # also restart the pod and reboot the Pi
 ```
@@ -168,21 +169,21 @@ A failure therefore tells you whether to look at the hardware, the inventory, or
 | `test_platform.py` | Pi 5, 64-bit OS, no throttling or under-voltage, free space, SoC temperature |
 | `test_services.py` | Host services and pod containers active, image builds succeeded, no crash restarts, no Plate Recognizer on `pii_free` units |
 | `test_web.py` | `nginx -t`; every location in the running proxy config answers; Node-RED, Frigate, and go2rtc ports; the home page from your machine |
-| `test_ai_coprocessor.py` | The expected co-processor and no other, its device and driver, Frigate's `AddDevice`, and inference running |
+| `test_ai_coprocessor.py` | The expected co-processor and no other, its device and driver, Frigate's `AddDevice`, and a detector process (that has run an inference, with `live_traffic`) |
 | `test_radars.py` | Expected serial ports and no extras, Node-RED's `AddDevice` lines, and the `TM_RADAR_SERIAL_PORT_*` names in `node-red-tm.env` and `config.yml` |
 | `test_cameras.py` | CSI sensors, the HEVC decoder passed to Frigate, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
 | `test_environmental.py` | Air-quality monitors enabled in `config.yml` and writing recent readings |
 | `test_dataflow.py` | `tmdb_migrate.py --check` passes (skipped for code from before #208), no plate reads, and new radar and event rows (with `live_traffic`) |
-| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot (`--disruptive` only) |
+| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot: units active, and Frigate, Node-RED, and nginx answering (`--disruptive` only) |
 
 Some checks need a particular setup. Without it they're skipped, and the summary says why:
 - **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`.
-- **`live_traffic`:** checks for new radar and event rows.
+- **`live_traffic`:** checks for new radar and event rows, and that the detector has run an inference.
 - **The relevant hardware in `tm_expect`:** the radar, camera, and environmental checks.
 
-Each run is logged as `summary.md` and `results.jsonl`. Their code is what the last deploy to that host put on the Pi, which can be another checkout (see [Testing another branch](#testing-another-branch)). `tmdev.py test` turns off pytest's cache, because its entries would name the host inside the repo.
+Each run is logged as `summary.md` and `results.jsonl`. Their code is what the last deploy to that host put on the Pi (with several hosts, the summary lists each one's last deploy), which can be another checkout (see [Testing another branch](#testing-another-branch)). `tmdev.py test` turns off pytest's cache, because its entries would name the host inside the repo.
 
-The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it; if you run pytest yourself, set it. Otherwise every device test is skipped, so running the repo's other tests never touches a Pi.
+The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it; if you run pytest yourself, set it. Otherwise every device test is skipped, so running the repo's other tests never touches a Pi. If it's set but the inventory is missing, pytest stops with an error instead of skipping.
 
 Before any test runs, each host is checked once for an SSH connection and passwordless sudo. If either is missing, that host's tests fail right away with the reason.
 

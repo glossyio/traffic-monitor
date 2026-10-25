@@ -22,7 +22,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import devlog  # noqa: E402
-from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, read_root_file,  # noqa: E402
+from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, pi_json, read_root_file,  # noqa: E402
                           require_pii_free, validate_expect)
 
 HERE = Path(__file__).resolve().parent
@@ -48,8 +48,9 @@ def pytest_configure(config):
     except devlog.DevPiError as exc:
         raise pytest.UsageError(str(exc)) from exc
     if not inventory.is_file():
-        config.stash[SKIP_REASON] = f"no dev-Pi inventory at {inventory} (see script/devpi/README.md)"
-        return
+        # TM_DEV_HOSTS asked for a device run, so don't skip everything and exit 0.
+        raise pytest.UsageError(f"TM_DEV_HOSTS is set, but there's no dev-Pi inventory at {inventory} "
+                                "(see script/devpi/README.md)")
     # testinfra runs ansible-inventory and ansible from PATH; use the ones in this venv.
     os.environ["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), os.environ.get("PATH", "")])
     if config.option.ansible_inventory is None:
@@ -94,10 +95,14 @@ def pytest_runtest_makereport(item, call):
     if logged and (report.when == "call" or not report.passed):
         if SUITE not in config.stash:
             host = os.environ["TM_DEV_HOSTS"]
-            deploy = devlog.last_deploy(host)
-            # The code under test is what the last deploy put on the Pi, not this checkout.
+            names = hosts_under_test(host)
+            deploys = {name: devlog.last_deploy(name) for name in names}
+            # The code under test is what the last deploy put on the Pi, not this checkout. Several
+            # hosts can run different code, so then the summary lists each host's deploy instead.
+            deploy = deploys[names[0]] if len(names) == 1 else None
             code = devlog.Run.load(devlog.log_dir() / deploy["run"]).meta["code"] if deploy else None
             run = devlog.Run.start("suite", host.replace(",", "+"), code=code, deploy=deploy,
+                                   deploys=deploys if len(names) > 1 else None,
                                    disruptive=os.environ.get("TM_DEV_DISRUPTIVE") == "1",
                                    pytest_args=list(config.invocation_params.args))
             config.stash[SUITE] = {"run": run, "results": []}
@@ -123,11 +128,14 @@ def pytest_sessionfinish(session, exitstatus):
         "",
         f"- Run directory: {run.dir}",
         f"- Code: {devlog.code_label(run.meta['code'])} ({run.meta['code']['worktree']}; "
-        + ("from the last deploy)" if run.meta["deploy"] else "no deploy logged, so this checkout)"),
+        + ("from the last deploy)" if run.meta["deploy"]
+           else "several hosts; see each one's deploy below)" if run.meta.get("deploys")
+           else "no deploy logged, so this checkout)"),
         *([f"- Tests: {devlog.code_label(run.meta['tool'])} ({run.meta['tool']['worktree']})"]
           if run.meta.get("tool") else []),
         f"- Started: {run.meta['started']}",
-        f"- Last deploy to this host: {devlog.deploy_label(run.meta['deploy'])}",
+        *([f"- Last deploy to {name}: {devlog.deploy_label(row)}" for name, row in run.meta["deploys"].items()]
+          if run.meta.get("deploys") else [f"- Last deploy to this host: {devlog.deploy_label(run.meta['deploy'])}"]),
         f"- Disruptive tests: {'included' if run.meta['disruptive'] else 'skipped'}",
         f"- Result: **{summary or 'no tests ran'}**",
         "",
@@ -140,6 +148,12 @@ def pytest_sessionfinish(session, exitstatus):
     (run.dir / "summary.md").write_text("\n".join(lines) + "\n")
     run.finish(summary or "no tests ran", not (counts["failed"] or counts["error"]))
     print(f"\ntmdev: device-test log: {run.dir / 'summary.md'}")
+
+
+def hosts_under_test(value):
+    """The host names in TM_DEV_HOSTS: a comma list, or the inventory group for every dev Pi."""
+    names = [name for name in value.split(",") if name]
+    return list(devlog.load_hosts()) if names == [devlog.INVENTORY_GROUP] else names
 
 
 # --- fixtures --------------------------------------------------------------------------------
@@ -157,18 +171,27 @@ def host_problem(host):
     return None
 
 
-@pytest.fixture(autouse=True)
-def pi_ready(request):
-    """Check each host once; if it can't be used, fail its tests at once with the reason."""
-    if "host" not in request.fixturenames:
-        return
-    host = request.getfixturevalue("host")
+@pytest.fixture(scope="module")
+def usable_host(request, host):
+    """host, once it's known to work; otherwise fail with the reason. Checked once per host.
+
+    Module-scoped fixtures that talk to the Pi take this instead of host, because they run
+    before the function-scoped pi_ready below.
+    """
     problems = request.config.stash.setdefault(HOST_PROBLEMS, {})
     name = host.backend.get_pytest_id()
     if name not in problems:
         problems[name] = host_problem(host)
     if problems[name]:
         pytest.fail(f"{name}: {problems[name]}", pytrace=False)
+    return host
+
+
+@pytest.fixture(autouse=True)
+def pi_ready(request):
+    """Fail every test on a host that can't be used, at once and with the reason."""
+    if "host" in request.fixturenames:
+        request.getfixturevalue("usable_host")
 
 
 @pytest.fixture(scope="module")
@@ -193,7 +216,17 @@ def codeowner(hostvars):
 
 
 @pytest.fixture(scope="module")
-def node_red_config(host, expect, codedir):
+def node_red_config(usable_host, expect, codedir):
     """The Pi's Node-RED config.yml, parsed. Only on pii_free units."""
     require_pii_free(expect)
-    return yaml.safe_load(read_root_file(host, f"{codedir}/node-red-tm/config/config.yml"))
+    return yaml.safe_load(read_root_file(usable_host, f"{codedir}/node-red-tm/config/config.yml"))
+
+
+@pytest.fixture(scope="module")
+def frigate_config(usable_host):
+    return pi_json(usable_host, "http://localhost:5000/api/config")
+
+
+@pytest.fixture(scope="module")
+def frigate_stats(usable_host):
+    return pi_json(usable_host, "http://localhost:5000/api/stats")

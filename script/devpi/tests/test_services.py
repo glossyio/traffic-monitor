@@ -1,7 +1,7 @@
 """Host services and the Traffic Monitor pod: running, built, and not crash-looping."""
 
 import pytest
-from devpi_checks import require_pii_free
+from devpi_checks import RESTARTING_UNITS, require_pii_free
 
 CORE_UNITS = [
     "go2rtc_server.service",
@@ -12,9 +12,6 @@ CORE_UNITS = [
     "NetworkManager.service",
     "sysstat.service",
 ]
-# Units with Restart= set, where NRestarts counts crashes since the unit was last started.
-RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate.service", "node-red-tm.service",
-                    "revproxy.service"]
 
 
 @pytest.mark.parametrize("unit", CORE_UNITS)

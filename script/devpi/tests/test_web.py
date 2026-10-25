@@ -2,6 +2,7 @@
 
 import re
 import shlex
+import urllib.error
 import urllib.request
 
 import pytest
@@ -14,7 +15,13 @@ DIRECT_PORTS = [(1880, "/"), (5000, "/api/version"), (1984, "/api/streams")]
 
 def http_status(host, url, host_header=None):
     header = f"-H {shlex.quote('Host: ' + host_header)} " if host_header else ""
-    return host.check_output(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 {header}{url}")
+    # host.run, not check_output: when curl can't connect it exits non-zero and still prints 000.
+    return host.run(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 {header}{url}").stdout.strip()
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None  # report the 3xx itself
 
 
 def test_nginx_config_valid(host):
@@ -47,5 +54,11 @@ def test_direct_port_responds(host, port, path):
 
 def test_home_page_reachable_from_this_machine(host, hostvars):
     address = hostvars.get("ansible_host", host.backend.hostname)
-    with urllib.request.urlopen(f"http://{address}/", timeout=10) as response:
-        assert response.status == 200
+    try:
+        with urllib.request.build_opener(NoRedirect).open(f"http://{address}/", timeout=10) as response:
+            status = response.status
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+    except urllib.error.URLError as exc:
+        pytest.fail(f"can't reach http://{address}/ from this machine: {exc.reason}", pytrace=False)
+    assert status == 200, f"http://{address}/ returned {status}"

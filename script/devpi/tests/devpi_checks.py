@@ -4,19 +4,40 @@ Named devpi_checks, not helpers, so it can't collide with another test directory
 module when several run in one pytest session.
 """
 
+import functools
 import json
 import re
 import shlex
+from pathlib import Path
 
 import pytest
+import yaml
+
+ROLE_DEFAULTS = Path(__file__).resolve().parents[2] / "ansible" / "roles" / "tmsetup" / "defaults" / "main.yml"
 
 DEFAULT_CODEDIR = "/opt/traffic-monitor"
 DEFAULT_CODEOWNER = "tmadmin"
 AI_COPROCESSORS = ("none", "edgetpu_usb", "edgetpu_pci", "hailo8l", "hailo8")
 CAMERA_SOURCES = ("csi", "rtsp")
 EXPECT_KEYS = {"pii_free", "live_traffic", "ai_coprocessor", "radars", "cameras", "environmental"}
-RADAR_PORT = re.compile(r"^/dev/ttyACM[0-3]$")
-RADAR_ENV_NAME = re.compile(r"^TM_RADAR_SERIAL_PORT_0[0-3]$")
+# Units with Restart= set, where NRestarts counts crashes since the unit was last started.
+RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate.service", "node-red-tm.service",
+                    "revproxy.service"]
+
+
+@functools.cache
+def role_defaults():
+    """The tmsetup role's defaults/main.yml, so the tests use the same device paths as the install."""
+    return yaml.safe_load(ROLE_DEFAULTS.read_text())
+
+
+def radar_ports():
+    return role_defaults()["tmsetup_radar_paths"]
+
+
+def radar_env_names():
+    """node-red-tm.env names the radars TM_RADAR_SERIAL_PORT_00.. in the order of tmsetup_radar_paths."""
+    return [f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(len(radar_ports()))]
 
 
 def validate_expect(expect):
@@ -28,11 +49,16 @@ def validate_expect(expect):
         problems.append(f"unknown keys {sorted(unknown)}")
     if expect.get("ai_coprocessor") not in AI_COPROCESSORS:
         problems.append(f"ai_coprocessor must be one of {', '.join(AI_COPROCESSORS)}")
+    for key in ("radars", "cameras", "environmental"):
+        entries = expect.get(key) or []
+        if not isinstance(entries, list) or not all(isinstance(entry, dict) for entry in entries):
+            problems.append(f"{key} must be a list of mappings, like the ones in dev-pis.example.yml")
+            expect = {**expect, key: []}
     for radar in expect.get("radars") or []:
-        if not RADAR_PORT.match(str(radar.get("port"))):
-            problems.append(f"radar port {radar.get('port')!r} isn't /dev/ttyACM0-3")
-        if not RADAR_ENV_NAME.match(str(radar.get("env_name"))):
-            problems.append(f"radar env_name {radar.get('env_name')!r} isn't TM_RADAR_SERIAL_PORT_00-03")
+        if radar.get("port") not in radar_ports():
+            problems.append(f"radar port {radar.get('port')!r} isn't one of {', '.join(radar_ports())}")
+        if radar.get("env_name") not in radar_env_names():
+            problems.append(f"radar env_name {radar.get('env_name')!r} isn't one of {', '.join(radar_env_names())}")
     for camera in expect.get("cameras") or []:
         if not camera.get("name"):
             problems.append("a camera has no name")

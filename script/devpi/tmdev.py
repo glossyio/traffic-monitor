@@ -394,9 +394,10 @@ def cmd_deploy(args):
 
 
 def cmd_test(args):
-    """Run the device tests against one host, or the whole tm_dev group; pytest options go after --."""
-    if args.host != devlog.INVENTORY_GROUP:
-        get_host(args.host)
+    """Run the device tests against a host, a comma list of hosts, or the whole tm_dev group; pytest options go after --."""
+    for name in args.host.split(","):
+        if name != devlog.INVENTORY_GROUP:
+            get_host(name)
     env = dict(os.environ, TM_DEV_HOSTS=args.host, TM_DEV_DISRUPTIVE="1" if args.disruptive else "0")
     # No pytest cache: its entries would name the host inside the repo.
     argv = [sys.executable, "-m", "pytest", str(Path(__file__).resolve().parent / "tests"),
@@ -473,7 +474,7 @@ def main(argv=None):
     reopen.add_argument("run_dir")
     test = commands.add_parser("test", help="run the device tests and log the results; pytest options go after --")
     test.add_argument("host", nargs="?", default=devlog.INVENTORY_GROUP,
-                      help=f"inventory host name (default: every host in {devlog.INVENTORY_GROUP})")
+                      help=f"inventory host name, or names separated by commas (default: every host in {devlog.INVENTORY_GROUP})")
     test.add_argument("--disruptive", action="store_true", help="also restart the pod and reboot the Pi")
     show = commands.add_parser("log", help="show the newest rows of the run log")
     show.add_argument("-n", type=int, default=20, help="number of rows (default 20)")

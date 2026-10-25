@@ -48,9 +48,9 @@ def test_frigate_gets_the_hevc_decoder(host, cameras):
     assert passed, f"frigate.container lacks {line}; the HEVC decoder is {decoders[0]}"
 
 
-def test_frigate_cameras_running(host, cameras):
-    config = pi_json(host, "http://localhost:5000/api/config").get("cameras", {})
-    stats = pi_json(host, "http://localhost:5000/api/stats").get("cameras", {})
+def test_frigate_cameras_running(cameras, frigate_config, frigate_stats):
+    config = frigate_config.get("cameras", {})
+    stats = frigate_stats.get("cameras", {})
     problems = []
     for camera in cameras:
         name = camera["name"]
@@ -63,9 +63,9 @@ def test_frigate_cameras_running(host, cameras):
     assert not problems, "; ".join(problems)
 
 
-def test_go2rtc_streams_have_producers(host, cameras):
+def test_go2rtc_streams_have_producers(host, cameras, frigate_config):
     """Each CSI camera's Frigate input is a stream on the host go2rtc that is producing."""
-    config = pi_json(host, "http://localhost:5000/api/config").get("cameras", {})
+    config = frigate_config.get("cameras", {})
     streams = pi_json(host, "http://localhost:1984/api/streams")
     problems = []
     for camera in (camera for camera in cameras if camera["source"] == "csi"):
