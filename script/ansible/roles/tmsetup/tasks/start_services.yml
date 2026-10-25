@@ -16,6 +16,18 @@
     name: sysstat.service
     state: started
 
+# cockpit.socket starts Cockpit on demand for /system/; cockpit-podman's page needs podman.socket
+- name: TMSetup - Start Services - Start and enable Cockpit sockets
+  become: true
+  loop:
+    - cockpit.socket
+    - podman.socket
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: "{{ item }}"
+    state: started
+
 - name: TMSetup - Start Services - Start and enable traffic-monitor services
   become: true
   loop:
