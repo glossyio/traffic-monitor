@@ -64,7 +64,7 @@ Keep device names, addresses, and log contents out of commits and PR text. Use p
    .venv/bin/python script/devpi/tmdev.py hosts
    ```
 
-   Set `tm_expect.pii_free: true` only for a unit that has never recorded real-world data and never had plate recognition enabled. That flag allows checks that read `config.yml` and `tmdb.sqlite`. Images, video clips, and secrets are never read.
+   Set `tm_expect.pii_free: true` only for a unit that has never recorded real-world data, never had plate recognition enabled, and still has the blank `thingsboard.access_token` it was installed with (the one secret in `config.yml`). The flag allows checks, including ones an AI assistant runs, that read `config.yml` and `tmdb.sqlite` under `/opt/traffic-monitor`. It's the only exception to CLAUDE.md's rule against reading that path on a Pi. Images, video clips, plate reads, and secrets are never read.
 
    To test what `tmsetup.sh` does when sudo asks for a password, add a second entry for the same Pi that logs in as your own account. Use another name, such as `tm-dev-01-owner`.
 
