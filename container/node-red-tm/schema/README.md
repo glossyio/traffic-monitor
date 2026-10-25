@@ -64,10 +64,11 @@ They use synthetic data only. Never add a copy of a device's database.
 
 ## On the device
 
-`tmsetup.sh -t node-red-tm` copies `tmdb_migrate.py`, `migrations/`, `schema.sql`, and this README to `{{ tmsetup_codedir }}/node-red-tm/schema/` and overwrites them on every run.
+`tmsetup.sh -t node-red-tm` copies `tmdb_migrate.py`, `migrations/`, `schema.sql`, and this README to `{{ tmsetup_codedir }}/node-red-tm/schema/` and overwrites them on every run. It also deletes files in `migrations/` that aren't in the repo, such as one left from a test.
 
 - `node-red-tm.service` runs the script as `ExecStartPre`, as the code owner, so the tables are current before any flow runs.
 - If a migration fails, it's rolled back, and Node-RED starts anyway on the previous version.
+- The runner is stopped after 25 minutes, before the service's 30-minute start timeout, so Node-RED still starts. An unfinished migration is rolled back, and the next start tries again.
 - Deploying from the Node-RED editor doesn't restart the service, so it doesn't apply migrations. See "Database schema" in `docs/development/dev-environment.md`.
 
 Read the runner's output:
@@ -89,7 +90,7 @@ Use a test Pi, not a field device. It should run the current `dev` with a databa
 
 1. Run the `--check` command from [On the device](#on-the-device). Expect `up to date at version <N-1>` and exit code 0.
 2. In the Pi's clone of the repo, check out your branch: `git fetch && git switch <branch>`.
-3. If the migration is heavy, such as an index or table rebuild on a `radar_*` table, time it on a copy of the database. The time includes the backup the device makes first, and it must stay well under the service's 30-minute start timeout. Put the copy on the SD card, because `/tmp` may be in RAM:
+3. If the migration is heavy, such as an index or table rebuild on a `radar_*` table, time it on a copy of the database. The time includes the backup the device makes first, and it must stay well under the runner's 25-minute limit. Put the copy on the SD card, because `/tmp` may be in RAM:
 
    ```bash
    mkdir -p ~/tmdb-timing

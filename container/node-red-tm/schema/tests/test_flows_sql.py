@@ -49,6 +49,12 @@ def schema(tmp_path_factory):
     con.close()
 
 
+def test_flows_define_no_schema():
+    """The migrations own the schema, so the flows must not create or change tables (they did before #208)."""
+    ddl = [param.id for param in STATEMENTS if re.match(r"\s*(CREATE|ALTER|DROP)\b", param.values[0], re.IGNORECASE)]
+    assert ddl == []
+
+
 def test_flows_contain_sql_to_check():
     # Guards against the collector silently finding nothing after a flows.json restructure.
     assert STATEMENTS
