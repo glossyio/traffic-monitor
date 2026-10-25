@@ -7,8 +7,9 @@ Image=revproxy.build
 Pod=traffic-monitor.pod
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
-Volume={{ tmsetup_codedir }}/revproxy/nginx.conf:/etc/nginx/nginx.conf:ro
-Volume={{ tmsetup_codedir }}/revproxy/tm:/etc/nginx/tm:ro
+{% for mount in tmsetup_revproxy_config_mounts %}
+Volume={{ tmsetup_codedir }}/revproxy/{{ mount['path'] }}:{{ mount['target'] }}:ro
+{% endfor %}
 
 [Service]
 Restart=always

@@ -90,7 +90,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - UIs: Node-RED editor `:1880` (admin/password), legacy dashboard `:1880/ui`, Dashboard 2.0 `:1880/dashboard`, Frigate `:5000`, host go2rtc `:1984`.
 - nginx (`revproxy`) serves a home page on `:80` and proxies `/dashboard`, `/frigate`, `/ui`, `/nr`, and `/feeds`. Its config is plain nginx, bind-mounted into the container rather than built into the image:
   - Each app's `location` block is its own file in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations` (`vars/main.yml`). Each one includes `tm/snippets/proxy-common.conf` for the forwarding and WebSocket headers.
-  - Setup deletes location files on the device that aren't in the list, then runs `nginx -t` before the restart handler.
+  - Setup renders the config into a throwaway directory and runs `nginx -t` on it before writing the device's copy, so a bad config never replaces a good one. It also deletes location files on the device that aren't in the list.
   - To proxy a new app, add its location file, list it, and add a link to the hand-written `html/index.html.j2`.
   - Frigate runs under `/frigate`, set by `FRIGATE_BASE_PATH` and `X-Ingress-Path`.
 

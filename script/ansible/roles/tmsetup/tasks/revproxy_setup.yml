@@ -16,21 +16,123 @@
     state: directory
   notify: Restart revproxy.service
 
+- name: TMSetup - revproxy Setup - Create NGinx Containerfile
+  become: true
+  ansible.builtin.template:
+    backup: false
+    dest: '{{ tmsetup_codedir }}/revproxy/Containerfile'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/revproxy/Containerfile.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Create NGinx quadlets
+  become: true
+  loop:
+    - revproxy.build
+    - revproxy.container
+  ansible.builtin.template:
+    dest: '/etc/containers/systemd/{{ item }}'
+    group: root
+    mode: '0644'
+    owner: root
+    src: 'container/revproxy/{{ item }}.j2'
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Build container
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: revproxy-build.service
+    state: started
+  notify: Restart revproxy.service
+
+- name: TMSetup - revproxy Setup - Find NGinx check directories left by an interrupted run
+  become: true
+  ansible.builtin.find:
+    file_type: directory
+    hidden: true
+    paths: '{{ tmsetup_codedir }}/revproxy'
+    patterns: '.nginx-check.*'
+  register: tmsetup_revproxy_stale_check_dirs_register
+
+- name: TMSetup - revproxy Setup - Remove NGinx check directories left by an interrupted run
+  become: true
+  loop: "{{ tmsetup_revproxy_stale_check_dirs_register['files'] | map(attribute='path') | list }}"
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+
+# Render the nginx config into a throwaway directory and check it there, so a
+# failed check leaves the deployed config and the running proxy untouched.
+- name: TMSetup - revproxy Setup - Check NGinx config before deploying it
+  block:
+    - name: TMSetup - revproxy Setup - Create NGinx check directory
+      become: true
+      ansible.builtin.tempfile:
+        path: '{{ tmsetup_codedir }}/revproxy'
+        prefix: '.nginx-check.'
+        state: directory
+      changed_when: false
+      register: tmsetup_revproxy_check_dir_register
+
+    - name: TMSetup - revproxy Setup - Create NGinx check subdirectories
+      become: true
+      loop:
+        - tm/locations
+        - tm/snippets
+      ansible.builtin.file:
+        mode: '0750'
+        path: '{{ tmsetup_revproxy_check_dir_register["path"] }}/{{ item }}'
+        state: directory
+      changed_when: false
+
+    - name: TMSetup - revproxy Setup - Render NGinx config for the check
+      become: true
+      loop: "{{ ['nginx.conf', 'tm/snippets/proxy-common.conf'] + tmsetup_revproxy_locations | map('regex_replace', '^', 'tm/locations/') | list }}"
+      ansible.builtin.template:
+        dest: '{{ tmsetup_revproxy_check_dir_register["path"] }}/{{ item }}'
+        mode: '0640'
+        src: 'container/revproxy/{{ item }}.j2'
+      changed_when: false
+
+    # --add-host lets nginx resolve the go2rtc upstream inside this throwaway container.
+    - name: TMSetup - revproxy Setup - Check NGinx config
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          podman run --rm --entrypoint nginx
+          --add-host host.containers.internal:127.0.0.1
+          {% for mount in tmsetup_revproxy_config_mounts %}
+          --volume {{ tmsetup_revproxy_check_dir_register["path"] }}/{{ mount["path"] }}:{{ mount["target"] }}:ro
+          {% endfor %}
+          {{ tmsetup_revproxy_image }} -t
+      changed_when: false
+  always:
+    - name: TMSetup - revproxy Setup - Remove NGinx check directory
+      become: true
+      ansible.builtin.file:
+        path: '{{ tmsetup_revproxy_check_dir_register["path"] }}'
+        state: absent
+      changed_when: false
+      when: tmsetup_revproxy_check_dir_register["path"] is defined
+
 - name: TMSetup - revproxy Setup - Create NGinx config file
   become: true
   loop:
-    - { path: 'revproxy/Containerfile', mode: '0640' }
-    - { path: 'revproxy/nginx.conf', mode: '0640' }
-    - { path: 'revproxy/html/index.html', mode: '0644' }
-    - { path: 'revproxy/tm/snippets/proxy-common.conf', mode: '0640' }
+    - revproxy/nginx.conf
+    - revproxy/tm/snippets/proxy-common.conf
   ansible.builtin.template:
     backup: false
-    dest: '{{ tmsetup_codedir }}/{{ item["path"] }}'
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
     force: true
     group: '{{ tmsetup_codegroup }}'
-    mode: '{{ item["mode"] }}'
+    mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
-    src: 'container/{{ item["path"] }}.j2'
+    src: 'container/{{ item }}.j2'
   notify: Restart revproxy.service
 
 - name: TMSetup - revproxy Setup - Create NGinx location files
@@ -63,40 +165,18 @@
     state: absent
   notify: Restart revproxy.service
 
-- name: TMSetup - revproxy Setup - Create NGinx quadlets
+# nginx serves the bind-mounted page at once, so write it only after the check
+# passes; otherwise it could link to a location the running config lacks.
+- name: TMSetup - revproxy Setup - Create NGinx home page
   become: true
-  loop:
-    - revproxy.build
-    - revproxy.container
   ansible.builtin.template:
-    dest: '/etc/containers/systemd/{{ item }}'
-    group: root
+    backup: false
+    dest: '{{ tmsetup_codedir }}/revproxy/html/index.html'
+    force: true
+    group: '{{ tmsetup_codegroup }}'
     mode: '0644'
-    owner: root
-    src: 'container/revproxy/{{ item }}.j2'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/revproxy/html/index.html.j2'
   notify: Restart revproxy.service
-
-- name: TMSetup - revproxy Setup - Build container
-  become: true
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    enabled: true
-    name: revproxy-build.service
-    state: started
-  notify: Restart revproxy.service
-
-# Fail before the restart handler runs if the rendered config is invalid, so
-# the running proxy keeps its last good config. --add-host lets nginx resolve
-# the go2rtc upstream inside this throwaway container.
-- name: TMSetup - revproxy Setup - Check NGinx config
-  become: true
-  ansible.builtin.command:
-    cmd: >-
-      podman run --rm --entrypoint nginx
-      --add-host host.containers.internal:127.0.0.1
-      --volume {{ tmsetup_codedir }}/revproxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      --volume {{ tmsetup_codedir }}/revproxy/tm:/etc/nginx/tm:ro
-      localhost/revproxy:latest -t
-  changed_when: false
 
 ...
