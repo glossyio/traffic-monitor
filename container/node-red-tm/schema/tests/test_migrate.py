@@ -1,11 +1,14 @@
 import collections
+import datetime
 import re
 import sqlite3
 import subprocess
 import sys
+import types
 
 import pytest
 
+import helpers
 from helpers import (
     BASELINE_TABLES,
     LEGACY_SCHEMA,
@@ -33,6 +36,12 @@ def legacy_db(path):
     con.execute("INSERT INTO radar_dov (time, direction, velocity, radarName) VALUES (1721144705.5, 'inbound', 24.5, 'TM_RADAR_SERIAL_PORT_00')")
     con.commit()
     con.close()
+
+
+def with_a_second_migration(make_migrations):
+    """The real baseline plus a 0002, so adopting a pre-migration database is more than the baseline."""
+    baseline = (helpers.SCHEMA_DIR / "migrations" / "0001_baseline.sql").read_text()
+    return make_migrations({"0001_baseline.sql": baseline, "0002_create_extra.sql": "CREATE TABLE extra (x);"})
 
 
 def output(capsys):
@@ -111,6 +120,23 @@ def test_invalid_migration_set_is_rejected_before_touching_the_database(db_path,
     assert not db_path.exists()
 
 
+@pytest.mark.parametrize("statement", ["COMMIT;", "begin transaction;", "ROLLBACK;", "VACUUM;", "PRAGMA user_version = 7;"])
+def test_migration_that_controls_its_own_transaction_is_rejected(db_path, make_migrations, statement, capsys):
+    """A COMMIT inside a file would end the runner's transaction early, so a later failure left half a change."""
+    migrations = make_migrations({"0001_create_a.sql": f"CREATE TABLE a (x);\n{statement}\nCREATE TABLE b (x);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 2
+
+    assert not db_path.exists()
+    assert "0001_create_a.sql" in output(capsys)
+
+
+def test_transaction_words_in_comments_and_names_are_allowed(db_path, make_migrations):
+    migrations = make_migrations({"0001_create_a.sql": "-- COMMIT is added by the runner\n/* ROLLBACK; */\nCREATE TABLE a (end_time REAL, begin_time REAL);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+
 def test_database_that_cannot_be_opened_is_reported_as_an_error(tmp_path, capsys):
     assert migrate("--db", tmp_path / "no_such_directory" / "tmdb.sqlite") == 1
 
@@ -130,10 +156,19 @@ def test_database_newer_than_the_migrations_is_left_unchanged(db_path):
 # --- backups ----------------------------------------------------------------
 
 
-def test_backup_holds_the_database_as_it_was_before_migrating(db_path):
+def test_adopting_a_pre_migration_database_needs_no_backup(db_path):
+    """The baseline only creates what's missing, and copying a multi-GB database would add minutes of downtime."""
     legacy_db(db_path)
 
     assert migrate("--db", db_path) == 0
+
+    assert files_in(db_path.parent / "backup") == []
+
+
+def test_backup_holds_the_database_as_it_was_before_migrating(db_path, make_migrations):
+    legacy_db(db_path)
+
+    assert migrate("--db", db_path, "--migrations", with_a_second_migration(make_migrations)) == 0
 
     backups = files_in(db_path.parent / "backup")
     assert len(backups) == 1 and backups[0].startswith("tmdb-v0-") and backups[0].endswith(".sqlite")
@@ -144,31 +179,117 @@ def test_backup_holds_the_database_as_it_was_before_migrating(db_path):
 
 def test_only_the_latest_backup_is_kept(db_path, make_migrations):
     create_db(db_path, "CREATE TABLE existing (x);")
-    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);"})
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_create_b.sql": "CREATE TABLE b (x);"})
     assert migrate("--db", db_path, "--migrations", migrations) == 0
 
-    make_migrations({"0002_create_b.sql": "CREATE TABLE b (x);"})
+    make_migrations({"0003_create_c.sql": "CREATE TABLE c (x);"})
     assert migrate("--db", db_path, "--migrations", migrations) == 0
 
     backups = files_in(db_path.parent / "backup")
+    assert len(backups) == 1 and backups[0].startswith("tmdb-v2-")
+
+
+def test_a_failed_migration_keeps_the_older_backups(db_path, make_migrations):
+    """A retry after a failure must not delete the only copy from before this release."""
+    create_db(db_path, "CREATE TABLE a (x);", user_version=1)
+    backup_dir = db_path.parent / "backup"
+    backup_dir.mkdir()
+    create_db(backup_dir / "tmdb-v0-20260101T000000Z.sqlite", "CREATE TABLE old (x);")
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_broken.sql": "INSERT INTO no_such_table VALUES (1);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 1
+
+    backups = files_in(backup_dir)
+    assert len(backups) == 2 and backups[0] == "tmdb-v0-20260101T000000Z.sqlite" and backups[1].startswith("tmdb-v1-")
+
+
+def test_a_retry_after_a_failed_migration_replaces_that_versions_backup(db_path, make_migrations, monkeypatch):
+    """Each failed start would otherwise add another full copy until the disk filled."""
+    create_db(db_path, "CREATE TABLE a (x);", user_version=1)
+    backup_dir = db_path.parent / "backup"
+    backup_dir.mkdir()
+    create_db(backup_dir / "tmdb-v0-20260101T000000Z.sqlite", "CREATE TABLE old (x);")
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_broken.sql": "INSERT INTO no_such_table VALUES (1);"})
+    # Give each run its own timestamp, so the second copy can't simply overwrite the first
+    times = iter([datetime.datetime(2026, 2, 1, tzinfo=datetime.timezone.utc),
+                  datetime.datetime(2026, 2, 2, tzinfo=datetime.timezone.utc)])
+    clock = types.SimpleNamespace(now=lambda tz: next(times))
+    monkeypatch.setattr(tmdb_migrate, "datetime", types.SimpleNamespace(datetime=clock, timezone=datetime.timezone))
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 1
+    assert migrate("--db", db_path, "--migrations", migrations) == 1
+
+    assert files_in(backup_dir) == ["tmdb-v0-20260101T000000Z.sqlite", "tmdb-v1-20260202T000000Z.sqlite"]
+
+
+def older_backup_of_size(backup_dir, size):
+    """A v0 backup file of about size bytes."""
+    path = backup_dir / "tmdb-v0-20260101T000000Z.sqlite"
+    create_db(path, f"CREATE TABLE old (x); INSERT INTO old VALUES (zeroblob({size}));")
+    return path
+
+
+def test_older_backups_make_room_for_a_new_one_when_space_is_short(db_path, make_migrations, monkeypatch, capsys):
+    create_db(db_path, "CREATE TABLE a (x);", user_version=1)
+    backup_dir = db_path.parent / "backup"
+    backup_dir.mkdir()
+    older_backup_of_size(backup_dir, 100_000)
+    usage = collections.namedtuple("usage", "total used free")
+    # Too little space for a copy of the database until the older backup is gone
+    monkeypatch.setattr(tmdb_migrate.shutil, "disk_usage", lambda path: usage(10**12, 0, 1))
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_create_b.sql": "CREATE TABLE b (x);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    backups = files_in(backup_dir)
     assert len(backups) == 1 and backups[0].startswith("tmdb-v1-")
+    assert "deleting 1 older backup" in output(capsys)
 
 
-def test_backup_is_skipped_but_migrations_run_when_disk_space_is_low(db_path, monkeypatch, capsys):
+def test_older_backups_are_kept_when_deleting_them_would_not_make_room(db_path, make_migrations, monkeypatch, capsys):
+    """Deleting them anyway would leave the device with no backup at all."""
+    create_db(db_path, "CREATE TABLE a (x); INSERT INTO a VALUES (zeroblob(100000));", user_version=1)
+    backup_dir = db_path.parent / "backup"
+    backup_dir.mkdir()
+    older_backup_of_size(backup_dir, 0)
+    usage = collections.namedtuple("usage", "total used free")
+    monkeypatch.setattr(tmdb_migrate.shutil, "disk_usage", lambda path: usage(10**12, 0, 1))
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_create_b.sql": "CREATE TABLE b (x);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert user_version(db_path) == 2
+    assert files_in(backup_dir) == ["tmdb-v0-20260101T000000Z.sqlite"]
+    assert "skipping backup" in output(capsys)
+
+
+def test_a_partial_backup_from_an_interrupted_run_is_removed(db_path, make_migrations):
+    create_db(db_path, "CREATE TABLE a (x);", user_version=1)
+    backup_dir = db_path.parent / "backup"
+    backup_dir.mkdir()
+    (backup_dir / "tmdb-v1-20260101T000000Z.sqlite.partial").write_text("cut off")
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_create_b.sql": "CREATE TABLE b (x);"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert not any(name.endswith(".partial") for name in files_in(backup_dir))
+
+
+def test_backup_is_skipped_but_migrations_run_when_disk_space_is_low(db_path, make_migrations, monkeypatch, capsys):
     legacy_db(db_path)
     usage = collections.namedtuple("usage", "total used free")
     monkeypatch.setattr(tmdb_migrate.shutil, "disk_usage", lambda path: usage(10_000, 9_999, 1))
 
-    assert migrate("--db", db_path) == 0
+    assert migrate("--db", db_path, "--migrations", with_a_second_migration(make_migrations)) == 0
 
-    assert user_version(db_path) == 1
+    assert user_version(db_path) == 2
     assert [name for name in files_in(db_path.parent / "backup") if name.endswith(".sqlite")] == []
     assert "WARNING" in output(capsys)
 
 
 def test_failed_backup_stops_the_migration(db_path, make_migrations, tmp_path):
     create_db(db_path, "CREATE TABLE existing (x);")
-    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);"})
+    migrations = make_migrations({"0001_create_a.sql": "CREATE TABLE a (x);", "0002_create_b.sql": "CREATE TABLE b (x);"})
     not_a_directory = tmp_path / "file"
     not_a_directory.write_text("")
 
@@ -201,6 +322,19 @@ def test_drift_is_reported_for_an_old_deployment_table_and_left_alone(db_path, c
     for column in ["entryDateTime", "orientation", "address", "description"]:
         assert column in unexpected
     assert columns(db_path, "deployment") == ["id", "entryDateTime", "lat", "lon", "orientation", "address", "description"]
+
+
+def test_drift_is_reported_for_a_missing_index(db_path, make_migrations, capsys):
+    create_db(db_path, "CREATE TABLE t (a REAL);")
+    migrations = make_migrations({"0001_create_t.sql": "CREATE TABLE IF NOT EXISTS t (a REAL);",
+                                  "0002_index_t.sql": "CREATE INDEX index_t_a ON t(a);"})
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+    capsys.readouterr()
+    sqlite3.connect(db_path).execute("DROP INDEX index_t_a").connection.close()
+
+    assert migrate("--db", db_path, "--migrations", migrations, "--check") == 1
+
+    assert "DRIFT missing index index_t_a" in output(capsys)
 
 
 def test_drift_is_reported_for_a_changed_column_type(db_path, make_migrations, capsys):

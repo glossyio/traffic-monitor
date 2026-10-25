@@ -2,7 +2,9 @@
 """Apply versioned schema migrations to the Traffic Monitor database (tmdb.sqlite).
 
 On the device this runs as ExecStartPre of node-red-tm.service, so it finishes
-before Node-RED opens the database. It uses only the standard library because
+before Node-RED opens the database. Run it as the user Node-RED runs as (the
+code owner, through runuser): a database or backup/ it creates belongs to the
+caller, and Node-RED can't write a root-owned one. It uses only the standard library because
 it runs with the system python3, outside any venv. See README.md for how to add
 a migration.
 """
@@ -16,6 +18,11 @@ import sys
 from pathlib import Path
 
 MIGRATION_NAME = re.compile(r"^(\d{4})_[A-Za-z0-9_-]+\.sql$")
+# The runner wraps each file in its own transaction and sets user_version, so a file must not.
+# A COMMIT inside a file would end that transaction early and let a later failure leave half a change.
+SQL_COMMENT = re.compile(r"--[^\n]*|/\*.*?\*/", re.DOTALL)
+FORBIDDEN_STATEMENT = re.compile(
+    r"(?:^|;)\s*(BEGIN|COMMIT|END|ROLLBACK|SAVEPOINT|RELEASE|VACUUM|PRAGMA\s+user_version)\b", re.IGNORECASE)
 # Free space needed for a pre-migration backup, as a multiple of the database size.
 BACKUP_SPACE_FACTOR = 1.2
 
@@ -38,6 +45,10 @@ def load_migrations(directory):
         number = int(match.group(1))
         if number in numbered:
             raise MigrationError(f"{path.name}: duplicate migration number {number:04d}")
+        forbidden = FORBIDDEN_STATEMENT.search(SQL_COMMENT.sub("", path.read_text()))
+        if forbidden:
+            # This also rejects a trigger's END; extend the check if a migration ever needs a trigger.
+            raise MigrationError(f"{path.name}: remove {forbidden.group(1)}; the runner handles transactions and user_version")
         numbered[number] = path
     if not numbered:
         raise MigrationError(f"no migrations found in {directory}")
@@ -55,13 +66,28 @@ def has_tables(con):
 
 
 def backup_database(con, db_path, backup_dir, version):
-    """Copy the database into backup_dir and delete older backups. Skips if space is short."""
+    """Copy the database into backup_dir and return the copy's path, or None if space is short.
+
+    The copy replaces any backup of the same version, left by a run whose migrations failed.
+    Backups of other versions stay until the migrations succeed (see remove_backups_except),
+    unless they take the space the new one needs. Nothing is deleted when the copy is skipped.
+    """
     backup_dir.mkdir(parents=True, exist_ok=True)
+    for partial in backup_dir.glob("tmdb-v*.sqlite.partial"):
+        partial.unlink()  # left by a run that stopped mid-copy
     needed = db_path.stat().st_size * BACKUP_SPACE_FACTOR
     free = shutil.disk_usage(backup_dir).free
-    if free < needed:
+    same = sorted(backup_dir.glob(f"tmdb-v{version}-*.sqlite"))
+    other = sorted(set(backup_dir.glob("tmdb-v*.sqlite")) - set(same))
+    if free + total_size(same) + total_size(other) < needed:
         log(f"WARNING: skipping backup, {free / 2**20:.0f} MiB free in {backup_dir}, {needed / 2**20:.0f} MiB needed")
-        return
+        return None
+    superseded = same
+    if free + total_size(same) < needed:
+        log(f"WARNING: deleting {len(other)} older backup(s) to make room for a new one")
+        superseded = same + other
+    for old in superseded:
+        old.unlink()
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     target = backup_dir / f"tmdb-v{version}-{stamp}.sqlite"
     partial = target.with_name(target.name + ".partial")
@@ -71,10 +97,18 @@ def backup_database(con, db_path, backup_dir, version):
         partial.rename(target)
     finally:
         partial.unlink(missing_ok=True)
-    for old in backup_dir.glob("tmdb-v*.sqlite"):
-        if old != target:
-            old.unlink()
     log(f"backed up {db_path} to {target}")
+    return target
+
+
+def total_size(paths):
+    return sum(path.stat().st_size for path in paths)
+
+
+def remove_backups_except(backup_dir, keep):
+    for old in backup_dir.glob("tmdb-v*.sqlite"):
+        if old != keep:
+            old.unlink()
 
 
 def apply_migrations(con, migrations, current):
@@ -86,6 +120,8 @@ def apply_migrations(con, migrations, current):
             if con.in_transaction:
                 con.execute("ROLLBACK")
             raise MigrationError(f"{path.name} failed and was rolled back: {exc}") from exc
+        if user_version(con) != number:
+            raise MigrationError(f"{path.name} left user_version at {user_version(con)}, expected {number}")
         log(f"applied {path.name}")
 
 
@@ -97,6 +133,12 @@ def expected_schema(migrations):
     return con
 
 
+def indexes_and_views(con):
+    """{(type, name)} for every index and view, leaving out SQLite's automatic indexes."""
+    return set(con.execute(
+        "SELECT type, name FROM sqlite_master WHERE type IN ('index', 'view') AND name NOT LIKE 'sqlite_%'"))
+
+
 def table_columns(con):
     """{table: {column: declared type}} for every table in the database."""
     names = [name for (name,) in con.execute(
@@ -105,8 +147,13 @@ def table_columns(con):
 
 
 def report_drift(con, migrations):
-    """Log each way the tables differ from what these migrations create. Returns True on any drift."""
-    expected = table_columns(expected_schema(migrations))
+    """Log each difference from what these migrations create. Returns True on any drift.
+
+    Compares table, column, index, and view names and declared column types. NOT NULL, defaults,
+    and keys are left out, because older devices' tables differ there harmlessly.
+    """
+    reference = expected_schema(migrations)
+    expected = table_columns(reference)
     actual = table_columns(con)
     issues = [f"missing table {name}" for name in sorted(expected.keys() - actual.keys())]
     issues += [f"unexpected table {name}" for name in sorted(actual.keys() - expected.keys())]
@@ -122,6 +169,9 @@ def report_drift(con, migrations):
             issues.append(f"{name}: unexpected columns: {', '.join(unexpected)}")
         if changed:
             issues.append(f"{name}: column types differ: {', '.join(changed)}")
+    want, have = indexes_and_views(reference), indexes_and_views(con)
+    issues += [f"missing {kind} {name}" for kind, name in sorted(want - have)]
+    issues += [f"unexpected {kind} {name}" for kind, name in sorted(have - want)]
     for issue in issues:
         log(f"DRIFT {issue}")
     return bool(issues)
@@ -138,9 +188,14 @@ def migrate_database(db_path, migrations, backup_dir):
         if current == latest:
             log(f"{db_path} is up to date at version {latest}")
         else:
-            if has_tables(con):
-                backup_database(con, db_path, backup_dir, current)
+            backup = None
+            # 0001 is the baseline: CREATE ... IF NOT EXISTS only, so adopting a database from
+            # before migrations changes no existing table, and a multi-GB copy would only add downtime.
+            if has_tables(con) and migrations[current:] != migrations[:1]:
+                backup = backup_database(con, db_path, backup_dir, current)
             apply_migrations(con, migrations, current)
+            if backup:
+                remove_backups_except(backup_dir, backup)
             log(f"migrated {db_path} from version {current} to {latest}")
         report_drift(con, migrations)
     finally:

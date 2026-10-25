@@ -24,7 +24,7 @@ The schema of the Traffic Monitor database (`tmdb.sqlite`) lives here as numbere
 Rules for migrations:
 
 - **Never edit, renumber, or delete a merged migration.** Devices may already have applied it. Fix mistakes with a new migration.
-- **Leave out `BEGIN`, `COMMIT`, and `PRAGMA user_version`.** The runner wraps each file in a transaction and sets the version, so a failing file leaves nothing behind.
+- **Leave out `BEGIN`, `COMMIT`, and `PRAGMA user_version`.** The runner wraps each file in a transaction and sets the version, so a failing file leaves nothing behind. It refuses a file that has them, or `VACUUM`. That check also rejects a trigger's `END`, so a migration that needs a trigger must extend it.
 - **Prefer additive changes:** new tables, `ALTER TABLE ... ADD COLUMN`, `CREATE INDEX IF NOT EXISTS`. Renaming, retyping, or dropping a column needs SQLite's [table rebuild procedure](https://www.sqlite.org/lang_altertable.html#otheralter) and a note in the release notes.
 - **Check drift reports before relying on a column.** Some devices have older table shapes. A migration that assumes the current shape fails there, and those devices keep running at the previous version.
 - **Keep migrations fast.** Node-RED is down while they run, and so is its MQTT broker, which Frigate publishes to. Events in that window are lost. Time anything that touches the large `radar_*` tables against a copy of a big database first.
@@ -68,7 +68,7 @@ Exit codes:
 
 Output lines start with `tmdb-migrate:`. Drift lines start with `tmdb-migrate: DRIFT`.
 
-- **Pending migrations.** Before applying them to a database that already has tables, the runner copies it to `backup/tmdb-v<version>-<UTC time>.sqlite` and deletes older backups. If free space is under 1.2 times the database size, it skips the backup with a warning.
-- **Drift.** After migrating, the runner compares the tables with the schema the migrations create and logs any difference. It never changes them.
+- **Pending migrations.** Before applying them to a database that already has tables, the runner copies it to `backup/tmdb-v<version>-<UTC time>.sqlite`. It skips the copy when only the baseline (`0001`) is pending, because that only adds what's missing. The copy replaces any earlier backup of the same version, so a migration that fails on every start doesn't add a copy each time. Backups of other versions are deleted once every migration has applied, so a failed run keeps them. The copy needs free space of 1.2 times the database size. If deleting the other backups would make that much room, it deletes them first; if not, it keeps them and skips the new copy with a warning.
+- **Drift.** After migrating, the runner compares table, column, index, and view names, and declared column types, with the schema the migrations create, and logs each difference. It doesn't compare `NOT NULL`, defaults, or keys, and it never changes anything.
 
-Only run apply mode while Node-RED is stopped. `node-red-node-sqlite` sets no busy timeout, so Node-RED's writes fail while a migration holds the lock. `--check` only reads, for a few milliseconds, but a Node-RED write that lands in that instant can still fail.
+Run it as the user Node-RED runs as. A database or `backup/` it creates belongs to whoever ran it, and Node-RED can't write a root-owned database. Only run apply mode while Node-RED is stopped. `node-red-node-sqlite` sets no busy timeout, so Node-RED's writes fail while a migration holds the lock. `--check` only reads, for a few milliseconds, but a Node-RED write that lands in that instant can still fail.
