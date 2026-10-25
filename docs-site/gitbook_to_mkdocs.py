@@ -52,7 +52,7 @@ ATTR_RE = re.compile(r'\b(href|src|srcset)="([^"]*)"')
 FENCE_RE = re.compile(r"^( *)(```|~~~).*?^\1\2[ \t]*$", re.M | re.S)
 HINT_RE = re.compile(r'^\{% hint style="(\w+)" %\}[ \t]*\n(.*?)\n?^\{% endhint %\}[ \t]*$', re.M | re.S)
 FIGURE_RE = re.compile(r"<figure>(.*?)</figure>", re.S)
-DIV_PAIR_RE = re.compile(r"^<div>((?:\s*<figure>.*?</figure>)+)\s*</div>[ \t]*$", re.M | re.S)
+DIV_PAIR_RE = re.compile(r"^<div>[ \t]*(<figure>[^\n]*?</figure>)[ \t]*</div>[ \t]*$", re.M)
 HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.M)
 
 
