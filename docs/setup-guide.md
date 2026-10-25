@@ -95,7 +95,7 @@ The generalized model available in the base version works well at a variety of a
 
 Node-RED controls most of the workflow logic and data collection.
 
-You will need to [Connect to your device](#connect-to-your-device) to edit the [Node-RED Config](configuration/node-red-config.md) files.
+You will need to [Connect to your device](#1-connect-to-your-device) to edit the [Node-RED Config](configuration/node-red-config.md) files.
 
 1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`
    1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml`

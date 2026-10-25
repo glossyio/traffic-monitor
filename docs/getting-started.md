@@ -10,14 +10,32 @@ The traffic monitor requires the [Recommended Hardware](build-your-own-device-di
 
 There are two ways to get started:
 
-<table data-card-size="large" data-view="cards"><thead><tr><th></th><th></th><th></th><th data-hidden data-card-cover data-type="files"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>Build It!</strong>  </td><td>See our <a href="build-your-own-device-diy/README.md">Build your own device (DIY)</a> guide. The software is open source and components are available retail.</td><td>Customize to your heart's content.</td><td><a href="assets/images/icon-diy-350x200px-black-bg_grey.png">icon-diy-350x200px-black-bg_grey.png</a></td><td><a href="build-your-own-device-diy/README.md">build-your-own-device-diy</a></td></tr><tr><td><strong>Buy It!</strong></td><td>(<em>coming soon)</em></td><td>Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.</td><td><a href="assets/images/icon-shop-350x200px-black-bg_grey.png">icon-shop-350x200px-black-bg_grey.png</a></td><td></td></tr></tbody></table>
+<div class="grid cards" markdown>
+
+-   ![](assets/images/icon-diy-350x200px-black-bg_grey.png)
+
+    **[Build It!](build-your-own-device-diy/README.md)**
+
+    ---
+
+    See our [Build your own device (DIY)](build-your-own-device-diy/README.md) guide. The software is open source and components are available retail. Customize to your heart's content.
+
+-   ![](assets/images/icon-shop-350x200px-black-bg_grey.png)
+
+    **Buy It!** (_coming soon_)
+
+    ---
+
+    Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.
+
+</div>
 
 ## Step 2: Plan your Deployment
 
 The traffic monitor must be placed with a good view of the roadway. See the [Deployment and Mounting Guide](deployment-and-mounting-guide.md) for more information on the most common deployment types:
 
-1. [Temporary deployments](deployment-and-mounting-guide.md#temporary-deployments) deployments allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
-2. [Permanent deployments](deployment-and-mounting-guide.md#permanent-deployments) deployments are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
+1. [Temporary deployments](deployment-and-mounting-guide.md#temporary-deployments) allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
+2. [Permanent deployments](deployment-and-mounting-guide.md#permanent-deployments) are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
 
 ## Step 3: Set up your Device
 

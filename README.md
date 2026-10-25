@@ -23,23 +23,23 @@ Visit our official documentation at [docs.trafficmonitor.ai](https://docs.traffi
 
 ### Getting Started
 
-See the [Getting Started](https://docs.trafficmonitor.ai/getting-started) docs for full walkthrough.
+See the [Getting Started](https://docs.trafficmonitor.ai/latest/getting-started/) docs for full walkthrough.
 
 ### Hardware Components
-The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and a variety of commidity hardware to keep it accessible, low-cost, upgradable, and repairable.  See [Recommended Hardware](https://docs.trafficmonitor.ai/build-your-own-device-diy/recommended-hardware) docs for more information.
+The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and a variety of commodity hardware to keep it accessible, low-cost, upgradable, and repairable.  See [Recommended Hardware](https://docs.trafficmonitor.ai/latest/build-your-own-device-diy/recommended-hardware/) docs for more information.
 
 ### Software Installation
 1. Install Raspberry Pi OS 64-bit Lite with [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager)
-1. Connect to your device via SSH and [Install the TM Software](https://docs.trafficmonitor.ai/build-your-own-device-diy/software-installation).
+1. Connect to your device via SSH and [Install the TM Software](https://docs.trafficmonitor.ai/latest/software-installation/).
     1. `sudo apt update && sudo apt install -y git`
     1. `git clone https://github.com/glossyio/traffic-monitor`
     1. `bash traffic-monitor/script/tmsetup.sh`
-1. [Deploy and mount]([url](https://docs.trafficmonitor.ai/deployment-and-mounting-guide)) your TM
-2. [Set up]([url](https://docs.trafficmonitor.ai/setup-guide)) zones, location, and enable sensors
+1. [Deploy and mount](https://docs.trafficmonitor.ai/latest/deployment-and-mounting-guide/) your TM
+2. [Set up](https://docs.trafficmonitor.ai/latest/setup-guide/) zones, location, and enable sensors
 7. Start capturing roadway usage data!
 
 ## Configuration ✅
-See [Setup Guide](https://docs.trafficmonitor.ai/setup-guide).
+See [Setup Guide](https://docs.trafficmonitor.ai/latest/setup-guide/).
 
 ## User Interfaces (UI) / port numbers references 🖥️
 - `http://<device_ip_address>:1880/ui` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
@@ -49,7 +49,7 @@ See [Setup Guide](https://docs.trafficmonitor.ai/setup-guide).
 
 ## Troubleshooting ⚠️
 
-No events are being captured? Review the [Setup Guide](https://docs.trafficmonitor.ai/setup-guide) to ensure the zones are properly set up and the camera is enabled and detecting:
+No events are being captured? Review the [Setup Guide](https://docs.trafficmonitor.ai/latest/setup-guide/) to ensure the zones are properly set up and the camera is enabled and detecting:
 - In Frigate > Settings> Configuration Editor:
     - Enable camera(s) (`cameras` --> `enabled: true`)
     - Enable detection (`detect` --> `enabled: true`)

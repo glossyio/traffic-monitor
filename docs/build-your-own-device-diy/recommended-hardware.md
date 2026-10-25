@@ -16,7 +16,7 @@ Here are some sample sensor configurations and the data it collects:
 4. (_future feature_) Install **only the radar** for the most privacy-conscious built that will be capable of basic object detection, speed, and direction.
 5. Add additional camera(s) to monitor more directions using the same AI co-processor.\*\*
 
-\*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](#camera-s) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.
+\*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](#cameras) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.
 
 ![](../assets/images/tm-mark1-exploded-description-bg_grey-text_white.png)
 

@@ -44,12 +44,15 @@ plugins:
 markdown_extensions:
   - admonition
   - attr_list
+  - footnotes
   - md_in_html
   - tables
   - toc:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
 
 # With `mkdocs build --strict`, these warnings fail the build.
 validation:
