@@ -189,16 +189,18 @@ that needs a variable the test didn't pass fails loudly. Jinja's own `default`/`
 ansible-core 2.19+ replaces them with versions that don't recognize plain Jinja undefined values.
 """
 
+import functools
 from pathlib import Path
 
 import jinja2
 import yaml
-from ansible.plugins.filter.core import FilterModule
+from ansible.plugins.filter import core, encryption, mathstuff, urls, urlsplit
 
 REPO = Path(__file__).resolve().parents[2]
 ROLE = REPO / "script" / "ansible" / "roles" / "tmsetup"
 
 
+@functools.cache
 def _environment():
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(str(REPO)),
@@ -206,7 +208,8 @@ def _environment():
         trim_blocks=True,
         keep_trailing_newline=True,
     )
-    env.filters.update({name: f for name, f in FilterModule().filters().items() if name not in ("default", "d")})
+    for module in (core, encryption, mathstuff, urls, urlsplit):
+        env.filters.update({name: f for name, f in module.FilterModule().filters().items() if name not in ("default", "d")})
     return env
 
 
@@ -378,7 +381,7 @@ def test_no_location_goes_through_host_containers_internal(name):
 
 def test_host_apps_are_proxied_on_loopback():
     assert "proxy_pass http://127.0.0.1:1984/;" in location("go2rtc.conf")
-    assert "proxy_pass http://127.0.0.1:9090/system/;" in location("cockpit.conf")
+    assert "proxy_pass http://127.0.0.1:9090;" in location("cockpit.conf")
 
 
 def test_feeds_accepts_only_get_and_plain_stream_names():
@@ -536,7 +539,7 @@ In `container/revproxy/tm/locations/cockpit.conf.j2`, change the comment and ups
 ```
 # cockpit - Cockpit system administration (runs on the host; nginx shares the host network)
 location /system/ {
-    proxy_pass http://127.0.0.1:9090/system/;
+    proxy_pass http://127.0.0.1:9090;
 ```
 
 Leave the rest of the file as #212 wrote it.
@@ -1672,6 +1675,12 @@ def test_existing_frigate_env_gets_both_credentials_without_printing_them():
     assert [item["key"] for item in task["loop"]] == ["FRIGATE_GO2RTC_RTSP_USER", "FRIGATE_GO2RTC_RTSP_PASSWORD"]
 
 
+def test_frigate_env_template_hides_its_diff():
+    """frigate.env.j2 renders the go2rtc RTSP password, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
+    task = frigate_tasks()["TMSetup - Frigate Setup - Create Frigate container configuration files"]
+    assert task["diff"] is False
+
+
 def test_existing_frigate_config_is_migrated_as_the_code_owner():
     task = frigate_tasks()["TMSetup - Frigate Setup - Update Frigate config from older installs"]
     argv = task["ansible.builtin.command"]["argv"]
@@ -1776,7 +1785,7 @@ In `script/ansible/roles/tmsetup/vars/main.yml`, before the closing `...`, add:
 tmsetup_go2rtc_rtsp_user: frigate
 ```
 
-In `script/ansible/roles/tmsetup/tasks/frigate_setup.yml`, directly after `TMSetup - Frigate Setup - Create Frigate container configuration files`, add:
+In `script/ansible/roles/tmsetup/tasks/frigate_setup.yml`, add `diff: false` to `TMSetup - Frigate Setup - Create Frigate container configuration files`, after `become: true`. That task renders `frigate.env.j2`, which now holds the password (Global Constraints). Then, directly after that task, add:
 
 ```yaml
 - name: TMSetup - Frigate Setup - Add go2rtc RTSP credentials to frigate.env
@@ -1848,6 +1857,8 @@ The Dashboard database page's downloads are served by `GET /storefiles` in the `
   - The "check result" switch then tests `msg.payload.code`, which is always undefined by that point. So the error branch can't be reached, and nothing ends the response.
   - On 2026-10-14, a bench Pi asked for a file Node-RED couldn't read. `tar` exited 2, and the Pi sent the 200 headers, then held the download open until curl gave up.
   - The Cancel button sets `msg.kill = "SIGKILL"`, and that lands on the same path.
+- **A failed download still saves a file.** "Validate filenames, setup tar" sets `Content-Type` and `Content-Disposition: attachment` before `tar` runs. When `tar` fails before its first byte, the 500 goes out with those headers, and the browser saves the error text as a small `…_tmdb.tar.gz` (found in review on 2026-10-23).
+- **The database download reads a file that's still being written.** Node-RED writes `tmdb.sqlite` all the time, so on a busy device GNU `tar` can exit 1 ("file changed as we read it") at the end of a multi-GB download. On 2026-10-25 the user chose to tar a consistent copy instead, and to tell people on the database page that it can take a minute or two to start.
 
 The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted `/db/temp-other/…`, and also `.`, which is the whole temp folder. The Dashboard only sends file names in `/db/temp` and `/db/tmdb.sqlite`, so requiring a path separator after the folder breaks no download.
 
@@ -1856,7 +1867,8 @@ The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted
 - Create: `script/tests/test_node_red_flows.py`
 
 **Interfaces:**
-- Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. Task 10's device tests check this on a Pi.
+- Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. The download headers go out with the first chunk, so a failure before that is a plain HTTP error with no file to save.
+- Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 10's device tests check all of this on a Pi.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1876,13 +1888,38 @@ def test_http_errors_set_msg_status_code():
     flows = json.loads(FLOWS.read_text())
     offenders = [node["name"] for node in flows if node["type"] == "function" and "msg.res.statusCode" in node["func"]]
     assert offenders == []
+
+
+def test_download_headers_wait_for_the_first_chunk():
+    """Headers set before tar runs make the browser save an early error as a small ".tar.gz" holding the message."""
+    flows = json.loads(FLOWS.read_text())
+    setters = sorted(node["name"] for node in flows if node["type"] == "function" and "Content-Disposition" in node["func"])
+    assert setters == ["download chunks"]
+
+
+def test_database_download_tars_a_copy():
+    """Node-RED keeps writing tmdb.sqlite, so tar reads a VACUUM INTO copy instead of the live file."""
+    flows = json.loads(FLOWS.read_text())
+
+    def one(name):
+        [node] = [node for node in flows if node.get("name") == name]
+        return node
+
+    assert one("zip files")["addpay"] == "tarArgs"
+    copy = one("copy database for download")
+    assert (copy["type"], copy["sqlquery"], copy["mydb"]) == ("sqlite", "msg.topic", "2f60c1ab30a6fc8f")
+    assert "VACUUM INTO" in one("copy database first?")["func"]
+    assert set(one("catch database copy")["scope"]) == {copy["id"], one("copy database first?")["id"]}
 ```
 
 - [ ] **Step 2: Run it to check it fails**
 
 Run: `.venv/bin/python -m pytest script/tests/test_node_red_flows.py -v`
 
-Expected: FAIL. The assertion names "setup test" and "Validate filenames, setup tar".
+Expected: 3 FAIL.
+- The status test names "setup test" and "Validate filenames, setup tar".
+- The header test lists the same two nodes instead of "download chunks".
+- The copy test fails at `one("copy database for download")`, because the node doesn't exist yet.
 
 - [ ] **Step 3: Edit the flows**
 
@@ -1908,7 +1945,53 @@ for code in (400, 403, 404):
     swap(validate, f"msg.res.statusCode = {code};", f"msg.statusCode = {code};")
 swap(validate, "if (!filePath.startsWith(baseDir)) {", "if (!filePath.startsWith(baseDir + path.sep)) {")
 swap(validate, "msg.res.statusCode = 0;\n", "")
-swap(by_id["3141bbce81b4c183"], "msg.res.statusCode = 0;\n", "")  # "setup test", the /test endpoint
+# tar's arguments move to msg.tarArgs, because the sqlite node that copies the database replaces msg.payload
+swap(validate, "msg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);", """\
+if (files == '/db/tmdb.sqlite') {
+  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by "copy database for download"
+  msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);
+  msg.tarArgs = ' -C ' + msg.snapshot + ' tmdb.sqlite';
+} else {
+  msg.tarArgs = ' -C ' + baseDir + ' ' + filepath;
+}""")
+swap(validate, """\
+// set browser download headers
+msg.res._res.append('Content-Type', 'application/octet-stream');
+const filename = prefix + name + ".tar.gz";
+msg.res._res.append('Content-Disposition', 'attachment; filename="' + filename + '"');
+""", """\
+// "download chunks" sets the download headers with the first chunk, so an error before then is a plain HTTP error
+msg.downloadName = prefix + name + ".tar.gz";
+""")
+
+setup_test = by_id["3141bbce81b4c183"]  # "setup test", the /test endpoint
+swap(setup_test, "msg.res.statusCode = 0;\n", "")
+swap(setup_test, "msg.res._res.append('Content-Type', 'application/octet-stream');\n", "")
+swap(setup_test, "msg.payload.filepath = ", "msg.tarArgs = ")
+swap(setup_test, """\
+const filename = "test.tar.gz";
+msg.res._res.append('Content-Disposition', 'attachment; filename="' + filename + '"');
+""", 'msg.downloadName = "test.tar.gz";\n')
+
+zip_files = by_id["30d1dd9d6d580fa4"]  # exec: tar czvf - ...
+zip_files["addpay"] = "tarArgs"
+
+by_id["857384c653c6a46c"]["func"] = """\
+// Set the download headers with the first chunk, so a failure before any data is a plain HTTP error.
+const res = msg.res._res;
+if (!res.headersSent) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + msg.downloadName + '"');
+}
+res.write(msg.payload);
+return null;"""
+
+instructions = by_id["138179c5e9949f4f"]  # ui-template "download instructions"
+old = "while the Traffic Monitor was deployed and capturing, only from this device.</p>"
+assert instructions["format"].count(old) == 1
+instructions["format"] = instructions["format"].replace(old, old + """
+        <p>The device first makes a consistent copy of the database, so a large database can take
+            a minute or two before the download starts.</p>""")
 
 test_for_error = by_id["04630be97890045c"]  # switch: tar on success, error response otherwise
 test_for_error["property"] = "statusCode"
@@ -1916,6 +1999,11 @@ test_for_error["rules"] = [{"t": "null"}, {"t": "else"}]
 
 handle_end = by_id["41deab2c99a209b8"]  # "handle end of file or error"
 handle_end["func"] = """\
+// Remove the database copy, if this download made one
+if (msg.snapshot) {
+    global.get("fs").rmSync(msg.snapshot, { recursive: true, force: true });
+}
+
 // tar has finished. The exec node gives its exit code as msg.payload.code (0 means the archive
 // is complete), and msg.payload.signal when it was stopped, as the Cancel button does.
 if (msg.payload.code === 0) {
@@ -1946,6 +2034,59 @@ check_result = "513356e9f9a779df"  # switch on msg.payload.code, which is never 
 flows.remove(by_id[check_result])
 by_id[handle_end["g"]]["nodes"].remove(check_result)
 
+# A database download copies tmdb.sqlite first: "Test for error" -> "copy database first?" -> sqlite -> tar
+group = by_id[validate["g"]]
+FUNCTION = {"type": "function", "outputs": 1, "timeout": 0, "noerr": 0, "initialize": "", "finalize": "", "libs": []}
+
+
+def add(node):
+    node.update(z=validate["z"], g=group["id"])
+    flows.append(node)
+    group["nodes"].append(node["id"])
+    return node["id"]
+
+
+copy_failed = add({**FUNCTION, "id": "3a226e9922929100", "name": "database copy failed", "x": 1090, "y": 2060,
+                   # http response, ui-notification, link out "hide compressing file(s)"
+                   "wires": [["8a12d83e700bcaa6", "9297900926075b54", "8f8958d08aa3a85d"]], "func": """\
+// The database copy for a download failed: remove what was copied and answer with an error.
+global.get("fs").rmSync(msg.snapshot, { recursive: true, force: true });
+const reason = String((msg.error && msg.error.message) || "unknown error");
+msg.payload = /SQLITE_FULL|disk is full/.test(reason)
+    ? "Download failed: not enough free space to copy the database"
+    : "Download failed: couldn't copy the database: " + reason;
+node.error(msg.payload);
+msg.statusCode = 500;
+return msg;"""})
+copy_db = add({"id": "6b71ab080a582bd2", "type": "sqlite", "name": "copy database for download",
+               "mydb": "2f60c1ab30a6fc8f", "sqlquery": "msg.topic", "sql": "", "x": 860, "y": 2060,
+               "wires": [[zip_files["id"]]]})
+prepare = add({**FUNCTION, "id": "a7ea83d9c70f2981", "name": "copy database first?", "outputs": 2, "x": 860, "y": 1920,
+               "wires": [[zip_files["id"]], [copy_db]], "func": """\
+// A database download tars a copy (msg.snapshot, set by "Validate filenames, setup tar"),
+// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.
+if (!msg.snapshot) {
+    return [msg, null];
+}
+const fs = global.get("fs");
+const path = global.get("path");
+const root = path.dirname(msg.snapshot);
+// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download
+const stale = Date.now() - 60 * 60 * 1000;
+for (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {
+    const dir = path.join(root, entry);
+    if (fs.statSync(dir).mtimeMs < stale) {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+}
+fs.mkdirSync(msg.snapshot, { recursive: true });
+// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing
+msg.topic = "VACUUM INTO '" + msg.snapshot + "/tmdb.sqlite'";
+return [null, msg];"""})
+add({"id": "d4485dfc776d50fc", "type": "catch", "name": "catch database copy", "scope": [prepare, copy_db],
+     "uncaught": False, "x": 870, "y": 2100, "wires": [[copy_failed]]})
+test_for_error["wires"][0] = [prepare]
+
 FLOWS.write_text(json.dumps(flows, indent=4, ensure_ascii=False))
 EOF
 ```
@@ -1960,8 +2101,18 @@ What it changes:
   - On a failure before anything was sent, it answers 500.
   - Either way, the message goes to the Dashboard notification. Cancel gives "Download stopped", without a Node-RED error.
 - **"check result"** is removed.
+- **Download headers** move from "Validate filenames, setup tar" and "setup test" into **"download chunks"**, which sets them before the first write. tar's arguments move from `msg.payload.filepath` to `msg.tarArgs`, and **"zip files"** reads them from there.
+- **A database download** goes through three new nodes before `tar`:
+  - **"copy database first?"** makes a folder for this download under `/db/snapshot/`, removes folders more than an hour old, and sets `msg.topic` to `VACUUM INTO '<folder>/tmdb.sqlite'`. Other downloads go straight to `tar`.
+  - **"copy database for download"** is a sqlite node on the shared sqlitedb config (`2f60c1ab30a6fc8f`).
+  - **"catch database copy"** sends a failure in either node to **"database copy failed"**. That node removes the folder and answers 500, saying so when the disk is full. It also shows the notification and hides the processing window.
+  - "handle end of file or error" removes the folder when `tar` ends, Cancel included.
+- **"download instructions"** says a large database can take a minute or two before the download starts.
 
-GNU `tar` exits 1 when a file changes while it's being read, and a large `tmdb.sqlite` on a busy device can change during a download. That counts as a failed download, because the copy may be inconsistent; this was decided on 2026-10-14, so don't treat exit 1 as success. It now fails with "tar exited with code 1" instead of hanging. Downloading a consistent copy, for example by running SQLite's backup before `tar`, is separate work. Open an issue if it shows up.
+GNU `tar` exits 1 when a file changes while it's being read. That still counts as a failed download (decided 2026-10-14), so don't treat exit 1 as success. A database download now tars its own copy, which nothing writes to, so it shouldn't happen there (decided 2026-10-25). The cost:
+- The copy needs about 1x the database in free space.
+- On a 2-3 GB database it takes 1-2 minutes before the first byte, and the database page says so.
+- While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 10 Step 5 checks it on a Pi.
 
 - [ ] **Step 4: Run the checks**
 
@@ -1976,7 +2127,7 @@ git diff --stat container/node-red-tm/data/flows.json
 Expected:
 - all pass
 - `flows ok`
-- `1 file changed, 10 insertions(+), 39 deletions(-)`
+- only `flows.json` changed. The 2026-10-14 stat (`10 insertions(+), 39 deletions(-)`) predates the database copy and no longer applies.
 
 There's no Node.js in the dev tools, so Task 10 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
 - 400, 403, or 404 for no files, a missing file, `../tmdb.sqlite`, `../temp-other.json`, and `.`;
@@ -1985,6 +2136,16 @@ There's no Node.js in the dev tools, so Task 10 runs the function code itself on
 - 500 when nothing had been sent;
 - the connection closed when data had gone out;
 - "Download stopped" for Cancel.
+
+The header move, the database copy, and the page text were added on 2026-10-25. The script above was then run on a copy of that day's `flows.json`: the three tests went from failing to passing. The changed and new function code was run under Node 22 with stub `msg`, `node`, and `fs` objects, and it checked out:
+- a database request gets its own `/db/snapshot/<stamp>-<random>` folder and `tarArgs`, with no headers set yet;
+- JSON requests and traversal checks behave as before;
+- headers are set once, with the first chunk;
+- "copy database first?" prunes only folders more than an hour old, and throws (for the catch node) when it can't make the folder;
+- "database copy failed" answers 500 with the disk-full message and removes the folder;
+- "handle end of file or error" removes the folder on success and on failure.
+
+The sqlite node, the catch node, and the shared connection weren't exercised. Task 10 runs them on a Pi.
 
 - [ ] **Step 5: Commit**
 
@@ -2030,6 +2191,8 @@ Every app on the Traffic Monitor is reached through the home page on port 80. Th
 `<device>` is the device's IP address or `<hostname>.local`.
 
 ## Open ports
+
+Open question, from #212's review on 2026-10-23: Cockpit's own `:9090` is a plain-HTTP login outside the proxy, so a login added at the proxy in M2 won't cover it. Once nginx is on the host network (Task 2), Cockpit can listen on loopback only. Decide in M1 whether to keep `:9090` as a rescue console, or bind `cockpit.socket` to `127.0.0.1` with a `ListenStream=` drop-in and rely on SSH for rescue. Then update this table and Task 10 Step 6.
 
 | Port | Used for |
 |---|---|
@@ -2277,14 +2440,47 @@ def test_failed_data_export_ends_the_download(host, expect, codedir, codeowner):
         host.check_output(f"install -m 000 /dev/null {temp}/tmdev-unreadable.json")
     try:
         # Straight to Node-RED on the Pi, so nginx's read timeout can't end a download that Node-RED left open.
-        result = host.run("curl -s -o /dev/null -w '%{http_code}' --max-time 20 "
+        result = host.run("curl -s -o /dev/null -D - -w '%{http_code}' --max-time 20 "
                           "'http://localhost:1880/storefiles?files=tmdev-unreadable.json'")
     finally:
         with host.sudo():
             host.check_output(f"rm -f {temp}/tmdev-unreadable.json")
+    status = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else ""
     # 500 if tar failed before sending anything; otherwise the connection is cut mid-download (curl exit 18).
     # Before #223's fix the download stayed open until curl gave up (exit 28).
-    assert (result.rc, result.stdout) in {(0, "500"), (18, "200")}, (result.rc, result.stdout)
+    assert (result.rc, status) in {(0, "500"), (18, "200")}, (result.rc, result.stdout)
+    if status == "500":
+        assert "content-disposition" not in result.stdout.lower(), "the browser would save the error as a file"
+
+
+def test_data_export_tars_a_database_copy(host, expect, codedir):
+    """The database download tars a VACUUM INTO copy, then removes it (2026-10-25)."""
+    if not expect["pii_free"]:
+        pytest.skip("downloads the whole database; set tm_expect.pii_free: true (bench units only)")
+    # The archive stays on the Pi: only its file list comes back.
+    listing = host.run("curl -sf --max-time 900 'http://localhost:1880/storefiles?files=/db/tmdb.sqlite' | tar tzf -")
+    assert (listing.rc, listing.stdout.split()) == (0, ["tmdb.sqlite"]), listing.stderr
+    with host.sudo():
+        leftovers = host.run(f"find {codedir}/node-red-tm/db/snapshot -mindepth 1").stdout.split()
+    assert leftovers == []
+
+
+def test_data_export_copy_failure_is_an_http_error(host, expect, codedir):
+    """If the database copy fails, the download is a 500 with no file to save."""
+    if not expect["pii_free"]:
+        pytest.skip("writes into the Pi's data folder; set tm_expect.pii_free: true (bench units only)")
+    snapshot = f"{codedir}/node-red-tm/db/snapshot"
+    with host.sudo():
+        # A file where the copies' folder belongs, so the copy can't start
+        host.check_output(f"rm -rf {snapshot} && install -m 000 /dev/null {snapshot}")
+    try:
+        result = host.run("curl -s -o /dev/null -D - -w '%{http_code}' --max-time 60 "
+                          "'http://localhost:1880/storefiles?files=/db/tmdb.sqlite'")
+    finally:
+        with host.sudo():
+            host.check_output(f"rm -f {snapshot}")
+    assert result.stdout.strip().splitlines()[-1] == "500", result.stdout
+    assert "content-disposition" not in result.stdout.lower()
 
 
 def test_camera_stream_needs_credentials(host, hostvars):
@@ -2331,7 +2527,7 @@ Run:
     | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `20`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `22`.
 
 - [ ] **Step 3: Open the check and record the baseline**
 
@@ -2347,7 +2543,7 @@ Expected: the new tests fail, which shows they catch the problem:
 - `/feeds/api/config` answers;
 - RTSP needs no login;
 - `/storefiles` errors come back as 200. A Pi without the storefiles commit gives nginx's 404 instead, so there the 404 case passes.
-- On a `pii_free` unit, the failed-download test fails with curl's exit 28, because the download stays open. Elsewhere it's skipped.
+- On a `pii_free` unit, the failed-download test fails with curl's exit 28, because the download stays open, and the copy-failure test fails because the download succeeds. The database-copy test passes before M1 too: the archive still holds `tmdb.sqlite`, and there's no snapshot folder. Elsewhere all three are skipped.
 
 Record it:
 
@@ -2373,7 +2569,8 @@ $T test <host>
 
 Expected:
 - All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL.
-- The 19 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass and the failed-download test is skipped.
+- The 21 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass and the three data-export tests that write to the Pi or download the database are skipped.
+- On a `pii_free` unit, while `test_data_export_tars_a_database_copy` runs: the Dashboard's Monitoring page keeps updating, and afterwards `$T run <host> -- sudo journalctl -u node-red-tm --since "-15min" | grep -c -E "SQLITE_BUSY|database is locked"` prints `0`. Record it as an item. If writes failed or Node-RED stalled during the copy, stop and bring it to the person; don't work around it.
 
 Record an item.
 
