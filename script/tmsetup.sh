@@ -179,12 +179,12 @@ _run_ansible() { # Run _ANSIBLE_CMD; if sudo wanted a password Ansible didn't ha
   # Copy the output to check for the sudo error; PIPESTATUS keeps the playbook's exit status
   ${_ANSIBLE_CMD} 2>&1 | tee -i "${output}"
   status=${PIPESTATUS[0]}
-  if [[ ${status} -ne 0 ]] && grep -q -E 'sudo: a password is required|Missing sudo password' "${output}"; then
+  if [[ ${status} -ne 0 ]] && grep -q -E 'a password is required|Missing sudo password' "${output}"; then
     printf "\n"
     _pline
     printf "Ansible stopped because sudo asked for a password.\n"
     printf "Run tmsetup.sh again with -K, and enter your sudo password when Ansible asks for it:\n\n"
-    printf "    bash %s -K" "${_THIS_SCRIPT}"
+    printf "    bash %q -K" "${_THIS_SCRIPT}"
     if [[ ${#_ARGS[@]} -gt 0 ]]; then
       printf " %q" "${_ARGS[@]}"
     fi
@@ -198,6 +198,12 @@ _run_ansible() { # Run _ANSIBLE_CMD; if sudo wanted a password Ansible didn't ha
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  # Check before anything uses sudo; once it caches a password, sudo -n would pass.
+  # Without a terminal Ansible can't ask, so skip the check and let a failed run print the -K hint.
+  if [[ -t 0 && " ${_EXTRA_ARGS} " != *" -K "* ]] && ! sudo -n true 2>/dev/null; then
+    printf "sudo needs a password here, so Ansible will ask for it (BECOME password).\n"
+    _add_arg "-K"
+  fi
   [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
   _install_ansible_local "${VENV_DIR}" "${_SCRIPT_DIR}"
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
@@ -210,8 +216,8 @@ _tmsetup_local(){ # Installation on localhost only
   _pline
   _ANSIBLE_CMD="ansible-playbook -i localhost setup.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${_ANSIBLE_CMD}"
-  _run_ansible
-  _EXIT_STATUS="$?"
+  # || keeps set -e from exiting before the result and reboot prompt are printed
+  _run_ansible || _EXIT_STATUS="$?"
   cd "${_START_DIR}"
   printf "\n\n"
   _print_result "${_EXIT_STATUS}"
@@ -246,8 +252,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
   _pline
   _ANSIBLE_CMD="ansible-playbook -i ${TMP_INVENTORY_PATH} setup_remote_hosts.yml ${_EXTRA_ARGS}"
   printf "\n\n%s\n\n" "${_ANSIBLE_CMD}"
-  _run_ansible
-  _EXIT_STATUS="$?"
+  _run_ansible || _EXIT_STATUS="$?"
   cd "${_START_DIR}"
   printf "\n\n"
   _print_result "${_EXIT_STATUS}"
