@@ -42,7 +42,6 @@ plugins:
       # depend on the host following symlinks.
       alias_type: copy
       canonical_version: latest
-      version_selector: false
 
 markdown_extensions:
   - admonition
