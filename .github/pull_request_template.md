@@ -5,7 +5,7 @@ What does this pull request change, and why? Link the related issue (e.g. `Close
 How did you test it? Include your Raspberry Pi model, the `tmsetup.sh` tags you ran, and screenshots if relevant.
 
 ## AI assistance
-See [Use of AI tools](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md#use-of-ai-tools).
+See [Use of AI tools](https://github.com/glossyio/traffic-monitor/blob/dev/CONTRIBUTING.md#use-of-ai-tools).
 
 - [ ] None
 - [ ] Review or explanations only

@@ -1,11 +1,16 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
   "permissions": {
     "deny": [
       "Read(//opt/traffic-monitor/**)"
     ],
     "ask": [
-      "Read(**/*.sqlite)",
-      "Read(**/*.db)",
+      "Read(//**/*.sqlite)",
+      "Read(//**/*.db)",
       "Bash(sqlite3 *)"
     ]
   }
