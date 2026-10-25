@@ -39,6 +39,7 @@ tmsetup_base_required_facts:
   - distribution
   - distribution_major_version
   - distribution_version
+  - distribution_release
   - architecture
   - user_id
   - user_dir

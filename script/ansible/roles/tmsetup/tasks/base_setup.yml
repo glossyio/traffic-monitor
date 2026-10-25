@@ -75,7 +75,6 @@
   become: true
   ansible.builtin.apt:
     name: '{{ tmsetup_packages_backports }}'
-    update_cache: true
     default_release: "{{ ansible_facts['distribution_release'] }}-backports"
 
 - name: TMSetup - Base Setup - Copy utils files to codedir
