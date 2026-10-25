@@ -4,20 +4,23 @@ description: On-device Monitoring dashboard
 
 # Monitoring
 
-{% hint style="success" %}
-The local, on-device Traffic Monitor dashboard is available by [connecting directly to your traffic monitor](../setup-guide.md#id-1.-connect-to-your-device) via a web browser.
-{% endhint %}
+!!! success
+
+    The local, on-device Traffic Monitor dashboard is available by [connecting directly to your traffic monitor](../setup-guide.md#1-connect-to-your-device) via a web browser.
 
 The Monitoring tab display counts and descriptive statistics among all your sensors.
 
 ## Sample screenshot
 
-<figure><img src="../.gitbook/assets/tm-dash-2026-03-monitoring.png" alt="TM Dashboard Monitoring tab sample with numbers corresponding to figure descriptions"><figcaption><p>Monitoring tab sample</p></figcaption></figure>
+<figure markdown="span">
+  ![TM Dashboard Monitoring tab sample with numbers corresponding to figure descriptions](../assets/images/tm-dash-2026-03-monitoring.png)
+  <figcaption>Monitoring tab sample</figcaption>
+</figure>
 
 ## Descriptions
 
-1. Select your Radar and Camera in case you have multiple sensors on the unit. Sensors need to be defined and enabled in the [node-red-config.md](../configuration/node-red-config.md "mention").
-2. Displays `car` object speed counts and descriptive statistics for those that moved through `zone_radar`  since 0400 local time. Stats include:&#x20;
+1. Select your Radar and Camera in case you have multiple sensors on the unit. Sensors need to be defined and enabled in the [Node-RED Config](../configuration/node-red-config.md).
+2. Displays `car` object speed counts and descriptive statistics for those that moved through `zone_radar`  since 0400 local time. Stats include:
    1. count: Total count through valid area
    2. mean\_speed: Average speed among all cars
    3. p25\_speed: 25th [Percentile](https://en.wikipedia.org/wiki/Percentile) speed, also known as first quartile (Q<sub>1</sub>)

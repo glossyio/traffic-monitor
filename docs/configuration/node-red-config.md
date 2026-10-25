@@ -4,11 +4,11 @@ description: Traffic Monitor Node-RED configuration logic
 
 # Node-RED Config
 
-{% hint style="info" %}
-This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.
+!!! info
 
-See [frigate-config.md](frigate-config.md "mention") for controlling object detection parameters.
-{% endhint %}
+    This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.
+
+    See [Frigate Config](frigate-config.md) for controlling object detection parameters.
 
 ## Config File
 
@@ -19,9 +19,9 @@ The Traffic Monitor Node-RED config file changes definitions to various services
 
 The config file is loaded whenever the TM flows restart.
 
-{% hint style="info" %}
-It is _not necessary_ to copy this full configuration file. Default values are specified below.
-{% endhint %}
+!!! info
+
+    It is _not necessary_ to copy this full configuration file. Default values are specified below.
 
 ```yml
 ########

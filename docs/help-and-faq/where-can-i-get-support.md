@@ -8,11 +8,11 @@ We are a volunteer-driven open source project relying on the generosity of our c
 
 We are also an inclusive community and ask that everyone read and follow our [Code of Conduct](https://github.com/glossyio/traffic-monitor/blob/main/CODE_OF_CONDUCT.md).
 
-We also welcome your contributions! You make the traffic monitor great. For code, troubleshooting, new ideas and more, see [contributing.md](../development/contributing.md "mention").
+We also welcome your contributions! You make the traffic monitor great. For code, troubleshooting, new ideas and more, see [Contributing](../development/contributing.md).
 
 ## Read the docs
 
-The [Traffic Monitor docs](https://docs.trafficmonitor.ai) have a wealth of knowledge and are searchable.
+The [Traffic Monitor docs](../README.md) have a wealth of knowledge and are searchable.
 
 ## Search the project repository
 
@@ -22,11 +22,11 @@ After the docs the best place to start is the  [Traffic Monitor project reposito
 
 To foster an interactive community, we have a [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/) ([Zulip values](https://zulip.com/values/) aligns with ours and it is open source).  Ask question, suggest ideas, and get in touch!
 
-This is also where project developers will discuss code contributions, so it is a good place to get started if you are interested in [contributing.md](../development/contributing.md "mention").
+This is also where project developers will discuss code contributions, so it is a good place to get started if you are interested in [Contributing](../development/contributing.md).
 
 ## Post on GitHub discussions
 
-The [Traffic Monitor repo discussions](https://github.com/glossyio/traffic-monitor/discussions) board is the next best place to interact with the community.  Hit New Discussion and there are a variety of category templates:&#x20;
+The [Traffic Monitor repo discussions](https://github.com/glossyio/traffic-monitor/discussions) board is the next best place to interact with the community.  Hit New Discussion and there are a variety of category templates:
 
 * 💬 [General](https://github.com/glossyio/traffic-monitor/discussions/new?category=general) - Chat about anything and everything here
 * 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/new?category=ideas) - Share ideas for new features, also vote on ideas

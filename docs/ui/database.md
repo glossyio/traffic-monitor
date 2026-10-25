@@ -6,7 +6,7 @@ description: Local data downloads and comments.
 
 ## Sample screenshot
 
-<figure><img src="../.gitbook/assets/tm-dash-2026-03-database.png" alt=""><figcaption></figcaption></figure>
+![](../assets/images/tm-dash-2026-03-database.png)
 
 ## Descriptions
 

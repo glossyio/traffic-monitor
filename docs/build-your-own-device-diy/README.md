@@ -1,18 +1,17 @@
 ---
 description: Traffic Monitor details and assembly instructions
-icon: user-helmet-safety
 ---
 
 # Build Your Own Device (DIY)
 
 ## 1. Hardware Assembly
 
-Start by collecting the [recommended-hardware.md](../recommended-hardware.md "mention").
+Start by collecting the [Recommended Hardware](recommended-hardware.md).
 
-Assemble the components: [assembly-instructions.md](assembly-instructions.md "mention")
+Assemble the components: [Assembly Instructions](assembly-instructions.md)
 
 ## 2. Software Setup
 
-See [software-installation.md](../software-installation.md "mention")
+See [Software Installation](../software-installation.md)
 
 <br>

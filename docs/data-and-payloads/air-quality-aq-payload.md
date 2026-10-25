@@ -8,17 +8,17 @@ description: Environment and air quality sensor for the Traffic Monitor
 
 The air quality monitor enables collection of a variety of environmental measurements including gasses commonly associated with pollution, temperature, pressure, humidity, and much more.
 
-{% hint style="info" %}
-The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor). It is based on the wonderful work from the [roscoe81/enviro-monitor](https://github.com/roscoe81/enviro-monitor) and [pimoroni/enviroplus](https://github.com/pimoroni/enviroplus-python) projects.
-{% endhint %}
+!!! info
+
+    The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor). It is based on the wonderful work from the [roscoe81/enviro-monitor](https://github.com/roscoe81/enviro-monitor) and [pimoroni/enviroplus](https://github.com/pimoroni/enviroplus-python) projects.
 
 ### Hardware
 
-The following hardware has been tested and incorporated into the Traffic Monitor.&#x20;
+The following hardware has been tested and incorporated into the Traffic Monitor.
 
-{% hint style="info" %}
-Although we strive to include high-quality equipment and data collection into our application, we make no warranty on the veracity or quality of the hardware or data. We welcome those with an [environmental science](https://en.wikipedia.org/wiki/Environmental_science) background to [contribute](../development/contributing.md)!
-{% endhint %}
+!!! info
+
+    Although we strive to include high-quality equipment and data collection into our application, we make no warranty on the veracity or quality of the hardware or data. We welcome those with an [environmental science](https://en.wikipedia.org/wiki/Environmental_science) background to [contribute](../development/contributing.md)!
 
 * [Enviro for Raspberry Pi](https://www.pishop.us/product/enviro-for-raspberry-pi/) – **Enviro + Air Quality**
   * Enviro for Raspberry Pi – **Enviro + Air Quality**
@@ -66,9 +66,9 @@ The following location-based settings need to be set per-deployment for your loc
 
 The TM AQ application sends messages via MQTT integration on the `aq/readings` topic.
 
-{% hint style="warning" %}
-The sensor needs to stabilize (default 5-minutes) after the script initializes before it will send external updates (via MQTT). This is defined by `startup_stabilisation_time` in config.json.
-{% endhint %}
+!!! warning
+
+    The sensor needs to stabilize (default 5-minutes) after the script initializes before it will send external updates (via MQTT). This is defined by `startup_stabilisation_time` in config.json.
 
 ```json
 {
@@ -182,9 +182,9 @@ The sensor includes the ability to detect reductive (RED), oxidative (OXI), and 
 
 The [BME280](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf) temperature, pressure, humidity sensor with I2S digital output.
 
-{% hint style="info" %}
-The Raspberry Pi and AI co-processor generate a substantial amount of heat that may affect the temperature and humidity readings. The [Traffic Monitor enclosure](../recommended-hardware.md#enclosure-weather-resistant-box) attempts to isolate the AQ sensors by physically separating the hardware, but further adjustments may need to be made.&#x20;
-{% endhint %}
+!!! info
+
+    The Raspberry Pi and AI co-processor generate a substantial amount of heat that may affect the temperature and humidity readings. The [Traffic Monitor enclosure](../build-your-own-device-diy/recommended-hardware.md#enclosure-weather-resistant-box) attempts to isolate the AQ sensors by physically separating the hardware, but further adjustments may need to be made.
 
 #### Software notes
 

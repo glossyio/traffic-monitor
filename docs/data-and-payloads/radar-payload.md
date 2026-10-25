@@ -10,11 +10,11 @@ The Doppler radar enables speed and direction measurement to be collected and ad
 
 ### Hardware
 
-{% hint style="info" %}
-See [#radar](../recommended-hardware.md#radar "mention") for more information on selecting a radar unit.
-{% endhint %}
+!!! info
 
-The [OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) radar from [OmniPreSense](https://omnipresense.com/):&#x20;
+    See [Radar](../build-your-own-device-diy/recommended-hardware.md#radar) for more information on selecting a radar unit.
+
+The [OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) radar from [OmniPreSense](https://omnipresense.com/):
 
 > OmniPreSense’s OPS243 is complete short-range radar (SRR) solution providing motion detection, speed, direction, and range reporting. All radar signal processing is done on board and a simple API reports the processed data.
 
@@ -22,18 +22,18 @@ The [OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) ra
 
 The OPS243 radar sensors include an easy-to-use [API interface](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) for returning a variety of radar readings and calculated values in JSON format. By default, we capture all of these values in separate tables:
 
-* **DetectedObjectVelocity** (command `ON`).&#x20;
-  * [#radar\_dov-table](radar-payload.md#radar_dov-table "mention")
+* **DetectedObjectVelocity** (command `ON`).
+  * [radar_dov table](#radar_dov-table)
   * Sensor determines if an object is present by looking for 2 consecutive speed reports. If met, the max speed detected is reported. If a faster speed is detected, additional speeds are reported. This lowers the number of speed reports for a given detected object. Use On to turn the mode off.
-* **TimedSpeedCounts** (command @O).&#x20;
-  * [#radar\_timed\_speed\_counts-table](radar-payload.md#radar_timed_speed_counts-table "mention").&#x20;
+* **TimedSpeedCounts** (command @O).
+  * [radar_timed_speed_counts table](#radar_timed_speed_counts-table).
   * Sensor counts and reports the cumulative number of objects (defined by DetectedObjectVelocity) that have gone by in a given period. Default TM setting is reporting every 300-seconds.
-* **Raw Speed Magnitude** (command `OS`).&#x20;
-  * [#radar\_raw\_speed\_magnitude-table](radar-payload.md#radar_raw_speed_magnitude-table "mention") and [#radar\_raw\_speed\_magnitude\_single-table](radar-payload.md#radar_raw_speed_magnitude_single-table "mention")
+* **Raw Speed Magnitude** (command `OS`).
+  * [radar_raw_speed_magnitude table](#radar_raw_speed_magnitude-table) and [radar_raw_speed_magnitude_single table](#radar_raw_speed_magnitude_single-table)
   * Reports magnitude and associated speed of each reading. The magnitude is a measure of the size, distance, and reflectivity of the object detected. By default, TM captures the 3-burst speed/magnitude pairs and the single strongest magnitude and associated speed in separate tables for deep dive and easier analysis, respectively.
-* **Vehicle Length** (command `OC`).&#x20;
-  * Note: _Requires Firmware OPS9243._&#x20;
-  * [#radar\_oc\_payload-table](radar-payload.md#radar_oc_payload-table "mention")
+* **Vehicle Length** (command `OC`).
+  * Note: _Requires Firmware OPS9243._
+  * [radar_oc_payload table](#radar_oc_payload-table)
   * From the docs: _Provides several parameters which can help identify the vehicle type and/or lane in which the vehicle is located_. This includes start/end time, frames, min/max MPH, magnitude, and length calculations.
 
 ## Radar Database

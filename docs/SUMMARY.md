@@ -4,7 +4,7 @@
 * [Welcome to smart city traffic monitoring](README.md)
 * [Getting Started](getting-started.md)
 * [Build Your Own Device (DIY)](build-your-own-device-diy/README.md)
-  * [Recommended Hardware](recommended-hardware.md)
+  * [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md)
   * [Assembly Instructions](build-your-own-device-diy/assembly-instructions.md)
 * [Software Installation](software-installation.md)
 * [Deployment and Mounting Guide](deployment-and-mounting-guide.md)
