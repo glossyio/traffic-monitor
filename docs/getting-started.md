@@ -1,5 +1,4 @@
 ---
-icon: play
 description: Start counting with the Traffic Monitor!
 icon: play
 ---
