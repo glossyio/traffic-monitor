@@ -146,6 +146,10 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 ## Conventions
 
 - PRs target `dev`; `main` tracks the latest stable release. Branch names follow `{feature|refactor|bugfix|hotfix}/{short-summary}/{issue-id}`.
+- Docs ride with the code: a PR that changes or adds something the docs describe updates those pages in the same PR, because each release tag freezes its own copy of the docs. In the PR template's "Docs" section, list the pages you changed, or say why none needed to.
+  - Follow "Writing docs" and its "Style" rules in `docs/development/contributing.md`, then run `mkdocs build --strict` (see Commands). Docs pages are for people, so don't write them in this file's terse, path-heavy style. Where a page copies a file from the repo, replace the copy with a link rather than refreshing it.
+  - `nav:` in `mkdocs.yml` lists every page by topic. Two pages mirror the code in ways the nav doesn't show: `docs/setup-guide.md` names the Frigate zones the flows expect, and `docs/data-and-payloads/` documents the tmdb tables and MQTT payloads.
+  - Repo docs count too: this file, CONTRIBUTING.md, and the READMEs beside the code, such as `script/devpi/README.md` and `container/node-red-tm/schema/README.md`.
 - Line endings are LF (`.gitattributes`). CONTRIBUTING.md says to indent with 4 spaces, but the Ansible YAML uses 2, so match the file you're editing.
 - Ansible style:
   - Task names look like `TMSetup - <Component> - <Action>`.
