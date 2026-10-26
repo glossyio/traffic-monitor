@@ -1,0 +1,2273 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Environment and air quality sensor for the Traffic Monitor">
+      
+      
+      
+        <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/data-and-payloads/air-quality-aq-payload/">
+      
+      
+        <link rel="prev" href="../radar-payload/">
+      
+      
+        <link rel="next" href="../../help-and-faq/frequently-asked-questions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Air Quality (AQ) Payload - Traffic Monitor</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <style>
+    .md-typeset .tm-description {
+      color: var(--md-default-fg-color--light);
+      font-size: 1.15em;
+      margin-top: -0.6em;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#air-quality-aq-payload" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're viewing docs for an unreleased or older version.
+  <a href="../../..">
+    <strong>Go to the latest release.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Traffic Monitor" class="md-header__button md-logo" aria-label="Traffic Monitor" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Traffic Monitor
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Air Quality (AQ) Payload
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/glossyio/traffic-monitor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    glossyio/traffic-monitor
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Traffic Monitor" class="md-nav__button md-logo" aria-label="Traffic Monitor" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Traffic Monitor
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/glossyio/traffic-monitor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    glossyio/traffic-monitor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome to smart city traffic monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../build-your-own-device-diy/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build Your Own Device (DIY)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Build Your Own Device (DIY)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/recommended-hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recommended Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/assembly-instructions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assembly Instructions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../software-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment and Mounting Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/frigate-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frigate Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/node-red-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node-RED Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/movements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Movements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and Payloads
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data and Payloads
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../events-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events Payload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../radar-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radar Payload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air Quality (AQ) Payload
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air Quality (AQ) Payload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hardware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hardware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-config-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended config settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-specific-config-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment-specific config settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#air-quality-mqtt-incoming-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality MQTT Incoming Payload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#air-quality-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality Database
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-on-air-quality-readings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on Air Quality readings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notes on Air Quality readings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gas-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gas sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-pressure-and-humidity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temperature, pressure, and humidity
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Temperature, pressure, and humidity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#software-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optical-light-proximity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optical (light, proximity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#particulate-matter-pm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Particulate matter (PM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & FAQ
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Help & FAQ
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frequently Asked Questions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Where can I get support?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use Cases and Scenarios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/dev-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev Environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hardware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hardware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-config-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended config settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-specific-config-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment-specific config settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#air-quality-mqtt-incoming-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality MQTT Incoming Payload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#air-quality-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality Database
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-on-air-quality-readings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on Air Quality readings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notes on Air Quality readings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gas-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gas sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-pressure-and-humidity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temperature, pressure, and humidity
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Temperature, pressure, and humidity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#software-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optical-light-proximity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optical (light, proximity)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#particulate-matter-pm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Particulate matter (PM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+  
+  
+    <a href="https://github.com/glossyio/traffic-monitor/edit/dev/docs/data-and-payloads/air-quality-aq-payload.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+  
+  
+    
+    
+  
+  
+  <h1 id="air-quality-aq-payload">Air Quality (AQ) Payload<a class="headerlink" href="#air-quality-aq-payload" title="Permanent link">&para;</a></h1>
+<p class="tm-description">Environment and air quality sensor for the Traffic Monitor</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The air quality monitor enables collection of a variety of environmental measurements including gasses commonly associated with pollution, temperature, pressure, humidity, and much more.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The AQ software is available at <a href="https://github.com/greendormer/enviroplus-monitor">greendormer/enviroplus-monitor</a>. It is based on the wonderful work from the <a href="https://github.com/roscoe81/enviro-monitor">roscoe81/enviro-monitor</a> and <a href="https://github.com/pimoroni/enviroplus-python">pimoroni/enviroplus</a> projects.</p>
+</div>
+<h3 id="hardware">Hardware<a class="headerlink" href="#hardware" title="Permanent link">&para;</a></h3>
+<p>The following hardware has been tested and incorporated into the Traffic Monitor.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Although we strive to include high-quality equipment and data collection into our application, we make no warranty on the veracity or quality of the hardware or data. We welcome those with an <a href="https://en.wikipedia.org/wiki/Environmental_science">environmental science</a> background to <a href="../../development/contributing/">contribute</a>!</p>
+</div>
+<ul>
+<li><a href="https://www.pishop.us/product/enviro-for-raspberry-pi/">Enviro for Raspberry Pi</a> – <strong>Enviro + Air Quality</strong></li>
+<li>Enviro for Raspberry Pi – <strong>Enviro + Air Quality</strong></li>
+<li>Air quality (pollutant gases and particulates*), temperature, pressure, humidity, light, and noise</li>
+<li><a href="https://learn.pimoroni.com/article/getting-started-with-enviro-plus">Getting started</a></li>
+<li><a href="https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/">PMS5003 Particulate Matter Sensor</a> for Enviro</li>
+<li>Monitor air pollution cheaply and accurately with this matchbox-sized particulate matter (PM) sensor from Plantower!</li>
+<li>It senses particulates of various sizes (PM1, PM2.5, PM10) from sources like smoke, dust, pollen, metal and organic particles, and more.</li>
+</ul>
+<h3 id="software">Software<a class="headerlink" href="#software" title="Permanent link">&para;</a></h3>
+<p>The AQ software is available at <a href="https://github.com/greendormer/enviroplus-monitor">greendormer/enviroplus-monitor</a> as a Python service script that communicates with the Traffic Monitor Node-RED flow via MQTT messages. See the repository for installation and setup instructions.</p>
+<h4 id="configjson">config.json<a class="headerlink" href="#configjson" title="Permanent link">&para;</a></h4>
+<p>See <a href="https://github.com/greendormer/enviroplus-monitor/blob/main/config_readme.md">Config Readme</a> for a detailed description of every available key.</p>
+<h4 id="recommended-config-settings">Recommended config settings<a class="headerlink" href="#recommended-config-settings" title="Permanent link">&para;</a></h4>
+<p>The following are important keys for the recommended default Traffic Monitor -specific configuration:</p>
+<ul>
+<li><code>"enable_send_data_to_homemanager": true</code> in order to send MQTT payloads to specified broker</li>
+<li><code>"mqtt_broker_name": "localhost"</code> to send to Node-RED MQTT broker (assumes port 1883)</li>
+<li><code>"indoor_outdoor_function": "Outdoor"</code> to utilize <code>outdoor_mqtt_topic</code></li>
+<li><code>"enable_display": false</code> since the AQ sensor will be in an enclosure</li>
+<li><code>"outdoor_mqtt_topic": "aq/sensorname01/readings"</code> for sending messages, must start with "aq" and the middle element, "sensorname01" must be defined in your TM config</li>
+<li><code>"long_update_delay": 300</code> for time between sending MQTT messages (default 300-seconds)</li>
+</ul>
+<h4 id="deployment-specific-config-settings">Deployment-specific config settings<a class="headerlink" href="#deployment-specific-config-settings" title="Permanent link">&para;</a></h4>
+<p>The following location-based settings need to be set per-deployment for your location. They are utilized by the <a href="https://astral.readthedocs.io/en/latest/package.html"><code>astral</code> package</a> for calculating the times of various aspects of the sun and phases of the moon (lat/lon, time zone) and calibrating temperature, humidity, barometer, and gas (altitude) readings.</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">"altitude"</span><span class="p">:</span><span class="w"> </span><span class="mi">49</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"city_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Portland"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"time_zone"</span><span class="p">:</span><span class="w"> </span><span class="s2">"America/Los_Angeles"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"custom_locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">"Portland, United States of America, America/Los_Angeles, 45.52, -122.681944"</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="air-quality-mqtt-incoming-payload">Air Quality MQTT Incoming Payload<a class="headerlink" href="#air-quality-mqtt-incoming-payload" title="Permanent link">&para;</a></h2>
+<p>The TM AQ application sends messages via MQTT integration on the <code>aq/readings</code> topic.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The sensor needs to stabilize (default 5-minutes) after the script initializes before it will send external updates (via MQTT). This is defined by <code>startup_stabilisation_time</code> in config.json.</p>
+</div>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">"gas_calibrated"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"bar"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="mf">1009.44</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"0"</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"hum"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="mf">28.7</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">"2"</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"p025"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"p10"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"p01"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"dew"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"temp"</span><span class="p">:</span><span class="w"> </span><span class="mi">21</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"temp_min"</span><span class="p">:</span><span class="w"> </span><span class="mf">20.9</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"temp_max"</span><span class="p">:</span><span class="w"> </span><span class="mf">21.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_red"</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_oxi"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.15</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_nh3"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.69</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"lux"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"proximity"</span><span class="p">:</span><span class="w"> </span><span class="mi">255</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"lux_raw"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.16185</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"temp_raw"</span><span class="p">:</span><span class="w"> </span><span class="mf">28.68982029794099</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"bar_raw"</span><span class="p">:</span><span class="w"> </span><span class="mf">1003.7122773175154</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"hum_raw"</span><span class="p">:</span><span class="w"> </span><span class="mf">18.31337919009301</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_red_raw"</span><span class="p">:</span><span class="w"> </span><span class="mi">140805</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_oxi_raw"</span><span class="p">:</span><span class="w"> </span><span class="mi">103585</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"gas_nh3_raw"</span><span class="p">:</span><span class="w"> </span><span class="mi">227871</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"current_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">1738698665.077546</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>MQTT attribute details:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Valid Values</th>
+<th>Units</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gas_calibrated</td>
+<td>true/false</td>
+<td></td>
+<td><code>gas_sensors_warmup_time = 6000</code> or <code>startup_stabilisation_time</code> when <code>reset_gas_sensor_calibration = true</code></td>
+</tr>
+<tr>
+<td>bar</td>
+<td>[REAL, TEXT]</td>
+<td>hPa, Comfort-level <code>{"0": "Stable", "1": "Fair", "3": "Poorer/Windy/", "4": "Rain/Gale/Storm"}</code></td>
+<td>Air pressure, compensated for altitude and temp as <code>Bar / comp_factor</code> where <code>comp_factor = math.pow(1 - (0.0065 * altitude/(temp + 0.0065 * alt + 273.15)), -5.257)</code></td>
+</tr>
+<tr>
+<td>hum</td>
+<td>[REAL, TEXT]</td>
+<td>%, Comfort-level <code>{"good": "1", "dry": "2", "wet": "3"}</code></td>
+<td>Adjusted for compensation factor set in <code>config.json</code></td>
+</tr>
+<tr>
+<td>Forecast</td>
+<td>{OBJECT}</td>
+<td><code>Valid</code>: true/false, <code>3 Hour Change</code> is millibars difference in barometer readings, <code>Forecast</code> is description calculated from barometer change</td>
+<td>Calculated forecast based on sensor barometer changes</td>
+</tr>
+<tr>
+<td>pm01</td>
+<td>REAL</td>
+<td>ug/m3 (microgram per meter cubed, µg/m³)</td>
+<td>Particulate Matter 1 micrometers / microns (PM1, PM1), Read directly using the <code>pms5003.pm_ug_per_m3()</code> method from the particulate matter sensor.</td>
+</tr>
+<tr>
+<td>pm025</td>
+<td>REAL</td>
+<td>ug/m3 (microgram per meter cubed, µg/m³)</td>
+<td>Particulate Matter 2.5 micrometers / microns (PM2.5, PM2.5), read directly using the <code>pms5003.pm_ug_per_m3()</code> method from the particulate matter sensor.</td>
+</tr>
+<tr>
+<td>pm10</td>
+<td>REAL</td>
+<td>ug/m3 (microgram per meter cubed, µg/m³)</td>
+<td>Particulate Matter 10 micrometers / microns (PM10, PM10), Read directly using the <code>pms5003.pm_ug_per_m3()</code> method from the particulate matter sensor.</td>
+</tr>
+<tr>
+<td>dew</td>
+<td>REAL</td>
+<td>C</td>
+<td>Calculated from Temp and Hum as <code>(237.7 * (math.log(dew_hum/100)+17.271*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271*dew_temp/(237.7 + dew_temp)))</code></td>
+</tr>
+<tr>
+<td>temp</td>
+<td>REAL</td>
+<td>C</td>
+<td>Adjusted for compensation factor set in <code>config.json</code></td>
+</tr>
+<tr>
+<td>temp_min</td>
+<td>REAL</td>
+<td>C</td>
+<td>Minimum temperature measured while sensor was running (only resets on restart)</td>
+</tr>
+<tr>
+<td>temp_max</td>
+<td>REAL</td>
+<td>C</td>
+<td>Maximum temperature measured while sensor was running (only resets on restart)</td>
+</tr>
+<tr>
+<td>gas_red</td>
+<td>REAL</td>
+<td>ppm</td>
+<td>Red PPM calculated as <code>red_in_ppm = math.pow(10, -1.25 * math.log10(red_ratio) + 0.64)</code>. <code>red_ratio</code> is compensated gas value, see Software notes.</td>
+</tr>
+<tr>
+<td>gas_oxi</td>
+<td>REAL</td>
+<td>ppm</td>
+<td>Oxi PPM calculated as <code>oxi_in_ppm = math.pow(10, math.log10(oxi_ratio) - 0.8129)</code>. <code>oxi_ratio</code> is compensated gas value, see Software notes.</td>
+</tr>
+<tr>
+<td>nh3</td>
+<td>REAL</td>
+<td>ppm</td>
+<td>NH3 PPM calculated as <code>nh3_in_ppm = math.pow(10, -1.8 * math.log10(nh3_ratio) - 0.163)</code>. <code>nh3_ratio</code> is compensated gas value, see Software notes.</td>
+</tr>
+<tr>
+<td>lux</td>
+<td>REAL</td>
+<td>lux</td>
+<td>Read directly using the <code>ltr559.get_lux()</code> method from the light sensor.</td>
+</tr>
+<tr>
+<td>temp_raw</td>
+<td>REAL</td>
+<td>C</td>
+<td>Read directly from sensor absent compensation.</td>
+</tr>
+<tr>
+<td>bar_raw</td>
+<td>REAL</td>
+<td>C</td>
+<td>Read directly from sensor absent compensation.</td>
+</tr>
+<tr>
+<td>hum_raw</td>
+<td>REAL</td>
+<td>%</td>
+<td>Read directly from sensor absent compensation.</td>
+</tr>
+<tr>
+<td>gas_red_raw</td>
+<td>REAL</td>
+<td>Ohms</td>
+<td>Read directly from sensor using <code>gas_data.reducing</code> method absent compensation.</td>
+</tr>
+<tr>
+<td>gas_oxi_raw</td>
+<td>REAL</td>
+<td>Ohms</td>
+<td>Read directly from sensor using <code>gas_data.oxidising</code> method absent compensation.</td>
+</tr>
+<tr>
+<td>gas_nh3_raw</td>
+<td>REAL</td>
+<td>Ohms</td>
+<td>Read directly from sensor using <code>gas_data.nh3</code> method absent compensation.</td>
+</tr>
+<tr>
+<td>current_time</td>
+<td>REAL</td>
+<td>Unix time in Seconds</td>
+<td>Created by script upon reading values.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="air-quality-database">Air Quality Database<a class="headerlink" href="#air-quality-database" title="Permanent link">&para;</a></h2>
+<p>The following attributes are captured, by default, into <code>tmdb.events.sqlite</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Description</th>
+<th>SQLite data type</th>
+<th>Valid values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>entryDateTime</td>
+<td>Unix timestamp when data capture began on sensor</td>
+<td>REAL</td>
+<td>Unix timestamp in Seconds</td>
+</tr>
+<tr>
+<td>gas_calibrated</td>
+<td>Indicates if gas sensors are fully "warmed up". Will be false until `gas_sensors_warmup_time` is met (default 10-minutes after sensor starts)</td>
+<td>REAL</td>
+<td>BOOLEAN, 1 = true / 0 = false</td>
+</tr>
+<tr>
+<td>temp</td>
+<td>Temperature reading in degree Celsius measured directly from BME280 sensor with compensation factor set from device config.</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>bar</td>
+<td>Barometer air pressure reading in bars (hPa) measured directly from BME280 sensor with compensation set for altitude from device config.</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>hum</td>
+<td>Humidity reading in percent (%) measured directly from BME280 sensor with compensation factor set from device config.</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>dew</td>
+<td>Calculated dew point in degree Celsius, based on temperature and humidity using the following calculation (Python) `(237.7 * (math.log(dew_hum/100)+17.271*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271*dew_temp/(237.7 + dew_temp)))`</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>temp_raw</td>
+<td>Temperature reading in degree Celsius measured directly from BME280 sensor absent of any compensation (raw values).</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>bar_raw</td>
+<td>Barometer air pressure reading in bars (hPa) measured directly from BME280 sensor absent of any compensation (raw values).</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>hum_raw</td>
+<td>Humidity reading in percent (%) measured directly from BME280 sensor absent of any compensation (raw values).</td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td>pm01</td>
+<td>Particulate Matter (PM) at 1 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>pm025</td>
+<td>Particulate Matter (PM) at 2.5 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>pm10</td>
+<td>Particulate Matter (PM) at 10 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_red</td>
+<td>Reducing gases (RED) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Eg hydrogen, carbon monoxide</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_oxi</td>
+<td>Oxidising gases (OX) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Eg chlorine, nitrous oxide</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_nh3</td>
+<td>Ammonia (NH3) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Gas resistance for nh3/ammonia</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_red_raw</td>
+<td>Reducing gases (RED) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Eg hydrogen, carbon monoxide</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_oxi_raw</td>
+<td>Oxidising gases (OX) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Eg chlorine, nitrous oxide</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>gas_nh3_raw</td>
+<td>Ammonia (NH3) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Gas resistance for nh3/ammonia</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>lux</td>
+<td>Lux reading in Lux measured directly from optical sensor with proximity-adjusted minimum.</td>
+<td>REAL</td>
+<td>0.01 to 64k lux</td>
+</tr>
+<tr>
+<td>lux_raw</td>
+<td>Lux reading in Lux measured directly from optical sensor.</td>
+<td>REAL</td>
+<td>0.01 to 64k lux</td>
+</tr>
+<tr>
+<td>proximity</td>
+<td>Proximity reading measure directly from optical sensor.</td>
+<td>REAL</td>
+<td>0-infinity</td>
+</tr>
+<tr>
+<td>sensorName</td>
+<td>Air Quality sensor that captured the data. This field may be used to associate with other sensors.</td>
+<td>TEXT</td>
+<td></td>
+</tr>
+<tr>
+<td>deployment_id</td>
+<td>Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.</td>
+<td>TEXT, FOREIGN KEY</td>
+<td>`deployment`.`id` foreign key, may be null</td>
+</tr>
+</tbody>
+</table>
+<h2 id="notes-on-air-quality-readings">Notes on Air Quality readings<a class="headerlink" href="#notes-on-air-quality-readings" title="Permanent link">&para;</a></h2>
+<h3 id="gas-sensor">Gas sensor<a class="headerlink" href="#gas-sensor" title="Permanent link">&para;</a></h3>
+<p>The <a href="https://www.sgxsensortech.com/content/uploads/2015/02/1143_Datasheet-MiCS-6814-rev-8.pdf">MICS6814</a> analog gas sensor: <em>The MiCS-6814 is a robust MEMS sensor for the detection of pollution from automobile exhausts and for agricultural/industrial odors.</em></p>
+<p>The sensor includes the ability to detect reductive (RED), oxidative (OXI), and ammonia (NH3) gases. The raw gas readings are measured as Ohms of resistance for their respective gasses, but the software compensates for temperature, humidity, altitude, and drift to provide PPM (parts per million) equivalents.*</p>
+<p>*See Software notes and additional discussions on <a href="https://github.com/pimoroni/enviroplus-python/issues/47">pimoroni/enviroplus-python #47</a> and <a href="https://github.com/pimoroni/enviroplus-python/issues/67">pimoroni/enviroplus-python #67</a>.</p>
+<p><strong>Software notes</strong></p>
+<ul>
+<li>Gas calibrates using Temp, Humidity, and Barometric Pressure readings.</li>
+<li>Gas Sensors (<code>Red</code>, <code>Oxi</code>, <code>NH3</code>) take 100-minutes to warm-up and readings to become available</li>
+<li>To compensate for gas sensor drift over time, the software calibrates gas sensors daily at time set by <code>gas_daily_r0_calibration_hour</code>, using average of daily readings over a week if not already done in the current day and if warm-up calibration is completed. This compensates for gas sensor drift over time</li>
+<li>Raw gas readings will also have compensation factors applied, determined by <a href="https://github.com/roscoe81/enviro-monitor/blob/master/Regression_Analysis/Northcliff_Enviro_Monitor_Regression_Analyser.py">regression analysis</a>.</li>
+</ul>
+<h3 id="temperature-pressure-and-humidity">Temperature, pressure, and humidity<a class="headerlink" href="#temperature-pressure-and-humidity" title="Permanent link">&para;</a></h3>
+<p>The <a href="https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf">BME280</a> temperature, pressure, humidity sensor with I2S digital output.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The Raspberry Pi and AI co-processor generate a substantial amount of heat that may affect the temperature and humidity readings. The <a href="../../build-your-own-device-diy/recommended-hardware/#enclosure-weather-resistant-box">Traffic Monitor enclosure</a> attempts to isolate the AQ sensors by physically separating the hardware, but further adjustments may need to be made.</p>
+</div>
+<h4 id="software-notes">Software notes<a class="headerlink" href="#software-notes" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>Temp</code> (temperature) and <code>Hum</code> (humidity) have cubic polynomial compensation factors applied to raw readings</li>
+<li><code>Min Temp</code>and <code>Max Temp</code>are calculated over the entire time the script is running</li>
+<li><code>Bar</code>(Barometer) reading updates only every 20 minutes</li>
+<li>Air pressure reading has an altitude compensation factor applied (defined in config.json)</li>
+<li>
+<p><code>Dew</code>(Dew Point) is calculated from temperature and humidity using the following calculation:</p>
+<div class="highlight"><pre><span></span><code><span class="n">dewpoint</span> <span class="o">=</span> <span class="p">(</span><span class="mf">237.7</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dew_hum</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span><span class="o">+</span><span class="mf">17.271</span><span class="o">*</span><span class="n">dew_temp</span><span class="o">/</span><span class="p">(</span><span class="mf">237.7</span><span class="o">+</span><span class="n">dew_temp</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mf">17.271</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dew_hum</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span> <span class="o">-</span> <span class="mf">17.271</span><span class="o">*</span><span class="n">dew_temp</span><span class="o">/</span><span class="p">(</span><span class="mf">237.7</span> <span class="o">+</span> <span class="n">dew_temp</span><span class="p">)))</span>
+</code></pre></div>
+</li>
+</ul>
+<h3 id="optical-light-proximity">Optical (light, proximity)<a class="headerlink" href="#optical-light-proximity" title="Permanent link">&para;</a></h3>
+<p>The <a href="https://optoelectronics.liteon.com/upload/download/DS86-2013-0003/LTR-559ALS-01_DS_V1.pdf">LTR-559</a> light and proximity sensor</p>
+<h3 id="noise">Noise<a class="headerlink" href="#noise" title="Permanent link">&para;</a></h3>
+<p>MEMS microphone (<a href="https://media.digikey.com/pdf/Data%20Sheets/Knowles%20Acoustics%20PDFs/SPH0645LM4H-B.pdf">datasheet</a>).</p>
+<h3 id="particulate-matter-pm">Particulate matter (PM)<a class="headerlink" href="#particulate-matter-pm" title="Permanent link">&para;</a></h3>
+<p>The Plantower <a href="http://www.aqmd.gov/docs/default-source/aq-spec/resources-page/plantower-pms5003-manual_v2-3.pdf">PMS5003</a> Particulate Matter (PM) Sensor.</p>
+  
+
+
+
+
+
+
+  
+  
+
+
+  
+
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
