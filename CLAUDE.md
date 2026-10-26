@@ -146,6 +146,16 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 ## Conventions
 
 - PRs target `dev`; `main` tracks the latest stable release. Branch names follow `{feature|refactor|bugfix|hotfix}/{short-summary}/{issue-id}`.
+- Docs ride with the code: a PR that changes or adds something the docs describe updates those pages in the same PR. Pushes to `dev` publish `/dev/`, and each release tag freezes its own copy, so docs left for a later PR can miss the release they describe. In the PR template's "Docs" section, list the pages you changed, or say why none needed to.
+  - How: follow the `docs/` notes at the top of this file and "Writing docs" in `docs/development/contributing.md`, then run `mkdocs build --strict` (see Commands).
+  - Where: `nav:` in `mkdocs.yml` lists every page by topic. These pages mirror the code most closely, so check them first:
+    - `docs/software-installation.md`: running `tmsetup.sh`, locally and with `-H`.
+    - `docs/setup-guide.md`: first-boot setup and the Frigate zones the flows expect.
+    - `docs/configuration/node-red-config.md`: `config.yml` keys with their defaults, and a copy of `node-red-tm.env.j2`.
+    - `docs/ui/`: the Monitoring, Database, and Movements dashboards.
+    - `docs/data-and-payloads/`: tmdb tables, MQTT payloads, and ThingsBoard telemetry.
+    - `docs/development/dev-environment.md`: editing flows, adding migrations, and testing on a dev Pi.
+  - Repo docs count too: this file, CONTRIBUTING.md, and the READMEs beside the code, such as `script/devpi/README.md` and `container/node-red-tm/schema/README.md`.
 - Line endings are LF (`.gitattributes`). CONTRIBUTING.md says to indent with 4 spaces, but the Ansible YAML uses 2, so match the file you're editing.
 - Ansible style:
   - Task names look like `TMSetup - <Component> - <Action>`.

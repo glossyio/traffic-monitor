@@ -1,6 +1,9 @@
 ## Summary
 What does this pull request change, and why? Link the related issue (e.g. `Closes #123`). Pull requests target the `dev` branch.
 
+## Docs
+Which docs pages did you add or update? If none, say why none needed to change. See [Writing docs](https://github.com/glossyio/traffic-monitor/blob/dev/docs/development/contributing.md#writing-docs) for how to preview and check them.
+
 ## Testing
 How did you test it? Include your Raspberry Pi model, the `tmsetup.sh` tags you ran, and screenshots if relevant.
 

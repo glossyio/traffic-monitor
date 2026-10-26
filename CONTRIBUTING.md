@@ -31,6 +31,8 @@ To deploy to a bench Pi from your dev machine and keep a log of what you tested 
 
 Please send a [GitHub Pull Request to this repo](https://github.com/glossyio/traffic-monitor/compare/dev...bugfix/yourfix) to the `dev` branch with a clear list of what you have done (read more about [pull requests](http://help.github.com/pull-requests/)). Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit), or we will squash commits.
 
+If your change affects something the docs describe, such as installing, setup, configuration, the dashboards, or the data, update those pages in [`docs/`](docs/) in the same pull request. Each release publishes its own copy of the docs at [docs.trafficmonitor.ai](https://docs.trafficmonitor.ai/), so docs sent in a later pull request can miss the release they describe. [Writing docs](docs/development/contributing.md#writing-docs) explains how to preview your changes and check the build.
+
 Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
 
     $ git commit -m "A brief summary of the commit
