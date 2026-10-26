@@ -14,12 +14,17 @@ import pytest
 import yaml
 
 ROLE_DEFAULTS = Path(__file__).resolve().parents[2] / "ansible" / "roles" / "tmsetup" / "defaults" / "main.yml"
+ROLE_VARS = ROLE_DEFAULTS.parents[1] / "vars" / "main.yml"
 
 DEFAULT_CODEDIR = "/opt/traffic-monitor"
 DEFAULT_CODEOWNER = "tmadmin"
 AI_COPROCESSORS = ("none", "edgetpu_usb", "edgetpu_pci", "hailo8l", "hailo8")
 CAMERA_SOURCES = ("csi", "rtsp")
 EXPECT_KEYS = {"pii_free", "live_traffic", "ai_coprocessor", "radars", "cameras", "environmental"}
+# The /dev/media* device whose model is rpi-hevc-dec, the scan setup used before the udev symlink (#231).
+FIND_HEVC = """for device in /dev/media*; do
+  udevadm info -a -n "$device" 2>/dev/null | grep -q 'ATTR{model}=="rpi-hevc-dec"' && echo "$device"
+done; true"""
 # Units with Restart= set, where NRestarts counts crashes since the unit was last started.
 RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate.service", "node-red-tm.service",
                     "revproxy.service"]
@@ -29,6 +34,12 @@ RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate
 def role_defaults():
     """The tmsetup role's defaults/main.yml, so the tests use the same device paths as the install."""
     return yaml.safe_load(ROLE_DEFAULTS.read_text())
+
+
+@functools.cache
+def role_vars():
+    """The tmsetup role's vars/main.yml, for the fixed paths the install uses."""
+    return yaml.safe_load(ROLE_VARS.read_text())
 
 
 def radar_ports():
@@ -84,6 +95,22 @@ def validate_expect(expect):
 def require_pii_free(expect):
     if not expect["pii_free"]:
         pytest.skip("reads config.yml or tmdb.sqlite; set tm_expect.pii_free: true (bench units only)")
+
+
+def find_hevc_decoder(host):
+    """The /dev/mediaN whose model is rpi-hevc-dec on this boot, found independently of the udev rule."""
+    with host.sudo():
+        found = host.check_output(FIND_HEVC).split()
+    if not found:
+        pytest.fail("no /dev/media* device with model rpi-hevc-dec", pytrace=False)
+    return found[0]
+
+
+def frigate_host_devices(host):
+    """The host path of every device the running frigate container was given."""
+    template = '{{range .HostConfig.Devices}}{{.PathOnHost}}{{"\\n"}}{{end}}'
+    with host.sudo():
+        return host.check_output(f"podman inspect frigate --format {shlex.quote(template)}").split()
 
 
 def read_root_file(host, path):

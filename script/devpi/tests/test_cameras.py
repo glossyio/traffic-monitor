@@ -1,14 +1,11 @@
-"""Cameras: sensors detected, the HEVC decoder passed to Frigate, and frames flowing end to end."""
+"""Cameras: sensors detected, the HEVC decoder's symlink and the decoder passed to Frigate, and frames flowing end to end."""
 
 import re
 
 import pytest
-from devpi_checks import pi_json
+from devpi_checks import find_hevc_decoder, frigate_host_devices, pi_json, role_vars
 
-# The same scan as utils/find_hevc_device.sh: the /dev/media* device whose model is rpi-hevc-dec.
-FIND_HEVC = """for device in /dev/media*; do
-  udevadm info -a -n "$device" 2>/dev/null | grep -q 'ATTR{model}=="rpi-hevc-dec"' && echo "$device"
-done; true"""
+HEVC_SYMLINK = role_vars()["tmsetup_hevc_device"]
 # Kernel names of the V4L2 sub-devices, sensors among them (e.g. imx708_wide). Readable without
 # camera access and while go2rtc holds the camera, unlike rpicam-hello --list-cameras.
 SUBDEV_NAMES = "cat /sys/class/video4linux/v4l-subdev*/name 2>/dev/null"
@@ -38,14 +35,20 @@ def test_csi_sensors_detected(host, cameras):
     assert not missing, f"sensors not found: {missing} (V4L2 sub-devices: {names or 'none'})"
 
 
-def test_frigate_gets_the_hevc_decoder(host, cameras):
-    with host.sudo():
-        decoders = host.check_output(FIND_HEVC).split()
-    assert decoders, "no /dev/media* device with model rpi-hevc-dec"
-    unit = host.file("/etc/containers/systemd/frigate.container").content_string
-    line = f"AddDevice={decoders[0]}:{decoders[0]}"
-    passed = line in unit
-    assert passed, f"frigate.container lacks {line}; the HEVC decoder is {decoders[0]}"
+def test_hevc_decoder_symlink_follows_the_decoder(host):
+    """udev's symlink points at the media device whose model is rpi-hevc-dec, whatever its number is on this boot (#231)."""
+    decoder = find_hevc_decoder(host)
+    target = host.run(f"readlink -f {HEVC_SYMLINK}").stdout.strip()
+    assert target == decoder, f"{HEVC_SYMLINK} -> {target or 'missing'}, but the decoder is {decoder}; re-run tmsetup.sh -t frigate"
+
+
+def test_frigate_gets_the_hevc_decoder(host):
+    """The unit passes the symlink, and the running container got the decoder's device for this boot."""
+    unit = host.file("/etc/containers/systemd/frigate.container").content_string.splitlines()
+    assert f"AddDevice={HEVC_SYMLINK}" in unit, f"frigate.container lacks AddDevice={HEVC_SYMLINK}; re-run tmsetup.sh -t frigate"
+    decoder = find_hevc_decoder(host)
+    devices = frigate_host_devices(host)
+    assert decoder in devices, f"the frigate container has {devices}, not the decoder {decoder} (started before the number changed?)"
 
 
 def test_frigate_cameras_running(cameras, frigate_config, frigate_stats):
