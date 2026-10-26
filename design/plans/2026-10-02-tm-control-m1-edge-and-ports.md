@@ -64,7 +64,7 @@ Tasks 1, 2, 9, and 10 below build on those files instead of creating them.
   - Synthetic data only.
   - Test module basenames must be unique across the repo, because pytest's default import mode needs it.
   - Don't name new helper modules `helpers.py`, and don't `import conftest`.
-- **Docs:** user docs under `docs/` use GitBook markdown. Design docs live under `design/`.
+- **Docs:** user docs under `docs/` are built with Material for MkDocs (see "Writing docs" in `docs/development/contributing.md`). Use admonitions (`!!! warning`), relative `.md` links, and Markdown images in `docs/assets/images/`. A new page must be added to `nav:` in `mkdocs.yml`. Check with `mkdocs build --strict`. Design docs live under `design/` and aren't published.
 - **Commits:**
   - Commit one per task.
   - End each message with CLAUDE.md's trailer block, not `Co-Authored-By`:
@@ -2160,7 +2160,7 @@ git commit -m "Return real HTTP errors from data downloads, and end a download w
 
 **Files:**
 - Create: `docs/configuration/network-access.md`
-- Modify: `docs/SUMMARY.md`
+- Modify: `mkdocs.yml` (nav)
 - Modify: `README.md` (lines 44–48 and 62)
 - Modify: `docs/setup-guide.md` (line 67)
 - Modify: `docs/development/dev-environment.md` (line 22)
@@ -2223,9 +2223,9 @@ The MQTT broker only accepts connections from the device itself, which is all th
 3. Run `bash script/tmsetup.sh -C mqtt_lan`.
 4. From another computer, check that the broker refuses a connection without the username and password.
 
-{% hint style="warning" %}
-Without step 1, anyone on the network can publish to the broker and add false data to your Traffic Monitor.
-{% endhint %}
+!!! warning
+
+    Without step 1, anyone on the network can publish to the broker and add false data to your Traffic Monitor.
 
 ## Changes from earlier versions
 
@@ -2235,10 +2235,10 @@ Without step 1, anyone on the network can publish to the broker and add false da
 * Data export downloads from the dashboard's database page now work through the home page address.
 ````
 
-In `docs/SUMMARY.md`, under `## Configuration`, after `* [Node-RED Config](configuration/node-red-config.md)`, add:
+In `mkdocs.yml`, under `nav:` → `- Configuration:`, after `- Node-RED Config: configuration/node-red-config.md`, add:
 
-```markdown
-* [Network Access](configuration/network-access.md)
+```yaml
+      - Network Access: configuration/network-access.md
 ```
 
 - [ ] **Step 2: Update the port references in the README and docs**
@@ -2252,7 +2252,7 @@ In `README.md`, replace the four bullets under "User Interfaces (UI) / port numb
 - `http://<device_ip_address>/feeds/` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) camera streams on the Raspberry Pi. Use this if your cameras are giving errors in Frigate.
 - `http://<device_ip_address>/nr/` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
 
-See [Network Access](https://docs.trafficmonitor.ai/configuration/network-access) for the ports the device opens.
+See [Network Access](https://docs.trafficmonitor.ai/latest/configuration/network-access/) for the ports the device opens.
 ```
 
 Also replace `Device dashboard available at \`http://<device_ip_address>:1880/ui\`.` with `Device dashboard available at \`http://<device_ip_address>/ui/\`.`.
@@ -2269,7 +2269,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
    ```markdown
    - `tm-control/`: the Traffic Monitor control app (spec in `design/specs/`). So far only `tm-control migrate`, which tmsetup runs to update config files from older installs. It's installed root-owned to `/usr/local/lib/traffic-monitor/tm-control` and `/usr/local/bin/tm-control`.
-   - `design/`: specs and implementation plans. Not published to GitBook.
+   - `design/`: specs and implementation plans. Not published to the docs site.
    ```
 
 2. **"Commands"**: change the pytest line to:
@@ -2329,17 +2329,19 @@ Run:
 
 ```bash
 grep -rn -E ':1880|:5000|:1984' README.md docs CLAUDE.md | grep -v 'network-access.md'
-grep -n 'network-access' docs/SUMMARY.md
+grep -n 'network-access' mkdocs.yml
+~/.venvs/tm-docs/bin/mkdocs build --strict
 ```
 
 Expected:
 - The first command prints nothing except lines that describe internal addresses (`127.0.0.1:…`).
-- The second prints the new SUMMARY line.
+- The second prints the new nav line.
+- The build passes. With `--strict` it fails on broken links or anchors, and on a page missing from the nav. Set up `~/.venvs/tm-docs` as described in CLAUDE.md's docs check.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/configuration/network-access.md docs/SUMMARY.md README.md docs/setup-guide.md docs/development/dev-environment.md CLAUDE.md
+git add docs/configuration/network-access.md mkdocs.yml README.md docs/setup-guide.md docs/development/dev-environment.md CLAUDE.md
 git commit -m "Document network access through the reverse proxy" -m "<trailer block>"
 ```
 
