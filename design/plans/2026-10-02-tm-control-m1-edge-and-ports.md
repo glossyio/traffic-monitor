@@ -14,15 +14,22 @@
 
 **Spec:** `design/specs/2026-10-02-tm-control-platform-design.md`, section "Milestones → M1". Read it with this plan.
 
-**Status:** written 2026-10-02 and aligned with the open PRs on 2026-10-13. Re-checked on 2026-10-14 against `dev` after #197, #218, #219, #220, and #222 merged, and against the open stacks' latest pushes. That pass ran Tasks 1, 2, 4, and 5 against a merge of all the stacks, and their expected counts below come from that run. The spec's "Builds on open PRs" section describes the PRs. This plan assumes their files:
+**Status:** written 2026-10-02, aligned with the open PRs on 2026-10-13, and re-checked on 2026-10-14. Every PR it builds on merged into `dev` on 2026-10-25 (#202, #205, #206, #208, #210, #212, #214, #215), and Task 0 ran the same day:
+- It rebased this branch onto `dev` (`e076db0`) and re-checked the plan against the merged files. Step 2 lists what had changed.
+- Tasks 1, 2, 3, and 8 were run on the rebased branch in a scratch worktree, and their expected counts below come from that run.
+- Tasks 4 and 5 depend on `dev` only through the Frigate template, unchanged since the 2026-10-14 run, and the render helper. Task 4's fixtures still generate as expected with today's helper.
+
+The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
 - #212's Cockpit
 - #206's dev venv and pytest layout
 - #214's `tmdev.py`, and #215's device tests
 
-Don't start until those have merged. Task 0 checks.
+**Open decisions.** Settle these with the person before the tasks that depend on them:
+- **Cockpit's `:9090`** (Tasks 9 and 10). It's a plain-HTTP login outside the proxy, so M2's login at the proxy won't cover it. Keep it as the rescue console, as the spec decided, or bind `cockpit.socket` to `127.0.0.1` with a `ListenStream=` drop-in and rely on SSH for rescue. Loopback would need a new step for the drop-in. Raised in #212's review on 2026-10-23. The tasks below are written for keeping it.
+- **#232: the pod stays down after `tmnet-network.service` fails once at boot.** Task 1 edits the same pod unit. Fold a fix into M1 as a new task, or leave it to its own PR. Either way, M1 keeps the home page up when the pod is down, because nginx leaves the pod (Task 2).
 
-**Already done:** the `/storefiles` fix for #211 was made early, on `feature/edge-ports/201` based on #210's head (`579084a`), and was checked on a dev Pi on 2026-10-14. That commit added:
+**Already done:** the `/storefiles` fix for #211 was made early on `feature/edge-ports/201`, and was checked on a dev Pi on 2026-10-14. Task 0 rebased it onto `dev`, so that check covered an older tree; Task 10 checks `/storefiles` again. That commit added:
 - `container/revproxy/tm/locations/storefiles.conf.j2` and its `tmsetup_revproxy_locations` entry
 - `script/tests/tmsetup_render.py` (Task 1 Step 1)
 - `script/tests/test_tmsetup_templates.py`, with `LOCATIONS`, `location()`, and the storefiles test
@@ -30,7 +37,7 @@ Don't start until those have merged. Task 0 checks.
 
 Tasks 1, 2, 9, and 10 below build on those files instead of creating them.
 
-**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edits `flows.json`, though not these nodes. On 2026-10-14, Task 8's edit merged cleanly with #208, #215, and `dev`.
+**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edited `flows.json`, though not these nodes. On 2026-10-25, Task 8's script ran cleanly on the merged `dev`'s `flows.json`, and the schema tests still passed.
 
 ## Global Constraints
 
@@ -86,7 +93,7 @@ These are the likeliest failures for a person upgrading or using a device. Each 
 
 1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. The device's config may still be Frigate 0.17's: Frigate 0.18 rewrites it on its first start, after `tm-control migrate` has run. Tests in Tasks 4 and 5 run on both a 0.17 and a 0.18 config. Tests in Task 7 check that the migration produces exactly the URL that new installs get, and that `frigate.env` gains both credential lines.
 2. **Re-running `tmsetup.sh`.** The generated secrets must never be regenerated, because the go2rtc and Frigate sides would drift apart. They must never appear in the install log. Tests in Task 3.
-3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying.
+3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying. On a Pi, #215's `test_no_crash_restarts[revproxy.service]` fails if revproxy still had to retry after the handler restarted it (Task 10 Step 5).
 4. **Crafted `/feeds/` requests.** These must get 403:
    - methods other than GET
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
@@ -100,9 +107,9 @@ These are the likeliest failures for a person upgrading or using a device. Each 
 
 ### Task 0: Base branch and a re-check against what merged
 
-The design docs are on `feature/tm-control-design/102`, based on `feature/ai-use-policy` (#202). M1's code needs files from both open stacks.
+Done on 2026-10-25, after the stacks merged, except for the push at the end of Step 3. The steps stay as a record, and to re-run if `dev` moves before M1 starts.
 
-- [ ] **Step 1: Check that the stacks this plan builds on have merged**
+- [x] **Step 1: Check that the stacks this plan builds on have merged**
 
 Each of these must exist on the base you pick. `origin/dev` is preferred.
 
@@ -122,7 +129,9 @@ If anything is missing, stop and tell the person which PRs haven't merged:
 
 Don't build M1 on a stack of drafts without asking.
 
-- [ ] **Step 2: Re-check this plan against the merged files**
+On 2026-10-25 all six files were on `origin/dev` (`e076db0`).
+
+- [x] **Step 2: Re-check this plan against the merged files**
 
 Merged code may differ from the drafts this plan was written against. Diff the files the tasks below edit against what this plan quotes, and update the plan before starting:
 
@@ -130,7 +139,7 @@ Merged code may differ from the drafts this plan was written against. Diff the f
 git show $B:container/revproxy/revproxy.container.j2
 git show $B:container/revproxy/tm/locations/go2rtc.conf.j2
 git show $B:container/revproxy/tm/locations/cockpit.conf.j2
-git show $B:script/ansible/roles/tmsetup/tasks/revproxy_setup.yml | grep -n -A8 'Check NGinx config'
+git show $B:script/ansible/roles/tmsetup/tasks/revproxy_setup.yml | grep -n -B2 -A8 'Check NGinx config$'
 git show $B:script/tmsetup.sh | grep -n -E '_VALID_TAGS=|_VALID_CUSTOM_VARS=|Valid values'
 git show $B:script/devpi/tests/test_web.py | head -20
 git show $B:script/devpi/tests/test_disruptive.py | head -40
@@ -138,27 +147,46 @@ git show $B:script/ansible/roles/tmsetup/files/go2rtc.yaml | grep -o 'exec:[A-Za
 git show $B:script/ansible/roles/tmsetup/vars/main.yml | grep -E 'go2rtc_version|frigate_version|node_red_tm_version'
 ```
 
-On 2026-10-14 all of this matched. The only `exec` command was `rpicam-vid`, and the versions were go2rtc v1.9.14, Frigate 0.18.1, and Node-RED 5.0.8.
+On 2026-10-14 all of this matched. On 2026-10-25 these had changed in the final merges, and the tasks below now follow `dev`:
+- **`revproxy.container.j2`** takes its config mounts from `tmsetup_revproxy_config_mounts` in `vars/main.yml`, a list the `nginx -t` check uses too (#210). Task 2 keeps that loop, and its unit test passes the list.
+- **The "Check NGinx config" task** runs `nginx -t` with the `containers.podman.podman_container` module. It resolves `host.containers.internal` through `etc_hosts`, not `--add-host` (#210). Task 2 Step 4 removes the `etc_hosts` entry.
+- **`cockpit.conf.j2`** has a comment between `location` and `proxy_pass` (#212). Task 2 Step 4 now shows the whole file.
+- **`README.md`** lists Cockpit as a fifth app (#212), so the list moved down a line. `docs/setup-guide.md`'s Frigate address is now on line 70. Task 9 follows both.
+- **`test_web.py`** already imports `urllib.error` (Task 10 Step 1).
+- **`tmdev.py run`** joins the words after `--` and runs them in the Pi's login shell. Task 10 now passes compound commands as one quoted word instead of `sh -c`.
+
+Everything else still matched:
+- the `tmsetup.sh` lines;
+- `rpicam-vid` as the only `exec` command;
+- go2rtc v1.9.14, Frigate 0.18.1, and Node-RED 5.0.8;
+- the handler, start-services, and main task names;
+- Frigate's camera input path;
+- every node id and quoted function text in Task 8.
 
 - [ ] **Step 3: Move the branch onto the base**
 
-`feature/edge-ports/201` already exists. It's #210's head (`579084a`), plus the design docs merged in, plus the storefiles commit. Replay everything after `579084a` onto the base. That works whether #210 merged as-is or squashed:
+`feature/edge-ports/201` sat on #210's final review-fix head, `a473ec1`, which is also its merge base with `dev`. So a plain rebase replays only this branch's commits:
 
 ```bash
 git switch feature/edge-ports/201
-git rebase --onto $B 579084a
-git log --oneline $B..HEAD   # the design-doc commits and the storefiles commit, nothing from #210
+git rebase origin/dev
+git log --oneline origin/dev..HEAD   # the design-doc commits and the storefiles commit, nothing from #210
 ```
 
-If the design docs changed on `origin/feature/tm-control-design/102` after the branch was made, bring those commits too.
+On 2026-10-25 this replayed 11 commits, with two conflicts:
+- `CLAUDE.md`, in the list of proxied paths: keep `dev`'s `/system` and this branch's `/storefiles`.
+- `.gitignore`: take `dev`'s, which already ignores `__pycache__/` and `.pytest_cache/`. The commit that added those lines now changes only `tmsetup_render.py`, and its message no longer mentions them.
 
-Draft PR #224 is this branch, and it targets #210's branch. The repo doesn't delete branches on merge, so GitHub won't retarget it. Ask the person before force-pushing, then:
+`git range-diff a473ec1..origin/feature/edge-ports/201 origin/dev..HEAD` showed the other nine commits unchanged. `git diff --stat origin/dev` listed only the design docs, `storefiles.conf.j2` and its `vars/main.yml` line, `script/tests/`, and the CLAUDE.md line. The off-device checks passed: 70 tests (`script/tests` and the schema tests), the Ansible syntax check, the template parse, `flows.json`, and `bash -n`. Every patch from `feature/tm-control-design/102` was already on this branch.
+
+What's left is the push. Draft PR #224 already targets `dev`: GitHub moved it there when #210's branch was deleted. Ask the person before force-pushing, then:
 
 ```bash
 git push --force-with-lease origin feature/edge-ports/201
-gh pr edit 224 --base dev
-gh pr view 224 --json baseRefName,commits --jq '.baseRefName, (.commits | length)'   # dev, and only this branch's commits
+gh pr view 224 --json baseRefName,mergeable,commits --jq '.baseRefName, .mergeable, (.commits | length)'   # dev, MERGEABLE, 11
 ```
+
+`gh pr edit` fails on this repo with a Projects (classic) error. To change the PR's base or description, use `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -f base=dev` (or `-F body=@<file>`).
 
 ---
 
@@ -310,6 +338,8 @@ to:
           printf "  %s\n" "${_VALID_CUSTOM_VARS[@]}"
 ```
 
+#229, which builds the `ansible-playbook` command as a bash array, changes other lines of `tmsetup.sh`. If it merges first, these two edits still apply as written.
+
 - [ ] **Step 5: Run the tests and syntax checks**
 
 Run: `.venv/bin/python -m pytest script/tests -v && bash -n script/tmsetup.sh && echo OK`
@@ -353,7 +383,11 @@ At the top of `script/tests/test_tmsetup_templates.py`, add `import re` and `imp
 
 ```python
 def revproxy_unit():
-    return render("container/revproxy/revproxy.container.j2", tmsetup_codedir="/opt/traffic-monitor").splitlines()
+    return render(
+        "container/revproxy/revproxy.container.j2",
+        tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_revproxy_config_mounts=load_role_yaml("vars/main.yml")["tmsetup_revproxy_config_mounts"],
+    ).splitlines()
 
 
 def test_revproxy_runs_on_the_host_network_outside_the_pod():
@@ -478,11 +512,11 @@ Expected: most new tests FAIL:
 - There's no deny location.
 - `revproxy.service` isn't in the start loop.
 
-On the 2026-10-14 merge of the stacks, with Task 1 and the storefiles commit done, it was 37 failed, 9 passed.
+On 2026-10-25, on the rebased branch with Task 1 done, it was 37 failed, 9 passed.
 
 - [ ] **Step 3: Move revproxy to the host network**
 
-Replace `container/revproxy/revproxy.container.j2` with the version below. It keeps #210's bind mounts, drops `Pod=`, and adds the restart settings.
+Replace `container/revproxy/revproxy.container.j2` with the version below. It keeps #210's bind mounts, including the `tmsetup_revproxy_config_mounts` loop that the `nginx -t` check shares. It drops `Pod=` and adds the restart settings.
 
 ```
 [Unit]
@@ -498,8 +532,9 @@ Image=revproxy.build
 Network=host
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
-Volume={{ tmsetup_codedir }}/revproxy/nginx.conf:/etc/nginx/nginx.conf:ro
-Volume={{ tmsetup_codedir }}/revproxy/tm:/etc/nginx/tm:ro
+{% for mount in tmsetup_revproxy_config_mounts %}
+Volume={{ tmsetup_codedir }}/revproxy/{{ mount['path'] }}:{{ mount['target'] }}:ro
+{% endfor %}
 
 [Service]
 Restart=always
@@ -534,17 +569,21 @@ The regex location is a sibling, not nested. nginx checks regex locations after 
 
 Why the `src` rule is still needed: go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API. A `src` can still be a URL, which makes the device connect to another host, or an `ffmpeg:` source. The `hls/` paths are HLS segments for iPhones older than iOS 17, which can't use MSE.
 
-In `container/revproxy/tm/locations/cockpit.conf.j2`, change the comment and upstream to:
+In `container/revproxy/tm/locations/cockpit.conf.j2`, change the first comment and the upstream. The whole file becomes:
 
 ```
 # cockpit - Cockpit system administration (runs on the host; nginx shares the host network)
 location /system/ {
+    # No URI after the port, so nginx passes Cockpit's request URI through unchanged
     proxy_pass http://127.0.0.1:9090;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+    # Per Cockpit's nginx guidance: stream responses, and keep ETags (gzip drops them)
+    proxy_buffering off;
+    gzip off;
+}
 ```
 
-Leave the rest of the file as #212 wrote it.
-
-In `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml`, in the "Check NGinx config" task, delete the line `--add-host host.containers.internal:127.0.0.1`. In the comment above the task, delete the sentence starting `--add-host lets nginx resolve`. No location uses that name anymore, and `nginx -t` needs no name lookups for IP upstreams.
+In `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml`, find the "Check NGinx config" task inside the "Check NGinx config before deploying it" block. Delete its `etc_hosts:` key and the `host.containers.internal: 127.0.0.1` line under it. In the comment above the task, delete the line `# etc_hosts lets nginx resolve the go2rtc upstream inside the container.` No location uses that name anymore, and `nginx -t` needs no name lookups for IP upstreams.
 
 - [ ] **Step 5: Restart and start revproxy after the pod**
 
@@ -570,7 +609,7 @@ Run:
 
 Expected: all tests pass (46 so far), then `exit 0`.
 
-The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 10. For an earlier check, render the config into a scratch directory and run `nginx -t` in `docker.io/library/nginx:1.31.0` with no `--add-host`. On 2026-10-14 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above and proxied every allowed path and `/storefiles`.
+The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 10. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
 
 - [ ] **Step 7: Commit**
 
@@ -718,7 +757,7 @@ Run:
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass, then `exit 0`.
+Expected: all tests pass (50 so far), then `exit 0`.
 
 - [ ] **Step 6: Commit**
 
@@ -1919,7 +1958,7 @@ Run: `.venv/bin/python -m pytest script/tests/test_node_red_flows.py -v`
 Expected: 3 FAIL.
 - The status test names "setup test" and "Validate filenames, setup tar".
 - The header test lists the same two nodes instead of "download chunks".
-- The copy test fails at `one("copy database for download")`, because the node doesn't exist yet.
+- The copy test fails on its first assert, because "zip files" still reads `payload.filepath`.
 
 - [ ] **Step 3: Edit the flows**
 
@@ -2119,15 +2158,15 @@ GNU `tar` exits 1 when a file changes while it's being read. That still counts a
 Run:
 
 ```bash
-.venv/bin/python -m pytest script/tests -v
+.venv/bin/python -m pytest script/tests container/node-red-tm/schema/tests -v
 python3 -m json.tool container/node-red-tm/data/flows.json >/dev/null && echo "flows ok"
 git diff --stat container/node-red-tm/data/flows.json
 ```
 
 Expected:
-- all pass
+- all pass. The schema tests include #208's `test_flows_sql.py`, which checks the SQL in `flows.json` against the schema.
 - `flows ok`
-- only `flows.json` changed. The 2026-10-14 stat (`10 insertions(+), 39 deletions(-)`) predates the database copy and no longer applies.
+- only `flows.json` changed: `1 file changed, 102 insertions(+), 44 deletions(-)` on 2026-10-25's `dev`.
 
 There's no Node.js in the dev tools, so Task 10 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
 - 400, 403, or 404 for no files, a missing file, `../tmdb.sqlite`, `../temp-other.json`, and `.`;
@@ -2137,7 +2176,7 @@ There's no Node.js in the dev tools, so Task 10 runs the function code itself on
 - the connection closed when data had gone out;
 - "Download stopped" for Cancel.
 
-The header move, the database copy, and the page text were added on 2026-10-25. The script above was then run on a copy of that day's `flows.json`: the three tests went from failing to passing. The changed and new function code was run under Node 22 with stub `msg`, `node`, and `fs` objects, and it checked out:
+The header move, the database copy, and the page text were added on 2026-10-25. The script above was then run on a copy of that day's `flows.json`: the three tests went from failing to passing. Later that day it ran again on the merged `dev` (`e076db0`, after #208's flow changes), in the scratch worktree that already had Tasks 1 to 3. Every `swap` matched once, the three tests again went from failing to passing, and all 122 off-device tests passed. The changed and new function code was run under Node 22 with stub `msg`, `node`, and `fs` objects, and it checked out:
 - a database request gets its own `/db/snapshot/<stamp>-<random>` folder and `tarArgs`, with no headers set yet;
 - JSON requests and traversal checks behave as before;
 - headers are set once, with the first chunk;
@@ -2161,12 +2200,14 @@ git commit -m "Return real HTTP errors from data downloads, and end a download w
 **Files:**
 - Create: `docs/configuration/network-access.md`
 - Modify: `mkdocs.yml` (nav)
-- Modify: `README.md` (lines 44–48 and 62)
-- Modify: `docs/setup-guide.md` (line 67)
+- Modify: `README.md` (lines 45–49 and 63)
+- Modify: `docs/setup-guide.md` (line 70)
 - Modify: `docs/development/dev-environment.md` (line 22)
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Write the network access page**
+
+This page, and Step 2, are written for keeping Cockpit's `:9090` (see "Open decisions"). If the person chooses loopback instead, drop the 9090 row here. Then also change the README's and `docs/setup-guide.md`'s "Cockpit also answers directly on port `9090`" lines, CLAUDE.md's UIs bullet in Step 3, and Task 10 Step 6.
 
 `docs/configuration/network-access.md`:
 
@@ -2187,12 +2228,11 @@ Every app on the Traffic Monitor is reached through the home page on port 80. Th
 | Legacy dashboard | `http://<device>/ui/` |
 | Node-RED editor | `http://<device>/nr/` |
 | Camera feeds (go2rtc) | `http://<device>/feeds/` |
+| System administration (Cockpit) | `http://<device>/system/` |
 
 `<device>` is the device's IP address or `<hostname>.local`.
 
 ## Open ports
-
-Open question, from #212's review on 2026-10-23: Cockpit's own `:9090` is a plain-HTTP login outside the proxy, so a login added at the proxy in M2 won't cover it. Once nginx is on the host network (Task 2), Cockpit can listen on loopback only. Decide in M1 whether to keep `:9090` as a rescue console, or bind `cockpit.socket` to `127.0.0.1` with a `ListenStream=` drop-in and rely on SSH for rescue. Then update this table and Task 10 Step 6.
 
 | Port | Used for |
 |---|---|
@@ -2200,7 +2240,7 @@ Open question, from #212's review on 2026-10-23: Cockpit's own `:9090` is a plai
 | 80 | Home page and every app above |
 | 8554 | Camera stream (RTSP), with a username and password |
 | 5353 (UDP) | `<hostname>.local` names (mDNS) |
-| 9090 | Cockpit, when installed |
+| 9090 | Cockpit, directly, with your Raspberry Pi login. Use it if the home page doesn't load. |
 
 The camera feeds page shows the camera streams. It doesn't offer go2rtc's config editor, stream management, or WebRTC. Players use MSE, or HLS on older iPhones.
 
@@ -2243,13 +2283,14 @@ In `mkdocs.yml`, under `nav:` → `- Configuration:`, after `- Node-RED Config: 
 
 - [ ] **Step 2: Update the port references in the README and docs**
 
-In `README.md`, replace the four bullets under "User Interfaces (UI) / port numbers references" with:
+In `README.md`, replace the five bullets under "User Interfaces (UI) / port numbers references" with the list below. The Cockpit bullet stays as #212 wrote it.
 
 ```markdown
 - `http://<device_ip_address>/` is the home page, with links to every app below.
 - `http://<device_ip_address>/ui/` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
 - `http://<device_ip_address>/frigate/` to view the [Frigate](https://github.com/blakeblackshear/frigate) interface and make any configuration changes specific to your deployment
 - `http://<device_ip_address>/feeds/` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) camera streams on the Raspberry Pi. Use this if your cameras are giving errors in Frigate.
+- `http://<device_ip_address>/system/` opens [Cockpit](https://cockpit-project.org/) for system administration: services, logs, updates, containers, and a terminal. Log in with your Raspberry Pi user account. Cockpit also answers directly on port `9090`.
 - `http://<device_ip_address>/nr/` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
 
 See [Network Access](https://docs.trafficmonitor.ai/latest/configuration/network-access/) for the ports the device opens.
@@ -2272,11 +2313,15 @@ Make these edits to the matching text. If a sentence was reworded on your base b
    - `design/`: specs and implementation plans. Not published to the docs site.
    ```
 
-2. **"Commands"**: change the pytest line to:
+2. **"Commands"**:
+   - Change `The off-device tests cover the tmdb schema (\`container/node-red-tm/schema/tests\`).` to `The off-device tests cover the tmdb schema (\`container/node-red-tm/schema/tests\`), the role's templates and tasks and \`flows.json\` (\`script/tests\`), and tm-control (\`tm-control/backend/tests\`).`
+   - Change the pytest line to:
 
-   ```bash
-   python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests  # schema, role templates and tasks, tm-control
-   ```
+     ```bash
+     python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests  # schema, role templates and tasks, tm-control
+     ```
+
+   - Add `tm-control` to the end of the tag list in the `tmsetup.sh -T` line's comment (Task 6's tag).
 
 3. **"Runtime topology"**, first bullet:
    - Change `All containers (frigate, node-red-tm, revproxy, optional plate-recognizer) run in one pod` to `The app containers (frigate, node-red-tm, optional plate-recognizer) run in one pod`.
@@ -2334,7 +2379,7 @@ grep -n 'network-access' mkdocs.yml
 ```
 
 Expected:
-- The first command prints nothing except lines that describe internal addresses (`127.0.0.1:…`).
+- The first command prints nothing except lines that describe internal addresses, such as `127.0.0.1:1984` and `http://frigate:5000/api/...` in CLAUDE.md.
 - The second prints the new nav line.
 - The build passes. With `--strict` it fails on broken links or anchors, and on a page missing from the nav. Set up `~/.venvs/tm-docs` as described in CLAUDE.md's docs check.
 
@@ -2354,7 +2399,7 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
 - Keep device names and addresses out of commits and PR text.
 - Ask the person before any step that reboots the Pi or stops services.
 
-`T` below stands for `.venv/bin/python script/devpi/tmdev.py`.
+`T` below stands for `.venv/bin/python script/devpi/tmdev.py`. Run it from this branch's checkout, so `test` runs this branch's device tests; the `.venv` needs `ansible-inventory`, which CLAUDE.md's dev venv has. `run` joins the words after `--` with spaces and runs them in the Pi's login shell. So pass a pipe or a compound command as one quoted word (`-- 'cmd1 | cmd2'`), not as `sh -c …`. An unquoted `|` runs the rest on this machine.
 
 **Files:**
 - Modify: `script/devpi/tests/test_web.py`
@@ -2370,7 +2415,7 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
 
 - [ ] **Step 1: Write the device tests**
 
-At the top of `script/devpi/tests/test_web.py`, add `import socket` and `import urllib.error` to the imports. Then append:
+At the top of `script/devpi/tests/test_web.py`, add `import socket` to the imports; it already imports `urllib.error` and `urllib.request`. Then append:
 
 ```python
 # Edge and ports (tm-control M1): from this machine, only nginx answers, and /feeds is view-only.
@@ -2570,9 +2615,9 @@ $T test <host>
 ```
 
 Expected:
-- All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL.
+- All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL. `test_no_crash_restarts[revproxy.service]` should pass too. It counts restarts since the handler last restarted revproxy, so a failure means the pod still held port 80 at that point (Review Focus 3). Bring that to the person.
 - The 21 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass and the three data-export tests that write to the Pi or download the database are skipped.
-- On a `pii_free` unit, while `test_data_export_tars_a_database_copy` runs: the Dashboard's Monitoring page keeps updating, and afterwards `$T run <host> -- sudo journalctl -u node-red-tm --since "-15min" | grep -c -E "SQLITE_BUSY|database is locked"` prints `0`. Record it as an item. If writes failed or Node-RED stalled during the copy, stop and bring it to the person; don't work around it.
+- On a `pii_free` unit, while `test_data_export_tars_a_database_copy` runs: the Dashboard's Monitoring page keeps updating, and afterwards `$T run <host> -- 'sudo journalctl -u node-red-tm --since -15min | grep -c -E "SQLITE_BUSY|database is locked"'` prints `0`. Record it as an item. If writes failed or Node-RED stalled during the copy, stop and bring it to the person; don't work around it.
 
 Record an item.
 
@@ -2587,7 +2632,7 @@ Expected: apart from `127.0.0.1` and `[::1]`, the only listeners are:
 - `:80`
 - `:8554` (go2rtc)
 - `:5353` (avahi)
-- `:9090`, if Cockpit is installed
+- `:9090` (Cockpit; see "Open decisions")
 - DHCP/DNS, only in hotspot mode
 
 Nothing listens on 1880, 1883, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 9). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
@@ -2600,13 +2645,13 @@ Re-run on the Pi itself, so its install log lands on the Pi where the check can 
 $T run <host> -- sudo sha256sum /etc/traffic-monitor/secrets/go2rtc_rtsp_password
 $T deploy <host> --on-pi -- -t frigate -t go2rtc
 $T run <host> -- sudo sha256sum /etc/traffic-monitor/secrets/go2rtc_rtsp_password
-$T run <host> -- sh -c 'sudo grep -l -F -f /etc/traffic-monitor/secrets/go2rtc_rtsp_password ~/tmsetup-*.log || echo "no secrets in logs"'
+$T run <host> -- 'ls ~/tmsetup-*.log && { sudo grep -l -F -f /etc/traffic-monitor/secrets/go2rtc_rtsp_password ~/tmsetup-*.log || echo "no secrets in logs"; }'
 ```
 
 Expected:
 - The two hashes match. A hash isn't the secret.
 - "Update Frigate config from older installs" reports *ok*, not changed.
-- The last command prints `no secrets in logs`.
+- The last command lists the install logs, then prints `no secrets in logs`. The `ls` keeps a missing log from passing the check.
 
 Record an item.
 
@@ -2616,7 +2661,7 @@ Ask the person first: this stops data capture for a few minutes.
 
 ```bash
 $T test <host> --disruptive -- -k survives_a_stopped_pod
-$T run <host> -- sh -c "sudo journalctl -u frigate.service -b | grep -i -E '401|unauthorized' || echo none"
+$T run <host> -- "sudo journalctl -u frigate.service -b | grep -i -E '401|unauthorized' || echo none"
 ```
 
 Expected: the test passes, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
@@ -2649,7 +2694,7 @@ git commit -m "Add device tests for closed app ports, the view-only /feeds, down
 
 - [ ] **Step 11: Update PR #224 and mark it ready**
 
-Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), rewrite its description for the finished M1, and mark it ready with `gh pr ready 224`. Fill in:
+Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), and rewrite its description for the finished M1 with `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -F body=@<file>`; `gh pr edit` fails on this repo. Read the current description first, so the person's own edits aren't lost. The person marks it ready and merges it, with a merge commit like the stacks before it. Closing keywords only fire on merges into `main`, so close #211 and #223 by hand once it's in `dev`. Fill in:
 - **Testing:** the check's checklist, with device names and addresses replaced by placeholders, plus the off-device results. Never include secret values.
 - **Release notes:**
   - Direct app ports are closed; use the `/…` paths.

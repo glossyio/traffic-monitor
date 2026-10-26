@@ -1,32 +1,21 @@
 # tm-control: Traffic Monitor control app, platform design
 
-- **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13. Re-checked on 2026-10-14 after #197, #218, #219, #220, and #222 merged into `dev` (see "Builds on open PRs").
-- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), #185 (Cockpit), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy), #223 (data download errors return 200)
+- **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13, and re-checked on 2026-10-14 after #197, #218, #219, #220, and #222 merged into `dev`. Re-checked again on 2026-10-25, after every PR it builds on had merged (see "Builds on merged PRs").
+- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy), #223 (data download errors return 200). #185 (Cockpit) closed when #212 merged. Other related issues are listed under "Builds on merged PRs".
 - **Scope:** this spec covers the **platform**. Features built on it, such as Wi-Fi/hotspot and camera rename, get their own specs.
 
-## Builds on open PRs
+## Builds on merged PRs
 
-Several PRs were open, most of them drafts, when this was written. The design builds on their approach. Their code may still change, so each milestone's plan re-checks what has merged before it starts.
-
-```
-dev (now includes #197, #218, #219, #220, #222)
-└─ #202 feature/ai-use-policy (CLAUDE.md, AI-use policy)
-   ├─ #205 bugfix/tmsetup-sudo-hint/mz
-   ├─ #206 refactor/tmdb-schema-migrations/mz → #208 refactor/tmdb-schema-activate/mz
-   │     → #214 feature/devpi-tooling/mz → #215 feature/devpi-tests/mz
-   └─ #210 feature/switch_nginxconf_from_dict → #212 feature/185-cockpit
-```
-
-On 2026-10-14 every open branch above contained the latest `dev`, and all four stacks merged together without conflicts.
+The design was written on top of open PRs, most of them drafts. They all merged into `dev` on 2026-10-25, each with a merge commit, in this order: #202, #205, #210, #206, #208, #214, #215, #212. Each milestone's plan still re-checks `dev` before it starts.
 
 | PR | What this design takes from it |
 |---|---|
 | #202 | The AI-use policy, commit trailers, and CLAUDE.md conventions. |
 | #205 | Raspberry Pi OS 6.2 and later asks for a sudo password. tm-control's runtime privilege never uses sudo (it uses polkit and root jobs), so this doesn't affect it. `sudo tm-control reset-admin` asks for the admin's password. |
-| #206, #208 | The dev venv (`script/requirements-dev`) and pytest layout for off-device tests. The `runuser` pattern for commands that run as the code owner. Flows that no longer create tables. |
-| #210 | **The nginx layout:** one `location` file per app in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations`. Shared headers come from `tm/snippets/proxy-common.conf`. The config is bind-mounted, checked with `nginx -t` before restarting, and `/frigate` is hardcoded. tm-control's nginx changes are location files and snippets in this layout. |
-| #212 | Cockpit at `/system/`, from backports, with `AllowUnencrypted` and `LoginTo = false`. It keeps its own login and listens on `:9090`, which is the rescue console. |
-| #214, #215 | **Pi checks** run through `script/devpi/tmdev.py` (`deploy`, `check`, `test`). `--src` points a check or deploy at another checkout, such as a milestone's worktree. Device tests in `script/devpi/tests` compare a bench Pi against its expected hardware. Tests that stop services go in `test_disruptive.py` and run only with `test --disruptive`. Each milestone adds device tests there. |
+| #206, #208 | The dev venv (`script/requirements-dev`) and pytest layout for off-device tests. The `runuser` pattern for commands that run as the code owner. Flows that no longer create tables: `tmdb_migrate.py` migrates `tmdb.sqlite` as `ExecStartPre` of `node-red-tm.service`, and Node-RED starts even if a migration fails. M3 reports a schema that's behind (see "Node-RED state"). |
+| #210 | **The nginx layout:** one `location` file per app in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations`. Shared headers come from `tm/snippets/proxy-common.conf`. The config is bind-mounted through `tmsetup_revproxy_config_mounts`, which the unit and the `nginx -t` check share. Setup renders the config into a throwaway directory and checks it there before it replaces the deployed copy. `/frigate` is hardcoded. tm-control's nginx changes are location files and snippets in this layout. |
+| #212 | Cockpit at `/system/`, installed from backports on every device, with `AllowUnencrypted` and `LoginTo = false`. It keeps its own login, and `cockpit.socket` listens on `:9090`, which is the rescue console. |
+| #214, #215 | **Pi checks** run through `script/devpi/tmdev.py` (`deploy`, `check`, `test`). `--src` points a check or deploy at another checkout, such as a milestone's worktree. Device tests in `script/devpi/tests` compare a bench Pi against its expected hardware. Tests that stop services go in `test_disruptive.py` and run only with `test --disruptive`. Each milestone adds device tests there. `test_no_crash_restarts` counts a unit's restarts since it last started, so after M1's upgrade it shows whether revproxy still had to retry for port 80. |
 
 **Merged into `dev` on 2026-10-14**
 
@@ -36,6 +25,19 @@ On 2026-10-14 every open branch above contained the latest `dev`, and all four s
 | #218, #219 | Frigate gets the HEVC decoder that `utils/find_hevc_device.sh` finds (`tmsetup_hevc_device`, falling back to `/dev/media3`). M3's hardware checks add it as a probe. |
 | #220 | Frigate 0.18.1, Node-RED 5.0.8, and go2rtc 1.9.14 with a checksummed download. go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API, and can limit which modules load and which commands `exec` runs. M1 uses both limits. Frigate 0.18 rewrites an older `config.yml` to `version: 0.18-0` on its first start, keeping a `backup_config.yaml`. |
 | #222 | When no accelerator is found, Frigate's `config.yml` gets a `cpu` detector. M3 reports that as a warning, not a failure. |
+
+**Docs site, 2026-10-25:** #233 moved the docs from GitBook to Material for MkDocs, with a version per release, on GitHub Pages. #234 shipped it as v0.7.1, #235 brought it into `dev`, and #236 and #237 followed up. New pages go in `mkdocs.yml`'s nav and use admonitions, and PRs that touch docs run `mkdocs build --strict`.
+
+**Related open issues, 2026-10-25**
+
+| Issue | How the design handles it |
+|---|---|
+| #211, #223 | Data export through the proxy, and its error statuses. Fixed in M1. |
+| #217 | The Coral USB Accelerator isn't detected on re-runs once its firmware is loaded. M3's probe matches both of its USB IDs. |
+| #231 | The HEVC decoder's `/dev/media` number can change between boots. M3's "passed to Frigate" check catches it. The likely fix is in `frigate.container.j2` and the HEVC scan, which M1 doesn't edit, so it can go in its own PR. M3 then probes whatever stable name it adds. |
+| #232 | The pod stays down after `tmnet-network.service` fails once at boot. After M1, nginx runs outside the pod, so the home page stays up, and M3's status page shows the pod down with a restart button. The M1 plan asks whether to fold the fix in, since M1 edits the same pod unit. |
+| #209 | Turning the hotspot on at install time belongs to the Wi-Fi/hotspot feature spec. |
+| #229, #230 | Unrelated to the design. #229 changes how `tmsetup.sh` builds its command, away from the lines M1 edits. #230 makes `/dashboard/`, which the home tile links to, open on Monitoring. |
 
 ## Context
 
@@ -72,7 +74,7 @@ It doesn't replace Frigate, the Node-RED dashboards, or Cockpit.
 | Why not off-the-shelf SSO | Authelia and tinyauth need HTTPS and real domains or subdomains, which rules out IPs and `.local`. Basic Auth isn't sent on WebSocket upgrades by Safari, which breaks Frigate live view and Dashboard 2.0 on iPhones. Using Frigate's login for everything would lock everyone out whenever Frigate breaks. |
 | First run | Welcome → EULA → **setup code** + admin account → optional system (Linux) password with a "same password" checkbox → home. |
 | Linux accounts | The OS admin account created in Raspberry Pi Imager stays: it's for Cockpit, SSH, updates, and recovery. Web users live in tm-control, not Linux. `tmadmin` stays a no-login service account. Dev Pis also have #214's key-only `tmdev` account, which field devices never get. |
-| Cockpit | As #212 sets it up: its own PAM login, at `/system/` behind the proxy, and directly on `:9090` as the rescue console. |
+| Cockpit | As #212 sets it up: its own PAM login, at `/system/` behind the proxy, and directly on `:9090` as the rescue console. Whether `:9090` stays open is an open decision in the M1 plan. |
 | Install variables | A fixed value shared by several tasks or templates becomes a non-configurable variable in `vars/main.yml`, like `tmsetup_hailo_driver_dir` and `tmsetup_revproxy_locations`. A value an operator may change goes in `defaults/main.yml`, with `-C` for booleans. A literal used once, in one file, is hardcoded, like `/frigate` in `frigate.conf.j2`. |
 | Host service | tm-control follows the host-service pattern of `go2rtc_server.service`, not the container trio (Containerfile, `.build`, `.container`). That's deliberate: it needs host privileges and has to keep working when Podman doesn't. |
 | Front end | Vue 3 + Vuetify 3 + TypeScript + Vite, the same stack as Node-RED Dashboard 2.0. Kept thin: logic in Python, the UI renders API data. Conventional, documented patterns so non-front-end maintainers can review it. |
@@ -95,7 +97,7 @@ Phone / laptop ──HTTP :80──▶ nginx (revproxy, host network)
   /nr/              Node-RED editor                                     auth_request, admin
   /feeds/           go2rtc       127.0.0.1:1984 (viewing paths only)    auth_request, admin; config API/editor denied
   /system/          Cockpit      127.0.0.1:9090                         auth_request, admin + Cockpit login
-Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot DHCP/DNS,
+Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
                go2rtc RTSP :8554 (credentials; Frigate reads the camera through it)
 ```
 
@@ -118,7 +120,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue, once #185 lands), mDNS, hotspot D
     - `src` must be a plain stream name. go2rtc itself already refuses `exec:` sources from its API. This rule also blocks URL sources, which would make the device connect to other hosts, and `ffmpeg:` sources.
     - A sibling location denies API paths other than the ones the players use: `location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" { return 403; }`.
   - go2rtc doesn't ask for its API or RTSP credentials from localhost. nginx connects from localhost, so nginx's rules are the API's real limit.
-- **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login.
+- **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login. M2's login at the proxy won't cover it, and binding it to loopback would leave SSH as the only rescue; the M1 plan lists this as an open decision.
 - **MQTT 1883:**
   - Loopback by default.
   - LAN access is an opt-in install variable for off-device sensors and requires broker credentials (`TM_MQTT_BROKER_USERNAME/PASSWORD`).
@@ -256,7 +258,10 @@ tm-control/
 **Node-RED state**
 - New `http in` endpoints under `/tm-internal/` cover status, the last config errors from `init config defaults`, and deployment and radar state.
 - Each endpoint checks `X-TM-Internal-Token`, and nginx denies `/nr/tm-internal/`.
-- Add them by script, as CLAUDE.md describes, on top of whatever flows have merged. #197 and #208 both change `flows.json`.
+- Add them by script, as CLAUDE.md describes, on top of whatever flows have merged. #197 and #208 both changed `flows.json`, and M1's Task 8 changes the download nodes.
+- **Schema version.** Node-RED starts even when `tmdb_migrate.py` fails (#208). On a fresh install it then writes into an empty database, every insert fails with "no such table", and only the journal says why. M3 compares the database's `PRAGMA user_version` with the newest deployed migration.
+  - When the schema is behind, the status page keeps a warning up, with the `journalctl -u node-red-tm | grep tmdb-migrate` hint. The check is documented in `docs/data-and-payloads/` and the schema README.
+  - tm-control only reads the version, from Node-RED's `/tm-internal/` status or from `tmdb_migrate.py --check`, which changes nothing. M3 planning picks one. A second connection's read lock can make Node-RED's writes fail, because they have no busy timeout.
 
 **Frigate**
 - Reads: `/api/config`, `/api/stats`, and `/api/version`.
@@ -281,7 +286,7 @@ tm-control/
 
   The first failing layer names the fix.
 - With no accelerator, Frigate runs its `cpu` detector (#222). The detector check reports that as a warning ("detecting on the CPU, slow"), not an error.
-- The HEVC decoder (#218) gets two layers: present, and passed to Frigate.
+- The HEVC decoder (#218) gets two layers: present, and passed to Frigate. The second compares the device Frigate got with the decoder found now, because the decoder's `/dev/media` number can change between boots (#231).
 - The fix actions ship in the detector feature spec: "Use in Frigate", an "Install support" job running `tmsetup.sh -t detectors -t frigate`, and "Switch detector". The platform ships the checks and a restart button.
 - #215's device tests check the same layers from the dev machine: expected, present, configured, and working. M3 uses the same layer names and the same probe commands, so a failure reads the same in both.
 - **Open question for M3 planning:** should #215's device tests assert against tm-control's `/api/v1/status` instead of keeping their own probes? That would remove duplication, but the tests would then depend on tm-control working.
@@ -319,7 +324,7 @@ tm-control/
    - **Services:** TM units, with restart.
    - **Apps:**
      - Frigate: reachable, version, and detector stats.
-     - Node-RED: reachable, and its config-load errors (D#151).
+     - Node-RED: reachable, its config-load errors (D#151), and whether `tmdb.sqlite`'s schema is current.
      - go2rtc: streams producing.
    - **Hardware:** layered detector checks, the HEVC decoder, radars present and visible, disk, and temperature and throttling.
    - **Contracts:**
@@ -350,7 +355,7 @@ tm-control/
 
 ## Milestones
 
-Each milestone gets its own implementation plan in `design/plans/` and can ship on its own. Each one needs the nginx stack (#210, #212) and the test and tooling stack (#206 to #215), so it starts once those have merged. Its first task re-checks the plan against what merged.
+Each milestone gets its own implementation plan in `design/plans/` and can ship on its own. They build on the nginx stack (#210, #212) and the test and tooling stack (#206 to #215), which merged on 2026-10-25. Each plan's first task re-checks it against `dev`.
 
 **M1: edge and ports.** Auth stays as it is today.
 - revproxy moves to `Network=host` and out of the pod. The `go2rtc.conf` and `cockpit.conf` upstreams move to `127.0.0.1`.
@@ -372,10 +377,10 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 - The UI shell: setup, login, home, and account.
 
 **M3: status and system.**
-- Status and config checks, the Node-RED `/tm-internal/` endpoints, and restart actions.
+- Status and config checks, the Node-RED `/tm-internal/` endpoints, and restart actions. The checks include the tmdb schema version (see "Node-RED state").
 - Hardware handling:
   - An optional `AddDevice=-<path>` for every known detector and radar path. Quadlet adds the device only if it exists. #215's `AddDevice` assertions in `test_ai_coprocessor` and `test_radars` change with it.
-  - The Coral USB probe matches both `1a6e:089a` and `18d1:9302`. The ID changes after Frigate initializes the device.
+  - The Coral USB probe matches both `1a6e:089a` and `18d1:9302` (#217). The ID changes after Frigate initializes the device.
 - The system info and date/time pages.
 
 ## Critical files
@@ -423,6 +428,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
   - `docs/configuration/*`.
   - A new user page for the portal.
   - `docs/development/`: tm-control architecture, the module guide, fake mode, and how the UI works.
+  - `mkdocs.yml`: each new page in `nav:`, and a new top-level page also in the `llmstxt` plugin's "Get started" section.
 - `CLAUDE.md`: the architecture update. The `config.yml` watch reload also corrects "read only when the flows start".
 
 ## Reuse
@@ -467,7 +473,6 @@ These are spikes in the M1 and M2 plans.
 - Frigate reads go2rtc RTSP via `host.containers.internal` with credentials. With WebRTC off, MSE fallback works in Frigate and in `/feeds`.
 - The OS baseline is Raspberry Pi OS Trixie (Podman 5.4), which `.build` Quadlets and `AddDevice=-` need.
 - `rpicam-vid --list-cameras` works while go2rtc holds the camera.
-- The PRs this design builds on are still open, and some are drafts. Their code can change before it merges, so each milestone plan starts by re-checking against what merged.
 
 ## Verification
 
@@ -491,13 +496,14 @@ Run these through `tmdev.py`:
 Keep device names and addresses out of the PR.
 
 *M1*
-- From another machine, `nmap -p- <pi>` shows only TCP 22, 80, 9090 (if Cockpit is present), and 8554. On the Pi, `ss -ulnp` shows no go2rtc UDP sockets, even while `/feeds/` plays.
+- From another machine, `nmap -p- <pi>` shows only TCP 22, 80, 9090 (Cockpit), and 8554. On the Pi, `ss -ulnp` shows no go2rtc UDP sockets, even while `/feeds/` plays.
 - Direct connections to 5000, 1880, and 1984 are refused.
 - RTSP without credentials gets 401.
 - `/feeds/api/config` returns 403.
 - Frigate live view and Dashboard 2.0 work through the proxy.
 - A data export from the Dashboard's database page downloads through the proxy.
 - Stopping `traffic-monitor.service` leaves the home page up (a disruptive device test).
+- `revproxy.service` didn't have to retry after the upgrade restarted it (#215's `test_no_crash_restarts`).
 - The watch-node test passes.
 
 *M2*
