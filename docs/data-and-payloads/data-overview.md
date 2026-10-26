@@ -20,7 +20,7 @@ We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized d
 
 Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
-By default, no images or video leave the device. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can open the live view and the recordings, though, because they have no login; [Home page and apps](../use/home-page.md) shows which apps ask for one.
+By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; [Home page and apps](../use/home-page.md) shows which apps ask for one. Frigate also publishes a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt), which has no login either. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows how to turn those snapshots off.
 
 The database stops being de-identified if you:
 
@@ -65,7 +65,7 @@ A row for each combination of sensor, location, and bearing the device has had, 
 | `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` |
 | `sensorType` | TEXT | `cameras`, `radars`, or `airquality_monitors` |
 | `sensorName` | TEXT | The sensor's name in `config.yml` |
-| `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)) |
+| `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written while the service starts, such as the first rows after an install, hold `undefined` instead. |
 
 ### comments
 
@@ -82,11 +82,11 @@ Free-text notes an operator adds on the [Data export](../ui/database.md) page, f
 
 ### Schema versions
 
-The tables are defined by numbered migrations in the repository's [`container/node-red-tm/schema/`](https://github.com/glossyio/traffic-monitor/tree/main/container/node-red-tm/schema) folder, and `schema.sql` there shows the whole current schema. Each time the Node-RED service starts, it applies any migrations the database doesn't have yet and records the schema version in the database. Before it does, it saves a copy of the database in `/opt/traffic-monitor/node-red-tm/db/backup/` and keeps only the most recent copy. It skips the copy for a new, empty database, for the first schema version on a database from before schema versions, which changes no existing table, and when the disk has less free space than about 1.2 times the database's size. You can read the version with `PRAGMA user_version;`.
+The tables are defined by numbered migrations in the repository's [`container/node-red-tm/schema/`](https://github.com/glossyio/traffic-monitor/tree/main/container/node-red-tm/schema) folder, and `schema.sql` there shows the whole current schema. Each time the Node-RED service starts, it applies any migrations the database doesn't have yet and records the schema version in the database. Before it does, it saves a copy of the database in `/opt/traffic-monitor/node-red-tm/db/backup/` and keeps only the most recent copy. It makes no copy of a new database, or when the disk has less free space than about 1.2 times the database's size. It also makes none when the only migration to apply is the first, which only adds missing tables. You can read the version with `PRAGMA user_version;`.
 
 ## Getting the data
 
-* **Download** the whole database from the [Data export](../ui/database.md) page, or a JSON export over a date range of the `events` table or one object type, the five radar tables, and the `airquality` table.
+* **Download** the whole database, or a JSON export of events, radar readings, or air quality readings over a date range, from the [Data export](../ui/database.md) page.
 * **Open** the database with [DB Browser for SQLite](https://sqlitebrowser.org/), or from code with any SQLite library, such as Python's built-in `sqlite3`.
 * **Subscribe** to today's counts over MQTT, or **upload** everything to ThingsBoard. See [MQTT and ThingsBoard](integrations.md).
 * **Review** snapshots and clips in Frigate's **Explore** view at `http://<device>/frigate/`.

@@ -4,7 +4,7 @@ description: The device's MQTT broker and topics, the daily counts it publishes,
 
 # MQTT and ThingsBoard
 
-Nothing leaves the device unless you set up one of these.
+The MQTT broker is on by default, and anyone on your network can subscribe to it. The ThingsBoard upload is off until you turn it on.
 
 ## MQTT
 
@@ -13,6 +13,7 @@ Node-RED hosts an MQTT broker on the device at port `1883`, with no authenticati
 | Topic | Direction | Contents |
 |---|---|---|
 | `frigate/events` | Frigate to the Traffic Monitor | Frigate's [event messages](https://docs.frigate.video/integrations/mqtt). The Traffic Monitor records the ones with `type: "end"` as [events](events-payload.md). |
+| `frigate/<camera>/<object>/snapshot` | Frigate to subscribers | A cropped JPEG of each detected object, which can show a person. The Traffic Monitor doesn't use it. To turn it off, see [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). |
 | `aq/<sensor>/readings` | [Air quality sensor](../add-ons/air-quality.md) to the Traffic Monitor | One JSON reading. See [Air quality](air-quality-aq-payload.md). |
 | `tm/events` | The Traffic Monitor to subscribers | Today's cumulative counts, mainly for a display board. Published with QoS 1 and retained, so a new subscriber gets the latest counts at once. See below. |
 
@@ -20,7 +21,7 @@ Node-RED hosts an MQTT broker on the device at port `1883`, with no authenticati
 
 ### tm/events
 
-A JSON object with today's counts for events that passed through `zone_capture`. The counts are for the camera selected on the legacy dashboard at `http://<device>/ui/`. The day starts at 04:00 local time, so from midnight until 04:00 the counts are empty.
+A JSON object with the same counts as **Today's counts** on the [Monitoring](../ui/monitoring.md) dashboard: events that passed through `zone_capture`, for the camera selected on the legacy dashboard at `http://<device>/ui/`, in a day that starts at 04:00 local time.
 
 | Key | Meaning |
 |---|---|

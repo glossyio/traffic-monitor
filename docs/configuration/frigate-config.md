@@ -49,6 +49,15 @@ To switch, change two things in the configuration editor under `cameras: picam_h
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](../data-and-payloads/data-overview.md) describes what the device stores.
 
+Frigate also publishes a cropped snapshot of each detected object on the device's [MQTT broker](../data-and-payloads/integrations.md#mqtt), which anyone on your network can subscribe to. The Traffic Monitor doesn't use these snapshots. To stop them, add `mqtt: enabled: false` under the existing `cameras: picam_h265:` in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.
+
+```yaml
+cameras:
+  picam_h265:
+    mqtt:
+      enabled: false
+```
+
 ## Better models
 
 [Frigate+](https://docs.frigate.video/plus/) offers paid models fine-tuned on your own snapshots, which can raise accuracy for a difficult site.

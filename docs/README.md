@@ -14,7 +14,7 @@ description: >-
   <figcaption>Be counted</figcaption>
 </figure>
 
-Privacy is part of the design. Object detection runs on the device, the database records labels, speeds, and times rather than people, and you choose what leaves the device. [Data and privacy](data-and-payloads/data-overview.md) lists what the device stores, including the short-lived snapshots and clips that Frigate keeps by default.
+Privacy is part of the design. Object detection runs on the device, the database records labels, speeds, and times rather than people, and nothing is sent to an outside server unless you set it up. [Data and privacy](data-and-payloads/data-overview.md) lists what the device stores, including the short-lived snapshots and clips that Frigate keeps by default, and who on your network can see them.
 
 Our mission is to democratize the power of AI tools to improve community safety and quality of life, through the ethical and transparent use of these capabilities.
 

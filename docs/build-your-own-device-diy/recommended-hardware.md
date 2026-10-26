@@ -54,7 +54,7 @@ The Raspberry Pi 5 needs a 27 W supply (5 V at 5 A). A weaker supply, such as an
 
 ??? note "Longer off-grid use: custom battery and solar"
 
-    **Battery.** Use a 12 V or 24 V [LiFePO₄](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) battery and a [buck converter](https://en.wikipedia.org/wiki/Buck_converter) that steps it down to 5 V at 5 A. A 12 V, 10 Ah battery lasts about 10 hours. For longer, size the battery from the device's draw: at about 13 W, 24 hours needs 13 × 24 = 312 Wh, which is a 12 V battery of about 30 Ah.
+    **Battery.** Use a 12 V or 24 V [LiFePO₄](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) battery and a [buck converter](https://en.wikipedia.org/wiki/Buck_converter) that steps it down to 5 V at 5 A. Size the battery from the device's draw of about 13 W: a 12 V, 10 Ah battery (120 Wh) lasts about 9 hours, and 24 hours needs 13 × 24 = 312 Wh, a 12 V battery of about 30 Ah.
 
     **Solar.** Add a [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) panel and a [charge controller](https://en.wikipedia.org/wiki/Charge_controller) to the battery setup. Size the panel for the worst month:
 
@@ -67,7 +67,7 @@ The Raspberry Pi 5 needs a 27 W supply (5 V at 5 A). A weaker supply, such as an
 
 ## Cameras
 
-The [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) in its wide-angle version is the tested camera. It needs the [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/), sold separately. The [Raspberry Pi Global Shutter camera](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) has been tested too, for faster motion or a custom lens, with the same cable. It needs camera stream settings that match its sensor, because the default settings are for Camera Module 3.
+The [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) in its wide-angle version is the tested camera. It needs the [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/), sold separately. The [Raspberry Pi Global Shutter camera](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) has been tested too, for faster motion or a custom lens, with the same cable. It needs camera stream settings that match its sensor, because the defaults are for Camera Module 3. They're in `/var/lib/go2rtc/go2rtc.yaml`, which every update replaces, so redo them after updating.
 
 The Raspberry Pi 5 has two camera connectors, so it can take two Raspberry Pi cameras. Network cameras also work; see [Frigate's camera recommendations](https://docs.frigate.video/frigate/hardware#cameras). Choose one that streams H.265 (HEVC), which the Raspberry Pi 5 decodes in hardware. H.264 works with software decoding but costs CPU, so keep to one or two such cameras.
 
@@ -87,7 +87,7 @@ The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-rada
 
 ## Air quality sensor
 
-The [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) board with the [PMS5003 particulate matter sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/) measures gases, particulates, temperature, pressure, humidity, light, and noise. It plugs into the Raspberry Pi's GPIO header through a [male-to-female ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/), which reaches the sensor's place in the enclosure. [Air quality sensor](../add-ons/air-quality.md) covers the software.
+The [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) board with the [PMS5003 particulate matter sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/) measures gases, particulates, temperature, pressure, humidity, and light. It plugs into the Raspberry Pi's GPIO header through a [male-to-female ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/), which reaches the sensor's place in the enclosure. [Air quality sensor](../add-ons/air-quality.md) covers the software.
 
 ## Enclosure
 

@@ -14,6 +14,7 @@ Keep the four top-level sections (`thingsboard`, `deployment`, `sensors`, `time`
 * A radar without `opt_api_commands_array` gets no extra commands.
 * ThingsBoard without `host` stays off.
 * A `deployment` without `lat` or `lon` isn't recorded, so leave the keys in place even when they're empty.
+* A camera whose `camera_radar` names a radar that isn't in the file records no events. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
 ## thingsboard
 
@@ -57,7 +58,7 @@ One entry per radar. A radar's name is the name of the variable that holds its s
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar. |
-| `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'` | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
+| `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'` | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
 | `deployment` | block | inherited | Per-radar `lat`, `lon`, and `bearing`. |
 
 ## sensors.airquality_monitors

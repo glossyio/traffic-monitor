@@ -10,9 +10,9 @@ The home page links to every app on the device.
 
 | Link | Path | What it is | Login |
 |---|---|---|---|
-| Dashboard | `/dashboard/` | The Traffic Monitor dashboards: [Monitoring](../ui/monitoring.md), [Movements](../ui/movements.md), and [Data export](../ui/database.md). | None |
+| Dashboard | `/dashboard/` | The Traffic Monitor dashboards: [Monitoring](../ui/monitoring.md), [Movements](../ui/movements.md), and [Data export](../ui/database.md), which opens first. Switch pages in the sidebar. | None |
 | Frigate | `/frigate/` | Object detection: live view, detections with snapshots and clips, zones, masks, and the Frigate settings. See [Tune object detection](../configuration/frigate-config.md). | None |
-| Legacy Dashboard | `/ui/` | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](../add-ons/air-quality.md) readings, and its camera and radar selection is the one all the dashboards' counts follow. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | None |
+| Legacy Dashboard | `/ui/` | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](../add-ons/air-quality.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | None |
 | Node-RED admin console | `/nr/` | The flow editor, for developers. See [Dev environment](../development/dev-environment.md). | `admin` / `password` |
 | Go2RTC Feeds | `/feeds/` | The camera streams the Pi camera produces, for checking that the camera works. | None |
 | Cockpit-Project system administration | `/system/` | Services, logs, containers, and a terminal. See [System administration](system-admin.md). | Your Raspberry Pi user account |

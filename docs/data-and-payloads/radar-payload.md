@@ -4,7 +4,7 @@ description: The five radar tables: detected object velocities, timed counts, ra
 
 # Radar
 
-The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) Doppler radar measures the speed and direction of whatever moves in front of it, does its own signal processing, and reports readings over USB as JSON. The Traffic Monitor turns on several of the radar's reporting modes when the service starts and stores each kind of reading in its own table. The radar's [API guide](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) describes the modes and the commands.
+The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) Doppler radar measures the speed and direction of whatever moves in front of it, does its own signal processing, and reports readings over USB as JSON. The Traffic Monitor turns on several of the radar's reporting modes when the service starts and whenever config.yml is saved, and stores each kind of reading in its own table. The radar's [API guide](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) describes the modes and the commands.
 
 | Reading | Radar command | Table | What it is |
 |---|---|---|---|

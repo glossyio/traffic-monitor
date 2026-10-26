@@ -118,9 +118,9 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 `flows.json` (~450 KB, 11 tabs) holds the TM logic. Node modules come from `data/package.json` and are installed when the node-red-tm image is built, so adding a module needs an image rebuild.
 
 - `init-config` reads `/config/config.yml` (on the host: `{{ tmsetup_codedir }}/node-red-tm/config/config.yml`), applies defaults, and stores the result as `global.config`. It also records deployments (lat/lon/bearing) and hosts the Aedes broker. The config is read when the flows start, and a `watch` node re-reads it whenever the file changes, which re-runs radar setup, the deployment record, and the ThingsBoard attributes. A YAML error keeps the previous `global.config`.
-- `capture-radar` talks to OmniPreSense radars over serial (AN-010 API, 19200 baud). It sends setup commands at startup and writes the `radar_*` tables.
+- `capture-radar` talks to OmniPreSense radars over serial (AN-010 API, 19200 baud). It sends setup commands at startup and on each config.yml change, and writes the `radar_*` tables.
 - `capture-events` handles Frigate `frigate/events` MQTT messages with `type: "end"`, keeping only moving objects from cameras enabled in config.yml.
-  - Direction comes from the order of `zone_near`/`zone_far` in `entered_zones`.
+  - Direction comes from the order of `zone_near`/`zone_far` in `entered_zones`, or from the radar when the zones give none. Both need an enabled radar on the camera; without one the event gets no direction (#243).
   - Speed is the median `radar_dov` velocity for that direction, within the event window ±2 s.
   - Results go to the `events` table, then via link nodes to `plate-recognizer`, `ui-monitoring`, and `thingsboard`.
 - `capture-aq` reads the air-quality sensor over MQTT `aq/#`. `system` collects OS and hardware metrics.

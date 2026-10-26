@@ -65,7 +65,7 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 * `/opt/traffic-monitor/frigate/frigate.env`
 * `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
-With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back.
+With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](../setup-guide.md).
 
 ## Add an accelerator later
 
@@ -75,7 +75,7 @@ After you add or change a Coral or Hailo accelerator, rerun two tags and reboot 
 bash traffic-monitor/script/tmsetup.sh -t detectors -t frigate
 ```
 
-That installs the driver and gives Frigate's container the device. Frigate's own `config.yml` still names the old detector, because the installer writes its `detectors:` and `model:` sections only when it creates the file. Either edit those two sections by hand to match the [template](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), or add `-f` to the command above and then redo your zones and masks from the timestamped copy.
+That installs the driver and gives Frigate's container the device. Frigate's own `config.yml` still names the old detector, because the installer writes its `detectors:` and `model:` sections only when it creates the file. Either edit those two sections by hand to match the [template](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), or add `-f` to the command above and then redo your Frigate settings, as [What `-f` replaces](#what-f-replaces) describes.
 
 ## Reboots
 

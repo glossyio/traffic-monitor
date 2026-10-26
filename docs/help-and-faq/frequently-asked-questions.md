@@ -32,20 +32,20 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ??? question "I edited config.yml and nothing changed"
 
-    The Traffic Monitor reads the file again when you save it, so a change that doesn't take effect usually means a YAML error, such as a wrong indent or a missing space after a colon. With an error, it keeps the previous settings. After a restart with an error, it has no settings at all, so fix the file before you restart. The `node-red-tm.service` log in [System administration](../use/system-admin.md) shows the error.
+    The Traffic Monitor reads the file again when you save it, so a change that doesn't take effect usually means a YAML error, such as a wrong indent or a missing space after a colon. The `node-red-tm.service` log in [System administration](../use/system-admin.md) shows the error. Fix the file before you restart the service; [config.yml settings](../configuration/node-red-config.md) explains why.
 
 ## Privacy
 
 ### What does the device record?
 
-The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, no images or video leave the device: everything is processed on the device, and the database holds only metadata. [Data and privacy](../data-and-payloads/data-overview.md) has the full list, including the features that would change this.
+The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. Anyone on your network can still see the live view, the recordings, and Frigate's snapshots, because none of them has a login. [Data and privacy](../data-and-payloads/data-overview.md#privacy) explains, and lists the features that would change what's stored.
 
 ### Why this design?
 
 The Traffic Monitor is built privacy-first because we believe in:
 
 * **Ethical and transparent monitoring.** The code, the architecture, and the models are open, so anyone can see what the device does, and operators, especially public bodies, can be held to account.
-* **Community safety and trust.** Detection runs on the device, nothing is sent anywhere unless you set it up, and the data stays in your control.
+* **Community safety and trust.** Detection runs on the device, nothing is sent to an outside server unless you set it up, and the data stays in your control.
 * **Unbiased data collection.** Detection runs without human bias, but machine learning models can carry [algorithmic bias](https://en.wikipedia.org/wiki/Algorithmic_bias). We use public-domain and open source models wherever possible and name the models in use.
 
 To keep an area out of view, aim the camera so the area is out of frame. A motion mask doesn't hide it; see [Data and privacy](../data-and-payloads/data-overview.md#privacy).

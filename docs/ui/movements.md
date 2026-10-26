@@ -15,7 +15,7 @@ Movements come from the `entered_zones` of each [event](../data-and-payloads/eve
 
 1. **Zones.** Tick the zones to include. The four standard `zone_*` zones are unticked by default, so that zones you drew for your own analysis stand out.
 2. **Intermediate zones.** Choose **Show intermediate zones** to count each full sequence of zones separately, or **Show just initial & final zones** to group by where an object entered and where it left.
-3. **Time range.** Start and end times; the last 7 days by default.
+3. **Time range.** Start and end times; the last 7 days by default. In time zones east of UTC, or with a half-hour offset, the page shows no counts for any range.
 4. **Counts** by object type for each zone sequence that matches.
 
 ## Example: a complex intersection

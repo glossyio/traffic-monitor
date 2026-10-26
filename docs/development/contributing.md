@@ -42,7 +42,7 @@ Aim for pages that are complete but quick to read: everything the reader needs, 
     | Build your own, Deploy, Add-ons | How-to guides, one task per page | Someone building or installing a device |
     | Use the device | How-to guides for the running device | Someone operating a device |
     | Reference | Tables: every setting, flag, topic, and column | Someone looking a value up |
-    | Help | Troubleshooting, ideas, and where to ask | Someone stuck or curious |
+    | Ideas and use cases, Help | Ideas, troubleshooting, and where to ask | Someone curious or stuck |
     | Development | Contributors | You |
 * **Leave out what the reader won't act on,** such as Ansible variables and task names, Node-RED node names, and files they won't open. Give real values, such as the default install folder `/opt/traffic-monitor`, instead of variables.
 * **Revise in place.** Rewrite the text your change affects and delete what it makes obsolete, rather than adding a paragraph. Keep the docs edit in proportion to the change; a diff that removes more than it adds is fine.

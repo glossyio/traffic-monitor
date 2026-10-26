@@ -11,9 +11,11 @@ A Traffic Monitor is a Raspberry Pi 5 running a few cooperating programs. Everyt
 1. **The camera** streams H.265 video at 1536×864 and 10 frames per second to Frigate.
 2. **[Frigate](https://frigate.video/)** finds and tracks objects in the video, using the AI accelerator if the device has one and the CPU if not. It records which **zones** each object passed through. When an object leaves the frame, Frigate publishes an event on the device's MQTT broker.
 3. **The radar** (optional) measures the speed and direction of whatever moves in front of it and reports readings over USB several times a second.
-4. **[Node-RED](https://nodered.org/)** runs the Traffic Monitor logic. It keeps every radar reading, and it records every moving object from an enabled camera as an event. For each event it:
-    * works out the direction of travel from the order in which the object entered `zone_near` and `zone_far`;
-    * attaches a speed when the object entered any zone: the median radar reading in that direction while the object was in view, with a two-second margin on each side.
+4. **[Node-RED](https://nodered.org/)** runs the Traffic Monitor logic. It keeps every radar reading, and it records every moving object from an enabled camera as an event. When the camera has a radar and the object entered any zone, it:
+    * works out the direction of travel from the order in which the object entered `zone_near` and `zone_far`, or from the radar if the zones don't give one;
+    * attaches a speed: the median radar reading in that direction while the object was in view, with a two-second margin on each side.
+
+    Without a radar, events have no direction or speed. [Direction and speed](../data-and-payloads/events-payload.md#direction-and-speed) has the exact rules.
 
     The dashboards and the daily counts then filter the events by zone: they count objects that passed through `zone_capture`, and they use only objects that passed through `zone_radar` for speed statistics.
 5. **The database**, one SQLite file on the device, stores the events, the radar readings, air quality readings from the optional sensor, and the device's deployment history. The dashboards read from it, and you can download it.

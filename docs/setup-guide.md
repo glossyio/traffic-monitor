@@ -69,13 +69,13 @@ sensors:
             enabled: true
 ```
 
-Save with Ctrl+O and leave nano with Ctrl+X. The Traffic Monitor reads the file again as soon as you save it, so no restart is needed. If the file has a YAML error, such as a wrong indent, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.
+Save with Ctrl+O and leave nano with Ctrl+X. The Traffic Monitor reads the file again as soon as you save it, so no restart is needed. A change that doesn't take effect usually means a YAML error, such as a wrong indent.
 
 [config.yml settings](configuration/node-red-config.md) describes every setting in this file, including the optional [ThingsBoard](data-and-payloads/integrations.md) upload.
 
 ## 5. Check the counts
 
-Open **Dashboard** from the home page. The [Monitoring](ui/monitoring.md) page shows a count a few seconds after each object passes through `zone_capture`, and speed statistics for objects that also passed through `zone_radar`. Each day's counts start at 04:00 local time, so from midnight until 04:00 the counts are empty, and objects that pass in those hours aren't in any day's counts.
+Open **Dashboard** from the home page and choose **Monitoring** in the sidebar. [Monitoring](ui/monitoring.md) shows a count a few seconds after each object passes through `zone_capture`, and speed statistics for objects that also passed through `zone_radar`. Today's counts start at 04:00 local time, so between midnight and 04:00 they're empty.
 
 ??? question "No counts?"
 

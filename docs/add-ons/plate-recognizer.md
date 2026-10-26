@@ -45,13 +45,13 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
             url: http://plate-recognizer:8080
     ```
 
-4. Restart the add-on so it reads its env file:
+4. Restart the add-on so it reads its env file, and again whenever you change that file:
 
     ```bash
     sudo systemctl restart plate-recognizer.service
     ```
 
-    Node-RED picks up `config.yml` as soon as you save it. Restart `plate-recognizer.service` again whenever you change its env file.
+    Node-RED picks up `config.yml` as soon as you save it, so it needs no restart.
 
 Frigate's snapshots must stay on, which they are by default; the reader works from them.
 
