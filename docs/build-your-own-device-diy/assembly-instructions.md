@@ -21,7 +21,7 @@ description: Assemble the traffic monitor and get it ready for use
 
 Assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or AI HAT+), and radar using the 3D printed enclosure.
 
-![](../assets/images/assembly-01.png)
+![](../assets/images/assembly-01.webp)
 
 1. Lay out all your parts and screws
 2. Lay out all your parts and screws (double-check)
@@ -62,7 +62,7 @@ Assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or A
 
 The following are optional steps for air quality (AQ) sensors continued from above.
 
-![](../assets/images/assembly-02.png)
+![](../assets/images/assembly-02.webp)
 
 ![](../assets/images/Screenshot_20260217_142457.png)
 

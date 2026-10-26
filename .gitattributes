@@ -4,3 +4,9 @@
 # Denote all files that are truly binary and should not be modified.
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.mp4 binary
