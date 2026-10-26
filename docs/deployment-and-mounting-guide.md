@@ -47,12 +47,12 @@ In scenarios where you need counts for only a few hours—such as during events 
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/tripod-002.png)
+  ![](assets/images/tripod-002.webp)
   <figcaption>Traffic Monitor on a 16-foot telescoping tripod to count event participants</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/tripod-001.png)
+  ![](assets/images/tripod-001.webp)
   <figcaption>Researcher recording manual confirmation counts with a Traffic Monitor on a camera tripod plugged into a portable power station</figcaption>
 </figure>
 
@@ -71,7 +71,7 @@ Long term deployments may be done in a variety of ways. As long as you have a go
 From garage roofs to wood posts in a 5-gallon cement-filled bucket to a high stone pillar, it is a good idea is to keep the Traffic Monitor out of reach and in a place that will not be obstructed.
 
 <figure markdown="span">
-  ![](assets/images/permanent-mount-010.png)
+  ![](assets/images/permanent-mount-010.webp)
   <figcaption>Long-term deployments with permission on private rooftops and gate entrances.</figcaption>
 </figure>
 
@@ -90,17 +90,17 @@ Ideal mounting locations will vary based on the use case and sensors. High-level
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/deployment-rvc-2025-07.png)
+  ![](assets/images/deployment-rvc-2025-07.webp)
   <figcaption>Quiet road, monitoring downhill movement</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/deployment-cookies-2025-07.png)
+  ![](assets/images/deployment-cookies-2025-07.webp)
   <figcaption>Busy business district, nearly straight-on object movement on wide road</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/deployment-next_adventure-2025-07.png)
+  ![](assets/images/deployment-next_adventure-2025-07.webp)
   <figcaption>Busy business district, side-on monitoring focused on pedestrian and bike crosswalk</figcaption>
 </figure>
 
