@@ -14,7 +14,7 @@ Important resources (many coming soon):
 
 ## Testing
 
-There's no CI yet, and most of the project is tested by installing it on a Raspberry Pi. The database schema has an automated test suite that runs on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
+The only CI checks are the docs build and GitHub's CodeQL scanning, and most of the project is tested by installing it on a Raspberry Pi. The database schema has an automated test suite that runs on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
 
     python3 -m venv .venv
     .venv/bin/pip install -r script/requirements-dev

@@ -10,11 +10,11 @@ Traffic Monitor turns a Raspberry Pi 5 with a camera, OmniPreSense Doppler radar
 - `container/`: Jinja templates per container (Containerfile, Podman Quadlet units, env/config files). `docker/` is a symlink to it.
 - `container/node-red-tm/data/flows.json`: nearly all application logic (Node-RED flows).
 - `utils/`: helper scripts and configs that get copied to `{{ tmsetup_codedir }}/utils` on the device.
-- `docs/`: GitBook source for docs.trafficmonitor.ai (`.gitbook.yaml`). It uses GitBook markdown (`{% hint %}`, `"mention"` links).
+- `docs/`: source for docs.trafficmonitor.ai, built with Material for MkDocs (`mkdocs.yml` holds the nav) and published by `.github/workflows/docs.yml` with mike to the `gh-pages` branch: pushes to `dev` → `/dev/`, release tags → `/vX.Y.Z/` and `/latest/`. Use admonitions (`!!! info`), relative `.md` links, and Markdown images in `docs/assets/images/`. New pages must be added to `nav:`. Build tooling is in `docs-site/`: hash-pinned requirements, theme override, and root `404.html` that redirects GitBook-era URLs. Branches written before the GitBook move can be converted with `python3 docs-site/gitbook_to_mkdocs.py` (temporary; safe to re-run).
 
 ## Commands
 
-There's no CI. The off-device tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Device tests (`script/devpi/tests`) check a bench Pi over SSH and run only through `tmdev.py test` (or with `TM_DEV_HOSTS` set). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
+The only CI is the docs build (`.github/workflows/docs.yml`, `mkdocs build --strict` on PRs that touch docs) and GitHub's CodeQL scanning. The off-device tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Device tests (`script/devpi/tests`) check a bench Pi over SSH and run only through `tmdev.py test` (or with `TM_DEV_HOSTS` set). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
 
 Local checks (any Linux box):
 
@@ -29,6 +29,10 @@ python -m pytest container/node-red-tm/schema/tests  # schema runner, migrations
 python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files '*.j2')
 python3 -m json.tool container/node-red-tm/data/flows.json >/dev/null
 bash -n script/tmsetup.sh
+
+# Docs: separate venv with the hash-pinned build deps. --strict fails on broken links, anchors, images, and pages missing from the nav.
+python3 -m venv ~/.venvs/tm-docs && ~/.venvs/tm-docs/bin/pip install --require-hashes -r docs-site/requirements.txt
+~/.venvs/tm-docs/bin/mkdocs build --strict   # or `mkdocs serve` to preview at http://127.0.0.1:8000
 ```
 
 - In a non-interactive shell, Ansible may abort with "requires blocking IO". Run it with `</dev/null` and redirect output to a file.
