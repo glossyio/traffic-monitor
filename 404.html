@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Page not found - Traffic Monitor</title>
+  <script>
+    // GitHub Pages serves this page for any path that doesn't exist.
+    // GitBook served pages without a version in the URL (/setup-guide), so
+    // send those to the same page in the latest release (/latest/setup-guide/).
+    (function () {
+      // Old paths of pages that have since moved.
+      var moved = {
+        "/build-your-own-device-diy/software-installation": "/software-installation",
+        "/sensor-payloads/events-payload": "/data-and-payloads/events-payload",
+        "/sensor-payloads/radar-payload": "/data-and-payloads/radar-payload",
+        "/sensor-payloads/air-quality-aq-payload": "/data-and-payloads/air-quality-aq-payload"
+      };
+      // Before the custom domain is set, the site lives under /traffic-monitor/.
+      var base = /\.github\.io$/.test(location.hostname)
+        ? "/" + location.pathname.split("/")[1]
+        : "";
+      var path = location.pathname.slice(base.length).replace(/\/+$/, "") || "/";
+      window.tmLatest = base + "/latest/";
+      // Already inside a version: this is a real "not found".
+      if (/^\/(dev|latest|v\d+\.\d+\.\d+)(\/|$)/.test(path)) return;
+      path = moved[path] || path;
+      location.replace(base + "/latest" + (path === "/" ? "/" : path + "/") + location.search + location.hash);
+    })();
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40em; margin: 4em auto; padding: 0 1em; }
+  </style>
+</head>
+<body>
+  <h1>Page not found</h1>
+  <p>This page doesn't exist in this version of the Traffic Monitor docs.</p>
+  <p><a id="home" href="/latest/">Go to the latest docs</a></p>
+  <script>document.getElementById("home").href = window.tmLatest;</script>
+</body>
+</html>
