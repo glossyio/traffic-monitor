@@ -16,8 +16,14 @@
 
 **Status:** written 2026-10-02, aligned with the open PRs on 2026-10-13, and re-checked on 2026-10-14. Every PR it builds on merged into `dev` on 2026-10-25 (#202, #205, #206, #208, #210, #212, #214, #215), and Task 0 ran the same day:
 - It rebased this branch onto `dev` (`e076db0`) and re-checked the plan against the merged files. Step 2 lists what had changed.
-- Tasks 1, 2, 3, 8, and 9, and Task 11's collection step, were run on the rebased branch in a scratch worktree. Their expected counts below come from that run.
+- Tasks 1, 2, 3, 8, and 9, and Task 12's collection step, were run on the rebased branch in a scratch worktree. Their expected counts below come from that run.
 - Tasks 4 and 5 depend on `dev` only through the Frigate template, unchanged since the 2026-10-14 run, and the render helper. Task 4's fixtures still generate as expected with today's helper.
+
+On 2026-10-26, after #240, #241, #242, and #257 merged, the branch was rebased onto `dev` again (`7c85c70`; Task 0 Step 4) and the plan re-checked:
+- #242 put `script/tests/tmsetup_render.py` on `dev` and added 8 HEVC tests to `script/tests`. Two of them skip on machines without Podman or systemd 254, so each step now runs its own test files instead of counting the whole folder.
+- #257 reorganized the docs by the reader's task, and #241 added the docs style rules and the PR template's Docs section. Task 11 (docs) is rewritten for both.
+- MQTT on the network now needs a login the broker enforces: new Task 10. Docs moved to Task 11, and device tests to Task 12.
+- #256 is folded into Task 7.
 
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
@@ -27,17 +33,22 @@ The spec's "Builds on merged PRs" section describes the PRs. This plan uses thei
 
 **Decisions, 2026-10-25:**
 - **Cockpit's `:9090` stays open** as the rescue console. It's a plain-HTTP login outside the proxy, so M2's login at the proxy won't cover it. But binding it to `127.0.0.1` would leave SSH as the only rescue when Podman or nginx is broken. #212's review raised the question on 2026-10-23.
-- **#232 is folded in as Task 9**, because Task 1 edits the same pod unit. Docs became Task 10, and device tests Task 11.
+- **#232 is folded in as Task 9**, because Task 1 edits the same pod unit. Docs became Task 10, and device tests Task 11. Since 2026-10-26 they're Tasks 11 and 12.
 
-**Already done:** the `/storefiles` fix for #211 was made early on `feature/edge-ports/201`, and was checked on a dev Pi on 2026-10-14. Task 0 rebased it onto `dev`, so that check covered an older tree; Task 11 checks `/storefiles` again. That commit added:
+**Decisions, 2026-10-26:**
+- **MQTT on the network needs a login the broker enforces.** The Aedes broker checked no login, so the spec's "requires broker credentials" wasn't true. `-C mqtt_lan` also lasted only one installer run, because the pod unit is rewritten on every run. Now port 1883 opens to the network exactly when `node-red-tm.env` sets `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD`, and the broker enforces them (Task 10).
+- **#256 is folded into Task 7**, for new installs and `-f` runs.
+- **The ports table gets its own Reference page**, `docs/reference/network.md` (Task 11).
+
+**Already done:** the `/storefiles` fix for #211 was made early on `feature/edge-ports/201`, and was checked on a dev Pi on 2026-10-14. Task 0 rebased it onto `dev`, so that check covered an older tree; Task 12 checks `/storefiles` again. That commit added:
 - `container/revproxy/tm/locations/storefiles.conf.j2` and its `tmsetup_revproxy_locations` entry
-- `script/tests/tmsetup_render.py` (Task 1 Step 1)
+- `script/tests/tmsetup_render.py` (Task 1 Step 1). Since the 2026-10-26 rebase it comes from `dev`, where #242 added an identical copy.
 - `script/tests/test_tmsetup_templates.py`, with `LOCATIONS`, `location()`, and the storefiles test
 - the CLAUDE.md mention
 
-Tasks 1, 2, 10, and 11 below build on those files instead of creating them.
+Tasks 1, 2, 11, and 12 below build on those files instead of creating them.
 
-**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edited `flows.json`, though not these nodes. On 2026-10-25, Task 8's script ran cleanly on the merged `dev`'s `flows.json`, and the schema tests still passed. #232 is Task 9: the pod stayed down after `tmnet-network.service` failed once at boot.
+**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edited `flows.json`, though not these nodes. On 2026-10-25, Task 8's script ran cleanly on the merged `dev`'s `flows.json`, and the schema tests still passed. #232 is Task 9: the pod stayed down after `tmnet-network.service` failed once at boot. #256 is in Task 7: new installs no longer publish Frigate's object snapshots on MQTT.
 
 ## Global Constraints
 
@@ -65,13 +76,15 @@ Tasks 1, 2, 10, and 11 below build on those files instead of creating them.
   - A fixed value shared by several tasks or templates goes in `vars/main.yml`, like `tmsetup_hailo_driver_dir`. That covers `tmsetup_secrets_dir`, `tmsetup_secret_names`, `tmsetup_tm_control_dir`, and `tmsetup_go2rtc_rtsp_user`.
   - A value an operator may change goes in `defaults/main.yml`, with `-C` for booleans, like `tmsetup_bool_mqtt_lan`.
   - A literal used once, in one file, is hardcoded, like `/frigate`.
-- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 11). Keep device names and addresses out of commits and PR text.
+  - The MQTT broker login is an operator setting in `node-red-tm.env`, not a device secret (Task 10).
+- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 12). Keep device names and addresses out of commits and PR text.
 - **Python:** indented with 4 spaces, with a docstring for each module. No AI-provenance comments.
 - **Tests:**
   - Synthetic data only.
   - Test module basenames must be unique across the repo, because pytest's default import mode needs it.
   - Don't name new helper modules `helpers.py`, and don't `import conftest`.
-- **Docs:** user docs under `docs/` are built with Material for MkDocs (see "Writing docs" in `docs/development/contributing.md`). Use admonitions (`!!! warning`), relative `.md` links, and Markdown images in `docs/assets/images/`. A new page must be added to `nav:` in `mkdocs.yml`. Check with `mkdocs build --strict`. Design docs live under `design/` and aren't published.
+  - Run each step's own test files. `script/tests` also holds #242's HEVC tests, two of which skip on machines without Podman or systemd 254, so a count of the whole folder depends on the machine.
+- **Docs:** user docs under `docs/` are built with Material for MkDocs (see "Writing docs" in `docs/development/contributing.md`). Use admonitions (`!!! warning`), relative `.md` links, and Markdown images in `docs/assets/images/`. A new page must be added to `nav:` in `mkdocs.yml`. Check with `mkdocs build --strict`. Design docs live under `design/` and aren't published. Follow the style rules under "Writing docs", and list the changed pages in the PR's Docs section.
 - **Commits:**
   - Commit one per task.
   - End each message with CLAUDE.md's trailer block, not `Co-Authored-By`:
@@ -93,22 +106,23 @@ These are the likeliest failures for a person upgrading or using a device. Each 
 
 1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. The device's config may still be Frigate 0.17's: Frigate 0.18 rewrites it on its first start, after `tm-control migrate` has run. Tests in Tasks 4 and 5 run on both a 0.17 and a 0.18 config. Tests in Task 7 check that the migration produces exactly the URL that new installs get, and that `frigate.env` gains both credential lines.
 2. **Re-running `tmsetup.sh`.** The generated secrets must never be regenerated, because the go2rtc and Frigate sides would drift apart. They must never appear in the install log. Tests in Task 3.
-3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying. On a Pi, #215's `test_no_crash_restarts[revproxy.service]` fails if revproxy still had to retry after the handler restarted it (Task 11 Step 5).
+3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying. On a Pi, #215's `test_no_crash_restarts[revproxy.service]` fails if revproxy still had to retry after the handler restarted it (Task 12 Step 5).
 4. **Crafted `/feeds/` requests.** These must get 403:
    - methods other than GET
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
    - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`). The viewing set includes HLS's `hls/` paths, which iPhones older than iOS 17 use.
 
-   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 11 send the same requests to a Pi.
+   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 12 send the same requests to a Pi.
 5. **A hand-edited Frigate config that reads go2rtc by LAN IP instead of `host.containers.internal`.** The migration can't rewrite it, so it must warn loudly instead of silently leaving the camera dark. Test in Task 5.
-6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 11 test cover it. The endpoint's errors also came back as 200, and a `tar` failure left the download open (#223). Task 8 fixes both, and Task 11 tests them on a Pi.
-7. **A failed start of `tmnet-network.service` at boot (#232).** The pod must still start, because the network it uses persists on disk. Test in Task 9 for the rendered unit; Task 11's disruptive device test makes the network unit fail once on a Pi.
+6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 12 test cover it. The endpoint's errors also came back as 200, and a `tar` failure left the download open (#223). Task 8 fixes both, and Task 12 tests them on a Pi.
+7. **A failed start of `tmnet-network.service` at boot (#232).** The pod must still start, because the network it uses persists on disk. Test in Task 9 for the rendered unit; Task 12's disruptive device test makes the network unit fail once on a Pi.
+8. **MQTT on the network.** Port 1883 must open only with a login the broker enforces, and stay that way through `-t` runs, `-f`, and updates. A device that already had `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` set must keep Frigate connected, so the installer copies the login into `frigate.env`. A missing key must never reach Node-RED: it would keep the literal `${…}` text, and the broker would require it as the login. Tests in Task 10; device tests in Task 12.
 
 ---
 
 ### Task 0: Base branch and a re-check against what merged
 
-Done on 2026-10-25, after the stacks merged, except for the push at the end of Step 3. The steps stay as a record, and to re-run if `dev` moves before M1 starts.
+Done on 2026-10-25, after the stacks merged, and run again on 2026-10-26 (Step 4). The steps stay as a record, and to re-run if `dev` moves before M1 starts.
 
 - [x] **Step 1: Check that the stacks this plan builds on have merged**
 
@@ -152,9 +166,9 @@ On 2026-10-14 all of this matched. On 2026-10-25 these had changed in the final 
 - **`revproxy.container.j2`** takes its config mounts from `tmsetup_revproxy_config_mounts` in `vars/main.yml`, a list the `nginx -t` check uses too (#210). Task 2 keeps that loop, and its unit test passes the list.
 - **The "Check NGinx config" task** runs `nginx -t` with the `containers.podman.podman_container` module. It resolves `host.containers.internal` through `etc_hosts`, not `--add-host` (#210). Task 2 Step 4 removes the `etc_hosts` entry.
 - **`cockpit.conf.j2`** has a comment between `location` and `proxy_pass` (#212). Task 2 Step 4 now shows the whole file.
-- **`README.md`** lists Cockpit as a fifth app (#212), so the list moved down a line. `docs/setup-guide.md`'s Frigate address is now on line 70. Task 10 follows both.
-- **`test_web.py`** already imports `urllib.error` (Task 11 Step 1).
-- **`tmdev.py run`** joins the words after `--` and runs them in the Pi's login shell. Task 11 now passes compound commands as one quoted word instead of `sh -c`.
+- **`README.md`** lists Cockpit as a fifth app (#212), so the list moved down a line. `docs/setup-guide.md`'s Frigate address is now on line 70. Task 11 follows both.
+- **`test_web.py`** already imports `urllib.error` (Task 12 Step 1).
+- **`tmdev.py run`** joins the words after `--` and runs them in the Pi's login shell. Task 12 now passes compound commands as one quoted word instead of `sh -c`.
 
 Everything else still matched:
 - the `tmsetup.sh` lines;
@@ -164,7 +178,7 @@ Everything else still matched:
 - Frigate's camera input path;
 - every node id and quoted function text in Task 8.
 
-- [ ] **Step 3: Move the branch onto the base**
+- [x] **Step 3: Move the branch onto the base**
 
 `feature/edge-ports/201` sat on #210's final review-fix head, `a473ec1`, which is also its merge base with `dev`. So a plain rebase replays only this branch's commits:
 
@@ -180,7 +194,7 @@ On 2026-10-25 this replayed 11 commits, with two conflicts:
 
 `git range-diff a473ec1..origin/feature/edge-ports/201 origin/dev..HEAD` showed the other nine commits unchanged. `git diff --stat origin/dev` listed only the design docs, `storefiles.conf.j2` and its `vars/main.yml` line, `script/tests/`, and the CLAUDE.md line. The off-device checks passed: 70 tests (`script/tests` and the schema tests), the Ansible syntax check, the template parse, `flows.json`, and `bash -n`. Every patch from `feature/tm-control-design/102` was already on this branch.
 
-What's left is the push. Draft PR #224 already targets `dev`: GitHub moved it there when #210's branch was deleted. Ask the person before force-pushing, then:
+The push followed the same day. Draft PR #224 targets `dev`: GitHub moved it there when #210's branch was deleted. To push a rebase, ask the person first, then:
 
 ```bash
 git push --force-with-lease origin feature/edge-ports/201
@@ -188,6 +202,19 @@ gh pr view 224 --json baseRefName,mergeable,commits --jq '.baseRefName, .mergeab
 ```
 
 `gh pr edit` fails on this repo with a Projects (classic) error. To change the PR's base or description, use `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -f base=dev` (or `-F body=@<file>`).
+
+- [x] **Step 4: Rebase again after the 2026-10-26 merges**
+
+#240, #241, #242, and #257 merged after Step 3. On 2026-10-26 the branch was rebased onto `dev` (`7c85c70`) in a worktree:
+
+```bash
+git rebase origin/dev
+# CONFLICT (add/add) in script/tests/tmsetup_render.py: #242 added the same file to dev
+git checkout --ours script/tests/tmsetup_render.py && git add script/tests/tmsetup_render.py
+git rebase --continue   # drops "Give the template test helper all of Ansible's filters": already upstream
+```
+
+`dev`'s copy of the helper is identical to this branch's final one, so keeping it changes nothing. 13 commits became 12, and the storefiles commit's message now says the helper comes from #242. The 78 off-device tests passed (69 schema, 8 HEVC, 1 storefiles). The plan was then re-checked against the merged files; Status lists what changed.
 
 ---
 
@@ -204,7 +231,8 @@ gh pr view 224 --json baseRefName,mergeable,commits --jq '.baseRefName, .mergeab
 - Produces, in `script/tests/tmsetup_render.py`:
   - `render(template: str, **variables) -> str`: renders a template given as a repo-relative path, like Ansible's template module.
   - `load_role_yaml(relative_path: str)`: loads a YAML file under `script/ansible/roles/tmsetup/`.
-- Produces the install variable `tmsetup_bool_mqtt_lan`, set with `tmsetup.sh -C mqtt_lan`.
+- Produces the install variable `tmsetup_bool_mqtt_lan`, set with `tmsetup.sh -C mqtt_lan`. Task 10 makes it create a broker login.
+- Consumes the fact `tmsetup_mqtt_lan_open`, which Task 10 sets. Until then it's undefined, and the pod keeps 1883 on loopback.
 
 - [ ] **Step 1: The render helper (already on the branch)**
 
@@ -264,7 +292,7 @@ def published_ports(unit_text):
 
 
 def test_pod_publishes_app_ports_on_loopback_only():
-    pod = render("container/traffic-monitor.pod.j2", tmsetup_bool_mqtt_lan=False)
+    pod = render("container/traffic-monitor.pod.j2", tmsetup_mqtt_lan_open=False)
     assert published_ports(pod) == [
         "127.0.0.1:1880:1880",
         "127.0.0.1:1883:1883",
@@ -273,9 +301,9 @@ def test_pod_publishes_app_ports_on_loopback_only():
     ]
 
 
-def test_pod_opens_mqtt_to_the_network_only_when_opted_in():
-    # tmsetup.sh -C mqtt_lan passes the string "true"
-    pod = render("container/traffic-monitor.pod.j2", tmsetup_bool_mqtt_lan="true")
+def test_pod_opens_mqtt_to_the_network_only_with_a_broker_login():
+    # Task 10 sets tmsetup_mqtt_lan_open when node-red-tm.env has a broker login
+    pod = render("container/traffic-monitor.pod.j2", tmsetup_mqtt_lan_open=True)
     assert "1883:1883" in published_ports(pod)
     assert "127.0.0.1:1883:1883" not in published_ports(pod)
 ```
@@ -284,7 +312,7 @@ def test_pod_opens_mqtt_to_the_network_only_when_opted_in():
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v`
 
-Expected: `test_pod_publishes_app_ports_on_loopback_only` FAILS, because the current pod publishes `1880:1880`, `1964:1984`, `80:80`, and so on. The MQTT opt-in test and the storefiles test already pass, since today's pod publishes 1883 on all interfaces. The opt-in test guards the `{% if %}` branch once Step 4 adds it.
+Expected: `test_pod_publishes_app_ports_on_loopback_only` FAILS, because the current pod publishes `1880:1880`, `1964:1984`, `80:80`, and so on. The MQTT test and the storefiles test already pass, since today's pod publishes 1883 on all interfaces. The MQTT test guards the `{% if %}` branch once Step 4 adds it.
 
 - [ ] **Step 4: Bind the pod's ports to loopback**
 
@@ -294,8 +322,8 @@ In `container/traffic-monitor.pod.j2`, replace the ten `PublishPort=` lines (fro
 # Published on 127.0.0.1 only: the reverse proxy (host network) and host services reach these,
 # the LAN doesn't. Every app is served to the network by the reverse proxy on port 80.
 PublishPort=127.0.0.1:1880:1880
-{% if tmsetup_bool_mqtt_lan | default(false) | bool %}
-# MQTT on all interfaces for sensors on other devices (tmsetup.sh -C mqtt_lan).
+{% if tmsetup_mqtt_lan_open | default(false) | bool %}
+# MQTT on all interfaces, because node-red-tm.env sets a broker login the broker enforces (tasks/mqtt_broker.yml).
 PublishPort=1883:1883
 {% else %}
 PublishPort=127.0.0.1:1883:1883
@@ -304,13 +332,13 @@ PublishPort=127.0.0.1:5000:5000
 PublishPort=127.0.0.1:8971:8971
 ```
 
-This drops 1964 (Frigate's go2rtc), 8080 (plate-recognizer), 8564–8566 (Frigate restream and WebRTC), and 80, which moves to the host-network nginx in Task 2.
+This drops 1964 (Frigate's go2rtc), 8080 (plate-recognizer), 8564–8566 (Frigate restream and WebRTC), and 80, which moves to the host-network nginx in Task 2. Until Task 10 sets `tmsetup_mqtt_lan_open`, 1883 stays on loopback.
 
 In `script/ansible/roles/tmsetup/defaults/main.yml`, after `tmsetup_bool_plate_recognizer: false`, add:
 
 ```yaml
-# Opens MQTT port 1883 to the network for sensors on other devices (tmsetup.sh -C mqtt_lan).
-# Set broker credentials first; see docs/configuration/network-access.md.
+# Creates an MQTT broker login in node-red-tm.env if it has none (tmsetup.sh -C mqtt_lan).
+# The login is what opens port 1883 to the network; see tasks/mqtt_broker.yml.
 tmsetup_bool_mqtt_lan: false
 ```
 
@@ -343,7 +371,7 @@ to:
 
 - [ ] **Step 5: Run the tests and syntax checks**
 
-Run: `.venv/bin/python -m pytest script/tests -v && bash -n script/tmsetup.sh && echo OK`
+Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v && bash -n script/tmsetup.sh && echo OK`
 
 Expected: 3 passed, then `OK`.
 
@@ -376,7 +404,7 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
   - `render` and `load_role_yaml` from `tmsetup_render.py`
   - `LOCATIONS` and `location()` from `test_tmsetup_templates.py`
   - `storefiles.conf` from the storefiles commit. It proxies to `127.0.0.1:1880`, so the host network needs no change to it.
-- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 11's device tests check this on a Pi.
+- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 12's device tests check this on a Pi.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -505,7 +533,7 @@ def test_start_services_starts_the_reverse_proxy_after_the_pod():
 
 - [ ] **Step 2: Run the tests to check they fail**
 
-Run: `.venv/bin/python -m pytest script/tests -v`
+Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py -v`
 
 Expected: most new tests FAIL:
 - `go2rtc.conf` and `cockpit.conf` still use `host.containers.internal`.
@@ -513,7 +541,7 @@ Expected: most new tests FAIL:
 - There's no deny location.
 - `revproxy.service` isn't in the start loop.
 
-On 2026-10-25, on the rebased branch with Task 1 done, it was 37 failed, 9 passed.
+On 2026-10-25, with Task 1 done, those two files gave 37 failed, 9 passed.
 
 - [ ] **Step 3: Move revproxy to the host network**
 
@@ -604,13 +632,13 @@ In `script/ansible/roles/tmsetup/tasks/start_services.yml`, add `revproxy.servic
 Run:
 
 ```bash
-.venv/bin/python -m pytest script/tests -v
+.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py -v
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass (46 so far), then `exit 0`.
+Expected: all tests pass (46 in those two files), then `exit 0`.
 
-The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 11. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
+The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 12. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
 
 - [ ] **Step 7: Commit**
 
@@ -728,6 +756,8 @@ Expected: the four new tests FAIL with `FileNotFoundError` (no `tasks/secrets.ym
 
 `force: false` writes a secret only when its file doesn't exist yet, so re-runs keep the existing values. Values are alphanumeric, so they're safe inside URLs.
 
+The MQTT broker login isn't one of these secrets. It's an operator setting in `node-red-tm.env` that the operator also gives to their own MQTT clients, so a second copy here would go stale (Task 10).
+
 - [ ] **Step 4: Register the variables and the import**
 
 In `script/ansible/roles/tmsetup/vars/main.yml`, before the closing `...`, add:
@@ -754,11 +784,11 @@ In `script/ansible/roles/tmsetup/tasks/main.yml`, directly after the `TMSetup - 
 Run:
 
 ```bash
-.venv/bin/python -m pytest script/tests -v
+.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py -v
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass (50 so far), then `exit 0`.
+Expected: all tests pass (50 in those two files), then `exit 0`.
 
 - [ ] **Step 6: Commit**
 
@@ -1635,7 +1665,7 @@ git commit -m "Install the tm-control command root-owned under /usr/local" -m "<
 - Create: `script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2`
 - Delete: `script/ansible/roles/tmsetup/files/go2rtc.yaml`
 - Modify: `script/ansible/roles/tmsetup/tasks/go2rtc_setup.yml` (the "Setup go2rtc rpicam settings" task)
-- Modify: `container/frigate/config/config.yml.j2` (camera input path)
+- Modify: `container/frigate/config/config.yml.j2` (camera input path, and `mqtt: enabled: false` for #256)
 - Modify: `container/frigate/frigate.env.j2`
 - Modify: `script/ansible/roles/tmsetup/tasks/frigate_setup.yml` (two tasks after "Create Frigate container configuration files")
 - Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`tmsetup_go2rtc_rtsp_user`)
@@ -1688,6 +1718,11 @@ def test_new_frigate_configs_read_go2rtc_with_credentials():
     config = yaml.safe_load(render("container/frigate/config/config.yml.j2", tmsetup_detectors={}))
     assert config["cameras"]["picam_h265"]["ffmpeg"]["inputs"][0]["path"] == CREDENTIALED_INPUT
 
+
+def test_new_frigate_configs_keep_object_snapshots_off_mqtt():
+    """Frigate publishes a cropped snapshot of each object on MQTT unless the camera turns it off (#256)."""
+    config = yaml.safe_load(render("container/frigate/config/config.yml.j2", tmsetup_detectors={}))
+    assert config["cameras"]["picam_h265"]["mqtt"] == {"enabled": False}
 
 def test_frigate_env_carries_the_go2rtc_credentials():
     lines = render(
@@ -1749,7 +1784,7 @@ def test_migrated_inputs_match_what_new_installs_get():
 
 Run: `.venv/bin/python -m pytest script/tests tm-control/backend/tests -v`
 
-Expected: the new tests FAIL with `TemplateNotFound: .../go2rtc.yaml.j2`, the old input path, `KeyError` for the new task names, and the drift test failing.
+Expected: the new tests FAIL with `TemplateNotFound: .../go2rtc.yaml.j2`, the old input path, the missing `mqtt` key, `KeyError` for the new task names, and the drift test failing.
 
 - [ ] **Step 3: Write the go2rtc template**
 
@@ -1775,7 +1810,7 @@ exec:
 streams:
 ```
 
-`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 11 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
+`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 12 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
 
 Then remove the old file: `git rm script/ansible/roles/tmsetup/files/go2rtc.yaml`
 
@@ -1809,6 +1844,15 @@ to:
 ```yaml
         - path: rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect
 ```
+
+Under `cameras: picam_h265:`, after `type: generic`, add (#256):
+
+```yaml
+    mqtt:
+      enabled: false
+```
+
+Frigate then stops publishing each object's snapshot on MQTT. `frigate/events`, which Node-RED counts, is unaffected. This reaches new installs and `-f` runs; existing devices keep their setting, and the docs say how to turn the snapshots off.
 
 In `container/frigate/frigate.env.j2`, after the `FRIGATE_RTSP_PASSWORD=` line, add:
 
@@ -1908,7 +1952,7 @@ The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted
 
 **Interfaces:**
 - Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. The download headers go out with the first chunk, so a failure before that is a plain HTTP error with no file to save.
-- Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 11's device tests check all of this on a Pi.
+- Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 12's device tests check all of this on a Pi.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2152,7 +2196,7 @@ What it changes:
 GNU `tar` exits 1 when a file changes while it's being read. That still counts as a failed download (decided 2026-10-14), so don't treat exit 1 as success. A database download now tars its own copy, which nothing writes to, so it shouldn't happen there (decided 2026-10-25). The cost:
 - The copy needs about 1x the database in free space.
 - On a 2-3 GB database it takes 1-2 minutes before the first byte, and the database page says so.
-- While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 11 Step 5 checks it on a Pi.
+- While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 12 Step 5 checks it on a Pi.
 
 - [ ] **Step 4: Run the checks**
 
@@ -2169,7 +2213,7 @@ Expected:
 - `flows ok`
 - only `flows.json` changed: `1 file changed, 102 insertions(+), 44 deletions(-)` on 2026-10-25's `dev`.
 
-There's no Node.js in the dev tools, so Task 11 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
+There's no Node.js in the dev tools, so Task 12 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
 - 400, 403, or 404 for no files, a missing file, `../tmdb.sqlite`, `../temp-other.json`, and `.`;
 - no status for the Dashboard's own requests;
 - end on exit 0;
@@ -2185,7 +2229,7 @@ The header move, the database copy, and the page text were added on 2026-10-25. 
 - "database copy failed" answers 500 with the disk-full message and removes the folder;
 - "handle end of file or error" removes the folder on success and on failure.
 
-The sqlite node, the catch node, and the shared connection weren't exercised. Task 11 runs them on a Pi.
+The sqlite node, the catch node, and the shared connection weren't exercised. Task 12 runs them on a Pi.
 
 - [ ] **Step 5: Commit**
 
@@ -2211,7 +2255,7 @@ On a fresh install the network unit still runs first, and tmsetup's run creates 
 - Test: `script/tests/test_tmsetup_templates.py`
 
 **Interfaces:**
-- Produces: a pod unit with no `Requires=` on `tmnet-network.service`. Task 11's disruptive device test checks on a Pi that the pod starts after one failed start of that unit.
+- Produces: a pod unit with no `Requires=` on `tmnet-network.service`. Task 12's disruptive device test checks on a Pi that the pod starts after one failed start of that unit.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2225,7 +2269,7 @@ def test_pod_starts_even_if_its_network_unit_fails_once():
     at boot kept the pod down (#232). The pod names the network instead, and orders itself after the unit."""
     network = render("container/tmnet.network.j2").splitlines()
     name = next(line.split("=", 1)[1] for line in network if line.startswith("NetworkName="))
-    pod = render("container/traffic-monitor.pod.j2", tmsetup_bool_mqtt_lan=False).splitlines()
+    pod = render("container/traffic-monitor.pod.j2", tmsetup_mqtt_lan_open=False).splitlines()
     assert f"Network={name}" in pod
     assert "Network=tmnet.network" not in pod
     assert "Wants=tmnet-network.service" in pod
@@ -2266,13 +2310,13 @@ If Podman is installed on the dev machine, check what Quadlet generates from the
 ```bash
 d=$(mktemp -d)
 .venv/bin/python -c "import sys; sys.path.insert(0, 'script/tests'); from tmsetup_render import render
-open('$d/traffic-monitor.pod', 'w').write(render('container/traffic-monitor.pod.j2', tmsetup_bool_mqtt_lan=False))
+open('$d/traffic-monitor.pod', 'w').write(render('container/traffic-monitor.pod.j2', tmsetup_mqtt_lan_open=False))
 open('$d/tmnet.network', 'w').write(render('container/tmnet.network.j2'))"
 QUADLET_UNIT_DIRS=$d /usr/libexec/podman/quadlet -dryrun | sed -n '/^---traffic-monitor.service---/,$p' \
     | grep -o -E '^Requires=.*|^(Wants|After)=tmnet.*|network tmnet'
 ```
 
-Expected: `Wants=tmnet-network.service`, `After=tmnet-network.service`, and `network tmnet`, with no `Requires=` line. The pattern matches only at the start of a line, because Quadlet copies the unit's comments, and one of them mentions `Requires=`. On 2026-10-25, Podman 5.7.0's Quadlet gave exactly that. Before the change it printed `Requires=tmnet-network.service` in place of the `Wants=` line. Task 11 checks the behavior on the Pi's Podman 5.4.
+Expected: `Wants=tmnet-network.service`, `After=tmnet-network.service`, and `network tmnet`, with no `Requires=` line. The pattern matches only at the start of a line, because Quadlet copies the unit's comments, and one of them mentions `Requires=`. On 2026-10-25, Podman 5.7.0's Quadlet gave exactly that. Before the change it printed `Requires=tmnet-network.service` in place of the `Wants=` line. Task 12 checks the behavior on the Pi's Podman 5.4.
 
 - [ ] **Step 4: Run the tests**
 
@@ -2289,54 +2333,441 @@ git commit -m "Start the pod even if its network unit fails once at boot (#232)"
 
 ---
 
-### Task 10: Docs and CLAUDE.md
+### Task 10: MQTT on the network only with a broker login
+
+The MQTT broker is the Aedes node in Node-RED. It had no credentials, so `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` in `node-red-tm.env` only made Node-RED's own client send a login, and nothing checked it. Task 1's `-C mqtt_lan` also lasted only one run: `podman_setup.yml` rewrites the pod unit on every run tagged `podman`, `frigate`, or `node-red-tm`.
+
+This task makes the rule hold on every installer run. Port 1883 is open to the network exactly when `node-red-tm.env` sets both values, and the broker enforces them:
+- The Aedes node takes its credentials from `${TM_MQTT_BROKER_USERNAME}` and `${TM_MQTT_BROKER_PASSWORD}`, like the client node `a5d65dd0e3566daa`. Node-RED 5.0.8 substitutes `${…}` in any node's credentials (`@node-red/runtime/lib/nodes/index.js`). node-red-contrib-aedes 0.15 checks logins only when both values are non-empty, so a device without a login behaves as before.
+- A missing key is different from a blank one. Node-RED substitutes a variable only when it exists (`if (r !== undefined)` in `flows/util.js`), so a missing key leaves the literal `${…}` text, and the broker would require it as the login. The installer writes both keys on every run, blank or not.
+- Frigate logs in with `FRIGATE_MQTT_USER` and `FRIGATE_MQTT_PASSWORD` from `frigate.env`. They default to `mqtt_user` and `mqtt_pass`, which nothing checked. The installer copies the login there.
+- `-C mqtt_lan` creates a login (username `tm`, 32 random characters) when `node-red-tm.env` has none. The login lives in the operator's settings file, so later runs keep it. To close the port, blank both values and run `tmsetup.sh -t node-red-tm`.
 
 **Files:**
-- Create: `docs/configuration/network-access.md`
+- Create: `script/ansible/roles/tmsetup/tasks/mqtt_broker.yml`
+- Modify: `script/ansible/roles/tmsetup/tasks/main.yml` (import right after the secrets import)
+- Modify: `container/node-red-tm/node-red-tm.env.j2` and `container/frigate/frigate.env.j2`
+- Modify: `script/ansible/roles/tmsetup/tasks/node-red-tm_setup.yml` (`diff: false` on "Create Node-RED-TM Configs")
+- Modify: `container/node-red-tm/data/flows_cred.json`, only through Step 4's procedure
+- Test: `script/tests/test_tmsetup_tasks.py`, `script/tests/test_tmsetup_templates.py`, `script/tests/test_node_red_flows.py`
+
+**Interfaces:**
+- Consumes: `tmsetup_bool_mqtt_lan` from Task 1.
+- Produces:
+  - the fact `tmsetup_mqtt_broker_login`, a dict with `username` and `password`, empty strings when there's no login
+  - the fact `tmsetup_mqtt_lan_open`, which Task 1's pod template reads
+  - the broker's credentials, which Task 12's device tests check
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `script/tests/test_tmsetup_tasks.py`:
+
+```python
+def mqtt_broker_tasks():
+    return {task["name"]: task for task in load_role_yaml("tasks/mqtt_broker.yml")}
+
+
+def test_broker_login_is_read_on_every_run_that_renders_the_pod():
+    main = load_role_yaml("tasks/main.yml")
+    names = [task["name"] for task in main]
+    login = main[names.index("TMSetup - Main - Read the MQTT broker login")]
+    assert set(login["tags"]) == {"podman", "frigate", "node-red-tm"}
+    secrets = names.index("TMSetup - Main - Generate and read device secrets")
+    assert names.index("TMSetup - Main - Read the MQTT broker login") == secrets + 1
+
+
+def test_broker_login_tasks_hide_the_values():
+    for name, task in mqtt_broker_tasks().items():
+        if any(module in task for module in ("ansible.builtin.slurp", "ansible.builtin.set_fact", "ansible.builtin.lineinfile")):
+            assert task.get("no_log") is True, name
+
+
+def test_both_broker_keys_are_written_even_when_blank():
+    """Node-RED keeps a missing variable's ${...} text, and the broker would then require it as the login."""
+    task = mqtt_broker_tasks()["TMSetup - MQTT Broker - Write the broker login to node-red-tm.env"]
+    assert [item["key"] for item in task["loop"]] == ["TM_MQTT_BROKER_USERNAME", "TM_MQTT_BROKER_PASSWORD"]
+    assert "tmsetup_mqtt_lan_open" not in str(task.get("when", ""))
+
+
+def test_a_login_change_restarts_both_ends():
+    tasks = mqtt_broker_tasks()
+    for name in ("TMSetup - MQTT Broker - Write the broker login to node-red-tm.env",
+                 "TMSetup - MQTT Broker - Give Frigate the broker login"):
+        assert set(tasks[name]["notify"]) == {"Restart frigate.service", "Restart node-red-tm.service"}, name
+
+
+def test_node_red_env_template_hides_its_diff():
+    """node-red-tm.env.j2 renders the broker login, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
+    task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
+                if t["name"] == "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs")
+    assert task["diff"] is False
+```
+
+Append to `script/tests/test_tmsetup_templates.py`:
+
+```python
+LOGIN = {"username": "tm", "password": "s3cret"}
+NO_LOGIN = {"username": "", "password": ""}
+
+
+def mqtt_lines(text):
+    # Only the MQTT settings, so a failing assert can't print other values, such as the credential secret
+    return [line for line in text.splitlines() if "MQTT_" in line and not line.startswith("#")]
+
+
+def node_red_env(login):
+    return mqtt_lines(render(
+        "container/node-red-tm/node-red-tm.env.j2",
+        ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
+        tmsetup_mqtt_broker_login=login,
+    ))
+
+
+def frigate_env(login):
+    return mqtt_lines(render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
+        tmsetup_mqtt_broker_login=login,
+    ))
+
+
+def test_env_templates_render_the_broker_login():
+    assert "TM_MQTT_BROKER_USERNAME=tm" in node_red_env(LOGIN)
+    assert "TM_MQTT_BROKER_PASSWORD=s3cret" in node_red_env(LOGIN)
+    assert "FRIGATE_MQTT_USER=tm" in frigate_env(LOGIN)
+    assert "FRIGATE_MQTT_PASSWORD=s3cret" in frigate_env(LOGIN)
+
+
+def test_env_templates_without_a_login():
+    assert "TM_MQTT_BROKER_USERNAME=" in node_red_env(NO_LOGIN)
+    assert "TM_MQTT_BROKER_PASSWORD=" in node_red_env(NO_LOGIN)
+    assert "FRIGATE_MQTT_USER=mqtt_user" in frigate_env(NO_LOGIN)
+```
+
+In Task 7's `test_frigate_env_carries_the_go2rtc_credentials`, add `tmsetup_mqtt_broker_login=NO_LOGIN` to the `render` call, because `frigate.env.j2` now needs it.
+
+Append to `script/tests/test_node_red_flows.py`:
+
+```python
+def test_mqtt_nodes_keep_their_ids():
+    """flows_cred.json stores the broker login by node id, so these nodes must keep their ids (Task 10)."""
+    types = {node["id"]: node["type"] for node in json.loads(FLOWS.read_text())}
+    assert types.get("9ca3b6ed1a6334c0") == "aedes broker"
+    assert types.get("a5d65dd0e3566daa") == "mqtt-broker"
+
+
+def test_flows_cred_is_still_encrypted():
+    assert list(json.loads((FLOWS.parent / "flows_cred.json").read_text())) == ["$"]
+```
+
+No test decrypts `flows_cred.json`. Step 4's procedure checks what the broker does with it, and Task 12's device tests check it on a Pi.
+
+- [ ] **Step 2: Run the tests to check they fail**
+
+Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py script/tests/test_node_red_flows.py -v`
+
+Expected: the new task tests FAIL with `FileNotFoundError` (no `tasks/mqtt_broker.yml`) or `ValueError` (no import), the diff test with `KeyError`, and the template tests on the old lines. The node-id and encryption tests already pass and guard Step 4.
+
+- [ ] **Step 3: Write the task file, the import, and the templates**
+
+`script/ansible/roles/tmsetup/tasks/mqtt_broker.yml`:
+
+```yaml
+---
+# TMSetup - MQTT Broker: port 1883 is open to the network exactly when node-red-tm.env sets a broker
+# login, and the broker enforces it. main.yml imports this with every tag that renders the pod.
+# Tasks that handle the login set no_log, because tmsetup.sh copies all output into ~/tmsetup-*.log.
+- name: TMSetup - MQTT Broker - Check for the env files
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    - '{{ tmsetup_codedir }}/frigate/frigate.env'
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  register: tmsetup_mqtt_env_stat_register
+
+- name: TMSetup - MQTT Broker - Read node-red-tm.env
+  become: true
+  no_log: true
+  ansible.builtin.slurp:
+    src: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+  register: tmsetup_mqtt_env_register
+  when: tmsetup_mqtt_env_stat_register.results[0].stat.exists
+
+- name: TMSetup - MQTT Broker - Set the broker login
+  no_log: true
+  vars:
+    env_text: "{{ tmsetup_mqtt_env_register.content | b64decode if tmsetup_mqtt_env_stat_register.results[0].stat.exists else '' }}"
+    found_username: "{{ (env_text | regex_search('(?m)^TM_MQTT_BROKER_USERNAME=.*$') or '') | regex_replace('^TM_MQTT_BROKER_USERNAME=', '') | trim }}"
+    found_password: "{{ (env_text | regex_search('(?m)^TM_MQTT_BROKER_PASSWORD=.*$') or '') | regex_replace('^TM_MQTT_BROKER_PASSWORD=', '') | trim }}"
+    create: "{{ (tmsetup_bool_mqtt_lan | default(false) | bool) and not found_username and not found_password }}"
+  ansible.builtin.set_fact:
+    tmsetup_mqtt_broker_login_created: '{{ create }}'
+    tmsetup_mqtt_broker_login:
+      username: "{{ 'tm' if create else found_username }}"
+      password: "{{ lookup('community.general.random_string', length=32, special=false) if create else found_password }}"
+
+- name: TMSetup - MQTT Broker - Open port 1883 only with a login
+  no_log: true
+  ansible.builtin.set_fact:
+    tmsetup_mqtt_lan_open: "{{ tmsetup_mqtt_broker_login.username != '' and tmsetup_mqtt_broker_login.password != '' }}"
+
+# The failed expression names variables, never values, so this task can show its message.
+- name: TMSetup - MQTT Broker - Check the broker login
+  ansible.builtin.assert:
+    that:
+      - (tmsetup_mqtt_broker_login.username == '') == (tmsetup_mqtt_broker_login.password == '')
+      - tmsetup_mqtt_broker_login.username is regex('^[A-Za-z0-9._-]*$')
+      - tmsetup_mqtt_broker_login.password is regex('^[A-Za-z0-9._-]*$')
+    fail_msg: >-
+      TM_MQTT_BROKER_USERNAME and TM_MQTT_BROKER_PASSWORD in node-red-tm.env must both be set or both be blank,
+      using only letters, digits, '.', '_', and '-', with no quotes. Fix the file, then run tmsetup.sh again.
+    quiet: true
+
+- name: TMSetup - MQTT Broker - Write the broker login to node-red-tm.env
+  become: true
+  no_log: true
+  loop:
+    - { key: TM_MQTT_BROKER_USERNAME, value: '{{ tmsetup_mqtt_broker_login.username }}' }
+    - { key: TM_MQTT_BROKER_PASSWORD, value: '{{ tmsetup_mqtt_broker_login.password }}' }
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  when: tmsetup_mqtt_env_stat_register.results[0].stat.exists
+  notify:
+    - Restart frigate.service
+    - Restart node-red-tm.service
+
+- name: TMSetup - MQTT Broker - Give Frigate the broker login
+  become: true
+  no_log: true
+  loop:
+    - { key: FRIGATE_MQTT_USER, value: '{{ tmsetup_mqtt_broker_login.username }}' }
+    - { key: FRIGATE_MQTT_PASSWORD, value: '{{ tmsetup_mqtt_broker_login.password }}' }
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/frigate/frigate.env'
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  register: tmsetup_mqtt_frigate_lines_register
+  when:
+    - tmsetup_mqtt_lan_open
+    - tmsetup_mqtt_env_stat_register.results[1].stat.exists
+  notify:
+    - Restart frigate.service
+    - Restart node-red-tm.service
+
+- name: TMSetup - MQTT Broker - Remind about the other MQTT clients
+  ansible.builtin.debug:
+    msg: >-
+      The MQTT broker now requires the login in {{ tmsetup_codedir }}/node-red-tm/node-red-tm.env, and port 1883 is
+      open to the network. Give that login to the air quality sensor (mqtt_username and mqtt_password in its
+      config.json) and to every other MQTT client, such as Home Assistant or a display board.
+  when: tmsetup_mqtt_lan_open and (tmsetup_mqtt_broker_login_created or tmsetup_mqtt_frigate_lines_register is changed)
+...
+```
+
+On a fresh install the two env files don't exist yet. The facts still carry the login, and the templates render it when Node-RED's and Frigate's setup create the files later in the run. `-f` keeps the login the same way, because this file reads it before the templates replace `node-red-tm.env`.
+
+In `script/ansible/roles/tmsetup/tasks/main.yml`, directly after `TMSetup - Main - Generate and read device secrets` (Task 3), add:
+
+```yaml
+- name: TMSetup - Main - Read the MQTT broker login
+  tags:
+    - podman
+    - frigate
+    - node-red-tm
+  ansible.builtin.import_tasks:
+    file: mqtt_broker.yml
+```
+
+In `container/node-red-tm/node-red-tm.env.j2`, replace the four lines from `# mqtt user, leave blank for no authentication` through `TM_MQTT_BROKER_PASSWORD=` with:
+
+```
+# MQTT broker login. The broker enforces it, and port 1883 opens to the network only when both are set.
+# Change it by running tmsetup.sh (-t node-red-tm), which also gives it to Frigate. Leave both blank for no login.
+TM_MQTT_BROKER_USERNAME={{ tmsetup_mqtt_broker_login.username }}
+TM_MQTT_BROKER_PASSWORD={{ tmsetup_mqtt_broker_login.password }}
+```
+
+In `container/frigate/frigate.env.j2`, change the two MQTT lines to:
+
+```
+FRIGATE_MQTT_USER={{ tmsetup_mqtt_broker_login.username or tmsetup_frigate_mqtt_user }}
+FRIGATE_MQTT_PASSWORD={{ tmsetup_mqtt_broker_login.password or tmsetup_frigate_mqtt_password }}
+```
+
+In `script/ansible/roles/tmsetup/tasks/node-red-tm_setup.yml`, add `diff: false` to `TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs`, after `become: true`.
+
+- [ ] **Step 4: Give the broker node its credentials**
+
+`flows_cred.json` is encrypted, so don't edit it by hand. Set the credentials through Node-RED's admin API in a throwaway container built from this repo, then copy back only `flows_cred.json`. Run this once from the repo root, with Podman, and don't commit the scripts. Nothing prints the credential secret. If any step behaves differently from what's described here, stop and tell the person.
+
+```bash
+d=$(mktemp -d)
+cp container/node-red-tm/data/{flows.json,flows_cred.json,settings.js,package.json} "$d"/
+chmod -R a+rwX "$d"   # the image runs Node-RED as uid 1000
+.venv/bin/python -c "import sys; sys.path.insert(0, 'script/tests'); from tmsetup_render import load_role_yaml, render
+open('$d/Containerfile', 'w').write(render('container/node-red-tm/Containerfile.j2',
+    tmsetup_node_red_tm_version=load_role_yaml('vars/main.yml')['tmsetup_node_red_tm_version']))"
+podman build -q -t tm-cred-edit -f "$d/Containerfile" container/node-red-tm
+# The credential secret and a made-up login go in a file, never on a command line
+grep '^NODE_RED_CREDENTIAL_SECRET=' container/node-red-tm/node-red-tm.env.j2 > "$d/env"
+printf 'TM_MQTT_BROKER_HOST=localhost\nTM_MQTT_BROKER_PORT=1883\nTM_MQTT_BROKER_USERNAME=check\nTM_MQTT_BROKER_PASSWORD=check-pass\n' >> "$d/env"
+podman run -d --rm --name tm-cred-edit --env-file "$d/env" -v "$d":/data -p 127.0.0.1:18800:1880 -p 127.0.0.1:18830:1883 tm-cred-edit
+```
+
+The flows log errors about the missing `/config` and `/db` folders; that's expected. Then set the credentials:
+
+```bash
+.venv/bin/python - <<'EOF'
+import json, time, urllib.request
+BASE = "http://127.0.0.1:18800"
+
+
+def call(method, path, body=None, token=None, headers=None):
+    request = urllib.request.Request(BASE + path, method=method, data=None if body is None else json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json", **(headers or {}),
+                                              **({"Authorization": "Bearer " + token} if token else {})})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read() or b"null")
+
+
+for _ in range(90):
+    try:
+        urllib.request.urlopen(BASE + "/auth/login", timeout=5)
+        break
+    except OSError:
+        time.sleep(2)
+token = call("POST", "/auth/token", {"client_id": "node-red-admin", "grant_type": "password", "scope": "*",
+                                     "username": "admin", "password": "password"})["access_token"]
+v2 = {"Node-RED-API-Version": "v2"}
+current = call("GET", "/flows", token=token, headers=v2)
+[broker] = [node for node in current["flows"] if node["id"] == "9ca3b6ed1a6334c0"]
+broker["credentials"] = {"username": "${TM_MQTT_BROKER_USERNAME}", "password": "${TM_MQTT_BROKER_PASSWORD}"}
+call("POST", "/flows", {"rev": current["rev"], "flows": current["flows"]}, token=token,
+     headers={**v2, "Node-RED-Deployment-Type": "full"})
+print("credentials set")
+EOF
+```
+
+Check what the broker now does, with a raw MQTT 3.1.1 CONNECT (return code 0 accepted, 5 not authorized):
+
+```bash
+cat > "$d/connack.py" <<'EOF'
+import socket
+import sys
+
+
+def field(text):
+    data = text.encode()
+    return len(data).to_bytes(2, "big") + data
+
+
+def connack(username=None, password=None, port=18830):
+    flags = 0x02 | (0x80 if username is not None else 0) | (0x40 if password is not None else 0)
+    body = field("MQTT") + bytes([4, flags]) + (30).to_bytes(2, "big") + field("tm-cred-check")
+    body += (field(username) if username is not None else b"") + (field(password) if password is not None else b"")
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as connection:
+        connection.sendall(bytes([0x10, len(body)]) + body)
+        return connection.recv(4)[3]
+
+
+print("no login", connack(), "wrong", connack("check", "wrong"), "right", connack("check", "check-pass"))
+EOF
+.venv/bin/python "$d/connack.py"
+```
+
+Expected: `no login 5 wrong 5 right 0`. Then check a device without a login:
+
+```bash
+podman stop tm-cred-edit
+sed -i 's/^\(TM_MQTT_BROKER_\(USERNAME\|PASSWORD\)\)=.*/\1=/' "$d/env"
+podman run -d --rm --name tm-cred-edit --env-file "$d/env" -v "$d":/data -p 127.0.0.1:18800:1880 -p 127.0.0.1:18830:1883 tm-cred-edit
+sleep 20 && .venv/bin/python "$d/connack.py"
+podman stop tm-cred-edit
+```
+
+Expected: `no login 0`, and the two connects that send a login also print 0, because a broker without credentials accepts anyone. Then copy the result back:
+
+```bash
+.venv/bin/python -c "import json, sys; assert json.load(open(sys.argv[1])) == json.load(open(sys.argv[2])), 'flows changed'" \
+    "$d/flows.json" container/node-red-tm/data/flows.json && echo "flows unchanged"
+cp "$d/flows_cred.json" container/node-red-tm/data/flows_cred.json
+podman rmi tm-cred-edit && rm -rf "$d"
+```
+
+Expected: `flows unchanged`. Only `flows_cred.json` changes in the repo.
+
+- [ ] **Step 5: Run the checks**
+
+Run:
+
+```bash
+.venv/bin/python -m pytest script/tests container/node-red-tm/schema/tests -v
+(cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"
+.venv/bin/python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files --cached --others --exclude-standard '*.j2') && echo "templates parse"
+git diff --stat
+```
+
+Expected:
+- all tests pass
+- `exit 0`
+- `templates parse`
+- `git diff --stat` lists the task file, `main.yml`, `node-red-tm_setup.yml`, both env templates, `flows_cred.json`, and the three test files.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add script/ansible/roles/tmsetup/tasks/mqtt_broker.yml script/ansible/roles/tmsetup/tasks/main.yml \
+    script/ansible/roles/tmsetup/tasks/node-red-tm_setup.yml container/node-red-tm/node-red-tm.env.j2 \
+    container/frigate/frigate.env.j2 container/node-red-tm/data/flows_cred.json script/tests/
+git commit -m "Open MQTT to the network only with a broker login the broker enforces" -m "<trailer block>"
+```
+
+---
+
+### Task 11: Docs and CLAUDE.md
+
+The docs follow "Writing docs" in `docs/development/contributing.md` (#241): describe how things work, not how they changed; say each fact once and link to it; and give real values, such as `/opt/traffic-monitor`, rather than variables. What changed goes in the release notes (Task 12 Step 12). Check every value against the code.
+
+**Files:**
+- Create: `docs/reference/network.md`
 - Modify: `mkdocs.yml` (nav)
+- Modify: `docs/use/home-page.md`, `docs/ui/database.md`, `docs/build-your-own-device-diy/update.md`, `docs/use/system-admin.md`
+- Modify: `docs/data-and-payloads/integrations.md`, `docs/data-and-payloads/data-overview.md`
+- Modify: `docs/configuration/frigate-config.md`, `docs/configuration/environment.md`, `docs/reference/tmsetup.md`
+- Modify: `docs/add-ons/air-quality.md`, `docs/development/dev-environment.md`
 - Modify: `README.md` (lines 45–49 and 63)
-- Modify: `docs/setup-guide.md` (line 70)
-- Modify: `docs/development/dev-environment.md` (line 22)
 - Modify: `CLAUDE.md`
 
-- [ ] **Step 1: Write the network access page**
+- [ ] **Step 1: Write the ports page**
 
-`docs/configuration/network-access.md`:
+`docs/reference/network.md`:
 
 ````markdown
 ---
-description: Which network ports the Traffic Monitor opens, and how to reach each app.
+description: The network ports a Traffic Monitor opens, and the login the camera stream needs.
 ---
 
-# Network Access
+# Network ports
 
-Every app on the Traffic Monitor is reached through the home page on port 80. The apps themselves only accept connections from the device, so other computers reach them through these paths:
-
-| App | Address |
-|---|---|
-| Home page | `http://<device>/` |
-| Dashboard | `http://<device>/dashboard/` |
-| Frigate | `http://<device>/frigate/` |
-| Legacy dashboard | `http://<device>/ui/` |
-| Node-RED editor | `http://<device>/nr/` |
-| Camera feeds (go2rtc) | `http://<device>/feeds/` |
-| System administration (Cockpit) | `http://<device>/system/` |
-
-`<device>` is the device's IP address or `<hostname>.local`.
-
-## Open ports
+Other computers reach the Traffic Monitor's apps through the [home page](../use/home-page.md) on port 80. The apps themselves accept connections only from the device.
 
 | Port | Used for |
 |---|---|
 | 22 | SSH |
-| 80 | Home page and every app above |
-| 8554 | Camera stream (RTSP), with a username and password |
+| 80 | The home page and every app it links to |
+| 1883 | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md#mqtt). |
 | 5353 (UDP) | `<hostname>.local` names (mDNS) |
-| 9090 | Cockpit, directly, with your Raspberry Pi login. Use it if the home page doesn't load. |
+| 8554 | The camera stream (RTSP), with a username and password |
+| 9090 | Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load. |
 
-The camera feeds page shows the camera streams. It doesn't offer go2rtc's config editor, stream management, or WebRTC. Players use MSE, or HLS on older iPhones.
+When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
 
-### Camera stream credentials
+## Camera stream login
 
 The camera stream on port 8554 needs the username `frigate` and a password generated on the device at install. To play the stream in another program, such as VLC, read the password on the device:
 
@@ -2345,37 +2776,52 @@ sudo cat /etc/traffic-monitor/secrets/go2rtc_rtsp_password
 ```
 
 Then open `rtsp://frigate:<password>@<device>:8554/picam_h265_detect`.
-
-## MQTT for sensors on other devices
-
-The MQTT broker only accepts connections from the device itself, which is all the air quality sensor needs. If a sensor on another device publishes to it, open MQTT to the network:
-
-1. Set a broker username and password: `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` in `/opt/traffic-monitor/node-red-tm/node-red-tm.env`.
-2. Set the same values as `FRIGATE_MQTT_USER` and `FRIGATE_MQTT_PASSWORD` in `/opt/traffic-monitor/frigate/frigate.env`.
-3. Run `bash script/tmsetup.sh -C mqtt_lan`.
-4. From another computer, check that the broker refuses a connection without the username and password.
-
-!!! warning
-
-    Without step 1, anyone on the network can publish to the broker and add false data to your Traffic Monitor.
-
-## Changes from earlier versions
-
-* Ports 1880, 1883, 1984, 5000, and 8971 aren't reachable from other computers anymore. Use the paths above.
-* Frigate's restream ports (8564–8566) and the Plate Recognizer port (8080) aren't published anymore.
-* The camera stream on port 8554 needs the username and password above.
-* Data export downloads from the dashboard's database page now work through the home page address.
 ````
 
-In `mkdocs.yml`, under `nav:` → `- Configuration:`, after `- Node-RED Config: configuration/node-red-config.md`, add:
+In `mkdocs.yml`, under `nav:` → `- Reference:`, after `- Installer options: reference/tmsetup.md`, add:
 
 ```yaml
-      - Network Access: configuration/network-access.md
+      - Network ports: reference/network.md
 ```
 
-- [ ] **Step 2: Update the port references in the README and docs**
+The `llmstxt` plugin's `reference/*.md` already picks the page up.
 
-In `README.md`, replace the five bullets under "User Interfaces (UI) / port numbers references" with the list below. The Cockpit bullet stays as #212 wrote it.
+- [ ] **Step 2: Update the pages that describe what M1 changes**
+
+Revise each in place; delete what M1 makes untrue rather than adding a note about it.
+
+- **`docs/use/home-page.md`:** replace the "Direct ports" note with one titled "If the home page doesn't load": the apps accept connections only from the device, so open Cockpit at `http://<device>:9090`, log in with the Raspberry Pi account, and check the services in [System administration](system-admin.md). Link [Network ports](../reference/network.md).
+- **`docs/ui/database.md`:** delete the "Download from Node-RED's port" warning (#211 is fixed). Under "Download the database", say that the device first makes a consistent copy of the database, so a large one can take a minute or two before the download starts, and that a failed download shows its reason on the page (#223).
+- **`docs/build-your-own-device-diy/update.md`:** in "Before you update", keep the database download, and drop "Open that page on Node-RED's port…".
+- **`docs/use/system-admin.md`:**
+  - The app containers run in one pod. `revproxy.service` runs on the host network, outside the pod, so the home page stays up when the pod is down.
+  - Add a row to "When to restart what": after changing the MQTT broker login in `node-red-tm.env`, run `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`, which gives the login to Frigate and opens or closes port 1883 to match. A plain restart leaves Frigate on the old login.
+- **`docs/data-and-payloads/integrations.md`:**
+  - The opening and the MQTT section: the broker is on by default and accepts connections only from the device. Frigate, the air quality sensor, and Node-RED connect locally.
+  - A new subsection, "Connect from other devices":
+    1. Give the broker a login: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm -C mqtt_lan`. Or set your own `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` (letters, digits, `.`, `_`, and `-`) in `/opt/traffic-monitor/node-red-tm/node-red-tm.env` and run the command without `-C mqtt_lan`. The broker then requires the login from every client, the installer gives it to Frigate, and port 1883 opens to your network.
+    2. Read it: `sudo grep ^TM_MQTT_BROKER_ /opt/traffic-monitor/node-red-tm/node-red-tm.env`.
+    3. Give it to the [air quality sensor](../add-ons/air-quality.md) and to each MQTT client.
+    4. Check from another computer: `mosquitto_sub -h <device> -u <username> -P <password> -t tm/events`.
+    5. To change or remove it, edit the two values and run `bash traffic-monitor/script/tmsetup.sh -t node-red-tm` again.
+  - A `!!! warning`: the login crosses the network unencrypted, and anyone who has it can read every topic and publish false data. Open MQTT only on a network you trust.
+  - The topic table's snapshot row: Frigate publishes it only when the camera's `mqtt` setting is on, which new installs turn off (#256). Link Tune object detection.
+  - The `tm/events` example gets `-u <username> -P <password>`.
+- **`docs/data-and-payloads/data-overview.md`:** in "By default, the device sends no images…", say Frigate's snapshots on the MQTT broker stay on the device unless you give the broker a login, and that new installs turn them off.
+- **`docs/configuration/frigate-config.md`:**
+  - The `_hr` input path keeps the login: `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr`. Frigate fills in the `{…}` values from `frigate.env`.
+  - "Recordings and snapshots": new installs turn the MQTT snapshots off with `mqtt: enabled: false` under `cameras: picam_h265:`. On an older install, add those lines in the configuration editor.
+- **`docs/configuration/environment.md`:**
+  - The `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` rows: the broker's login, required from every client when both are set, which also opens port 1883 to the network. Letters, digits, `.`, `_`, and `-` only. Link "Connect from other devices".
+  - The "restart the service" step: for the broker login, run the installer instead.
+- **`docs/reference/tmsetup.md`:**
+  - The `-C` row: `plate_recognizer`, or `mqtt_lan`, which creates an MQTT broker login when there isn't one.
+  - A `tm-control` row in the tags table: the `tm-control` command, which updates settings files from earlier versions. The `frigate` tag runs it too.
+  - "What `-f` replaces": the MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`.
+- **`docs/add-ons/air-quality.md`:** add `mqtt_username` and `mqtt_password` to the settings table, needed once the broker has a login.
+- **`docs/development/dev-environment.md`:** the editor is at `http://<device>/nr/`.
+
+In `README.md`, replace the bullets under "User Interfaces (UI) / port numbers references" with:
 
 ```markdown
 - `http://<device_ip_address>/` is the home page, with links to every app below.
@@ -2385,14 +2831,10 @@ In `README.md`, replace the five bullets under "User Interfaces (UI) / port numb
 - `http://<device_ip_address>/system/` opens [Cockpit](https://cockpit-project.org/) for system administration: services, logs, updates, containers, and a terminal. Log in with your Raspberry Pi user account. Cockpit also answers directly on port `9090`.
 - `http://<device_ip_address>/nr/` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
 
-See [Network Access](https://docs.trafficmonitor.ai/latest/configuration/network-access/) for the ports the device opens.
+See [Network ports](https://docs.trafficmonitor.ai/latest/reference/network/) for the ports the device opens.
 ```
 
 Also replace `Device dashboard available at \`http://<device_ip_address>:1880/ui\`.` with `Device dashboard available at \`http://<device_ip_address>/ui/\`.`.
-
-In `docs/setup-guide.md`, replace `` `http://<TM_IP_ADDRESS>:5000` `` with `` `http://<TM_IP_ADDRESS>/frigate/` ``.
-
-In `docs/development/dev-environment.md`, replace `` `http://<you_ip>:1880` `` with `` `http://<your_ip>/nr/` ``.
 
 - [ ] **Step 3: Update CLAUDE.md**
 
@@ -2417,7 +2859,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
 3. **"Runtime topology"**, first bullet:
    - Change `All containers (frigate, node-red-tm, revproxy, optional plate-recognizer) run in one pod` to `The app containers (frigate, node-red-tm, optional plate-recognizer) run in one pod`.
-   - After `nginx proxies to \`127.0.0.1:<port>\`.`, add a sub-bullet: `The pod publishes its ports on 127.0.0.1 only (1880, 1883, 5000, 8971). Set \`tmsetup_bool_mqtt_lan\` (\`-C mqtt_lan\`) to open 1883 to the LAN.`
+   - After `nginx proxies to \`127.0.0.1:<port>\`.`, add a sub-bullet: `The pod publishes its ports on 127.0.0.1 only (1880, 1883, 5000, 8971). 1883 also opens to the LAN when \`node-red-tm.env\` sets a broker login, which the Aedes broker enforces (\`tasks/mqtt_broker.yml\`); \`-C mqtt_lan\` creates one.`
 
 4. **"Runtime topology"**, go2rtc bullet:
    - Change `config from \`roles/tmsetup/files/go2rtc.yaml\`` to `config from \`roles/tmsetup/templates/go2rtc.yaml.j2\``.
@@ -2448,25 +2890,21 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
      The storefiles commit already added `/storefiles` to this bullet's list of proxied paths.
 
-7. **Node-RED flows, `init-config` bullet**: replace `The config is read only when the flows start.` with:
-
-   ```
-   A `watch` node reloads it when the file changes, which re-records deployments and re-initializes the radars.
-   ```
-
-8. **"Overwrite semantics"**: add at the end:
+7. **"Overwrite semantics"**: add at the end:
 
    ```
    To change an existing device's `config.yml` without `-f`, add a step to `tm-control migrate` (round-trip edit with a backup), as tmsetup does for the go2rtc RTSP credentials. Add new `*.env` keys with `lineinfile`.
    ```
+
+8. **"Editing `flows.json`"**, the `flows_cred.json` bullet: after `don't hand-edit it.`, add `It holds the MQTT nodes' \`${TM_MQTT_BROKER_*}\` credential references, stored by node id. Change it only with the container procedure in the M1 plan's Task 10, and keep the MQTT nodes' ids.`
 
 - [ ] **Step 4: Check the docs build inputs**
 
 Run:
 
 ```bash
-grep -rn -E ':1880|:5000|:1984' README.md docs CLAUDE.md | grep -v 'network-access.md'
-grep -n 'network-access' mkdocs.yml
+grep -rn -E ':1880|:5000|:1984' README.md docs CLAUDE.md
+grep -n 'reference/network' mkdocs.yml
 ~/.venvs/tm-docs/bin/mkdocs build --strict
 ```
 
@@ -2478,13 +2916,13 @@ Expected:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/configuration/network-access.md mkdocs.yml README.md docs/setup-guide.md docs/development/dev-environment.md CLAUDE.md
-git commit -m "Document network access through the reverse proxy" -m "<trailer block>"
+git add docs/ mkdocs.yml README.md CLAUDE.md
+git commit -m "Document network access through the reverse proxy and the MQTT broker login" -m "<trailer block>"
 ```
 
 ---
 
-### Task 11: Device tests and the Pi test plan, through tmdev
+### Task 12: Device tests and the Pi test plan, through tmdev
 
 This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare a bench Pi with its expected hardware. Run the Pi test plan before committing this task and before opening the PR:
 - Use a dev Pi from the local inventory, never a field device.
@@ -2505,6 +2943,7 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
   - Task 7's RTSP credentials
   - Task 8's download errors
   - Task 9's pod unit, which no longer requires `tmnet-network.service`
+  - Task 10's broker login
 
 - [ ] **Step 1: Write the device tests**
 
@@ -2512,7 +2951,7 @@ At the top of `script/devpi/tests/test_web.py`, add `import socket` to the impor
 
 ```python
 # Edge and ports (tm-control M1): from this machine, only nginx answers, and /feeds is view-only.
-CLOSED_TO_NETWORK = [1880, 1883, 1984, 5000, 8971]
+CLOSED_TO_NETWORK = [1880, 1984, 5000, 8971]  # 1883: see the MQTT tests below
 
 
 def pi_address(host, hostvars):
@@ -2631,7 +3070,75 @@ def test_camera_stream_needs_credentials(host, hostvars):
         connection.sendall(request.encode())
         status_line = connection.recv(1024).decode(errors="replace").splitlines()[0]
     assert status_line.startswith("RTSP/1.0 401"), status_line
+
+
+def mqtt_connack(address, username=None, password=None, port=1883):
+    """Send an MQTT 3.1.1 CONNECT and return the CONNACK return code: 0 accepted, 5 not authorized."""
+    def field(text):
+        data = text.encode()
+        return len(data).to_bytes(2, "big") + data
+
+    flags = 0x02 | (0x80 if username is not None else 0) | (0x40 if password is not None else 0)
+    body = field("MQTT") + bytes([4, flags]) + (30).to_bytes(2, "big") + field("tmdev-check")
+    body += (field(username) if username is not None else b"") + (field(password) if password is not None else b"")
+    length, encoded = len(body), b""
+    while True:
+        length, digit = divmod(length, 128)
+        encoded += bytes([digit | (0x80 if length else 0)])
+        if not length:
+            break
+    with socket.create_connection((address, port), timeout=5) as connection:
+        connection.sendall(b"\x10" + encoded + body)
+        return connection.recv(4)[3]
+
+
+def broker_login(host, expect, codedir):
+    if not expect["pii_free"]:
+        pytest.skip("reads node-red-tm.env; set tm_expect.pii_free: true (bench units only)")
+    with host.sudo():
+        text = host.run(f"grep '^TM_MQTT_BROKER_' {codedir}/node-red-tm/node-red-tm.env").stdout
+    values = dict(line.split("=", 1) for line in text.splitlines() if "=" in line)
+    return values.get("TM_MQTT_BROKER_USERNAME", ""), values.get("TM_MQTT_BROKER_PASSWORD", "")
+
+
+def test_mqtt_port_follows_the_broker_login(host, hostvars, expect, codedir):
+    """MQTT is open to the network only with a broker login, and the broker enforces it (Task 10)."""
+    username, password = broker_login(host, expect, codedir)
+    address = pi_address(host, hostvars)
+    if not (username and password):
+        with pytest.raises(OSError):
+            socket.create_connection((address, 1883), timeout=5).close()
+        return
+    # Compare return codes only, so the login never appears in an assertion message
+    assert mqtt_connack(address) == 5
+    assert mqtt_connack(address, username, password + "x") == 5
+    assert mqtt_connack(address, username, password) == 0
+
+
+PI_MQTT_CONNACK = (
+    "import socket; s = socket.create_connection(('127.0.0.1', 1883), timeout=5); "
+    "s.sendall(bytes([0x10, 23]) + b'\\x00\\x04MQTT\\x04\\x02\\x00\\x1e\\x00\\x0btmdev-check'); "
+    "print(s.recv(4)[3])"
+)
+
+
+def test_mqtt_broker_enforces_its_login_on_the_pi(host, expect, codedir):
+    """On the Pi, a client without a login is refused exactly when a broker login is set."""
+    username, password = broker_login(host, expect, codedir)
+    expected = "5" if username and password else "0"
+    assert host.check_output("python3 -c " + shlex.quote(PI_MQTT_CONNACK)) == expected
+
+
+def test_frigate_logs_in_to_the_mqtt_broker(host):
+    """Frigate has reached the broker with its login since it last started (Task 10)."""
+    with host.sudo():
+        since = host.check_output("systemctl show -p ActiveEnterTimestamp --value frigate.service")
+        errors = host.run(f"journalctl -u frigate.service --since {shlex.quote(since)} --no-pager "
+                          "| grep -c -i 'unable to connect to mqtt'").stdout.strip()
+    assert errors == "0"
 ```
+
+Check the exact wording of Frigate 0.18.1's MQTT connection error before relying on the `grep`, and adjust the pattern if it differs.
 
 #215's `test_direct_port_responds` stays as it is. It checks the same ports on the Pi's `localhost`, where the apps still answer.
 
@@ -2693,10 +3200,10 @@ Run:
 ```bash
 .venv/bin/python -m pytest -q -p no:cacheprovider script/devpi/tests
 .venv/bin/python -m pytest -q -p no:cacheprovider --collect-only script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py \
-    | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod|network_unit_fails_once'
+    | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|mqtt|survives_a_stopped_pod|network_unit_fails_once'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `23`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `25`.
 
 - [ ] **Step 3: Open the check and record the baseline**
 
@@ -2704,7 +3211,7 @@ Run these while the Pi still runs the code from before M1:
 
 ```bash
 $T check start --host <host> --pr 224 --title "M1: edge and ports"
-$T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export"
+$T test <host> -- -k "closed_to_the_network or view_only or needs_credentials or data_export or mqtt"
 ```
 
 Expected: the new tests fail, which shows they catch the problem:
@@ -2712,6 +3219,7 @@ Expected: the new tests fail, which shows they catch the problem:
 - `/feeds/api/config` answers;
 - RTSP needs no login;
 - `/storefiles` errors come back as 200. A Pi without the storefiles commit gives nginx's 404 instead, so there the 404 case passes.
+- On a `pii_free` unit, `test_mqtt_port_follows_the_broker_login` fails, because port 1883 is open without a login. The two other MQTT tests pass.
 - On a `pii_free` unit, the failed-download test fails with curl's exit 28, because the download stays open, and the copy-failure test fails because the download succeeds. The database-copy test passes before M1 too: the archive still holds `tmdb.sqlite`, and there's no snapshot folder. Elsewhere all three are skipped.
 
 With the person's OK, because it stops the pod for a few minutes, also run `$T test <host> --disruptive -- -k network_unit_fails_once`. It fails, which reproduces #232, and its cleanup starts the pod again.
@@ -2740,7 +3248,7 @@ $T test <host>
 
 Expected:
 - All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL. `test_no_crash_restarts[revproxy.service]` should pass too. It counts restarts since the handler last restarted revproxy, so a failure means the pod still held port 80 at that point (Review Focus 3). Bring that to the person.
-- The 21 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass and the three data-export tests that write to the Pi or download the database are skipped.
+- The 23 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass, and five are skipped: the three data-export tests that write to the Pi or download the database, and the two MQTT tests that read `node-red-tm.env`.
 - On a `pii_free` unit, while `test_data_export_tars_a_database_copy` runs: the Dashboard's Monitoring page keeps updating, and afterwards `$T run <host> -- 'sudo journalctl -u node-red-tm --since -15min | grep -c -E "SQLITE_BUSY|database is locked"'` prints `0`. Record it as an item. If writes failed or Node-RED stalled during the copy, stop and bring it to the person; don't work around it.
 
 Record an item.
@@ -2757,9 +3265,10 @@ Expected: apart from `127.0.0.1` and `[::1]`, the only listeners are:
 - `:8554` (go2rtc)
 - `:5353` (avahi)
 - `:9090` (Cockpit, the rescue console)
+- `:1883`, only on a unit with a broker login (Step 9)
 - DHCP/DNS, only in hotspot mode
 
-Nothing listens on 1880, 1883, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 9). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
+Nothing listens on 1880, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 10). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
 
 - [ ] **Step 7: Check that re-runs keep the secrets and keep them out of the log**
 
@@ -2790,7 +3299,29 @@ $T run <host> -- "sudo journalctl -u frigate.service -b | grep -i -E '401|unauth
 
 Expected: both tests pass, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
 
-- [ ] **Step 9: Record what needs a person**
+- [ ] **Step 9: Open MQTT to the network with a broker login**
+
+Ask the person first: this restarts Node-RED and Frigate. On a `pii_free` unit only, because it reads `node-red-tm.env`:
+
+```bash
+$T deploy <host> --on-pi -- -t node-red-tm -C mqtt_lan
+$T test <host> -- -k mqtt
+$T run <host> -- 'sudo grep "^TM_MQTT_BROKER_" /opt/traffic-monitor/node-red-tm/node-red-tm.env | sha256sum'
+$T deploy <host> --on-pi -- -t node-red-tm
+$T run <host> -- 'sudo grep "^TM_MQTT_BROKER_" /opt/traffic-monitor/node-red-tm/node-red-tm.env | sha256sum'
+$T run <host> -- 'sudo sh -c "grep ^TM_MQTT_BROKER_PASSWORD= /opt/traffic-monitor/node-red-tm/node-red-tm.env | cut -d= -f2- > /run/tmdev-mqtt-pw" && { sudo grep -l -F -f /run/tmdev-mqtt-pw ~/tmsetup-*.log || echo "no broker password in logs"; }; sudo rm -f /run/tmdev-mqtt-pw'
+```
+
+Expected:
+- The MQTT device tests pass with the login set. From this machine, a client without it and a wrong password get code 5, and the right login gets 0. Frigate's journal has no MQTT connection errors.
+- The two hashes match: a later plain `-t node-red-tm` run keeps the login. A hash isn't the secret.
+- `no broker password in logs`.
+
+Then blank both values with `$T run <host> -- 'sudo sed -i "s/^\(TM_MQTT_BROKER_\(USERNAME\|PASSWORD\)\)=.*/\1=/" /opt/traffic-monitor/node-red-tm/node-red-tm.env'`, run `$T deploy <host> --on-pi -- -t node-red-tm`, and run `$T test <host> -- -k mqtt` again: port 1883 is closed to this machine, and a client without a login on the Pi gets 0. Leave the unit that way, or run `-C mqtt_lan` again. Record an item for each part.
+
+A unit that had a login set by hand before M1 should keep Frigate connected after the upgrade (`test_frigate_logs_in_to_the_mqtt_broker`). If no bench unit has one, record that case as not tested.
+
+- [ ] **Step 10: Record what needs a person**
 
 These need eyes or the Node-RED editor, so record them as `manual`:
 
@@ -2803,11 +3334,9 @@ $T check item "Node-RED watch test: in-place, then two atomic edits of config.ym
     --note "Spec, Risks to verify early"
 ```
 
-Only if LAN MQTT is needed: after `-C mqtt_lan` and broker credentials, a client without credentials must be refused. If it isn't, the docs must say LAN MQTT isn't supported yet.
-
 When the person reports back, reopen the check with `$T check reopen <run_dir>` and re-record those items as `pass` or `fail`.
 
-- [ ] **Step 10: Close the check and commit**
+- [ ] **Step 11: Close the check and commit**
 
 ```bash
 $T check status
@@ -2816,9 +3345,10 @@ git add script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py
 git commit -m "Add device tests for closed app ports, the view-only /feeds, download errors, the proxy outliving the pod, and the pod outliving a network failure" -m "<trailer block>"
 ```
 
-- [ ] **Step 11: Update PR #224 and mark it ready**
+- [ ] **Step 12: Update PR #224 and mark it ready**
 
-Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), and rewrite its description for the finished M1 with `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -F body=@<file>`; `gh pr edit` fails on this repo. Read the current description first, so the person's own edits aren't lost. The person marks it ready and merges it, with a merge commit like the stacks before it. Closing keywords only fire on merges into `main`, so close #211, #223, and #232 by hand once it's in `dev`. Fill in:
+Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), and rewrite its description for the finished M1 with `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -F body=@<file>`; `gh pr edit` fails on this repo. Read the current description first, so the person's own edits aren't lost. The person marks it ready and merges it, with a merge commit like the stacks before it. Closing keywords only fire on merges into `main`, so close #211, #223, #232, and #256 by hand once it's in `dev`. Fill in:
+- **Docs:** the pages Task 11 changed, in the PR template's Docs section.
 - **Testing:** the check's checklist, with device names and addresses replaced by placeholders, plus the off-device results. Never include secret values.
 - **Release notes:**
   - Direct app ports are closed; use the `/…` paths.
@@ -2827,5 +3357,8 @@ Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check t
   - Data export downloads now work through the proxy (#211).
   - Download errors return their HTTP status, and a download that fails partway ends instead of hanging (#223).
   - The pod starts even if its network unit fails once at boot (#232).
+  - MQTT port 1883 is reachable only from the device unless `node-red-tm.env` sets a broker login, which the broker now enforces. `-C mqtt_lan` creates one. Home Assistant and display boards need it.
+  - A broker login set earlier is now enforced and copied to Frigate. Add it to the air quality sensor before upgrading, or blank it.
+  - New installs don't publish Frigate's object snapshots on MQTT (#256).
   - Upgrade with a full `tmsetup.sh` run.
 - **AI assistance:** fill in the template's section.
