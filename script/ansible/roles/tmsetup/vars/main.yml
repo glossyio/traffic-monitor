@@ -24,6 +24,7 @@ tmsetup_packages:
   - screen
   - build-essential
   - cmake
+  - git
   - cron
   - rpicam-apps
   - sysstat
