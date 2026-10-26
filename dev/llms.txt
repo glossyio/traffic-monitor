@@ -6,42 +6,59 @@ The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an 
 
 ## Get started
 
-- [Welcome to smart city traffic monitoring](https://docs.trafficmonitor.ai/dev/index.md)
-- [Getting Started](https://docs.trafficmonitor.ai/dev/getting-started/index.md)
-- [Build Your Own Device (DIY)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md)
-- [Assembly Instructions](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/assembly-instructions/index.md)
-- [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md)
-- [Software Installation](https://docs.trafficmonitor.ai/dev/software-installation/index.md)
-- [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md)
-- [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md)
+- [Home](https://docs.trafficmonitor.ai/dev/index.md)
+- [How it works](https://docs.trafficmonitor.ai/dev/get-started/how-it-works/index.md)
+- [Choose your path](https://docs.trafficmonitor.ai/dev/getting-started/index.md)
 
-## Configuration
+## Build your own
 
-- [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md)
-- [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md)
-- [Config Overview](https://docs.trafficmonitor.ai/dev/configuration/overview/index.md)
+- [Build your own](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md)
+- [Assembly](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/assembly-instructions/index.md)
+- [Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md)
+- [Update the software](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/update/index.md)
+- [Install the software](https://docs.trafficmonitor.ai/dev/software-installation/index.md)
 
-## User interface
+## Deploy
 
-- [Database](https://docs.trafficmonitor.ai/dev/ui/database/index.md)
+- [Choose a site and mount](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md)
+- [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md)
+
+## Use the device
+
+- [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md)
+- [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md)
+- [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md)
 - [Monitoring](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md)
 - [Movements](https://docs.trafficmonitor.ai/dev/ui/movements/index.md)
+- [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md)
 
-## Data and payloads
+## Reference
 
-- [Air Quality (AQ) Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md)
-- [Data Overview](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md)
-- [Events Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md)
-- [Radar Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md)
+- [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md)
+- [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md)
+- [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md)
+- [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md)
+- [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md)
+- [Events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md)
+- [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md)
+- [Radar](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md)
 
-## Help and FAQ
+## Add-ons
 
-- [Frequently Asked Questions](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md)
-- [Use Cases and Scenarios](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/index.md)
-- [Where can I get support?](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md)
+- [Air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md)
+- [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md)
+
+## Ideas and use cases
+
+- [Ideas and use cases](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/index.md)
+
+## Help
+
+- [Troubleshooting and FAQ](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md)
+- [Get support](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md)
 
 ## Development
 
-- [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)
-- [Dev Environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md)
+- [Contributing and writing docs](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)
+- [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md)
 

@@ -6,17 +6,17 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Zone-related patterns for human confirmation counts">
+        <meta name="description" content="Open-source roadway counting and speed monitoring on a Raspberry Pi">
       
       
       
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/ui/movements/">
       
       
-        <link rel="prev" href="../database/">
+        <link rel="prev" href="../monitoring/">
       
       
-        <link rel="next" href="../../data-and-payloads/data-overview/">
+        <link rel="next" href="../database/">
       
       
         
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#movements" class="md-skip">
+        <a href="#description-the-movements-dashboard-counts-of-objects-by-the-sequence-of-zones-they-passed-through-for-checking-against-manual-counts" class="md-skip">
           Skip to content
         </a>
       
@@ -293,7 +293,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome to smart city traffic monitoring
+    Home
   
 
     
@@ -312,15 +312,73 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../../get-started/how-it-works/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Getting Started
+    How it works
   
 
     
@@ -329,6 +387,42 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose your path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -344,6 +438,10 @@
       
         
           
+        
+      
+        
+      
         
       
         
@@ -374,7 +472,7 @@
   <span class="md-ellipsis">
     
   
-    Build Your Own Device (DIY)
+    Build your own
   
 
     
@@ -396,7 +494,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Build Your Own Device (DIY)
+    Build your own
   
 
           </label>
@@ -418,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    Recommended Hardware
+    Hardware
   
 
     
@@ -446,7 +544,63 @@
   <span class="md-ellipsis">
     
   
-    Assembly Instructions
+    Assembly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../software-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install the software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/update/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Update the software
   
 
     
@@ -473,91 +627,8 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../software-installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Software Installation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Deployment and Mounting Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../setup-guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Setup Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
     
     
-      
-        
       
         
       
@@ -576,17 +647,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Configuration
+    Deploy
   
 
     
@@ -597,12 +668,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Configuration
+    Deploy
   
 
           </label>
@@ -615,14 +686,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/overview/" class="md-nav__link">
+      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Config Overview
+    Choose a site and mount
   
 
     
@@ -643,42 +714,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/frigate-config/" class="md-nav__link">
+      <a href="../../setup-guide/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Frigate Config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../configuration/node-red-config/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Node-RED Config
+    First-time setup
   
 
     
@@ -709,6 +752,8 @@
   
     
     
+      
+        
       
         
       
@@ -729,17 +774,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    User Interface
+    Use the device
   
 
     
@@ -750,12 +795,99 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
-    User Interface
+    Use the device
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/home-page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home page and apps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dashboards
   
 
           </label>
@@ -793,34 +925,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../database/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Database
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -829,8 +933,6 @@
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
-      
-        
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
@@ -874,8 +976,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -884,10 +984,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sample-screenshot" class="md-nav__link">
+  <a href="#description-the-movements-dashboard-counts-of-objects-by-the-sequence-of-zones-they-passed-through-for-checking-against-manual-counts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sample screenshot
+        description: The Movements dashboard: counts of objects by the sequence of zones they passed through, for checking against manual counts.
       
     </span>
   </a>
@@ -895,30 +995,490 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#descriptions" class="md-nav__link">
+  <a href="#movements" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Descriptions
+        Movements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Movements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-a-complex-intersection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: a complex intersection
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#example-of-complex-movement-patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example of complex movement patterns
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data export
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/frigate-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tune object detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/system-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/node-red-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config.yml settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    node-red-tm.env settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/tmsetup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installer options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/data-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and privacy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/events-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/radar-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/air-quality-aq-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT and ThingsBoard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -944,6 +1504,150 @@
         
       
         
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add-ons
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Add-ons
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/air-quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/plate-recognizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plate Recognizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ideas and use cases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
       
         
       
@@ -972,7 +1676,7 @@
   <span class="md-ellipsis">
     
   
-    Data and Payloads
+    Help
   
 
     
@@ -988,7 +1692,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Data and Payloads
+    Help
   
 
           </label>
@@ -1001,14 +1705,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data-and-payloads/data-overview/" class="md-nav__link">
+      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Data Overview
+    Troubleshooting and FAQ
   
 
     
@@ -1029,70 +1733,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data-and-payloads/events-payload/" class="md-nav__link">
+      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Events Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data-and-payloads/radar-payload/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Radar Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data-and-payloads/air-quality-aq-payload/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Air Quality (AQ) Payload
+    Get support
   
 
     
@@ -1121,8 +1769,6 @@
   
     
     
-      
-        
       
         
       
@@ -1151,7 +1797,7 @@
   <span class="md-ellipsis">
     
   
-    Help & FAQ
+    Development
   
 
     
@@ -1164,155 +1810,6 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_10">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Help & FAQ
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Frequently Asked Questions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Where can I get support?
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Use Cases and Scenarios
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Development
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1336,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    Dev Environment
+    Dev environment
   
 
     
@@ -1364,7 +1861,7 @@
   <span class="md-ellipsis">
     
   
-    Contributing
+    Contributing and writing docs
   
 
     
@@ -1402,8 +1899,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1412,10 +1907,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sample-screenshot" class="md-nav__link">
+  <a href="#description-the-movements-dashboard-counts-of-objects-by-the-sequence-of-zones-they-passed-through-for-checking-against-manual-counts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sample screenshot
+        description: The Movements dashboard: counts of objects by the sequence of zones they passed through, for checking against manual counts.
       
     </span>
   </a>
@@ -1423,24 +1918,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#descriptions" class="md-nav__link">
+  <a href="#movements" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Descriptions
+        Movements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Movements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-a-complex-intersection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: a complex intersection
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#example-of-complex-movement-patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example of complex movement patterns
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1470,36 +1971,34 @@
 
   
   
-    
-    
   
-  
-  <h1 id="movements">Movements<a class="headerlink" href="#movements" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Zone-related patterns for human confirmation counts</p>
-<div class="admonition success">
-<p class="admonition-title">Success</p>
-<p>Movement patterns are based on <a href="https://docs.frigate.video/configuration/zones">Frigate Zones</a>. Configure zones properly before analyzing movements.</p>
-</div>
-<p>The Movements tab allows operators to see counts of objects through zones. This is commonly used to provide confirmation counts against manual counts and to determine if deployment and zones provide accurate counts.</p>
-<h2 id="sample-screenshot">Sample screenshot<a class="headerlink" href="#sample-screenshot" title="Permanent link">&para;</a></h2>
-<p><img alt="" src="../../assets/images/tm-dash-2026-03-movement.png" /></p>
-<h2 id="descriptions">Descriptions<a class="headerlink" href="#descriptions" title="Permanent link">&para;</a></h2>
+  <hr />
+<h2 id="description-the-movements-dashboard-counts-of-objects-by-the-sequence-of-zones-they-passed-through-for-checking-against-manual-counts">description: The Movements dashboard: counts of objects by the sequence of zones they passed through, for checking against manual counts.<a class="headerlink" href="#description-the-movements-dashboard-counts-of-objects-by-the-sequence-of-zones-they-passed-through-for-checking-against-manual-counts" title="Permanent link">&para;</a></h2>
+<h1 id="movements">Movements<a class="headerlink" href="#movements" title="Permanent link">&para;</a></h1>
+<p>Open <code>http://&lt;device&gt;/dashboard/movements</code>. Movements counts objects by the path they took through your zones, which is how you check the device against a manual count or confirm that the zones capture what you want.</p>
+<p>Movements come from the <code>entered_zones</code> of each <a href="../../data-and-payloads/events-payload/">event</a>, so they depend on how the <a href="../../setup-guide/#3-adjust-the-zones">zones</a> are drawn.</p>
+<figure>
+  <img alt="Movements dashboard with a zone checklist, a time range, and a table of counts by object and zone sequence" src="../../assets/images/tm-dash-2026-03-movement.png" />
+<br />
+<figcaption>The Movements page</figcaption>
+</figure>
 <ol>
-<li>Movements Selection: Selectable filters to specify.</li>
-<li>Movement behavior selection: Provides the ability to filter objects that go through <em>any</em> of the selected zones or objects that go through <em>only selected zones</em>.</li>
-<li>Table of counts by object for selected movement pattern filters.</li>
+<li><strong>Zones.</strong> Tick the zones to include. The four standard <code>zone_*</code> zones are unticked by default, so that zones you drew for your own analysis stand out.</li>
+<li><strong>Intermediate zones.</strong> Choose <strong>Show intermediate zones</strong> to count each full sequence of zones separately, or <strong>Show just initial &amp; final zones</strong> to group by where an object entered and where it left.</li>
+<li><strong>Time range.</strong> Start and end times; the last 7 days by default. In time zones east of UTC, or with a half-hour offset, the page shows no counts for any range.</li>
+<li><strong>Counts</strong> by object type for each zone sequence that matches.</li>
 </ol>
-<h2 id="example-of-complex-movement-patterns">Example of complex movement patterns<a class="headerlink" href="#example-of-complex-movement-patterns" title="Permanent link">&para;</a></h2>
-<p>A complex intersection provides potentially dozens of combinations of turning behaviors and movement. The movements tab provides the ability to confirm against manual counts.</p>
+<h2 id="example-a-complex-intersection">Example: a complex intersection<a class="headerlink" href="#example-a-complex-intersection" title="Permanent link">&para;</a></h2>
+<p>An intersection with many zones has dozens of possible movements. Each turn or crossing becomes its own row, which you can compare with a manual count sheet.</p>
 <figure>
-  <img alt="Screen shot of Frigate zones configured with 12 zones drawn on a busy 5-way intersection" src="../../assets/images/image-2.png" />
+  <img alt="Frigate zone editor with 12 zones drawn over a five-way intersection" src="../../assets/images/image-2.png" />
 <br />
-<figcaption>Frigate zones configured with 12 zones drawn on a busy 5-way intersection</figcaption>
+<figcaption>Twelve zones drawn on a busy five-way intersection</figcaption>
 </figure>
 <figure>
-  <img alt="Slide of two manual hand-written counts for traffic movement through area" src="../../assets/images/image-1-1.png" />
+  <img alt="Two hand-written count sheets with tallies of turning movements" src="../../assets/images/image-1-1.png" />
 <br />
-<figcaption>Example of manual, hand-written confirmation counts through various intersections (left image matches above zones)</figcaption>
+<figcaption>Manual confirmation counts; the left sheet matches the zones above</figcaption>
 </figure>
   
 
@@ -1507,9 +2006,6 @@
 
 
 
-
-  
-  
 
 
   

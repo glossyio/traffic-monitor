@@ -1,153 +1,91 @@
-# Recommended Hardware
+______________________________________________________________________
 
-Customize the hardware to fit your needs! The core components include the computing device, storage, camera, and co-processor. Feel free to mix-and-match components, but most of the documentation and default configuration assumes using the hardware recommended below.
+## description: The parts for a Traffic Monitor: Raspberry Pi 5, camera, AI accelerator, radar, enclosure, power, and the optional air quality sensor.
 
-## Sample Hardware Configurations
+# Hardware
 
-Here are some sample sensor configurations and the data it collects:
+The core parts are the Raspberry Pi 5, a microSD card, a camera, and an AI accelerator. A radar adds accurate speeds, and an air quality sensor adds environmental readings. You can swap parts, but the docs and the default settings assume the parts below.
 
-1. **Camera + AI co-processor** is the lowest cost and will give you object detection, direction, visual speed measurements, and much more.
-1. Add in a **radar** for the most accurate speed and direction measurements and basic object detection for nighttime detection.
-1. Include an **environmental sensor** to also measure air quality, gases, particulate matter, noise, temperature, and much more.
-1. (*future feature*) Install **only the radar** for the most privacy-conscious built that will be capable of basic object detection, speed, and direction.
-1. Add additional camera(s) to monitor more directions using the same AI co-processor.\*\*
+What each combination gives you:
 
-\*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](#cameras) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.
+1. **Camera and AI accelerator**: object detection and counts. The lowest cost.
+1. **Add a radar** for speeds and the direction of travel. Without a radar, events have no speed or direction.
+1. **Add an air quality sensor** for gases, particulate matter, temperature, pressure, humidity, and light.
+1. **Add cameras** to watch more directions with the same accelerator. The software supports several cameras and up to four radars, paired in any pattern. See [Cameras](#cameras).
 
-## Hardware Check List - Bill of Materials (BOM)
+## Parts list
 
-Use the following checklist as a quick guide to components you need to purchase
+We are not affiliated with the stores or companies linked here. These are parts contributors have used or tested; if you've tested others, post in the [discussions](https://github.com/glossyio/traffic-monitor/discussions).
 
-Info
+- Computer: [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/), 4 GB or 8 GB
+  - Power: the official [27 W USB-C power supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
+  - Cooling: the [Raspberry Pi active cooler](https://www.raspberrypi.com/products/active-cooler/)
+- Storage: a microSD card of 32 GB or more, such as the [Raspberry Pi SD card](https://www.raspberrypi.com/products/sd-cards/) or the [SanDisk Extreme Pro](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA)
+- Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/), wide angle, plus a [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/)
+- AI accelerator: see [AI accelerator](#ai-accelerator)
+- Radar (recommended): [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
+- Enclosure: see [Enclosure](#enclosure)
+- Air quality sensor (optional): [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) with the [PMS5003 particulate matter sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/) and a [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/)
+- Screws: assorted M3 for the boards and enclosure, M2.5×10 mm for the Raspberry Pi
 
-We are not affiliated with any of the stores or companies linked in this section. These are suggestions that have been used or tested by contributors. If you have used or tested more, post on [TM GitHub discussions](https://github.com/glossyio/traffic-monitor/discussions)!
+## Computer
 
-- Computing Device: [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB
-- Power: official RPi [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
-- (*Recommended*) CPU Cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/)
-- Storage: microSD card (≥32GB),
-- [Raspberry Pi SD Cards](https://www.raspberrypi.com/products/sd-cards/) are modern, fast, stable microSD cards.
-- OR [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA) for larger sizes to store more videos and snapshots
-- Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/)
-- plus the [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
-- AI co-processor: see [AI Co-processor](#ai-co-processor) for options
-- (*Recommended*) Radar: [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
-- Enclosure: See [Enclosure (weather-resistant box)](#enclosure-weather-resistant-box) for options
-- (*Optional*) Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) with [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/)
-- AQ sensor will need a [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/) with the TM enclosure
-- Screws: various M3 sizes for mounting board and enclosure, M2.5x10mm for Raspberry Pi mount
-
-## Computing Device
-
-(*Required*) [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB. The Traffic Monitor is designed around 4GB memory profile, but if you have many sensors and other applications running, 8GB may be more performant.
-
-Also pick up a (very cheap) official CPU cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/) which helps prevent overheating on very hot days.
+The [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) with 4 GB of memory runs the standard setup. Choose 8 GB if you plan to add sensors or other applications. Add the [active cooler](https://www.raspberrypi.com/products/active-cooler/); it's inexpensive and prevents throttling on hot days.
 
 Warning
 
-The Traffic Monitor is based on the Raspberry Pi 5.
-
-The Raspberry Pi 4B and earlier units are not recommended as they have experienced detrimental performance due to not meeting the power requirements on the peripherals (USB) for the TPU and radar for this setup. However, many have been successful with earlier versions of the Raspberry Pi for object detection, so your mileage may vary.
+The Raspberry Pi 4 and earlier can't supply enough power over USB for the accelerator and the radar together, which causes resets and dropped readings. Some people have run object detection alone on older models.
 
 ### Storage
 
-(*Required*) A high-quality microSD card or a SSD (see alternative). Recommend at least 32GB capacity for system files with minimal (or no) snapshot and video capture.
+A good microSD card of 32 GB or more holds the system and the database. Both the [Raspberry Pi SD card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) and the [SanDisk Extreme Pro](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA) have been tested. An NVMe (M.2) drive is faster and more durable, and some M.2 HATs hold both a drive and a Coral accelerator.
 
-1. *Option*: Setup has been tested and works well with the [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA).
-1. *Option*: [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) performs particularly well but sizes only range up to 128GB.
-1. *Alternative*: There are many options on the RPi5 to use a faster, more durable NVME (M.2) drive, including those that pair with the Coral TPU or other AI co-processors.
+### Power
 
-### Power Supply
+The Raspberry Pi 5 needs a 27 W supply (5 V at 5 A). A weaker supply, such as an older Raspberry Pi adapter, causes resets and throttling. The device itself draws 6 to 14 W while detecting, and every part is powered from the Raspberry Pi.
 
-(Required) To run the Traffic Monitor and components.
+- **Mains:** the official [27 W USB-C power supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/).
+- **Power over Ethernet:** a PoE HAT such as the [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) or [Waveshare PoE M.2 HAT+](https://www.waveshare.com/PoE-M.2-HAT-Plus.htm), with a PoE+ source such as the [Raspberry Pi PoE+ injector](https://www.raspberrypi.com/products/poe-plus-injector/).
+- **Battery for about a day:** a portable power station such as a [Jackery Explorer 300](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station), with the official power supply plugged into it. A 300 Wh station lasts about a day.
 
-Warning
+Longer off-grid use: custom battery and solar
 
-The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lower rating like the older RPi PSUs will result in resets and/or throttling. However, the Traffic Monitor typically consumes between 6-14-watts of energy when it is fully operational and inferencing. All components are intended to be powered off the Raspberry Pi 5, so a quality power source is recommended.
+**Battery.** Use a 12 V or 24 V [LiFePO₄](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) battery and a [buck converter](https://en.wikipedia.org/wiki/Buck_converter) that steps it down to 5 V at 5 A. Size the battery from the device's draw of about 13 W: a 12 V, 10 Ah battery (120 Wh) lasts about 9 hours, and 24 hours needs 13 × 24 = 312 Wh, a 12 V battery of about 30 Ah.
 
-1. *(Recommended)* The official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
-1. *(Alternative)* PoE (Power over Ethernet) HATs available for the RPi 5.
-1. [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) or [Waveshare PoE M.2 HAT+](https://www.waveshare.com/PoE-M.2-HAT-Plus.htm) has performed well for some contributors.
-1. You will need a PoE+ power supply, such as a [PoE+ Power Injector](https://www.raspberrypi.com/products/poe-plus-injector/).
-1. (*Optional*) Battery for short-term off-grid--i.e. a few hours--we recommend a portable power station such as a [Jackery](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station) and plug in the official 27W USB-C Power Supply.
-1. A 300-Watt-hours portlable power station should be able to last ~24-hours. (see calculation in custom battery below)
-1. (*Optional*) Custom battery for longer-term off-grid use.
-1. Required components:
-   1. [Buck converter](https://en.wikipedia.org/wiki/Buck_converter) (step-down converter) to step down a 12v (or 24v) battery to 5v@5A for the Raspberry Pi 5
-   1. [LFP](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) (LiFePO4) battery at 12v or 24v with Amp-hours (Ah) to last desired time frame.
-1. Sample battery calculation (YMMV[1](#fn:1)): the TM consumes ~13-watts, running it for 24-hour will require 13\*24=312 Wh (Watt-hours), the LFP battery needs to be 312/12= 26, which would be 12-volts @ 30-Ah.
-1. *(Prototype)* Solar panel + battery.
-1. Components: Same as custom battery above plus [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) (PV) panel and [solar charge controller](https://en.wikipedia.org/wiki/Charge_controller)
-1. Sample calculation:
-   1. Find your daily [Solar PV potential](https://profilesolar.com/countries/US/); e.g. Portland, OR has 7.15 and 1.42 kWh[2](#fn:2)/day potential in an optimum summer and winter, respectively.
-   1. Choose your PV panel size and calculate potential energy generation for the lowest time of year (winter in northern hemisphere).
-      1. Potential * Size of PV panel = production per day; e.g. 1.42 * 0.1 (100-watt panel) = 142-Watts per day production in Portland, OR winter
-   1. PWM solar controllers have ~80% efficiency on power conversion
-      1. Production per day * controller efficiency = 142\*0.8 = 113-Watts per day available.
-   1. Calculate battery size requirements as above.
-   1. *Note*: **This is not enough to run the TM and charge a battery**. You would require 3-times that amount, closer to a 300-watt PV in a Portland, OR winter.
-1. (*Caveat)* Solar production is very dependent on the amount of sun you are able to harvest. You need to consider factors like orientation/angle of panels, non-optimal days (cloudy, rainy), anything that blocks the sun such as trees, and more.
+**Solar.** Add a [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) panel and a [charge controller](https://en.wikipedia.org/wiki/Charge_controller) to the battery setup. Size the panel for the worst month:
 
-## Camera(s)
+1. Look up your daily [solar potential](https://profilesolar.com/countries/US/). Portland, Oregon, gets about 7.15 kWh/day in summer and 1.42 kWh/day in winter per kW of panel.
+1. Multiply by the panel size. A 100 W panel in a Portland winter produces about 1.42 × 0.1 = 142 Wh per day.
+1. Allow for the controller. A PWM controller passes about 80%, so 142 × 0.8 = 113 Wh per day.
+1. Compare with the 312 Wh the device uses per day. A 100 W panel isn't enough; a Portland winter needs about 300 W of panel.
 
-(Required) For full object detection capabilities.
+Real output depends on panel angle, cloud, shade from trees, and snow. This setup is a prototype, not a tested product.
 
-Info
+## Cameras
 
-The official Raspberry Pi cameras are below recommended for low-cost, compact, local object detection; however cameras that output H.265 (h265, HEVC) are preferrable due to RPi5 hardware encoding but even H.264 (h264) will work with software decoding in lower volume environments.
+The [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) in its wide-angle version is the tested camera. It needs the [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/), sold separately. The [Raspberry Pi Global Shutter camera](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) has been tested too, for faster motion or a custom lens, with the same cable. It needs camera stream settings that match its sensor, because the defaults are for Camera Module 3. They're in `/var/lib/go2rtc/go2rtc.yaml`, which every update replaces, so redo them after updating.
 
-1. *(Recommended)* [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) (wide angle recommended)
-1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
-1. *(Alternative/additional)* [Raspberry Pi Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for faster motion capture and custom-lens based on your needs
-1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
-1. (*Alternative/additional*): See more at [Frigate's recommended camera hardware](https://docs.frigate.video/frigate/hardware#cameras).
+The Raspberry Pi 5 has two camera connectors, so it can take two Raspberry Pi cameras. Network cameras also work; see [Frigate's camera recommendations](https://docs.frigate.video/frigate/hardware#cameras). Choose one that streams H.265 (HEVC), which the Raspberry Pi 5 decodes in hardware. H.264 works with software decoding but costs CPU, so keep to one or two such cameras.
 
-The Raspberry Pi 5 has 2 (two) camera transceiver slots, so you can easily attach 2 native Raspberry Pi cameras.
+## AI accelerator
 
-Info
+An AI accelerator runs the object detection model at over 100 frames per second with a few milliseconds per inference, enough for several cameras. Without one, Frigate detects on the CPU, which is slower and misses more objects on a busy road, so an accelerator is recommended for any deployment with a camera.
 
-See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) for more information on tuning stream configurations based on various goals for your deployment.
+1. **Recommended:** [Raspberry Pi AI HAT+](https://www.raspberrypi.com/products/ai-hat/) with the Hailo-8 or Hailo-8L.
+1. **Older:** [Coral USB Accelerator](https://coral.ai/products/accelerator). It has become expensive and hard to find.
+1. **Older:** [Coral M.2 Accelerator B+M key](https://coral.ai/products/m2-accelerator-bm/) (not the A+E key) on the [Raspberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/).
 
-## AI Co-processor
-
-## AI Co-processor
-
-(Required with camera) The AI co-processor is an efficient way to run the object detection model, much more efficient than CPU-alone.
-
-Info
-
-The AI co-processor is used by Frigate to run the object detection model, see Frigate's [supported hardware](https://docs.frigate.video/configuration/object_detectors) for more options and details. The Traffic Monitor assumes you are building on Raspberry Pi.
-
-The below AI co-processors or detectors are capable of 100+ FPS with millisecond inference time, depending on the model and hardware. This means multiple camera feeds may be supported.
-
-1. *Recommended:* [Raspberry Pi AI HAT+](https://www.raspberrypi.com/products/ai-hat/) with Hailo-8 or Hailo-8L offers high-performance, power-efficient processing.
-1. *(Older alternative, becoming expensive, hard-to-find, and obsolete)* [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor that you can connect to any computing device with a USB interface.
-1. *(Older alternative, becoming expensive, hard-to-find, and obsolete)* Coral HATs (Hardware-Attached-on-Top [of a Raspberry Pi]) are more compact, upgradable than the USB accelerator:
-1. [Rapsberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/) pairs nicely with the [Coral M.2 Accelerator B+M Key](https://coral.ai/products/m2-accelerator-bm/) (not the A+E key!).
+Frigate's [supported detectors](https://docs.frigate.video/configuration/object_detectors) lists other options. The installer detects the Coral and Hailo accelerators and configures Frigate for whichever it finds.
 
 ## Radar
 
-(*Recommended*) Provides accurate speed and direction measurement.
+The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) Doppler radar measures speed and direction up to about 100 m away and is certified with the same tests as law-enforcement speed radars. It connects over USB.
 
-1. [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - certified with same tests as law enforcement speed radars. Detection up to 100-meters away.
+## Air quality sensor
 
-## Other Sensors
+The [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) board with the [PMS5003 particulate matter sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/) measures gases, particulates, temperature, pressure, humidity, and light. It plugs into the Raspberry Pi's GPIO header through a [male-to-female ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/), which reaches the sensor's place in the enclosure. [Air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) covers the software.
 
-(*Optional*) For additional environmental data.
+## Enclosure
 
-1. Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) paired with the (recommended) [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/). Also pick up a longer ribbon cable, we recommend the [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/).
-
-Info
-
-Get AQ sensor details and capabilities on the [Air Quality (AQ) Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md) page.
-
-## Enclosure (weather-resistant box)
-
-- *Print it yourself*: We offer a 3D printable model so you can build the truly open source Traffic Monitor. Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.
-- *Purchase*: *(coming soon)* Purchase the box or a kit to assemble yourself.
-- *Alternative DIY*: There are many waterproof electrical junction boxes that may be modified to fit your needs with the traffic monitor. Rough dimensions to fit the Traffic Monitor components including the camera and radar should be around 9"x7"x4" such as the [TICONN IP67 ABS Enclosure](https://www.amazon.com/gp/product/B0B87X944Z).
-
-______________________________________________________________________
-
-1. Your Mileage May Vary [↩](#fnref:1 "Jump back to footnote 1 in the text")
-1. kiloWatt-hours [↩](#fnref:2 "Jump back to footnote 2 in the text")
+- **Print it.** The 3D-printable enclosure is open source at [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d), with a parts list.
+- **Adapt a junction box.** A waterproof electrical box of about 9 × 7 × 4 inches, such as the [TICONN IP67 ABS enclosure](https://www.amazon.com/gp/product/B0B87X944Z), holds the parts, the camera, and the radar with some modification.

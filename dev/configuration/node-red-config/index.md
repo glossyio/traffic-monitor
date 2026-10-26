@@ -1,162 +1,83 @@
-# Node-RED Config
+# config.yml settings
 
-Info
+The Traffic Monitor's own settings live in `/opt/traffic-monitor/node-red-tm/config/config.yml` on the device. The installer writes it from [this template](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2) on the first install and leaves it alone afterwards, unless you run the installer with `-f`.
 
-This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.
+The Traffic Monitor reads the file again whenever you save it, so changes take effect without a restart. If the file has a YAML error, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.
 
-See [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) for controlling object detection parameters.
+Keep the four top-level sections (`thingsboard`, `deployment`, `sensors`, `time`) in the file. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:
 
-## Config File
+- A camera or radar without `enabled` is off.
+- A radar without `opt_api_commands_array` gets no extra commands.
+- ThingsBoard without `host` stays off.
+- A `deployment` without `lat` or `lon` isn't recorded, so leave the keys in place even when they're empty.
+- A camera whose `camera_radar` names a radar that isn't in the file records no events. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
-The Traffic Monitor Node-RED config file changes definitions to various services and functionality.
+## thingsboard
 
-- Installed path: `/opt/traffic-monitor/node-red-tm/config/config.yml`
-- [Repo path](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2): `container/node-red-tm/config/config.yml.j2`
+Uploads events, readings, and device telemetry to a [ThingsBoard](https://thingsboard.io/) server. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
 
-The config file is loaded whenever the TM flows restart.
+| Setting        | Type              | Default                         | Meaning                                                                         |
+| -------------- | ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `enabled`      | `true` or `false` | `false`                         | Turn the upload on.                                                             |
+| `host`         | text              | `tb.server.com` (a placeholder) | The server's hostname, without protocol or port. Required when enabled.         |
+| `protocol`     | `http` or `https` | `https`                         | How to reach the server.                                                        |
+| `port`         | number            | none                            | Set it only if the server isn't on the standard port for the protocol.          |
+| `access_token` | text              | empty                           | The device's access token from ThingsBoard. This is the one secret in the file. |
 
-Info
+## deployment
 
-It is *not necessary* to copy this full configuration file. Default values are specified below.
+Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.
 
-```
-########
-# This file contains configuration settings executed by node-red
-# Note: Comments will be removed by updates from node-red
-########
+| Setting   | Type                                          | Default | Meaning                                                    |
+| --------- | --------------------------------------------- | ------- | ---------------------------------------------------------- |
+| `lat`     | decimal degrees, such as `45.5225`            | empty   | Latitude. Four decimal places give address-level accuracy. |
+| `lon`     | decimal degrees, such as `-122.6919`          | empty   | Longitude.                                                 |
+| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty   | The compass direction the camera and radar face.           |
 
-# Optional: IoT hub backend integration
-thingsboard:
-    # Optional: enable connection to backend thingsboard server (default: shown below)
-    enabled: false
-    # Required: host name, without protocol or port number
-    host: tb.example.com
-    # Required: thingsboard telemetry protocol (default: shown below), 
-    # NOTE: only http(s) currently supported, mqtt coming soon
-    #  see https://thingsboard.io/docs/reference/protocols/
-    protocol: http
-    # Optional: port, common settings: https=443, http=80, mqtt=1883
-    # Check with your ThingsBoard admin for settings
-    port:
-    # Optional: API key for device 
-    # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
-    access_token:
-    # Optional: future use for auto-provisioning (RPiSN)
-    # provisionDeviceKey: 
-    # Optional: future use for auto-provisioning (manual)
-    # provisionDeviceSecret: 
+A `deployment:` block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.
 
-# Optional: deployment location details
-# Note: May be used to determine device placement on maps
-# NOTE: Can be overridden at the sensors level, top-level values will cascade down
-deployment:
-    # NOTE: for address-level accuracy, recommend at least 4 digits after the decimal
-    # Optional: Latitude in decimal degrees format; e.g. 45.5225
-    lat:
-    # Optional: Longitude in decimal degrees format; e.g. -122.6919
-    lon:
-    # Optional: cardinal (N, S, E, W) or ordinal (NE, NW, SE, etc.) direction the camera/radar is facing 
-    # Note: For bearing, match the roadway traffic direction
-    bearing:
+## sensors.cameras
 
-sensors:
-    # Optional: if used, must match the Frigate camera name(s)
-    # if not set, no cameras will be used
-    cameras:
-        # camera name must match Frigate configuration camera names
-        picam_h265:
-            # Optional Enable/disable the camera (default: shown below).
-            # if disabled, any Frigate events for specified camera will be ignored
-            # Note: this will not impact Frigate's system
-            enabled: false
-            # Optional: define the radar co-located with camera to associate speeds
-            # camera and radar direction and field of view (FOV) should match
-            # Note: name needs to match one defined in `radars` section
-            # Note: A single radar may be attached to multiple cameras
-            camera_radar: TM_RADAR_SERIAL_PORT_00
-            # Optional, related to addons
-            plate_recognizer: false
+One entry per camera, named exactly as the camera is named in Frigate. The default camera is `picam_h265`. Events from a camera that isn't listed here, or is disabled, are ignored.
 
-    # Optional: used to specify what radars are enabled for speed/direction and detection
-    radars:
-        # Note: Names must match those defined in the node-red environment file
-        # Names are used to associate readings with cameras and other sensors
-        TM_RADAR_SERIAL_PORT_00:
-            # Optional: Enable/disable the radar (default: shown below).
-            enabled: false
-            # Optional: additional Radar API commands to execute on startup (default: shown below)
-            # must be defined as a string in JSON array format
-            # these commands will override any that come before it
-            # e.g. '["^/+0.00\n", "^/-0.00\n"]' will set cosine correction
-            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
+| Setting            | Type                               | Default                   | Meaning                                                                                                                           |
+| ------------------ | ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`          | `true` or `false`                  | `true` for `picam_h265`   | Record this camera's events. Frigate keeps running either way.                                                                    |
+| `camera_radar`     | a radar name from `sensors.radars` | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.    |
+| `plate_recognizer` | `true` or `false`                  | `false`                   | Send this camera's events to the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. |
+| `deployment`       | block                              | inherited                 | Per-camera `lat`, `lon`, and `bearing`.                                                                                           |
 
-    # Optional: used to specify air quality monitor sensor name(s)
-    # Note: air quality configuration file is separate from the node-red config, based on the aq device
-    airquality_monitors:
-        # Required: aq sensor name must match AQ configuration -defined MQTT topic middle element (second element)
-        sensorname01:
-            # Optional: Enable/disable the AQ sensor payloads (default: shown below).
-            enabled: false
-            # Required: mqtt topic to subscribe for incoming full-payload telemetry from AQ sensor
-            #  must be last element in mqtt topic defined in AQ configuration
-            mqtt_topic_incoming: readings
+## sensors.radars
 
-time:
-    # Optional: Set a timezone to use in the UI (default: use browser local time)
-    # NOTE: shall be in unix tz format: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-    #  this will also set the timezone for the entire system
-    timezone: America/Los_Angeles
-    # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
-    # Note: for offline deployments, time will stop whenever power is disconnected
-    npt_set: true
+One entry per radar. A radar's name is the name of the variable that holds its serial port in [node-red-tm.env](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md), `TM_RADAR_SERIAL_PORT_00` through `TM_RADAR_SERIAL_PORT_03`.
 
-addons:
-    #Optional: For additional apps / micro-services available via tmsetup
-    # See https://platerecognizer.com capabilities
-    plate_recognizer:
-        token: 
-        # base url e.g. http://plate-recognizer:8080 and api calls added via app
-        url:
-```
+| Setting                  | Type                     | Default                              | Meaning                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                | `true` or `false`        | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar.                                                                                                                                                                                                                                                |
+| `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'`       | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
+| `deployment`             | block                    | inherited                            | Per-radar `lat`, `lon`, and `bearing`.                                                                                                                                                                                                                                                                         |
 
-## Environment File
+## sensors.airquality_monitors
 
-The environment file defines variables are accessible by the node-red-tm podman container.
+One entry per [air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md), named as the middle part of the topic the sensor publishes to: `aq/<name>/readings`.
 
-```
-########
-# This file contains node-red environment variables loaded by node-red.service
-#   Read more at https://nodered.org/docs/user-guide/environment-variables
-#     and https://fedoraproject.org/wiki/Packaging:Systemd
-# Uses:
-#   - variables can be used in settings.js by calling `process.env.ENV_VAR`
-#   - node property can be set by calling `${ENV_VAR}
-#
-########
+| Setting               | Type              | Default    | Meaning                                                                                 |
+| --------------------- | ----------------- | ---------- | --------------------------------------------------------------------------------------- |
+| `enabled`             | `true` or `false` | `false`    | Record this sensor's readings. Readings from a sensor that isn't enabled are dropped.   |
+| `mqtt_topic_incoming` | text              | `readings` | Present in the template but not used. The device subscribes to every topic under `aq/`. |
 
-# traffic monitor open source software release version
-TM_VERSION='0.5.0'
+## time
 
-# used in settings.js for credentialSecret 
-NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
+| Setting    | Type                                                                               | Default                                                              | Meaning                                                                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timezone` | a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | the installer's `-z` value, `America/Los_Angeles` unless you set one | Present in the template but not used. The dashboards and the 04:00 daily reset use the device's time zone, which the installer's `-z` sets. |
+| `npt_set`  | `true` or `false`                                                                  | `true`                                                               | Present in the template but not used.                                                                                                       |
 
-# database locations, relative to user directory defined in settings.js
-#  will be relative path to store SQLite databases
-TM_DATABASE_PATH_TMDB='/db/tmdb.sqlite'
+## addons.plate_recognizer
 
-# mqtt broker for incoming Frigate events 
-#  Settings below set up the aedes broker node
-TM_MQTT_BROKER_HOST='localhost'
-TM_MQTT_BROKER_PORT='1883'
-# mqtt user, leave blank for no authentication
-TM_MQTT_BROKER_USERNAME=''
-# mqtt password, leave blank for no authentication
-TM_MQTT_BROKER_PASSWORD=''
+Only needed with the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. The section isn't in the template; add it.
 
-# defines system USB serial port for radar
-# run `ls -lat /sys/class/tty/ttyACM*` to list devices
-TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
-TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
-TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
-TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
-```
+| Setting | Type | Default | Meaning                                                                 |
+| ------- | ---- | ------- | ----------------------------------------------------------------------- |
+| `token` | text | none    | Your Plate Recognizer API token. Plates aren't read until this is set.  |
+| `url`   | URL  | none    | The add-on's address inside the device, `http://plate-recognizer:8080`. |

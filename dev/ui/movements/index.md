@@ -1,23 +1,24 @@
+______________________________________________________________________
+
+## description: The Movements dashboard: counts of objects by the sequence of zones they passed through, for checking against manual counts.
+
 # Movements
 
-Success
+Open `http://<device>/dashboard/movements`. Movements counts objects by the path they took through your zones, which is how you check the device against a manual count or confirm that the zones capture what you want.
 
-Movement patterns are based on [Frigate Zones](https://docs.frigate.video/configuration/zones). Configure zones properly before analyzing movements.
+Movements come from the `entered_zones` of each [event](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md), so they depend on how the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) are drawn.
 
-The Movements tab allows operators to see counts of objects through zones. This is commonly used to provide confirmation counts against manual counts and to determine if deployment and zones provide accurate counts.
+The Movements page
 
-## Sample screenshot
+1. **Zones.** Tick the zones to include. The four standard `zone_*` zones are unticked by default, so that zones you drew for your own analysis stand out.
+1. **Intermediate zones.** Choose **Show intermediate zones** to count each full sequence of zones separately, or **Show just initial & final zones** to group by where an object entered and where it left.
+1. **Time range.** Start and end times; the last 7 days by default. In time zones east of UTC, or with a half-hour offset, the page shows no counts for any range.
+1. **Counts** by object type for each zone sequence that matches.
 
-## Descriptions
+## Example: a complex intersection
 
-1. Movements Selection: Selectable filters to specify.
-1. Movement behavior selection: Provides the ability to filter objects that go through *any* of the selected zones or objects that go through *only selected zones*.
-1. Table of counts by object for selected movement pattern filters.
+An intersection with many zones has dozens of possible movements. Each turn or crossing becomes its own row, which you can compare with a manual count sheet.
 
-## Example of complex movement patterns
+Twelve zones drawn on a busy five-way intersection
 
-A complex intersection provides potentially dozens of combinations of turning behaviors and movement. The movements tab provides the ability to confirm against manual counts.
-
-Frigate zones configured with 12 zones drawn on a busy 5-way intersection
-
-Example of manual, hand-written confirmation counts through various intersections (left image matches above zones)
+Manual confirmation counts; the left sheet matches the zones above

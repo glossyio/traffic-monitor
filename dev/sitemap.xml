@@ -21,6 +21,14 @@
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
+         <loc>https://docs.trafficmonitor.ai/latest/add-ons/air-quality/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.trafficmonitor.ai/latest/add-ons/plate-recognizer/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
          <loc>https://docs.trafficmonitor.ai/latest/build-your-own-device-diy/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
@@ -33,15 +41,19 @@
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
+         <loc>https://docs.trafficmonitor.ai/latest/build-your-own-device-diy/update/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.trafficmonitor.ai/latest/configuration/environment/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
          <loc>https://docs.trafficmonitor.ai/latest/configuration/frigate-config/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
          <loc>https://docs.trafficmonitor.ai/latest/configuration/node-red-config/</loc>
-         <lastmod>2026-10-26</lastmod>
-    </url>
-    <url>
-         <loc>https://docs.trafficmonitor.ai/latest/configuration/overview/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
@@ -57,6 +69,10 @@
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
+         <loc>https://docs.trafficmonitor.ai/latest/data-and-payloads/integrations/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
          <loc>https://docs.trafficmonitor.ai/latest/data-and-payloads/radar-payload/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
@@ -66,6 +82,10 @@
     </url>
     <url>
          <loc>https://docs.trafficmonitor.ai/latest/development/dev-environment/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.trafficmonitor.ai/latest/get-started/how-it-works/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
@@ -81,6 +101,10 @@
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
+         <loc>https://docs.trafficmonitor.ai/latest/reference/tmsetup/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
          <loc>https://docs.trafficmonitor.ai/latest/ui/database/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
@@ -90,6 +114,14 @@
     </url>
     <url>
          <loc>https://docs.trafficmonitor.ai/latest/ui/movements/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.trafficmonitor.ai/latest/use/home-page/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.trafficmonitor.ai/latest/use/system-admin/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
 </urlset>

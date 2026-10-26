@@ -6,17 +6,17 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Traffic Monitor Node-RED configuration logic">
+        <meta name="description" content="Every setting in the Traffic Monitor's config.yml, with its type, default, and effect.">
       
       
       
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/configuration/node-red-config/">
       
       
-        <link rel="prev" href="../frigate-config/">
+        <link rel="prev" href="../../use/system-admin/">
       
       
-        <link rel="next" href="../../ui/monitoring/">
+        <link rel="next" href="../environment/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Node-RED Config - Traffic Monitor</title>
+        <title>config.yml settings - Traffic Monitor</title>
       
     
     
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#node-red-config" class="md-skip">
+        <a href="#configyml-settings" class="md-skip">
           Skip to content
         </a>
       
@@ -138,7 +138,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Node-RED Config
+              config.yml settings
             
           </span>
         </div>
@@ -293,7 +293,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome to smart city traffic monitoring
+    Home
   
 
     
@@ -312,15 +312,73 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../../get-started/how-it-works/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Getting Started
+    How it works
   
 
     
@@ -329,6 +387,42 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose your path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -344,6 +438,10 @@
       
         
           
+        
+      
+        
+      
         
       
         
@@ -374,7 +472,7 @@
   <span class="md-ellipsis">
     
   
-    Build Your Own Device (DIY)
+    Build your own
   
 
     
@@ -396,7 +494,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Build Your Own Device (DIY)
+    Build your own
   
 
           </label>
@@ -418,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    Recommended Hardware
+    Hardware
   
 
     
@@ -446,7 +544,7 @@
   <span class="md-ellipsis">
     
   
-    Assembly Instructions
+    Assembly
   
 
     
@@ -460,15 +558,8 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
+              
+                
   
   
   
@@ -481,150 +572,7 @@
   <span class="md-ellipsis">
     
   
-    Software Installation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Deployment and Mounting Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../setup-guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Setup Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Configuration
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Configuration
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Config Overview
+    Install the software
   
 
     
@@ -645,14 +593,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../frigate-config/" class="md-nav__link">
+      <a href="../../build-your-own-device-diy/update/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Frigate Config
+    Update the software
   
 
     
@@ -661,103 +609,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Node-RED Config
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Node-RED Config
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#config-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Config File
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#environment-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Environment File
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -778,6 +629,129 @@
   
     
     
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a site and mount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First-time setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
       
         
       
@@ -798,17 +772,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    User Interface
+    Use the device
   
 
     
@@ -819,12 +793,97 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
-    User Interface
+    Use the device
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/home-page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home page and apps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dashboards
   
 
           </label>
@@ -845,34 +904,6 @@
     
   
     Monitoring
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ui/database/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Database
   
 
     
@@ -914,6 +945,586 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data export
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frigate-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tune object detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/system-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config.yml settings
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config.yml settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#thingsboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        thingsboard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deployment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorscameras" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.cameras
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorsradars" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.radars
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorsairquality_monitors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.airquality_monitors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#addonsplate_recognizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        addons.plate_recognizer
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    node-red-tm.env settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/tmsetup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installer options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/data-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and privacy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/events-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/radar-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/air-quality-aq-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT and ThingsBoard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -933,6 +1544,150 @@
         
       
         
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add-ons
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Add-ons
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/air-quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/plate-recognizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plate Recognizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ideas and use cases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
       
         
       
@@ -961,7 +1716,7 @@
   <span class="md-ellipsis">
     
   
-    Data and Payloads
+    Help
   
 
     
@@ -977,7 +1732,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Data and Payloads
+    Help
   
 
           </label>
@@ -990,14 +1745,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data-and-payloads/data-overview/" class="md-nav__link">
+      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Data Overview
+    Troubleshooting and FAQ
   
 
     
@@ -1018,70 +1773,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data-and-payloads/events-payload/" class="md-nav__link">
+      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Events Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data-and-payloads/radar-payload/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Radar Payload
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../data-and-payloads/air-quality-aq-payload/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Air Quality (AQ) Payload
+    Get support
   
 
     
@@ -1110,8 +1809,6 @@
   
     
     
-      
-        
       
         
       
@@ -1140,7 +1837,7 @@
   <span class="md-ellipsis">
     
   
-    Help & FAQ
+    Development
   
 
     
@@ -1153,155 +1850,6 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_10">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Help & FAQ
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Frequently Asked Questions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Where can I get support?
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Use Cases and Scenarios
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Development
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1325,7 +1873,7 @@
   <span class="md-ellipsis">
     
   
-    Dev Environment
+    Dev environment
   
 
     
@@ -1353,7 +1901,7 @@
   <span class="md-ellipsis">
     
   
-    Contributing
+    Contributing and writing docs
   
 
     
@@ -1401,10 +1949,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#config-file" class="md-nav__link">
+  <a href="#thingsboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Config File
+        thingsboard
       
     </span>
   </a>
@@ -1412,10 +1960,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#environment-file" class="md-nav__link">
+  <a href="#deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Environment File
+        deployment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorscameras" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.cameras
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorsradars" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.radars
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensorsairquality_monitors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sensors.airquality_monitors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#addonsplate_recognizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        addons.plate_recognizer
       
     </span>
   </a>
@@ -1452,160 +2055,242 @@
     
   
   
-  <h1 id="node-red-config">Node-RED Config<a class="headerlink" href="#node-red-config" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Traffic Monitor Node-RED configuration logic</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.</p>
-<p>See <a href="../frigate-config/">Frigate Config</a> for controlling object detection parameters.</p>
-</div>
-<h2 id="config-file">Config File<a class="headerlink" href="#config-file" title="Permanent link">&para;</a></h2>
-<p>The Traffic Monitor Node-RED config file changes definitions to various services and functionality.</p>
+  <h1 id="configyml-settings">config.yml settings<a class="headerlink" href="#configyml-settings" title="Permanent link">&para;</a></h1>
+<p class="tm-description">Every setting in the Traffic Monitor&#39;s config.yml, with its type, default, and effect.</p>
+<p>The Traffic Monitor's own settings live in <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code> on the device. The installer writes it from <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2">this template</a> on the first install and leaves it alone afterwards, unless you run the installer with <code>-f</code>.</p>
+<p>The Traffic Monitor reads the file again whenever you save it, so changes take effect without a restart. If the file has a YAML error, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.</p>
+<p>Keep the four top-level sections (<code>thingsboard</code>, <code>deployment</code>, <code>sensors</code>, <code>time</code>) in the file. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:</p>
 <ul>
-<li>Installed path: <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code></li>
-<li><a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2">Repo path</a>: <code>container/node-red-tm/config/config.yml.j2</code></li>
+<li>A camera or radar without <code>enabled</code> is off.</li>
+<li>A radar without <code>opt_api_commands_array</code> gets no extra commands.</li>
+<li>ThingsBoard without <code>host</code> stays off.</li>
+<li>A <code>deployment</code> without <code>lat</code> or <code>lon</code> isn't recorded, so leave the keys in place even when they're empty.</li>
+<li>A camera whose <code>camera_radar</code> names a radar that isn't in the file records no events. On a device without a radar, remove <code>camera_radar</code> or keep the radar's entry with <code>enabled: false</code>.</li>
 </ul>
-<p>The config file is loaded whenever the TM flows restart.</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>It is <em>not necessary</em> to copy this full configuration file. Default values are specified below.</p>
-</div>
-<div class="highlight"><pre><span></span><code><span class="c1">########</span>
-<span class="c1"># This file contains configuration settings executed by node-red</span>
-<span class="c1"># Note: Comments will be removed by updates from node-red</span>
-<span class="c1">########</span>
-
-<span class="c1"># Optional: IoT hub backend integration</span>
-<span class="nt">thingsboard</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: enable connection to backend thingsboard server (default: shown below)</span>
-<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">    </span><span class="c1"># Required: host name, without protocol or port number</span>
-<span class="w">    </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tb.example.com</span>
-<span class="w">    </span><span class="c1"># Required: thingsboard telemetry protocol (default: shown below), </span>
-<span class="w">    </span><span class="c1"># NOTE: only http(s) currently supported, mqtt coming soon</span>
-<span class="w">    </span><span class="c1">#  see https://thingsboard.io/docs/reference/protocols/</span>
-<span class="w">    </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
-<span class="w">    </span><span class="c1"># Optional: port, common settings: https=443, http=80, mqtt=1883</span>
-<span class="w">    </span><span class="c1"># Check with your ThingsBoard admin for settings</span>
-<span class="w">    </span><span class="nt">port</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: API key for device </span>
-<span class="w">    </span><span class="c1"># Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret</span>
-<span class="w">    </span><span class="nt">access_token</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: future use for auto-provisioning (RPiSN)</span>
-<span class="w">    </span><span class="c1"># provisionDeviceKey: </span>
-<span class="w">    </span><span class="c1"># Optional: future use for auto-provisioning (manual)</span>
-<span class="w">    </span><span class="c1"># provisionDeviceSecret: </span>
-
-<span class="c1"># Optional: deployment location details</span>
-<span class="c1"># Note: May be used to determine device placement on maps</span>
-<span class="c1"># NOTE: Can be overridden at the sensors level, top-level values will cascade down</span>
-<span class="nt">deployment</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># NOTE: for address-level accuracy, recommend at least 4 digits after the decimal</span>
-<span class="w">    </span><span class="c1"># Optional: Latitude in decimal degrees format; e.g. 45.5225</span>
-<span class="w">    </span><span class="nt">lat</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: Longitude in decimal degrees format; e.g. -122.6919</span>
-<span class="w">    </span><span class="nt">lon</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: cardinal (N, S, E, W) or ordinal (NE, NW, SE, etc.) direction the camera/radar is facing </span>
-<span class="w">    </span><span class="c1"># Note: For bearing, match the roadway traffic direction</span>
-<span class="w">    </span><span class="nt">bearing</span><span class="p">:</span>
-
-<span class="nt">sensors</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: if used, must match the Frigate camera name(s)</span>
-<span class="w">    </span><span class="c1"># if not set, no cameras will be used</span>
-<span class="w">    </span><span class="nt">cameras</span><span class="p">:</span>
-<span class="w">        </span><span class="c1"># camera name must match Frigate configuration camera names</span>
-<span class="w">        </span><span class="nt">picam_h265</span><span class="p">:</span>
-<span class="w">            </span><span class="c1"># Optional Enable/disable the camera (default: shown below).</span>
-<span class="w">            </span><span class="c1"># if disabled, any Frigate events for specified camera will be ignored</span>
-<span class="w">            </span><span class="c1"># Note: this will not impact Frigate's system</span>
-<span class="w">            </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">            </span><span class="c1"># Optional: define the radar co-located with camera to associate speeds</span>
-<span class="w">            </span><span class="c1"># camera and radar direction and field of view (FOV) should match</span>
-<span class="w">            </span><span class="c1"># Note: name needs to match one defined in `radars` section</span>
-<span class="w">            </span><span class="c1"># Note: A single radar may be attached to multiple cameras</span>
-<span class="w">            </span><span class="nt">camera_radar</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TM_RADAR_SERIAL_PORT_00</span>
-<span class="w">            </span><span class="c1"># Optional, related to addons</span>
-<span class="w">            </span><span class="nt">plate_recognizer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-
-<span class="w">    </span><span class="c1"># Optional: used to specify what radars are enabled for speed/direction and detection</span>
-<span class="w">    </span><span class="nt">radars</span><span class="p">:</span>
-<span class="w">        </span><span class="c1"># Note: Names must match those defined in the node-red environment file</span>
-<span class="w">        </span><span class="c1"># Names are used to associate readings with cameras and other sensors</span>
-<span class="w">        </span><span class="nt">TM_RADAR_SERIAL_PORT_00</span><span class="p">:</span>
-<span class="w">            </span><span class="c1"># Optional: Enable/disable the radar (default: shown below).</span>
-<span class="w">            </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">            </span><span class="c1"># Optional: additional Radar API commands to execute on startup (default: shown below)</span>
-<span class="w">            </span><span class="c1"># must be defined as a string in JSON array format</span>
-<span class="w">            </span><span class="c1"># these commands will override any that come before it</span>
-<span class="w">            </span><span class="c1"># e.g. '["^/+0.00\n", "^/-0.00\n"]' will set cosine correction</span>
-<span class="w">            </span><span class="nt">opt_api_commands_array</span><span class="p">:</span><span class="w"> </span><span class="s">'["^/+0.00\n",</span><span class="nv"> </span><span class="s">"^/-0.00\n"]'</span>
-
-<span class="w">    </span><span class="c1"># Optional: used to specify air quality monitor sensor name(s)</span>
-<span class="w">    </span><span class="c1"># Note: air quality configuration file is separate from the node-red config, based on the aq device</span>
-<span class="w">    </span><span class="nt">airquality_monitors</span><span class="p">:</span>
-<span class="w">        </span><span class="c1"># Required: aq sensor name must match AQ configuration -defined MQTT topic middle element (second element)</span>
-<span class="w">        </span><span class="nt">sensorname01</span><span class="p">:</span>
-<span class="w">            </span><span class="c1"># Optional: Enable/disable the AQ sensor payloads (default: shown below).</span>
-<span class="w">            </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">            </span><span class="c1"># Required: mqtt topic to subscribe for incoming full-payload telemetry from AQ sensor</span>
-<span class="w">            </span><span class="c1">#  must be last element in mqtt topic defined in AQ configuration</span>
-<span class="w">            </span><span class="nt">mqtt_topic_incoming</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">readings</span>
-
-<span class="nt">time</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Optional: Set a timezone to use in the UI (default: use browser local time)</span>
-<span class="w">    </span><span class="c1"># NOTE: shall be in unix tz format: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</span>
-<span class="w">    </span><span class="c1">#  this will also set the timezone for the entire system</span>
-<span class="w">    </span><span class="nt">timezone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">America/Los_Angeles</span>
-<span class="w">    </span><span class="c1"># Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)</span>
-<span class="w">    </span><span class="c1"># Note: for offline deployments, time will stop whenever power is disconnected</span>
-<span class="w">    </span><span class="nt">npt_set</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-
-<span class="nt">addons</span><span class="p">:</span>
-<span class="w">    </span><span class="c1">#Optional: For additional apps / micro-services available via tmsetup</span>
-<span class="w">    </span><span class="c1"># See https://platerecognizer.com capabilities</span>
-<span class="w">    </span><span class="nt">plate_recognizer</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">token</span><span class="p">:</span><span class="w"> </span>
-<span class="w">        </span><span class="c1"># base url e.g. http://plate-recognizer:8080 and api calls added via app</span>
-<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span>
-</code></pre></div>
-<h2 id="environment-file">Environment File<a class="headerlink" href="#environment-file" title="Permanent link">&para;</a></h2>
-<p>The environment file defines variables are accessible by the node-red-tm podman container.</p>
-<div class="highlight"><pre><span></span><code><span class="c1">########</span>
-<span class="c1"># This file contains node-red environment variables loaded by node-red.service</span>
-<span class="c1">#   Read more at https://nodered.org/docs/user-guide/environment-variables</span>
-<span class="c1">#     and https://fedoraproject.org/wiki/Packaging:Systemd</span>
-<span class="c1"># Uses:</span>
-<span class="c1">#   - variables can be used in settings.js by calling `process.env.ENV_VAR`</span>
-<span class="c1">#   - node property can be set by calling `${ENV_VAR}</span>
-<span class="c1">#</span>
-<span class="c1">########</span>
-
-<span class="c1"># traffic monitor open source software release version</span>
-<span class="nv">TM_VERSION</span><span class="o">=</span><span class="s1">'0.5.0'</span>
-
-<span class="c1"># used in settings.js for credentialSecret </span>
-<span class="nv">NODE_RED_CREDENTIAL_SECRET</span><span class="o">=</span><span class="s1">'myNodeRED1234'</span>
-
-<span class="c1"># database locations, relative to user directory defined in settings.js</span>
-<span class="c1">#  will be relative path to store SQLite databases</span>
-<span class="nv">TM_DATABASE_PATH_TMDB</span><span class="o">=</span><span class="s1">'/db/tmdb.sqlite'</span>
-
-<span class="c1"># mqtt broker for incoming Frigate events </span>
-<span class="c1">#  Settings below set up the aedes broker node</span>
-<span class="nv">TM_MQTT_BROKER_HOST</span><span class="o">=</span><span class="s1">'localhost'</span>
-<span class="nv">TM_MQTT_BROKER_PORT</span><span class="o">=</span><span class="s1">'1883'</span>
-<span class="c1"># mqtt user, leave blank for no authentication</span>
-<span class="nv">TM_MQTT_BROKER_USERNAME</span><span class="o">=</span><span class="s1">''</span>
-<span class="c1"># mqtt password, leave blank for no authentication</span>
-<span class="nv">TM_MQTT_BROKER_PASSWORD</span><span class="o">=</span><span class="s1">''</span>
-
-<span class="c1"># defines system USB serial port for radar</span>
-<span class="c1"># run `ls -lat /sys/class/tty/ttyACM*` to list devices</span>
-<span class="nv">TM_RADAR_SERIAL_PORT_00</span><span class="o">=</span><span class="s1">'/dev/ttyACM0'</span>
-<span class="nv">TM_RADAR_SERIAL_PORT_01</span><span class="o">=</span><span class="s1">'/dev/ttyACM1'</span>
-<span class="nv">TM_RADAR_SERIAL_PORT_02</span><span class="o">=</span><span class="s1">'/dev/ttyACM2'</span>
-<span class="nv">TM_RADAR_SERIAL_PORT_03</span><span class="o">=</span><span class="s1">'/dev/ttyACM3'</span>
-</code></pre></div>
+<h2 id="thingsboard">thingsboard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
+<p>Uploads events, readings, and device telemetry to a <a href="https://thingsboard.io/">ThingsBoard</a> server. See <a href="../../data-and-payloads/integrations/">MQTT and ThingsBoard</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>false</code></td>
+<td>Turn the upload on.</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td>text</td>
+<td><code>tb.server.com</code> (a placeholder)</td>
+<td>The server's hostname, without protocol or port. Required when enabled.</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td><code>http</code> or <code>https</code></td>
+<td><code>https</code></td>
+<td>How to reach the server.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>number</td>
+<td>none</td>
+<td>Set it only if the server isn't on the standard port for the protocol.</td>
+</tr>
+<tr>
+<td><code>access_token</code></td>
+<td>text</td>
+<td>empty</td>
+<td>The device's access token from ThingsBoard. This is the one secret in the file.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deployment">deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
+<p>Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lat</code></td>
+<td>decimal degrees, such as <code>45.5225</code></td>
+<td>empty</td>
+<td>Latitude. Four decimal places give address-level accuracy.</td>
+</tr>
+<tr>
+<td><code>lon</code></td>
+<td>decimal degrees, such as <code>-122.6919</code></td>
+<td>empty</td>
+<td>Longitude.</td>
+</tr>
+<tr>
+<td><code>bearing</code></td>
+<td><code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code></td>
+<td>empty</td>
+<td>The compass direction the camera and radar face.</td>
+</tr>
+</tbody>
+</table>
+<p>A <code>deployment:</code> block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.</p>
+<h2 id="sensorscameras">sensors.cameras<a class="headerlink" href="#sensorscameras" title="Permanent link">&para;</a></h2>
+<p>One entry per camera, named exactly as the camera is named in Frigate. The default camera is <code>picam_h265</code>. Events from a camera that isn't listed here, or is disabled, are ignored.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>true</code> for <code>picam_h265</code></td>
+<td>Record this camera's events. Frigate keeps running either way.</td>
+</tr>
+<tr>
+<td><code>camera_radar</code></td>
+<td>a radar name from <code>sensors.radars</code></td>
+<td><code>TM_RADAR_SERIAL_PORT_00</code></td>
+<td>The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.</td>
+</tr>
+<tr>
+<td><code>plate_recognizer</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>false</code></td>
+<td>Send this camera's events to the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on.</td>
+</tr>
+<tr>
+<td><code>deployment</code></td>
+<td>block</td>
+<td>inherited</td>
+<td>Per-camera <code>lat</code>, <code>lon</code>, and <code>bearing</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sensorsradars">sensors.radars<a class="headerlink" href="#sensorsradars" title="Permanent link">&para;</a></h2>
+<p>One entry per radar. A radar's name is the name of the variable that holds its serial port in <a href="../environment/">node-red-tm.env</a>, <code>TM_RADAR_SERIAL_PORT_00</code> through <code>TM_RADAR_SERIAL_PORT_03</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>true</code> for <code>TM_RADAR_SERIAL_PORT_00</code></td>
+<td>Read this radar. Set it to <code>false</code> on a device without a radar.</td>
+</tr>
+<tr>
+<td><code>opt_api_commands_array</code></td>
+<td>a JSON array in a string</td>
+<td><code>'["^/+0.00\n", "^/-0.00\n"]'</code></td>
+<td>Extra <a href="https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf">OPS243 API</a> commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions.</td>
+</tr>
+<tr>
+<td><code>deployment</code></td>
+<td>block</td>
+<td>inherited</td>
+<td>Per-radar <code>lat</code>, <code>lon</code>, and <code>bearing</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sensorsairquality_monitors">sensors.airquality_monitors<a class="headerlink" href="#sensorsairquality_monitors" title="Permanent link">&para;</a></h2>
+<p>One entry per <a href="../../add-ons/air-quality/">air quality sensor</a>, named as the middle part of the topic the sensor publishes to: <code>aq/&lt;name&gt;/readings</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>false</code></td>
+<td>Record this sensor's readings. Readings from a sensor that isn't enabled are dropped.</td>
+</tr>
+<tr>
+<td><code>mqtt_topic_incoming</code></td>
+<td>text</td>
+<td><code>readings</code></td>
+<td>Present in the template but not used. The device subscribes to every topic under <code>aq/</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="time">time<a class="headerlink" href="#time" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timezone</code></td>
+<td>a <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">tz database name</a></td>
+<td>the installer's <code>-z</code> value, <code>America/Los_Angeles</code> unless you set one</td>
+<td>Present in the template but not used. The dashboards and the 04:00 daily reset use the device's time zone, which the installer's <code>-z</code> sets.</td>
+</tr>
+<tr>
+<td><code>npt_set</code></td>
+<td><code>true</code> or <code>false</code></td>
+<td><code>true</code></td>
+<td>Present in the template but not used.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="addonsplate_recognizer">addons.plate_recognizer<a class="headerlink" href="#addonsplate_recognizer" title="Permanent link">&para;</a></h2>
+<p>Only needed with the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. The section isn't in the template; add it.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Type</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>token</code></td>
+<td>text</td>
+<td>none</td>
+<td>Your Plate Recognizer API token. Plates aren't read until this is set.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>URL</td>
+<td>none</td>
+<td>The add-on's address inside the device, <code>http://plate-recognizer:8080</code>.</td>
+</tr>
+</tbody>
+</table>
   
 
 

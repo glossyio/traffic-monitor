@@ -1,43 +1,45 @@
-# Welcome to smart city traffic monitoring
+# Traffic Monitor docs
 
-## Overview
+[Traffic Monitor](https://www.trafficmonitor.ai/) is open source software that turns a Raspberry Pi 5 with a camera and a Doppler radar into a roadway counter and speed monitor. It counts pedestrians, bicycles, and vehicles, measures vehicle speeds, and keeps the data on the device.
 
-[TrafficMonitor.ai](https://www.trafficmonitor.ai/), the Traffic Monitor, is an open source smart city traffic monitoring software built with commodity hardware to capture holistic roadway usage. Utilizing edge machine learning object detection and Doppler radar, it counts pedestrians, bicycles, and cars and measures vehicle speeds.
+Be counted
 
-Find our website at [trafficmonitor.ai](https://www.trafficmonitor.ai) to sign up for the newsletter.
+Privacy is part of the design. Object detection runs on the device, the database records labels, speeds, and times rather than people, and nothing is sent to an outside server unless you set it up. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md) lists what the device stores, including the short-lived snapshots and clips that Frigate keeps by default, and who on your network can see them.
 
-Be Counted!
+Our mission is to democratize the power of AI tools to improve community safety and quality of life, through the ethical and transparent use of these capabilities.
 
-Our mission is to *democratize the power of AI tools* to *improve community safety and quality of life* through the *ethical and transparent use of these capabilities*.
+## Where to start
 
-## Get Started
-
-The Traffic Monitor software and hardware are open source and available for anyone to build, modify, improve, and contribute back. We welcome your ideas and contributions at the [Traffic Monitor GitHub](https://github.com/glossyio/traffic-monitor) repository!
-
-- **[Getting Started](https://docs.trafficmonitor.ai/dev/getting-started/index.md)**
+- **[Build your own device](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md)**
 
   ______________________________________________________________________
 
-  Start counting!
+  Buy the parts, assemble the enclosure, and install the software.
 
-- **[Help & FAQ](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md)**
+- **[Set up a pre-built unit](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md)**
 
   ______________________________________________________________________
 
-  Find answers to common issues, in addition to [discussions](https://github.com/glossyio/traffic-monitor/discussions), [issues](https://github.com/glossyio/traffic-monitor/issues), and [chat](https://trafficmonitor.zulipchat.com/).
+  Choose a site, mount the device, then follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+
+- **[Work with the data](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md)**
+
+  ______________________________________________________________________
+
+  What the database holds, what each column means, and how to export it.
 
 - **[Contribute](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)**
 
   ______________________________________________________________________
 
-  Contribute back to the open source project.
+  Code, docs, ideas, and deployment stories are all welcome.
 
-## Thank You 🩵
+Something not working? See [Troubleshooting and FAQ](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md), or ask in the [chat](https://trafficmonitor.zulipchat.com/) and [discussions](https://github.com/glossyio/traffic-monitor/discussions) listed under [Get support](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md).
 
-Made possible thanks to these incredible, unaffiliated projects:
+## Thank you 🩵
 
-- [Frigate NVR project](https://github.com/blakeblackshear/frigate) (core Object Detection application)
-- [Node-RED](https://nodered.org/) (low-code programming environment)
-- [Zulip](https://zulip.com/) for hosting the [Traffic Monitor chat](https://trafficmonitor.zulipchat.com/)
+Made possible by these unaffiliated open source projects:
 
-We also have integration with the open source [ThingsBoard](https://thingsboard.io/) IoT Platform to monitor your device(s) and share data.
+- [Frigate NVR](https://github.com/blakeblackshear/frigate), which does the object detection
+- [Node-RED](https://nodered.org/), which runs the Traffic Monitor logic and dashboards
+- [Zulip](https://zulip.com/), which hosts the [Traffic Monitor chat](https://trafficmonitor.zulipchat.com/)

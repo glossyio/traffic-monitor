@@ -1,40 +1,34 @@
-# Where can I get support?
+______________________________________________________________________
 
-We are a volunteer-driven open source project relying on the generosity of our community to answer questions and offer support. While we strive to assist as many as possible, our capacity is limited, and your patience is appreciated. Your involvement is crucial, and by engaging with us, you help foster a supportive and thriving environment where everyone can benefit from shared knowledge and solutions.
+## description: Where to ask questions, report bugs, and share ideas: the chat, GitHub discussions, and issues.
 
-We are also an inclusive community and ask that everyone read and follow our [Code of Conduct](https://github.com/glossyio/traffic-monitor/blob/main/CODE_OF_CONDUCT.md).
+# Get support
 
-We also welcome your contributions! You make the traffic monitor great. For code, troubleshooting, new ideas and more, see [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
+The Traffic Monitor is a volunteer-run open source project. The community answers questions as it can, so please be patient, and help others when you can. Everyone follows the [Code of Conduct](https://github.com/glossyio/traffic-monitor/blob/main/CODE_OF_CONDUCT.md).
 
-## Read the docs
+## Search first
 
-The [Traffic Monitor docs](https://docs.trafficmonitor.ai/dev/index.md) have a wealth of knowledge and are searchable.
+Search these docs, then the [repository](https://github.com/glossyio/traffic-monitor): the search box at the top right covers discussions, issues, and code, with filters on the left.
 
-## Search the project repository
+## Chat
 
-After the docs the best place to start is the [Traffic Monitor project repository](https://github.com/glossyio/traffic-monitor). Look for the search bar in the *upper right corner* and then filtering for matching discussions, issues, or even code (filter is on the left side of the screen).
+The [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/) is the quickest place to ask a question, suggest an idea, or show a deployment. Developers discuss code there too, so it's also the place to start [contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
 
-## Chat with us
+## GitHub discussions
 
-To foster an interactive community, we have a [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/) ([Zulip values](https://zulip.com/values/) aligns with ours and it is open source). Ask question, suggest ideas, and get in touch!
+The [discussions board](https://github.com/glossyio/traffic-monitor/discussions) is for longer conversations:
 
-This is also where project developers will discuss code contributions, so it is a good place to get started if you are interested in [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
+- 💬 [General](https://github.com/glossyio/traffic-monitor/discussions/new?category=general): anything at all
+- 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/new?category=ideas): feature ideas, and votes on them
+- 🗳️ [Polls](https://github.com/glossyio/traffic-monitor/discussions/new?category=polls)
+- 🙏 [Q&A](https://github.com/glossyio/traffic-monitor/discussions/new?category=q-a): ask for help
+- 👐 [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell): what you've built
 
-## Post on GitHub discussions
+## GitHub issues
 
-The [Traffic Monitor repo discussions](https://github.com/glossyio/traffic-monitor/discussions) board is the next best place to interact with the community. Hit New Discussion and there are a variety of category templates:
+Open an [issue](https://github.com/glossyio/traffic-monitor/issues) for a specific bug, a feature request, or a technical question that the discussions haven't answered. Include enough detail for someone else to reproduce or understand it.
 
-- 💬 [General](https://github.com/glossyio/traffic-monitor/discussions/new?category=general) - Chat about anything and everything here
-- 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/new?category=ideas) - Share ideas for new features, also vote on ideas
-- 🗳️ [Polls](https://github.com/glossyio/traffic-monitor/discussions/new?category=polls) - Take a vote from the community
-- 🙏 [Q&A](https://github.com/glossyio/traffic-monitor/discussions/new?category=q-a) - Ask the community for help
-- 👐 [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) - Show off something you've made
+- 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
+- 💡 [Feature request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=)
 
-## Open a GitHub issue
-
-To open a [Traffic Monitor GitHub issue](https://github.com/glossyio/traffic-monitor/issues), ensure your topic is specific to a bug, request for a new feature, or a detailed technical question that hasn't been addressed in existing discussions. Make sure to provide enough context and detail to help collaborators address the issue effectively. There are a few issue templates:
-
-- 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=) - Create a report to help us improve
-- 💡 [Feature Request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) - Suggest an idea for this project
-
-Sometimes, a GitHub issue may be closed without a full resolution. This does not imply a lack of concern or interest from the maintainers. Issues may be closed for various reasons, such as duplicate reports, inactivity, or because they are being addressed elsewhere. We encourage continuous community engagement and collaboration to ensure all significant matters are acknowledged and acted upon.
+An issue may be closed without a full resolution, for example as a duplicate, after inactivity, or because the work is tracked elsewhere. That isn't a lack of interest; comment or reopen if it still matters.

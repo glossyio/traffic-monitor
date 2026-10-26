@@ -1,30 +1,35 @@
+______________________________________________________________________
+
+## description: The Monitoring dashboard: today's counts, car speed statistics, hourly and daily charts, and the latest events with their radar readings.
+
 # Monitoring
 
-Success
+Open `http://<device>/dashboard/monitoring`, or open **Dashboard** from the home page and choose **Monitoring** in the sidebar. Monitoring shows the counts and speed statistics for one camera and one radar at a time.
 
-The local, on-device Traffic Monitor dashboard is available by [connecting directly to your traffic monitor](https://docs.trafficmonitor.ai/dev/setup-guide/#1-connect-to-your-device) via a web browser.
+The Monitoring page, numbered as in the list below
 
-The Monitoring tab display counts and descriptive statistics among all your sensors.
+1. **Sensor selection.** A radar and a camera picker, listing every sensor in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras), enabled or not. The counts and statistics on this page follow the camera and radar selected on the legacy dashboard at `http://<device>/ui/`, not the selection here. On a device with one camera and one radar, they're the same.
 
-## Sample screenshot
+1. **Car speed statistics** for the current day, which starts at 04:00 local time. They cover `car` events that passed through both `zone_capture` and `zone_radar` and got a speed from the radar. Speeds are absolute values, so inbound and outbound are pooled, and every value is rounded to a whole number.
 
-Monitoring tab sample
+   The percentiles come from sorting the day's cars by speed and splitting them into 20 groups of equal size, so they're approximate. With few cars, some stay empty: the 25th percentile needs 5 cars, the median 10, the 75th percentile and `iqr_upper` 15, and the 85th percentile 17.
 
-## Descriptions
+   | Statistic                                          | Meaning                                                                                                                                                     |
+   | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `count`                                            | Cars with a speed                                                                                                                                           |
+   | `mean_speed`                                       | Average speed                                                                                                                                               |
+   | `p25_speed`, `p50_speed`, `p75_speed`, `p85_speed` | 25th, 50th (median), 75th, and 85th [percentile](https://en.wikipedia.org/wiki/Percentile) speeds. The 85th percentile is the usual basis for speed limits. |
+   | `max_speed`                                        | Fastest car                                                                                                                                                 |
+   | `count_over_25`                                    | Cars faster than 25, in the radar's units                                                                                                                   |
+   | `iqr_upper`                                        | The outlier line: `p75_speed` plus 1.5 times the [interquartile range](https://en.wikipedia.org/wiki/Interquartile_range)                                   |
+   | `iqr_upper_freq`                                   | Cars faster than `iqr_upper`, the outliers                                                                                                                  |
 
-1. Select your Radar and Camera in case you have multiple sensors on the unit. Sensors need to be defined and enabled in the [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).
-1. Displays `car` object speed counts and descriptive statistics for those that moved through `zone_radar` since 0400 local time. Stats include:
-1. count: Total count through valid area
-1. mean_speed: Average speed among all cars
-1. p25_speed: 25th [Percentile](https://en.wikipedia.org/wiki/Percentile) speed, also known as first quartile (Q1)
-1. p50_speed: 50th Percentile speed, also known as [median](https://en.wikipedia.org/wiki/Median) speed
-1. p75_speed: 75th Percentile speed, also known as third quartile (Q3)
-1. p85_speed: 85th Percentile speed
-1. max_speed: Maximum speed
-1. count_over_25: Static set number for maximum speed (25 in set system; e.g. 25 mph)
-1. iqr_upper: [Interquartile range](https://en.wikipedia.org/wiki/Interquartile_range) (IQR) calculated as p75 + 1.5 * IQR
-1. iqr_upper_freq: (frequency of cars above the iqr_upper) Count of vehicles driving above the iq_upper (considered [outliers](https://en.wikipedia.org/wiki/Outlier) that are significantly faster than other vehicles)
-1. Daily cumulative counts for all [Frigate-enabled objects](https://docs.frigate.video/configuration/objects) since 0400 local time.
-1. Hourly cumulative counts by object for the last 36 hours.
-1. Daily cumulative counts by object for the last 10 days.
-1. Latest observations (to display images, [Frigate snapshots](https://docs.frigate.video/configuration/snapshots/) must be enabled).
+1. **Today's counts** by object type for events that passed through `zone_capture`. The day starts at 04:00 local time, so from midnight until 04:00 these counts and the speed statistics are empty. Objects that pass in those hours are left out of the day's counts, but they appear in the hourly and daily charts.
+
+1. **Hourly counts** by object type for the last 36 hours, for events that passed through `zone_capture`.
+
+1. **Daily counts** by object type for the last 10 calendar days, for events that passed through `zone_capture`.
+
+1. **Latest observations.** The 21 most recent events from any camera that passed through `zone_radar`, newest first, including events without a speed. Each card shows Frigate's thumbnail of the object, the direction, the speed, and the radar's raw readings from the start of the event to its end: how many there were ("radar hits"), the range of their magnitudes and speeds, and two charts, **Radar Magnitude** and **Radar Speed**. The charts show whether the readings came from one object or from several at once. They're the raw readings, not the ones the speed was worked out from. The list is kept in memory, so it empties when Node-RED restarts.
+
+Counts and statistics come from the `events` table; see [Events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md). The same counts are published over MQTT on `tm/events`; see [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#tmevents).
