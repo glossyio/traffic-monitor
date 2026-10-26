@@ -1,0 +1,31 @@
+# Keeps the docs build's pinned versions current: the GitHub Actions in
+# .github/workflows/ and the Python packages in docs-site/requirements.txt.
+# Updates arrive as one grouped pull request per ecosystem each month,
+# against dev, and skip releases younger than two weeks.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /docs-site
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      docs-build:
+        patterns: ["*"]
+    ignore:
+      # Material for MkDocs requires MkDocs 1.x. MkDocs 2 drops plugin support.
+      - dependency-name: mkdocs
+        update-types: ["version-update:semver-major"]
