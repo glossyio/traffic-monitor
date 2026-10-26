@@ -21,6 +21,8 @@
     - '{{ tmsetup_codedir }}/node-red-tm/config'
     - '{{ tmsetup_codedir }}/node-red-tm/data'
     - '{{ tmsetup_codedir }}/node-red-tm/db'
+    - '{{ tmsetup_codedir }}/node-red-tm/schema'
+    - '{{ tmsetup_codedir }}/node-red-tm/schema/migrations'
   ansible.builtin.file:
     group: '{{ tmsetup_codegroup }}'
     mode: '0750'
@@ -37,6 +39,49 @@
     - node-red-tm/data/README.md
     - node-red-tm/data/settings.js
     - node-red-tm/data/package.json
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item }}'
+
+- name: TMSetup - Node-RED-TM Setup - Copy tmdb schema runner and migrations
+  become: true
+  loop:
+    - node-red-tm/schema/tmdb_migrate.py
+    - node-red-tm/schema/migrations/
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/{{ item }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/{{ item }}'
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Find deployed tmdb migrations
+  become: true
+  ansible.builtin.find:
+    paths: '{{ tmsetup_codedir }}/node-red-tm/schema/migrations'
+  register: tmsetup_node_red_tm_migrations_find_register
+
+# A migration left behind from another branch or a test would be applied, or block the runner
+# with a duplicate number.
+- name: TMSetup - Node-RED-TM Setup - Remove tmdb migrations that aren't in the repo
+  become: true
+  loop: "{{ tmsetup_node_red_tm_migrations_find_register['files'] | map(attribute='path') | map('basename')
+    | difference(query('ansible.builtin.fileglob', 'container/node-red-tm/schema/migrations/*') | map('basename')) }}"
+  ansible.builtin.file:
+    path: '{{ tmsetup_codedir }}/node-red-tm/schema/migrations/{{ item }}'
+    state: absent
+  notify: Restart node-red-tm.service
+
+# Reference copies only; the device never runs them, so they don't restart Node-RED.
+- name: TMSetup - Node-RED-TM Setup - Copy tmdb schema docs
+  become: true
+  loop:
+    - node-red-tm/schema/schema.sql
+    - node-red-tm/schema/README.md
   ansible.builtin.copy:
     dest: '{{ tmsetup_codedir }}/{{ item }}'
     group: '{{ tmsetup_codegroup }}'

@@ -160,3 +160,5 @@ CREATE TABLE radar_timed_speed_counts (
     radarName TEXT,
     deployment_id TEXT
 );
+
+CREATE INDEX index_radar_singleton_time ON radar_raw_speed_magnitude_single(time);
