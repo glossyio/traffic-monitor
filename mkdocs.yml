@@ -38,8 +38,8 @@ extra:
 plugins:
   - search
   # Writes llms.txt and llms-full.txt (https://llmstxt.org/) for AI tools.
-  # Pages in these folders are picked up automatically; a new top-level page
-  # must be added to "Get started".
+  # The sections mirror the nav below. A page in a listed folder is picked up
+  # automatically; a page outside those folders must be listed here by name.
   - llmstxt:
       # Links must include the version folder. The docs workflow sets
       # TM_DOCS_BASE_URL for each version it deploys.
@@ -53,18 +53,26 @@ plugins:
       sections:
         Get started:
           - README.md
+          - get-started/*.md
           - getting-started.md
+        Build your own:
           - build-your-own-device-diy/*.md
           - software-installation.md
+        Deploy:
           - deployment-and-mounting-guide.md
           - setup-guide.md
-        Configuration:
-          - configuration/*.md
-        User interface:
+        Use the device:
+          - use/*.md
           - ui/*.md
-        Data and payloads:
+          - configuration/frigate-config.md
+        Reference:
+          - configuration/node-red-config.md
+          - configuration/environment.md
+          - reference/*.md
           - data-and-payloads/*.md
-        Help and FAQ:
+        Add-ons:
+          - add-ons/*.md
+        Help:
           - help-and-faq/*.md
         Development:
           - development/*.md
@@ -93,33 +101,48 @@ validation:
   unrecognized_links: warn
   anchors: warn
 
+# Sections are named for what the reader is doing, not for the component.
+# Keep file paths stable when you move a page in the nav; a path that does
+# change needs a row in the "moved" map in docs-site/pages-root/404.html.
 nav:
-  - Welcome to smart city traffic monitoring: README.md
-  - Getting Started: getting-started.md
-  - Build Your Own Device (DIY):
+  - Home: README.md
+  - Get started:
+      - How it works: get-started/how-it-works.md
+      - Choose your path: getting-started.md
+  - Build your own:
       - build-your-own-device-diy/README.md
-      - Recommended Hardware: build-your-own-device-diy/recommended-hardware.md
-      - Assembly Instructions: build-your-own-device-diy/assembly-instructions.md
-  - Software Installation: software-installation.md
-  - Deployment and Mounting Guide: deployment-and-mounting-guide.md
-  - Setup Guide: setup-guide.md
-  - Configuration:
-      - Config Overview: configuration/overview.md
-      - Frigate Config: configuration/frigate-config.md
-      - Node-RED Config: configuration/node-red-config.md
-  - User Interface:
-      - Monitoring: ui/monitoring.md
-      - Database: ui/database.md
-      - Movements: ui/movements.md
-  - Data and Payloads:
-      - Data Overview: data-and-payloads/data-overview.md
-      - Events Payload: data-and-payloads/events-payload.md
-      - Radar Payload: data-and-payloads/radar-payload.md
-      - Air Quality (AQ) Payload: data-and-payloads/air-quality-aq-payload.md
-  - Help & FAQ:
-      - Frequently Asked Questions: help-and-faq/frequently-asked-questions.md
-      - Where can I get support?: help-and-faq/where-can-i-get-support.md
-      - Use Cases and Scenarios: help-and-faq/use-cases-and-scenarios.md
+      - Hardware: build-your-own-device-diy/recommended-hardware.md
+      - Assembly: build-your-own-device-diy/assembly-instructions.md
+      - Install the software: software-installation.md
+      - Update the software: build-your-own-device-diy/update.md
+  - Deploy:
+      - Choose a site and mount: deployment-and-mounting-guide.md
+      - First-time setup: setup-guide.md
+  - Use the device:
+      - Home page and apps: use/home-page.md
+      - Dashboards:
+          - Monitoring: ui/monitoring.md
+          - Movements: ui/movements.md
+          - Data export: ui/database.md
+      - Tune object detection: configuration/frigate-config.md
+      - System administration: use/system-admin.md
+  - Reference:
+      - config.yml settings: configuration/node-red-config.md
+      - node-red-tm.env settings: configuration/environment.md
+      - Installer options: reference/tmsetup.md
+      - Data:
+          - Data and privacy: data-and-payloads/data-overview.md
+          - Events: data-and-payloads/events-payload.md
+          - Radar: data-and-payloads/radar-payload.md
+          - Air quality: data-and-payloads/air-quality-aq-payload.md
+          - MQTT and ThingsBoard: data-and-payloads/integrations.md
+  - Add-ons:
+      - Air quality sensor: add-ons/air-quality.md
+      - Plate Recognizer: add-ons/plate-recognizer.md
+  - Ideas and use cases: help-and-faq/use-cases-and-scenarios.md
+  - Help:
+      - Troubleshooting and FAQ: help-and-faq/frequently-asked-questions.md
+      - Get support: help-and-faq/where-can-i-get-support.md
   - Development:
-      - Dev Environment: development/dev-environment.md
-      - Contributing: development/contributing.md
+      - Dev environment: development/dev-environment.md
+      - Contributing and writing docs: development/contributing.md

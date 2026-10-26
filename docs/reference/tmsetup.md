@@ -1,0 +1,71 @@
+---
+description: Flags and tags for tmsetup.sh, the Traffic Monitor installer, including what -f overwrites and how to rerun one component.
+---
+
+# Installer options
+
+`script/tmsetup.sh` in the repository installs and updates the Traffic Monitor. Run it from the device, or from another computer with `-H`. [Install the software](../software-installation.md) and [Update the software](../build-your-own-device-diy/update.md) show the usual runs.
+
+```bash
+bash traffic-monitor/script/tmsetup.sh [flags]
+```
+
+## Flags
+
+| Flag | Meaning |
+|---|---|
+| `-h` | Show the usage text and exit. |
+| `-y` | Answer yes to every prompt, including the reboot. |
+| `-v` | Verbose output. Repeat for more. |
+| `-f` | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces). |
+| `-t TAG` | Run only one component. Repeat for several. See [Tags](#tags). |
+| `-T` | List the tags and exit. |
+| `-C NAME[,NAME]` | Turn on an optional component. The only one is `plate_recognizer`; see [Plate Recognizer](../add-ons/plate-recognizer.md). |
+| `-u` | Also upgrade the operating system's packages (`apt full-upgrade`). |
+| `-d PATH` | Install folder. Default `/opt/traffic-monitor`. The docs assume the default. |
+| `-o USER` | Owner of the installed files and processes. Default `tmadmin`, created by the installer. |
+| `-g GROUP` | Group of the installed files. Default `tmadmin`. |
+| `-z TIMEZONE` | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`. |
+| `-L PATH` | Where to write the installer's log. |
+| `-a ARG` | Pass an extra argument to the underlying Ansible run, without its leading hyphen. |
+
+Remote runs:
+
+| Flag | Meaning |
+|---|---|
+| `-H HOST[,HOST]` | Install to these devices over SSH instead of the local machine. Separate several with commas. |
+| `-l USER` | The SSH username on the devices. |
+| `-k` | Ask for the SSH password. |
+| `-K` | Ask for the password for administrator rights (sudo). Needed on Raspberry Pi OS unless you've set up passwordless sudo. |
+
+## Tags
+
+Each tag reruns one part of the install. Without `-t`, everything runs.
+
+| Tag | What it does |
+|---|---|
+| `base` | Operating system packages, the owner account, Cockpit, and the boot configuration |
+| `full_upgrade` | The `apt full-upgrade`, when `-u` is given |
+| `wifi` | Wi-Fi setup |
+| `go2rtc` | The camera streaming service on the host |
+| `detectors` | Detects the Coral or Hailo accelerator and installs its driver. Rerun it with `frigate` after adding or changing an accelerator. |
+| `podman` | The container runtime and the pod |
+| `frigate` | Frigate's container, settings, and the devices it needs |
+| `node-red-tm` | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar. |
+| `plate-recognizer` | The optional Plate Recognizer container |
+| `revproxy` | The home page and reverse proxy |
+
+## What `-f` replaces
+
+Every run replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. These files are kept unless you pass `-f`:
+
+* `/opt/traffic-monitor/node-red-tm/config/config.yml`
+* `/opt/traffic-monitor/node-red-tm/node-red-tm.env`
+* `/opt/traffic-monitor/frigate/config/config.yml`, which holds zones and masks drawn in Frigate
+* `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`
+
+With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back.
+
+## Reboots
+
+The installer edits the boot configuration and installs kernel drivers, so it asks to reboot when needed. On the device, it prompts (or reboots at once with `-y`). Remote devices reboot by themselves. Services stay stopped until the reboot.

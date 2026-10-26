@@ -24,7 +24,7 @@ These docs are Markdown files in the repo's [`docs/`](https://github.com/glossyi
   `python3 -m venv ~/.venvs/tm-docs && ~/.venvs/tm-docs/bin/pip install --require-hashes -r docs-site/requirements.txt`
   once, then `~/.venvs/tm-docs/bin/mkdocs serve` and open <http://127.0.0.1:8000>.
 * **Check before you push:** `mkdocs build --strict` fails on broken links, anchors, and images, and on pages missing from the nav. Pull requests run the same check.
-* **New pages** go in the `nav:` list in `mkdocs.yml`. A new page at the top level of `docs/` also goes in the `llmstxt` plugin's "Get started" list, so AI tools can find it in `llms.txt`.
+* **New pages** go in the `nav:` list in `mkdocs.yml`, under the section for the reader's job (see below). A page outside the folders already listed under the `llmstxt` plugin also goes in that plugin's matching section, so AI tools can find it in `llms.txt`. Keep a page's file path when you move it in the nav; if the path must change, add the old path to the `moved` map in `docs-site/pages-root/404.html`.
 * **Images** go in `docs/assets/images/`. Link them with Markdown, `![Alt text](../assets/images/name.png)`, so the build can check the path. Add a caption with `<figure markdown="span">` (see existing pages).
 * **Callouts** use admonitions: `!!! info`, `!!! success`, `!!! warning`, or `!!! danger`, followed by the text indented four spaces.
 
@@ -34,7 +34,16 @@ Versions: pushes to `dev` publish to [`/dev/`](https://docs.trafficmonitor.ai/de
 
 Aim for pages that are complete but quick to read: everything the reader needs, and nothing they don't. These rules apply to every docs change, whether a person or an AI tool drafted it.
 
-* **One reader and one job per page.** Pages about installing, setup, configuration, the dashboards, and the data tell the person running a device what to do or what something means. Details for contributors go in the Development pages or in the README next to the code. [Diátaxis](https://diataxis.fr/) names the four jobs: tutorial, how-to guide, reference, and explanation. Use it to decide what belongs on the page you're editing, not to reorganize the site.
+* **One reader and one job per page.** Pages about installing, setup, configuration, the dashboards, and the data tell the person running a device what to do or what something means. Details for contributors go in the Development pages or in the README next to the code. [Diátaxis](https://diataxis.fr/) names the four jobs: tutorial, how-to guide, reference, and explanation. Use it to decide what belongs on the page you're editing, not to reorganize the site. The nav sections map to those jobs:
+
+    | Section | Job | Reader |
+    |---|---|---|
+    | Get started | Explanation and orientation | Anyone new |
+    | Build your own, Deploy, Add-ons | How-to guides, one task per page | Someone building or installing a device |
+    | Use the device | How-to guides for the running device | Someone operating a device |
+    | Reference | Tables: every setting, flag, topic, and column | Someone looking a value up |
+    | Help | Troubleshooting, ideas, and where to ask | Someone stuck or curious |
+    | Development | Contributors | You |
 * **Leave out what the reader won't act on,** such as Ansible variables and task names, Node-RED node names, and files they won't open. Give real values, such as the default install folder `/opt/traffic-monitor`, instead of variables.
 * **Revise in place.** Rewrite the text your change affects and delete what it makes obsolete, rather than adding a paragraph. Keep the docs edit in proportion to the change; a diff that removes more than it adds is fine.
 * **Describe how things work, not how they changed.** Don't narrate changes ("now supports", "new in", "previously"). Each release has its own copy of the docs, and history belongs in commit messages and release notes.
