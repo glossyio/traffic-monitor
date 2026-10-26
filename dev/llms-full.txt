@@ -1,0 +1,1683 @@
+# Traffic Monitor
+
+> Open-source roadway counting and speed monitoring on a Raspberry Pi
+
+The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an optional AI accelerator into an open source roadway counter and speed monitor. These docs cover hardware, installation, setup, configuration, the on-device dashboards, and data payloads.
+
+# Get started
+
+# Welcome to smart city traffic monitoring
+
+## Overview
+
+[TrafficMonitor.ai](https://www.trafficmonitor.ai/), the Traffic Monitor, is an open source smart city traffic monitoring software built with commodity hardware to capture holistic roadway usage. Utilizing edge machine learning object detection and Doppler radar, it counts pedestrians, bicycles, and cars and measures vehicle speeds.
+
+Find our website at [trafficmonitor.ai](https://www.trafficmonitor.ai) to sign up for the newsletter.
+
+Be Counted!
+
+Our mission is to *democratize the power of AI tools* to *improve community safety and quality of life* through the *ethical and transparent use of these capabilities*.
+
+## Get Started
+
+The Traffic Monitor software and hardware are open source and available for anyone to build, modify, improve, and contribute back. We welcome your ideas and contributions at the [Traffic Monitor GitHub](https://github.com/glossyio/traffic-monitor) repository!
+
+- **[Getting Started](https://docs.trafficmonitor.ai/dev/getting-started/index.md)**
+
+  ______________________________________________________________________
+
+  Start counting!
+
+- **[Help & FAQ](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md)**
+
+  ______________________________________________________________________
+
+  Find answers to common issues, in addition to [discussions](https://github.com/glossyio/traffic-monitor/discussions), [issues](https://github.com/glossyio/traffic-monitor/issues), and [chat](https://trafficmonitor.zulipchat.com/).
+
+- **[Contribute](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)**
+
+  ______________________________________________________________________
+
+  Contribute back to the open source project.
+
+## Thank You 🩵
+
+Made possible thanks to these incredible, unaffiliated projects:
+
+- [Frigate NVR project](https://github.com/blakeblackshear/frigate) (core Object Detection application)
+- [Node-RED](https://nodered.org/) (low-code programming environment)
+- [Zulip](https://zulip.com/) for hosting the [Traffic Monitor chat](https://trafficmonitor.zulipchat.com/)
+
+We also have integration with the open source [ThingsBoard](https://thingsboard.io/) IoT Platform to monitor your device(s) and share data.
+
+# Getting Started
+
+## Step 1: Get your Traffic Monitor
+
+The traffic monitor requires the [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md) and [software installation](https://docs.trafficmonitor.ai/dev/software-installation/index.md) before you can begin capturing roadway data.
+
+There are two ways to get started:
+
+- **[Build It!](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md)**
+
+  ______________________________________________________________________
+
+  See our [Build your own device (DIY)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md) guide. The software is open source and components are available retail. Customize to your heart's content.
+
+- **Buy It!** (*coming soon*)
+
+  ______________________________________________________________________
+
+  Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.
+
+## Step 2: Plan your Deployment
+
+The traffic monitor must be placed with a good view of the roadway. See the [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) for more information on the most common deployment types:
+
+1. [Temporary deployments](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/#temporary-deployments) allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
+1. [Permanent deployments](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/#permanent-deployments) are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
+
+## Step 3: Set up your Device
+
+After you have your traffic monitor built, software installed, and physically set up (mounted), it is time to boot it up! To get the best data and most out of the device, follow these steps:
+
+1. [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md)
+1. [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
+1. [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!
+
+## Step 4: Collect and Share that Data
+
+The traffic monitor will now run 24/7 collecting the data you set up. It will automatically restart if the power cycles, even if you are not there to reset it.
+
+You can view the on-device dashboards, review event snapshots and clips in Frigate, download the local database, or view data shared with another data provider.
+
+Consider pairing the Traffic Monitor with physical displays to show daily counts of cars, bikes, and pedestrians. The sky is the limit! Learn more and share via the [TM GitHub Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or our [TM Zulip chat](https://trafficmonitor.zulipchat.com/).
+
+LED Display showing daily counts capture with the traffic monitor
+
+# Build Your Own Device (DIY)
+
+## 1. Hardware Assembly
+
+Start by collecting the [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md).
+
+Assemble the components: [Assembly Instructions](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/assembly-instructions/index.md)
+
+## 2. Software Setup
+
+See [Software Installation](https://docs.trafficmonitor.ai/dev/software-installation/index.md)
+
+# Assembly Instructions
+
+Success
+
+The assembly instructions assume you have the [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md).
+
+Full set of Traffic Monitor components ready for assembly
+
+**Steps 1-34** show assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or AI HAT+), and radar using the 3D printed enclosure.
+
+**Steps 35-53** show assembly of the enviromental sensors (Enviro+ and Particulate Matter sensor).
+
+## Core components
+
+Assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or AI HAT+), and radar using the 3D printed enclosure.
+
+1. Lay out all your parts and screws
+1. Lay out all your parts and screws (double-check)
+1. M3x12mm screws for camera, M3x6mm screws for radar, M3x10mm screws for carrier board
+1. Lay out all your parts and screws
+1. (Coral TPU M.2 chip and HAT pictured) Unbox the AI co-processor and M.2 board (if separate)
+1. (Coral TPU M.2 chip and HAT pictured) Attach the M.2 chip to the board, attach ribbon cable
+1. Attach RPi active cooler to the RPi
+1. Lay out HAT stand-offs
+1. Attach stand-offs to board (bottom HAT version shown)
+1. Plug in the PCIe ribbon cable (*pay close attention to so the triangle marks match up between the ribbon cable, RPi board, and HAT!).*
+1. Attach HAT to RPi board (bottom HAT is shown for Coral TPU)
+1. Locate the RPi carrier plate
+1. Turn the RPi carrier plate with the built-in stand-offs pointing down
+1. Mount the RPi and HAT to the carrier plate
+1. Note bottom of carrier plate
+1. Locate the radar and mounting board
+1. Attach the radar to the mounting board with M3x6mm screws so the radar antenna (white and gold areas) are at the bottom and the micro-USB plug is near the camera cut-out.
+1. Locate the camera, camera mounts, and camera ribbon cable
+1. The camera may already contain a [white] ribbon cable, this will not work with the RPi5, so remove it
+1. Attach the RPi5 camera ribbon cable to the camera
+1. Slide the camera into the first camera mounting plate
+1. Snap on the other mounting camera plate so all the holes and pins align
+1. The camera mount stand-offs will be on the back side and the first camera mount plate will be flush with the end of the stand-offs
+1. Locate the main mounting board and assembled camera mount
+1. Locate 4 M3x12mm screws for mounting the camera
+1. (*Pictures contined below*) Mount the camera in either of the camera mount holes
+1. Fully mounted radar and camera from the front
+1. Slip the camera ribbon cable through the camera mounting hole to the back
+1. Front view with camera ribbon cable through the back
+1. Locate main mounting board, carrier plate, and M3x10mm screws
+1. Attach the carrier board to the main board
+1. Front view with carrier board attached
+1. Plug in the camera ribbon cable to either of the RPi5 camera slots
+1. Place the main mounting board into the enclosure, with the radar and camera in the top facing forward. Screw in M3x10mm screws into the 4 corners to secure.
+
+## Environmental sensor components
+
+The following are optional steps for air quality (AQ) sensors continued from above.
+
+1. (35) Locate the environmental sensor equipment; Enviro+ board and Particulat Matter (PM) sensors
+1. (36) Remove the enviro board and PM from packaging
+1. (37) Attach the enviro board to the PM sensor
+1. (38) Back view of enviro board
+1. (39) Locate the GPIO ribbon cable
+1. (40) Attach the GPIO ribbon cable to the enviro board with the ribbon cable wires going down (the ribbon cable notch will be on the top)
+1. (41) Place the PM sensor into the slot, ensuring a tight fit into the pins on the bottom of the enclosure
+1. (42) View of the PM sensor from the bottom
+1. (43) Slip the enviro board into the air quality (AQ) carrier board.
+1. (44) The pins on the bottom of the AQ carrier board should align to the enviro board. It may be snug.
+1. (45) Gently place the AQ carrier board into the alignment slots on the enclosure
+1. (46) There should be almost no gaps around the carrier board and enclosure
+1. (47) Fold the ribbon cable up and tuck the PM sensor cable on top of the PM
+1. (48) Slide the AQ shroud into the slots, ensuring you can see the screw inserts. Screw in M3x8mm screws to secure AQ shroud.
+1. (49) Front view of assembled AQ
+1. (50) Top view of assembled AQ
+1. (51) External view of assembled AQ
+
+### Attach the GPIO ribbon cable
+
+Carefully attach the ribbon cable to the Raspberry Pi GPIO ports with the notch on the top.
+
+Carefully attach the AQ ribbon cable with notch towards outside of RPi5
+
+Tips for working with the GPIO ribbon cable:
+
+- It can help to pre-fold the ribbon cable so it sits flat when the case is closed.
+- The ribbon cable will be tight on the pins and against the RPi active cooler heatsink.
+- Carefully work the ribbon cable down moving from side-to-side a few milimeters at a time until fully onto seated onto the pins.
+- To remove the cable (unplugged the RPi before you remove it):
+- Carefully insert a flat-head screwdriver between the ribbon cable head and GPIO plastic header.
+- Slowly work the GPIO cable off the pins from side-to-side, a few milimeters at a time. Be careful not to short the pins with the screwdriver.
+
+## Ready to deploy!
+
+Close the case, and it's ready to use! 🎉
+
+Traffic monitors ready to count
+
+# Recommended Hardware
+
+Customize the hardware to fit your needs! The core components include the computing device, storage, camera, and co-processor. Feel free to mix-and-match components, but most of the documentation and default configuration assumes using the hardware recommended below.
+
+## Sample Hardware Configurations
+
+Here are some sample sensor configurations and the data it collects:
+
+1. **Camera + AI co-processor** is the lowest cost and will give you object detection, direction, visual speed measurements, and much more.
+1. Add in a **radar** for the most accurate speed and direction measurements and basic object detection for nighttime detection.
+1. Include an **environmental sensor** to also measure air quality, gases, particulate matter, noise, temperature, and much more.
+1. (*future feature*) Install **only the radar** for the most privacy-conscious built that will be capable of basic object detection, speed, and direction.
+1. Add additional camera(s) to monitor more directions using the same AI co-processor.\*\*
+
+\*\* The traffic monitor software is capable of supporting potentially any number of cameras either connected directly or via a local feed on the same AI co-processor for monitor multiple directions or any other configuration (see [recommended hardware > cameras](#cameras) for more details). The TM software also has support for up to four (4) radars directly connected and paired in any pattern to the cameras.
+
+## Hardware Check List - Bill of Materials (BOM)
+
+Use the following checklist as a quick guide to components you need to purchase
+
+Info
+
+We are not affiliated with any of the stores or companies linked in this section. These are suggestions that have been used or tested by contributors. If you have used or tested more, post on [TM GitHub discussions](https://github.com/glossyio/traffic-monitor/discussions)!
+
+- Computing Device: [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB
+- Power: official RPi [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/)
+- (*Recommended*) CPU Cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/)
+- Storage: microSD card (≥32GB),
+- [Raspberry Pi SD Cards](https://www.raspberrypi.com/products/sd-cards/) are modern, fast, stable microSD cards.
+- OR [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA) for larger sizes to store more videos and snapshots
+- Camera: [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/)
+- plus the [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/)
+- AI co-processor: see [AI Co-processor](#ai-co-processor) for options
+- (*Recommended*) Radar: [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/)
+- Enclosure: See [Enclosure (weather-resistant box)](#enclosure-weather-resistant-box) for options
+- (*Optional*) Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) with [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/)
+- AQ sensor will need a [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/) with the TM enclosure
+- Screws: various M3 sizes for mounting board and enclosure, M2.5x10mm for Raspberry Pi mount
+
+## Computing Device
+
+(*Required*) [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) (RPi 5) 4GB/8GB. The Traffic Monitor is designed around 4GB memory profile, but if you have many sensors and other applications running, 8GB may be more performant.
+
+Also pick up a (very cheap) official CPU cooler: [RPi5 active cooler](https://www.raspberrypi.com/products/active-cooler/) which helps prevent overheating on very hot days.
+
+Warning
+
+The Traffic Monitor is based on the Raspberry Pi 5.
+
+The Raspberry Pi 4B and earlier units are not recommended as they have experienced detrimental performance due to not meeting the power requirements on the peripherals (USB) for the TPU and radar for this setup. However, many have been successful with earlier versions of the Raspberry Pi for object detection, so your mileage may vary.
+
+### Storage
+
+(*Required*) A high-quality microSD card or a SSD (see alternative). Recommend at least 32GB capacity for system files with minimal (or no) snapshot and video capture.
+
+1. *Option*: Setup has been tested and works well with the [SanDisk Extreme Pro microSDXC UHS-I Card](https://www.westerndigital.com/products/memory-cards/sandisk-extreme-pro-uhs-i-microsd?sku=SDSQXCD-128G-GN6MA).
+1. *Option*: [Raspberry Pi official SD Card](https://www.raspberrypi.com/products/sd-cards/?variant=sd-64gb) performs particularly well but sizes only range up to 128GB.
+1. *Alternative*: There are many options on the RPi5 to use a faster, more durable NVME (M.2) drive, including those that pair with the Coral TPU or other AI co-processors.
+
+### Power Supply
+
+(Required) To run the Traffic Monitor and components.
+
+Warning
+
+The Raspberry Pi 5 is rated for 27-watts (5V at 5A) and using anything with a lower rating like the older RPi PSUs will result in resets and/or throttling. However, the Traffic Monitor typically consumes between 6-14-watts of energy when it is fully operational and inferencing. All components are intended to be powered off the Raspberry Pi 5, so a quality power source is recommended.
+
+1. *(Recommended)* The official [27W USB-C Power Supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/) for testing and permanent mounts.
+1. *(Alternative)* PoE (Power over Ethernet) HATs available for the RPi 5.
+1. [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) or [Waveshare PoE M.2 HAT+](https://www.waveshare.com/PoE-M.2-HAT-Plus.htm) has performed well for some contributors.
+1. You will need a PoE+ power supply, such as a [PoE+ Power Injector](https://www.raspberrypi.com/products/poe-plus-injector/).
+1. (*Optional*) Battery for short-term off-grid--i.e. a few hours--we recommend a portable power station such as a [Jackery](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station) and plug in the official 27W USB-C Power Supply.
+1. A 300-Watt-hours portlable power station should be able to last ~24-hours. (see calculation in custom battery below)
+1. (*Optional*) Custom battery for longer-term off-grid use.
+1. Required components:
+   1. [Buck converter](https://en.wikipedia.org/wiki/Buck_converter) (step-down converter) to step down a 12v (or 24v) battery to 5v@5A for the Raspberry Pi 5
+   1. [LFP](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) (LiFePO4) battery at 12v or 24v with Amp-hours (Ah) to last desired time frame.
+1. Sample battery calculation (YMMV[1](#fn:1)): the TM consumes ~13-watts, running it for 24-hour will require 13\*24=312 Wh (Watt-hours), the LFP battery needs to be 312/12= 26, which would be 12-volts @ 30-Ah.
+1. *(Prototype)* Solar panel + battery.
+1. Components: Same as custom battery above plus [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) (PV) panel and [solar charge controller](https://en.wikipedia.org/wiki/Charge_controller)
+1. Sample calculation:
+   1. Find your daily [Solar PV potential](https://profilesolar.com/countries/US/); e.g. Portland, OR has 7.15 and 1.42 kWh[2](#fn:2)/day potential in an optimum summer and winter, respectively.
+   1. Choose your PV panel size and calculate potential energy generation for the lowest time of year (winter in northern hemisphere).
+      1. Potential * Size of PV panel = production per day; e.g. 1.42 * 0.1 (100-watt panel) = 142-Watts per day production in Portland, OR winter
+   1. PWM solar controllers have ~80% efficiency on power conversion
+      1. Production per day * controller efficiency = 142\*0.8 = 113-Watts per day available.
+   1. Calculate battery size requirements as above.
+   1. *Note*: **This is not enough to run the TM and charge a battery**. You would require 3-times that amount, closer to a 300-watt PV in a Portland, OR winter.
+1. (*Caveat)* Solar production is very dependent on the amount of sun you are able to harvest. You need to consider factors like orientation/angle of panels, non-optimal days (cloudy, rainy), anything that blocks the sun such as trees, and more.
+
+## Camera(s)
+
+(Required) For full object detection capabilities.
+
+Info
+
+The official Raspberry Pi cameras are below recommended for low-cost, compact, local object detection; however cameras that output H.265 (h265, HEVC) are preferrable due to RPi5 hardware encoding but even H.264 (h264) will work with software decoding in lower volume environments.
+
+1. *(Recommended)* [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) (wide angle recommended)
+1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
+1. *(Alternative/additional)* [Raspberry Pi Global Shutter](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) for faster motion capture and custom-lens based on your needs
+1. Requires a [RPi 5 Camera Cable](https://www.raspberrypi.com/products/camera-cable/) that is sold separately.
+1. (*Alternative/additional*): See more at [Frigate's recommended camera hardware](https://docs.frigate.video/frigate/hardware#cameras).
+
+The Raspberry Pi 5 has 2 (two) camera transceiver slots, so you can easily attach 2 native Raspberry Pi cameras.
+
+Info
+
+See the [Frigate camera setup](https://docs.frigate.video/frigate/camera_setup) for more information on tuning stream configurations based on various goals for your deployment.
+
+## AI Co-processor
+
+## AI Co-processor
+
+(Required with camera) The AI co-processor is an efficient way to run the object detection model, much more efficient than CPU-alone.
+
+Info
+
+The AI co-processor is used by Frigate to run the object detection model, see Frigate's [supported hardware](https://docs.frigate.video/configuration/object_detectors) for more options and details. The Traffic Monitor assumes you are building on Raspberry Pi.
+
+The below AI co-processors or detectors are capable of 100+ FPS with millisecond inference time, depending on the model and hardware. This means multiple camera feeds may be supported.
+
+1. *Recommended:* [Raspberry Pi AI HAT+](https://www.raspberrypi.com/products/ai-hat/) with Hailo-8 or Hailo-8L offers high-performance, power-efficient processing.
+1. *(Older alternative, becoming expensive, hard-to-find, and obsolete)* [Coral USB Accelerator](https://coral.ai/products/accelerator) is easy-to-use co-processor that you can connect to any computing device with a USB interface.
+1. *(Older alternative, becoming expensive, hard-to-find, and obsolete)* Coral HATs (Hardware-Attached-on-Top [of a Raspberry Pi]) are more compact, upgradable than the USB accelerator:
+1. [Rapsberry Pi M.2 HAT+](https://www.raspberrypi.com/products/m2-hat-plus/) pairs nicely with the [Coral M.2 Accelerator B+M Key](https://coral.ai/products/m2-accelerator-bm/) (not the A+E key!).
+
+## Radar
+
+(*Recommended*) Provides accurate speed and direction measurement.
+
+1. [OmniPreSence OPS243-A Doppler Radar Sensor](https://omnipresense.com/product/ops243-doppler-radar-sensor/) - certified with same tests as law enforcement speed radars. Detection up to 100-meters away.
+
+## Other Sensors
+
+(*Optional*) For additional environmental data.
+
+1. Air quality (AQ) sensor: [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) paired with the (recommended) [Particulate Matter (PM) Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/). Also pick up a longer ribbon cable, we recommend the [male-to-female GPIO ribbon cable](https://www.pishop.us/product/male-to-female-gpio-ribbon-cable/).
+
+Info
+
+Get AQ sensor details and capabilities on the [Air Quality (AQ) Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md) page.
+
+## Enclosure (weather-resistant box)
+
+- *Print it yourself*: We offer a 3D printable model so you can build the truly open source Traffic Monitor. Visit our open source repository [greendormer/tm-enclosure-3d](https://github.com/greendormer/tm-enclosure-3d) for details and parts list.
+- *Purchase*: *(coming soon)* Purchase the box or a kit to assemble yourself.
+- *Alternative DIY*: There are many waterproof electrical junction boxes that may be modified to fit your needs with the traffic monitor. Rough dimensions to fit the Traffic Monitor components including the camera and radar should be around 9"x7"x4" such as the [TICONN IP67 ABS Enclosure](https://www.amazon.com/gp/product/B0B87X944Z).
+
+______________________________________________________________________
+
+1. Your Mileage May Vary [↩](#fnref:1 "Jump back to footnote 1 in the text")
+1. kiloWatt-hours [↩](#fnref:2 "Jump back to footnote 2 in the text")
+
+# Software Installation
+
+Whether you [Build Your Own Device (DIY)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md) or buy a pre-built unit, these are the instructions to perform a fresh install.
+
+### Preparation
+
+Success
+
+**Raspberry Pi OS 64-bit Lite install** is the recommended default and is the basis for the software. The 64-bit Full Install will provide a desktop environment and extra packages that are not used by the Traffic Monitor.
+
+Find it on RPi Imager by navigating to *Operating System > Raspberry Pi OS (other) > Raspberry Pi OS Lite (64-bit)*.
+
+1. Install Raspberry Pi OS (64-bit lite) using [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager) (read the [RPi getting started](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system)).
+1. You will need an SD card or microSD card reader on your host machine.
+1. (*Recommended*) [OS customization](https://www.raspberrypi.com/documentation/computers/getting-started.html#advanced-options) to set up your WiFi credentials and username and password to access the device headless; i.e. SSH with no monitor or keyboard.
+1. Insert the microSD card into the Raspberry Pi and boot.
+1. Note: The first boot may take several minutes before it is fully online.
+
+### Install the Traffic Monitor software
+
+Warning
+
+*An internet connection* is required to install system dependencies, build the required Podman containers, download drivers, and more. After installation, the traffic monitor can run fully offline.
+
+Info
+
+The Traffic Monitor software is installed via an [Ansible](https://github.com/ansible/ansible) deploy script. This allows you to perform a [local installation](#local-installation) or [remote installation](#remote-installation) from a host computer to 1 or more devices simultaneously!
+
+#### Local installation
+
+(*Most common installation method*)
+
+1. [Connect to your device](https://docs.trafficmonitor.ai/dev/setup-guide/#1-connect-to-your-device) and executing the following commands via a terminal:
+1. `sudo apt update && sudo apt install -y git`
+1. `git clone https://github.com/glossyio/traffic-monitor`
+1. `bash traffic-monitor/script/tmsetup.sh`
+1. Follow instructions and restart when prompted.
+
+#### Remote Installation
+
+Install the TM software to 1 or more devices simultaneously using our Ansible deploy script. This allows you to deploy or update a whole fleet of Traffic Monitors with common configuration files in a single command!
+
+Success
+
+Before you can perform remote installation, ensure the following:
+
+1. Your host machine is able to run `bash` commands (Linux or Mac)
+
+1. Raspberry Pi OS is installed on each device
+
+1. The traffic monitor device is running and online
+
+1. You have the device IP address(es) or resolvable host name(s) from your host to the device(s)
+
+1. On your host machine, download TM[1](#fn:1) OSS[2](#fn:2) software and set up any configurations you want to send:
+
+1. `git clone https://github.com/glossyio/traffic-monitor`
+
+1. Run the install script from your host machine with your device IP address(es) space-separated with `-H`, enter username specified on OS setup (needs to be the same across all devices) with `-l`, and prompt for password with `-k`:
+
+1. `bash traffic-monitor/script/tmsetup.sh -H <ip_address> -l <ssh_username> -k`
+
+1. Continue to [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) for each device.
+
+### Next Steps
+
+1. Deploy your device: See the [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md).
+1. Set up zones, location, and enable your sensors: See [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+1. Start capturing roadway usage data!
+
+______________________________________________________________________
+
+1. traffic monitor [↩](#fnref:1 "Jump back to footnote 1 in the text")
+1. open source software [↩](#fnref:2 "Jump back to footnote 2 in the text")
+
+# Deployment and Mounting Guide
+
+Deployment encompasses geographic location and bearing, physical hardware mounting, angle of camera and device to roadway, and configuration to make it ready to detect objects.
+
+Danger
+
+**Warning:** Ensure compliance with all applicable laws and local regulations when installing, mounting, and deploying a traffic monitor, particularly in public spaces. Unauthorized surveillance can lead to legal consequences and infringement of privacy rights. Always consult with legal professionals or local authorities if you are unsure of the requirements. Information in this guide is for educational purposes, and you are responsible for adhering to applicable laws and consequences of the deployment and use of the traffic monitor.
+
+Ensure you are mounting the traffic monitor in an approved area to comply with local regulations, and avoid attaching it to utility poles without proper authorization.
+
+## Mounting capabilities
+
+Info
+
+When selecting what mount method to use, an important consideration is how to make fine adjustments, especially for fine-tuning the radar angle and position.
+
+The open source, 3D printed [Enclosure (weather-resistant box)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/#enclosure-weather-resistant-box) has multiple built-in methods for mounting, depending on the variant, including:
+
+- 1/4"-20 screw insert hole on bottom and/or back for camera-style and trail camera mounting hardware
+- VESA mount -compatible holes (75 and 100 mm)
+- Arca-Swiss Quick Release System -compatible plate on bottom for tripods
+- Strap mount slots on back to directly attach to posts, poles, and trees
+- Safety tether hole for just-in-case carabiner and strap
+
+Back with VESA mount holes, 1/4"-20 mm screw insert, strap slots, and safety tether hole (lower-left)
+
+Bottom of the standard enclosure with arca-swiss quick release plate and 1/4"-20 mm screw insert
+
+## Temporary deployments
+
+In scenarios where you need counts for only a few hours—such as during events or point-in-time research—the Traffic Monitor performs well when mounted at or above head height in locations offering an unobstructed view of the roadway. A sturdy tripod and a compact portable power station are ideal for this setup.
+
+Traffic Monitor on a 16-foot telescoping tripod to count event participants
+
+Researcher recording manual confirmation counts with a Traffic Monitor on a camera tripod plugged into a portable power station
+
+## Permanent deployments
+
+Warning
+
+**Safety Note**: When installing the camera, always use proper safety equipment and practice ladder safety. Ensure that the camera is securely mounted, and verify that all mounting components are tightly fastened, safety tethers are in place, and check for stability to guarantee safe and reliable operation. Failure to do so could result in injury or damage to property.
+
+The Traffic Monitor provides 24/7 roadway monitoring capabilities, depending on the sensors you have installed.
+
+Long term deployments may be done in a variety of ways. As long as you have a good view of the roadway for the camera and can properly orient the radar, there's a variety of mounting methods you can employ.
+
+From garage roofs to wood posts in a 5-gallon cement-filled bucket to a high stone pillar, it is a good idea is to keep the Traffic Monitor out of reach and in a place that will not be obstructed.
+
+Long-term deployments with permission on private rooftops and gate entrances.
+
+## Best practices for deployment
+
+Ideal mounting locations will vary based on the use case and sensors. High-level tips include:
+
+- Mount the device above the roadway, out of reach for the best view and to minimize tampering; e.g., 10-12 ft above the roadway.
+- Choose a clear view of the road. Note that objects will still be tracked even if they temporarily move behind an object such as a tree or lamp post.
+- Consider where parked vehicles or common stopping locations will be, as they may affect the radar's ability to detect moving objects; i.e., don't point the radar directly at a parking spot.
+- Camera object detection works anywhere in the camera's field-of-view, so position the camera to get the most complete view of the roadway.
+- Consider what [Frigate zones](https://docs.trafficmonitor.ai/dev/setup-guide/#2-configure-frigate-zones) you will need for your use case.
+
+### Sample deployments and angle calculations
+
+Quiet road, monitoring downhill movement
+
+Busy business district, nearly straight-on object movement on wide road
+
+Busy business district, side-on monitoring focused on pedestrian and bike crosswalk
+
+Neighborhood Greenway, an ideal spot to monitor roadway utilization for bikes, pedestrians, and cars
+
+Neighborhood Greenway mounting spot, South-facing
+
+Neighborhood Greenway mounting spot, North-facing
+
+### **Camera considerations**
+
+**The camera** works best with an unobstructed view of the roadway for the best performance, but it is able to perform object detection anywhere in the camera frame.
+
+Focus on covering the entire area-of-interest, even if the camera is not centered on the roadway or area-of-interest.
+
+Detection events may occur anywhere in the camera field-of-view (FOV)
+
+### **Radar considerations**
+
+**The radar** has a narrower field-of-view (FOV) than most cameras and requires specific angles to the roadway for the most accurate speed measurements.
+
+Test the radar's capture area by having someone hold the radar unit (outside of the case) and watching the **red/blue blinking LEDs on the front of the radar** as you move towards and away from the unit. Watch the LEDs as objects move through the view and determine the boundaries for drawing the zone.
+
+Optimizing speed measurements:
+
+- The Traffic Monitor and radar should be at an **acute angle to the direction of travel** for desired objects (ideally 45-degrees or less).
+- See [Omnipresense Field of View calculator](https://omnipresense.com/ops243-field-of-view-calculator/) for more info on cosine correction.
+- Object movement direction will be labeled as `inbound` and `outbound`, so consider locating the radar with objects coming towards the radar in a way that makes sense for those movements.
+
+## Next Steps
+
+Power on the Traffic Monitor (once it is plugged in to a power source it should automatically start, check for the green LED) and proceed to [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) to connect and configure it.
+
+# Setup Guide
+
+At this point you have [deployed](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) your traffic monitor and it is running, or it is on your desk and you are testing it. ;-) Either way, nice job!
+
+This guide will walk you though configuring your device based on your sensors (*required*), adjust it for roadway conditions (*recommended*), optimize your data capture, and connect with the ThingsBoard platform (optional).
+
+Info
+
+Note that the software as of v0.5 is still *pre-consumer (alpha)* and requires some technical expertise including: connecting to the Raspberry Pi via `ssh` and modifying some text configuration files.
+
+We welcome your feedback, requests, and questions via [Where can I get support?](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md)
+
+Warning
+
+The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.
+
+## Power on
+
+Power on the Traffic Monitor. Once it is plugged in to a power source it will automatically start without further intervention. Check for the green LED on the Raspberry Pi to confirm the device has power then proceed with the following steps:
+
+- [1. Connect to your Device](#1-connect-to-your-device)
+- [2. Configure Frigate Zones](#2-configure-frigate-zones)
+- [3. Configure Node-RED](#3-configure-node-red)
+
+## 1. Connect to your Device
+
+Connect to your device to initially set up the Traffic Monitor, retrieve data, and monitoring usage.
+
+### Physical Access
+
+Physical access to the device is a less-convenient method but will allow the most control to address issues.
+
+#### Monitor, Keyboard, Mouse
+
+See [Raspberry Pi Getting Started](https://www.raspberrypi.com/documentation/computers/getting-started.html#display) for more information on connecting your Raspberry Pi. It should be as simple as plugging in a USB keyboard, USB mouse, and micro HDMI cable to your monitor. In this case, you can use `localhost` as the RPi IP address or use the host name.
+
+#### SD Card
+
+If your Traffic Monitor uses the default Raspberry Pi installation method, you will have an [SD Card boot media](https://www.raspberrypi.com/documentation/computers/getting-started.html#sd-cards) that contains all your system files. If necessary, you can insert the card into a micro-SD card reader to access the entire Raspberry Pi OS directory structure.
+
+### Remote Access
+
+(*Recommended*) Remote access allows you to control various parts of your Raspberry Pi without connecting it to a monitor, keyboard, or mouse. This must be done from another computer, e.g. a laptop. See [Raspberry Pi's remote access](https://www.raspberrypi.com/documentation/computers/remote-access.html#introduction-to-remote-access) docs for a full rundown of options.
+
+You will need to know the Traffic Monitor / Raspberry Pi IP address or host name to connect to the various configuration environments.
+
+Info
+
+For system administration in a browser, open `http://<TM_IP_ADDRESS>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows services, logs, updates, and containers, and has a terminal. It also answers directly on port `9090`.
+
+#### Finding Your IP address
+
+- If you chose the [Build Your Own Device (DIY)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md) route, we recommend you set up WiFi credentials by following the [Raspberry Pi Imager docs](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system) and it will automatically be accessible the network you specified. Find the RPi IP address via your router, or if your router supports DNS host names, you can use the host name set on the RPi.
+- If you received a **pre-built device**, check with your provider for specific instructions. To get you started, it may be available as a Hotspot that will [host a wireless network](https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-from-your-raspberry-pi). Connect to it like any WiFi network, look for the host name as the SSID. The IP address of the Raspberry Pi will be the Gateway IP address or you may use the host name set on the RPi.
+
+See [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address) for more options.
+
+## 2. Configure Frigate Zones
+
+Frigate controls and generates object detection events with the camera.
+
+Info
+
+This section describes setting up Frigate with the Traffic Monitor [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md). If you have alternative or optional camera(s) or other components, you may need additional configuration. Reference the official [Frigate Configuration](https://docs.frigate.video/guides/getting_started#configuring-frigate) for more details.
+
+Frigate has a well-developed front-end user interface that can be accessed by visiting `http://<TM_IP_ADDRESS>:5000` in a browser.
+
+The Traffic Monitor will be expecting the following specifically named [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and workflow logic. These need to manually drawn based on your deployment.
+
+Success
+
+Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment and roadway conditions.
+
+Set up or modify the following zones, overlaying any temporary or permanent stationary objects:
+
+1. zone_capture - Set to capture the entire roadway, including sidewalks that are clearly in view for counting objects.
+1. zone_near - Paired with `zone_near`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the further half of the `zone_capture` region.
+1. zone_far - Paired with `zone_far`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the closer half of the `zone_capture` region.
+1. zone_radar - (for units equipped with radar) - This should correspond to the field of view for the radar (where it can pick up accurate measurements) on the street. It will roughly make a rectangle in the center of the camera field of view from curb to curb.
+
+Properly configured Frigate Zones
+
+After changes are made, you will need to restart Frigate before they take effect. You can do this via **Frigate > Settings > Restart Frigate**.
+
+### Optimize Object Detection
+
+The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, different cameras and camera settings, and environmental conditions.
+
+The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.
+
+## 3. Configure Node-RED
+
+Node-RED controls most of the workflow logic and data collection.
+
+You will need to [Connect to your device](#1-connect-to-your-device) to edit the [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) files.
+
+1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`
+1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml`
+1. Change the deployment location information to represent the current deployment. Get your latitude and longitude from any map service, such as Google Maps and enter bearing with the single-letter cardinal direction the traffic monitor is facing.
+
+```
+deployment:
+    lat: 45.5225
+    lon: -122.6919
+    bearing: n
+```
+
+1. Modify sensors to reflect currently installed components. For example, with a single Raspberry Pi Camera and Radar, it may look like this:
+
+```
+sensors:
+    cameras:
+        picam_h265:
+            enabled: true
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+    radars:
+        TM_RADAR_SERIAL_PORT_00:
+            enabled: true
+```
+
+1. To save changes, press Ctr+o (hold control and o)
+1. To exit, press Ctr+x (hold control and x)
+
+These settings should take immediate effect, if not, restart Node-RED by running: `sudo systemctl restart node-red-tm.service` .
+# Configuration
+
+# Frigate Config
+
+Object detection is powered by [Frigate NVR](https://frigate.video/), which provides powerful capabilities for tuning and reviewing events. The Traffic Monitor is not directly affiliated with the Frigate NVR project.
+
+Refer to [Frigate Configuration](https://docs.frigate.video/configuration/) docs for full list of available configuration options and descriptions.
+
+## Recommended Traffic Monitor Settings
+
+The recommended Traffic Monitor settings attempts to optimize the Frigate config for **object detection on roadways**. Each deployment presents unique scenarios and challenges with accurate and precise object detection.
+
+View our [default frigate config.yml](https://github.com/glossyio/traffic-monitor/blob/main/frigate/config/config.yml.j2) for a sample configuration.
+
+Info
+
+Many settings will need to be uniquely tailored to your specific deployment.
+
+See [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) for optimizing your placement.
+
+## Optimizing Object Detection
+
+Go to **Frigate > Settings > Debug** to more easily determine how your object detection is working.
+
+Frigate > Settings > Debug to see how your object detection settings are working
+
+Fine-tuning can help you with the following:
+
+- detection (are you missing bikes or pedestrians?)
+- reducing cross-classification (is an ebike being called a motorcycle?)
+- minimizing false positives (is a tree being detected as a person?), see also [Defining Masks](#defining-masks)
+
+The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, camera quality and settings, and environmental conditions such as clouds, rain, snow, etc.
+
+The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.
+
+### Sample Object Detection Fine-Tuning
+
+The most relevant section of the Frigate config for fine-tuning object detection is the following.
+
+In this sample, bicycle `min_score` and `threshold` are set low to detect most types of bikes encountered on the roadway while motorcycle `threshold` is set high so even large ebikes don't get misclassified as motorcycles:
+
+```
+objects:
+  track:
+  - bicycle
+  - person
+  - car
+  - motorcycle
+  - dog
+  # Optional: filters to reduce false positives for specific object types
+  filters:
+    bicycle:
+      # Optional: minimum width*height of the bounding box for the detected object (default: 0)
+      min_area: 0
+      # Optional: maximum width*height of the bounding box for the detected object (default: 24000000)
+      max_area: 24000000
+      # Optional: minimum width/height of the bounding box for the detected object (default: 0)
+      min_ratio: 0.2
+      # Optional: maximum width/height of the bounding box for the detected object (default: 24000000)
+      max_ratio: 10.0
+      # Optional: minimum score for the object to initiate tracking (default: shown below)
+      min_score: 0.25
+      # Optional: minimum decimal percentage for tracked object's computed score to be considered a true positive (default: shown below)
+      threshold: 0.42
+    motorcycle:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.5
+      threshold: 0.8
+```
+
+## Defining Masks
+
+Optional step for reducing false-positives, creating private areas, and refining your configuration. To access this capability, log into your Frigate interface and go to [Frigate > Settings > Motion Masks](https://docs.frigate.video/guides/getting_started/#step-5-setup-motion-masks).
+
+Warning
+
+Use masks sparingly. *Over-masking will make it more difficult for objects to be tracked.* Motion masks should not be used to mark out areas where you do not want objects to be detected or to reduce false positives.
+
+If you are getting many false positives, e.g. a tree that gets detected as a person, we recommend first modifying [object filters](https://docs.frigate.video/configuration/object_filters/) such as `threshold` and `min_score`.
+
+1. **Motion Masks**: may be designated to prevent unwanted types of motion from triggering detection.
+1. **Object filter masks**: filter out false positives for a given object type based on location.
+
+For detailed information visit [Frigate > Masks](https://docs.frigate.video/configuration/masks).
+
+## Improved Models
+
+Check out the premium [Frigate+](https://docs.frigate.video/plus/) for fine-tuned models that may increase accuracy and efficiency.
+
+# Node-RED Config
+
+Info
+
+This page is for the Traffic Monitor -specific configuration of the Node-RED flows. This controls much of the logic and flow for the traffic monitor but does not control other applications such as Frigate or the operating system.
+
+See [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) for controlling object detection parameters.
+
+## Config File
+
+The Traffic Monitor Node-RED config file changes definitions to various services and functionality.
+
+- Installed path: `/opt/traffic-monitor/node-red-tm/config/config.yml`
+- [Repo path](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2): `container/node-red-tm/config/config.yml.j2`
+
+The config file is loaded whenever the TM flows restart.
+
+Info
+
+It is *not necessary* to copy this full configuration file. Default values are specified below.
+
+```
+########
+# This file contains configuration settings executed by node-red
+# Note: Comments will be removed by updates from node-red
+########
+
+# Optional: IoT hub backend integration
+thingsboard:
+    # Optional: enable connection to backend thingsboard server (default: shown below)
+    enabled: false
+    # Required: host name, without protocol or port number
+    host: tb.example.com
+    # Required: thingsboard telemetry protocol (default: shown below), 
+    # NOTE: only http(s) currently supported, mqtt coming soon
+    #  see https://thingsboard.io/docs/reference/protocols/
+    protocol: http
+    # Optional: port, common settings: https=443, http=80, mqtt=1883
+    # Check with your ThingsBoard admin for settings
+    port:
+    # Optional: API key for device 
+    # Note: (Future) if already provisioned, will be assigned based on provisionDeviceKey and secret
+    access_token:
+    # Optional: future use for auto-provisioning (RPiSN)
+    # provisionDeviceKey: 
+    # Optional: future use for auto-provisioning (manual)
+    # provisionDeviceSecret: 
+
+# Optional: deployment location details
+# Note: May be used to determine device placement on maps
+# NOTE: Can be overridden at the sensors level, top-level values will cascade down
+deployment:
+    # NOTE: for address-level accuracy, recommend at least 4 digits after the decimal
+    # Optional: Latitude in decimal degrees format; e.g. 45.5225
+    lat:
+    # Optional: Longitude in decimal degrees format; e.g. -122.6919
+    lon:
+    # Optional: cardinal (N, S, E, W) or ordinal (NE, NW, SE, etc.) direction the camera/radar is facing 
+    # Note: For bearing, match the roadway traffic direction
+    bearing:
+
+sensors:
+    # Optional: if used, must match the Frigate camera name(s)
+    # if not set, no cameras will be used
+    cameras:
+        # camera name must match Frigate configuration camera names
+        picam_h265:
+            # Optional Enable/disable the camera (default: shown below).
+            # if disabled, any Frigate events for specified camera will be ignored
+            # Note: this will not impact Frigate's system
+            enabled: false
+            # Optional: define the radar co-located with camera to associate speeds
+            # camera and radar direction and field of view (FOV) should match
+            # Note: name needs to match one defined in `radars` section
+            # Note: A single radar may be attached to multiple cameras
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+            # Optional, related to addons
+            plate_recognizer: false
+
+    # Optional: used to specify what radars are enabled for speed/direction and detection
+    radars:
+        # Note: Names must match those defined in the node-red environment file
+        # Names are used to associate readings with cameras and other sensors
+        TM_RADAR_SERIAL_PORT_00:
+            # Optional: Enable/disable the radar (default: shown below).
+            enabled: false
+            # Optional: additional Radar API commands to execute on startup (default: shown below)
+            # must be defined as a string in JSON array format
+            # these commands will override any that come before it
+            # e.g. '["^/+0.00\n", "^/-0.00\n"]' will set cosine correction
+            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
+
+    # Optional: used to specify air quality monitor sensor name(s)
+    # Note: air quality configuration file is separate from the node-red config, based on the aq device
+    airquality_monitors:
+        # Required: aq sensor name must match AQ configuration -defined MQTT topic middle element (second element)
+        sensorname01:
+            # Optional: Enable/disable the AQ sensor payloads (default: shown below).
+            enabled: false
+            # Required: mqtt topic to subscribe for incoming full-payload telemetry from AQ sensor
+            #  must be last element in mqtt topic defined in AQ configuration
+            mqtt_topic_incoming: readings
+
+time:
+    # Optional: Set a timezone to use in the UI (default: use browser local time)
+    # NOTE: shall be in unix tz format: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    #  this will also set the timezone for the entire system
+    timezone: America/Los_Angeles
+    # Optional: For internet-connected deployments, sync using `timedatectl set-npt` (default: shown below)
+    # Note: for offline deployments, time will stop whenever power is disconnected
+    npt_set: true
+
+addons:
+    #Optional: For additional apps / micro-services available via tmsetup
+    # See https://platerecognizer.com capabilities
+    plate_recognizer:
+        token: 
+        # base url e.g. http://plate-recognizer:8080 and api calls added via app
+        url:
+```
+
+## Environment File
+
+The environment file defines variables are accessible by the node-red-tm podman container.
+
+```
+########
+# This file contains node-red environment variables loaded by node-red.service
+#   Read more at https://nodered.org/docs/user-guide/environment-variables
+#     and https://fedoraproject.org/wiki/Packaging:Systemd
+# Uses:
+#   - variables can be used in settings.js by calling `process.env.ENV_VAR`
+#   - node property can be set by calling `${ENV_VAR}
+#
+########
+
+# traffic monitor open source software release version
+TM_VERSION='0.5.0'
+
+# used in settings.js for credentialSecret 
+NODE_RED_CREDENTIAL_SECRET='myNodeRED1234'
+
+# database locations, relative to user directory defined in settings.js
+#  will be relative path to store SQLite databases
+TM_DATABASE_PATH_TMDB='/db/tmdb.sqlite'
+
+# mqtt broker for incoming Frigate events 
+#  Settings below set up the aedes broker node
+TM_MQTT_BROKER_HOST='localhost'
+TM_MQTT_BROKER_PORT='1883'
+# mqtt user, leave blank for no authentication
+TM_MQTT_BROKER_USERNAME=''
+# mqtt password, leave blank for no authentication
+TM_MQTT_BROKER_PASSWORD=''
+
+# defines system USB serial port for radar
+# run `ls -lat /sys/class/tty/ttyACM*` to list devices
+TM_RADAR_SERIAL_PORT_00='/dev/ttyACM0'
+TM_RADAR_SERIAL_PORT_01='/dev/ttyACM1'
+TM_RADAR_SERIAL_PORT_02='/dev/ttyACM2'
+TM_RADAR_SERIAL_PORT_03='/dev/ttyACM3'
+```
+
+# Config Overview
+
+Traffic Monitor settings and configuration are stored and controlled locally, on each device.
+
+The following configuration files control the most common operations:
+
+- [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) - to enable and configure object detection
+- Node-RED [Environment File](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#environment-file) - to configure hardware sensors
+- Node-RED [Config File](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#config-file) - to enable and configure sensors and ThingsBoard IoT hub connection
+
+It is recommended to start with a minimal configuration and add to it as needed.
+
+## Backup and Restore
+
+Backup and restore are built into the Node-RED Device Dashboard but require a connection to a [ThingsBoard](https://thingsboard.io/) IoT (Internet of Things) hub server.
+# User interface
+
+# Database
+
+## Sample screenshot
+
+## Descriptions
+
+1. Create local comments: Operator-entered free-text comments that will be available in the `comments` table to be used for manual analysis. May be useful when adjusting settings (changed model or threshold), noting environmental conditions (road work happening), etc.
+1. Download Database: Will trigger the entire database for download in unencrypted, compressed format.
+1. Very large databases may take several minutes to compress and download; e.g. 3 GB database file may take up to 5-minutes to compress and several minutes to download, depending on connection speed.
+1. Database size is indicated in [Megabytes (MB)](https://en.wikipedia.org/wiki/Megabyte)
+1. Database is in [SQLite](https://en.wikipedia.org/wiki/SQLite) format (`.sqlite`), a open-source relational database format. Read more at [sqlite.org](https://sqlite.org/). Once downloaded, you may browse database structure by using [sqlitebrowser.org](https://sqlitebrowser.org/) or programmatically via sqlite libraries; e.g.built-in [Python sqlite3 library](https://docs.python.org/3/library/sqlite3.html).
+1. Database is compressed in [Tar](<https://en.wikipedia.org/wiki/Tar_(computing)>) Gzip format (`.tar.gz`). On Linux or Mac, uncompress with `tar -xvzf`. On Windows download the open source [7-Zip](https://www.7-zip.org/) application.
+1. Download JSON: Customizable data export in unencrypted, uncompressed [JSON](https://en.wikipedia.org/wiki/JSON) format by object event type or full tables with a data start/end date time. View in your preferred text editor.
+
+# Monitoring
+
+Success
+
+The local, on-device Traffic Monitor dashboard is available by [connecting directly to your traffic monitor](https://docs.trafficmonitor.ai/dev/setup-guide/#1-connect-to-your-device) via a web browser.
+
+The Monitoring tab display counts and descriptive statistics among all your sensors.
+
+## Sample screenshot
+
+Monitoring tab sample
+
+## Descriptions
+
+1. Select your Radar and Camera in case you have multiple sensors on the unit. Sensors need to be defined and enabled in the [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).
+1. Displays `car` object speed counts and descriptive statistics for those that moved through `zone_radar` since 0400 local time. Stats include:
+1. count: Total count through valid area
+1. mean_speed: Average speed among all cars
+1. p25_speed: 25th [Percentile](https://en.wikipedia.org/wiki/Percentile) speed, also known as first quartile (Q1)
+1. p50_speed: 50th Percentile speed, also known as [median](https://en.wikipedia.org/wiki/Median) speed
+1. p75_speed: 75th Percentile speed, also known as third quartile (Q3)
+1. p85_speed: 85th Percentile speed
+1. max_speed: Maximum speed
+1. count_over_25: Static set number for maximum speed (25 in set system; e.g. 25 mph)
+1. iqr_upper: [Interquartile range](https://en.wikipedia.org/wiki/Interquartile_range) (IQR) calculated as p75 + 1.5 * IQR
+1. iqr_upper_freq: (frequency of cars above the iqr_upper) Count of vehicles driving above the iq_upper (considered [outliers](https://en.wikipedia.org/wiki/Outlier) that are significantly faster than other vehicles)
+1. Daily cumulative counts for all [Frigate-enabled objects](https://docs.frigate.video/configuration/objects) since 0400 local time.
+1. Hourly cumulative counts by object for the last 36 hours.
+1. Daily cumulative counts by object for the last 10 days.
+1. Latest observations (to display images, [Frigate snapshots](https://docs.frigate.video/configuration/snapshots/) must be enabled).
+
+# Movements
+
+Success
+
+Movement patterns are based on [Frigate Zones](https://docs.frigate.video/configuration/zones). Configure zones properly before analyzing movements.
+
+The Movements tab allows operators to see counts of objects through zones. This is commonly used to provide confirmation counts against manual counts and to determine if deployment and zones provide accurate counts.
+
+## Sample screenshot
+
+## Descriptions
+
+1. Movements Selection: Selectable filters to specify.
+1. Movement behavior selection: Provides the ability to filter objects that go through *any* of the selected zones or objects that go through *only selected zones*.
+1. Table of counts by object for selected movement pattern filters.
+
+## Example of complex movement patterns
+
+A complex intersection provides potentially dozens of combinations of turning behaviors and movement. The movements tab provides the ability to confirm against manual counts.
+
+Frigate zones configured with 12 zones drawn on a busy 5-way intersection
+
+Example of manual, hand-written confirmation counts through various intersections (left image matches above zones)
+# Data and payloads
+
+# Air Quality (AQ) Payload
+
+## Overview
+
+The air quality monitor enables collection of a variety of environmental measurements including gasses commonly associated with pollution, temperature, pressure, humidity, and much more.
+
+Info
+
+The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor). It is based on the wonderful work from the [roscoe81/enviro-monitor](https://github.com/roscoe81/enviro-monitor) and [pimoroni/enviroplus](https://github.com/pimoroni/enviroplus-python) projects.
+
+### Hardware
+
+The following hardware has been tested and incorporated into the Traffic Monitor.
+
+Info
+
+Although we strive to include high-quality equipment and data collection into our application, we make no warranty on the veracity or quality of the hardware or data. We welcome those with an [environmental science](https://en.wikipedia.org/wiki/Environmental_science) background to [contribute](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)!
+
+- [Enviro for Raspberry Pi](https://www.pishop.us/product/enviro-for-raspberry-pi/) – **Enviro + Air Quality**
+- Enviro for Raspberry Pi – **Enviro + Air Quality**
+- Air quality (pollutant gases and particulates\*), temperature, pressure, humidity, light, and noise
+- [Getting started](https://learn.pimoroni.com/article/getting-started-with-enviro-plus)
+- [PMS5003 Particulate Matter Sensor](https://www.pishop.us/product/pms5003-particulate-matter-sensor-with-cable/) for Enviro
+- Monitor air pollution cheaply and accurately with this matchbox-sized particulate matter (PM) sensor from Plantower!
+- It senses particulates of various sizes (PM1, PM2.5, PM10) from sources like smoke, dust, pollen, metal and organic particles, and more.
+
+### Software
+
+The AQ software is available at [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor) as a Python service script that communicates with the Traffic Monitor Node-RED flow via MQTT messages. See the repository for installation and setup instructions.
+
+#### config.json
+
+See [Config Readme](https://github.com/greendormer/enviroplus-monitor/blob/main/config_readme.md) for a detailed description of every available key.
+
+#### Recommended config settings
+
+The following are important keys for the recommended default Traffic Monitor -specific configuration:
+
+- `"enable_send_data_to_homemanager": true` in order to send MQTT payloads to specified broker
+- `"mqtt_broker_name": "localhost"` to send to Node-RED MQTT broker (assumes port 1883)
+- `"indoor_outdoor_function": "Outdoor"` to utilize `outdoor_mqtt_topic`
+- `"enable_display": false` since the AQ sensor will be in an enclosure
+- `"outdoor_mqtt_topic": "aq/sensorname01/readings"` for sending messages, must start with "aq" and the middle element, "sensorname01" must be defined in your TM config
+- `"long_update_delay": 300` for time between sending MQTT messages (default 300-seconds)
+
+#### Deployment-specific config settings
+
+The following location-based settings need to be set per-deployment for your location. They are utilized by the [`astral` package](https://astral.readthedocs.io/en/latest/package.html) for calculating the times of various aspects of the sun and phases of the moon (lat/lon, time zone) and calibrating temperature, humidity, barometer, and gas (altitude) readings.
+
+```
+{
+    "altitude": 49,
+    "city_name": "Portland",
+    "time_zone": "America/Los_Angeles",
+    "custom_locations": [
+        "Portland, United States of America, America/Los_Angeles, 45.52, -122.681944"
+    ]
+}
+```
+
+## Air Quality MQTT Incoming Payload
+
+The TM AQ application sends messages via MQTT integration on the `aq/readings` topic.
+
+Warning
+
+The sensor needs to stabilize (default 5-minutes) after the script initializes before it will send external updates (via MQTT). This is defined by `startup_stabilisation_time` in config.json.
+
+```
+{
+    "gas_calibrated": false,
+    "bar": [
+        1009.44,
+        "0"
+    ],
+    "hum": [
+        28.7,
+        "2"
+    ],
+    "p025": 0,
+    "p10": 0,
+    "p01": 0,
+    "dew": 2.1,
+    "temp": 21,
+    "temp_min": 20.9,
+    "temp_max": 21.1,
+    "gas_red": 4.2,
+    "gas_oxi": 0.15,
+    "gas_nh3": 0.69,
+    "lux": 1.2,
+    "proximity": 255,
+    "lux_raw": 1.16185,
+    "temp_raw": 28.68982029794099,
+    "bar_raw": 1003.7122773175154,
+    "hum_raw": 18.31337919009301,
+    "gas_red_raw": 140805,
+    "gas_oxi_raw": 103585,
+    "gas_nh3_raw": 227871,
+    "current_time": 1738698665.077546
+}
+```
+
+MQTT attribute details:
+
+| Key            | Valid Values | Units                                                                                                                                          | Notes                                                                                                                                                                      |
+| -------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| gas_calibrated | true/false   |                                                                                                                                                | `gas_sensors_warmup_time = 6000` or `startup_stabilisation_time` when `reset_gas_sensor_calibration = true`                                                                |
+| bar            | [REAL, TEXT] | hPa, Comfort-level `{"0": "Stable", "1": "Fair", "3": "Poorer/Windy/", "4": "Rain/Gale/Storm"}`                                                | Air pressure, compensated for altitude and temp as `Bar / comp_factor` where `comp_factor = math.pow(1 - (0.0065 * altitude/(temp + 0.0065 * alt + 273.15)), -5.257)`      |
+| hum            | [REAL, TEXT] | %, Comfort-level `{"good": "1", "dry": "2", "wet": "3"}`                                                                                       | Adjusted for compensation factor set in `config.json`                                                                                                                      |
+| Forecast       | {OBJECT}     | `Valid`: true/false, `3 Hour Change` is millibars difference in barometer readings, `Forecast` is description calculated from barometer change | Calculated forecast based on sensor barometer changes                                                                                                                      |
+| pm01           | REAL         | ug/m3 (microgram per meter cubed, µg/m³)                                                                                                       | Particulate Matter 1 micrometers / microns (PM1, PM1), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor.                         |
+| pm025          | REAL         | ug/m3 (microgram per meter cubed, µg/m³)                                                                                                       | Particulate Matter 2.5 micrometers / microns (PM2.5, PM2.5), read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor.                   |
+| pm10           | REAL         | ug/m3 (microgram per meter cubed, µg/m³)                                                                                                       | Particulate Matter 10 micrometers / microns (PM10, PM10), Read directly using the `pms5003.pm_ug_per_m3()` method from the particulate matter sensor.                      |
+| dew            | REAL         | C                                                                                                                                              | Calculated from Temp and Hum as `(237.7 * (math.log(dew_hum/100)+17.271*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271*dew_temp/(237.7 + dew_temp)))` |
+| temp           | REAL         | C                                                                                                                                              | Adjusted for compensation factor set in `config.json`                                                                                                                      |
+| temp_min       | REAL         | C                                                                                                                                              | Minimum temperature measured while sensor was running (only resets on restart)                                                                                             |
+| temp_max       | REAL         | C                                                                                                                                              | Maximum temperature measured while sensor was running (only resets on restart)                                                                                             |
+| gas_red        | REAL         | ppm                                                                                                                                            | Red PPM calculated as `red_in_ppm = math.pow(10, -1.25 * math.log10(red_ratio) + 0.64)`. `red_ratio` is compensated gas value, see Software notes.                         |
+| gas_oxi        | REAL         | ppm                                                                                                                                            | Oxi PPM calculated as `oxi_in_ppm = math.pow(10, math.log10(oxi_ratio) - 0.8129)`. `oxi_ratio` is compensated gas value, see Software notes.                               |
+| nh3            | REAL         | ppm                                                                                                                                            | NH3 PPM calculated as `nh3_in_ppm = math.pow(10, -1.8 * math.log10(nh3_ratio) - 0.163)`. `nh3_ratio` is compensated gas value, see Software notes.                         |
+| lux            | REAL         | lux                                                                                                                                            | Read directly using the `ltr559.get_lux()` method from the light sensor.                                                                                                   |
+| temp_raw       | REAL         | C                                                                                                                                              | Read directly from sensor absent compensation.                                                                                                                             |
+| bar_raw        | REAL         | C                                                                                                                                              | Read directly from sensor absent compensation.                                                                                                                             |
+| hum_raw        | REAL         | %                                                                                                                                              | Read directly from sensor absent compensation.                                                                                                                             |
+| gas_red_raw    | REAL         | Ohms                                                                                                                                           | Read directly from sensor using `gas_data.reducing` method absent compensation.                                                                                            |
+| gas_oxi_raw    | REAL         | Ohms                                                                                                                                           | Read directly from sensor using `gas_data.oxidising` method absent compensation.                                                                                           |
+| gas_nh3_raw    | REAL         | Ohms                                                                                                                                           | Read directly from sensor using `gas_data.nh3` method absent compensation.                                                                                                 |
+| current_time   | REAL         | Unix time in Seconds                                                                                                                           | Created by script upon reading values.                                                                                                                                     |
+
+## Air Quality Database
+
+The following attributes are captured, by default, into `tmdb.events.sqlite`:
+
+| Attribute      | Description                                                                                                                                                                                                                                                      | SQLite data type  | Valid values                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------ |
+| entryDateTime  | Unix timestamp when data capture began on sensor                                                                                                                                                                                                                 | REAL              | Unix timestamp in Seconds                  |
+| gas_calibrated | Indicates if gas sensors are fully "warmed up". Will be false until `gas_sensors_warmup_time` is met (default 10-minutes after sensor starts)                                                                                                                    | REAL              | BOOLEAN, 1 = true / 0 = false              |
+| temp           | Temperature reading in degree Celsius measured directly from BME280 sensor with compensation factor set from device config.                                                                                                                                      | REAL              |                                            |
+| bar            | Barometer air pressure reading in bars (hPa) measured directly from BME280 sensor with compensation set for altitude from device config.                                                                                                                         | REAL              |                                            |
+| hum            | Humidity reading in percent (%) measured directly from BME280 sensor with compensation factor set from device config.                                                                                                                                            | REAL              |                                            |
+| dew            | Calculated dew point in degree Celsius, based on temperature and humidity using the following calculation (Python) `(237.7 \* (math.log(dew_hum/100)+17.271\*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271\*dew_temp/(237.7 + dew_temp)))` | REAL              |                                            |
+| temp_raw       | Temperature reading in degree Celsius measured directly from BME280 sensor absent of any compensation (raw values).                                                                                                                                              | REAL              |                                            |
+| bar_raw        | Barometer air pressure reading in bars (hPa) measured directly from BME280 sensor absent of any compensation (raw values).                                                                                                                                       | REAL              |                                            |
+| hum_raw        | Humidity reading in percent (%) measured directly from BME280 sensor absent of any compensation (raw values).                                                                                                                                                    | REAL              |                                            |
+| pm01           | Particulate Matter (PM) at 1 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.                                                                                                                          | REAL              | 0-infinity                                 |
+| pm025          | Particulate Matter (PM) at 2.5 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.                                                                                                                        | REAL              | 0-infinity                                 |
+| pm10           | Particulate Matter (PM) at 10 micrometers or greater in diameter in micrograms per cubic meter (ug/m3) measured directly from PM sensor.                                                                                                                         | REAL              | 0-infinity                                 |
+| gas_red        | Reducing gases (RED) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Eg hydrogen, carbon monoxide                                                                                                   | REAL              | 0-infinity                                 |
+| gas_oxi        | Oxidising gases (OX) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Eg chlorine, nitrous oxide                                                                                                     | REAL              | 0-infinity                                 |
+| gas_nh3        | Ammonia (NH3) reading in Parts Per Million (PPM) measured directly from gas sensor with compensation factor set for drift. Gas resistance for nh3/ammonia                                                                                                        | REAL              | 0-infinity                                 |
+| gas_red_raw    | Reducing gases (RED) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Eg hydrogen, carbon monoxide                                                                                                                     | REAL              | 0-infinity                                 |
+| gas_oxi_raw    | Oxidising gases (OX) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Eg chlorine, nitrous oxide                                                                                                                       | REAL              | 0-infinity                                 |
+| gas_nh3_raw    | Ammonia (NH3) reading in Ohms measured directly from gas sensor absent of any compensation (raw values). Gas resistance for nh3/ammonia                                                                                                                          | REAL              | 0-infinity                                 |
+| lux            | Lux reading in Lux measured directly from optical sensor with proximity-adjusted minimum.                                                                                                                                                                        | REAL              | 0.01 to 64k lux                            |
+| lux_raw        | Lux reading in Lux measured directly from optical sensor.                                                                                                                                                                                                        | REAL              | 0.01 to 64k lux                            |
+| proximity      | Proximity reading measure directly from optical sensor.                                                                                                                                                                                                          | REAL              | 0-infinity                                 |
+| sensorName     | Air Quality sensor that captured the data. This field may be used to associate with other sensors.                                                                                                                                                               | TEXT              |                                            |
+| deployment_id  | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.                                                                                                        | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null |
+
+## Notes on Air Quality readings
+
+### Gas sensor
+
+The [MICS6814](https://www.sgxsensortech.com/content/uploads/2015/02/1143_Datasheet-MiCS-6814-rev-8.pdf) analog gas sensor: *The MiCS-6814 is a robust MEMS sensor for the detection of pollution from automobile exhausts and for agricultural/industrial odors.*
+
+The sensor includes the ability to detect reductive (RED), oxidative (OXI), and ammonia (NH3) gases. The raw gas readings are measured as Ohms of resistance for their respective gasses, but the software compensates for temperature, humidity, altitude, and drift to provide PPM (parts per million) equivalents.\*
+
+\*See Software notes and additional discussions on [pimoroni/enviroplus-python #47](https://github.com/pimoroni/enviroplus-python/issues/47) and [pimoroni/enviroplus-python #67](https://github.com/pimoroni/enviroplus-python/issues/67).
+
+**Software notes**
+
+- Gas calibrates using Temp, Humidity, and Barometric Pressure readings.
+- Gas Sensors (`Red`, `Oxi`, `NH3`) take 100-minutes to warm-up and readings to become available
+- To compensate for gas sensor drift over time, the software calibrates gas sensors daily at time set by `gas_daily_r0_calibration_hour`, using average of daily readings over a week if not already done in the current day and if warm-up calibration is completed. This compensates for gas sensor drift over time
+- Raw gas readings will also have compensation factors applied, determined by [regression analysis](https://github.com/roscoe81/enviro-monitor/blob/master/Regression_Analysis/Northcliff_Enviro_Monitor_Regression_Analyser.py).
+
+### Temperature, pressure, and humidity
+
+The [BME280](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf) temperature, pressure, humidity sensor with I2S digital output.
+
+Info
+
+The Raspberry Pi and AI co-processor generate a substantial amount of heat that may affect the temperature and humidity readings. The [Traffic Monitor enclosure](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/#enclosure-weather-resistant-box) attempts to isolate the AQ sensors by physically separating the hardware, but further adjustments may need to be made.
+
+#### Software notes
+
+- `Temp` (temperature) and `Hum` (humidity) have cubic polynomial compensation factors applied to raw readings
+
+- `Min Temp`and `Max Temp`are calculated over the entire time the script is running
+
+- `Bar`(Barometer) reading updates only every 20 minutes
+
+- Air pressure reading has an altitude compensation factor applied (defined in config.json)
+
+- `Dew`(Dew Point) is calculated from temperature and humidity using the following calculation:
+
+  ```
+  dewpoint = (237.7 * (math.log(dew_hum/100)+17.271*dew_temp/(237.7+dew_temp))/(17.271 - math.log(dew_hum/100) - 17.271*dew_temp/(237.7 + dew_temp)))
+  ```
+
+### Optical (light, proximity)
+
+The [LTR-559](https://optoelectronics.liteon.com/upload/download/DS86-2013-0003/LTR-559ALS-01_DS_V1.pdf) light and proximity sensor
+
+### Noise
+
+MEMS microphone ([datasheet](https://media.digikey.com/pdf/Data%20Sheets/Knowles%20Acoustics%20PDFs/SPH0645LM4H-B.pdf)).
+
+### Particulate matter (PM)
+
+The Plantower [PMS5003](http://www.aqmd.gov/docs/default-source/aq-spec/resources-page/plantower-pms5003-manual_v2-3.pdf) Particulate Matter (PM) Sensor.
+
+# Data Overview
+
+## Background
+
+The objective of the Traffic Monitor is to be used as a primary data collection tool to capture holistic roadway data. The architecture is privacy-focused, featuring onboard detection, processing, and local data storage for cloud-free capability. Data is processed, generated, and captured locally in real-time.
+
+The system records granular, event-level records for all sensors including those for **detected objects** (e.g., bicycle, vehicle, pedestrian), **radar readings** (speed, magnitude, detected object velocity, etc.), **environmental measurements** (air quality, temp, pressure, humidity, particulate matter, etc.), **deployment metadata**, **system metrics**, and more including data from plug-ins and extensions.
+
+### Data privacy
+
+We believe in the power of [open data](https://en.wikipedia.org/wiki/Open_data). Anonymized data are crucial for useful social research and a public good. Our system (the Traffic Monitor database) prioritizes privacy by capturing as little [personally identifiable information](https://en.wikipedia.org/wiki/Personal_data) (PII) data as possible. With the default settings, our dataset is fully [de-identified](https://en.wikipedia.org/wiki/De-identification) so it is easier to share with mitigated risk to individuals and the public.
+
+The Traffic Monitor may, via configuration file changes, capture PII such as license plates and images from persons, for example, via full roadway snapshots and clips from the camera.
+
+Be aware that when enabled, additional applications and sensors may be captured both in the [primary database](#database-structure), losing de-identified qualification, and elsewhere on the device storage; e.g. application-specific folders and databases that contain their own retention policies.
+
+Warning
+
+Applications, plugins, and sensors may also store data for their own operation data in their own structure and locations.
+
+## Storage formats
+
+The Traffic Monitor database utilizes unencrypted, open formats by default to make them portable and easy to share.
+
+- [SQLite](https://www.sqlite.org/) is the native database format and can be viewed with open source [DB Browser for SQLite](https://sqlitebrowser.org/).
+- [JSON](https://en.wikipedia.org/wiki/JSON) - The [Database](https://docs.trafficmonitor.ai/dev/ui/database/index.md) UI tab allows downloading data with specific filteres including by table, object(s), and/or time frames.
+
+## Database structure
+
+The Traffic Monitor database contains all captured, combined, and processed data from sensors, including additional, optional applications.
+
+For tables related to sensors that are not installed, they will simply contain no records.
+
+| Table Name                       | Description                                                                                                                                          | PII Included                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| deployment                       | History of location details for device and sensors: includes latitude, longitude, bearing.                                                           | No                                                        |
+| events                           | Object Detection confirmed events. Generated by Frigate with required information attached.                                                          | Potential (if included in Frigate sub-label or attribute) |
+| radar_dov                        | DetectedObjectVelocity (DOV) readings from Radar API, `ON` command                                                                                   | No                                                        |
+| radar_timed_speed_counts         | TimedSpeedCounts readings from Radar API `@O` command with \`@                                                                                       | No                                                        |
+| radar_raw_speed_magnitude        | Show speeds and magnitudes in descending order by magnitude. `OS` and `OM` commands with `O3`                                                        | No                                                        |
+| radar_raw_speed_magnitude_single | Same as above, but only the first speed and magnitude value, for easier analysis. `OS` and `OM` commands with `O1`                                   | No                                                        |
+| radar_oc_payload                 | Object detection capability, including vehicle length. `OC` command, with OPS9243 firmware                                                           | No                                                        |
+| comments                         | Operator-entered time stamped entries for Traffic Monitor status, deployment, location, conditions, construction, etc. Used for downstream analysis. | Potential (operator-entered free-text)                    |
+| airquality                       | Environmental readings from the optional air quality sensor: gases, particulate matter, temperature, pressure, humidity, and light.                  | No                                                        |
+| plate_recognizer                 | License plate and vehicle details from the optional Plate Recognizer application. Stays empty unless Plate Recognizer is enabled.                    | Yes (license plates)                                      |
+
+### Schema versions
+
+The table definitions live in the repo as numbered migrations in `container/node-red-tm/schema/migrations/`, and `container/node-red-tm/schema/schema.sql` shows the full current schema. Each time the Node-RED service starts, it first applies any migrations the database doesn't have yet and records the schema version in the database itself. You can read it with `PRAGMA user_version;` in [DB Browser for SQLite](https://sqlitebrowser.org/).
+
+Before applying new migrations, the device saves a copy of the database in `{{ tmsetup_codedir }}/node-red-tm/db/backup/` and keeps only the most recent copy.
+
+## How to access data
+
+- Traffic Monitor Database: On-device dashboard: [Database](https://docs.trafficmonitor.ai/dev/ui/database/index.md) UI tab
+- Frigate data: [Recording](https://docs.frigate.video/configuration/record) and [Snapshots](https://docs.frigate.video/configuration/record) follow [configuration](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) policies at `{{ tmsetup_codedir }}/frigate/storage`
+- Other apps, plugins, and sensors may also store data for their own operation
+
+# Events Payload
+
+## Overview
+
+Traffic Monitor object detection events are generated by the connected sensors by performing [object detection](https://en.wikipedia.org/wiki/Object_detection) to identify instances of roadway users such as cars, bikes, pedestrians, and more. Additional data and metadata may also be added via other sensors and processes to create an event payload.
+
+### Hardware and Software
+
+**The camera** is the primary detection method, powered by [Frigate NVR](https://frigate.video/). Events are created by optical camera observation and machine learning-powered [object detectors](https://docs.frigate.video/configuration/object_detectors) inferencing the video frames to label [available objects](https://docs.frigate.video/configuration/objects).
+
+*Future feature*: **The radar** may also generate object detection events. This is particularly useful for nighttime and low-light conditions or even deployments that do not utilize a camera. See [Radar Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md) for more information on radar readings.
+
+## Frigate MQTT Incoming Payload
+
+Events are recorded via the [Frigate MQTT](https://docs.frigate.video/integrations/mqtt) integration on the `frigate/events` topic containing `type: "end",`which indicates a complete capture event. See Frigate documentation for a full list of available attributes.
+
+## Events Database
+
+## Events Database
+
+The following attributes are captured, by default, into `tmdb.events.sqlite`: The following attributes are captured, by default, into `tmdb.events.sqlite`:
+
+| Attribute        | Description                                                                                                                                                    | SQLite data type  | Valid values                                                                                                                                                                                                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id               | UUID for object detection. Will be generated by `source` Frigate-generated from MQTT event `end`. Radar-generated from flow.                                   | TEXT, PRIMARY KEY | Frigate: Unix timestamp in seconds concatenated to a hyphen and randomly-generated 6-alphanumeric value; e.g. "1721144705.617111-fg3luy" Radar: Unix timestamp in seconds concatenated to a hyphen and randomly-generated 8-alphanumeric value concatenated with a hypen r '-r'; e.g. "1721144705.617111-fg3luy4x-r" |
+| camera           | Name of camera for object detection (defined in Frigate config). Frigate-generated from MQTT event `end`.                                                      | TEXT              | Free-text                                                                                                                                                                                                                                                                                                            |
+| label            | Object label assigned by Frigate. Frigate-generated from MQTT event `end`.                                                                                     | TEXT              | Assigned by model, based on [Frigate available objects](https://docs.frigate.video/configuration/objects)                                                                                                                                                                                                            |
+| sub_label        | Additional informatoin assigned to Frigate event. Frigate-generated from MQTT event `end`.                                                                     | TEXT              | Assigned via Frigate HTTP API                                                                                                                                                                                                                                                                                        |
+| top_score        | Model inference score for object label. This is the highest score as object moved through field of view. Frigate-generated from MQTT event `end`.              | REAL              | 0-1 value                                                                                                                                                                                                                                                                                                            |
+| frame_time       | Unix timestamp in seconds for when the object was optimally identified by Frigate for the field of view. Frigate-generated from MQTT event `end`.              | REAL              | Unix timestamp in Seconds                                                                                                                                                                                                                                                                                            |
+| start_time       | Unix timestamp in seconds for when the object first entered the field of view. Frigate-generated from MQTT event `end`.                                        | REAL              | Unix timestamp in Seconds                                                                                                                                                                                                                                                                                            |
+| end_time         | Unix timestamp in seconds for when the object exited the field of view. Frigate-generated from MQTT event `end`.                                               | REAL              | Unix timestamp in Seconds                                                                                                                                                                                                                                                                                            |
+| entered_zones    | JSON array list of zones in order the object entered each zone. Specified zones are used for various calculations. Frigate-generated from MQTT event `end`.    | TEXT              | Free-text via Frigate; expected: - "zone_capture" - region for counting objects - "zone_radar" - radar detection field of view (FOV) - "zone_near" - area closest to radar, for determining visual direction - "zone_far" - area furthest from radar, for determining visual direction                               |
+| score            | Model inference score for the object to initiate tracking. Computed score as object moves through field of view. Frigate-generated from MQTT event `end`.      | REAL              | 0-1 value                                                                                                                                                                                                                                                                                                            |
+| area             | Width\*height of the bounding box for the detected object Frigate-generated from MQTT event `end`.                                                             | REAL              | 0-24000000                                                                                                                                                                                                                                                                                                           |
+| ratio            | Width/height of the bounding box for the detected object; e.g. 0.5 is tall (twice as high as wide box) Frigate-generated from MQTT event `end`.                | REAL              | 0-24000000                                                                                                                                                                                                                                                                                                           |
+| motionless_count | Number of frames the object has been motionless Frigate-generated from MQTT event `end`.                                                                       | REAL              | Integer count; e.g. 0                                                                                                                                                                                                                                                                                                |
+| position_changes | Number of times the object has changed position Frigate-generated from MQTT event `end`.                                                                       | REAL              | Integer count; e.g. 2                                                                                                                                                                                                                                                                                                |
+| attributes       | Attributes with top score that have been identified on the object at any point Frigate-generated from MQTT event `end`.                                        | TEXT, JSON        | JSON object with key:value pairs; e.g. {"face": 0.86}                                                                                                                                                                                                                                                                |
+| direction_calc   | Assigned object moving direction relative to device placement; i.e. "outbound" is moving away from device.                                                     | TEXT              | "outbound" or "inbound"                                                                                                                                                                                                                                                                                              |
+| speed_calc       | Assigned speed/velocity calculated for entire time object was in the camera's field of view.                                                                   | REAL              | Positive, Negative corresponding to inbound and outbound direction, respectively                                                                                                                                                                                                                                     |
+| provenance       | Source(s) of event detection. List any sensor on the device that captured or created this event. The first item in the array is considered the primary source. | TEXT, JSON        | JSON Array with every sensor that confirms the same event. e.g. Camera sensor: frigate, Radar sensor: radar                                                                                                                                                                                                          |
+| radarName        | Radar sensor name that is associated (via config) with the camera during the event, regardless if event was confirmed by radar (see provenance).               | TEXT              | Free-text, defined from configs                                                                                                                                                                                                                                                                                      |
+| deployment_id    | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.      | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                                                                                                                                                                                                                                                           |
+
+## Telemetry
+
+### HTTP Telemetry
+
+[ThingsBoard HTTP upload telemetry API](https://thingsboard.io/docs/reference/http-api/#telemetry-upload-api) requests are sent for each event as a single JSON payload containing:
+
+- `ts: frame_time * 1000` - to make it milliseconds
+- `values: {event:values}`- contains all attributes in [Events Database](#events-database)
+
+### MQTT Publications
+
+### MQTT Publications
+
+The primary event are available on-device for downstream subscriptions (e.g. Home Assistant):
+
+- **Topic**: `tm/event`
+- **Payload**: Same as the [Events Database](#events-database)
+
+Additionally, there is a daily cumulative object count utilized for the on-device dashboard and connected displays:
+
+- **Topic**: `tm/events`
+- **Payload**: Daily cumulative counts of detected objects (resets at 0400 local time). Note, these can be adjusted in the Frigate config for [Available Objects](https://docs.frigate.video/configuration/objects).
+- `car`
+- `person`
+- `bicycle`
+- `motorcycle`
+- `bicycle_adj` - bicycle plus motorcycle - adjust for eBikes, but this is addressed now by Frigate configs for each object and is unnecessary for most deployments
+- `person_adj` - person minus bicycle - Essentially represents "pedestrian count" since every bicycle will have [at least one] rider that is detected independently of the bike.
+  - Scooters and other transit modes will likely only count as a person using the base model.
+  - Cars never have a person identified inside of them with the base model.
+- `person_adj` - person minus bicycle - Essentially represents "pedestrian count" since every bicycle will have [at least one] rider that is detected independently of the bike.
+  - Scooters and other transit modes will likely only count as a person using the base model.
+  - Cars never have a person identified inside of them with the base model.
+- `dog`
+- `cat`
+
+# Radar Payload
+
+## Overview
+
+The Doppler radar enables speed and direction measurement to be collected and added to events.
+
+### Hardware
+
+Info
+
+See [Radar](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/#radar) for more information on selecting a radar unit.
+
+The [OPS243-A](https://omnipresense.com/product/ops243-doppler-radar-sensor/) radar from [OmniPreSense](https://omnipresense.com/):
+
+> OmniPreSense’s OPS243 is complete short-range radar (SRR) solution providing motion detection, speed, direction, and range reporting. All radar signal processing is done on board and a simple API reports the processed data.
+
+### Software
+
+The OPS243 radar sensors include an easy-to-use [API interface](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) for returning a variety of radar readings and calculated values in JSON format. By default, we capture all of these values in separate tables:
+
+- **DetectedObjectVelocity** (command `ON`).
+- [radar_dov table](#radar_dov-table)
+- Sensor determines if an object is present by looking for 2 consecutive speed reports. If met, the max speed detected is reported. If a faster speed is detected, additional speeds are reported. This lowers the number of speed reports for a given detected object. Use On to turn the mode off.
+- **TimedSpeedCounts** (command @O).
+- [radar_timed_speed_counts table](#radar_timed_speed_counts-table).
+- Sensor counts and reports the cumulative number of objects (defined by DetectedObjectVelocity) that have gone by in a given period. Default TM setting is reporting every 300-seconds.
+- **Raw Speed Magnitude** (command `OS`).
+- [radar_raw_speed_magnitude table](#radar_raw_speed_magnitude-table) and [radar_raw_speed_magnitude_single table](#radar_raw_speed_magnitude_single-table)
+- Reports magnitude and associated speed of each reading. The magnitude is a measure of the size, distance, and reflectivity of the object detected. By default, TM captures the 3-burst speed/magnitude pairs and the single strongest magnitude and associated speed in separate tables for deep dive and easier analysis, respectively.
+- **Vehicle Length** (command `OC`).
+- Note: *Requires Firmware OPS9243.*
+- [radar_oc_payload table](#radar_oc_payload-table)
+- From the docs: *Provides several parameters which can help identify the vehicle type and/or lane in which the vehicle is located*. This includes start/end time, frames, min/max MPH, magnitude, and length calculations.
+
+## Radar Database
+
+The following attributes are captured, by default, into `tmdb.events.sqlite`:
+
+### radar_dov table
+
+| Attribute     | Description                                                                                                                                               | SQLite data type  | Valid values                                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| time          | Unix timestamp directly from radar                                                                                                                        | REAL              | Unix timestamp in Seconds                                                                 |
+| unit          | Unit of measure for velocity/speed set on radar (configurable)                                                                                            | TEXT              | "mph"                                                                                     |
+| direction     | Object moving direction relative to radar placement; i.e. "outbound" is moving away from radar.                                                           | TEXT              | "outbound" or "inbound"                                                                   |
+| velocity      | Maximum speed/velocity calculated for all measurements object was detected in the radar zone. `DetectedObjectVelocity` from API                           | REAL              | Integer, Positive, Negative corresponding to inbound and outbound direction, respectively |
+| radarName     | Radar sensor that captured the data. This field is used to associate with cameras and other radars.                                                       | TEXT              |                                                                                           |
+| deployment_id | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column. | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                                |
+
+### radar_timed_speed_counts table
+
+| Attribute     | Description                                                                                                                                               | SQLite data type  | Valid values                                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| time          | Unix timestamp directly from radar                                                                                                                        | REAL              | Unix timestamp in Seconds                                                                 |
+| direction     | Object moving direction relative to radar placement; i.e. "outbound" is moving away from radar.                                                           | TEXT              | "outbound" or "inbound"                                                                   |
+| units         | Unit of measure for velocity/speed set on radar (configurable)                                                                                            | TEXT              | "mph"                                                                                     |
+| count         | Number of object detection (DOV) measurements; should correspond to number of objects/vehicles that passed through radar zone                             | INTEGER           | Integer, positive                                                                         |
+| average       | Average speed/velocity across all object detections (count) during measurement interval; defined by `units` attribute                                     | REAL              | Integer, Positive, Negative corresponding to inbound and outbound direction, respectively |
+| radarName     | Radar sensor that captured the data. This field is used to associate with cameras and other radars.                                                       | TEXT              |                                                                                           |
+| deployment_id | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column. | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                                |
+
+### radar_raw_speed_magnitude table
+
+| Attribute     | Description                                                                                                                                                                                                                   | SQLite data type  | Valid values                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| time          | Unix timestamp directly from radar                                                                                                                                                                                            | REAL              | Unix timestamp in Seconds                                                        |
+| unit          | Unit of measure for velocity/speed set on radar (configurable)                                                                                                                                                                | TEXT              | "mph"                                                                            |
+| magnitude     | Array of individual magnitude measurements for the sampling time depending on K+ setting; e.g. one speed represents ~50-ms at 20k samples. Corresponds to speed's array location in descending order of speed (configurable). | TEXT              | Positive                                                                         |
+| speed         | Array of individual Speed/velocity for the sampling time depending on K+ setting; e.g. one speed represents ~50-ms at 20k samples. Corresponds to magnitude's array location in descending order of speed (configurable).     | REAL              | Positive, Negative corresponding to inbound and outbound direction, respectively |
+| radarName     | Radar sensor that captured the data. This field is used to associate with cameras and other radars.                                                                                                                           | TEXT              |                                                                                  |
+| deployment_id | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.                                                                     | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                       |
+
+### radar_raw_speed_magnitude_single table
+
+| Attribute     | Description                                                                                                                                                                                                                   | SQLite data type  | Valid values                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| time          | Unix timestamp directly from radar                                                                                                                                                                                            | REAL              | Unix timestamp in Seconds                                                        |
+| unit          | Unit of measure for velocity/speed set on radar (configurable)                                                                                                                                                                | TEXT              | "mph"                                                                            |
+| magnitude     | Array of individual magnitude measurements for the sampling time depending on K+ setting; e.g. one speed represents ~50-ms at 20k samples. Corresponds to speed's array index==0 in descending order of speed (configurable). | REAL              | Positive                                                                         |
+| speed         | Array of individual Speed/velocity for the sampling time depending on K+ setting; e.g. one speed represents ~50-ms at 20k samples. Corresponds to magnitude's array index==0 in descending order of speed (configurable).     | REAL              | Positive, Negative corresponding to inbound and outbound direction, respectively |
+| radarName     | Radar sensor that captured the data. This field is used to associate with cameras and other radars.                                                                                                                           | TEXT              |                                                                                  |
+| deployment_id | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.                                                                     | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                       |
+
+### radar_oc_payload table
+
+| Attribute           | Description                                                                                                                                                                                                                                                                                                                                                     | SQLite data type  | Valid values                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------- |
+| start_time          | Unix timestamp directly from radar                                                                                                                                                                                                                                                                                                                              | REAL              | Unix timestamp in Seconds                                                             |
+| end_time            | Unix timestamp directly from radar                                                                                                                                                                                                                                                                                                                              | REAL              | Unix timestamp in Seconds                                                             |
+| delta_time_msec     | Different in end and start times in milliseconds, representing the amount of time the object was in the radar zone: i.e. `end_time` minus `start_time` * 1000                                                                                                                                                                                                   | REAL              |                                                                                       |
+| direction           | Object moving direction relative to radar placement; i.e. "outbound" is moving away from radar.                                                                                                                                                                                                                                                                 | TEXT              | inbound, outbound                                                                     |
+| frames_count        | Number of frames, defined by doppler pings (equivalent to OS) for an object through the field of view (FOV)                                                                                                                                                                                                                                                     | INTEGER           |                                                                                       |
+| velocity_max        | Maximum velocity/speed of object through field of view (FOV)                                                                                                                                                                                                                                                                                                    | REAL              |                                                                                       |
+| velocity_min        | Minimum velocity/speed of object through field of view (FOV)                                                                                                                                                                                                                                                                                                    | REAL              |                                                                                       |
+| magnitude_max       | Maximium magnitude of doppler radar response of object through field of view (FOV)                                                                                                                                                                                                                                                                              | REAL              |                                                                                       |
+| magnitude_mean      | Average / mean magnitude of doppler radar response of object through field of view (FOV)                                                                                                                                                                                                                                                                        | REAL              |                                                                                       |
+| velocity_change     | Delta max_speed – min_speed. This can help with indication of the lane a vehicle is in. A vehicle farther to the edge of the FoV will have a higher cosine error change and therefore delta speed. This should be normalized to speed so offline we’ve used (max_speed – min_speed)/max_speed. A lower number tends to show a vehicle in the farther lane over. | REAL              |                                                                                       |
+| frames_per_velocity | Number of frames captured per unit of velocity. This acts as the inverse to speed in order to calculate length of object. Calculated as `frames_count / velocity_max`                                                                                                                                                                                           | REAL              |                                                                                       |
+| object_length       | Estimted length of object, calculated by taking speed and time through field of view.                                                                                                                                                                                                                                                                           | REAL              |                                                                                       |
+| units               | Velocity unit of measurement. Will also match length units, relatively.                                                                                                                                                                                                                                                                                         | TEXT              | mph, mps - for Miles Per Hour (imperial) and Meters Per Second (metric), respectively |
+| object_label        | RESERVE FOR FUTURE USE. Radar-based classification for the type of object that moved through the field of view. This is estimated from common roadway-based objects. Payload is a JSON object containing key:value of the top -calculated labels and respective likelihood score.                                                                               | TEXT, JSON        | JSON object with key:value pairs; e.g.                                                |
+| radarName           | Radar sensor that captured the data. This field is used to associate with cameras and other radars.                                                                                                                                                                                                                                                             | TEXT              |                                                                                       |
+| deployment_id       | Each ID represents a unique deployment configuration and/or location for the device. This acts a foreign key link to the `deployment` table, `id` column.                                                                                                                                                                                                       | TEXT, FOREIGN KEY | `deployment`.`id` foreign key, may be null                                            |
+# Help and FAQ
+
+# Frequently Asked Questions
+
+## What about privacy?
+
+The Traffic Monitor is built with a **privacy-by-design approach** because we believe in:
+
+- **Ethical and Transparent Monitoring**: Our mission is to democratize smart city monitoring by making it ethical and transparent. We value transparency from [open source](https://en.wikipedia.org/wiki/Open_source), [glass-box](<https://en.wikipedia.org/wiki/White_box_(software_engineering)>) code, architecture, and models.
+- **Community Safety and Trust**: The architecture is designed to maintain privacy and keep the population safe while providing data in your control. We understand it is ultimately in the hands of the person implementing a solution. A solution that is open can be better understood by anyone, and [audit controls](https://en.wikipedia.org/wiki/Information_technology_audit) may be demanded from operators, especially government departments.
+- **Unbiased Data Collection**: Object detection and counting is performed without human bias, allowing for a whole new avenue to collect data on holistic road usage. We understand and acknowledge that [algorithmic bias](https://en.wikipedia.org/wiki/Algorithmic_bias) may be built into the machine learning models intentionally or unintentionally. To address this we use public domain and open source models whenever possible and may specify models for full transparency.
+
+### How is privacy implemented in the Traffic Monitor?
+
+Privacy is implemented through a decentralized, local processing architecture:
+
+- **Local Inferencing (Edge ML)**: All image processing, model inferences, and initial data storage occur locally on the device. This means no cloud data processors or third parties are involved in the core data processing.
+- **Native Data De-identification**: The device only records non-uniquely identifiable metadata (such as object label, speed, and timestamps) to an internal database, unless additional models are enabled such as License Plate Recognition (LPR).
+- **No Images or Videos Stored by Default**: The native data de-identification process ensures no images or videos are stored unless the monitor is specifically configured for surveillance purposes (e.g., for License Plate Recognition or to capture a speeding event).
+- **User Control Over Sharing**: Users control what data is shared from the device through open communication standards like MQTT and HTTP APIs.
+- **Open Source for Transparency**: The system's software is open source (OSS) for transparency and auditability.
+- **Privacy Regions**: The device may be configured with privacy regions to restrict what data is collected in certain areas, see [Defining Masks](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#defining-masks).
+
+## How many simultaneous object detections can the traffic monitor handle?
+
+> I am interested in using this in a location that is very congested. There could easily be 10 walkers and a few bikes in a single frame. Can it handle that many simultaneous detections? I am primarily looking for counts and direction of travel.
+
+### Short answer
+
+Yes, 👍 it can handle all that and more than you will throw at it. I think the biggest practical limitation for the Traffic Monitor is likely going to be when you have so many objects they "overlap" each other, so you can't tell if there is a person/bike behind another (think at the beginning of a marathon).
+
+### Longer answer
+
+We use the [Frigate NVR Project](https://github.com/blakeblackshear/frigate) to do the heavy lifting on object detection, decoding video, and motion detection. So, I am going to reference their documentation and discussions.
+
+A couple of relevant discussions:
+
+> if you have an inference speed of 10 milliseconds then that means you can run (1000 ms in a second / 10 milliseconds per inference) **100 object detection inferences per second**. Frigate often runs multiple inferences on a single camera frame, for instance when motion happens in two places at the same time, when an object was partially detected at the edge of a region and a larger region should be used, etc.
+
+- from <https://github.com/blakeblackshear/frigate/discussions/7491> (emphasis mine)
+
+> The maximum number of detections per frame is determined by the largest number of disjoint movement zones, for which the upper bound then is equal to how many tiles of WxH, where WxH is model input dimensions, are needed to tile the full frame (not counting the region-connecting logic).
+
+- from <https://github.com/blakeblackshear/frigate/discussions/18326>
+
+Some illustration of this. I have a quiet road today, but when the sun is casting shadows through the trees, Frigate is doing a lot of work to send various regions (green boxes) to object detection to "see" if any of that shadow motion is an object. The following image has more than 18 regions (that I can count) it is sending to object detection PLUS the 9(??) labeled objects it is tracking and sending. My inference speed was still sitting around 9ms, so the object detector could handle many more. The CPU spikes because of the video decoding and motion tracking, but with the RPi5 we still had quite a bit of overhead.
+
+Roadway with many regions being sent to be checked for object detection because of motion and shadows.
+
+# Use Cases and Scenarios
+
+We are only as powerful as the story we tell. What can we do with the data we collect? What can the traffic monitor do?
+
+The TrafficMonitor.ai collects an extensive amount of data, depending on the sensors installed. For details on payloads, check out [Events Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md), [Radar Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md), and [Air Quality (AQ) Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md).
+
+## How can I perform a "near miss" analysis using this hardware?
+
+This scenario is where there is a driver of a vehicle and a vulnerable road user like a pedestrian at the crosswalk at the same time.
+
+This is an important and dangerous situation that has absolutely been largely un-captured in our current transportation system. **We need to create definitions on what a "near miss / near hit" is**, but we have laws we can follow for this. [PortlandBicycleSchool.com](https://portlandbicycleschool.com/driving-around-bicycles/driving-around-pedestrians-faq/) highlights many of these:
+
+- In Oregon, *every corner is a crosswalk*. ORS 801.220
+- Pedestrians invoke their right to cross when any part or extension of the pedestrian (body, cane, wheelchair, or bicycle) enters the crosswalk. ORS 811.028(4), 814.040(1)(a)
+- A driver must remain stopped Until the pedestrian passes the driver’s lane (or lane they intend to turn into) plus one further lane. ORS 811.028
+
+To accomplish this with the TrafficMonitor, the following would allow for analysis of events that have a driver / pedestrian conflict:
+
+1. Mount a TM watching an intersection.
+1. Draw zones that represent "pedestrian zones" and "driver zones".
+1. This will create separate events for `person` and `car` with relevant [event payload fields](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md) including `start_time`, `end_time`, and `entered_zones`.
+1. Watch for events where a driver enters the zone simultaneously as a pedestrian in their zone (overlapping start/end times) where the zones will be in conflict.
+1. Download the data and create an analysis that looks at those potential conflicts.
+
+Example scenario analysis:
+
+- if a person was at the `zone_ped_ne` (bottom left) and wanted to cross S or W
+- and a car simultaneously entered the `zone_intersection_e` (left) and wanted to turn into `zone_intersection_n`(right)
+- and the car _turned first_ into the `zone_intersection_n` before the pedestrian crossed, based on `start_time` and `end_time` for both events
+- This would potentially be a "near miss" or at least an illegal maneuver for a driver while a pedestrian was in the crosswalk.
+
+You can potentially add in other elements to make the requires more stringent, like seeing if the car was stationary at the stop sign or just blew through it. Or tighten the "pedestrian zone" to represent the very edges of the sidewalk to show the pedestrian had "intent to cross".
+
+Example of a potential near-miss scenario zone tracking set up. Zones everywhere!
+
+Of course, the truly more harrowing observations would include those where a `person` and `car` were in the same `zone_intersection` (on the road) at the same time. That would obviously be a "near miss" if it wasn't a true driver striking a pedestrian.
+
+## How can I capture a vehicle not stopping at a stop sign?
+
+This is an all-too-common scenario where a vehicle does not come to a complete stop and/or stop for the legally-mandated amount of time before proceeding through a stop sign. This is also referred to as a "[rolling stop](https://en.wikipedia.org/wiki/Stop_sign#Compliance_requirements)", Rhode Island stop, or California stop, depending where you live.
+
+Info
+
+If you are a stickler for the law and want to capture all modalities, be aware that *bicyclists may apply the stop-as-yield* in some jurisdictions, see [Idaho stop](https://en.wikipedia.org/wiki/Idaho_stop).
+
+This is easy to set up to capture this scenario in Frigate.
+
+1. Set up the Traffic Monitor. The ideal location for a camera is high looking down at the entire intersection.
+1. Set up your Frigate zones:
+1. Set up a "stop sign zone" in a **thin strip in front of your stop signs**, in the example below you will see `zone_stop_sign_e` and `zone_stop_sign_w` for the 2-way stop on the east and west, respectively. \\
+1. For the newly created stop sign zone, set up a "[Loitering Time](https://docs.frigate.video/configuration/zones/#zone-loitering)" that aligns with your jurisdiction's rules; e.g. 3-seconds and optionally limit it only to `cars` object. This will cause that zone to only appear if the vehicle is stationary for that amount of time, otherwise the zone will not appear in the object's `entered_zones` payload.\\
+1. Optionally set up wider zones for each intersection so you can also do analysis on turning behavior. You will be able to calculate, for example, if a car went from the `zone_intersection_e` to `zone_intersection_n` , which is a right turn! You may find some interesting driver behaviors.\\
+1. Confirm your zone placements by observing a few instances. Click on the *Frigate > Explore panel,* and look for `car` objects that wen through your zone. It may take a long time to find a car that appropriately does the stop.\\
+
+# Where can I get support?
+
+We are a volunteer-driven open source project relying on the generosity of our community to answer questions and offer support. While we strive to assist as many as possible, our capacity is limited, and your patience is appreciated. Your involvement is crucial, and by engaging with us, you help foster a supportive and thriving environment where everyone can benefit from shared knowledge and solutions.
+
+We are also an inclusive community and ask that everyone read and follow our [Code of Conduct](https://github.com/glossyio/traffic-monitor/blob/main/CODE_OF_CONDUCT.md).
+
+We also welcome your contributions! You make the traffic monitor great. For code, troubleshooting, new ideas and more, see [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
+
+## Read the docs
+
+The [Traffic Monitor docs](https://docs.trafficmonitor.ai/dev/index.md) have a wealth of knowledge and are searchable.
+
+## Search the project repository
+
+After the docs the best place to start is the [Traffic Monitor project repository](https://github.com/glossyio/traffic-monitor). Look for the search bar in the *upper right corner* and then filtering for matching discussions, issues, or even code (filter is on the left side of the screen).
+
+## Chat with us
+
+To foster an interactive community, we have a [Traffic Monitor Zulip chat](https://trafficmonitor.zulipchat.com/) ([Zulip values](https://zulip.com/values/) aligns with ours and it is open source). Ask question, suggest ideas, and get in touch!
+
+This is also where project developers will discuss code contributions, so it is a good place to get started if you are interested in [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
+
+## Post on GitHub discussions
+
+The [Traffic Monitor repo discussions](https://github.com/glossyio/traffic-monitor/discussions) board is the next best place to interact with the community. Hit New Discussion and there are a variety of category templates:
+
+- 💬 [General](https://github.com/glossyio/traffic-monitor/discussions/new?category=general) - Chat about anything and everything here
+- 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/new?category=ideas) - Share ideas for new features, also vote on ideas
+- 🗳️ [Polls](https://github.com/glossyio/traffic-monitor/discussions/new?category=polls) - Take a vote from the community
+- 🙏 [Q&A](https://github.com/glossyio/traffic-monitor/discussions/new?category=q-a) - Ask the community for help
+- 👐 [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) - Show off something you've made
+
+## Open a GitHub issue
+
+To open a [Traffic Monitor GitHub issue](https://github.com/glossyio/traffic-monitor/issues), ensure your topic is specific to a bug, request for a new feature, or a detailed technical question that hasn't been addressed in existing discussions. Make sure to provide enough context and detail to help collaborators address the issue effectively. There are a few issue templates:
+
+- 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=) - Create a report to help us improve
+- 💡 [Feature Request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) - Suggest an idea for this project
+
+Sometimes, a GitHub issue may be closed without a full resolution. This does not imply a lack of concern or interest from the maintainers. Issues may be closed for various reasons, such as duplicate reports, inactivity, or because they are being addressed elsewhere. We encourage continuous community engagement and collaboration to ensure all significant matters are acknowledged and acted upon.
+# Development
+
+# Contributing
+
+Thank you for your interest in getting involved! We welcome all skill levels and abilities as contributions. Visit our [Traffic Monitor GitHub](https://github.com/glossyio/traffic-monitor) page to get involved.
+
+Contributions can include any of the following plus more!
+
+- 💡 [Feature requests](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) and use case ideas
+- 🐞 [Bug reports](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
+- 👩‍💻 [Code contributions](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md), see Contributing
+- 👍 Comment on or thumbs-up [milestones](https://github.com/glossyio/traffic-monitor/milestones) or [issues](https://github.com/glossyio/traffic-monitor/issues)
+- 💬 Questions, comments, and videos/images of your deployments on our [Traffic Monitor Zulip Chat](https://trafficmonitor.zulipchat.com/)!
+
+We foster a safe and welcoming community, review [our Code of Conduct](https://github.com/glossyio/traffic-monitor?tab=coc-ov-file#readme).
+
+## Use of AI tools
+
+You may use AI coding assistants to help draft, review, or explain a contribution, but you remain its author: understand and test every change you submit. Never share images, video clips, or plate reads with an AI tool, and use placeholders instead of real passwords, keys, or tokens. The de-identified `tmdb.sqlite` database may be shared only with the device operator's explicit consent, and never if plate recognition was ever enabled, because it then holds plate numbers. See [Use of AI tools](https://github.com/glossyio/traffic-monitor/blob/dev/CONTRIBUTING.md#use-of-ai-tools) in CONTRIBUTING.md for the details and for how to label AI-assisted commits.
+
+## Writing docs
+
+These docs are Markdown files in the repo's [`docs/`](https://github.com/glossyio/traffic-monitor/tree/dev/docs) folder, built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). Docs changes go in the same pull request as the code they describe, against `dev`.
+
+- **Preview while you edit:** from the repo root, run `python3 -m venv ~/.venvs/tm-docs && ~/.venvs/tm-docs/bin/pip install --require-hashes -r docs-site/requirements.txt` once, then `~/.venvs/tm-docs/bin/mkdocs serve` and open <http://127.0.0.1:8000>.
+- **Check before you push:** `mkdocs build --strict` fails on broken links, anchors, and images, and on pages missing from the nav. Pull requests run the same check.
+- **New pages** go in the `nav:` list in `mkdocs.yml`. A new page at the top level of `docs/` also goes in the `llmstxt` plugin's "Get started" list, so AI tools can find it in `llms.txt`.
+- **Images** go in `docs/assets/images/`. Link them with Markdown, `![Alt text](../assets/images/name.png)`, so the build can check the path. Add a caption with `<figure markdown="span">` (see existing pages).
+- **Callouts** use admonitions: `!!! info`, `!!! success`, `!!! warning`, or `!!! danger`, followed by the text indented four spaces.
+
+Versions: pushes to `dev` publish to [`/dev/`](https://docs.trafficmonitor.ai/dev/), and each release tag (`vX.Y.Z`) publishes a frozen copy and becomes `/latest/`, the default version.
+
+# Dev Environment
+
+The Traffic Monitor software is completely open source, so you are welcome to modify your devices to fit your needs. If you think others will benefit from your changes, you are welcome to [join the community](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md) and [contribute back](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)!
+
+The [Traffic Monitor OSS repo](https://github.com/glossyio/traffic-monitor) is set up as a [monorepo](https://en.wikipedia.org/wiki/Monorepo) containing everything to get the TM up and running.
+
+## Node-RED logic
+
+[Node-RED](https://nodered.org/) provides the primary logic engine to the Traffic Monitor including:
+
+- Accepting input from other applications, such as Frigate for object detection, and sensors such as the radar for speed measurement.
+- Enriching events by attaching speed
+- Saving payloads and data internally
+- Sending data to downstream applications
+
+To get started developing:
+
+1. Access the Node-RED interface: `http://<you_ip>:1880` and enter the default username and password.
+1. Start a New Project and Clone [your fork of] the traffic-monitor repo. This will completely reset the current project, so ensure you have saved any changes.
+1. Change `flows.json` and `package.json` to the `node-red-tm/data` directory locations so changes will be incorporated
+1. Commit changes to the [forked] repo in a new branch.
+1. PR changes following the [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md) guidelines.
+
+## Database schema
+
+The tables in the Traffic Monitor database are defined by numbered SQL migrations in `container/node-red-tm/schema/migrations/`, not by the Node-RED flows. Every time `node-red-tm.service` starts, it applies the migrations the database doesn't have yet, before Node-RED opens it. The schema directory's `README.md` describes the full process, from writing a migration to testing the upgrade on a Pi and opening the PR.
+
+To change the schema:
+
+1. Add the next numbered migration, regenerate `schema.sql`, and update the table docs in [data-and-payloads](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md).
+1. Run the tests, using the dev environment from [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md):
+
+```
+.venv/bin/python -m pytest container/node-red-tm/schema/tests
+```
+
+To try a migration on a dev device, apply it while Node-RED is stopped. Deploying from the Node-RED editor doesn't restart the service, so it doesn't apply migrations. These commands use the default code owner (`tmadmin`) and install directory (`/opt/traffic-monitor`), and run the migration script from your Node-RED project's clone:
+
+```
+sudo systemctl stop node-red-tm.service
+sudo runuser -u tmadmin -- python3 \
+    /opt/traffic-monitor/node-red-tm/data/projects/<project>/container/node-red-tm/schema/tmdb_migrate.py \
+    --db /opt/traffic-monitor/node-red-tm/db/tmdb.sqlite
+sudo systemctl start node-red-tm.service
+```
+
+The database records each migration it applies. If you change a migration after applying it, restore the copy saved in `/opt/traffic-monitor/node-red-tm/db/backup/` and apply it again.
+
+## Testing on a dev Pi
+
+`script/devpi/tmdev.py` deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.
+
+The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repo. `script/devpi/README.md` covers setup and use.
+
+Warning
+
+Use these tools only with bench units, not field devices. Deploys pass `-y` to `tmsetup.sh`, so the Pi reboots when the installer needs it.

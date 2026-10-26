@@ -1,0 +1,47 @@
+# Traffic Monitor
+
+> Open-source roadway counting and speed monitoring on a Raspberry Pi
+
+The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an optional AI accelerator into an open source roadway counter and speed monitor. These docs cover hardware, installation, setup, configuration, the on-device dashboards, and data payloads.
+
+## Get started
+
+- [Welcome to smart city traffic monitoring](https://docs.trafficmonitor.ai/dev/index.md)
+- [Getting Started](https://docs.trafficmonitor.ai/dev/getting-started/index.md)
+- [Build Your Own Device (DIY)](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/index.md)
+- [Assembly Instructions](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/assembly-instructions/index.md)
+- [Recommended Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/index.md)
+- [Software Installation](https://docs.trafficmonitor.ai/dev/software-installation/index.md)
+- [Deployment and Mounting Guide](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md)
+- [Setup Guide](https://docs.trafficmonitor.ai/dev/setup-guide/index.md)
+
+## Configuration
+
+- [Frigate Config](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md)
+- [Node-RED Config](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md)
+- [Config Overview](https://docs.trafficmonitor.ai/dev/configuration/overview/index.md)
+
+## User interface
+
+- [Database](https://docs.trafficmonitor.ai/dev/ui/database/index.md)
+- [Monitoring](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md)
+- [Movements](https://docs.trafficmonitor.ai/dev/ui/movements/index.md)
+
+## Data and payloads
+
+- [Air Quality (AQ) Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md)
+- [Data Overview](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md)
+- [Events Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md)
+- [Radar Payload](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md)
+
+## Help and FAQ
+
+- [Frequently Asked Questions](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md)
+- [Use Cases and Scenarios](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/index.md)
+- [Where can I get support?](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md)
+
+## Development
+
+- [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)
+- [Dev Environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md)
+

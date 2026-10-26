@@ -1467,7 +1467,7 @@
   <code>python3 -m venv ~/.venvs/tm-docs &amp;&amp; ~/.venvs/tm-docs/bin/pip install --require-hashes -r docs-site/requirements.txt</code>
   once, then <code>~/.venvs/tm-docs/bin/mkdocs serve</code> and open <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>.</li>
 <li><strong>Check before you push:</strong> <code>mkdocs build --strict</code> fails on broken links, anchors, and images, and on pages missing from the nav. Pull requests run the same check.</li>
-<li><strong>New pages</strong> go in the <code>nav:</code> list in <code>mkdocs.yml</code>.</li>
+<li><strong>New pages</strong> go in the <code>nav:</code> list in <code>mkdocs.yml</code>. A new page at the top level of <code>docs/</code> also goes in the <code>llmstxt</code> plugin's "Get started" list, so AI tools can find it in <code>llms.txt</code>.</li>
 <li><strong>Images</strong> go in <code>docs/assets/images/</code>. Link them with Markdown, <code>![Alt text](../assets/images/name.png)</code>, so the build can check the path. Add a caption with <code>&lt;figure markdown="span"&gt;</code> (see existing pages).</li>
 <li><strong>Callouts</strong> use admonitions: <code>!!! info</code>, <code>!!! success</code>, <code>!!! warning</code>, or <code>!!! danger</code>, followed by the text indented four spaces.</li>
 </ul>
