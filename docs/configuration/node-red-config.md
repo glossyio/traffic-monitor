@@ -30,7 +30,7 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 
 ## deployment
 
-Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.
+Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device. You can leave any of the three settings out entirely; the deployment record then stores null for them.
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
