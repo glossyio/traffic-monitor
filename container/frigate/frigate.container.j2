@@ -2,6 +2,10 @@
 Description=Frigate container for Traffic Monitor
 After=go2rtc_server.service podman.socket
 Wants=go2rtc_server.service
+# The HEVC decoder's udev symlink (tmsetup_hevc_device) has a device unit, so Frigate waits for it at boot.
+# Without the decoder, systemd gives up after DefaultDeviceTimeoutSec and Frigate fails on the missing device, as before.
+After=dev-rpi\x2dhevc\x2ddec.device
+Wants=dev-rpi\x2dhevc\x2ddec.device
 
 [Container]
 ContainerName=frigate
@@ -11,7 +15,8 @@ ShmSize=512m
 {% for name, detector in tmsetup_detectors.items() %}{% if (detector.dev_path_available | default(false) and detector.exists | default(false)) or detector.fresh_install | default(false) %}
 AddDevice={{ detector.dev_path }}:{{ detector.dev_path }}
 {% endif %}{% endfor %}
-AddDevice={{ tmsetup_hevc_device }}:{{ tmsetup_hevc_device }}
+# No container path: Podman follows the symlink and creates the device as /dev/mediaN, the name ffmpeg looks for.
+AddDevice={{ tmsetup_hevc_device }}
 AddDevice=/dev/video19:/dev/video19
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/frigate/config:/config

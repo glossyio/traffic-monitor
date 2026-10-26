@@ -12,6 +12,9 @@ tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
 tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
+# udev symlink to the Pi 5 HEVC decoder (model rpi-hevc-dec); its /dev/media number changes between boots (#231).
+# Must match the SYMLINK in templates/60-traffic-monitor-hevc-dec.rules.j2 and the device unit in frigate.container.j2.
+tmsetup_hevc_device: /dev/rpi-hevc-dec
 tmsetup_restart_required: false
 
 tmsetup_remove_packages:

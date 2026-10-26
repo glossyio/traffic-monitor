@@ -171,10 +171,10 @@ A failure therefore tells you whether to look at the hardware, the inventory, or
 | `test_web.py` | `nginx -t`; every location in the running proxy config answers; Node-RED, Frigate, and go2rtc ports; the home page from your machine |
 | `test_ai_coprocessor.py` | The expected co-processor and no other, its device and driver, Frigate's `AddDevice`, and a detector process (that has run an inference, with `live_traffic`) |
 | `test_radars.py` | Expected serial ports and no extras, Node-RED's `AddDevice` lines, and the `TM_RADAR_SERIAL_PORT_*` names in `node-red-tm.env` and `config.yml` |
-| `test_cameras.py` | CSI sensors, the HEVC decoder passed to Frigate, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
+| `test_cameras.py` | CSI sensors, the HEVC decoder's udev symlink and the decoder passed to the running Frigate container, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
 | `test_environmental.py` | Air-quality monitors enabled in `config.yml` and writing recent readings |
 | `test_dataflow.py` | `tmdb_migrate.py --check` passes (skipped for code from before #208), no plate reads, and new radar and event rows (with `live_traffic`) |
-| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot: units active, and Frigate, Node-RED, and nginx answering (`--disruptive` only) |
+| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot: units active, and Frigate, Node-RED, and nginx answering; Frigate follows the HEVC decoder after its `/dev/media` number changes (`--disruptive` only) |
 
 Some checks need a particular setup. Without it they're skipped, and the summary says why:
 - **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`.
