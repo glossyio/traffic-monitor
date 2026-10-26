@@ -74,9 +74,9 @@ Across the tables, `direction` is `inbound` (toward the radar) or `outbound` (aw
 | `velocity_min` | REAL | Lowest speed while in view | |
 | `magnitude_max` | REAL | Highest magnitude while in view | |
 | `magnitude_mean` | REAL | Average magnitude while in view | |
-| `velocity_change` | REAL | `velocity_max` minus `velocity_min`. A vehicle at the edge of the radar's view shows a larger change, from the cosine effect, so this hints at which lane it was in. Dividing by `velocity_max` normalizes it. | |
+| `velocity_change` | REAL | The change in speed while in view, as the radar reports it. A vehicle at the edge of the radar's view shows a larger change, from the cosine effect, so this hints at which lane it was in. Dividing by `velocity_max` normalizes it. | Empty for radars whose report format doesn't include it |
 | `frames_per_velocity` | REAL | `frames_count` ÷ `velocity_max`, the inverse of speed used to estimate length | |
-| `object_length` | REAL | Estimated length, from speed and time in view | In the unit's length system: feet for `imperial` |
+| `object_length` | REAL | Estimated length, from speed and time in view | Feet for `imperial`, metres for `metric` |
 | `units` | TEXT | Unit system | `imperial` or `metric` |
 | `object_label` | TEXT | Reserved for a radar-based object classification | Always empty |
 | `radarName` | TEXT | The radar | |

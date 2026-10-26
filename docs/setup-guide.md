@@ -33,7 +33,7 @@ The Traffic Monitor looks for four zones with fixed names. Frigate ships with al
 | `zone_capture` | The whole roadway you want to count, including sidewalks that are clearly in view | Counting. An object is counted only if it passes through this zone. |
 | `zone_near` | The half of `zone_capture` closest to the device | Direction |
 | `zone_far` | The half of `zone_capture` farthest from the device | Direction. An object that enters `zone_near` and then `zone_far` is moving **outbound**, away from the device; the reverse is **inbound**. |
-| `zone_radar` | The part of the road the radar covers accurately, roughly a rectangle from curb to curb in the middle of the frame. Skip it if the device has no radar. | Speed. An object gets a speed only if it passes through this zone. [Radar considerations](deployment-and-mounting-guide.md#radar-considerations) shows how to find the radar's coverage. |
+| `zone_radar` | The part of the road the radar covers accurately, roughly a rectangle from curb to curb in the middle of the frame. Skip it if the device has no radar. | Speed statistics. Any object that enters a zone gets a speed from the radar, but the dashboards' speed statistics use only objects that passed through this zone. [Radar considerations](deployment-and-mounting-guide.md#radar-considerations) shows how to find the radar's coverage. |
 
 <figure markdown="span">
   ![Frigate zone editor with zone_capture over the whole street, zone_near and zone_far over each half, and zone_radar across the middle](assets/images/Screenshot_20250306_110924.png)
@@ -69,23 +69,19 @@ sensors:
             enabled: true
 ```
 
-Save with Ctrl+O and leave nano with Ctrl+X, then restart the service. The settings are read only when it starts:
-
-```bash
-sudo systemctl restart node-red-tm.service
-```
+Save with Ctrl+O and leave nano with Ctrl+X. The Traffic Monitor reads the file again as soon as you save it, so no restart is needed. If the file has a YAML error, such as a wrong indent, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.
 
 [config.yml settings](configuration/node-red-config.md) describes every setting in this file, including the optional [ThingsBoard](data-and-payloads/integrations.md) upload.
 
 ## 5. Check the counts
 
-Open **Dashboard** from the home page. The [Monitoring](ui/monitoring.md) page shows a count a few seconds after each object passes through `zone_capture`, and a speed for objects that also passed through `zone_radar`. Daily counts reset at 04:00 local time.
+Open **Dashboard** from the home page. The [Monitoring](ui/monitoring.md) page shows a count a few seconds after each object passes through `zone_capture`, and speed statistics for objects that also passed through `zone_radar`. Each day's counts start at 04:00 local time, so from midnight until 04:00 the counts are empty, and objects that pass in those hours aren't in any day's counts.
 
 ??? question "No counts?"
 
     Work down the list:
 
     1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Go2RTC Feeds** from the home page to check that the camera itself streams.
-    2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. Restart `node-red-tm.service` after editing.
+    2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.
     3. **Counts but no speeds.** The radar must be `enabled: true` and named in the camera's `camera_radar`, `zone_radar` must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
     4. **Still nothing.** Look at the logs in [System administration](use/system-admin.md), then ask in the [chat](help-and-faq/where-can-i-get-support.md).

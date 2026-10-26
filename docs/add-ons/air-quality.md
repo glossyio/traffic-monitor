@@ -4,7 +4,7 @@ description: Add the Enviro+ air quality sensor to a Traffic Monitor: hardware, 
 
 # Air quality sensor
 
-The optional air quality sensor measures gases, particulate matter, temperature, pressure, humidity, light, and noise. Readings go into the device's database every five minutes and appear on the legacy dashboard.
+The optional air quality sensor measures gases, particulate matter, temperature, pressure, humidity, and light. Readings go into the device's database every five minutes and appear on the legacy dashboard.
 
 We make no warranty on the accuracy of the sensor or its data. If you have an environmental science background, we'd welcome your [help](../development/contributing.md).
 
@@ -49,13 +49,7 @@ sensors:
             enabled: true
 ```
 
-Then restart the service:
-
-```bash
-sudo systemctl restart node-red-tm.service
-```
-
-Readings from a sensor that isn't enabled are dropped.
+The change takes effect when you save the file. Readings from a sensor that isn't enabled are dropped.
 
 ## What to expect
 

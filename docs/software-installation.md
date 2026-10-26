@@ -4,7 +4,7 @@ description: Image a microSD card with Raspberry Pi OS and run the Traffic Monit
 
 # Install the software
 
-The Traffic Monitor runs on a Raspberry Pi 5 with Raspberry Pi OS Lite (64-bit). One installer script sets up the operating system, detects the camera, radar, and AI accelerator, builds the containers on the device, and reboots when it needs to.
+The Traffic Monitor runs on a Raspberry Pi 5 with Raspberry Pi OS Lite (64-bit). One installer script sets up the operating system, detects the radars and the AI accelerator, builds the containers on the device, and reboots when it needs to.
 
 ## Prepare the card
 
@@ -33,7 +33,7 @@ bash traffic-monitor/script/tmsetup.sh
 
 The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-Near the end, the installer asks to reboot. The reboot finishes installing the driver for the AI accelerator it found and starts the services. After it, open `http://<hostname>.local/` and continue with [First-time setup](setup-guide.md).
+Near the end, the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/` and continue with [First-time setup](setup-guide.md).
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](reference/tmsetup.md).
 

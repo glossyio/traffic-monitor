@@ -72,8 +72,11 @@ plugins:
           - data-and-payloads/*.md
         Add-ons:
           - add-ons/*.md
+        Ideas and use cases:
+          - help-and-faq/use-cases-and-scenarios.md
         Help:
-          - help-and-faq/*.md
+          - help-and-faq/frequently-asked-questions.md
+          - help-and-faq/where-can-i-get-support.md
         Development:
           - development/*.md
   - mike:
@@ -87,6 +90,8 @@ markdown_extensions:
   - attr_list
   - footnotes
   - md_in_html
+  # Lets an ordered list start at its first number, such as assembly step 35.
+  - sane_lists
   - tables
   - toc:
       permalink: true

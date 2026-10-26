@@ -6,13 +6,14 @@ description: Every setting in the Traffic Monitor's config.yml, with its type, d
 
 The Traffic Monitor's own settings live in `/opt/traffic-monitor/node-red-tm/config/config.yml` on the device. The installer writes it from [this template](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2) on the first install and leaves it alone afterwards, unless you run the installer with `-f`.
 
-The file is read only when the Node-RED service starts, so after editing it run:
+The Traffic Monitor reads the file again whenever you save it, so changes take effect without a restart. If the file has a YAML error, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.
 
-```bash
-sudo systemctl restart node-red-tm.service
-```
+Keep the four top-level sections (`thingsboard`, `deployment`, `sensors`, `time`) in the file. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:
 
-Keep the four top-level sections (`thingsboard`, `deployment`, `sensors`, `time`) in the file. Within them, a missing setting takes the default below.
+* A camera or radar without `enabled` is off.
+* A radar without `opt_api_commands_array` gets no extra commands.
+* ThingsBoard without `host` stays off.
+* A `deployment` without `lat` or `lon` isn't recorded, so leave the keys in place even when they're empty.
 
 ## thingsboard
 
@@ -72,7 +73,7 @@ One entry per [air quality sensor](../add-ons/air-quality.md), named as the midd
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
-| `timezone` | a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | the installer's `-z` value, `America/Los_Angeles` unless you set one | The time zone the dashboards use, including the 04:00 daily reset. The installer sets the system clock to the same zone. |
+| `timezone` | a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | the installer's `-z` value, `America/Los_Angeles` unless you set one | Present in the template but not used. The dashboards and the 04:00 daily reset use the device's time zone, which the installer's `-z` sets. |
 | `npt_set` | `true` or `false` | `true` | Present in the template but not used. |
 
 ## addons.plate_recognizer

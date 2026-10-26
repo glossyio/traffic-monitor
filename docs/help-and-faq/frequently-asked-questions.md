@@ -16,11 +16,11 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ??? question "Frigate shows no camera image"
 
-    Open **Go2RTC Feeds** from the home page. If the `picam_h265_detect` stream plays there, Frigate's camera is off: in Frigate's configuration editor, set `cameras: picam_h265: enabled: true`. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](../use/system-admin.md).
+    Open **Go2RTC Feeds** from the home page. If the `picam_h265_detect` stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where `cameras: picam_h265:` needs `enabled: true`, or Frigate's video decoding is failing, which shows as ffmpeg errors in the `frigate.service` log. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](../use/system-admin.md).
 
 ??? question "Detection is slow or misses objects"
 
-    Without an AI accelerator, Frigate detects on the CPU and can't keep up with a busy road. [Hardware](../build-your-own-device-diy/recommended-hardware.md#ai-accelerator) lists the supported accelerators. If you added one after installing, rerun the installer with `-t detectors -t frigate`. With an accelerator, see [Tune object detection](../configuration/frigate-config.md).
+    Without an AI accelerator, Frigate detects on the CPU and can't keep up with a busy road. [Hardware](../build-your-own-device-diy/recommended-hardware.md#ai-accelerator) lists the supported accelerators. If you added one after installing, see [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). With an accelerator, see [Tune object detection](../configuration/frigate-config.md).
 
 ??? question "The first install seems stuck"
 
@@ -32,13 +32,13 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ??? question "I edited config.yml and nothing changed"
 
-    The file is read only when the service starts: `sudo systemctl restart node-red-tm.service`.
+    The Traffic Monitor reads the file again when you save it, so a change that doesn't take effect usually means a YAML error, such as a wrong indent or a missing space after a colon. With an error, it keeps the previous settings. After a restart with an error, it has no settings at all, so fix the file before you restart. The `node-red-tm.service` log in [System administration](../use/system-admin.md) shows the error.
 
 ## Privacy
 
 ### What does the device record?
 
-The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. [Data and privacy](../data-and-payloads/data-overview.md) has the full list, including the features that would change this.
+The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, no images or video leave the device: everything is processed on the device, and the database holds only metadata. [Data and privacy](../data-and-payloads/data-overview.md) has the full list, including the features that would change this.
 
 ### Why this design?
 
@@ -48,7 +48,7 @@ The Traffic Monitor is built privacy-first because we believe in:
 * **Community safety and trust.** Detection runs on the device, nothing is sent anywhere unless you set it up, and the data stays in your control.
 * **Unbiased data collection.** Detection runs without human bias, but machine learning models can carry [algorithmic bias](https://en.wikipedia.org/wiki/Algorithmic_bias). We use public-domain and open source models wherever possible and name the models in use.
 
-To stop the camera watching an area, draw a [motion mask](../configuration/frigate-config.md#masks) over it.
+To keep an area out of view, aim the camera so the area is out of frame. A motion mask doesn't hide it; see [Data and privacy](../data-and-payloads/data-overview.md#privacy).
 
 ## Capacity
 
@@ -56,7 +56,7 @@ To stop the camera watching an area, draw a [motion mask](../configuration/friga
 
 More than a busy street produces. The practical limit is objects hiding each other, as at the start of a race, where the camera can't see the person behind another.
 
-The AI accelerator runs an inference in about 10 ms, which is about 100 inferences per second, and Frigate runs several inferences per frame when there's motion in several places. On a road with trees casting moving shadows, Frigate has been seen checking more than 18 motion regions and tracking 9 labeled objects at once, with inference time still around 9 ms. The CPU, which does the video decoding and motion detection, had headroom to spare. Frigate's discussions [#7491](https://github.com/blakeblackshear/frigate/discussions/7491) and [#18326](https://github.com/blakeblackshear/frigate/discussions/18326) explain how detections per frame are bounded.
+The AI accelerator runs an inference in about 10 ms, which is about 100 inferences per second, and Frigate runs several inferences per frame when there's motion in several places. On a road with trees casting moving shadows, Frigate has been seen checking more than 18 motion regions and tracking 9 labeled objects at once, with inference time still around 9 ms. The video is decoded in hardware, and the CPU, which encodes the camera stream and runs motion detection, had headroom to spare. Frigate's discussions [#7491](https://github.com/blakeblackshear/frigate/discussions/7491) and [#18326](https://github.com/blakeblackshear/frigate/discussions/18326) explain how detections per frame are bounded.
 
 <figure markdown="span">
   ![Frigate debug view of a tree-lined road with many green motion regions and several labeled objects](../assets/images/image-2-1.png)

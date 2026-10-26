@@ -58,23 +58,23 @@ Steps 1 to 34 assemble the Raspberry Pi 5, Camera Module 3, AI accelerator (Cora
 
 ![Enviro+ board and particulate matter sensor in the printed carrier](../assets/images/Screenshot_20260217_142457.png)
 
-1. (35) Locate the Enviro+ board and the particulate matter (PM) sensor
-2. (36) Unpack both
-3. (37) Attach the Enviro+ board to the PM sensor
-4. (38) Back of the Enviro+ board
-5. (39) Locate the GPIO ribbon cable
-6. (40) Attach the ribbon cable to the Enviro+ board with the wires going down and the notch on top
-7. (41) Place the PM sensor in its slot, pushed fully onto the pins in the bottom of the enclosure
-8. (42) The PM sensor from below
-9. (43) Slip the Enviro+ board into the air quality carrier board
-10. (44) Line up the pins on the bottom of the carrier board with the Enviro+ board. It may be snug.
-11. (45) Gently place the carrier board into the alignment slots in the enclosure
-12. (46) There should be almost no gap between the carrier board and the enclosure
-13. (47) Fold the ribbon cable up and tuck the PM sensor cable on top of the PM sensor
-14. (48) Slide the air quality shroud into its slots so you can see the screw inserts, and secure it with M3×8 mm screws
-15. (49) Front of the assembled sensor
-16. (50) Top of the assembled sensor
-17. (51) The assembled sensor from outside the enclosure
+35. Locate the Enviro+ board and the particulate matter (PM) sensor
+36. Unpack both
+37. Attach the Enviro+ board to the PM sensor
+38. Back of the Enviro+ board
+39. Locate the GPIO ribbon cable
+40. Attach the ribbon cable to the Enviro+ board with the wires going down and the notch on top
+41. Place the PM sensor in its slot, pushed fully onto the pins in the bottom of the enclosure
+42. The PM sensor from below
+43. Slip the Enviro+ board into the air quality carrier board
+44. Line up the pins on the bottom of the carrier board with the Enviro+ board. It may be snug.
+45. Gently place the carrier board into the alignment slots in the enclosure
+46. There should be almost no gap between the carrier board and the enclosure
+47. Fold the ribbon cable up and tuck the PM sensor cable on top of the PM sensor
+48. Slide the air quality shroud into its slots so you can see the screw inserts, and secure it with M3×8 mm screws
+49. Front of the assembled sensor
+50. Top of the assembled sensor
+51. The assembled sensor from outside the enclosure
 
 ### Attach the GPIO ribbon cable
 

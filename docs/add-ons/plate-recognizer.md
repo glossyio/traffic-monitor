@@ -4,7 +4,9 @@ description: Install the optional Plate Recognizer add-on, connect it to a camer
 
 # Plate Recognizer
 
-The Plate Recognizer add-on runs [Plate Recognizer's](https://platerecognizer.com/) on-device license plate reader in a container next to Frigate. For each event from a camera you choose, it reads the plate from Frigate's snapshot and stores the plate number, region, and vehicle make, model, and color.
+Plate Recognizer is an optional add-on built on a commercial product from [Plate Recognizer](https://platerecognizer.com/), a company the Traffic Monitor project isn't affiliated with. It's off unless you install it. The add-on runs the company's on-device license plate reader in a container next to Frigate. For each `car` event from a camera you choose that passed through `zone_radar`, it reads the plate from Frigate's snapshot and stores the plate number, region, and vehicle make, model, and color.
+
+Frigate has its own license plate recognition, which the Traffic Monitor doesn't turn on.
 
 !!! danger
 
@@ -43,11 +45,13 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
             url: http://plate-recognizer:8080
     ```
 
-4. Restart the services:
+4. Restart the add-on so it reads its env file:
 
     ```bash
-    sudo systemctl restart plate-recognizer.service node-red-tm.service
+    sudo systemctl restart plate-recognizer.service
     ```
+
+    Node-RED picks up `config.yml` as soon as you save it. Restart `plate-recognizer.service` again whenever you change its env file.
 
 Frigate's snapshots must stay on, which they are by default; the reader works from them.
 
@@ -59,15 +63,15 @@ Each read goes into the `plate_recognizer` table, keyed by the event it belongs 
 |---|---|---|
 | `event_id` | TEXT, primary key | The `id` of the [event](../data-and-payloads/events-payload.md) |
 | `filename` | TEXT | The snapshot that was read |
-| `timestamp` | TEXT | When the read happened |
-| `camera_id` | TEXT | The camera |
+| `timestamp` | TEXT | The event's `frame_time`, when Frigate took the best frame of the car |
+| `camera_id` | TEXT | Always `picam_h264`, whichever camera the event came from |
 | `processing_time` | REAL | Milliseconds the read took |
 | `plate_type` | TEXT | Plate category, if the reader reports one |
 | `plate_score` | REAL | Confidence that a plate was found, 0 to 1 |
 | `plate_xmin`, `plate_ymin`, `plate_xmax`, `plate_ymax` | INTEGER | The plate's box in the snapshot, in pixels |
 | `plate_value` | TEXT | The plate number |
 | `plate_value_score` | REAL | Confidence in the plate number, 0 to 1 |
-| `plate_region_value` | TEXT | The issuing region, such as `us-or` |
+| `plate_region_value` | TEXT | The issuing region, such as `us-or`. The reader looks only for `us`, `us-or`, and `us-wa` plates. |
 | `plate_region_score` | REAL | Confidence in the region, 0 to 1 |
 | `vehicle_type` | TEXT | Vehicle category, such as `Sedan` |
 | `vehicle_score` | REAL | Confidence in the vehicle, 0 to 1 |

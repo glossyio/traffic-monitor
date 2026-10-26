@@ -4,17 +4,31 @@ description: The events table: one row per object the camera detected, with its 
 
 # Events
 
-An event is one object that Frigate detected and tracked until it left the frame: a car, a person, a bicycle, and so on. The Traffic Monitor adds the direction of travel and, when the device has a radar, the speed, and stores the result in the `events` table of the database.
+An event is one object that Frigate detected and tracked until it left the frame: a car, a person, a bicycle, and so on. When the camera has a radar, the Traffic Monitor adds the direction of travel and the speed, and it stores the result in the `events` table of the database.
 
 ## How an event is made
 
 1. Frigate publishes a message on the device's MQTT topic `frigate/events` for each tracked object. When the object leaves the frame, the message has `type: "end"` and holds everything Frigate knows about it.
 2. The Traffic Monitor keeps the `end` message if the camera is enabled in [config.yml](../configuration/node-red-config.md#sensorscameras) and the object moved.
-3. It sets `direction_calc` from the order in which the object entered `zone_near` and `zone_far`.
-4. If the object passed through `zone_radar` and the camera has a radar, it sets `speed_calc` to the median of the radar's readings in that direction while the object was in view, with a two-second margin on each side, and adds `radar` to `provenance`.
-5. It writes the row, publishes today's counts on `tm/events`, and uploads the event to ThingsBoard if that is on. See [MQTT and ThingsBoard](integrations.md).
+3. If the object entered any zone and the camera has an enabled radar, it works out the direction and the speed, as described below, and adds `radar` to `provenance` when a speed was found.
+4. It writes the row, publishes today's counts on `tm/events`, and uploads the event to ThingsBoard if that is on. See [MQTT and ThingsBoard](integrations.md).
 
 [First-time setup](../setup-guide.md#3-adjust-the-zones) describes the four zones.
+
+## Direction and speed
+
+The zones give a direction when the object entered both `zone_near` and `zone_far`: `zone_near` then `zone_far` is outbound, and the reverse is inbound. The radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction.
+
+| Zones | Radar readings | `direction_calc` | `speed_calc` |
+|---|---|---|---|
+| A direction | In that direction, or in both directions | The zones' direction | The median in that direction |
+| A direction | Only in the other direction | Empty | Empty |
+| No direction | In one direction only | The radar's direction | The median in that direction |
+| No direction | In both directions | Empty | Empty |
+| A direction | None | The zones' direction | Empty |
+| No direction | None | Empty | Empty |
+
+An object that entered no zone, and every object on a camera without an enabled radar, has no direction and no speed.
 
 ## Columns
 
@@ -37,8 +51,8 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `motionless_count` | REAL | *Frigate.* Frames in which the object didn't move | A count |
 | `position_changes` | REAL | *Frigate.* How many times the object changed position | A count |
 | `attributes` | TEXT | *Frigate.* Attributes detected on the object, with their best scores | A JSON object, such as `{"face": 0.86}`; usually empty |
-| `direction_calc` | TEXT | Direction of travel relative to the device | `outbound` (away from the device), `inbound` (toward it), or empty if the object didn't pass through both direction zones |
+| `direction_calc` | TEXT | Direction of travel relative to the device | `outbound` (away from the device), `inbound` (toward it), or empty. See [Direction and speed](#direction-and-speed). |
 | `speed_calc` | REAL | Speed from the radar, in the radar's units (mph by default) | Positive for inbound and negative for outbound; empty if no speed was matched |
 | `provenance` | TEXT | Which sensors contributed, primary first | A JSON array: `["frigate"]`, or `["frigate", "radar"]` when a speed was matched |
-| `radarName` | TEXT | The radar paired with the camera, whether or not it supplied a speed | A radar name such as `TM_RADAR_SERIAL_PORT_00`, or empty |
+| `radarName` | TEXT | The radar paired with the camera, if that radar is enabled, whether or not it supplied a speed | A radar name such as `TM_RADAR_SERIAL_PORT_00`, or empty |
 | `deployment_id` | TEXT | Where the device was. See the [deployment](data-overview.md#deployment) table. | A `deployment.id`, or empty |

@@ -117,7 +117,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 
 `flows.json` (~450 KB, 11 tabs) holds the TM logic. Node modules come from `data/package.json` and are installed when the node-red-tm image is built, so adding a module needs an image rebuild.
 
-- `init-config` reads `/config/config.yml` (on the host: `{{ tmsetup_codedir }}/node-red-tm/config/config.yml`), applies defaults, and stores the result as `global.config`. It also records deployments (lat/lon/bearing) and hosts the Aedes broker. The config is read only when the flows start.
+- `init-config` reads `/config/config.yml` (on the host: `{{ tmsetup_codedir }}/node-red-tm/config/config.yml`), applies defaults, and stores the result as `global.config`. It also records deployments (lat/lon/bearing) and hosts the Aedes broker. The config is read when the flows start, and a `watch` node re-reads it whenever the file changes, which re-runs radar setup, the deployment record, and the ThingsBoard attributes. A YAML error keeps the previous `global.config`.
 - `capture-radar` talks to OmniPreSense radars over serial (AN-010 API, 19200 baud). It sends setup commands at startup and writes the `radar_*` tables.
 - `capture-events` handles Frigate `frigate/events` MQTT messages with `type: "end"`, keeping only moving objects from cameras enabled in config.yml.
   - Direction comes from the order of `zone_near`/`zone_far` in `entered_zones`.
@@ -132,7 +132,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 
 **Cross-component name contracts.** A mismatch fails silently:
 - Frigate camera names (default `picam_h265`) must match `sensors.cameras.<name>` in the Node-RED `config.yml`. Events from cameras that are missing or disabled there are not recorded.
-- Frigate zone names are hard-coded in the flows: `zone_capture` (counts), `zone_radar` (speed), `zone_near`/`zone_far` (direction).
+- Frigate zone names are hard-coded in the flows: `zone_capture` (counts), `zone_radar` (which events feed the speed statistics, the latest-observation cards, and Plate Recognizer), `zone_near`/`zone_far` (direction). Speed itself is attached to any moving event that entered any zone.
 - Radar names are the env var names `TM_RADAR_SERIAL_PORT_00..03` from `node-red-tm.env`. They're used as keys under `sensors.radars` and as `camera_radar` values.
 
 **Editing `flows.json`:**

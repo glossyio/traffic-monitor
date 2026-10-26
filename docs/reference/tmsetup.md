@@ -44,11 +44,11 @@ Each tag reruns one part of the install. Without `-t`, everything runs.
 
 | Tag | What it does |
 |---|---|
-| `base` | Operating system packages, the owner account, Cockpit, and the boot configuration |
+| `base` | Operating system packages, the owner account, and Cockpit. It runs with every `-t`. |
 | `full_upgrade` | The `apt full-upgrade`, when `-u` is given |
 | `wifi` | Wi-Fi setup |
 | `go2rtc` | The camera streaming service on the host |
-| `detectors` | Detects the Coral or Hailo accelerator and installs its driver. Rerun it with `frigate` after adding or changing an accelerator. |
+| `detectors` | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later). |
 | `podman` | The container runtime and the pod |
 | `frigate` | Frigate's container, settings, and the devices it needs |
 | `node-red-tm` | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar. |
@@ -62,10 +62,21 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 * `/opt/traffic-monitor/node-red-tm/config/config.yml`
 * `/opt/traffic-monitor/node-red-tm/node-red-tm.env`
 * `/opt/traffic-monitor/frigate/config/config.yml`, which holds zones and masks drawn in Frigate
-* `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`
+* `/opt/traffic-monitor/frigate/frigate.env`
+* `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back.
 
+## Add an accelerator later
+
+After you add or change a Coral or Hailo accelerator, rerun two tags and reboot when the installer asks:
+
+```bash
+bash traffic-monitor/script/tmsetup.sh -t detectors -t frigate
+```
+
+That installs the driver and gives Frigate's container the device. Frigate's own `config.yml` still names the old detector, because the installer writes its `detectors:` and `model:` sections only when it creates the file. Either edit those two sections by hand to match the [template](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), or add `-f` to the command above and then redo your zones and masks from the timestamped copy.
+
 ## Reboots
 
-The installer edits the boot configuration and installs kernel drivers, so it asks to reboot when needed. On the device, it prompts (or reboots at once with `-y`). Remote devices reboot by themselves. Services stay stopped until the reboot.
+The installer edits the boot configuration and installs kernel drivers, so it asks to reboot when needed. On the device, it prompts, and with `-y` it doesn't ask. Either way the reboot starts one minute later. Remote devices reboot by themselves. Services stay stopped until the reboot.

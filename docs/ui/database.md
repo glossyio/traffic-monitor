@@ -4,7 +4,7 @@ description: The Data export dashboard: download the database or a JSON export, 
 
 # Data export
 
-Open `http://<device>/dashboard/database`. This page gets data off the device and lets you leave notes in it.
+Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it.
 
 <figure markdown="span">
   ![Data export dashboard with a comment form, a database download button, and JSON export choices](../assets/images/tm-dash-2026-03-database.png)
@@ -13,7 +13,7 @@ Open `http://<device>/dashboard/database`. This page gets data off the device an
 
 ## Comments
 
-A comment is a timestamped note stored in the `comments` table, for whoever analyzes the data later: a settings change, road work, an event in the area. Give it an effective time and an optional expiry time, the text, and your name; only the name is required. [Data and privacy](../data-and-payloads/data-overview.md#comments) lists the columns.
+A comment is a timestamped note stored in the `comments` table, for whoever analyzes the data later: a settings change, road work, an event in the area. Give it an effective date and an optional expiry date, the text, and your name; only the name is required. The form also has time fields, but only the dates are kept. Without an effective date, the comment takes effect when you save it. [Data and privacy](../data-and-payloads/data-overview.md#comments) lists the columns.
 
 ## Download the database
 
@@ -21,9 +21,9 @@ Downloads the whole database as a compressed archive named `<hostname>_<time>_tm
 
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
 
-??? warning "Download fails or stops early"
+!!! warning "Download from Node-RED's port"
 
-    Downloads through the home page's `/dashboard/` path can fail for large files. Until that's fixed, open the page directly on Node-RED's port, `http://<device>:1880/dashboard/database`, and download from there.
+    Downloads fail when you open this page through the home page's `/dashboard/` path, for the database and for JSON alike. Open the page on Node-RED's port instead, `http://<device>:1880/dashboard/database`, and download from there.
 
 ## Download JSON
 
@@ -31,7 +31,7 @@ Exports part of the data as JSON files in a compressed archive named `<hostname>
 
 | Choice | Contents |
 |---|---|
-| Everything | Every table |
+| Everything | The `events` table, the five radar tables, and the `airquality` table |
 | All event types | The whole `events` table for the time range |
 | One object type, such as `car` or `person` | The events of that type |
 | Air quality | The `airquality` table |

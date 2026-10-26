@@ -8,9 +8,9 @@ The core parts are the Raspberry Pi 5, a microSD card, a camera, and an AI accel
 
 What each combination gives you:
 
-1. **Camera and AI accelerator**: object detection, counts, direction, and camera-based speed estimates. The lowest cost.
-2. **Add a radar** for the most accurate speeds and directions.
-3. **Add an air quality sensor** for gases, particulate matter, temperature, pressure, humidity, light, and noise.
+1. **Camera and AI accelerator**: object detection and counts. The lowest cost.
+2. **Add a radar** for speeds and the direction of travel. Without a radar, events have no speed or direction.
+3. **Add an air quality sensor** for gases, particulate matter, temperature, pressure, humidity, and light.
 4. **Add cameras** to watch more directions with the same accelerator. The software supports several cameras and up to four radars, paired in any pattern. See [Cameras](#cameras).
 
 ![Exploded view of the Traffic Monitor showing the enclosure, Raspberry Pi, camera, radar, and air quality sensor](../assets/images/tm-mark1-exploded-description-bg_grey-text_white.png)
@@ -50,11 +50,11 @@ The Raspberry Pi 5 needs a 27 W supply (5 V at 5 A). A weaker supply, such as an
 
 * **Mains:** the official [27 W USB-C power supply](https://www.pishop.us/product/raspberry-pi-27w-usb-c-power-supply-black-us/).
 * **Power over Ethernet:** a PoE HAT such as the [Waveshare PoE HAT (F)](https://www.waveshare.com/poe-hat-f.htm) or [Waveshare PoE M.2 HAT+](https://www.waveshare.com/PoE-M.2-HAT-Plus.htm), with a PoE+ source such as the [Raspberry Pi PoE+ injector](https://www.raspberrypi.com/products/poe-plus-injector/).
-* **Battery for a few hours:** a portable power station such as a [Jackery Explorer 300](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station), with the official power supply plugged into it. A 300 Wh station lasts about 24 hours.
+* **Battery for about a day:** a portable power station such as a [Jackery Explorer 300](https://www.jackery.com/products/jackery-explorer-300-v2-portable-power-station), with the official power supply plugged into it. A 300 Wh station lasts about a day.
 
 ??? note "Longer off-grid use: custom battery and solar"
 
-    **Battery.** Use a 12 V or 24 V [LiFePO₄](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) battery and a [buck converter](https://en.wikipedia.org/wiki/Buck_converter) that steps it down to 5 V at 5 A. Size the battery from the device's draw: at about 13 W, 24 hours needs 13 × 24 = 312 Wh, which is a 12 V battery of about 30 Ah.
+    **Battery.** Use a 12 V or 24 V [LiFePO₄](https://en.wikipedia.org/wiki/Lithium_iron_phosphate_battery) battery and a [buck converter](https://en.wikipedia.org/wiki/Buck_converter) that steps it down to 5 V at 5 A. A 12 V, 10 Ah battery lasts about 10 hours. For longer, size the battery from the device's draw: at about 13 W, 24 hours needs 13 × 24 = 312 Wh, which is a 12 V battery of about 30 Ah.
 
     **Solar.** Add a [photovoltaic](https://en.wikipedia.org/wiki/Photovoltaics) panel and a [charge controller](https://en.wikipedia.org/wiki/Charge_controller) to the battery setup. Size the panel for the worst month:
 
@@ -67,7 +67,7 @@ The Raspberry Pi 5 needs a 27 W supply (5 V at 5 A). A weaker supply, such as an
 
 ## Cameras
 
-The [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) in its wide-angle version is the tested camera. It needs the [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/), sold separately. The [Raspberry Pi Global Shutter camera](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) works too, for faster motion or a custom lens, with the same cable.
+The [Raspberry Pi Camera Module 3](https://www.raspberrypi.com/products/camera-module-3/) in its wide-angle version is the tested camera. It needs the [Raspberry Pi 5 camera cable](https://www.raspberrypi.com/products/camera-cable/), sold separately. The [Raspberry Pi Global Shutter camera](https://www.raspberrypi.com/products/raspberry-pi-global-shutter-camera/) has been tested too, for faster motion or a custom lens, with the same cable. It needs camera stream settings that match its sensor, because the default settings are for Camera Module 3.
 
 The Raspberry Pi 5 has two camera connectors, so it can take two Raspberry Pi cameras. Network cameras also work; see [Frigate's camera recommendations](https://docs.frigate.video/frigate/hardware#cameras). Choose one that streams H.265 (HEVC), which the Raspberry Pi 5 decodes in hardware. H.264 works with software decoding but costs CPU, so keep to one or two such cameras.
 

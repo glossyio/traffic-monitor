@@ -9,7 +9,7 @@ An update reruns the installer from a newer copy of the repository. Your data an
 ## Before you update
 
 * Read the [release notes](https://github.com/glossyio/traffic-monitor/releases). A release that needs a fresh image says so.
-* Download a copy of the database from the [Data export](../ui/database.md) page.
+* Download a copy of the database from the [Data export](../ui/database.md#download-the-database) page. Open that page on Node-RED's port, as it explains, because downloads through the home page's `/dashboard/` path fail.
 * Make sure the device has an internet connection. The update downloads packages and rebuilds the container images. Rebuilding Frigate's image compiles ffmpeg on the device, which can take about 20 minutes.
 
 ## Update
@@ -30,13 +30,7 @@ To update several devices from your computer, use the remote form of the install
 
 ## What an update changes
 
-| On the device | Default update | With `-f` |
-|---|---|---|
-| Container images, service units, Node-RED flows, and the reverse proxy config | Replaced | Replaced |
-| `/opt/traffic-monitor/node-red-tm/config/config.yml` | Kept | Replaced from the template; the old file stays beside it with a timestamp |
-| `/opt/traffic-monitor/node-red-tm/node-red-tm.env` | Kept | Replaced, with a timestamped copy |
-| `/opt/traffic-monitor/frigate/config/config.yml`, including zones and masks drawn in Frigate | Kept | Replaced, with a timestamped copy |
-| The database and Frigate's recordings | Kept | Kept |
+An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, and Frigate's recordings. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. [What `-f` replaces](../reference/tmsetup.md#what-f-replaces) lists the files.
 
 Use `-f` when a release changes the settings files and you want the new template. Afterwards, redo your settings from the timestamped copies: location and sensors in `config.yml`, and zones in Frigate.
 
