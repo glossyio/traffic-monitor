@@ -65,8 +65,6 @@ def test_frigate_follows_the_decoder_after_its_number_changes(host):
     """After the decoder's /dev/media number changes, the symlink and a restarted Frigate follow it."""
     before = find_hevc_decoder(host)
     with host.sudo():
-        # go2rtc's rpicam-vid holds the ISP; Frigate holds the decoder.
-        host.check_output("systemctl stop frigate.service go2rtc_server.service")
         # The minors these two drivers hold; the camera front end keeps its own and isn't touched.
         # testinfra runs sudo commands with /bin/sh, which has no brace expansion, so both paths are spelled out.
         freed = sorted(int(line.split(":")[1]) for line in host.check_output(
@@ -74,6 +72,8 @@ def test_frigate_follows_the_decoder_after_its_number_changes(host):
             " /sys/bus/platform/devices/1000880000.pisp_be/media*/dev").splitlines())
         decoder_minor = int(host.check_output("cat /sys/bus/platform/devices/1000800000.codec/media*/dev").split(":")[1])
         try:
+            # go2rtc's rpicam-vid holds the ISP; Frigate holds the decoder. Stopped inside the try so they always restart.
+            host.check_output("systemctl stop frigate.service go2rtc_server.service")
             bind(host, "rpi-hevc-dec", "unbind")
             bind(host, "pispbe", "unbind")
             # Bound first, a driver takes the lowest freed number. The decoder gets it unless it's the one it had;
