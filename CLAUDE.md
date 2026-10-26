@@ -171,7 +171,7 @@ The policy is "Use of AI tools" in CONTRIBUTING.md: AI may draft, but a person r
   AI-Role: drafted | review only
   ```
 
-  `.claude/settings.json` empties Claude Code's `attribution` setting, which only stops Claude Code from adding its own `Co-Authored-By` trailer and PR footer. Write this block yourself.
+  `.claude/settings.json` sets only `attribution.sessionUrl: false`, so no session link is added. It leaves the `commit` and `pr` attribution at Claude Code's defaults, which give way to this file: write this block in place of the `Co-Authored-By` trailer and PR footer they suggest. Don't set `commit` or `pr` to an empty string. Claude Code then tells the model to skip all attribution lines, this block included.
 
 - In pull requests, fill in the template's "AI assistance" section instead of adding a "Generated with Claude Code" footer.
 - Don't add AI-provenance comments to code.
