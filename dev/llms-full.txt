@@ -1624,6 +1624,22 @@ These docs are Markdown files in the repo's [`docs/`](https://github.com/glossyi
 
 Versions: pushes to `dev` publish to [`/dev/`](https://docs.trafficmonitor.ai/dev/), and each release tag (`vX.Y.Z`) publishes a frozen copy and becomes `/latest/`, the default version.
 
+### Style
+
+Aim for pages that are complete but quick to read: everything the reader needs, and nothing they don't. These rules apply to every docs change, whether a person or an AI tool drafted it.
+
+- **One reader and one job per page.** Pages about installing, setup, configuration, the dashboards, and the data tell the person running a device what to do or what something means. Details for contributors go in the Development pages or in the README next to the code. [Diátaxis](https://diataxis.fr/) names the four jobs: tutorial, how-to guide, reference, and explanation. Use it to decide what belongs on the page you're editing, not to reorganize the site.
+- **Leave out what the reader won't act on,** such as Ansible variables and task names, Node-RED node names, and files they won't open. Give real values, such as the default install folder `/opt/traffic-monitor`, instead of variables.
+- **Revise in place.** Rewrite the text your change affects and delete what it makes obsolete, rather than adding a paragraph. Keep the docs edit in proportion to the change; a diff that removes more than it adds is fine.
+- **Describe how things work, not how they changed.** Don't narrate changes ("now supports", "new in", "previously"). Each release has its own copy of the docs, and history belongs in commit messages and release notes.
+- **Say each fact once,** and link to it from other pages. Link to config files and code in the repo instead of copying them into a page, because copies go stale. Link to the `main` branch, which tracks the latest release, so the link matches `/latest/` rather than `/dev/`.
+- **Put the common case first.** Move edge cases and troubleshooting into a collapsed callout (`???` instead of `!!!`), a table, or the [FAQ](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/index.md).
+- **Use tables for reference data,** with one row per setting or database column and its type, default, and meaning.
+- **Keep the language plain:** "you", present tense, active voice, short sentences, and no filler such as "simply", "just", or "note that". Save callouts for what the reader must not miss.
+- **Check every value against the code,** including defaults, paths, ports, and names.
+
+For anything these rules don't cover, follow the [Google developer documentation style guide](https://developers.google.com/style).
+
 # Dev Environment
 
 The Traffic Monitor software is completely open source, so you are welcome to modify your devices to fit your needs. If you think others will benefit from your changes, you are welcome to [join the community](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md) and [contribute back](https://docs.trafficmonitor.ai/dev/development/contributing/index.md)!

@@ -1354,6 +1354,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Writing docs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Style
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1418,6 +1435,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Writing docs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Style
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1472,6 +1506,20 @@
 <li><strong>Callouts</strong> use admonitions: <code>!!! info</code>, <code>!!! success</code>, <code>!!! warning</code>, or <code>!!! danger</code>, followed by the text indented four spaces.</li>
 </ul>
 <p>Versions: pushes to <code>dev</code> publish to <a href="https://docs.trafficmonitor.ai/dev/"><code>/dev/</code></a>, and each release tag (<code>vX.Y.Z</code>) publishes a frozen copy and becomes <code>/latest/</code>, the default version.</p>
+<h3 id="style">Style<a class="headerlink" href="#style" title="Permanent link">&para;</a></h3>
+<p>Aim for pages that are complete but quick to read: everything the reader needs, and nothing they don't. These rules apply to every docs change, whether a person or an AI tool drafted it.</p>
+<ul>
+<li><strong>One reader and one job per page.</strong> Pages about installing, setup, configuration, the dashboards, and the data tell the person running a device what to do or what something means. Details for contributors go in the Development pages or in the README next to the code. <a href="https://diataxis.fr/">Diátaxis</a> names the four jobs: tutorial, how-to guide, reference, and explanation. Use it to decide what belongs on the page you're editing, not to reorganize the site.</li>
+<li><strong>Leave out what the reader won't act on,</strong> such as Ansible variables and task names, Node-RED node names, and files they won't open. Give real values, such as the default install folder <code>/opt/traffic-monitor</code>, instead of variables.</li>
+<li><strong>Revise in place.</strong> Rewrite the text your change affects and delete what it makes obsolete, rather than adding a paragraph. Keep the docs edit in proportion to the change; a diff that removes more than it adds is fine.</li>
+<li><strong>Describe how things work, not how they changed.</strong> Don't narrate changes ("now supports", "new in", "previously"). Each release has its own copy of the docs, and history belongs in commit messages and release notes.</li>
+<li><strong>Say each fact once,</strong> and link to it from other pages. Link to config files and code in the repo instead of copying them into a page, because copies go stale. Link to the <code>main</code> branch, which tracks the latest release, so the link matches <code>/latest/</code> rather than <code>/dev/</code>.</li>
+<li><strong>Put the common case first.</strong> Move edge cases and troubleshooting into a collapsed callout (<code>???</code> instead of <code>!!!</code>), a table, or the <a href="../../help-and-faq/frequently-asked-questions/">FAQ</a>.</li>
+<li><strong>Use tables for reference data,</strong> with one row per setting or database column and its type, default, and meaning.</li>
+<li><strong>Keep the language plain:</strong> "you", present tense, active voice, short sentences, and no filler such as "simply", "just", or "note that". Save callouts for what the reader must not miss.</li>
+<li><strong>Check every value against the code,</strong> including defaults, paths, ports, and names.</li>
+</ul>
+<p>For anything these rules don't cover, follow the <a href="https://developers.google.com/style">Google developer documentation style guide</a>.</p>
   
 
 
