@@ -9,13 +9,16 @@
     // GitHub Pages serves this page for any path that doesn't exist.
     // GitBook served pages without a version in the URL (/setup-guide), so
     // send those to the same page in the latest release (/latest/setup-guide/).
+    // Inside a version, a page that has moved is sent to its new path in the
+    // same version; anything else is a real "not found".
     (function () {
-      // Old paths of pages that have since moved.
+      // Old paths of pages that have since moved or merged into another page.
       var moved = {
         "/build-your-own-device-diy/software-installation": "/software-installation",
         "/sensor-payloads/events-payload": "/data-and-payloads/events-payload",
         "/sensor-payloads/radar-payload": "/data-and-payloads/radar-payload",
-        "/sensor-payloads/air-quality-aq-payload": "/data-and-payloads/air-quality-aq-payload"
+        "/sensor-payloads/air-quality-aq-payload": "/data-and-payloads/air-quality-aq-payload",
+        "/configuration/overview": "/configuration/node-red-config"
       };
       // Before the custom domain is set, the site lives under /traffic-monitor/.
       var base = /\.github\.io$/.test(location.hostname)
@@ -23,8 +26,13 @@
         : "";
       var path = location.pathname.slice(base.length).replace(/\/+$/, "") || "/";
       window.tmLatest = base + "/latest/";
-      // Already inside a version: this is a real "not found".
-      if (/^\/(dev|latest|v\d+\.\d+\.\d+)(\/|$)/.test(path)) return;
+      var version = path.match(/^\/(dev|latest|v\d+\.\d+\.\d+)(\/|$)/);
+      if (version) {
+        var rest = path.slice(version[1].length + 1);
+        if (!moved[rest]) return;
+        location.replace(base + "/" + version[1] + moved[rest] + "/" + location.search + location.hash);
+        return;
+      }
       path = moved[path] || path;
       location.replace(base + "/latest" + (path === "/" ? "/" : path + "/") + location.search + location.hash);
     })();

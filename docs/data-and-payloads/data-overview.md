@@ -1,46 +1,92 @@
-# Data Overview
+---
+description: What a Traffic Monitor stores, which of it could identify a person, the database tables, and how to get the data off the device.
+---
 
-## Background
+# Data and privacy
 
-The objective of the Traffic Monitor is to be used as a primary data collection tool to capture holistic roadway data. The architecture is privacy-focused, featuring onboard detection, processing, and local data storage for cloud-free capability. Data is processed, generated, and captured locally in real-time.
+The Traffic Monitor is a data collection tool. Everything it collects is processed and stored on the device, in open formats, so you own it and can share it.
 
-The system records granular, event-level records for all sensors including those for **detected objects** (e.g., bicycle, vehicle, pedestrian), **radar readings** (speed, magnitude, detected object velocity, etc.), **environmental measurements** (air quality, temp, pressure, humidity, particulate matter, etc.), **deployment metadata**, **system metrics**, and more including data from plug-ins and extensions.
+## What the device stores
 
-### Data privacy
+| Where | What | How long |
+|---|---|---|
+| `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite` | The database: [events](events-payload.md), [radar readings](radar-payload.md), [air quality readings](air-quality-aq-payload.md), the device's deployment history, and operator comments | Until you delete it |
+| `/opt/traffic-monitor/frigate/storage/` | Frigate's cropped snapshots of each detection, and recordings of alerts and detections | About an hour, by default |
+| Your ThingsBoard server | A copy of the data above, plus system metrics | If you turn on the [ThingsBoard upload](integrations.md#thingsboard) |
 
-We believe in the power of [open data](https://en.wikipedia.org/wiki/Open_data). Anonymized data are crucial for useful social research and a public good. Our system (the Traffic Monitor database) prioritizes privacy by capturing as little [personally identifiable information](https://en.wikipedia.org/wiki/Personal_data) (PII) data as possible. With the default settings, our dataset is fully [de-identified](https://en.wikipedia.org/wiki/De-identification) so it is easier to share with mitigated risk to individuals and the public.
+## Privacy
 
-The Traffic Monitor may, via configuration file changes, capture PII such as license plates and images from persons, for example, via full roadway snapshots and clips from the camera.
+We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is [de-identified](https://en.wikipedia.org/wiki/De-identification): it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number.
 
-Be aware that when enabled, additional applications and sensors may be captured both in the [primary database](#database-structure), losing de-identified qualification, and elsewhere on the device storage; e.g. application-specific folders and databases that contain their own retention policies.
+Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
-!!! warning
+By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; [Home page and apps](../use/home-page.md) shows which apps ask for one. Frigate also publishes a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt), which has no login either. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows how to turn those snapshots off.
 
-    Applications, plugins, and sensors may also store data for their own operation data in their own structure and locations.
+The database stops being de-identified if you:
 
-## Storage formats
+* Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
+* Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.
+* Write identifying details into operator comments.
 
-The Traffic Monitor database utilizes unencrypted, open formats by default to make them portable and easy to share.
+For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A [motion mask](../configuration/frigate-config.md#masks) only stops motion there from starting a detection; the area still shows in the live view and in recordings.
 
-* [SQLite](https://www.sqlite.org/) is the native database format and can be viewed with open source [DB Browser for SQLite](https://sqlitebrowser.org/).
-* [JSON](https://en.wikipedia.org/wiki/JSON) - The [Database](../ui/database.md) UI tab allows downloading data with specific filteres including by table, object(s), and/or time frames.
+Other software on the device, such as Frigate and the air quality sensor's service, keeps its own working data under its own retention rules.
 
-## Database structure
+## Tables
 
-The Traffic Monitor database contains all captured, combined, and processed data from sensors, including additional, optional applications.
+Tables for sensors the device doesn't have stay empty.
 
-For tables related to sensors that are not installed, they will simply contain no records.
+| Table | Contents | Could identify a person? |
+|---|---|---|
+| `events` | One row per object the camera detected, with direction and speed. See [Events](events-payload.md). | Only through Frigate sub-labels or attributes, if you turn those on |
+| `radar_dov` | Detected object velocity readings from the radar | No |
+| `radar_timed_speed_counts` | Counts and average speeds the radar reports every 300 seconds | No |
+| `radar_raw_speed_magnitude` | Raw speed and magnitude readings, three per sample | No |
+| `radar_raw_speed_magnitude_single` | The strongest reading of each sample | No |
+| `radar_oc_payload` | Per-object summaries from the radar, including estimated length | No |
+| `airquality` | Air quality and weather readings. See [Air quality](air-quality-aq-payload.md). | No |
+| `deployment` | Where each sensor was, and when | Possibly: it holds the exact location, which is a home address if the device is mounted at a home |
+| `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
+| `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 
-<table><thead><tr><th width="246.2421875">Table Name</th><th width="342.9296875">Description</th><th>PII Included</th></tr></thead><tbody><tr><td>deployment</td><td>History of location details for device and sensors: includes latitude, longitude, bearing.</td><td>No</td></tr><tr><td>events</td><td>Object Detection confirmed events. Generated by Frigate with required information attached. </td><td>Potential (if included in Frigate sub-label or attribute)</td></tr><tr><td>radar_dov</td><td>DetectedObjectVelocity (DOV) readings from Radar API, <code>ON</code> command</td><td>No</td></tr><tr><td>radar_timed_speed_counts</td><td>TimedSpeedCounts readings from Radar API <code>@O</code> command with `@</td><td>No</td></tr><tr><td>radar_raw_speed_magnitude</td><td>Show speeds and magnitudes in descending order by magnitude. <code>OS</code> and <code>OM</code> commands with <code>O3</code></td><td>No</td></tr><tr><td>radar_raw_speed_magnitude_single</td><td>Same as above, but only the first speed and magnitude value, for easier analysis. <code>OS</code> and <code>OM</code> commands with <code>O1</code></td><td>No</td></tr><tr><td>radar_oc_payload</td><td>Object detection capability, including vehicle length. <code>OC</code> command, with OPS9243 firmware</td><td>No</td></tr><tr><td>comments</td><td>Operator-entered time stamped entries for  Traffic Monitor status, deployment, location, conditions, construction, etc. Used for downstream analysis.</td><td>Potential (operator-entered free-text)</td></tr><tr><td>airquality</td><td>Environmental readings from the optional air quality sensor: gases, particulate matter, temperature, pressure, humidity, and light.</td><td>No</td></tr><tr><td>plate_recognizer</td><td>License plate and vehicle details from the optional Plate Recognizer application. Stays empty unless Plate Recognizer is enabled.</td><td>Yes (license plates)</td></tr></tbody></table>
+The [radar](radar-payload.md) tables are described on their own page. The two tables below have no other page.
+
+### deployment
+
+A row for each combination of sensor, location, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `id` | TEXT, primary key | The deployment id |
+| `entryStartDateTime` | REAL | Unix time, in milliseconds, when this deployment began |
+| `entryEndDateTime` | REAL | Unix time, in milliseconds, when it ended; empty for the current one |
+| `lat` | REAL | Latitude in decimal degrees |
+| `lon` | REAL | Longitude in decimal degrees |
+| `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` |
+| `sensorType` | TEXT | `cameras`, `radars`, or `airquality_monitors` |
+| `sensorName` | TEXT | The sensor's name in `config.yml` |
+| `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written while the service starts, such as the first rows after an install, hold `undefined` instead. |
+
+### comments
+
+Free-text notes an operator adds on the [Data export](../ui/database.md) page, for example "threshold lowered to 0.4" or "road work on the north side", so that whoever analyzes the data later knows what changed and when.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `id` | TEXT, primary key | |
+| `effectiveDateTime` | TIMESTAMP | When the note starts to apply |
+| `expirationDateTime` | TIMESTAMP | When it stops applying; empty if open-ended |
+| `entryDateTime` | TIMESTAMP | When it was written |
+| `comment` | TEXT | The note |
+| `commenter_name` | TEXT | Who wrote it |
 
 ### Schema versions
 
-The table definitions live in the repo as numbered migrations in `container/node-red-tm/schema/migrations/`, and `container/node-red-tm/schema/schema.sql` shows the full current schema. Each time the Node-RED service starts, it first applies any migrations the database doesn't have yet and records the schema version in the database itself. You can read it with `PRAGMA user_version;` in [DB Browser for SQLite](https://sqlitebrowser.org/).
+The tables are defined by numbered migrations in the repository's [`container/node-red-tm/schema/`](https://github.com/glossyio/traffic-monitor/tree/main/container/node-red-tm/schema) folder, and `schema.sql` there shows the whole current schema. Each time the Node-RED service starts, it applies any migrations the database doesn't have yet and records the schema version in the database. Before it does, it saves a copy of the database in `/opt/traffic-monitor/node-red-tm/db/backup/` and keeps only the most recent copy. It makes no copy of a new database, or when the disk has less free space than about 1.2 times the database's size. It also makes none when the only migration to apply is the first, which only adds missing tables. You can read the version with `PRAGMA user_version;`.
 
-Before applying new migrations, the device saves a copy of the database in `{{ tmsetup_codedir }}/node-red-tm/db/backup/` and keeps only the most recent copy.
+## Getting the data
 
-## How to access data
-
-* Traffic Monitor Database:  On-device dashboard: [Database](../ui/database.md) UI tab
-* Frigate data: [Recording](https://docs.frigate.video/configuration/record) and [Snapshots](https://docs.frigate.video/configuration/record) follow [configuration](../configuration/frigate-config.md) policies at `{{ tmsetup_codedir }}/frigate/storage`
-* Other apps, plugins, and sensors may also store data for their own operation
+* **Download** the whole database, or a JSON export of events, radar readings, or air quality readings over a date range, from the [Data export](../ui/database.md) page.
+* **Open** the database with [DB Browser for SQLite](https://sqlitebrowser.org/), or from code with any SQLite library, such as Python's built-in `sqlite3`.
+* **Subscribe** to today's counts over MQTT, or **upload** everything to ThingsBoard. See [MQTT and ThingsBoard](integrations.md).
+* **Review** snapshots and clips in Frigate's **Explore** view at `http://<device>/frigate/`.

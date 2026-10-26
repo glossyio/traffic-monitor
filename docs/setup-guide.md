@@ -1,120 +1,64 @@
 ---
-description: Steps to connect to and setup your Traffic Monitor.
+description: Turn on detection, adjust the zones to your roadway, and record the device's location so it starts counting.
 ---
 
-# Setup Guide
+# First-time setup
 
-At this point you have [deployed](deployment-and-mounting-guide.md) your traffic monitor and it is running, or it is on your desk and you are testing it. ;-) Either way, nice job!
+Do these steps once the device is [mounted](deployment-and-mounting-guide.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and an SSH client for step 4.
 
-This guide will walk you though configuring your device based on your sensors (_required_), adjust it for roadway conditions (_recommended_), optimize your data capture, and connect with the ThingsBoard platform (optional).
+As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
-!!! info
+## 1. Open the home page
 
-    Note that the software as of v0.5 is still _pre-consumer (alpha)_ and requires some technical expertise including: connecting to the Raspberry Pi via `ssh` and modifying some text configuration files.
+Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](use/home-page.md) explains each link and how to find the address.
 
-    We welcome your feedback, requests, and questions via [Where can I get support?](help-and-faq/where-can-i-get-support.md)
+## 2. Turn on detection
 
-!!! warning
+1. Open **Frigate** from the home page.
+2. Go to **Settings > Configuration editor**.
+3. Under `cameras: picam_h265: detect:`, change `enabled: false` to `enabled: true`.
+4. Choose **Save & Restart**.
 
-    The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.
+When Frigate is back, its live view draws a box around anything that moves past the camera.
 
-## Power on
+## 3. Adjust the zones
 
-Power on the Traffic Monitor. Once it is plugged in to a power source it will automatically start without further intervention. Check for the green LED on the Raspberry Pi to confirm the device has power then proceed with the following steps:
+The Traffic Monitor looks for four zones with fixed names. Frigate ships with all four drawn for a sample roadway; drag their corners to fit yours.
 
-* [x] [1. Connect to your Device](#1-connect-to-your-device)
-* [x] [2. Configure Frigate Zones](#2-configure-frigate-zones)
-* [x] [3. Configure Node-RED](#3-configure-node-red)
+1. In Frigate, go to **Settings > Camera configuration > Masks / Zones**.
+2. Edit each zone in the table below, then save. Frigate restarts.
 
-## 1. Connect to your Device
-
-Connect to your device to initially set up the Traffic Monitor, retrieve data, and monitoring usage.
-
-### Physical Access
-
-Physical access to the device is a less-convenient method but will allow the most control to address issues.
-
-#### Monitor, Keyboard, Mouse
-
-See [Raspberry Pi Getting Started](https://www.raspberrypi.com/documentation/computers/getting-started.html#display) for more information on connecting your Raspberry Pi. It should be as simple as plugging in a USB keyboard, USB mouse, and micro HDMI cable to your monitor. In this case, you can use `localhost` as the RPi IP address or use the host name.
-
-#### SD Card
-
-If your Traffic Monitor uses the default Raspberry Pi installation method, you will have an [SD Card boot media](https://www.raspberrypi.com/documentation/computers/getting-started.html#sd-cards) that contains all your system files. If necessary, you can insert the card into a micro-SD card reader to access the entire Raspberry Pi OS directory structure.
-
-### Remote Access
-
-(_Recommended_) Remote access allows you to control various parts of your Raspberry Pi without connecting it to a monitor, keyboard, or mouse. This must be done from another computer, e.g. a laptop.  See [Raspberry Pi's remote access](https://www.raspberrypi.com/documentation/computers/remote-access.html#introduction-to-remote-access) docs for a full rundown of options.
-
-You will need to know the Traffic Monitor / Raspberry Pi IP address or host name to connect to the various configuration environments. 
-
-!!! info
-
-    For system administration in a browser, open `http://<TM_IP_ADDRESS>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows services, logs, updates, and containers, and has a terminal. It also answers directly on port `9090`.
-
-#### Finding Your IP address
-
-* If you chose the [Build Your Own Device (DIY)](build-your-own-device-diy/README.md) route, we recommend you set up WiFi credentials by following the [Raspberry Pi Imager docs](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system) and it will automatically be accessible the network you specified. Find the RPi IP address via your router, or if your router supports DNS host names, you can use the host name set on the RPi.
-* If you received a **pre-built device**, check with your provider for specific instructions. To get you started, it may be available as a Hotspot that will [host a wireless network](https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-from-your-raspberry-pi). Connect to it like any WiFi network, look for the host name as the SSID. The IP address of the Raspberry Pi will be the Gateway IP address or you may use the host name set on the RPi.
-
-See [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address) for more options.
-
-## 2. Configure Frigate Zones
-
-Frigate controls and generates object detection events with the camera.
-
-!!! info
-
-    This section describes setting up Frigate with the Traffic Monitor [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md). If you have alternative or optional camera(s) or other components, you may need additional configuration. Reference the official [Frigate Configuration](https://docs.frigate.video/guides/getting_started#configuring-frigate) for more details.
-
-&#x20;Frigate has a well-developed front-end user interface that can be accessed by visiting `http://<TM_IP_ADDRESS>:5000`  in a browser.
-
-The Traffic Monitor will be expecting the following specifically named [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and workflow logic.  These need to manually drawn based on your deployment.
-
-!!! success
-
-    Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment and roadway conditions. 
-
-Set up or modify the following zones, overlaying any temporary or permanent stationary objects:
-
-1. <mark style="color:red;">zone\_capture</mark> - Set to capture the entire roadway, including sidewalks that are clearly in view for counting objects.
-2. <mark style="color:red;">zone\_near</mark> - Paired with `zone_near`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the further half of the `zone_capture` region.
-3. <mark style="color:red;">zone\_far</mark> - Paired with `zone_far`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the closer half of the `zone_capture` region.
-4. <mark style="color:red;">zone\_radar</mark> - (for units equipped with radar) - This should correspond to the field of view for the radar (where it can pick up accurate measurements) on the street. It will roughly make a rectangle in the center of the camera field of view from curb to curb.
+| Zone | Draw it over | Used for |
+|---|---|---|
+| `zone_capture` | The whole roadway you want to count, including sidewalks that are clearly in view | Counting. An object is counted only if it passes through this zone. |
+| `zone_near` | The half of `zone_capture` closest to the device | Direction |
+| `zone_far` | The half of `zone_capture` farthest from the device | Direction. An object that enters `zone_near` and then `zone_far` is moving **outbound**, away from the device; the reverse is **inbound**. |
+| `zone_radar` | The part of the road the radar covers accurately, roughly a rectangle from curb to curb in the middle of the frame. Skip it if the device has no radar. | Speed statistics. Any object that enters a zone gets a speed from the radar, but the dashboards' speed statistics use only objects that passed through this zone. [Radar considerations](deployment-and-mounting-guide.md#radar-considerations) shows how to find the radar's coverage. |
 
 <figure markdown="span">
-  ![](assets/images/Screenshot_20250306_110924.png)
-  <figcaption>Properly configured Frigate Zones</figcaption>
+  ![Frigate zone editor with zone_capture over the whole street, zone_near and zone_far over each half, and zone_radar across the middle](assets/images/Screenshot_20250306_110924.png)
+  <figcaption>The four zones drawn over a residential street</figcaption>
 </figure>
 
-After changes are made, you will need to restart Frigate before they take effect. You can do this via **Frigate > Settings > Restart Frigate**.
+Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, can have any other name. [Ideas and use cases](help-and-faq/use-cases-and-scenarios.md) has examples.
 
-### Optimize Object Detection
+## 4. Record the location and sensors
 
-The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, different cameras and camera settings, and environmental conditions.
+The device records its location with every event, so set it before you collect data. Connect over SSH and open the Traffic Monitor settings file:
 
-The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.
+```bash
+sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
+```
 
-## 3. Configure Node-RED
-
-Node-RED controls most of the workflow logic and data collection.
-
-You will need to [Connect to your device](#1-connect-to-your-device) to edit the [Node-RED Config](configuration/node-red-config.md) files.
-
-1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`
-   1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml`
-2. Change the deployment location information to represent the current deployment. Get your latitude and longitude from any map service, such as Google Maps and enter bearing with the single-letter cardinal direction the traffic monitor is facing.
+1. Under `deployment`, enter the latitude and longitude from any map service, and the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`.
+2. Under `sensors`, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`.
 
 ```yaml
 deployment:
     lat: 45.5225
     lon: -122.6919
     bearing: n
-```
 
-3. Modify sensors to reflect currently installed components. For example, with a single Raspberry Pi Camera and Radar, it may look like this:
-
-```yaml
 sensors:
     cameras:
         picam_h265:
@@ -125,7 +69,19 @@ sensors:
             enabled: true
 ```
 
-4. To save changes, press Ctr+o (hold control and o)
-5. To exit, press Ctr+x (hold control and x)
+Save with Ctrl+O and leave nano with Ctrl+X. The Traffic Monitor reads the file again as soon as you save it, so no restart is needed. A change that doesn't take effect usually means a YAML error, such as a wrong indent.
 
-These settings should take immediate effect, if not, restart Node-RED by running: `sudo systemctl restart node-red-tm.service` .
+[config.yml settings](configuration/node-red-config.md) describes every setting in this file, including the optional [ThingsBoard](data-and-payloads/integrations.md) upload.
+
+## 5. Check the counts
+
+Open **Dashboard** from the home page and choose **Monitoring** in the sidebar. [Monitoring](ui/monitoring.md) shows a count a few seconds after each object passes through `zone_capture`, and speed statistics for objects that also passed through `zone_radar`. Today's counts start at 04:00 local time, so between midnight and 04:00 they're empty.
+
+??? question "No counts?"
+
+    Work down the list:
+
+    1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Go2RTC Feeds** from the home page to check that the camera itself streams.
+    2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.
+    3. **Counts but no speeds.** The radar must be `enabled: true` and named in the camera's `camera_radar`, `zone_radar` must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
+    4. **Still nothing.** Look at the logs in [System administration](use/system-admin.md), then ask in the [chat](help-and-faq/where-can-i-get-support.md).
