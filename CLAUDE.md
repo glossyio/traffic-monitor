@@ -47,6 +47,19 @@ bash script/tmsetup.sh -H <ip>[,<ip>] -l <user> -k    # from a dev machine: inst
 
 Always use `tmsetup.sh` rather than calling `ansible-playbook` directly. The script supplies extra vars the role depends on (e.g. `tmsetup_reboot_touch_file`) and handles the reboot prompt.
 
+From a dev machine, against a bench Pi defined in the local dev-Pi inventory (`script/devpi/README.md`):
+
+```bash
+.venv/bin/python script/devpi/tmdev.py pi-login [--key <name>] [--shell]       # tmdev login for a new card (cloud-init) or running Pi
+.venv/bin/python script/devpi/tmdev.py hosts                                   # dev Pis in the inventory
+.venv/bin/python script/devpi/tmdev.py deploy <host> [--on-pi] -- -t <tag>     # tmsetup.sh with -y; may reboot the Pi
+.venv/bin/python script/devpi/tmdev.py run <host>|local -- <command>           # run and log a command
+.venv/bin/python script/devpi/tmdev.py check start|item|status|end ...         # record a PR's Pi test plan
+.venv/bin/python script/devpi/tmdev.py log                                     # newest rows of the run log
+```
+
+The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH.
+
 Containers run as rootful, Quadlet-generated systemd units:
 
 ```bash
@@ -143,7 +156,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 The policy is "Use of AI tools" in CONTRIBUTING.md: AI may draft, but a person reviews, tests, and owns every change.
 
 - Keep drafts small enough for a person to review line by line, and say what you're unsure about.
-- Device data follows "Use of AI tools" in CONTRIBUTING.md. Never read images, video clips, or plate reads. Before reading a copy of `tmdb.sqlite`, confirm with the user that the device operator consented and that plate recognition was never enabled. Never ask for real passwords, API keys, or tokens; work with placeholders. Don't read anything under `/opt/traffic-monitor` on a Pi. `.claude/settings.json` backs this up on a best-effort basis: it blocks Read on that path and asks before Read on `*.sqlite`/`*.db` files and before `sqlite3` commands. It doesn't catch every route (`sudo sqlite3`, Python's `sqlite3` module, `cp`), so follow the rule, not the guard.
+- Device data follows "Use of AI tools" in CONTRIBUTING.md. Never read images, video clips, or plate reads. Before reading a copy of `tmdb.sqlite`, confirm with the user that the device operator consented and that plate recognition was never enabled. Never ask for real passwords, API keys, or tokens; work with placeholders. Don't read anything under `/opt/traffic-monitor` on a Pi. The one exception is a dev Pi in the dev-Pi inventory with `tm_expect.pii_free: true` (`script/devpi/README.md`). Such a unit keeps `thingsboard.access_token`, the one secret in `config.yml`, blank as installed. There you may read its `config.yml` and `tmdb.sqlite`, but still never images, clips, plate reads, or secrets. `.claude/settings.json` backs this up on a best-effort basis: it blocks Read on that path and asks before Read on `*.sqlite`/`*.db` files and before `sqlite3` commands. It doesn't catch every route (`sudo sqlite3`, Python's `sqlite3` module, `cp`), so follow the rule, not the guard.
 - End commit messages with this trailer block instead of `Co-Authored-By`; in this repo `Co-authored-by` means a human co-author. Take the version from `claude --version` and the model from your own model ID. If you don't know the interface or effort level, ask; never guess a value.
 
   ```text
