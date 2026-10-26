@@ -1,0 +1,4 @@
+# Written by tmsetup.sh (frigate tag). The Pi 5 HEVC decoder's /dev/media number can change between
+# boots, so Frigate is given this symlink instead. TAG+="systemd" gives it a device unit that
+# frigate.service waits for.
+SUBSYSTEM=="media", ATTR{model}=="rpi-hevc-dec", SYMLINK+="{{ tmsetup_hevc_device | basename }}", TAG+="systemd"

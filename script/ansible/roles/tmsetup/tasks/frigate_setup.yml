@@ -1,6 +1,24 @@
 ---
 # TMSetup - Frigate Setup tasks
 
+- name: TMSetup - Frigate Setup - Create udev rule for the HEVC decoder symlink
+  become: true
+  ansible.builtin.template:
+    src: 60-traffic-monitor-hevc-dec.rules.j2
+    dest: /etc/udev/rules.d/60-traffic-monitor-hevc-dec.rules
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload udev rules and trigger
+    - Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Remove the install-time HEVC scan script
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_codedir }}/utils/find_hevc_device.sh'
+    state: absent
+
 - name: TMSetup - Frigate Setup - Create Frigate Directories
   become: true
   loop:
