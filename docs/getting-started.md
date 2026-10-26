@@ -1,59 +1,46 @@
 ---
-description: Start counting with the Traffic Monitor!
+description: Build a Traffic Monitor or start with a pre-built unit, then deploy it and start counting.
 ---
 
-# Getting Started
+# Choose your path
 
-## Step 1: Get your Traffic Monitor
-
-The traffic monitor requires the [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md) and [software installation](software-installation.md) before you can begin capturing roadway data.
-
-There are two ways to get started:
+## 1. Get a Traffic Monitor
 
 <div class="grid cards" markdown>
 
--   ![](assets/images/icon-diy-350x200px-black-bg_grey.png)
+-   ![DIY icon](assets/images/icon-diy-350x200px-black-bg_grey.png)
 
-    **[Build It!](build-your-own-device-diy/README.md)**
-
-    ---
-
-    See our [Build your own device (DIY)](build-your-own-device-diy/README.md) guide. The software is open source and components are available retail. Customize to your heart's content.
-
--   ![](assets/images/icon-shop-350x200px-black-bg_grey.png)
-
-    **Buy It!** (_coming soon_)
+    **[Build your own](build-your-own-device-diy/README.md)**
 
     ---
 
-    Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.
+    Buy the [hardware](build-your-own-device-diy/recommended-hardware.md), [assemble](build-your-own-device-diy/assembly-instructions.md) it, and [install the software](software-installation.md). The software is open source and the parts are sold at retail.
+
+-   ![Shop icon](assets/images/icon-shop-350x200px-black-bg_grey.png)
+
+    **Start with a pre-built unit**
+
+    ---
+
+    The software is installed. Skip to step 2, and ask your provider how the unit connects to your network.
 
 </div>
 
-## Step 2: Plan your Deployment
+## 2. Deploy it
 
-The traffic monitor must be placed with a good view of the roadway. See the [Deployment and Mounting Guide](deployment-and-mounting-guide.md) for more information on the most common deployment types:
+The device needs a clear view of the roadway, and the radar needs a shallow angle to the direction of travel. [Choose a site and mount](deployment-and-mounting-guide.md) covers both, for [temporary](deployment-and-mounting-guide.md#temporary-deployments) and [permanent](deployment-and-mounting-guide.md#permanent-deployments) deployments.
 
-1. [Temporary deployments](deployment-and-mounting-guide.md#temporary-deployments) allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
-2. [Permanent deployments](deployment-and-mounting-guide.md#permanent-deployments) are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
+## 3. Set it up
 
-## Step 3: Set up your Device
+Power it on and follow [First-time setup](setup-guide.md): open the home page, turn on detection, adjust the zones to your roadway, and record the device's location. This takes about half an hour.
 
-After you have your traffic monitor built, software installed, and physically set up (mounted), it is time to boot it up!  To get the best data and most out of the device, follow these steps:
+## 4. Use the data
 
-1. [Setup Guide](setup-guide.md)
-2. [Frigate Config](configuration/frigate-config.md) will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
-3. [Node-RED Config](configuration/node-red-config.md) will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!
+The device counts around the clock and starts again by itself after a power cut. Watch the [Monitoring dashboard](ui/monitoring.md), review detections in Frigate, [export the data](ui/database.md), or send it to [ThingsBoard](data-and-payloads/integrations.md).
 
-## Step 4: Collect and Share that Data
-
-The traffic monitor will now run 24/7 collecting the data you set up. It will automatically restart if the power cycles, even if you are not there to reset it.
-
-You can view the on-device dashboards, review event snapshots and clips in Frigate, download the local database, or view data shared with another data provider.
-
-Consider pairing the Traffic Monitor with physical displays to show daily counts of cars, bikes, and pedestrians.  The sky is the limit!  Learn more and share via the [TM GitHub Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or our [TM Zulip chat](https://trafficmonitor.zulipchat.com/).
+Some operators pair the device with a display that shows the day's counts. Share what you build in [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or on the [Zulip chat](https://trafficmonitor.zulipchat.com/).
 
 <figure markdown="span">
-  ![](assets/images/tm-display-pic01.jpg)
-  <figcaption>LED Display showing daily counts capture with the traffic monitor</figcaption>
+  ![LED sign on a sidewalk showing the day's car, bike, and pedestrian counts](assets/images/tm-display-pic01.jpg)
+  <figcaption>LED display showing daily counts from a Traffic Monitor</figcaption>
 </figure>

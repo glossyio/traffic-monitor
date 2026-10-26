@@ -1,70 +1,61 @@
 ---
-description: Software installation for the Traffic Monitor.
+description: Image a microSD card with Raspberry Pi OS and run the Traffic Monitor installer, on the device or from another computer.
 ---
 
-# Software Installation
+# Install the software
 
-Whether you [Build Your Own Device (DIY)](build-your-own-device-diy/README.md) or buy a pre-built unit, these are the instructions to perform a fresh install.
+The Traffic Monitor runs on a Raspberry Pi 5 with Raspberry Pi OS Lite (64-bit). One installer script sets up the operating system, detects the camera, radar, and AI accelerator, builds the containers on the device, and reboots when it needs to.
 
-### Preparation
+## Prepare the card
 
-!!! success
+1. Open [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager) on your computer, with the microSD card in a card reader.
+2. Choose **Raspberry Pi OS (other) > Raspberry Pi OS Lite (64-bit)**. The full desktop image works but installs software the Traffic Monitor doesn't use.
+3. In [OS customization](https://www.raspberrypi.com/documentation/computers/getting-started.html#advanced-options), set a hostname, a username and password, your Wi-Fi network, and turn on SSH. The hostname becomes the device's address on your network: `http://<hostname>.local/`.
+4. Write the card, put it in the Raspberry Pi, and power it on. The first boot takes a few minutes.
 
-    **Raspberry Pi OS 64-bit Lite install** is the recommended default and is the basis for the software. The 64-bit Full Install will provide a desktop environment and extra packages that are not used by the Traffic Monitor.
+## Install on the device
 
-    Find it on RPi Imager by navigating to _Operating System > Raspberry Pi OS (other) > Raspberry Pi OS Lite (64-bit)_.
+The device needs an internet connection during the install. Afterwards it runs offline.
 
-1. Install Raspberry Pi OS (64-bit lite) using [RPi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html#install-using-imager) (read the [RPi getting started](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system)).
-   * You will need an SD card or microSD card reader on your host machine.
-   * (_Recommended_) [OS customization](https://www.raspberrypi.com/documentation/computers/getting-started.html#advanced-options) to set up your WiFi credentials and username and password to access the device headless; i.e. SSH with no monitor or keyboard.
-2. Insert the microSD card into the Raspberry Pi and boot.
-   * Note: The first boot may take several minutes before it is fully online.
+Connect over SSH with the username and hostname you chose:
 
-### Install the Traffic Monitor software
+```bash
+ssh <username>@<hostname>.local
+```
 
-!!! warning
+Then download the repository and run the installer:
 
-    _An internet connection_ is required to install system dependencies, build the required Podman containers, download drivers, and more.  After installation, the traffic monitor can run fully offline.
+```bash
+sudo apt update && sudo apt install -y git
+git clone https://github.com/glossyio/traffic-monitor
+bash traffic-monitor/script/tmsetup.sh
+```
 
-!!! info
+The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-    The Traffic Monitor software is installed via an [Ansible](https://github.com/ansible/ansible) deploy script.  This allows you to perform a [local installation](#local-installation) or [remote installation](#remote-installation) from a host computer to 1 or more devices simultaneously!
+Near the end, the installer asks to reboot. The reboot finishes installing the driver for the AI accelerator it found and starts the services. After it, open `http://<hostname>.local/` and continue with [First-time setup](setup-guide.md).
 
-#### Local installation
+The installer's flags, such as a different install folder or time zone, are listed in [Installer options](reference/tmsetup.md).
 
-(_Most common installation method_)
+## Install from another computer
 
-1. [Connect to your device](setup-guide.md#1-connect-to-your-device) and executing the following commands via a terminal:
-   1. `sudo apt update && sudo apt install -y git` 
-   2. `git clone https://github.com/glossyio/traffic-monitor`
-   3. `bash traffic-monitor/script/tmsetup.sh`
-2. Follow instructions and restart when prompted. 
+The same script can install or update one or more devices over SSH from a Linux or Mac computer. Each device needs Raspberry Pi OS, a network connection, and an address you can reach.
 
-#### Remote Installation
+```bash
+git clone https://github.com/glossyio/traffic-monitor
+bash traffic-monitor/script/tmsetup.sh -H <address>[,<address>] -l <username> -k -K
+```
 
-Install the TM software to 1 or more devices simultaneously using our Ansible deploy script. This allows you to deploy or update a whole fleet of Traffic Monitors with common configuration files in a single command!
+| Flag | Meaning |
+|---|---|
+| `-H` | The devices' hostnames or IP addresses, separated by commas |
+| `-l` | The username you set when imaging the cards. It must be the same on every device. |
+| `-k` | Ask for the SSH password |
+| `-K` | Ask for the password for administrator rights. Raspberry Pi OS requires it. |
 
-!!! success
+Remote devices reboot by themselves when the install needs it.
 
-    Before you can perform remote installation, ensure the following:
+## Next steps
 
-    1. Your host machine is able to run `bash` commands (Linux or Mac)
-    2. Raspberry Pi OS is installed on each device
-    3. The traffic monitor device is running and online
-    4. You have the device IP address(es) or resolvable host name(s) from your host to the device(s)
-
-1. On your host machine, download TM[^1] OSS[^2] software and set up any configurations you want to send:
-   1. `git clone https://github.com/glossyio/traffic-monitor`
-2. Run the install script from your host machine with your device IP address(es) space-separated with `-H`, enter username specified on OS setup (needs to be the same across all devices) with `-l`, and prompt for password with `-k`: 
-   1. `bash traffic-monitor/script/tmsetup.sh -H <ip_address> -l <ssh_username> -k`
-3. Continue to [Deployment and Mounting Guide](deployment-and-mounting-guide.md) and [Setup Guide](setup-guide.md) for each device.
-
-### Next Steps
-
-1. Deploy your device: See the [Deployment and Mounting Guide](deployment-and-mounting-guide.md).
-2. Set up zones, location, and enable your sensors: See [Setup Guide](setup-guide.md).
-3. Start capturing roadway usage data!
-
-[^1]: traffic monitor
-
-[^2]: open source software
+1. [Choose a site and mount](deployment-and-mounting-guide.md) the device.
+2. [First-time setup](setup-guide.md): turn on detection, adjust the zones, and record the location.

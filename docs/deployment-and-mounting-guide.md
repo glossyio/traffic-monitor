@@ -1,59 +1,57 @@
 ---
-description: Permanent and temporary physical placement suggestions.
+description: Where and how to mount a Traffic Monitor, for a few hours or for years, so the camera and radar get a clear view.
 ---
 
-# Deployment and Mounting Guide
+# Choose a site and mount
 
-Deployment encompasses geographic location and bearing, physical hardware mounting, angle of camera and device to roadway, and configuration to make it ready to detect objects.
+Deployment covers where the device goes, how it's mounted, and the angle of the camera and radar to the roadway. The zones and location are set afterwards in [First-time setup](setup-guide.md).
 
 !!! danger
 
-    **Warning:** Ensure compliance with all applicable laws and local regulations when installing, mounting, and deploying a traffic monitor, particularly in public spaces. Unauthorized surveillance can lead to legal consequences and infringement of privacy rights. Always consult with legal professionals or local authorities if you are unsure of the requirements. Information in this guide is for educational purposes, and you are responsible for adhering to applicable laws and consequences of the deployment and use of the traffic monitor.
+    **Follow the law.** Comply with all applicable laws and local regulations when installing, mounting, and deploying a Traffic Monitor, particularly in public spaces. Unauthorized surveillance can lead to legal consequences and infringe privacy rights. Consult legal professionals or local authorities if you are unsure of the requirements. This guide is for educational purposes; you are responsible for complying with the law and for the consequences of deploying and using the device.
 
-    Ensure you are mounting the traffic monitor in an approved area to comply with local regulations, and avoid attaching it to utility poles without proper authorization.
+    Mount the device only where you have permission, and don't attach it to utility poles without proper authorization.
 
-## Mounting capabilities
+## Mounting options
 
-!!! info
+Choose a mount that lets you make fine adjustments, because the radar's angle and position need tuning on site.
 
-    When selecting what mount method to use, an important consideration is how to make fine adjustments, especially for fine-tuning the radar angle and position.
+The open source, 3D-printed [enclosure](build-your-own-device-diy/recommended-hardware.md#enclosure) has several mounting methods built in, depending on the variant:
 
-The open source, 3D printed [Enclosure (weather-resistant box)](build-your-own-device-diy/recommended-hardware.md#enclosure-weather-resistant-box) has multiple built-in methods for mounting, depending on the variant, including:
-
-* 1/4"-20 screw insert hole on bottom and/or back for camera-style and trail camera mounting hardware
-* VESA mount -compatible holes (75 and 100 mm)
-* Arca-Swiss Quick Release System -compatible plate on bottom for tripods
-* Strap mount slots on back to directly attach to posts, poles, and trees
-* Safety tether hole for just-in-case carabiner and strap
+* 1/4"-20 screw insert on the bottom and back, for camera and trail-camera mounting hardware
+* VESA-compatible holes (75 and 100 mm)
+* Arca-Swiss-compatible quick-release plate on the bottom, for tripods
+* Strap slots on the back, for posts, poles, and trees
+* Safety tether hole for a carabiner and strap
 
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/Screenshot_20260217_180711.png)
-  <figcaption>Back with VESA mount holes, 1/4"-20 mm screw insert, strap slots, and safety tether hole (lower-left)</figcaption>
+  ![Back of the enclosure showing VESA holes, a screw insert, strap slots, and a tether hole](assets/images/Screenshot_20260217_180711.png)
+  <figcaption>Back: VESA holes, 1/4"-20 screw insert, strap slots, and safety tether hole (lower left)</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/Screenshot_20260217_180444.png)
-  <figcaption>Bottom of the standard enclosure with arca-swiss quick release plate and 1/4"-20 mm screw insert</figcaption>
+  ![Bottom of the enclosure showing the Arca-Swiss plate and a screw insert](assets/images/Screenshot_20260217_180444.png)
+  <figcaption>Bottom: Arca-Swiss quick-release plate and 1/4"-20 screw insert</figcaption>
 </figure>
 
 </div>
 
 ## Temporary deployments
 
-In scenarios where you need counts for only a few hours—such as during events or point-in-time research—the Traffic Monitor performs well when mounted at or above head height in locations offering an unobstructed view of the roadway. A sturdy tripod and a compact portable power station are ideal for this setup.
+For counts over a few hours, such as an event or a point-in-time study, mount the device at or above head height with an unobstructed view of the roadway. A sturdy tripod and a compact portable power station work well.
 
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/tripod-002.webp)
-  <figcaption>Traffic Monitor on a 16-foot telescoping tripod to count event participants</figcaption>
+  ![Traffic Monitor on a tall telescoping tripod beside an event route](assets/images/tripod-002.webp)
+  <figcaption>On a 16-foot telescoping tripod, counting event participants</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/tripod-001.webp)
-  <figcaption>Researcher recording manual confirmation counts with a Traffic Monitor on a camera tripod plugged into a portable power station</figcaption>
+  ![Researcher with a clipboard next to a Traffic Monitor on a camera tripod and a portable power station](assets/images/tripod-001.webp)
+  <figcaption>Recording manual confirmation counts, with the device on a camera tripod and a portable power station</figcaption>
 </figure>
 
 </div>
@@ -62,46 +60,40 @@ In scenarios where you need counts for only a few hours—such as during events 
 
 !!! warning
 
-    **Safety Note**: When installing the camera, always use proper safety equipment and practice ladder safety. Ensure that the camera is securely mounted, and verify that all mounting components are tightly fastened, safety tethers are in place, and check for stability to guarantee safe and reliable operation. Failure to do so could result in injury or damage to property.
+    **Work safely.** Use proper safety equipment and ladder practice. Make sure the device is securely mounted, all fasteners are tight, the safety tether is in place, and the mount is stable. Failure to do so can cause injury or property damage.
 
-The Traffic Monitor provides 24/7 roadway monitoring capabilities, depending on the sensors you have installed.
-
-Long term deployments may be done in a variety of ways. As long as you have a good view of the roadway for the camera and can properly orient the radar, there's a variety of mounting methods you can employ.
-
-From garage roofs to wood posts in a 5-gallon cement-filled bucket to a high stone pillar, it is a good idea is to keep the Traffic Monitor out of reach and in a place that will not be obstructed.
+Long-term deployments work anywhere the camera has a good view of the roadway and the radar can be aimed along it: garage roofs, a wood post in a cement-filled bucket, a stone pillar. Keep the device out of reach and clear of anything that might grow or be parked in front of it.
 
 <figure markdown="span">
-  ![](assets/images/permanent-mount-010.webp)
-  <figcaption>Long-term deployments with permission on private rooftops and gate entrances.</figcaption>
+  ![Two Traffic Monitors mounted on a private rooftop edge and a gate post](assets/images/permanent-mount-010.webp)
+  <figcaption>Long-term deployments, with permission, on a private rooftop and a gate entrance</figcaption>
 </figure>
 
-## Best practices for deployment
+## Best practices
 
-Ideal mounting locations will vary based on the use case and sensors. High-level tips include:
+* Mount the device above the roadway and out of reach, about 10 to 12 feet up, for the best view and the least tampering.
+* Choose a clear view of the road. Objects are still tracked when they pass briefly behind a tree or lamp post.
+* Keep the radar off parking spots and other places where vehicles stop, because stationary vehicles get in the way of its readings.
+* The camera detects objects anywhere in its field of view, so frame the whole stretch of road you care about.
+* Think about which [zones](setup-guide.md#3-adjust-the-zones) your use case needs, and whether the view lets you draw them.
 
-* Mount the device above the roadway, out of reach for the best view and to minimize tampering; e.g., 10-12 ft above the roadway.
-* Choose a clear view of the road. Note that objects will still be tracked even if they temporarily move behind an object such as a tree or lamp post.
-* Consider where parked vehicles or common stopping locations will be, as they may affect the radar's ability to detect moving objects; i.e., don't point the radar directly at a parking spot.
-* Camera object detection works anywhere in the camera's field-of-view, so position the camera to get the most complete view of the roadway.
-* Consider what [Frigate zones](setup-guide.md#2-configure-frigate-zones) you will need for your use case.
-
-### Sample deployments and angle calculations
+### Sample deployments
 
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/deployment-rvc-2025-07.webp)
+  ![Camera view down a quiet residential street](assets/images/deployment-rvc-2025-07.webp)
   <figcaption>Quiet road, monitoring downhill movement</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/deployment-cookies-2025-07.webp)
-  <figcaption>Busy business district, nearly straight-on object movement on wide road</figcaption>
+  ![Camera view of a wide commercial street with traffic coming toward the camera](assets/images/deployment-cookies-2025-07.webp)
+  <figcaption>Busy business district, nearly head-on movement on a wide road</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/deployment-next_adventure-2025-07.webp)
-  <figcaption>Busy business district, side-on monitoring focused on pedestrian and bike crosswalk</figcaption>
+  ![Camera view across a commercial street with a crosswalk in the foreground](assets/images/deployment-next_adventure-2025-07.webp)
+  <figcaption>Busy business district, side-on view focused on a pedestrian and bike crosswalk</figcaption>
 </figure>
 
 </div>
@@ -109,45 +101,39 @@ Ideal mounting locations will vary based on the use case and sensors. High-level
 <div class="grid" markdown>
 
 <figure markdown="span">
-  ![](assets/images/location-001.jpeg)
-  <figcaption>Neighborhood Greenway, an ideal spot to monitor roadway utilization for bikes, pedestrians, and cars</figcaption>
+  ![Tree-lined neighborhood greenway with a bike lane](assets/images/location-001.jpeg)
+  <figcaption>Neighborhood greenway, an ideal spot to count bikes, pedestrians, and cars</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/location-003.jpeg)
-  <figcaption>Neighborhood Greenway mounting spot, South-facing</figcaption>
+  ![Mounting spot on a greenway, looking south](assets/images/location-003.jpeg)
+  <figcaption>Greenway mounting spot, facing south</figcaption>
 </figure>
 
 <figure markdown="span">
-  ![](assets/images/location-002.jpeg)
-  <figcaption>Neighborhood Greenway mounting spot, North-facing</figcaption>
+  ![Mounting spot on a greenway, looking north](assets/images/location-002.jpeg)
+  <figcaption>Greenway mounting spot, facing north</figcaption>
 </figure>
 
 </div>
 
-### **Camera considerations**
+### Camera considerations
 
-**The camera** works best with an unobstructed view of the roadway for the best performance, but it is able to perform object detection anywhere in the camera frame.
-
-Focus on covering the entire area-of-interest, even if the camera is not centered on the roadway or area-of-interest.
+The camera detects objects anywhere in the frame, so cover the whole area of interest even if the roadway isn't centered. An unobstructed view gives the best results.
 
 <figure markdown="span">
-  ![screen shot of Frigate debug interface with detections highlighted](assets/images/image.png)
-  <figcaption>Detection events may occur anywhere in the camera field-of-view (FOV)</figcaption>
+  ![Frigate debug view with detection boxes around several objects across the frame](assets/images/image.png)
+  <figcaption>Detections can happen anywhere in the camera's field of view</figcaption>
 </figure>
 
-### **Radar considerations**
+### Radar considerations
 
-**The radar** has a narrower field-of-view (FOV) than most cameras and requires specific angles to the roadway for the most accurate speed measurements.
+The radar has a narrower field of view than the camera and measures speed accurately only at a shallow angle to the direction of travel.
 
-Test the radar's capture area by having someone hold the radar unit (outside of the case) and watching the **red/blue blinking LEDs on the front of the radar** as you move towards and away from the unit. Watch the LEDs as objects move through the view and determine the boundaries for drawing the zone.
+* Aim the device so that traffic moves toward or away from it at **45 degrees or less**. The [OmniPreSense field-of-view calculator](https://omnipresense.com/ops243-field-of-view-calculator/) shows how the angle affects the reading.
+* The radar labels movement **inbound** (toward the device) and **outbound** (away from it), and the camera uses the same words. Place the device so those directions make sense for your roadway, for example inbound for downhill traffic.
+* To find the radar's coverage, have someone hold the radar outside the case and watch the red and blue LEDs on its front as people and vehicles pass. Where the LEDs blink is where to draw `zone_radar`.
 
-Optimizing speed measurements:
+## Next steps
 
-* The Traffic Monitor and radar should be at an **acute angle to the direction of travel** for desired objects (ideally 45-degrees or less). 
-* See [Omnipresense Field of View calculator](https://omnipresense.com/ops243-field-of-view-calculator/) for more info on cosine correction.
-* Object movement direction will be labeled as `inbound` and `outbound`, so consider locating the radar with objects coming towards the radar in a way that makes sense for those movements.
-
-## Next Steps
-
-Power on the Traffic Monitor (once it is plugged in to a power source it should automatically start, check for the green LED) and proceed to [Setup Guide](setup-guide.md) to connect and configure it.
+Plug the device in. It starts by itself, and the green LED on the Raspberry Pi shows it has power. Continue with [First-time setup](setup-guide.md).

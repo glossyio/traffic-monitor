@@ -1,97 +1,54 @@
 ---
-description: Configure Frigate object detection on the Traffic Monitor
+description: Use Frigate's debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don't.
 ---
 
-# Frigate Config
+# Tune object detection
 
-Object detection is powered by [Frigate NVR](https://frigate.video/), which provides powerful capabilities for tuning and reviewing events. The Traffic Monitor is not directly affiliated with the Frigate NVR project.
+[Frigate](https://frigate.video/) does the object detection. How well it works depends on the mounting height and angle, the camera, and the weather, so expect to adjust it for each site. The Traffic Monitor is not affiliated with the Frigate project.
 
-Refer to [Frigate Configuration](https://docs.frigate.video/configuration/) docs for full list of available configuration options and descriptions.
+The Traffic Monitor's [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2) is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at **Settings > Configuration editor**. Frigate's [configuration reference](https://docs.frigate.video/configuration/) explains every setting.
 
-## Recommended Traffic Monitor Settings
+## See what Frigate sees
 
-The recommended Traffic Monitor settings attempts to optimize the Frigate config for **object detection on roadways**. Each deployment presents unique scenarios and challenges with accurate and precise object detection.
-
-View our [default frigate config.yml](https://github.com/glossyio/traffic-monitor/blob/main/frigate/config/config.yml.j2) for a sample configuration.
-
-!!! info
-
-    Many settings will need to be uniquely tailored to your specific deployment. 
-
-    See [Deployment and Mounting Guide](../deployment-and-mounting-guide.md) for optimizing your placement.
-
-## Optimizing Object Detection
-
-Go to **Frigate > Settings > Debug** to more easily determine how your object detection is working.
+Go to **Settings > Debug** to watch detections live with their scores, and the motion regions Frigate is checking. **Explore** lists past detections with their snapshots, which is the quickest way to find missed bikes or a tree that's being called a person.
 
 <figure markdown="span">
-  ![](../assets/images/Screenshot_20250307_143756.png)
-  <figcaption>Frigate > Settings > Debug to see how your object detection settings are working</figcaption>
+  ![Frigate debug view showing detection boxes, labels, and scores over a street](../assets/images/Screenshot_20250307_143756.png)
+  <figcaption>The debug view shows how detection is performing</figcaption>
 </figure>
 
-Fine-tuning can help you with the following:
+## Object filters
 
-* detection (are you missing bikes or pedestrians?)
-* reducing cross-classification (is an ebike being called a motorcycle?)
-* minimizing false positives (is a tree being detected as a person?), see also [Defining Masks](#defining-masks)
+Frigate tracks `bicycle`, `person`, `car`, `bus`, `motorcycle`, and `dog` by default. Each object type has two scores in the `objects: filters:` section of the config:
 
-The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, camera quality and settings, and environmental conditions such as clouds, rain, snow, etc.
+* `min_score` is the score needed to start tracking an object.
+* `threshold` is the average score an object needs, over the time it's tracked, to count as a real detection.
 
-The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.
+The defaults set `bicycle` low, so most kinds of bike are detected, and `motorcycle` high, so a large e-bike isn't called a motorcycle. If you see false positives for a type, raise its `threshold`; if you miss objects, lower it. Frigate's [object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) page describes these and the size and shape filters.
 
-### Sample Object Detection Fine-Tuning
+## Masks
 
-The most relevant section of the Frigate config for fine-tuning object detection is the following. 
+Go to **Settings > Camera configuration > Masks / Zones**.
 
-In this sample, bicycle `min_score` and `threshold` are set low to detect most types of bikes encountered on the roadway while motorcycle `threshold` is set high so even large ebikes don't get misclassified as motorcycles:
-
-```yaml
-objects:
-  track:
-  - bicycle
-  - person
-  - car
-  - motorcycle
-  - dog
-  # Optional: filters to reduce false positives for specific object types
-  filters:
-    bicycle:
-      # Optional: minimum width*height of the bounding box for the detected object (default: 0)
-      min_area: 0
-      # Optional: maximum width*height of the bounding box for the detected object (default: 24000000)
-      max_area: 24000000
-      # Optional: minimum width/height of the bounding box for the detected object (default: 0)
-      min_ratio: 0.2
-      # Optional: maximum width/height of the bounding box for the detected object (default: 24000000)
-      max_ratio: 10.0
-      # Optional: minimum score for the object to initiate tracking (default: shown below)
-      min_score: 0.25
-      # Optional: minimum decimal percentage for tracked object's computed score to be considered a true positive (default: shown below)
-      threshold: 0.42
-    motorcycle:
-      min_area: 0
-      max_area: 24000000
-      min_ratio: 0.2
-      max_ratio: 10.0
-      min_score: 0.5
-      threshold: 0.8
-```
-
-## Defining Masks
-
-Optional step for reducing false-positives, creating private areas, and refining your configuration.  To access this capability, log into your Frigate interface and go to [Frigate > Settings > Motion Masks](https://docs.frigate.video/guides/getting_started/#step-5-setup-motion-masks).
+* A **motion mask** stops motion in an area, such as swaying branches or a timestamp overlay, from triggering detection.
+* An **object mask** ignores detections of one object type in an area, such as a parked car that's detected every time the light changes.
 
 !!! warning
 
-    Use masks sparingly. _Over-masking will make it more difficult for objects to be tracked._ Motion masks should not be used to mark out areas where you do not want objects to be detected or to reduce false positives.
+    Use masks sparingly. Over-masking makes objects harder to track. A motion mask isn't the tool for cutting false positives; adjust the object filters first.
 
-    If you are getting many false positives, e.g. a tree that gets detected as a person, we recommend first modifying [object filters](https://docs.frigate.video/configuration/object_filters/) such as `threshold` and `min_score`.
+Frigate's [masks](https://docs.frigate.video/configuration/masks) page has the details.
 
-1. **Motion Masks**:  may be designated to prevent unwanted types of motion from triggering detection.
-2. **Object filter masks**: filter out false positives for a given object type based on location.
+## Higher-resolution stream
 
-For detailed information visit [Frigate > Masks](https://docs.frigate.video/configuration/masks).
+The Pi camera is set up to produce two streams. Frigate uses `picam_h265_detect` at 1536×864 by default, which gives the best balance of detail and load. A second stream, `picam_h265_detect_hr`, runs at 2304×1296 for cases where objects are small in the frame.
 
-## Improved Models
+To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Then redraw the [zones](../setup-guide.md#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
 
-Check out the premium [Frigate+](https://docs.frigate.video/plus/) for fine-tuned models that may increase accuracy and efficiency.
+## Recordings and snapshots
+
+By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](../data-and-payloads/data-overview.md) describes what the device stores.
+
+## Better models
+
+[Frigate+](https://docs.frigate.video/plus/) offers paid models fine-tuned on your own snapshots, which can raise accuracy for a difficult site.
