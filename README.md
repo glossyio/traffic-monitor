@@ -45,6 +45,7 @@ See [Setup Guide](https://docs.trafficmonitor.ai/latest/setup-guide/).
 - `http://<device_ip_address>:1880/ui` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
 - `http://<device_ip_address>:5000` to view the [Frigate](https://github.com/blakeblackshear/frigate) interface and make any configuration changes specific to your deployment
 - `http://<device_ip_address>:1984` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) configured camera settings on the Raspberri Pi. Use this if your cameras are giving errors in Frigate.
+- `http://<device_ip_address>/system/` opens [Cockpit](https://cockpit-project.org/) for system administration: services, logs, updates, containers, and a terminal. Log in with your Raspberry Pi user account. Cockpit also answers directly on port `9090`.
 - `http://<device_ip_address>:1880` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
 
 ## Troubleshooting ⚠️

@@ -12,6 +12,10 @@ Contributions can include any of the following plus more!
 
 We foster a safe and welcoming community, review [our Code of Conduct](https://github.com/glossyio/traffic-monitor?tab=coc-ov-file#readme).
 
+## Use of AI tools
+
+You may use AI coding assistants to help draft, review, or explain a contribution, but you remain its author: understand and test every change you submit. Never share images, video clips, or plate reads with an AI tool, and use placeholders instead of real passwords, keys, or tokens. The de-identified `tmdb.sqlite` database may be shared only with the device operator's explicit consent, and never if plate recognition was ever enabled, because it then holds plate numbers. See [Use of AI tools](https://github.com/glossyio/traffic-monitor/blob/dev/CONTRIBUTING.md#use-of-ai-tools) in CONTRIBUTING.md for the details and for how to label AI-assisted commits.
+
 ## Writing docs
 
 These docs are Markdown files in the repo's [`docs/`](https://github.com/glossyio/traffic-monitor/tree/dev/docs) folder, built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). Docs changes go in the same pull request as the code they describe, against `dev`.

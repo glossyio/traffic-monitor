@@ -1,0 +1,11 @@
+# Common proxy settings, including WebSocket upgrade support.
+# Include this inside each location: nginx drops server-level
+# proxy_set_header lines in any location that sets its own.
+proxy_http_version 1.1;
+# $http_host keeps the port the browser used; apps such as Cockpit compare it with Origin
+proxy_set_header Host $http_host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection $connection_upgrade;

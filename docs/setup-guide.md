@@ -48,6 +48,10 @@ If your Traffic Monitor uses the default Raspberry Pi installation method, you w
 
 You will need to know the Traffic Monitor / Raspberry Pi IP address or host name to connect to the various configuration environments. 
 
+!!! info
+
+    For system administration in a browser, open `http://<TM_IP_ADDRESS>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows services, logs, updates, and containers, and has a terminal. It also answers directly on port `9090`.
+
 #### Finding Your IP address
 
 * If you chose the [Build Your Own Device (DIY)](build-your-own-device-diy/README.md) route, we recommend you set up WiFi credentials by following the [Raspberry Pi Imager docs](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system) and it will automatically be accessible the network you specified. Find the RPi IP address via your router, or if your router supports DNS host names, you can use the host name set on the RPi.

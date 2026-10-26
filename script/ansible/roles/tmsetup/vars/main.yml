@@ -28,16 +28,38 @@ tmsetup_packages:
   - rpicam-apps
   - sysstat
 
+tmsetup_packages_backports:
+  - cockpit
+  - cockpit-files
+  - cockpit-podman
+  - cockpit-sosreport
+
 tmsetup_base_required_facts:
   - os_family
   - distribution
   - distribution_major_version
   - distribution_version
+  - distribution_release
   - architecture
   - user_id
   - user_dir
   - hostname
 
-# Set base path for Frigate
-tmsetup_base_path_frigate: /frigate
+tmsetup_revproxy_image: localhost/revproxy:latest
+# Config mounted into the revproxy container, relative to {{ tmsetup_codedir }}/revproxy.
+# revproxy.container and the nginx -t check in revproxy_setup.yml both use this list.
+tmsetup_revproxy_config_mounts:
+  - { path: nginx.conf, target: /etc/nginx/nginx.conf }
+  - { path: tm, target: /etc/nginx/tm }
+
+# Reverse proxy location files, one per app (container/revproxy/tm/locations).
+# Deployed location files not listed here are removed from the device.
+tmsetup_revproxy_locations:
+  - cockpit.conf
+  - dashboard.conf
+  - frigate.conf
+  - go2rtc.conf
+  - legacy-ui.conf
+  - nodered.conf
+
 ...
