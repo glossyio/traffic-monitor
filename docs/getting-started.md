@@ -1,33 +1,49 @@
 ---
-icon: play
 description: Start counting with the Traffic Monitor!
-icon: play
 ---
 
 # Getting Started
 
 ## Step 1: Get your Traffic Monitor
 
-The traffic monitor requires the [Recommended Hardware](recommended-hardware.md) and [software installation](software-installation.md) before you can begin capturing roadway data.
+The traffic monitor requires the [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md) and [software installation](software-installation.md) before you can begin capturing roadway data.
 
 There are two ways to get started:
 
-<table data-card-size="large" data-view="cards"><thead><tr><th></th><th></th><th></th><th data-hidden data-card-cover data-type="files"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>Build It!</strong>  </td><td>See our <a href="build-your-own-device-diy/">Build your own device (DIY)</a> guide. The software is open source and components are available retail.</td><td>Customize to your heart's content.</td><td><a href=".gitbook/assets/icon-diy-350x200px-black-bg_grey.png">icon-diy-350x200px-black-bg_grey.png</a></td><td><a href="build-your-own-device-diy/">build-your-own-device-diy</a></td></tr><tr><td><strong>Buy It!</strong></td><td>(<em>coming soon)</em></td><td>Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.</td><td><a href=".gitbook/assets/icon-shop-350x200px-black-bg_grey.png">icon-shop-350x200px-black-bg_grey.png</a></td><td></td></tr></tbody></table>
+<div class="grid cards" markdown>
+
+-   ![](assets/images/icon-diy-350x200px-black-bg_grey.png)
+
+    **[Build It!](build-your-own-device-diy/README.md)**
+
+    ---
+
+    See our [Build your own device (DIY)](build-your-own-device-diy/README.md) guide. The software is open source and components are available retail. Customize to your heart's content.
+
+-   ![](assets/images/icon-shop-350x200px-black-bg_grey.png)
+
+    **Buy It!** (_coming soon_)
+
+    ---
+
+    Purchase a pre-built traffic monitor or kit from the Roadway Biome Project.
+
+</div>
 
 ## Step 2: Plan your Deployment
 
-The traffic monitor must be placed with a good view of the roadway. See the [deployment-and-mounting-guide.md](deployment-and-mounting-guide.md "mention") for more information on the most common deployment types:&#x20;
+The traffic monitor must be placed with a good view of the roadway. See the [Deployment and Mounting Guide](deployment-and-mounting-guide.md) for more information on the most common deployment types:
 
-1. [#temporary](deployment-and-mounting-guide.md#temporary "mention") deployments allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
-2. [#permanent](deployment-and-mounting-guide.md#permanent "mention") deployments are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
+1. [Temporary deployments](deployment-and-mounting-guide.md#temporary-deployments) allow you to set up on the right-of-way or sidewalk next to a roadway to get counts for a short time.
+2. [Permanent deployments](deployment-and-mounting-guide.md#permanent-deployments) are geared towards setting up a traffic monitor in a location to get 24/7 counts and monitoring.
 
 ## Step 3: Set up your Device
 
 After you have your traffic monitor built, software installed, and physically set up (mounted), it is time to boot it up!  To get the best data and most out of the device, follow these steps:
 
-1. [setup-guide.md](setup-guide.md "mention")
-2. [frigate-config.md](configuration/frigate-config.md "mention") will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
-3. [node-red-config.md](configuration/node-red-config.md "mention") will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!&#x20;
+1. [Setup Guide](setup-guide.md)
+2. [Frigate Config](configuration/frigate-config.md) will guide you in setting up the object detection capabilities by turning on the camera and detection and defining zones.
+3. [Node-RED Config](configuration/node-red-config.md) will turn on additional data collection capabilities, such as pairing your camera with the radar and other sensors, sharing your de-identified event data with another system or data provider, and more!
 
 ## Step 4: Collect and Share that Data
 
@@ -37,4 +53,7 @@ You can view the on-device dashboards, review event snapshots and clips in Friga
 
 Consider pairing the Traffic Monitor with physical displays to show daily counts of cars, bikes, and pedestrians.  The sky is the limit!  Learn more and share via the [TM GitHub Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or our [TM Zulip chat](https://trafficmonitor.zulipchat.com/).
 
-<figure><img src=".gitbook/assets/tm-display-pic01.jpg" alt=""><figcaption><p>LED Display showing daily counts capture with the traffic monitor</p></figcaption></figure>
+<figure markdown="span">
+  ![](assets/images/tm-display-pic01.jpg)
+  <figcaption>LED Display showing daily counts capture with the traffic monitor</figcaption>
+</figure>

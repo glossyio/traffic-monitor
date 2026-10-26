@@ -4,11 +4,14 @@ description: Assemble the traffic monitor and get it ready for use
 
 # Assembly Instructions
 
-{% hint style="success" %}
-The assembly instructions assume you have the [recommended-hardware.md](../recommended-hardware.md "mention").
-{% endhint %}
+!!! success
 
-<figure><img src="../.gitbook/assets/Screenshot_20260217_143355.png" alt=""><figcaption><p>Full set of Traffic Monitor components ready for assembly</p></figcaption></figure>
+    The assembly instructions assume you have the [Recommended Hardware](recommended-hardware.md).
+
+<figure markdown="span">
+  ![](../assets/images/Screenshot_20260217_143355.png)
+  <figcaption>Full set of Traffic Monitor components ready for assembly</figcaption>
+</figure>
 
 **Steps 1-34** show assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or AI HAT+), and radar using the 3D printed enclosure.
 
@@ -18,7 +21,7 @@ The assembly instructions assume you have the [recommended-hardware.md](../recom
 
 Assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or AI HAT+), and radar using the 3D printed enclosure.
 
-<figure><img src="../.gitbook/assets/assembly-01.png" alt=""><figcaption></figcaption></figure>
+![](../assets/images/assembly-01.png)
 
 1. Lay out all your parts and screws
 2. Lay out all your parts and screws (double-check)
@@ -59,9 +62,9 @@ Assembly of the Raspberry Pi 5 (RPi), Raspberry Pi 3 camera, Coral TPU HAT (or A
 
 The following are optional steps for air quality (AQ) sensors continued from above.
 
-<figure><img src="../.gitbook/assets/assembly-02.png" alt=""><figcaption></figcaption></figure>
+![](../assets/images/assembly-02.png)
 
-<figure><img src="../.gitbook/assets/Screenshot_20260217_142457.png" alt=""><figcaption></figcaption></figure>
+![](../assets/images/Screenshot_20260217_142457.png)
 
 1. (35) Locate the environmental sensor equipment; Enviro+ board and Particulat Matter (PM) sensors
 2. (36) Remove the enviro board and PM from packaging
@@ -71,7 +74,7 @@ The following are optional steps for air quality (AQ) sensors continued from abo
 6. (40) Attach the GPIO ribbon cable to the enviro board with the ribbon cable wires going down (the ribbon cable notch will be on the top)
 7. (41) Place the PM sensor into the slot, ensuring a tight fit into the pins on the bottom of the enclosure
 8. (42) View of the PM sensor from the bottom
-9. (43) Slip the enviro board into the air quality (AQ) carrier board.&#x20;
+9. (43) Slip the enviro board into the air quality (AQ) carrier board.
 10. (44) The pins on the bottom of the AQ carrier board should align to the enviro board. It may be snug.
 11. (45) Gently place the AQ carrier board into the alignment slots on the enclosure
 12. (46) There should be almost no gaps around the carrier board and enclosure
@@ -83,22 +86,28 @@ The following are optional steps for air quality (AQ) sensors continued from abo
 
 ### Attach the GPIO ribbon cable
 
-Carefully attach the ribbon cable to the Raspberry Pi GPIO ports with the notch on the top.&#x20;
+Carefully attach the ribbon cable to the Raspberry Pi GPIO ports with the notch on the top.
 
-<figure><img src="../.gitbook/assets/Screenshot_20260217_142822.png" alt=""><figcaption><p>Carefully attach the AQ ribbon cable with notch towards outside of RPi5</p></figcaption></figure>
+<figure markdown="span">
+  ![](../assets/images/Screenshot_20260217_142822.png)
+  <figcaption>Carefully attach the AQ ribbon cable with notch towards outside of RPi5</figcaption>
+</figure>
 
 Tips for working with the GPIO ribbon cable:
 
 * It can help to pre-fold the ribbon cable so it sits flat when the case is closed.
-* The ribbon cable will be tight on the pins and against the RPi active cooler heatsink.&#x20;
-  * Carefully work the ribbon cable down moving from side-to-side a few milimeters at a time until fully onto seated onto the pins. &#x20;
+* The ribbon cable will be tight on the pins and against the RPi active cooler heatsink.
+  * Carefully work the ribbon cable down moving from side-to-side a few milimeters at a time until fully onto seated onto the pins. 
 * To remove the cable (unplugged the RPi before you remove it):
-  * Carefully insert a flat-head screwdriver between the ribbon cable head and GPIO plastic header.&#x20;
+  * Carefully insert a flat-head screwdriver between the ribbon cable head and GPIO plastic header.
   * Slowly work the GPIO cable off the pins from side-to-side, a few milimeters at a time. Be careful not to short the pins with the screwdriver.
 
 ## Ready to deploy!
 
 Close the case, and it's ready to use!  🎉
 
-<figure><img src="../.gitbook/assets/Screenshot_20260217_135645.png" alt=""><figcaption><p>Traffic monitors ready to count</p></figcaption></figure>
+<figure markdown="span">
+  ![](../assets/images/Screenshot_20260217_135645.png)
+  <figcaption>Traffic monitors ready to count</figcaption>
+</figure>
 

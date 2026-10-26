@@ -17,13 +17,13 @@ The [Traffic Monitor OSS repo](https://github.com/glossyio/traffic-monitor) is s
 * Saving payloads and data internally
 * Sending data to downstream applications
 
-To get started developing:&#x20;
+To get started developing:
 
 1. Access the Node-RED interface:  `http://<you_ip>:1880` and enter the default username and password.
 2. Start a New Project and Clone \[your fork of] the traffic-monitor repo.  This will completely reset the current project, so ensure you have saved any changes.
 3. Change `flows.json` and `package.json` to the `node-red-tm/data` directory locations so changes will be incorporated
 4. Commit changes to the \[forked] repo in a new branch.
-5. PR changes following the [contributing.md](contributing.md "mention") guidelines.
+5. PR changes following the [Contributing](contributing.md) guidelines.
 
 ## Database schema
 
@@ -32,7 +32,7 @@ The tables in the Traffic Monitor database are defined by numbered SQL migration
 To change the schema:
 
 1. Add the next numbered migration, regenerate `schema.sql`, and update the table docs in [data-and-payloads](../data-and-payloads/data-overview.md).
-2. Run the tests, using the dev environment from [contributing.md](contributing.md "mention"):
+2. Run the tests, using the dev environment from [Contributing](contributing.md):
 
    ```bash
    .venv/bin/python -m pytest container/node-red-tm/schema/tests
@@ -56,6 +56,6 @@ The database records each migration it applies. If you change a migration after 
 
 The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repo. `script/devpi/README.md` covers setup and use.
 
-{% hint style="warning" %}
-Use these tools only with bench units, not field devices. Deploys pass `-y` to `tmsetup.sh`, so the Pi reboots when the installer needs it.
-{% endhint %}
+!!! warning
+
+    Use these tools only with bench units, not field devices. Deploys pass `-y` to `tmsetup.sh`, so the Pi reboots when the installer needs it.

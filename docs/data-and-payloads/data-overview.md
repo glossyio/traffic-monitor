@@ -10,24 +10,24 @@ The system records granular, event-level records for all sensors including those
 
 We believe in the power of [open data](https://en.wikipedia.org/wiki/Open_data). Anonymized data are crucial for useful social research and a public good. Our system (the Traffic Monitor database) prioritizes privacy by capturing as little [personally identifiable information](https://en.wikipedia.org/wiki/Personal_data) (PII) data as possible. With the default settings, our dataset is fully [de-identified](https://en.wikipedia.org/wiki/De-identification) so it is easier to share with mitigated risk to individuals and the public.
 
-The Traffic Monitor may, via configuration file changes, capture PII such as license plates and images from persons, for example, via full roadway snapshots and clips from the camera.&#x20;
+The Traffic Monitor may, via configuration file changes, capture PII such as license plates and images from persons, for example, via full roadway snapshots and clips from the camera.
 
-Be aware that when enabled, additional applications and sensors may be captured both in the [primary database](data-overview.md#database-structure), losing de-identified qualification, and elsewhere on the device storage; e.g. application-specific folders and databases that contain their own retention policies.
+Be aware that when enabled, additional applications and sensors may be captured both in the [primary database](#database-structure), losing de-identified qualification, and elsewhere on the device storage; e.g. application-specific folders and databases that contain their own retention policies.
 
-{% hint style="warning" %}
-Applications, plugins, and sensors may also store data for their own operation data in their own structure and locations.
-{% endhint %}
+!!! warning
+
+    Applications, plugins, and sensors may also store data for their own operation data in their own structure and locations.
 
 ## Storage formats
 
-The Traffic Monitor database utilizes unencrypted, open formats by default to make them portable and easy to share.&#x20;
+The Traffic Monitor database utilizes unencrypted, open formats by default to make them portable and easy to share.
 
 * [SQLite](https://www.sqlite.org/) is the native database format and can be viewed with open source [DB Browser for SQLite](https://sqlitebrowser.org/).
-* [JSON](https://en.wikipedia.org/wiki/JSON) - The [database.md](../ui/database.md "mention") UI tab allows downloading data with specific filteres including by table, object(s), and/or time frames.
+* [JSON](https://en.wikipedia.org/wiki/JSON) - The [Database](../ui/database.md) UI tab allows downloading data with specific filteres including by table, object(s), and/or time frames.
 
-## Database structure&#x20;
+## Database structure
 
-The Traffic Monitor database contains all captured, combined, and processed data from sensors, including additional, optional applications.&#x20;
+The Traffic Monitor database contains all captured, combined, and processed data from sensors, including additional, optional applications.
 
 For tables related to sensors that are not installed, they will simply contain no records.
 
@@ -41,6 +41,6 @@ Before applying new migrations, the device saves a copy of the database in `{{ t
 
 ## How to access data
 
-* Traffic Monitor Database:  On-device dashboard: [database.md](../ui/database.md "mention") UI tab
+* Traffic Monitor Database:  On-device dashboard: [Database](../ui/database.md) UI tab
 * Frigate data: [Recording](https://docs.frigate.video/configuration/record) and [Snapshots](https://docs.frigate.video/configuration/record) follow [configuration](../configuration/frigate-config.md) policies at `{{ tmsetup_codedir }}/frigate/storage`
 * Other apps, plugins, and sensors may also store data for their own operation

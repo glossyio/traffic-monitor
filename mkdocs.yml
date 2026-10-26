@@ -1,0 +1,94 @@
+# Docs site for docs.trafficmonitor.ai, built with Material for MkDocs and
+# versioned with mike. See docs/development/contributing.md#writing-docs.
+site_name: Traffic Monitor
+site_description: Open-source roadway counting and speed monitoring on a Raspberry Pi
+site_url: https://docs.trafficmonitor.ai/
+repo_url: https://github.com/glossyio/traffic-monitor
+repo_name: glossyio/traffic-monitor
+edit_uri: edit/dev/docs/
+
+theme:
+  name: material
+  custom_dir: docs-site/overrides
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  version:
+    provider: mike
+    default: latest
+    alias: true
+
+plugins:
+  - search
+  - mike:
+      # Copy the release to /latest/ rather than symlinking it, so it doesn't
+      # depend on the host following symlinks.
+      alias_type: copy
+      canonical_version: latest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+# With `mkdocs build --strict`, these warnings fail the build.
+validation:
+  omitted_files: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Welcome to smart city traffic monitoring: README.md
+  - Getting Started: getting-started.md
+  - Build Your Own Device (DIY):
+      - build-your-own-device-diy/README.md
+      - Recommended Hardware: build-your-own-device-diy/recommended-hardware.md
+      - Assembly Instructions: build-your-own-device-diy/assembly-instructions.md
+  - Software Installation: software-installation.md
+  - Deployment and Mounting Guide: deployment-and-mounting-guide.md
+  - Setup Guide: setup-guide.md
+  - Configuration:
+      - Config Overview: configuration/overview.md
+      - Frigate Config: configuration/frigate-config.md
+      - Node-RED Config: configuration/node-red-config.md
+  - User Interface:
+      - Monitoring: ui/monitoring.md
+      - Database: ui/database.md
+      - Movements: ui/movements.md
+  - Data and Payloads:
+      - Data Overview: data-and-payloads/data-overview.md
+      - Events Payload: data-and-payloads/events-payload.md
+      - Radar Payload: data-and-payloads/radar-payload.md
+      - Air Quality (AQ) Payload: data-and-payloads/air-quality-aq-payload.md
+  - Help & FAQ:
+      - Frequently Asked Questions: help-and-faq/frequently-asked-questions.md
+      - Where can I get support?: help-and-faq/where-can-i-get-support.md
+      - Use Cases and Scenarios: help-and-faq/use-cases-and-scenarios.md
+  - Development:
+      - Dev Environment: development/dev-environment.md
+      - Contributing: development/contributing.md

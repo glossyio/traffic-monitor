@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{#- Style for the page description shown under the title. -#}
+{% block extrahead %}
+  <style>
+    .md-typeset .tm-description {
+      color: var(--md-default-fg-color--light);
+      font-size: 1.15em;
+      margin-top: -0.6em;
+    }
+  </style>
+{% endblock %}
+
+{#- Shown on every version except the latest release. -#}
+{% block outdated %}
+  You're viewing docs for an unreleased or older version.
+  <a href="{{ '../' ~ base_url }}">
+    <strong>Go to the latest release.</strong>
+  </a>
+{% endblock %}
+
+{#-
+  Same as Material's partials/content.html, plus the page's front matter
+  `description` shown under the title, the way GitBook showed it.
+-#}
+{% block content %}
+  {% include "partials/tags.html" %}
+  {% include "partials/actions.html" %}
+  {% set body = page.content %}
+  {% if page.meta and page.meta.description %}
+    {% set lead = '</h1>\n<p class="tm-description">' ~ (page.meta.description | e) ~ '</p>' %}
+    {% set body = body | replace("</h1>", lead, 1) %}
+  {% endif %}
+  {% if "<h1" not in page.content %}
+    <h1>{{ page.title | d(config.site_name, true) }}</h1>
+  {% endif %}
+  {{ body }}
+  {% include "partials/source-file.html" %}
+  {% include "partials/feedback.html" %}
+  {% include "partials/comments.html" %}
+{% endblock %}

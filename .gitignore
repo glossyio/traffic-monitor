@@ -1,5 +1,6 @@
 *.backup
 .vscode
+site/
 .venv/
 __pycache__/
 .pytest_cache/

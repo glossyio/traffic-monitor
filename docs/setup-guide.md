@@ -1,31 +1,30 @@
 ---
 description: Steps to connect to and setup your Traffic Monitor.
-icon: sliders
 ---
 
 # Setup Guide
 
-At this point you have [deployed](deployment-and-mounting-guide.md) your traffic monitor and it is running, or it is on your desk and you are testing it. ;-) Either way, nice job!&#x20;
+At this point you have [deployed](deployment-and-mounting-guide.md) your traffic monitor and it is running, or it is on your desk and you are testing it. ;-) Either way, nice job!
 
 This guide will walk you though configuring your device based on your sensors (_required_), adjust it for roadway conditions (_recommended_), optimize your data capture, and connect with the ThingsBoard platform (optional).
 
-{% hint style="info" %}
-Note that the software as of v0.5 is still _pre-consumer (alpha)_ and requires some technical expertise including: connecting to the Raspberry Pi via `ssh` and modifying some text configuration files.
+!!! info
 
-We welcome your feedback, requests, and questions via [where-can-i-get-support.md](help-and-faq/where-can-i-get-support.md "mention")
-{% endhint %}
+    Note that the software as of v0.5 is still _pre-consumer (alpha)_ and requires some technical expertise including: connecting to the Raspberry Pi via `ssh` and modifying some text configuration files.
 
-{% hint style="warning" %}
-The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.&#x20;
-{% endhint %}
+    We welcome your feedback, requests, and questions via [Where can I get support?](help-and-faq/where-can-i-get-support.md)
+
+!!! warning
+
+    The default configuration files have disabled all sensors until you follow these steps. There will be no data captured until you enable your sensors using the following steps.
 
 ## Power on
 
 Power on the Traffic Monitor. Once it is plugged in to a power source it will automatically start without further intervention. Check for the green LED on the Raspberry Pi to confirm the device has power then proceed with the following steps:
 
-* [x] [#id-1.-connect-to-your-device](setup-guide.md#id-1.-connect-to-your-device "mention")
-* [x] [#id-2.-configure-frigate-zones](setup-guide.md#id-2.-configure-frigate-zones "mention")
-* [x] [#id-3.-configure-node-red](setup-guide.md#id-3.-configure-node-red "mention")
+* [x] [1. Connect to your Device](#1-connect-to-your-device)
+* [x] [2. Configure Frigate Zones](#2-configure-frigate-zones)
+* [x] [3. Configure Node-RED](#3-configure-node-red)
 
 ## 1. Connect to your Device
 
@@ -43,19 +42,19 @@ See [Raspberry Pi Getting Started](https://www.raspberrypi.com/documentation/com
 
 If your Traffic Monitor uses the default Raspberry Pi installation method, you will have an [SD Card boot media](https://www.raspberrypi.com/documentation/computers/getting-started.html#sd-cards) that contains all your system files. If necessary, you can insert the card into a micro-SD card reader to access the entire Raspberry Pi OS directory structure.
 
-### Remote Access&#x20;
+### Remote Access
 
 (_Recommended_) Remote access allows you to control various parts of your Raspberry Pi without connecting it to a monitor, keyboard, or mouse. This must be done from another computer, e.g. a laptop.  See [Raspberry Pi's remote access](https://www.raspberrypi.com/documentation/computers/remote-access.html#introduction-to-remote-access) docs for a full rundown of options.
 
-You will need to know the Traffic Monitor / Raspberry Pi IP address or host name to connect to the various configuration environments. &#x20;
+You will need to know the Traffic Monitor / Raspberry Pi IP address or host name to connect to the various configuration environments. 
 
-{% hint style="info" %}
-For system administration in a browser, open `http://<TM_IP_ADDRESS>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows services, logs, updates, and containers, and has a terminal. It also answers directly on port `9090`.
-{% endhint %}
+!!! info
+
+    For system administration in a browser, open `http://<TM_IP_ADDRESS>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows services, logs, updates, and containers, and has a terminal. It also answers directly on port `9090`.
 
 #### Finding Your IP address
 
-* If you chose the [build-your-own-device-diy](build-your-own-device-diy/ "mention") route, we recommend you set up WiFi credentials by following the [Raspberry Pi Imager docs](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system) and it will automatically be accessible the network you specified. Find the RPi IP address via your router, or if your router supports DNS host names, you can use the host name set on the RPi.
+* If you chose the [Build Your Own Device (DIY)](build-your-own-device-diy/README.md) route, we recommend you set up WiFi credentials by following the [Raspberry Pi Imager docs](https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system) and it will automatically be accessible the network you specified. Find the RPi IP address via your router, or if your router supports DNS host names, you can use the host name set on the RPi.
 * If you received a **pre-built device**, check with your provider for specific instructions. To get you started, it may be available as a Hotspot that will [host a wireless network](https://www.raspberrypi.com/documentation/computers/configuration.html#host-a-wireless-network-from-your-raspberry-pi). Connect to it like any WiFi network, look for the host name as the SSID. The IP address of the Raspberry Pi will be the Gateway IP address or you may use the host name set on the RPi.
 
 See [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address) for more options.
@@ -64,17 +63,17 @@ See [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/docum
 
 Frigate controls and generates object detection events with the camera.
 
-{% hint style="info" %}
-This section describes setting up Frigate with the Traffic Monitor [recommended-hardware.md](recommended-hardware.md "mention"). If you have alternative or optional camera(s) or other components, you may need additional configuration. Reference the official [Frigate Configuration](https://docs.frigate.video/guides/getting_started#configuring-frigate) for more details.
-{% endhint %}
+!!! info
+
+    This section describes setting up Frigate with the Traffic Monitor [Recommended Hardware](build-your-own-device-diy/recommended-hardware.md). If you have alternative or optional camera(s) or other components, you may need additional configuration. Reference the official [Frigate Configuration](https://docs.frigate.video/guides/getting_started#configuring-frigate) for more details.
 
 &#x20;Frigate has a well-developed front-end user interface that can be accessed by visiting `http://<TM_IP_ADDRESS>:5000`  in a browser.
 
 The Traffic Monitor will be expecting the following specifically named [Frigate zones](https://docs.frigate.video/configuration/zones/) to work properly with all dashboards and workflow logic.  These need to manually drawn based on your deployment.
 
-{% hint style="success" %}
-Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment and roadway conditions. &#x20;
-{% endhint %}
+!!! success
+
+    Ensure following [Frigate zones](https://docs.frigate.video/configuration/zones/) are manually configured each time a the traffic monitor is re-positioned or relocated, based on your unique deployment and roadway conditions. 
 
 Set up or modify the following zones, overlaying any temporary or permanent stationary objects:
 
@@ -83,23 +82,26 @@ Set up or modify the following zones, overlaying any temporary or permanent stat
 3. <mark style="color:red;">zone\_far</mark> - Paired with `zone_far`, this will determine if an object moves "outbound" or "inbound". Set this to be roughly the closer half of the `zone_capture` region.
 4. <mark style="color:red;">zone\_radar</mark> - (for units equipped with radar) - This should correspond to the field of view for the radar (where it can pick up accurate measurements) on the street. It will roughly make a rectangle in the center of the camera field of view from curb to curb.
 
-<figure><img src=".gitbook/assets/Screenshot_20250306_110924.png" alt=""><figcaption><p>Properly configured Frigate Zones</p></figcaption></figure>
+<figure markdown="span">
+  ![](assets/images/Screenshot_20250306_110924.png)
+  <figcaption>Properly configured Frigate Zones</figcaption>
+</figure>
 
 After changes are made, you will need to restart Frigate before they take effect. You can do this via **Frigate > Settings > Restart Frigate**.
 
 ### Optimize Object Detection
 
-The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, different cameras and camera settings, and environmental conditions.&#x20;
+The object detection model accuracy and detection ability may vary depending on a number of factors including mounting conditions such as height and angles to the roadway, different cameras and camera settings, and environmental conditions.
 
-The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.&#x20;
+The generalized model available in the base version works well at a variety of angles, but is particularly suited for an oblique angle that has a good side-view of objects as they pass through the frame. [Frigate object filters](https://docs.frigate.video/configuration/object_filters/#object-scores) have a variety of score and threshold parameters that may be set to be more effective with your deployment.
 
 ## 3. Configure Node-RED
 
 Node-RED controls most of the workflow logic and data collection.
 
-You will need to [#connect-to-your-device](setup-guide.md#connect-to-your-device "mention") to edit the [node-red-config.md](configuration/node-red-config.md "mention") files.
+You will need to [Connect to your device](#1-connect-to-your-device) to edit the [Node-RED Config](configuration/node-red-config.md) files.
 
-1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`&#x20;
+1. Open up the terminal or via SSH and edit the node-red config file located at: `/opt/traffic-monitor/node-red-tm/config/config.yml`
    1. To edit the config file with nano run: `sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml`
 2. Change the deployment location information to represent the current deployment. Get your latitude and longitude from any map service, such as Google Maps and enter bearing with the single-letter cardinal direction the traffic monitor is facing.
 

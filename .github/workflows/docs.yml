@@ -1,0 +1,113 @@
+# Builds the docs site (mkdocs.yml, docs/) and publishes it with mike to the
+# gh-pages branch, which GitHub Pages serves at docs.trafficmonitor.ai.
+#   - pull requests: strict build only (broken links, images, anchors, nav)
+#   - push to dev:   deploys /dev/
+#   - release tag:   deploys /vX.Y.Z/; the highest release also becomes /latest/
+name: Docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "docs-site/**"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [dev]
+    # GitHub doesn't apply path filters to tag pushes, so every release tag deploys.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "docs-site/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs-site/requirements.txt
+      - run: pip install --require-hashes -r docs-site/requirements.txt
+      - run: mkdocs build --strict
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    # Every deploy pushes to gh-pages, so run them one at a time.
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs-site/requirements.txt
+      - run: pip install --require-hashes -r docs-site/requirements.txt
+
+      - name: Check the build
+        run: mkdocs build --strict
+
+      - name: Prepare git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages --depth=1 || echo "No gh-pages branch yet; mike creates it."
+
+      - name: Deploy this version
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF" in
+            refs/heads/dev)
+              mike deploy --push --title "Dev (unreleased)" dev
+              ;;
+            refs/tags/v*)
+              version="$GITHUB_REF_NAME"
+              if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "::error::$version isn't a release tag (vX.Y.Z)."
+                exit 1
+              fi
+              highest=$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' \
+                | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+              if [ "$version" = "$highest" ]; then
+                mike deploy --push --update-aliases --title "$version" "$version" latest
+                mike set-default --push latest
+              else
+                # Redeploying an older release must not move /latest/ back.
+                mike deploy --push --title "$version" "$version"
+              fi
+              ;;
+            *)
+              echo "::error::Docs deploy only runs for dev and release tags, not $GITHUB_REF."
+              exit 1
+              ;;
+          esac
+
+      - name: Update files at the site root
+        run: |
+          set -euo pipefail
+          git worktree add "$RUNNER_TEMP/gh-pages" gh-pages
+          cp -a docs-site/pages-root/. "$RUNNER_TEMP/gh-pages/"
+          cd "$RUNNER_TEMP/gh-pages"
+          git add -- $(cd "$GITHUB_WORKSPACE/docs-site/pages-root" && ls -A)
+          if git diff --cached --quiet; then
+            echo "Root files unchanged."
+          else
+            git commit -m "Update site root files from docs-site/pages-root"
+            git push origin gh-pages
+          fi

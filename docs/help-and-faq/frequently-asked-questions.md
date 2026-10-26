@@ -8,7 +8,7 @@ description: Troubleshooting tips and tricks
 
 The Traffic Monitor is built with a **privacy-by-design approach** because we believe in:
 
-* **Ethical and Transparent Monitoring**: Our mission is to democratize smart city monitoring by making it ethical and transparent. We value transparency from [open source](https://en.wikipedia.org/wiki/Open_source), [glass-box](https://en.wikipedia.org/wiki/White_box_\(software_engineering\)) code, architecture, and models.&#x20;
+* **Ethical and Transparent Monitoring**: Our mission is to democratize smart city monitoring by making it ethical and transparent. We value transparency from [open source](https://en.wikipedia.org/wiki/Open_source), [glass-box](https://en.wikipedia.org/wiki/White_box_\(software_engineering\)) code, architecture, and models.
 * **Community Safety and Trust**: The architecture is designed to maintain privacy and keep the population safe while providing data in your control. We understand it is ultimately in the hands of the person implementing a solution. A solution that is open can be better understood by anyone, and [audit controls](https://en.wikipedia.org/wiki/Information_technology_audit) may be demanded from operators, especially government departments.
 * **Unbiased Data Collection**: Object detection and counting is performed without human bias, allowing for a whole new avenue to collect data on holistic road usage. We understand and acknowledge that [algorithmic bias](https://en.wikipedia.org/wiki/Algorithmic_bias) may be built into the machine learning models intentionally or unintentionally. To address this we use public domain and open source models whenever possible and may specify models for full transparency.
 
@@ -21,7 +21,7 @@ Privacy is implemented through a decentralized, local processing architecture:
 * **No Images or Videos Stored by Default**: The native data de-identification process ensures no images or videos are stored unless the monitor is specifically configured for surveillance purposes (e.g., for License Plate Recognition or to capture a speeding event).
 * **User Control Over Sharing**: Users control what data is shared from the device through open communication standards like MQTT and HTTP APIs.
 * **Open Source for Transparency**: The system's software is open source (OSS) for transparency and auditability.
-* **Privacy Regions**: The device may be configured with privacy regions to restrict what data is collected in certain areas, see [#defining-masks](../configuration/frigate-config.md#defining-masks "mention").
+* **Privacy Regions**: The device may be configured with privacy regions to restrict what data is collected in certain areas, see [Defining Masks](../configuration/frigate-config.md#defining-masks).
 
 ## How many simultaneous object detections can the traffic monitor handle?
 
@@ -47,4 +47,7 @@ A couple of relevant discussions:
 
 Some illustration of this. I have a quiet road today, but when the sun is casting shadows through the trees, Frigate is doing a lot of work to send various regions (green boxes) to object detection to "see" if any of that shadow motion is an object. The following image has more than 18 regions (that I can count) it is sending to object detection PLUS the 9(??) labeled objects it is tracking and sending. My inference speed was still sitting around 9ms, so the object detector could handle many more. The CPU spikes because of the video decoding and motion tracking, but with the RPi5 we still had quite a bit of overhead.
 
-<figure><img src="../.gitbook/assets/image (2) (1).png" alt=""><figcaption><p>Roadway with many regions being sent to be checked for object detection because of motion and shadows.</p></figcaption></figure>
+<figure markdown="span">
+  ![](../assets/images/image-2-1.png)
+  <figcaption>Roadway with many regions being sent to be checked for object detection because of motion and shadows.</figcaption>
+</figure>

@@ -4,13 +4,13 @@ description: Traffic Monitor Configuration overview
 
 # Config Overview
 
-Traffic Monitor settings and configuration are stored and controlled locally, on each device.&#x20;
+Traffic Monitor settings and configuration are stored and controlled locally, on each device.
 
 The following configuration files control the most common operations:
 
-* [frigate-config.md](frigate-config.md "mention") - to enable and configure object detection
-* Node-RED [#environment-file](node-red-config.md#environment-file "mention") - to configure hardware sensors
-* Node-RED [#config-file](node-red-config.md#config-file "mention") - to enable and configure sensors and ThingsBoard IoT hub connection
+* [Frigate Config](frigate-config.md) - to enable and configure object detection
+* Node-RED [Environment File](node-red-config.md#environment-file) - to configure hardware sensors
+* Node-RED [Config File](node-red-config.md#config-file) - to enable and configure sensors and ThingsBoard IoT hub connection
 
 It is recommended to start with a minimal configuration and add to it as needed.
 
