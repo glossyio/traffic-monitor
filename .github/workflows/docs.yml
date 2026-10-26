@@ -74,6 +74,7 @@ jobs:
           set -euo pipefail
           case "$GITHUB_REF" in
             refs/heads/dev)
+              export TM_DOCS_BASE_URL="https://docs.trafficmonitor.ai/dev/"
               mike deploy --push --title "Dev (unreleased)" dev
               ;;
             refs/tags/v*)
@@ -82,6 +83,8 @@ jobs:
                 echo "::error::$version isn't a release tag (vX.Y.Z)."
                 exit 1
               fi
+              # llms.txt links point into this version's folder.
+              export TM_DOCS_BASE_URL="https://docs.trafficmonitor.ai/$version/"
               highest=$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' \
                 | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
               if [ "$version" = "$highest" ]; then

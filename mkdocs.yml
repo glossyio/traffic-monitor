@@ -37,6 +37,37 @@ extra:
 
 plugins:
   - search
+  # Writes llms.txt and llms-full.txt (https://llmstxt.org/) for AI tools.
+  # Pages in these folders are picked up automatically; a new top-level page
+  # must be added to "Get started".
+  - llmstxt:
+      # Links must include the version folder. The docs workflow sets
+      # TM_DOCS_BASE_URL for each version it deploys.
+      base_url: !ENV [TM_DOCS_BASE_URL, "https://docs.trafficmonitor.ai/latest/"]
+      full_output: llms-full.txt
+      markdown_description: >-
+        The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler
+        radar, and an optional AI accelerator into an open source roadway
+        counter and speed monitor. These docs cover hardware, installation,
+        setup, configuration, the on-device dashboards, and data payloads.
+      sections:
+        Get started:
+          - README.md
+          - getting-started.md
+          - build-your-own-device-diy/*.md
+          - software-installation.md
+          - deployment-and-mounting-guide.md
+          - setup-guide.md
+        Configuration:
+          - configuration/*.md
+        User interface:
+          - ui/*.md
+        Data and payloads:
+          - data-and-payloads/*.md
+        Help and FAQ:
+          - help-and-faq/*.md
+        Development:
+          - development/*.md
   - mike:
       # Copy the release to /latest/ rather than symlinking it, so it doesn't
       # depend on the host following symlinks.

@@ -1,0 +1,10 @@
+# Traffic Monitor
+
+> Open-source roadway counting and speed monitoring on a Raspberry Pi
+
+These docs are versioned. For AI tools, use the latest release:
+
+- [llms.txt for the latest release](https://docs.trafficmonitor.ai/latest/llms.txt): an index of every page, each as Markdown
+- [llms-full.txt for the latest release](https://docs.trafficmonitor.ai/latest/llms-full.txt): every page in one file
+
+Each version has its own copies, for example https://docs.trafficmonitor.ai/dev/llms.txt for unreleased changes.

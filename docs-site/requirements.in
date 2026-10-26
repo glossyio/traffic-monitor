@@ -3,3 +3,4 @@
 mkdocs==1.6.1
 mkdocs-material==9.8.0
 mike==2.2.0
+mkdocs-llmstxt==0.5.1

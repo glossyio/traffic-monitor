@@ -24,7 +24,7 @@ These docs are Markdown files in the repo's [`docs/`](https://github.com/glossyi
   `python3 -m venv ~/.venvs/tm-docs && ~/.venvs/tm-docs/bin/pip install --require-hashes -r docs-site/requirements.txt`
   once, then `~/.venvs/tm-docs/bin/mkdocs serve` and open <http://127.0.0.1:8000>.
 * **Check before you push:** `mkdocs build --strict` fails on broken links, anchors, and images, and on pages missing from the nav. Pull requests run the same check.
-* **New pages** go in the `nav:` list in `mkdocs.yml`.
+* **New pages** go in the `nav:` list in `mkdocs.yml`. A new page at the top level of `docs/` also goes in the `llmstxt` plugin's "Get started" list, so AI tools can find it in `llms.txt`.
 * **Images** go in `docs/assets/images/`. Link them with Markdown, `![Alt text](../assets/images/name.png)`, so the build can check the path. Add a caption with `<figure markdown="span">` (see existing pages).
 * **Callouts** use admonitions: `!!! info`, `!!! success`, `!!! warning`, or `!!! danger`, followed by the text indented four spaces.
 
