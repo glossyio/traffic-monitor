@@ -16,7 +16,7 @@
 
 **Status:** written 2026-10-02, aligned with the open PRs on 2026-10-13, and re-checked on 2026-10-14. Every PR it builds on merged into `dev` on 2026-10-25 (#202, #205, #206, #208, #210, #212, #214, #215), and Task 0 ran the same day:
 - It rebased this branch onto `dev` (`e076db0`) and re-checked the plan against the merged files. Step 2 lists what had changed.
-- Tasks 1, 2, 3, and 8 were run on the rebased branch in a scratch worktree, and their expected counts below come from that run.
+- Tasks 1, 2, 3, 8, and 9, and Task 11's collection step, were run on the rebased branch in a scratch worktree. Their expected counts below come from that run.
 - Tasks 4 and 5 depend on `dev` only through the Frigate template, unchanged since the 2026-10-14 run, and the render helper. Task 4's fixtures still generate as expected with today's helper.
 
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
@@ -25,19 +25,19 @@ The spec's "Builds on merged PRs" section describes the PRs. This plan uses thei
 - #206's dev venv and pytest layout
 - #214's `tmdev.py`, and #215's device tests
 
-**Open decisions.** Settle these with the person before the tasks that depend on them:
-- **Cockpit's `:9090`** (Tasks 9 and 10). It's a plain-HTTP login outside the proxy, so M2's login at the proxy won't cover it. Keep it as the rescue console, as the spec decided, or bind `cockpit.socket` to `127.0.0.1` with a `ListenStream=` drop-in and rely on SSH for rescue. Loopback would need a new step for the drop-in. Raised in #212's review on 2026-10-23. The tasks below are written for keeping it.
-- **#232: the pod stays down after `tmnet-network.service` fails once at boot.** Task 1 edits the same pod unit. Fold a fix into M1 as a new task, or leave it to its own PR. Either way, M1 keeps the home page up when the pod is down, because nginx leaves the pod (Task 2).
+**Decisions, 2026-10-25:**
+- **Cockpit's `:9090` stays open** as the rescue console. It's a plain-HTTP login outside the proxy, so M2's login at the proxy won't cover it. But binding it to `127.0.0.1` would leave SSH as the only rescue when Podman or nginx is broken. #212's review raised the question on 2026-10-23.
+- **#232 is folded in as Task 9**, because Task 1 edits the same pod unit. Docs became Task 10, and device tests Task 11.
 
-**Already done:** the `/storefiles` fix for #211 was made early on `feature/edge-ports/201`, and was checked on a dev Pi on 2026-10-14. Task 0 rebased it onto `dev`, so that check covered an older tree; Task 10 checks `/storefiles` again. That commit added:
+**Already done:** the `/storefiles` fix for #211 was made early on `feature/edge-ports/201`, and was checked on a dev Pi on 2026-10-14. Task 0 rebased it onto `dev`, so that check covered an older tree; Task 11 checks `/storefiles` again. That commit added:
 - `container/revproxy/tm/locations/storefiles.conf.j2` and its `tmsetup_revproxy_locations` entry
 - `script/tests/tmsetup_render.py` (Task 1 Step 1)
 - `script/tests/test_tmsetup_templates.py`, with `LOCATIONS`, `location()`, and the storefiles test
 - the CLAUDE.md mention
 
-Tasks 1, 2, 9, and 10 below build on those files instead of creating them.
+Tasks 1, 2, 10, and 11 below build on those files instead of creating them.
 
-**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edited `flows.json`, though not these nodes. On 2026-10-25, Task 8's script ran cleanly on the merged `dev`'s `flows.json`, and the schema tests still passed.
+**Folded in:** #223 is Task 8. Download errors came back as 200, and a failed `tar` left the download open. #208 also edited `flows.json`, though not these nodes. On 2026-10-25, Task 8's script ran cleanly on the merged `dev`'s `flows.json`, and the schema tests still passed. #232 is Task 9: the pod stayed down after `tmnet-network.service` failed once at boot.
 
 ## Global Constraints
 
@@ -65,7 +65,7 @@ Tasks 1, 2, 9, and 10 below build on those files instead of creating them.
   - A fixed value shared by several tasks or templates goes in `vars/main.yml`, like `tmsetup_hailo_driver_dir`. That covers `tmsetup_secrets_dir`, `tmsetup_secret_names`, `tmsetup_tm_control_dir`, and `tmsetup_go2rtc_rtsp_user`.
   - A value an operator may change goes in `defaults/main.yml`, with `-C` for booleans, like `tmsetup_bool_mqtt_lan`.
   - A literal used once, in one file, is hardcoded, like `/frigate`.
-- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 10). Keep device names and addresses out of commits and PR text.
+- **Pi checks:** run them with `script/devpi/tmdev.py` (`deploy`, `check`, `test`) before committing or opening the PR (Task 11). Keep device names and addresses out of commits and PR text.
 - **Python:** indented with 4 spaces, with a docstring for each module. No AI-provenance comments.
 - **Tests:**
   - Synthetic data only.
@@ -93,15 +93,16 @@ These are the likeliest failures for a person upgrading or using a device. Each 
 
 1. **Upgrading a device that already has `frigate.env` and Frigate's `config.yml`.** tmsetup doesn't overwrite these files without `-f`. After the upgrade, Frigate must still read the camera. The device's config may still be Frigate 0.17's: Frigate 0.18 rewrites it on its first start, after `tm-control migrate` has run. Tests in Tasks 4 and 5 run on both a 0.17 and a 0.18 config. Tests in Task 7 check that the migration produces exactly the URL that new installs get, and that `frigate.env` gains both credential lines.
 2. **Re-running `tmsetup.sh`.** The generated secrets must never be regenerated, because the go2rtc and Frigate sides would drift apart. They must never appear in the install log. Tests in Task 3.
-3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying. On a Pi, #215's `test_no_crash_restarts[revproxy.service]` fails if revproxy still had to retry after the handler restarted it (Task 10 Step 5).
+3. **The reverse proxy restarting during the upgrade while the old pod still holds port 80.** nginx must come up once the pod releases the port. Tests in Task 2 check the handler order and that the unit keeps retrying. On a Pi, #215's `test_no_crash_restarts[revproxy.service]` fails if revproxy still had to retry after the handler restarted it (Task 11 Step 5).
 4. **Crafted `/feeds/` requests.** These must get 403:
    - methods other than GET
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
    - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`). The viewing set includes HLS's `hls/` paths, which iPhones older than iOS 17 use.
 
-   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 10 send the same requests to a Pi.
+   Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 11 send the same requests to a Pi.
 5. **A hand-edited Frigate config that reads go2rtc by LAN IP instead of `host.containers.internal`.** The migration can't rewrite it, so it must warn loudly instead of silently leaving the camera dark. Test in Task 5.
-6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 10 test cover it. The endpoint's errors also came back as 200, and a `tar` failure left the download open (#223). Task 8 fixes both, and Task 10 tests them on a Pi.
+6. **Data export after port 1880 closes (#211).** Both downloads on the Dashboard's database page, the JSON export and the database download, go to `/storefiles?files=…` at the site root. Through the proxy that path returned 404. It worked only on port 1880, so without its own location M1 would leave no way to download data. That's fixed already (see "Already done"), with an off-device test in `test_tmsetup_templates.py`. On a Pi, #215's `test_proxied_locations_respond` and a Task 11 test cover it. The endpoint's errors also came back as 200, and a `tar` failure left the download open (#223). Task 8 fixes both, and Task 11 tests them on a Pi.
+7. **A failed start of `tmnet-network.service` at boot (#232).** The pod must still start, because the network it uses persists on disk. Test in Task 9 for the rendered unit; Task 11's disruptive device test makes the network unit fail once on a Pi.
 
 ---
 
@@ -151,9 +152,9 @@ On 2026-10-14 all of this matched. On 2026-10-25 these had changed in the final 
 - **`revproxy.container.j2`** takes its config mounts from `tmsetup_revproxy_config_mounts` in `vars/main.yml`, a list the `nginx -t` check uses too (#210). Task 2 keeps that loop, and its unit test passes the list.
 - **The "Check NGinx config" task** runs `nginx -t` with the `containers.podman.podman_container` module. It resolves `host.containers.internal` through `etc_hosts`, not `--add-host` (#210). Task 2 Step 4 removes the `etc_hosts` entry.
 - **`cockpit.conf.j2`** has a comment between `location` and `proxy_pass` (#212). Task 2 Step 4 now shows the whole file.
-- **`README.md`** lists Cockpit as a fifth app (#212), so the list moved down a line. `docs/setup-guide.md`'s Frigate address is now on line 70. Task 9 follows both.
-- **`test_web.py`** already imports `urllib.error` (Task 10 Step 1).
-- **`tmdev.py run`** joins the words after `--` and runs them in the Pi's login shell. Task 10 now passes compound commands as one quoted word instead of `sh -c`.
+- **`README.md`** lists Cockpit as a fifth app (#212), so the list moved down a line. `docs/setup-guide.md`'s Frigate address is now on line 70. Task 10 follows both.
+- **`test_web.py`** already imports `urllib.error` (Task 11 Step 1).
+- **`tmdev.py run`** joins the words after `--` and runs them in the Pi's login shell. Task 11 now passes compound commands as one quoted word instead of `sh -c`.
 
 Everything else still matched:
 - the `tmsetup.sh` lines;
@@ -375,7 +376,7 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
   - `render` and `load_role_yaml` from `tmsetup_render.py`
   - `LOCATIONS` and `location()` from `test_tmsetup_templates.py`
   - `storefiles.conf` from the storefiles commit. It proxies to `127.0.0.1:1880`, so the host network needs no change to it.
-- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 10's device tests check this on a Pi.
+- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 11's device tests check this on a Pi.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -609,7 +610,7 @@ Run:
 
 Expected: all tests pass (46 so far), then `exit 0`.
 
-The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 10. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
+The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 11. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
 
 - [ ] **Step 7: Commit**
 
@@ -1774,7 +1775,7 @@ exec:
 streams:
 ```
 
-`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 10 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
+`app.modules` and `exec.allow_paths` need go2rtc 1.9.12 or later; #220 pinned 1.9.14. In go2rtc's source, `webrtc.listen: ""` only skips the fixed :8555 listener, and WebRTC still negotiates on random UDP ports. Leaving the module out is what turns WebRTC off. Task 11 Step 6 checks that no go2rtc UDP socket is open. If a stream later needs another command, add it to `allow_paths`; the drift test above fails until you do.
 
 Then remove the old file: `git rm script/ansible/roles/tmsetup/files/go2rtc.yaml`
 
@@ -1907,7 +1908,7 @@ The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted
 
 **Interfaces:**
 - Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. The download headers go out with the first chunk, so a failure before that is a plain HTTP error with no file to save.
-- Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 10's device tests check all of this on a Pi.
+- Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 11's device tests check all of this on a Pi.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2151,7 +2152,7 @@ What it changes:
 GNU `tar` exits 1 when a file changes while it's being read. That still counts as a failed download (decided 2026-10-14), so don't treat exit 1 as success. A database download now tars its own copy, which nothing writes to, so it shouldn't happen there (decided 2026-10-25). The cost:
 - The copy needs about 1x the database in free space.
 - On a 2-3 GB database it takes 1-2 minutes before the first byte, and the database page says so.
-- While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 10 Step 5 checks it on a Pi.
+- While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 11 Step 5 checks it on a Pi.
 
 - [ ] **Step 4: Run the checks**
 
@@ -2168,7 +2169,7 @@ Expected:
 - `flows ok`
 - only `flows.json` changed: `1 file changed, 102 insertions(+), 44 deletions(-)` on 2026-10-25's `dev`.
 
-There's no Node.js in the dev tools, so Task 10 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
+There's no Node.js in the dev tools, so Task 11 runs the function code itself on a Pi. On 2026-10-14 the edited nodes were also run under Node 22 with stub `msg` and `node` objects, and they checked out:
 - 400, 403, or 404 for no files, a missing file, `../tmdb.sqlite`, `../temp-other.json`, and `.`;
 - no status for the Dashboard's own requests;
 - end on exit 0;
@@ -2184,7 +2185,7 @@ The header move, the database copy, and the page text were added on 2026-10-25. 
 - "database copy failed" answers 500 with the disk-full message and removes the folder;
 - "handle end of file or error" removes the folder on success and on failure.
 
-The sqlite node, the catch node, and the shared connection weren't exercised. Task 10 runs them on a Pi.
+The sqlite node, the catch node, and the shared connection weren't exercised. Task 11 runs them on a Pi.
 
 - [ ] **Step 5: Commit**
 
@@ -2195,7 +2196,100 @@ git commit -m "Return real HTTP errors from data downloads, and end a download w
 
 ---
 
-### Task 9: Docs and CLAUDE.md
+### Task 9: Keep the pod starting when its network unit fails once (#232)
+
+`traffic-monitor.pod.j2` uses `Network=tmnet.network`. For a `.network` reference, Quadlet adds `Requires=tmnet-network.service` and `After=tmnet-network.service` to the pod's unit. On a bench Pi, `tmnet-network.service` crashed once during boot with a Podman panic. Its `Restart=on-failure` brought it back a moment later. By then the pod's start job had already failed with result `dependency`, and systemd doesn't retry those, so the pod stayed down until the next deploy.
+
+The network itself was never missing. Podman keeps it in `/etc/containers/networks/` across reboots, and the unit only runs `podman network create --ignore`. So the pod needs to start after the unit, not to require it:
+- Naming the network (`Network=tmnet`, the `NetworkName=` in `tmnet.network.j2`) stops Quadlet from adding `Requires=`.
+- The pod's own `[Unit]` keeps the order with `Wants=` and `After=`.
+
+On a fresh install the network unit still runs first, and tmsetup's run creates the network.
+
+**Files:**
+- Modify: `container/traffic-monitor.pod.j2`
+- Test: `script/tests/test_tmsetup_templates.py`
+
+**Interfaces:**
+- Produces: a pod unit with no `Requires=` on `tmnet-network.service`. Task 11's disruptive device test checks on a Pi that the pod starts after one failed start of that unit.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `script/tests/test_tmsetup_templates.py`:
+
+```python
+
+
+def test_pod_starts_even_if_its_network_unit_fails_once():
+    """A .network reference makes Quadlet add Requires=tmnet-network.service, so one failed start of that unit
+    at boot kept the pod down (#232). The pod names the network instead, and orders itself after the unit."""
+    network = render("container/tmnet.network.j2").splitlines()
+    name = next(line.split("=", 1)[1] for line in network if line.startswith("NetworkName="))
+    pod = render("container/traffic-monitor.pod.j2", tmsetup_bool_mqtt_lan=False).splitlines()
+    assert f"Network={name}" in pod
+    assert "Network=tmnet.network" not in pod
+    assert "Wants=tmnet-network.service" in pod
+    assert "After=tmnet-network.service" in pod
+```
+
+- [ ] **Step 2: Run it to check it fails**
+
+Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v -k network_unit`
+
+Expected: FAIL, because the pod still has `Network=tmnet.network`.
+
+- [ ] **Step 3: Name the network in the pod**
+
+In `container/traffic-monitor.pod.j2`, change:
+
+```
+[Unit]
+Description=Traffic Monitor pod
+```
+
+to:
+
+```
+[Unit]
+Description=Traffic Monitor pod
+# Start after the network unit without requiring it. With Network=tmnet.network, Quadlet adds Requires=,
+# and one failed start of tmnet-network.service at boot kept the pod down (#232). The network persists
+# in /etc/containers/networks/, so the pod can start even when the unit fails.
+Wants=tmnet-network.service
+After=tmnet-network.service
+```
+
+Then change `Network=tmnet.network` to `Network=tmnet`. `tmnet` is the `NetworkName=` in `container/tmnet.network.j2`, and the test fails if the two drift apart.
+
+If Podman is installed on the dev machine, check what Quadlet generates from the rendered files:
+
+```bash
+d=$(mktemp -d)
+.venv/bin/python -c "import sys; sys.path.insert(0, 'script/tests'); from tmsetup_render import render
+open('$d/traffic-monitor.pod', 'w').write(render('container/traffic-monitor.pod.j2', tmsetup_bool_mqtt_lan=False))
+open('$d/tmnet.network', 'w').write(render('container/tmnet.network.j2'))"
+QUADLET_UNIT_DIRS=$d /usr/libexec/podman/quadlet -dryrun | sed -n '/^---traffic-monitor.service---/,$p' \
+    | grep -o -E '^Requires=.*|^(Wants|After)=tmnet.*|network tmnet'
+```
+
+Expected: `Wants=tmnet-network.service`, `After=tmnet-network.service`, and `network tmnet`, with no `Requires=` line. The pattern matches only at the start of a line, because Quadlet copies the unit's comments, and one of them mentions `Requires=`. On 2026-10-25, Podman 5.7.0's Quadlet gave exactly that. Before the change it printed `Requires=tmnet-network.service` in place of the `Wants=` line. Task 11 checks the behavior on the Pi's Podman 5.4.
+
+- [ ] **Step 4: Run the tests**
+
+Run: `.venv/bin/python -m pytest script/tests -v`
+
+Expected: all pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add container/traffic-monitor.pod.j2 script/tests/test_tmsetup_templates.py
+git commit -m "Start the pod even if its network unit fails once at boot (#232)" -m "<trailer block>"
+```
+
+---
+
+### Task 10: Docs and CLAUDE.md
 
 **Files:**
 - Create: `docs/configuration/network-access.md`
@@ -2206,8 +2300,6 @@ git commit -m "Return real HTTP errors from data downloads, and end a download w
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Write the network access page**
-
-This page, and Step 2, are written for keeping Cockpit's `:9090` (see "Open decisions"). If the person chooses loopback instead, drop the 9090 row here. Then also change the README's and `docs/setup-guide.md`'s "Cockpit also answers directly on port `9090`" lines, CLAUDE.md's UIs bullet in Step 3, and Task 10 Step 6.
 
 `docs/configuration/network-access.md`:
 
@@ -2392,7 +2484,7 @@ git commit -m "Document network access through the reverse proxy" -m "<trailer b
 
 ---
 
-### Task 10: Device tests and the Pi test plan, through tmdev
+### Task 11: Device tests and the Pi test plan, through tmdev
 
 This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare a bench Pi with its expected hardware. Run the Pi test plan before committing this task and before opening the PR:
 - Use a dev Pi from the local inventory, never a field device.
@@ -2412,6 +2504,7 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
   - Task 2's `/feeds/` rules
   - Task 7's RTSP credentials
   - Task 8's download errors
+  - Task 9's pod unit, which no longer requires `tmnet-network.service`
 
 - [ ] **Step 1: Write the device tests**
 
@@ -2562,7 +2655,36 @@ def test_home_page_survives_a_stopped_pod(host, hostvars):
         with host.sudo():
             host.check_output("systemctl start traffic-monitor.service")
         wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
+# Makes the network unit's next start fail once, like the Podman panic in #232; its Restart=on-failure then brings it up.
+NETWORK_DROPIN = "/run/systemd/system/tmnet-network.service.d/tmdev-fail-once.conf"
+NETWORK_FAILED_ONCE = "/run/tmdev-tmnet-failed-once"
+FAIL_ONCE = f'[Service]\nExecStartPre=/bin/sh -c "test -e {NETWORK_FAILED_ONCE} || {{ touch {NETWORK_FAILED_ONCE}; exit 1; }}"\n'
+
+
+def test_pod_starts_after_its_network_unit_fails_once(host):
+    """One failed start of tmnet-network.service, as at boot in #232, doesn't keep the pod down."""
+    with host.sudo():
+        host.check_output("systemctl stop traffic-monitor.service tmnet-network.service")
+        host.check_output(f"mkdir -p {NETWORK_DROPIN.rsplit('/', 1)[0]} && rm -f {NETWORK_FAILED_ONCE} "
+                          f"&& printf %s {shlex.quote(FAIL_ONCE)} > {NETWORK_DROPIN} && systemctl daemon-reload")
+    try:
+        with host.sudo():
+            host.run("systemctl start traffic-monitor.service")  # before #232's fix, a dependency job fails here
+        deadline = time.monotonic() + 120
+        while host.run("systemctl is-active traffic-monitor.service").stdout.strip() != "active":
+            assert time.monotonic() < deadline, "the pod didn't start after tmnet-network.service failed once (#232)"
+            time.sleep(5)
+        assert host.file(NETWORK_FAILED_ONCE).exists, "the drop-in didn't make tmnet-network.service fail"
+    finally:
+        with host.sudo():
+            host.check_output(f"rm -f {NETWORK_DROPIN} {NETWORK_FAILED_ONCE} && systemctl daemon-reload")
+            host.check_output("systemctl start tmnet-network.service traffic-monitor.service")
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
 ```
+
+Add `import shlex` to the imports at the top of `test_disruptive.py`.
 
 - [ ] **Step 2: Check the tests are collected and skip without a dev Pi**
 
@@ -2571,10 +2693,10 @@ Run:
 ```bash
 .venv/bin/python -m pytest -q -p no:cacheprovider script/devpi/tests
 .venv/bin/python -m pytest -q -p no:cacheprovider --collect-only script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py \
-    | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod'
+    | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|survives_a_stopped_pod|network_unit_fails_once'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `22`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `23`.
 
 - [ ] **Step 3: Open the check and record the baseline**
 
@@ -2591,6 +2713,8 @@ Expected: the new tests fail, which shows they catch the problem:
 - RTSP needs no login;
 - `/storefiles` errors come back as 200. A Pi without the storefiles commit gives nginx's 404 instead, so there the 404 case passes.
 - On a `pii_free` unit, the failed-download test fails with curl's exit 28, because the download stays open, and the copy-failure test fails because the download succeeds. The database-copy test passes before M1 too: the archive still holds `tmdb.sqlite`, and there's no snapshot folder. Elsewhere all three are skipped.
+
+With the person's OK, because it stops the pod for a few minutes, also run `$T test <host> --disruptive -- -k network_unit_fails_once`. It fails, which reproduces #232, and its cleanup starts the pod again.
 
 Record it:
 
@@ -2632,7 +2756,7 @@ Expected: apart from `127.0.0.1` and `[::1]`, the only listeners are:
 - `:80`
 - `:8554` (go2rtc)
 - `:5353` (avahi)
-- `:9090` (Cockpit; see "Open decisions")
+- `:9090` (Cockpit, the rescue console)
 - DHCP/DNS, only in hotspot mode
 
 Nothing listens on 1880, 1883, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 9). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
@@ -2660,11 +2784,11 @@ Record an item.
 Ask the person first: this stops data capture for a few minutes.
 
 ```bash
-$T test <host> --disruptive -- -k survives_a_stopped_pod
+$T test <host> --disruptive -- -k "survives_a_stopped_pod or network_unit_fails_once"
 $T run <host> -- "sudo journalctl -u frigate.service -b | grep -i -E '401|unauthorized' || echo none"
 ```
 
-Expected: the test passes, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
+Expected: both tests pass, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
 
 - [ ] **Step 9: Record what needs a person**
 
@@ -2689,12 +2813,12 @@ When the person reports back, reopen the check with `$T check reopen <run_dir>` 
 $T check status
 $T check end
 git add script/devpi/tests/test_web.py script/devpi/tests/test_disruptive.py
-git commit -m "Add device tests for closed app ports, the view-only /feeds, download errors, and the proxy outliving the pod" -m "<trailer block>"
+git commit -m "Add device tests for closed app ports, the view-only /feeds, download errors, the proxy outliving the pod, and the pod outliving a network failure" -m "<trailer block>"
 ```
 
 - [ ] **Step 11: Update PR #224 and mark it ready**
 
-Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), and rewrite its description for the finished M1 with `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -F body=@<file>`; `gh pr edit` fails on this repo. Read the current description first, so the person's own edits aren't lost. The person marks it ready and merges it, with a merge commit like the stacks before it. Closing keywords only fire on merges into `main`, so close #211 and #223 by hand once it's in `dev`. Fill in:
+Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check that it targets `dev` (Task 0 Step 3), and rewrite its description for the finished M1 with `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/224 -F body=@<file>`; `gh pr edit` fails on this repo. Read the current description first, so the person's own edits aren't lost. The person marks it ready and merges it, with a merge commit like the stacks before it. Closing keywords only fire on merges into `main`, so close #211, #223, and #232 by hand once it's in `dev`. Fill in:
 - **Testing:** the check's checklist, with device names and addresses replaced by placeholders, plus the off-device results. Never include secret values.
 - **Release notes:**
   - Direct app ports are closed; use the `/…` paths.
@@ -2702,5 +2826,6 @@ Draft PR #224 has been open since 2026-10-14. Ask the person first. Then check t
   - The camera stream needs credentials.
   - Data export downloads now work through the proxy (#211).
   - Download errors return their HTTP status, and a download that fails partway ends instead of hanging (#223).
+  - The pod starts even if its network unit fails once at boot (#232).
   - Upgrade with a full `tmsetup.sh` run.
 - **AI assistance:** fill in the template's section.

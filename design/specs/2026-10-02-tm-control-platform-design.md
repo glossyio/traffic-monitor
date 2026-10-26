@@ -1,7 +1,7 @@
 # tm-control: Traffic Monitor control app, platform design
 
 - **Status:** approved 2026-10-02. Aligned with the open PRs on 2026-10-13, and re-checked on 2026-10-14 after #197, #218, #219, #220, and #222 merged into `dev`. Re-checked again on 2026-10-25, after every PR it builds on had merged (see "Builds on merged PRs").
-- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy), #223 (data download errors return 200). #185 (Cockpit) closed when #212 merged. Other related issues are listed under "Builds on merged PRs".
+- **Tracking:** #102 (wizard / configuration page), #201 and D#200 (central authentication), #169 (firewall), D#94 (FastAPI for host calls), D#199 (captive portal), #211 (data downloads 404 behind the proxy), #223 (data download errors return 200), #232 (the pod stays down after its network unit fails at boot). #185 (Cockpit) closed when #212 merged. Other related issues are listed under "Builds on merged PRs".
 - **Scope:** this spec covers the **platform**. Features built on it, such as Wi-Fi/hotspot and camera rename, get their own specs.
 
 ## Builds on merged PRs
@@ -35,7 +35,7 @@ The design was written on top of open PRs, most of them drafts. They all merged 
 | #211, #223 | Data export through the proxy, and its error statuses. Fixed in M1. |
 | #217 | The Coral USB Accelerator isn't detected on re-runs once its firmware is loaded. M3's probe matches both of its USB IDs. |
 | #231 | The HEVC decoder's `/dev/media` number can change between boots. M3's "passed to Frigate" check catches it. The likely fix is in `frigate.container.j2` and the HEVC scan, which M1 doesn't edit, so it can go in its own PR. M3 then probes whatever stable name it adds. |
-| #232 | The pod stays down after `tmnet-network.service` fails once at boot. After M1, nginx runs outside the pod, so the home page stays up, and M3's status page shows the pod down with a restart button. The M1 plan asks whether to fold the fix in, since M1 edits the same pod unit. |
+| #232 | The pod stays down after `tmnet-network.service` fails once at boot. Fixed in M1 (plan Task 9, decided 2026-10-25): the pod names its network and orders itself after that unit with `Wants=`, so one failed start no longer cancels the pod's. If the pod is down anyway, nginx outside the pod keeps the home page up, and M3's status page has a restart button. |
 | #209 | Turning the hotspot on at install time belongs to the Wi-Fi/hotspot feature spec. |
 | #229, #230 | Unrelated to the design. #229 changes how `tmsetup.sh` builds its command, away from the lines M1 edits. #230 makes `/dashboard/`, which the home tile links to, open on Monitoring. |
 
@@ -74,7 +74,7 @@ It doesn't replace Frigate, the Node-RED dashboards, or Cockpit.
 | Why not off-the-shelf SSO | Authelia and tinyauth need HTTPS and real domains or subdomains, which rules out IPs and `.local`. Basic Auth isn't sent on WebSocket upgrades by Safari, which breaks Frigate live view and Dashboard 2.0 on iPhones. Using Frigate's login for everything would lock everyone out whenever Frigate breaks. |
 | First run | Welcome → EULA → **setup code** + admin account → optional system (Linux) password with a "same password" checkbox → home. |
 | Linux accounts | The OS admin account created in Raspberry Pi Imager stays: it's for Cockpit, SSH, updates, and recovery. Web users live in tm-control, not Linux. `tmadmin` stays a no-login service account. Dev Pis also have #214's key-only `tmdev` account, which field devices never get. |
-| Cockpit | As #212 sets it up: its own PAM login, at `/system/` behind the proxy, and directly on `:9090` as the rescue console. Whether `:9090` stays open is an open decision in the M1 plan. |
+| Cockpit | As #212 sets it up: its own PAM login, at `/system/` behind the proxy, and directly on `:9090` as the rescue console. Confirmed on 2026-10-25: `:9090` stays open, because binding it to loopback would leave SSH as the only rescue. |
 | Install variables | A fixed value shared by several tasks or templates becomes a non-configurable variable in `vars/main.yml`, like `tmsetup_hailo_driver_dir` and `tmsetup_revproxy_locations`. A value an operator may change goes in `defaults/main.yml`, with `-C` for booleans. A literal used once, in one file, is hardcoded, like `/frigate` in `frigate.conf.j2`. |
 | Host service | tm-control follows the host-service pattern of `go2rtc_server.service`, not the container trio (Containerfile, `.build`, `.container`). That's deliberate: it needs host privileges and has to keep working when Podman doesn't. |
 | Front end | Vue 3 + Vuetify 3 + TypeScript + Vite, the same stack as Node-RED Dashboard 2.0. Kept thin: logic in Python, the UI renders API data. Conventional, documented patterns so non-front-end maintainers can review it. |
@@ -120,7 +120,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
     - `src` must be a plain stream name. go2rtc itself already refuses `exec:` sources from its API. This rule also blocks URL sources, which would make the device connect to other hosts, and `ffmpeg:` sources.
     - A sibling location denies API paths other than the ones the players use: `location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" { return 403; }`.
   - go2rtc doesn't ask for its API or RTSP credentials from localhost. nginx connects from localhost, so nginx's rules are the API's real limit.
-- **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login. M2's login at the proxy won't cover it, and binding it to loopback would leave SSH as the only rescue; the M1 plan lists this as an open decision.
+- **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login. M2's login at the proxy won't cover it. It stays open anyway (decided 2026-10-25), because binding it to loopback would leave SSH as the only rescue when Podman or nginx is broken.
 - **MQTT 1883:**
   - Loopback by default.
   - LAN access is an opt-in install variable for off-device sensors and requires broker credentials (`TM_MQTT_BROKER_USERNAME/PASSWORD`).
@@ -362,6 +362,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 - Pod ports move to loopback, and the unused ones are dropped.
 - go2rtc: API on loopback, RTSP credentials, only the modules TM uses (so no WebRTC), and `exec` limited to `rpicam-vid`. `go2rtc.conf` limits `/feeds/` to viewing paths.
 - A `storefiles.conf` location, so the Dashboard's data export downloads through the proxy.
+- The pod names its network (`Network=tmnet`) and orders itself after `tmnet-network.service` with `Wants=`. A `.network` reference made Quadlet add `Requires=`, and one failed start of that unit at boot kept the pod down (#232).
 - Device tests in `script/devpi/tests` check that the direct ports are closed to the network, that `/feeds/` is restricted, and (disruptive) that the home page survives a stopped pod.
 - Secrets are generated on the device.
 - A tm-control package skeleton, with its venv and the `tm-control migrate` CLI. The CLI adds RTSP credentials to existing Frigate camera inputs; it edits round trip, makes a backup, and is idempotent.
@@ -397,7 +398,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 - `script/ansible/roles/tmsetup/files/tm-control`: a symlink to the top-level `tm-control/`, like `files/container`.
 
 **Modified**
-- `container/traffic-monitor.pod.j2`: loopback ports and removals.
+- `container/traffic-monitor.pod.j2`: loopback ports and removals, and the network named instead of required (#232).
 - `container/revproxy/revproxy.container.j2`: `Network=host` and no `Pod=`. #210's bind mounts stay, and M2 adds the `ui-dist` mount.
 - `container/revproxy/tm/locations/*.conf.j2`:
   - `go2rtc.conf` gets the `/feeds/` restrictions and `127.0.0.1:1984`.
@@ -504,6 +505,7 @@ Keep device names and addresses out of the PR.
 - A data export from the Dashboard's database page downloads through the proxy.
 - Stopping `traffic-monitor.service` leaves the home page up (a disruptive device test).
 - `revproxy.service` didn't have to retry after the upgrade restarted it (#215's `test_no_crash_restarts`).
+- With `tmnet-network.service` made to fail once, the pod still starts (a disruptive device test, #232).
 - The watch-node test passes.
 
 *M2*
