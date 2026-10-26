@@ -38,7 +38,7 @@ Aim for pages that are complete but quick to read: everything the reader needs, 
 * **Leave out what the reader won't act on,** such as Ansible variables and task names, Node-RED node names, and files they won't open. Give real values, such as the default install folder `/opt/traffic-monitor`, instead of variables.
 * **Revise in place.** Rewrite the text your change affects and delete what it makes obsolete, rather than adding a paragraph. Keep the docs edit in proportion to the change; a diff that removes more than it adds is fine.
 * **Describe how things work, not how they changed.** Don't narrate changes ("now supports", "new in", "previously"). Each release has its own copy of the docs, and history belongs in commit messages and release notes.
-* **Say each fact once,** and link to it from other pages. Link to config files and code in the repo instead of copying them into a page, because copies go stale.
+* **Say each fact once,** and link to it from other pages. Link to config files and code in the repo instead of copying them into a page, because copies go stale. Link to the `main` branch, which tracks the latest release, so the link matches `/latest/` rather than `/dev/`.
 * **Put the common case first.** Move edge cases and troubleshooting into a collapsed callout (`???` instead of `!!!`), a table, or the [FAQ](../help-and-faq/frequently-asked-questions.md).
 * **Use tables for reference data,** with one row per setting or database column and its type, default, and meaning.
 * **Keep the language plain:** "you", present tense, active voice, short sentences, and no filler such as "simply", "just", or "note that". Save callouts for what the reader must not miss.
