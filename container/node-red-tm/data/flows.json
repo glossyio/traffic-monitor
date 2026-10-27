@@ -1042,7 +1042,11 @@
             "3a226e9922929100",
             "6b71ab080a582bd2",
             "a7ea83d9c70f2981",
-            "d4485dfc776d50fc"
+            "d4485dfc776d50fc",
+            "5ce2b1e89783a67e",
+            "45620e4ed4a0c575",
+            "b4446864cff62fd7",
+            "19275be7a9ef0fe2"
         ],
         "x": 4,
         "y": 1859,
@@ -13650,7 +13654,8 @@
         "wires": [
             [
                 "635a1a57798cb598",
-                "40e153d5160cefdd"
+                "40e153d5160cefdd",
+                "45620e4ed4a0c575"
             ]
         ]
     },
@@ -13889,7 +13894,8 @@
             ],
             [
                 "8a12d83e700bcaa6",
-                "9297900926075b54"
+                "9297900926075b54",
+                "8f8958d08aa3a85d"
             ]
         ]
     },
@@ -13927,7 +13933,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n  // Only plain file names: tar gets each name as an argument, so spaces or a leading \"-\" would become tar options\n  if (baseDir != \"/db\" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {\n    node.error(\"Invalid file name: \" + fileName);\n    msg.statusCode = 400;\n    msg.payload = \"Invalid file name.\";\n    return msg;\n  }\n\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir + path.sep)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nif (files == '/db/tmdb.sqlite') {\n  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by \"copy database for download\"\n  msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';\n} else {\n  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;\n}\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// \"download chunks\" sets the download headers with the first chunk, so an error before then is a plain HTTP error\nmsg.downloadName = prefix + name + \".tar.gz\";\nreturn msg;",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\n// A repeated parameter (?files=a&files=b) arrives as an array; check every name it holds\nconst requested = Array.isArray(msg.payload.files) ? msg.payload.files.join(\",\") : String(msg.payload.files);\nlet files = requested.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n  // Only plain file names: tar gets each name as an argument, so spaces or a leading \"-\" would become tar options\n  if (baseDir != \"/db\" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {\n    node.error(\"Invalid file name: \" + fileName);\n    msg.statusCode = 400;\n    msg.payload = \"Invalid file name.\";\n    return msg;\n  }\n\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir + path.sep)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nif (files == '/db/tmdb.sqlite') {\n  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by \"copy database for download\"\n  msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';\n} else {\n  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;\n}\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// \"download chunks\" sets the download headers with the first chunk, so an error before then is a plain HTTP error\nmsg.downloadName = prefix + name + \".tar.gz\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -14166,7 +14172,7 @@
                 "8f8958d08aa3a85d"
             ]
         ],
-        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\nglobal.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
+        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\ntry {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n} catch (err) {\n    node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n}\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f"
     },
@@ -14181,7 +14187,7 @@
         "y": 2060,
         "wires": [
             [
-                "30d1dd9d6d580fa4"
+                "5ce2b1e89783a67e"
             ]
         ],
         "z": "7c7dba965ad4a266",
@@ -14207,7 +14213,7 @@
                 "6b71ab080a582bd2"
             ]
         ],
-        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    if (fs.statSync(dir).mtimeMs < stale) {\n        fs.rmSync(dir, { recursive: true, force: true });\n    }\n}\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
+        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// \"stop if cancelled\" compares this with the time Cancel was pressed\nmsg.copyStartedAt = Date.now();\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    try {\n        if (fs.statSync(dir).mtimeMs < stale) {\n            fs.rmSync(dir, { recursive: true, force: true });\n        }\n    } catch (err) {\n        // Another download removed it first\n    }\n}\n// VACUUM INTO writes a full copy. Leave room for every other flow's writes, or the copy could fill the disk.\nconst { bavail, bsize } = fs.statfsSync(\"/db\");\nconst needed = fs.statSync(\"/db/tmdb.sqlite\").size + 256 * 1024 * 1024;\nif (bavail * bsize < needed) {\n    // \"database copy failed\" answers with the \"not enough free space\" message\n    throw new Error(\"disk is full: not enough free space to copy the database\");\n}\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f"
     },
@@ -14229,5 +14235,88 @@
         ],
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f"
+    },
+    {
+        "id": "5ce2b1e89783a67e",
+        "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "stop if cancelled",
+        "func": "// Cancel only signals tar, which hasn't started while the database is being copied.\n// So stop here if Cancel was pressed after this download's copy started.\nconst cancelledAt = flow.get(\"downloadCancelledAt\");\nif (cancelledAt > msg.copyStartedAt) {\n    try {\n        global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n    } catch (err) {\n        node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n    }\n    msg.payload = \"Download stopped\";\n    msg.statusCode = 500;\n    // Output 2 sends the HTTP error and shows the message on the Dashboard\n    return [null, msg];\n}\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 2060,
+        "wires": [
+            [
+                "30d1dd9d6d580fa4"
+            ],
+            [
+                "8a12d83e700bcaa6",
+                "9297900926075b54"
+            ]
+        ]
+    },
+    {
+        "id": "45620e4ed4a0c575",
+        "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "remember Cancel",
+        "func": "// \"stop if cancelled\" checks this when a database copy finishes\nflow.set(\"downloadCancelledAt\", Date.now());\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 2360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4446864cff62fd7",
+        "type": "inject",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "on start",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "x": 150,
+        "y": 2180,
+        "wires": [
+            [
+                "19275be7a9ef0fe2"
+            ]
+        ]
+    },
+    {
+        "id": "19275be7a9ef0fe2",
+        "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "remove database copies left by a restart",
+        "func": "// No download can be in progress when the flows start, so anything under /db/snapshot\n// was left by a download that a restart cut short.\nconst fs = global.get(\"fs\");\nconst root = \"/db/snapshot\";\ntry {\n    const leftovers = fs.existsSync(root) ? fs.readdirSync(root) : [];\n    fs.rmSync(root, { recursive: true, force: true });\n    if (leftovers.length > 0) {\n        node.warn(\"Removed database copies left by a restart: \" + leftovers.join(\", \"));\n    }\n} catch (err) {\n    node.warn(\"Couldn't remove \" + root + \": \" + err.message);\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 2180,
+        "wires": [
+            []
+        ]
     }
 ]

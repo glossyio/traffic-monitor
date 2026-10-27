@@ -53,3 +53,60 @@ def test_mqtt_nodes_keep_their_ids():
 
 def test_flows_cred_is_still_encrypted():
     assert list(json.loads((FLOWS.parent / "flows_cred.json").read_text())) == ["$"]
+
+
+def _download_nodes():
+    """The data download group's nodes by name, and every node by id."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    by_name = {}
+    for node in flows:
+        if node.get("g") == "c3e71a6b79637b6f" and node.get("name"):
+            by_name.setdefault(node["name"], node)
+    return by_name, by_id
+
+
+def test_refused_download_hides_the_processing_window():
+    """A refused request must also close the "compressing file(s)" window, or it stays open."""
+    by_name, _ = _download_nodes()
+    assert "8f8958d08aa3a85d" in by_name["Test for error"]["wires"][1]
+
+
+def test_repeated_files_parameter_is_handled():
+    """?files=a&files=b makes msg.payload.files an array, which has no split()."""
+    by_name, _ = _download_nodes()
+    assert "Array.isArray(msg.payload.files)" in by_name["Validate filenames, setup tar"]["func"]
+
+
+def test_database_copy_checks_free_space_and_records_its_start():
+    """The copy must not fill the disk, and Cancel needs to know when the copy started."""
+    by_name, _ = _download_nodes()
+    func = by_name["copy database first?"]["func"]
+    assert "statfsSync" in func
+    assert "msg.copyStartedAt = Date.now();" in func
+    assert func.index("statfsSync") < func.index("mkdirSync(msg.snapshot")
+
+
+def test_cancel_stops_a_database_download_during_the_copy():
+    """tar hasn't started while the copy runs, so Cancel's kill signal alone can't stop it."""
+    by_name, by_id = _download_nodes()
+    stop = by_name["stop if cancelled"]
+    assert by_name["copy database for download"]["wires"] == [[stop["id"]]]
+    assert stop["outputs"] == 2
+    assert stop["wires"][0] == [by_name["zip files"]["id"]]
+    assert set(stop["wires"][1]) == {"8a12d83e700bcaa6", "9297900926075b54"}
+    assert "downloadCancelledAt" in stop["func"]
+    remember = by_name["remember Cancel"]
+    assert remember["id"] in by_id["88d154342ef138bf"]["wires"][0]
+    assert 'flow.set("downloadCancelledAt", Date.now());' in remember["func"]
+
+
+def test_database_copies_left_by_a_restart_are_removed_at_start():
+    """A restart mid-download leaves its copy under /db/snapshot, and nothing else would remove it for an hour."""
+    by_name, by_id = _download_nodes()
+    cleanup = by_name["remove database copies left by a restart"]
+    starts = [node for node in by_id.values() if node["type"] == "inject" and node.get("once") is True and cleanup["id"] in node["wires"][0]]
+    assert len(starts) == 1 and starts[0]["repeat"] == ""
+    assert '"/db/snapshot"' in cleanup["func"]
+    for name in ("on start", "remove database copies left by a restart", "stop if cancelled", "remember Cancel"):
+        assert by_name[name]["id"] in by_id["c3e71a6b79637b6f"]["nodes"]
