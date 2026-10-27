@@ -25,6 +25,8 @@ On 2026-10-26, after #240, #241, #242, and #257 merged, the branch was rebased o
 - MQTT on the network now needs a login the broker enforces: new Task 10. Docs moved to Task 11, and device tests to Task 12.
 - #256 is folded into Task 7.
 
+Tasks 1–3 ran later on 2026-10-26. Task 2's `/feeds/` rules came out stricter than first written. The `src` check could be bypassed, because nginx matches `$arg_src` ignoring case and without decoding the parameter name, while go2rtc decodes names and is case-sensitive. A `dst` parameter also let a WebSocket publish into a stream. Parameter names must now be lowercase and unencoded, and `dst` is refused. Task 2's steps and the counts in Tasks 2 and 3 show the result.
+
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
 - #212's Cockpit
@@ -110,6 +112,8 @@ These are the likeliest failures for a person upgrading or using a device. Each 
 4. **Crafted `/feeds/` requests.** These must get 403:
    - methods other than GET
    - `src=` values that are URLs or `exec:` sources, raw or percent-encoded
+   - parameter names that are upper-case or percent-encoded (`SRC=`, `%73rc=`), which nginx and go2rtc read differently
+   - `dst=`, which makes a WebSocket publish into a stream instead of viewing it
    - go2rtc API paths outside the viewing set (`config`, `log`, `exit`, `restart`, `webrtc`, bare `api`). The viewing set includes HLS's `hls/` paths, which iPhones older than iOS 17 use.
 
    Tests in Task 2 check the rendered `go2rtc.conf`. Device tests in Task 12 send the same requests to a Pi.
@@ -234,7 +238,7 @@ git rebase --continue   # drops "Give the template test helper all of Ansible's 
 - Produces the install variable `tmsetup_bool_mqtt_lan`, set with `tmsetup.sh -C mqtt_lan`. Task 10 makes it create a broker login.
 - Consumes the fact `tmsetup_mqtt_lan_open`, which Task 10 sets. Until then it's undefined, and the pod keeps 1883 on loopback.
 
-- [ ] **Step 1: The render helper (already on the branch)**
+- [x] **Step 1: The render helper (already on the branch)**
 
 The storefiles commit added `script/tests/tmsetup_render.py` with this content. Check it still matches, and don't rewrite it:
 
@@ -280,7 +284,7 @@ def load_role_yaml(relative_path):
     return yaml.safe_load((ROLE / relative_path).read_text())
 ```
 
-- [ ] **Step 2: Write the failing pod tests**
+- [x] **Step 2: Write the failing pod tests**
 
 Append to `script/tests/test_tmsetup_templates.py`, which already has the module docstring, `from tmsetup_render import load_role_yaml, render`, `LOCATIONS`, `location()`, and the storefiles test:
 
@@ -308,13 +312,13 @@ def test_pod_opens_mqtt_to_the_network_only_with_a_broker_login():
     assert "127.0.0.1:1883:1883" not in published_ports(pod)
 ```
 
-- [ ] **Step 3: Run the tests to check they fail**
+- [x] **Step 3: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v`
 
 Expected: `test_pod_publishes_app_ports_on_loopback_only` FAILS, because the current pod publishes `1880:1880`, `1964:1984`, `80:80`, and so on. The MQTT test and the storefiles test already pass, since today's pod publishes 1883 on all interfaces. The MQTT test guards the `{% if %}` branch once Step 4 adds it.
 
-- [ ] **Step 4: Bind the pod's ports to loopback**
+- [x] **Step 4: Bind the pod's ports to loopback**
 
 In `container/traffic-monitor.pod.j2`, replace the ten `PublishPort=` lines (from `PublishPort=1880:1880` through `PublishPort=80:80`) with:
 
@@ -369,13 +373,13 @@ to:
 
 #229, which builds the `ansible-playbook` command as a bash array, changes other lines of `tmsetup.sh`. If it merges first, these two edits still apply as written.
 
-- [ ] **Step 5: Run the tests and syntax checks**
+- [x] **Step 5: Run the tests and syntax checks**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v && bash -n script/tmsetup.sh && echo OK`
 
 Expected: 3 passed, then `OK`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add script/tests/test_tmsetup_templates.py container/traffic-monitor.pod.j2 \
@@ -404,9 +408,9 @@ This builds on #210's layout: one location file per app in `container/revproxy/t
   - `render` and `load_role_yaml` from `tmsetup_render.py`
   - `LOCATIONS` and `location()` from `test_tmsetup_templates.py`
   - `storefiles.conf` from the storefiles commit. It proxies to `127.0.0.1:1880`, so the host network needs no change to it.
-- Produces: `/feeds/` accepts only GET and plain stream names, and denies go2rtc API paths beyond viewing. Task 12's device tests check this on a Pi.
+- Produces: `/feeds/` accepts only GET, lowercase unencoded parameter names, no `dst`, and plain stream names in `src`, and denies go2rtc API paths beyond viewing. Task 12's device tests check this on a Pi.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 At the top of `script/tests/test_tmsetup_templates.py`, add `import re` and `import pytest`. The `tmsetup_render` import already includes `load_role_yaml`. Then append:
 
@@ -451,6 +455,8 @@ def test_feeds_accepts_only_get_and_plain_stream_names():
     conf = location("go2rtc.conf")
     assert "limit_except GET { deny all; }" in conf
     assert 'if ($arg_src !~ "^[A-Za-z0-9_-]*$") { return 403; }' in conf
+    assert 'if ($args !~ "^([a-z0-9_]+(=[^&]*)?(&|$))*$") { return 403; }' in conf
+    assert "if ($arg_dst) { return 403; }" in conf
 
 
 def denied_api_pattern():
@@ -459,6 +465,10 @@ def denied_api_pattern():
 
 def src_pattern():
     return re.search(r'\$arg_src !~ "([^"]+)"', location("go2rtc.conf")).group(1)
+
+
+def args_pattern():
+    return re.search(r'\$args !~ "([^"]+)"', location("go2rtc.conf")).group(1)
 
 
 @pytest.mark.parametrize(
@@ -472,6 +482,7 @@ def src_pattern():
         ("/feeds/api/frame.jpeg", False),
         ("/feeds/api/stream.mp4", False),
         ("/feeds/api/stream.m3u8", False),
+        ("/feeds/api/stream.mjpeg", False),
         ("/feeds/api/hls/playlist.m3u8", False),
         ("/feeds/api/hls/segment.ts", False),
         ("/feeds/api/hls/segment.m4s", False),
@@ -506,6 +517,24 @@ def test_feeds_denies_go2rtc_api_paths_beyond_viewing(path, denied):
 )
 def test_feeds_accepts_only_stream_names_as_src(src, allowed):
     assert bool(re.search(src_pattern(), src)) is allowed
+
+
+@pytest.mark.parametrize(
+    "args, allowed",
+    [
+        ("", True),
+        ("src=picam_h265_detect", True),
+        ("src=a&src=b&mode=webrtc%2Cmse&width=50%25&background=false", True),
+        ("id=Ab12cd", True),
+        ("%73rc=rtsp://192.0.2.1/x", False),
+        ("SRC=picam_h265_detect&src=rtsp://192.0.2.1/x", False),
+        ("Src=rtsp://192.0.2.1/x", False),
+        ("s+rc=rtsp://192.0.2.1/x", False),
+    ],
+)
+def test_feeds_accepts_only_plain_parameter_names(args, allowed):
+    """nginx matches $arg_src ignoring case and undecoded; go2rtc decodes names and is case-sensitive."""
+    assert bool(re.search(args_pattern(), args)) is allowed
 ```
 
 The regex tests read their patterns from the rendered `go2rtc.conf`, so they test what nginx gets.
@@ -531,7 +560,7 @@ def test_start_services_starts_the_reverse_proxy_after_the_pod():
     assert start["loop"].index("revproxy.service") > start["loop"].index("traffic-monitor.service")
 ```
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py -v`
 
@@ -541,9 +570,9 @@ Expected: most new tests FAIL:
 - There's no deny location.
 - `revproxy.service` isn't in the start loop.
 
-On 2026-10-25, with Task 1 done, those two files gave 37 failed, 9 passed.
+On 2026-10-25, with Task 1 done, those two files gave 37 failed, 9 passed. With the parameter-name, `dst`, and `stream.mjpeg` tests added on 2026-10-26, the count is 46 failed, 9 passed.
 
-- [ ] **Step 3: Move revproxy to the host network**
+- [x] **Step 3: Move revproxy to the host network**
 
 Replace `container/revproxy/revproxy.container.j2` with the version below. It keeps #210's bind mounts, including the `tmsetup_revproxy_config_mounts` loop that the `nginx -t` check shares. It drops `Pod=` and adds the restart settings.
 
@@ -575,7 +604,7 @@ WantedBy=default.target
 
 The pod-app location files (`dashboard.conf`, `frigate.conf`, `legacy-ui.conf`, `nodered.conf`) already proxy to `127.0.0.1:<port>`. With Task 1's loopback publishing they keep working unchanged.
 
-- [ ] **Step 4: Point the host apps at loopback and restrict `/feeds/`**
+- [x] **Step 4: Point the host apps at loopback and restrict `/feeds/`**
 
 Replace `container/revproxy/tm/locations/go2rtc.conf.j2` with:
 
@@ -585,6 +614,12 @@ Replace `container/revproxy/tm/locations/go2rtc.conf.j2` with:
 # method but GET, any src that isn't a plain stream name, and API paths the players don't use.
 location /feeds/ {
     limit_except GET { deny all; }
+    # Parameter names must be lowercase and unencoded. nginx finds $arg_src ignoring case and
+    # without decoding it, but go2rtc decodes names and tells SRC from src, so ?%73rc= or
+    # ?SRC=x&src= would pass a URL source to go2rtc unchecked.
+    if ($args !~ "^([a-z0-9_]+(=[^&]*)?(&|$))*$") { return 403; }
+    # dst publishes into a stream instead of viewing it, e.g. go2rtc's WebRTC page over the WebSocket
+    if ($arg_dst) { return 403; }
     if ($arg_src !~ "^[A-Za-z0-9_-]*$") { return 403; }
     proxy_pass http://127.0.0.1:1984/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
@@ -597,6 +632,10 @@ location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/
 The regex location is a sibling, not nested. nginx checks regex locations after picking the longest prefix, so for `/feeds/api/config` it wins over `/feeds/` and returns 403. #215's `test_web.py` collects only prefix locations, so it skips this one.
 
 Why the `src` rule is still needed: go2rtc 1.9.12 and later refuses `exec:`, `echo:`, and `expr:` sources sent through its API. A `src` can still be a URL, which makes the device connect to another host, or an `ffmpeg:` source. The `hls/` paths are HLS segments for iPhones older than iOS 17, which can't use MSE.
+
+Why the parameter-name rule: without it, `?%73rc=rtsp://…` gives nginx an empty `$arg_src`, and `?SRC=x&src=rtsp://…` gives it `x`, while go2rtc (Go's `net/url`) reads the URL in both cases. With names limited to lowercase and unencoded, nginx and go2rtc read the same `src`. go2rtc's own players send only such names (`src`, `mode`, `width`, `background`, and `id` on HLS paths).
+
+Why `dst` is refused: in go2rtc 1.9.14, `GET /api/ws?dst=<stream>` followed by a `webrtc/offer` message adds a producer to that stream (`internal/webrtc/webrtc.go`). Task 7 leaves the `webrtc` module out, but `/feeds/` should be view-only on its own. Its other `dst` handlers need POST, or sit on paths the regex location denies. No viewing request uses `dst`.
 
 In `container/revproxy/tm/locations/cockpit.conf.j2`, change the first comment and the upstream. The whole file becomes:
 
@@ -614,7 +653,7 @@ location /system/ {
 
 In `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml`, find the "Check NGinx config" task inside the "Check NGinx config before deploying it" block. Delete its `etc_hosts:` key and the `host.containers.internal: 127.0.0.1` line under it. In the comment above the task, delete the line `# etc_hosts lets nginx resolve the go2rtc upstream inside the container.` No location uses that name anymore, and `nginx -t` needs no name lookups for IP upstreams.
 
-- [ ] **Step 5: Restart and start revproxy after the pod**
+- [x] **Step 5: Restart and start revproxy after the pod**
 
 In `script/ansible/roles/tmsetup/handlers/main.yml`, move the whole `Restart revproxy.service` handler (its 6 lines) to directly after the `Restart traffic-monitor.service` handler. Handlers run in file order, and the pod must release port 80 first.
 
@@ -627,7 +666,7 @@ In `script/ansible/roles/tmsetup/tasks/start_services.yml`, add `revproxy.servic
     - revproxy.service
 ```
 
-- [ ] **Step 6: Run the tests and the Ansible syntax check**
+- [x] **Step 6: Run the tests and the Ansible syntax check**
 
 Run:
 
@@ -636,11 +675,11 @@ Run:
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass (46 in those two files), then `exit 0`.
+Expected: all tests pass (55 in those two files), then `exit 0`.
 
 The real `nginx -t` runs on the Pi during deploy, in #210's check task, and again in Task 12. For an earlier check, render `nginx.conf`, `tm/snippets/proxy-common.conf`, and the listed location files into a scratch directory with `tmsetup_render.render`; they need no variables. Then run `nginx -t` on them in `docker.io/library/nginx:1.31.0` with no host alias. On 2026-10-25 that passed for this task's files. A running copy then returned 403 for every denied `/feeds/` request above. It proxied every allowed path, `/storefiles`, `/system/`, and `/frigate/`, which answered 502 because no apps were running. Send a `Host:` header other than `localhost`, or the image's stock `default.conf` answers.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add container/revproxy/revproxy.container.j2 container/revproxy/tm/locations/go2rtc.conf.j2 \
@@ -666,7 +705,7 @@ git commit -m "Run the reverse proxy on the host network; limit /feeds to viewin
   - `tmsetup_secret_names`, which for M1 is `[go2rtc_rtsp_password]`
 - Task 7 uses `tmsetup_secrets['go2rtc_rtsp_password']`. M2 adds names to the list.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `script/tests/test_tmsetup_tasks.py`:
 
@@ -702,13 +741,13 @@ def test_secrets_are_read_on_every_run():
     assert names.index("TMSetup - Main - Generate and read device secrets") == names.index("TMSetup - Main - Setup base") + 1
 ```
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_tasks.py -v`
 
 Expected: the four new tests FAIL with `FileNotFoundError` (no `tasks/secrets.yml` yet) or `ValueError` (task not in `main.yml`).
 
-- [ ] **Step 3: Write the secrets task file**
+- [x] **Step 3: Write the secrets task file**
 
 `script/ansible/roles/tmsetup/tasks/secrets.yml`:
 
@@ -758,7 +797,7 @@ Expected: the four new tests FAIL with `FileNotFoundError` (no `tasks/secrets.ym
 
 The MQTT broker login isn't one of these secrets. It's an operator setting in `node-red-tm.env` that the operator also gives to their own MQTT clients, so a second copy here would go stale (Task 10).
 
-- [ ] **Step 4: Register the variables and the import**
+- [x] **Step 4: Register the variables and the import**
 
 In `script/ansible/roles/tmsetup/vars/main.yml`, before the closing `...`, add:
 
@@ -779,7 +818,7 @@ In `script/ansible/roles/tmsetup/tasks/main.yml`, directly after the `TMSetup - 
     file: secrets.yml
 ```
 
-- [ ] **Step 5: Run the tests and the Ansible checks**
+- [x] **Step 5: Run the tests and the Ansible checks**
 
 Run:
 
@@ -788,9 +827,9 @@ Run:
 (cd script/ansible && ../../.venv/bin/ansible-playbook -i localhost setup.yml --syntax-check </dev/null > /tmp/tm-syntax.log 2>&1); echo "exit $?"; tail -3 /tmp/tm-syntax.log
 ```
 
-Expected: all tests pass (50 in those two files), then `exit 0`.
+Expected: all tests pass (59 in those two files), then `exit 0`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add script/ansible/roles/tmsetup/tasks/secrets.yml script/ansible/roles/tmsetup/tasks/main.yml \
@@ -2885,7 +2924,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
    - Add a sub-bullet:
 
      ```markdown
-     - `go2rtc.conf` and `cockpit.conf` proxy to `127.0.0.1`. `go2rtc.conf` also limits `/feeds` to viewing: GET only, plain stream names as `src`, and a sibling regex location that returns 403 for go2rtc API paths the players don't use.
+     - `go2rtc.conf` and `cockpit.conf` proxy to `127.0.0.1`. `go2rtc.conf` also limits `/feeds` to viewing: GET only, lowercase unencoded parameter names (nginx and go2rtc must read the same `src`), no `dst`, plain stream names as `src`, and a sibling regex location that returns 403 for go2rtc API paths the players don't use.
      ```
 
      The storefiles commit already added `/storefiles` to this bullet's list of proxied paths.
@@ -2984,6 +3023,9 @@ def status_from_this_machine(host, hostvars, path, method="GET"):
         ("/feeds/api/log", "GET", 403),
         ("/feeds/api/stream.mp4?src=exec:id", "GET", 403),
         ("/feeds/api/stream.mp4?src=exec%3Aid", "GET", 403),
+        ("/feeds/api/stream.mp4?%73rc=rtsp://192.0.2.1/x", "GET", 403),
+        ("/feeds/api/stream.mp4?SRC=picam_h265_detect&src=rtsp://192.0.2.1/x", "GET", 403),
+        ("/feeds/api/ws?dst=picam_h265_detect", "GET", 403),
         ("/feeds/api/streams?src=x", "POST", 403),
     ],
 )

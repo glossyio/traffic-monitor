@@ -126,6 +126,8 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
   - `go2rtc.conf` exposes only go2rtc's viewing paths:
     - It accepts only GET.
     - `src` must be a plain stream name. go2rtc itself already refuses `exec:` sources from its API. This rule also blocks URL sources, which would make the device connect to other hosts, and `ffmpeg:` sources.
+    - Parameter names must be lowercase and unencoded. nginx matches `$arg_src` ignoring case and without decoding the name, while go2rtc decodes names and is case-sensitive, so `?%73rc=` or `?SRC=x&src=` would otherwise pass a URL source unchecked.
+    - `dst` is refused. With it, a WebSocket publishes into a stream instead of viewing it.
     - A sibling location denies API paths other than the ones the players use: `location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" { return 403; }`.
   - go2rtc doesn't ask for its API or RTSP credentials from localhost. nginx connects from localhost, so nginx's rules are the API's real limit.
 - **Cockpit** (#212): `cockpit.conf` sets `AllowUnencrypted`, so the `:9090` rescue console also answers over plain HTTP. Like SSH, it's protected only by the OS login. M2's login at the proxy won't cover it. It stays open anyway (decided 2026-10-25), because binding it to loopback would leave SSH as the only rescue when Podman or nginx is broken.
