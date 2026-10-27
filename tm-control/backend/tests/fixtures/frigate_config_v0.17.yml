@@ -1,0 +1,124 @@
+# see https://docs.frigate.video/configuration/reference
+mqtt:
+  enabled: true
+  host: localhost
+  port: 1883
+
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+
+detectors:
+#  mycpu:
+#    type: cpu
+  edgetpu_usb:
+    type: edgetpu
+    device: usb
+
+model:
+  model_type: yolo-generic
+  width: 512
+  height: 512
+  path: /config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite
+  labelmap_path: /config/labels-coco17.txt
+
+ffmpeg:
+  hwaccel_args: -hwaccel drm
+
+cameras:
+  picam_h265:
+    enabled: true
+    type: generic
+    ffmpeg:
+      hwaccel_args: -hwaccel drm
+      inputs:
+        - path: rtsp://host.containers.internal:8554/picam_h265_detect
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: false
+      width: 1536
+      height: 864
+      fps: 10
+    zones:
+      zone_capture:
+        coordinates: 2304,1296,0,1296,0,493,998,268,2304,475
+        inertia: 3
+        loitering_time: 0
+      zone_far:
+        coordinates: 1248,556,926,497,231,657,477,769
+        inertia: 3
+        loitering_time: 0
+      zone_near:
+        coordinates: 1690,695,1355,563,429,754,825,982
+        inertia: 3
+        loitering_time: 0
+      zone_radar:
+        coordinates: 390,634,1039,464,1891,684,1087,1029
+        inertia: 3
+        loitering_time: 0
+
+objects:
+  track:
+    - bicycle
+    - person
+    - car
+    - bus
+    - motorcycle
+    - dog
+  filters:
+    bicycle:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.05
+      threshold: 0.10
+    motorcycle:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.5
+      threshold: 0.8
+    person:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.4
+      threshold: 0.5
+    dog:
+      min_area: 0
+      max_area: 24000000
+      min_ratio: 0.2
+      max_ratio: 10.0
+      min_score: 0.25
+      threshold: 0.4
+
+record:
+  enabled: true
+  continuous:
+    days: 0
+  motion:
+    days: 0
+  alerts:
+    retain:
+      days: 0.042
+      mode: active_objects
+  detections:
+    retain:
+      days: 0.042
+      mode: active_objects
+
+snapshots:
+  enabled: true
+  clean_copy: true
+  timestamp: false
+  bounding_box: false
+  crop: true
+  quality: 70
+  retain:
+    default: 0.042
+
+version: 0.17-0
