@@ -122,3 +122,29 @@ def test_failed_removal_of_the_database_copy_still_answers_the_download():
     func = by_name["handle end of file or error"]["func"]
     removal = func.index("rmSync(msg.snapshot")
     assert func.rindex("try {", 0, removal) < removal < func.index("} catch (err) {", removal)
+
+
+def test_database_copies_in_progress_count_against_free_space():
+    """Copies run one after another, so a download that arrives while another is copying must leave room for both."""
+    by_name, _ = _download_nodes()
+    func = by_name["copy database first?"]["func"]
+    assert 'const copies = flow.get("databaseCopiesInProgress") || 0;' in func
+    assert "Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024" in func
+    increment = func.index('flow.set("databaseCopiesInProgress", copies + 1);')
+    assert func.index("throw new Error(") < increment < func.index("msg.countsAsCopy = true;") < func.index("mkdirSync(msg.snapshot")
+
+
+def test_every_end_of_a_database_copy_releases_its_count():
+    """A count left behind would refuse every later database download until Node-RED restarts."""
+    by_name, _ = _download_nodes()
+    release = 'flow.set("databaseCopiesInProgress", Math.max((flow.get("databaseCopiesInProgress") || 0) - 1, 0));'
+    for name in ("handle end of file or error", "database copy failed", "stop if cancelled"):
+        func = by_name[name]["func"]
+        assert func.count(release) == 1, name
+        guard = func.index("if (msg.countsAsCopy) {")
+        assert guard < func.index(release) < func.index("delete msg.countsAsCopy;"), name
+    stop = by_name["stop if cancelled"]["func"]
+    # Only the stop path: a copy that goes on to tar is released by "handle end of file or error"
+    assert stop.index("!== msg.cancelCountAtCopy") < stop.index(release) < stop.index('msg.payload = "Download stopped";')
+    cleanup = by_name["remove database copies left by a restart"]["func"]
+    assert 'flow.set("databaseCopiesInProgress", 0);' in cleanup
