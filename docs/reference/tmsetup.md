@@ -18,7 +18,7 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 | `-y` | Answer yes to every prompt, including the reboot. |
 | `-v` | Verbose output. Repeat for more. |
 | `-f` | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces). |
-| `-t TAG` | Run only one component. Repeat for several. See [Tags](#tags). |
+| `-t TAG` | Run one component, plus anything that has to change with it. Repeat for several. See [Tags](#tags). |
 | `-T` | List the tags and exit. |
 | `-C NAME[,NAME]` | Turn on an optional component: `plate_recognizer` (see [Plate Recognizer](../add-ons/plate-recognizer.md)), or `mqtt_lan`, which creates an MQTT broker login when there isn't one (see [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices)). |
 | `-u` | Also upgrade the operating system's packages (`apt full-upgrade`). |

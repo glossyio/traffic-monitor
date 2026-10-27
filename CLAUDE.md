@@ -45,13 +45,13 @@ On a Pi (re-running a single tag is the closest thing to running a single test):
 ```bash
 bash script/tmsetup.sh                    # full local install; -y skips prompts, -v for verbose Ansible
 bash script/tmsetup.sh -T                 # list tags: base full_upgrade wifi go2rtc detectors podman frigate node-red-tm plate-recognizer revproxy tm-control
-bash script/tmsetup.sh -t node-red-tm     # redeploy one component (-t can repeat)
+bash script/tmsetup.sh -t node-red-tm     # redeploy a component (-t can repeat)
 bash script/tmsetup.sh -f                 # also overwrite user-editable configs from templates (timestamped backups kept)
 bash script/tmsetup.sh -C plate_recognizer            # enable the optional Plate Recognizer container
 bash script/tmsetup.sh -H <ip>[,<ip>] -l <user> -k    # from a dev machine: install to remote Pis over SSH
 ```
 
-A single `-t` assumes the rest of the device already runs the same version. To update a device to a new version, run the whole installer, because some changes span tags: revproxy's host-network port 80 needs the pod to stop publishing it, and the go2rtc RTSP login needs Frigate's `config.yml` updated with it.
+A single `-t` assumes the rest of the device already runs the same version; to update a device to a new version, run the whole installer. The podman, frigate, node-red-tm, go2rtc, and revproxy tags always render the pod and revproxy together (`tasks/main.yml`).
 
 Always use `tmsetup.sh` rather than calling `ansible-playbook` directly. The script supplies extra vars the role depends on (e.g. `tmsetup_reboot_touch_file`) and handles the reboot prompt.
 

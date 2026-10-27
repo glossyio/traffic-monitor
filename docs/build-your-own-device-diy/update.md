@@ -52,7 +52,7 @@ Node-RED flow changes made in the editor on the device are replaced on every upd
 
 ## Update one component
 
-Each installer tag reruns one component. For example, after plugging in a radar:
+Each installer tag reruns one component, plus anything that has to change with it; see [Tags](../reference/tmsetup.md#tags). For example, after plugging in a radar:
 
 ```bash
 bash script/tmsetup.sh -t node-red-tm
