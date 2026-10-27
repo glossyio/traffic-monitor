@@ -4,6 +4,7 @@ import ast
 import re
 
 import pytest
+import yaml
 from tmsetup_render import load_role_yaml, render
 
 LOCATIONS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_locations"]
@@ -173,3 +174,54 @@ def test_tm_control_wrapper_runs_only_the_root_owned_copy():
     assert script.splitlines()[0] == f"#!{TM_CONTROL_DIR}/venv/bin/python -EP"
     assert f'sys.path.insert(0, "{TM_CONTROL_DIR}/backend")' in script
     ast.parse(script)
+
+
+SECRETS = {"go2rtc_rtsp_password": "s3cret"}
+CREDENTIALED_INPUT = "rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect"
+
+
+def go2rtc_config():
+    return yaml.safe_load(render(
+        "script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2",
+        tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
+    ))
+
+
+def test_go2rtc_api_is_loopback_only_and_rtsp_needs_credentials():
+    config = go2rtc_config()
+    assert config["api"] == {"listen": "127.0.0.1:1984"}
+    assert config["rtsp"] == {"listen": ":8554", "username": "frigate", "password": "s3cret"}
+    assert set(config["streams"]) == {"picam_h265_detect", "picam_h265_detect_hr"}
+
+
+def test_go2rtc_loads_no_webrtc_and_runs_only_allowed_commands():
+    config = go2rtc_config()
+    assert "webrtc" not in config["app"]["modules"]
+    assert "webrtc" not in config
+    for name, source in config["streams"].items():
+        if source.startswith("exec:"):
+            assert source[len("exec:"):].split()[0] in config["exec"]["allow_paths"], name
+
+
+def test_new_frigate_configs_read_go2rtc_with_credentials():
+    config = yaml.safe_load(render("container/frigate/config/config.yml.j2", tmsetup_detectors={}))
+    assert config["cameras"]["picam_h265"]["ffmpeg"]["inputs"][0]["path"] == CREDENTIALED_INPUT
+
+
+def test_new_frigate_configs_keep_object_snapshots_off_mqtt():
+    """Frigate publishes a cropped snapshot of each object on MQTT unless the camera turns it off (#256)."""
+    config = yaml.safe_load(render("container/frigate/config/config.yml.j2", tmsetup_detectors={}))
+    assert config["cameras"]["picam_h265"]["mqtt"] == {"enabled": False}
+
+
+def test_frigate_env_carries_the_go2rtc_credentials():
+    lines = render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1",
+        tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
+    ).splitlines()
+    assert "FRIGATE_GO2RTC_RTSP_USER=frigate" in lines
+    assert "FRIGATE_GO2RTC_RTSP_PASSWORD=s3cret" in lines
+    assert "FRIGATE_RTSP_PASSWORD=password" in lines  # operators' own variable is untouched

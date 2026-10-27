@@ -76,4 +76,7 @@ tmsetup_secret_names:
 # tm-control code and venv: root-owned, outside tmsetup_codedir (which the code owner can write)
 tmsetup_tm_control_dir: /usr/local/lib/traffic-monitor/tm-control
 
+# go2rtc RTSP user that Frigate logs in as; the password is tmsetup_secrets['go2rtc_rtsp_password']
+tmsetup_go2rtc_rtsp_user: frigate
+
 ...

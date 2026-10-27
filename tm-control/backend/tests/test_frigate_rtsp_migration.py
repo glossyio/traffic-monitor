@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from tm_control.core import migrate
+
+REPO = Path(__file__).resolve().parents[3]
 
 DEFAULT_INPUT = "        - path: rtsp://host.containers.internal:8554/picam_h265_detect"
 MIGRATED_INPUT = (
@@ -100,3 +104,8 @@ def test_invalid_yaml_is_an_error_and_is_left_alone(tmp_path, capsys):
     assert migrate.run(path) == 1
     assert "ERROR reading" in output(capsys)
     assert path.read_text() == "cameras: [unclosed\n"
+
+
+def test_migrated_inputs_match_what_new_installs_get():
+    template = (REPO / "container" / "frigate" / "config" / "config.yml.j2").read_text()
+    assert migrate.HOST_GO2RTC_RTSP_WITH_CREDENTIALS + "picam_h265_detect" in template

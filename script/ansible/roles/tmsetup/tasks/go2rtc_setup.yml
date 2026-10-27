@@ -23,12 +23,13 @@
 
 - name: TMSetup - Go2rtc Setup - Setup go2rtc rpicam settings
   become: true
-  ansible.builtin.copy:
+  diff: false
+  ansible.builtin.template:
     dest: /var/lib/go2rtc/go2rtc.yaml
     group: root
-    mode: '644'
+    mode: '0600'
     owner: root
-    src: go2rtc.yaml
+    src: go2rtc.yaml.j2
   notify: Restart go2rtc_server service
 
 - name: TMSetup - Go2rtc Setup - Create go2rtc_server systemd unit file
