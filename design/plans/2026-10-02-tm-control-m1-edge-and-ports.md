@@ -33,6 +33,15 @@ Tasks 4–11 ran the same day. Two changes came out of their reviews, and the st
 
 Task 12's Pi plan ran on both bench units in the inventory, one with a camera and a Coral PCIe, one with a Hailo-8 and no camera. Before M1 the new tests failed as expected, and the disruptive one reproduced #232. After the full deploy, every automated test passed on both, including the full disruptive set with a reboot. The items that need a person (Step 10) are still open, and Step 12 waits for the maintainer.
 
+A review of the whole branch against `dev` then led to five fix commits, and where the steps below differ, the code is the reference:
+- `tm-control migrate` doesn't crash on an input that isn't a valid URL, never prints credentials, a query, or a fragment, and also updates Frigate's own `go2rtc: streams:` sources. It warns about sources that wrap this device's stream in another scheme. `uncredentialed_rtsp_8554_inputs` now returns `(kind, name, problem, detail)`.
+- The Frigate credential steps from Task 7 moved to `tasks/frigate_credentials.yml`, which runs under both the `go2rtc` and `frigate` tags, so `-t go2rtc` alone can't leave Frigate without the login. `tm-control` is installed under the `go2rtc` tag too.
+- `/storefiles` waits up to 30 minutes for the first byte (`proxy_read_timeout 30m`), and `/feeds/` refuses any `dst` parameter with `if ($args ~ "(^|&)dst(=|&|$)")`.
+- The download flow closes the processing window after a refused request, accepts a repeated `files` parameter, checks free space before the database copy, lets Cancel stop a download during the copy (with a counter, not the clock), removes copies left by a restart when the flows start, and can't leave a request unanswered when a cleanup fails.
+- CLAUDE.md, the update page, the database page, and the installer reference describe these changes.
+
+The camera unit passed a re-test of these fixes: a full deploy, `-t go2rtc` alone, and every non-disruptive device test.
+
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
 - #212's Cockpit
