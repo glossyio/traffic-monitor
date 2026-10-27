@@ -1,5 +1,18 @@
-# go2rtc - Go2RTC Feeds (runs on the host, not in the pod)
+# go2rtc - Go2RTC Feeds (runs on the host; nginx shares the host network)
+# View streams only. go2rtc's API can add stream sources and change its config, so refuse every
+# method but GET, any src that isn't a plain stream name, and API paths the players don't use.
 location /feeds/ {
-    proxy_pass http://host.containers.internal:1984/;
+    limit_except GET { deny all; }
+    # Parameter names must be lowercase and unencoded. nginx finds $arg_src ignoring case and
+    # without decoding it, but go2rtc decodes names and tells SRC from src, so ?%73rc= or
+    # ?SRC=x&src= would pass a URL source to go2rtc unchecked.
+    if ($args !~ "^([a-z0-9_]+(=[^&]*)?(&|$))*$") { return 403; }
+    # dst publishes into a stream instead of viewing it, e.g. go2rtc's WebRTC page over the WebSocket
+    if ($arg_dst) { return 403; }
+    if ($arg_src !~ "^[A-Za-z0-9_-]*$") { return 403; }
+    proxy_pass http://127.0.0.1:1984/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
+}
+location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" {
+    return 403;
 }

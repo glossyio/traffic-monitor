@@ -1,10 +1,14 @@
 [Unit]
 Description=Traffic Monitor NGinx Reverse Proxy container
+# Keep retrying: during an upgrade the old pod can hold port 80 for a few seconds.
+StartLimitIntervalSec=0
 
 [Container]
 ContainerName=revproxy
 Image=revproxy.build
-Pod=traffic-monitor.pod
+# Host network, outside the pod: nginx is the only service listening on the LAN, reaches the apps
+# on 127.0.0.1, and keeps serving the home page when the pod is down.
+Network=host
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/revproxy/html:/usr/share/nginx/html:ro
 {% for mount in tmsetup_revproxy_config_mounts %}
@@ -13,6 +17,7 @@ Volume={{ tmsetup_codedir }}/revproxy/{{ mount['path'] }}:{{ mount['target'] }}:
 
 [Service]
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=default.target
