@@ -1,5 +1,6 @@
 """Render tmsetup templates and check what the device gets. Off-device; no Ansible run needed."""
 
+import ast
 import re
 
 import pytest
@@ -162,3 +163,13 @@ def test_feeds_accepts_only_stream_names_as_src(src, allowed):
 def test_feeds_accepts_only_plain_parameter_names(args, allowed):
     """nginx matches $arg_src ignoring case and undecoded; go2rtc decodes names and is case-sensitive."""
     assert bool(re.search(args_pattern(), args)) is allowed
+
+
+TM_CONTROL_DIR = "/usr/local/lib/traffic-monitor/tm-control"
+
+
+def test_tm_control_wrapper_runs_only_the_root_owned_copy():
+    script = render("script/ansible/roles/tmsetup/templates/tm-control/tm-control.j2", tmsetup_tm_control_dir=TM_CONTROL_DIR)
+    assert script.splitlines()[0] == f"#!{TM_CONTROL_DIR}/venv/bin/python -EP"
+    assert f'sys.path.insert(0, "{TM_CONTROL_DIR}/backend")' in script
+    ast.parse(script)

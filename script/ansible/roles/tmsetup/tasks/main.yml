@@ -56,6 +56,13 @@
   ansible.builtin.import_tasks:
     file: detectors_install.yml
 
+- name: TMSetup - Main - Setup tm-control command line
+  tags:
+    - tm-control
+    - frigate
+  ansible.builtin.import_tasks:
+    file: tm-control_setup.yml
+
 - name: TMSetup - Main - Setup Frigate
   tags:
     - frigate

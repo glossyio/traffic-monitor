@@ -1,0 +1,13 @@
+#!{{ tmsetup_tm_control_dir }}/venv/bin/python -EP
+"""tm-control command line, installed by tmsetup.sh (tm-control tag).
+
+-E ignores PYTHON* environment variables and -P keeps the current directory off sys.path,
+so the code that runs is always the root-owned copy below, even under sudo.
+"""
+import sys
+
+sys.path.insert(0, "{{ tmsetup_tm_control_dir }}/backend")
+
+from tm_control.cli import main  # noqa: E402
+
+sys.exit(main())

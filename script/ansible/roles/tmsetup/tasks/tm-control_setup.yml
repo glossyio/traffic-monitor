@@ -1,0 +1,71 @@
+---
+# TMSetup - tm-control Setup tasks
+# Root may run this code, so it lives under /usr/local and stays root-owned, outside
+# {{ tmsetup_codedir }}, which the code owner can write.
+- name: TMSetup - tm-control Setup - Create install directories
+  become: true
+  loop:
+    - /usr/local/lib/traffic-monitor
+    - '{{ tmsetup_tm_control_dir }}'
+    - '{{ tmsetup_tm_control_dir }}/backend'
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: TMSetup - tm-control Setup - Copy the tm_control package
+  become: true
+  ansible.builtin.copy:
+    src: tm-control/backend/tm_control
+    dest: '{{ tmsetup_tm_control_dir }}/backend/'
+    owner: root
+    group: root
+    mode: u=rwX,go=rX
+
+- name: TMSetup - tm-control Setup - Copy pinned requirements
+  become: true
+  ansible.builtin.copy:
+    src: tm-control/backend/requirements.txt
+    dest: '{{ tmsetup_tm_control_dir }}/requirements.txt'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - tm-control Setup - Create virtual environment
+  become: true
+  ansible.builtin.command:
+    cmd: python3 -m venv {{ tmsetup_tm_control_dir }}/venv
+    creates: '{{ tmsetup_tm_control_dir }}/venv/bin/python'
+
+- name: TMSetup - tm-control Setup - Install pinned requirements
+  become: true
+  ansible.builtin.command:
+    argv:
+      - '{{ tmsetup_tm_control_dir }}/venv/bin/pip'
+      - install
+      - --no-input
+      - --disable-pip-version-check
+      - --requirement
+      - '{{ tmsetup_tm_control_dir }}/requirements.txt'
+  register: tmsetup_tm_control_pip_register
+  changed_when: "'Successfully installed' in tmsetup_tm_control_pip_register.stdout"
+
+- name: TMSetup - tm-control Setup - Install the tm-control command
+  become: true
+  ansible.builtin.template:
+    src: tm-control/tm-control.j2
+    dest: /usr/local/bin/tm-control
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: TMSetup - tm-control Setup - Check the tm-control command runs
+  become: true
+  ansible.builtin.command:
+    argv:
+      - /usr/local/bin/tm-control
+      - --help
+  changed_when: false
+...

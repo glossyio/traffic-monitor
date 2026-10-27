@@ -45,3 +45,24 @@ def test_secrets_are_read_on_every_run():
     secrets = main[names.index("TMSetup - Main - Generate and read device secrets")]
     assert secrets["tags"] == ["always"]
     assert names.index("TMSetup - Main - Generate and read device secrets") == names.index("TMSetup - Main - Setup base") + 1
+
+
+def test_tm_control_code_lives_outside_the_code_owners_directory():
+    tm_control_dir = load_role_yaml("vars/main.yml")["tmsetup_tm_control_dir"]
+    assert tm_control_dir.startswith("/usr/local/")
+    assert not tm_control_dir.startswith(load_role_yaml("defaults/main.yml")["tmsetup_codedir"])
+
+
+def test_tm_control_files_are_root_owned():
+    for task in load_role_yaml("tasks/tm-control_setup.yml"):
+        for module in ("ansible.builtin.file", "ansible.builtin.copy", "ansible.builtin.template"):
+            if module in task:
+                assert task[module]["owner"] == "root", task["name"]
+
+
+def test_frigate_and_tm_control_tags_install_tm_control_before_frigate():
+    main = load_role_yaml("tasks/main.yml")
+    names = [task["name"] for task in main]
+    tm_control = main[names.index("TMSetup - Main - Setup tm-control command line")]
+    assert set(tm_control["tags"]) == {"tm-control", "frigate"}
+    assert names.index("TMSetup - Main - Setup tm-control command line") < names.index("TMSetup - Main - Setup Frigate")
