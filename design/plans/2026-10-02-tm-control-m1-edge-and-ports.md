@@ -27,6 +27,10 @@ On 2026-10-26, after #240, #241, #242, and #257 merged, the branch was rebased o
 
 Tasks 1–3 ran later on 2026-10-26. Task 2's `/feeds/` rules came out stricter than first written. The `src` check could be bypassed, because nginx matches `$arg_src` ignoring case and without decoding the parameter name, while go2rtc decodes names and is case-sensitive. A `dst` parameter also let a WebSocket publish into a stream. Parameter names must now be lowercase and unencoded, and `dst` is refused. Task 2's steps and the counts in Tasks 2 and 3 show the result.
 
+Tasks 4–11 ran the same day. Two changes came out of their reviews, and the steps below include both:
+- Task 7 shows `tm-control migrate`'s warnings, which went to stderr and stayed hidden on a normal run.
+- Task 8 accepts only plain file names in a download request, and puts `--` before them in tar's arguments. Before, a name with spaces passed the folder check and gave tar extra options, including one that runs a command. Traversal names now get 400 instead of 403, and Task 12's device tests expect that.
+
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
 - #212's Cockpit
@@ -864,7 +868,7 @@ git commit -m "Generate device secrets once and keep them out of the install log
   - `backup_path(path: Path, now: datetime | None = None) -> Path`: returns `<name>.<YYYYMMDDTHHMMSSZ>.bak`.
 - Produces the pytest fixture `frigate_config`: a `Path` to a 0640 copy of a fixture in `tmp_path/config/config.yml`. It's parametrized, so every test that uses it runs once on the Frigate 0.17 config and once on the 0.18 config.
 
-- [ ] **Step 1: Add the dependency and the test fixture**
+- [x] **Step 1: Add the dependency and the test fixture**
 
 `tm-control/backend/requirements.txt`:
 
@@ -918,7 +922,7 @@ grep -h '^version:' tm-control/backend/tests/fixtures/*.yml
 
 Expected: a count of 1 for each file, with no credentials in the path. Then `version: 0.17-0` and `version: 0.18-0`. Don't regenerate these fixtures after Task 7.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `tm-control/backend/tests/conftest.py`:
 
@@ -1034,13 +1038,13 @@ def test_failed_write_leaves_the_file_and_no_temp_files(frigate_config, monkeypa
     assert sorted(p.name for p in frigate_config.parent.iterdir()) == ["config.yml"]
 ```
 
-- [ ] **Step 3: Run the tests to check they fail**
+- [x] **Step 3: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
 Expected: collection ERROR, `ModuleNotFoundError: No module named 'tm_control'`.
 
-- [ ] **Step 4: Write the package**
+- [x] **Step 4: Write the package**
 
 `tm-control/backend/tm_control/__init__.py`:
 
@@ -1152,13 +1156,13 @@ class RoundTripFile:
 
 `mapping_indent=2` with `sequence=4, offset=2` reproduces tmsetup's Frigate config byte for byte, for both the 0.17 and the 0.18 template. These are also the settings Frigate 0.18's own config migration uses. Node-RED's `config.yml` uses 4-space mappings, and M2 passes `mapping_indent=4` for it.
 
-- [ ] **Step 5: Run the tests to check they pass**
+- [x] **Step 5: Run the tests to check they pass**
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
 Expected: 16 passed (8 tests, each on both fixtures).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tm-control/ script/requirements-dev
@@ -1188,7 +1192,7 @@ git commit -m "Add tm-control package with round-trip YAML editing" -m "<trailer
   - stdout contains `updated` only when the file changed.
   - Errors go to stderr, starting with `tm-control migrate: ERROR`, with exit code 1.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tm-control/backend/tests/test_frigate_rtsp_migration.py`:
 
@@ -1334,13 +1338,13 @@ def test_runs_as_a_module(frigate_config):
     assert "would update 1 camera input(s)" in result.stdout
 ```
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
 Expected: collection ERROR, `ImportError: cannot import name 'migrate' from 'tm_control.core'` (or no module `tm_control.cli`).
 
-- [ ] **Step 3: Write the migration and the command line**
+- [x] **Step 3: Write the migration and the command line**
 
 `tm-control/backend/tm_control/core/migrate.py`:
 
@@ -1460,13 +1464,13 @@ def main(argv=None):
     return 2
 ```
 
-- [ ] **Step 4: Run the tests to check they pass**
+- [x] **Step 4: Run the tests to check they pass**
 
 Run: `.venv/bin/python -m pytest tm-control/backend/tests -v`
 
 Expected: 36 passed. The tests that use `frigate_config` run on both fixtures.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tm-control/backend/tm_control/core/migrate.py tm-control/backend/tm_control/cli.py tm-control/backend/tests/
@@ -1494,7 +1498,7 @@ git commit -m "Add tm-control migrate to add go2rtc RTSP credentials to existing
   - `tmsetup_tm_control_dir`.
   - The `tm-control` tag. Tags `frigate` and `tm-control` both run this task file.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add `import ast` to the imports at the top of `script/tests/test_tmsetup_templates.py`, then append:
 
@@ -1533,13 +1537,13 @@ def test_frigate_and_tm_control_tags_install_tm_control_before_frigate():
     assert names.index("TMSetup - Main - Setup tm-control command line") < names.index("TMSetup - Main - Setup Frigate")
 ```
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests -v`
 
 Expected: the new tests FAIL with `TemplateNotFound`, `KeyError: 'tmsetup_tm_control_dir'`, and `FileNotFoundError`.
 
-- [ ] **Step 3: Write the wrapper template, the task file, and the symlink**
+- [x] **Step 3: Write the wrapper template, the task file, and the symlink**
 
 `script/ansible/roles/tmsetup/templates/tm-control/tm-control.j2`:
 
@@ -1642,7 +1646,7 @@ ln -s ../../../../../tm-control/ script/ansible/roles/tmsetup/files/tm-control
 ls script/ansible/roles/tmsetup/files/tm-control/backend/requirements.txt
 ```
 
-- [ ] **Step 4: Register the variables, package, import, and tag**
+- [x] **Step 4: Register the variables, package, import, and tag**
 
 In `script/ansible/roles/tmsetup/vars/main.yml`:
 - Add `- python3-venv` as the last item of `tmsetup_packages`.
@@ -1670,7 +1674,7 @@ In `script/tmsetup.sh`, add `"tm-control"` to the end of `_VALID_TAGS`:
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy" "tm-control")
 ```
 
-- [ ] **Step 5: Run the tests and Ansible checks**
+- [x] **Step 5: Run the tests and Ansible checks**
 
 Run:
 
@@ -1687,7 +1691,7 @@ Expected:
 - `tm-control`
 - `OK`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add script/ansible/roles/tmsetup/tasks/tm-control_setup.yml script/ansible/roles/tmsetup/templates/tm-control/ \
@@ -1721,7 +1725,7 @@ git commit -m "Install the tm-control command root-owned under /usr/local" -m "<
   - `frigate.env` keys `FRIGATE_GO2RTC_RTSP_USER` and `FRIGATE_GO2RTC_RTSP_PASSWORD`
   - `tmsetup_go2rtc_rtsp_user: frigate`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add `import yaml` to the imports at the top of `script/tests/test_tmsetup_templates.py`, then append:
 
@@ -1803,6 +1807,17 @@ def test_existing_frigate_config_is_migrated_as_the_code_owner():
     assert task["notify"] == "Restart frigate.service"
 
 
+def test_frigate_config_update_warnings_are_shown():
+    """migrate warns on stderr and exits 0; Ansible hides a successful command's stderr without -v."""
+    names = list(frigate_tasks())
+    show = frigate_tasks()["TMSetup - Frigate Setup - Show warnings from the Frigate config update"]
+    assert names.index("TMSetup - Frigate Setup - Show warnings from the Frigate config update") == (
+        names.index("TMSetup - Frigate Setup - Update Frigate config from older installs") + 1
+    )
+    assert show["ansible.builtin.debug"]["msg"] == "{{ tmsetup_frigate_migrate_register.stderr_lines }}"
+    assert "WARNING" in show["when"]
+
+
 def test_go2rtc_config_with_the_password_is_root_only_and_never_diffed():
     task = next(t for t in load_role_yaml("tasks/go2rtc_setup.yml") if t["name"] == "TMSetup - Go2rtc Setup - Setup go2rtc rpicam settings")
     template = task["ansible.builtin.template"]
@@ -1819,13 +1834,13 @@ def test_migrated_inputs_match_what_new_installs_get():
     assert migrate.HOST_GO2RTC_RTSP_WITH_CREDENTIALS + "picam_h265_detect" in template
 ```
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests tm-control/backend/tests -v`
 
 Expected: the new tests FAIL with `TemplateNotFound: .../go2rtc.yaml.j2`, the old input path, the missing `mqtt` key, `KeyError` for the new task names, and the drift test failing.
 
-- [ ] **Step 3: Write the go2rtc template**
+- [x] **Step 3: Write the go2rtc template**
 
 Create `script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2` with this header. After it, copy the stream entries from `script/ansible/roles/tmsetup/files/go2rtc.yaml` unchanged: everything after that file's own `streams:` line, which the header already ends with.
 
@@ -1870,7 +1885,7 @@ In `script/ansible/roles/tmsetup/tasks/go2rtc_setup.yml`, replace the "Setup go2
 
 go2rtc runs as root, so 0600 keeps the RTSP password from other local users.
 
-- [ ] **Step 4: Point Frigate at the credentialed stream**
+- [x] **Step 4: Point Frigate at the credentialed stream**
 
 In `container/frigate/config/config.yml.j2`, change:
 
@@ -1938,11 +1953,16 @@ In `script/ansible/roles/tmsetup/tasks/frigate_setup.yml`, add `diff: false` to 
   register: tmsetup_frigate_migrate_register
   changed_when: "'updated' in tmsetup_frigate_migrate_register.stdout"
   notify: Restart frigate.service
+
+- name: TMSetup - Frigate Setup - Show warnings from the Frigate config update
+  ansible.builtin.debug:
+    msg: '{{ tmsetup_frigate_migrate_register.stderr_lines }}'
+  when: "'WARNING' in tmsetup_frigate_migrate_register.stderr"
 ```
 
-`frigate.env` and `config.yml` aren't overwritten without `-f`. The first task gives existing devices the credentials. The second rewrites their camera input, keeping comments and writing a backup, and does nothing on new installs. It runs as the code owner through `runuser`, like the tmdb migration in `node-red-tm.container.j2`.
+`frigate.env` and `config.yml` aren't overwritten without `-f`. The first task gives existing devices the credentials. The second rewrites their camera input, keeping comments and writing a backup, and does nothing on new installs. It runs as the code owner through `runuser`, like the tmdb migration in `node-red-tm.container.j2`. The third shows `migrate`'s warnings: it prints them on stderr and exits 0, and Ansible hides a successful command's stderr without `-v`, so a camera read by LAN IP would otherwise go dark unnoticed (Review Focus 5). The warnings never hold a password: `migrate` skips URLs that carry credentials.
 
-- [ ] **Step 5: Run every check**
+- [x] **Step 5: Run every check**
 
 Run:
 
@@ -1959,7 +1979,7 @@ Expected:
 - `templates parse`
 - `flows ok`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A script/ansible/roles/tmsetup/templates/go2rtc.yaml.j2 script/ansible/roles/tmsetup/files/go2rtc.yaml \
@@ -1993,7 +2013,7 @@ The task also tightens the folder check. `filePath.startsWith(baseDir)` accepted
 - Produces: `GET /storefiles` answers 400, 403, or 404, with the message as the body. When `tar` fails, it answers 500 if nothing has been sent yet; otherwise it closes the connection. Either way the message shows up as the Dashboard notification. The download headers go out with the first chunk, so a failure before that is a plain HTTP error with no file to save.
 - Produces: a database download first copies `tmdb.sqlite` with `VACUUM INTO` into its own folder under `/db/snapshot/`, through the sqlitedb config node every flow uses. It tars that copy and deletes it when `tar` ends (success, failure, or Cancel). If the copy fails, for example because the disk is full, it answers 500. Task 12's device tests check all of this on a Pi.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `script/tests/test_node_red_flows.py`:
 
@@ -2033,18 +2053,28 @@ def test_database_download_tars_a_copy():
     assert (copy["type"], copy["sqlquery"], copy["mydb"]) == ("sqlite", "msg.topic", "2f60c1ab30a6fc8f")
     assert "VACUUM INTO" in one("copy database first?")["func"]
     assert set(one("catch database copy")["scope"]) == {copy["id"], one("copy database first?")["id"]}
+
+
+def test_download_names_cannot_become_tar_options():
+    """tar gets each requested name as an argument, so a name with spaces or a leading "-" could add tar options."""
+    flows = json.loads(FLOWS.read_text())
+    [validate] = [node for node in flows if node.get("name") == "Validate filenames, setup tar"]
+    assert '!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)' in validate["func"]
+    assert "msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;" in validate["func"]
+    assert "msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';" in validate["func"]
 ```
 
-- [ ] **Step 2: Run it to check it fails**
+- [x] **Step 2: Run it to check it fails**
 
 Run: `.venv/bin/python -m pytest script/tests/test_node_red_flows.py -v`
 
-Expected: 3 FAIL.
+Expected: 4 FAIL.
 - The status test names "setup test" and "Validate filenames, setup tar".
 - The header test lists the same two nodes instead of "download chunks".
 - The copy test fails on its first assert, because "zip files" still reads `payload.filepath`.
+- The tar-options test fails, because there's no file-name check yet.
 
-- [ ] **Step 3: Edit the flows**
+- [x] **Step 3: Edit the flows**
 
 Make the edit with a script and write the file back the way Node-RED does (see CLAUDE.md). Run this once from the repo root; don't commit the script. Each `swap` asserts that its text appears exactly once, so the script stops if the merged nodes differ from what's quoted here.
 
@@ -2073,10 +2103,24 @@ swap(validate, "msg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/t
 if (files == '/db/tmdb.sqlite') {
   // Node-RED keeps writing tmdb.sqlite, so tar a copy made by "copy database for download"
   msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);
-  msg.tarArgs = ' -C ' + msg.snapshot + ' tmdb.sqlite';
+  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';
 } else {
-  msg.tarArgs = ' -C ' + baseDir + ' ' + filepath;
+  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;
 }""")
+# tar gets each name as an argument (spawn mode splits on spaces), so allow only plain file names
+swap(validate, """\
+ // Resolve the full path to prevent path traversal attacks
+  const filePath = path.resolve(baseDir, fileName);""", """\
+  // Only plain file names: tar gets each name as an argument, so spaces or a leading "-" would become tar options
+  if (baseDir != "/db" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {
+    node.error("Invalid file name: " + fileName);
+    msg.statusCode = 400;
+    msg.payload = "Invalid file name.";
+    return msg;
+  }
+
+ // Resolve the full path to prevent path traversal attacks
+  const filePath = path.resolve(baseDir, fileName);""")
 swap(validate, """\
 // set browser download headers
 msg.res._res.append('Content-Type', 'application/octet-stream');
@@ -2215,7 +2259,7 @@ EOF
 ```
 
 What it changes:
-- **"Validate filenames, setup tar"** sets `msg.statusCode` for 400, 403, and 404. Its folder check requires `baseDir + path.sep`, and it drops the `msg.res.statusCode = 0` success flag.
+- **"Validate filenames, setup tar"** sets `msg.statusCode` for 400, 403, and 404. Its folder check requires `baseDir + path.sep`, and it drops the `msg.res.statusCode = 0` success flag. Names in `/db/temp` must be plain file names (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, else 400), and tar's arguments put `--` before them. The exec node runs in spawn mode, which splits the command line on spaces, so a name such as `events.json --checkpoint-action=exec=<cmd> /../events.json` passed the folder check (it resolves to `/db/temp/events.json`) and gave tar an option that runs a command. The Dashboard only sends plain names. Traversal names such as `../tmdb.sqlite` now get this 400 before the folder check.
 - **"setup test"** drops the same flag. It goes straight to `tar` and never used the flag.
 - **"Test for error"** routes on `msg.statusCode`: unset goes to `tar`, set goes to the error response.
 - **"handle end of file or error"** is rewritten with two outputs:
@@ -2237,7 +2281,7 @@ GNU `tar` exits 1 when a file changes while it's being read. That still counts a
 - On a 2-3 GB database it takes 1-2 minutes before the first byte, and the database page says so.
 - While it runs, every other flow's SQL waits behind it on the shared sqlitedb connection. A second connection would avoid the wait, but in the default rollback-journal mode its read lock would make those writes fail with `SQLITE_BUSY`. Queued writes should be delayed, not lost, but this hasn't been measured. Task 12 Step 5 checks it on a Pi.
 
-- [ ] **Step 4: Run the checks**
+- [x] **Step 4: Run the checks**
 
 Run:
 
@@ -2270,7 +2314,7 @@ The header move, the database copy, and the page text were added on 2026-10-25. 
 
 The sqlite node, the catch node, and the shared connection weren't exercised. Task 12 runs them on a Pi.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add container/node-red-tm/data/flows.json script/tests/test_node_red_flows.py
@@ -2296,7 +2340,7 @@ On a fresh install the network unit still runs first, and tmsetup's run creates 
 **Interfaces:**
 - Produces: a pod unit with no `Requires=` on `tmnet-network.service`. Task 12's disruptive device test checks on a Pi that the pod starts after one failed start of that unit.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `script/tests/test_tmsetup_templates.py`:
 
@@ -2315,13 +2359,13 @@ def test_pod_starts_even_if_its_network_unit_fails_once():
     assert "After=tmnet-network.service" in pod
 ```
 
-- [ ] **Step 2: Run it to check it fails**
+- [x] **Step 2: Run it to check it fails**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py -v -k network_unit`
 
 Expected: FAIL, because the pod still has `Network=tmnet.network`.
 
-- [ ] **Step 3: Name the network in the pod**
+- [x] **Step 3: Name the network in the pod**
 
 In `container/traffic-monitor.pod.j2`, change:
 
@@ -2357,13 +2401,13 @@ QUADLET_UNIT_DIRS=$d /usr/libexec/podman/quadlet -dryrun | sed -n '/^---traffic-
 
 Expected: `Wants=tmnet-network.service`, `After=tmnet-network.service`, and `network tmnet`, with no `Requires=` line. The pattern matches only at the start of a line, because Quadlet copies the unit's comments, and one of them mentions `Requires=`. On 2026-10-25, Podman 5.7.0's Quadlet gave exactly that. Before the change it printed `Requires=tmnet-network.service` in place of the `Wants=` line. Task 12 checks the behavior on the Pi's Podman 5.4.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `.venv/bin/python -m pytest script/tests -v`
 
 Expected: all pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add container/traffic-monitor.pod.j2 script/tests/test_tmsetup_templates.py
@@ -2397,7 +2441,7 @@ This task makes the rule hold on every installer run. Port 1883 is open to the n
   - the fact `tmsetup_mqtt_lan_open`, which Task 1's pod template reads
   - the broker's credentials, which Task 12's device tests check
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `script/tests/test_tmsetup_tasks.py`:
 
@@ -2503,13 +2547,13 @@ def test_flows_cred_is_still_encrypted():
 
 No test decrypts `flows_cred.json`. Step 4's procedure checks what the broker does with it, and Task 12's device tests check it on a Pi.
 
-- [ ] **Step 2: Run the tests to check they fail**
+- [x] **Step 2: Run the tests to check they fail**
 
 Run: `.venv/bin/python -m pytest script/tests/test_tmsetup_templates.py script/tests/test_tmsetup_tasks.py script/tests/test_node_red_flows.py -v`
 
 Expected: the new task tests FAIL with `FileNotFoundError` (no `tasks/mqtt_broker.yml`) or `ValueError` (no import), the diff test with `KeyError`, and the template tests on the old lines. The node-id and encryption tests already pass and guard Step 4.
 
-- [ ] **Step 3: Write the task file, the import, and the templates**
+- [x] **Step 3: Write the task file, the import, and the templates**
 
 `script/ansible/roles/tmsetup/tasks/mqtt_broker.yml`:
 
@@ -2640,7 +2684,7 @@ FRIGATE_MQTT_PASSWORD={{ tmsetup_mqtt_broker_login.password or tmsetup_frigate_m
 
 In `script/ansible/roles/tmsetup/tasks/node-red-tm_setup.yml`, add `diff: false` to `TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs`, after `become: true`.
 
-- [ ] **Step 4: Give the broker node its credentials**
+- [x] **Step 4: Give the broker node its credentials**
 
 `flows_cred.json` is encrypted, so don't edit it by hand. Set the credentials through Node-RED's admin API in a throwaway container built from this repo, then copy back only `flows_cred.json`. Run this once from the repo root, with Podman, and don't commit the scripts. Nothing prints the credential secret. If any step behaves differently from what's described here, stop and tell the person.
 
@@ -2740,7 +2784,7 @@ podman rmi tm-cred-edit && rm -rf "$d"
 
 Expected: `flows unchanged`. Only `flows_cred.json` changes in the repo.
 
-- [ ] **Step 5: Run the checks**
+- [x] **Step 5: Run the checks**
 
 Run:
 
@@ -2757,7 +2801,7 @@ Expected:
 - `templates parse`
 - `git diff --stat` lists the task file, `main.yml`, `node-red-tm_setup.yml`, both env templates, `flows_cred.json`, and the three test files.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add script/ansible/roles/tmsetup/tasks/mqtt_broker.yml script/ansible/roles/tmsetup/tasks/main.yml \
@@ -2782,7 +2826,7 @@ The docs follow "Writing docs" in `docs/development/contributing.md` (#241): des
 - Modify: `README.md` (lines 45–49 and 63)
 - Modify: `CLAUDE.md`
 
-- [ ] **Step 1: Write the ports page**
+- [x] **Step 1: Write the ports page**
 
 `docs/reference/network.md`:
 
@@ -2825,7 +2869,7 @@ In `mkdocs.yml`, under `nav:` → `- Reference:`, after `- Installer options: re
 
 The `llmstxt` plugin's `reference/*.md` already picks the page up.
 
-- [ ] **Step 2: Update the pages that describe what M1 changes**
+- [x] **Step 2: Update the pages that describe what M1 changes**
 
 Revise each in place; delete what M1 makes untrue rather than adding a note about it.
 
@@ -2875,7 +2919,7 @@ See [Network ports](https://docs.trafficmonitor.ai/latest/reference/network/) fo
 
 Also replace `Device dashboard available at \`http://<device_ip_address>:1880/ui\`.` with `Device dashboard available at \`http://<device_ip_address>/ui/\`.`.
 
-- [ ] **Step 3: Update CLAUDE.md**
+- [x] **Step 3: Update CLAUDE.md**
 
 Make these edits to the matching text. If a sentence was reworded on your base branch, apply the same meaning.
 
@@ -2937,7 +2981,7 @@ Make these edits to the matching text. If a sentence was reworded on your base b
 
 8. **"Editing `flows.json`"**, the `flows_cred.json` bullet: after `don't hand-edit it.`, add `It holds the MQTT nodes' \`${TM_MQTT_BROKER_*}\` credential references, stored by node id. Change it only with the container procedure in the M1 plan's Task 10, and keep the MQTT nodes' ids.`
 
-- [ ] **Step 4: Check the docs build inputs**
+- [x] **Step 4: Check the docs build inputs**
 
 Run:
 
@@ -2952,7 +2996,7 @@ Expected:
 - The second prints the new nav line.
 - The build passes. With `--strict` it fails on broken links or anchors, and on a page missing from the nav. Set up `~/.venvs/tm-docs` as described in CLAUDE.md's docs check.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/ mkdocs.yml README.md CLAUDE.md
@@ -3038,8 +3082,10 @@ def test_feeds_is_view_only_from_this_machine(host, hostvars, path, method, expe
     [
         ("", 400),
         ("?files=tmdev-missing.json", 404),
-        ("?files=../tmdb.sqlite", 403),
-        ("?files=../temp-other.json", 403),
+        ("?files=../tmdb.sqlite", 400),
+        ("?files=../temp-other.json", 400),
+        ("?files=-v", 400),
+        ("?files=a%20b.json", 400),
     ],
 )
 def test_data_export_errors_from_this_machine(host, hostvars, query, expected):
