@@ -31,6 +31,8 @@ Tasks 4–11 ran the same day. Two changes came out of their reviews, and the st
 - Task 7 shows `tm-control migrate`'s warnings, which went to stderr and stayed hidden on a normal run.
 - Task 8 accepts only plain file names in a download request, and puts `--` before them in tar's arguments. Before, a name with spaces passed the folder check and gave tar extra options, including one that runs a command. Traversal names now get 400 instead of 403, and Task 12's device tests expect that.
 
+Task 12's Pi plan ran on both bench units in the inventory, one with a camera and a Coral PCIe, one with a Hailo-8 and no camera. Before M1 the new tests failed as expected, and the disruptive one reproduced #232. After the full deploy, every automated test passed on both, including the full disruptive set with a reboot. The items that need a person (Step 10) are still open, and Step 12 waits for the maintainer.
+
 The spec's "Builds on merged PRs" section describes the PRs. This plan uses their files:
 - #210's nginx location files
 - #212's Cockpit
@@ -3028,7 +3030,9 @@ This uses #214's `script/devpi/tmdev.py` and #215's device tests, which compare 
   - Task 9's pod unit, which no longer requires `tmnet-network.service`
   - Task 10's broker login
 
-- [ ] **Step 1: Write the device tests**
+- [x] **Step 1: Write the device tests**
+
+The committed tests (2026-10-26) start from the code below and add what their review asked for. A failing assert or traceback never shows a device value: the MQTT tests assert on return codes through `connack_code`, and a `Redacted` wrapper and an `address` fixture keep the Pi's address and inventory values out of the output. The closed-port checks first prove the address answers on port 80, and also cover 1964, 8080, 8564, and 8565. The copy-failure test uses a root-owned 0555 `db/snapshot` folder. The disruptive tests set up inside `try`. `test_frigate_api_hides_the_rtsp_password` compares the password on the Pi. The on-Pi MQTT check retries for 30 seconds after a restart. Where they differ, `script/devpi/tests` is the reference.
 
 At the top of `script/devpi/tests/test_web.py`, add `import socket` to the imports; it already imports `urllib.error` and `urllib.request`. Then append:
 
@@ -3281,7 +3285,7 @@ def test_pod_starts_after_its_network_unit_fails_once(host):
 
 Add `import shlex` to the imports at the top of `test_disruptive.py`.
 
-- [ ] **Step 2: Check the tests are collected and skip without a dev Pi**
+- [x] **Step 2: Check the tests are collected and skip without a dev Pi**
 
 Run:
 
@@ -3291,9 +3295,9 @@ Run:
     | grep -c -E 'closed_to_the_network|view_only|needs_credentials|data_export|mqtt|survives_a_stopped_pod|network_unit_fails_once'
 ```
 
-Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `25`.
+Expected: everything skipped, because no `TM_DEV_HOSTS` is set, and then `34`.
 
-- [ ] **Step 3: Open the check and record the baseline**
+- [x] **Step 3: Open the check and record the baseline**
 
 Run these while the Pi still runs the code from before M1:
 
@@ -3318,7 +3322,7 @@ Record it:
 $T check item "New device tests fail before M1 is deployed" pass --evidence cmd-NNN
 ```
 
-- [ ] **Step 4: Deploy the upgrade path**
+- [x] **Step 4: Deploy the upgrade path**
 
 Ask the person first: a full run can reboot the Pi.
 
@@ -3328,7 +3332,7 @@ $T deploy <host>
 
 Expected: the run succeeds. In the deploy's `tmsetup.log`, "Update Frigate config from older installs" reports *changed*, and "Check NGinx config" passes. Record an item with the deploy as evidence.
 
-- [ ] **Step 5: Run every device test**
+- [x] **Step 5: Run every device test**
 
 ```bash
 $T test <host>
@@ -3336,12 +3340,12 @@ $T test <host>
 
 Expected:
 - All pass, including #215's existing ones: `nginx -t`, every proxied location answers (now including `/storefiles`), the direct ports answer on the Pi's `localhost`, and the home page loads from this machine. `test_cameras.py` reads the camera name from Frigate's input path with `:8554/<name>`, which still matches the credentialed URL. `test_no_crash_restarts[revproxy.service]` should pass too. It counts restarts since the handler last restarted revproxy, so a failure means the pod still held port 80 at that point (Review Focus 3). Bring that to the person.
-- The 23 new non-disruptive tests pass. On a unit without `pii_free`, 18 pass, and five are skipped: the three data-export tests that write to the Pi or download the database, and the two MQTT tests that read `node-red-tm.env`.
+- The 33 new non-disruptive tests pass, including `test_frigate_api_hides_the_rtsp_password`, which compares the RTSP password with Frigate's `/api/config` on the Pi so the password never leaves it. On a unit without `pii_free`, 28 pass, and five are skipped: the three data-export tests that write to the Pi or download the database, and the two MQTT tests that read `node-red-tm.env`.
 - On a `pii_free` unit, while `test_data_export_tars_a_database_copy` runs: the Dashboard's Monitoring page keeps updating, and afterwards `$T run <host> -- 'sudo journalctl -u node-red-tm --since -15min | grep -c -E "SQLITE_BUSY|database is locked"'` prints `0`. Record it as an item. If writes failed or Node-RED stalled during the copy, stop and bring it to the person; don't work around it.
 
 Record an item.
 
-- [ ] **Step 6: Check what listens on the network**
+- [x] **Step 6: Check what listens on the network**
 
 ```bash
 $T run <host> -- sudo ss -tlnup
@@ -3353,12 +3357,13 @@ Expected: apart from `127.0.0.1` and `[::1]`, the only listeners are:
 - `:8554` (go2rtc)
 - `:5353` (avahi)
 - `:9090` (Cockpit, the rescue console)
+- `:53` on the pod network's gateway (Podman's DNS for the pod)
 - `:1883`, only on a unit with a broker login (Step 9)
 - DHCP/DNS, only in hotspot mode
 
 Nothing listens on 1880, 1984, 5000, 8555, or 8971, and go2rtc has no UDP sockets. Repeat the `ss -ulnp` part while a browser plays `/feeds/stream.html?src=picam_h265_detect` (Step 10). go2rtc should still have no UDP socket, which shows WebRTC isn't loaded. Record an item.
 
-- [ ] **Step 7: Check that re-runs keep the secrets and keep them out of the log**
+- [x] **Step 7: Check that re-runs keep the secrets and keep them out of the log**
 
 Re-run on the Pi itself, so its install log lands on the Pi where the check can read it:
 
@@ -3376,18 +3381,18 @@ Expected:
 
 Record an item.
 
-- [ ] **Step 8: Check the home page survives the pod**
+- [x] **Step 8: Check the home page survives the pod**
 
 Ask the person first: this stops data capture for a few minutes.
 
 ```bash
 $T test <host> --disruptive -- -k "survives_a_stopped_pod or network_unit_fails_once"
-$T run <host> -- "sudo journalctl -u frigate.service -b | grep -i -E '401|unauthorized' || echo none"
+$T run <host> -- "sudo journalctl -u frigate.service -b -o cat | grep -i -E '[^0-9.]401[^0-9]|unauthorized' || echo none"
 ```
 
 Expected: both tests pass, and the journal check prints `none`, meaning Frigate reads the camera with the credentials. Record an item. #215's `test_restart_recovers` and `test_reboot_recovers` also cover M1's restart order. Run the full `--disruptive` set only if the person agrees to a reboot.
 
-- [ ] **Step 9: Open MQTT to the network with a broker login**
+- [x] **Step 9: Open MQTT to the network with a broker login**
 
 Ask the person first: this restarts Node-RED and Frigate. On a `pii_free` unit only, because it reads `node-red-tm.env`:
 
@@ -3409,7 +3414,7 @@ Then blank both values with `$T run <host> -- 'sudo sed -i "s/^\(TM_MQTT_BROKER_
 
 A unit that had a login set by hand before M1 should keep Frigate connected after the upgrade (`test_frigate_logs_in_to_the_mqtt_broker`). If no bench unit has one, record that case as not tested.
 
-- [ ] **Step 10: Record what needs a person**
+- [x] **Step 10: Record what needs a person**
 
 These need eyes or the Node-RED editor, so record them as `manual`:
 
@@ -3424,7 +3429,7 @@ $T check item "Node-RED watch test: in-place, then two atomic edits of config.ym
 
 When the person reports back, reopen the check with `$T check reopen <run_dir>` and re-record those items as `pass` or `fail`.
 
-- [ ] **Step 11: Close the check and commit**
+- [x] **Step 11: Close the check and commit**
 
 ```bash
 $T check status
