@@ -89,4 +89,31 @@
       open to the network. Give that login to the air quality sensor (mqtt_username and mqtt_password in its
       config.json) and to every other MQTT client, such as Home Assistant or a display board.
   when: tmsetup_mqtt_lan_open and (tmsetup_mqtt_broker_login_created or tmsetup_mqtt_frigate_lines_register is changed)
+
+# Devices installed before M1 published MQTT to the network with no login. This file runs before
+# podman_setup.yml renders the new pod, so the installed unit still shows whether 1883 was open.
+- name: TMSetup - MQTT Broker - Check for the installed pod unit
+  become: true
+  ansible.builtin.stat:
+    path: /etc/containers/systemd/traffic-monitor.pod
+  register: tmsetup_mqtt_pod_stat_register
+
+- name: TMSetup - MQTT Broker - Read the installed pod unit
+  become: true
+  no_log: true
+  ansible.builtin.slurp:
+    src: /etc/containers/systemd/traffic-monitor.pod
+  register: tmsetup_mqtt_pod_register
+  when: tmsetup_mqtt_pod_stat_register.stat.exists
+
+- name: TMSetup - MQTT Broker - Say that port 1883 closes to the network
+  ansible.builtin.debug:
+    msg: >-
+      Port 1883 now accepts MQTT only from this device. To let other devices, such as a display board or Home
+      Assistant, connect, give the broker a login with 'bash script/tmsetup.sh -t node-red-tm -C mqtt_lan' and give
+      that login to each client (see "Connect from other devices" in the docs).
+  when:
+    - not tmsetup_mqtt_lan_open
+    - tmsetup_mqtt_pod_stat_register.stat.exists
+    - (tmsetup_mqtt_pod_register.content | b64decode) is regex('^PublishPort=1883:1883$', multiline=true)
 ...

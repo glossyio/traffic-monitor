@@ -12,7 +12,15 @@ After editing it, restart the service:
 sudo systemctl restart node-red-tm.service
 ```
 
-After changing the MQTT broker login, run the installer instead, so Frigate gets the same login and port 1883 opens or closes to match: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
+!!! warning "After changing the MQTT broker login"
+
+    A restart or reboot isn't enough after you change `TM_MQTT_BROKER_USERNAME` or `TM_MQTT_BROKER_PASSWORD`. Run the installer instead, so Frigate gets the same login and port 1883 opens or closes to match:
+
+    ```bash
+    bash traffic-monitor/script/tmsetup.sh -t node-red-tm
+    ```
+
+    Otherwise the broker refuses Frigate's connection, and no events are recorded.
 
 | Variable | Default | Meaning |
 |---|---|---|

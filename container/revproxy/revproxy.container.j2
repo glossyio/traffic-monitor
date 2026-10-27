@@ -1,7 +1,9 @@
 [Unit]
 Description=Traffic Monitor NGinx Reverse Proxy container
-# Keep retrying: during an upgrade the old pod can hold port 80 for a few seconds.
-StartLimitIntervalSec=0
+# Retry for a few minutes during an upgrade, while the old pod releases port 80, then fail visibly
+# instead of restarting forever.
+StartLimitIntervalSec=300
+StartLimitBurst=30
 
 [Container]
 ContainerName=revproxy

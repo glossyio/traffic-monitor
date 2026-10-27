@@ -40,7 +40,7 @@ Remote runs:
 
 ## Tags
 
-Each tag reruns one part of the install. Without `-t`, everything runs.
+Each tag reruns one part of the install. Without `-t`, everything runs. The pod and the reverse proxy have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, and `revproxy` tags each update both.
 
 | Tag | What it does |
 |---|---|

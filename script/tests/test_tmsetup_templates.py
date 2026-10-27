@@ -66,8 +66,12 @@ def test_revproxy_keeps_its_bind_mounted_config():
 
 
 def test_revproxy_keeps_retrying_while_port_80_is_still_taken():
+    """Retry for a few minutes while the old pod releases port 80 during an upgrade, then fail visibly."""
     unit = revproxy_unit()
-    assert "StartLimitIntervalSec=0" in unit
+    unit_section = unit[:unit.index("[Container]")]
+    assert "StartLimitIntervalSec=300" in unit_section
+    assert "StartLimitBurst=30" in unit_section
+    assert "StartLimitIntervalSec=0" not in unit
     assert "RestartSec=5" in unit
 
 

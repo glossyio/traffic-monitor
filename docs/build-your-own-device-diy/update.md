@@ -22,7 +22,7 @@ git pull
 bash script/tmsetup.sh
 ```
 
-Run the whole installer rather than a single tag, because one version's changes can span several components. For example, the reverse proxy serves port 80 on the host's network, which works only after the pod stops using that port, so both have to be updated together.
+Run the whole installer rather than a single tag, because one version's changes can span several components.
 
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](../data-and-payloads/data-overview.md#schema-versions) describes the copy it saves first.
 
@@ -35,6 +35,8 @@ Restart when the installer asks. When the services come back, the Node-RED servi
     ```
 
 A Frigate configuration from a backup may lack the camera stream login. After you restore one, run `bash script/tmsetup.sh -t frigate` to add it.
+
+Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices).
 
 Open `http://<device>/` and check the [Monitoring dashboard](../ui/monitoring.md) for new counts.
 

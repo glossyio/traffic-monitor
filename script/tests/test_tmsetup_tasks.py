@@ -155,11 +155,26 @@ def mqtt_broker_tasks():
     return {task["name"]: task for task in load_role_yaml("tasks/mqtt_broker.yml")}
 
 
+POD_AND_PROXY_TAGS = {"podman", "frigate", "node-red-tm", "revproxy", "go2rtc"}
+
+
+def test_the_pod_and_the_reverse_proxy_always_update_together():
+    """On a device installed before M1, a single-tag run must not pair the new pod with the old in-pod nginx, or the reverse."""
+    main = load_role_yaml("tasks/main.yml")
+    names = [task["name"] for task in main]
+    for name in ("TMSetup - Main - Setup Podman",
+                 "TMSetup - Main - Read the MQTT broker login",
+                 "TMSetup - Main - Setup NGinx Reverse Proxy"):
+        assert POD_AND_PROXY_TAGS <= set(main[names.index(name)]["tags"]), name
+    assert names.index("TMSetup - Main - Setup Podman") < names.index("TMSetup - Main - Setup NGinx Reverse Proxy")
+    assert POD_AND_PROXY_TAGS <= set(main[names.index("TMSetup - Main - Start Services")]["tags"])
+
+
 def test_broker_login_is_read_on_every_run_that_renders_the_pod():
     main = load_role_yaml("tasks/main.yml")
     names = [task["name"] for task in main]
     login = main[names.index("TMSetup - Main - Read the MQTT broker login")]
-    assert set(login["tags"]) == {"podman", "frigate", "node-red-tm"}
+    assert set(login["tags"]) == POD_AND_PROXY_TAGS
     secrets = names.index("TMSetup - Main - Generate and read device secrets")
     assert names.index("TMSetup - Main - Read the MQTT broker login") == secrets + 1
 
@@ -189,3 +204,23 @@ def test_node_red_env_template_hides_its_diff():
     task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs")
     assert task["diff"] is False
+
+
+def test_installer_says_when_an_update_closes_mqtt_to_the_network():
+    tasks = mqtt_broker_tasks()
+    stat = tasks["TMSetup - MQTT Broker - Check for the installed pod unit"]
+    assert stat["ansible.builtin.stat"]["path"] == "/etc/containers/systemd/traffic-monitor.pod"
+    assert stat["register"] == "tmsetup_mqtt_pod_stat_register"
+    read = tasks["TMSetup - MQTT Broker - Read the installed pod unit"]
+    assert read["ansible.builtin.slurp"]["src"] == "/etc/containers/systemd/traffic-monitor.pod"
+    assert read["register"] == "tmsetup_mqtt_pod_register"
+    assert "tmsetup_mqtt_pod_stat_register.stat.exists" in str(read["when"])
+    notice = tasks["TMSetup - MQTT Broker - Say that port 1883 closes to the network"]
+    when = notice["when"] if isinstance(notice["when"], list) else [notice["when"]]
+    assert "not tmsetup_mqtt_lan_open" in when
+    assert "tmsetup_mqtt_pod_stat_register.stat.exists" in when
+    assert "PublishPort=1883:1883" in str(when)
+    assert "-t node-red-tm -C mqtt_lan" in notice["ansible.builtin.debug"]["msg"]
+    names = list(tasks)
+    assert names.index("TMSetup - MQTT Broker - Open port 1883 only with a login") < names.index(
+        "TMSetup - MQTT Broker - Say that port 1883 closes to the network")
