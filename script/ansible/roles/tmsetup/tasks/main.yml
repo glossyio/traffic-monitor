@@ -13,6 +13,12 @@
   ansible.builtin.import_tasks:
     file: base_setup.yml
 
+- name: TMSetup - Main - Generate and read device secrets
+  tags:
+    - always
+  ansible.builtin.import_tasks:
+    file: secrets.yml
+
 - name: TMSetup - Main - Apt Full Upgrade (for remote hosts)
   tags:
     - full_upgrade

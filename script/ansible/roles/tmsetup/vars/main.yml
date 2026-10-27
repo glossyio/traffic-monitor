@@ -67,4 +67,9 @@ tmsetup_revproxy_locations:
   - nodered.conf
   - storefiles.conf
 
+# Secrets generated once on the device by tasks/secrets.yml. Only names here; values never in the repo.
+tmsetup_secrets_dir: /etc/traffic-monitor/secrets
+tmsetup_secret_names:
+  - go2rtc_rtsp_password
+
 ...
