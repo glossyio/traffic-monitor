@@ -225,3 +225,15 @@ def test_frigate_env_carries_the_go2rtc_credentials():
     assert "FRIGATE_GO2RTC_RTSP_USER=frigate" in lines
     assert "FRIGATE_GO2RTC_RTSP_PASSWORD=s3cret" in lines
     assert "FRIGATE_RTSP_PASSWORD=password" in lines  # operators' own variable is untouched
+
+
+def test_pod_starts_even_if_its_network_unit_fails_once():
+    """A .network reference makes Quadlet add Requires=tmnet-network.service, so one failed start of that unit
+    at boot kept the pod down (#232). The pod names the network instead, and orders itself after the unit."""
+    network = render("container/tmnet.network.j2").splitlines()
+    name = next(line.split("=", 1)[1] for line in network if line.startswith("NetworkName="))
+    pod = render("container/traffic-monitor.pod.j2", tmsetup_mqtt_lan_open=False).splitlines()
+    assert f"Network={name}" in pod
+    assert "Network=tmnet.network" not in pod
+    assert "Wants=tmnet-network.service" in pod
+    assert "After=tmnet-network.service" in pod

@@ -1,10 +1,15 @@
 [Unit]
 Description=Traffic Monitor pod
+# Start after the network unit without requiring it. With Network=tmnet.network, Quadlet adds Requires=,
+# and one failed start of tmnet-network.service at boot kept the pod down (#232). The network persists
+# in /etc/containers/networks/, so the pod can start even when the unit fails.
+Wants=tmnet-network.service
+After=tmnet-network.service
 
 [Pod]
 PodName=traffic-monitor
 ServiceName=traffic-monitor
-Network=tmnet.network
+Network=tmnet
 # Published on 127.0.0.1 only: the reverse proxy (host network) and host services reach these,
 # the LAN doesn't. Every app is served to the network by the reverse proxy on port 80.
 PublishPort=127.0.0.1:1880:1880
