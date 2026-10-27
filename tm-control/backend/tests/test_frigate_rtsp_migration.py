@@ -108,6 +108,41 @@ def test_invalid_yaml_is_an_error_and_is_left_alone(tmp_path, capsys):
     assert path.read_text() == "cameras: [unclosed\n"
 
 
+@pytest.mark.parametrize(
+    ("broken_lines", "position"),
+    [
+        # An unquoted ": " in the value: the scanner fails on the line that holds the password.
+        ("      - path: rtsp://admin:s3cret@192.0.2.10:554/x extra: y\n", "line 5, column 57"),
+        # A duplicate key: the error quotes both lines.
+        (
+            "      - path: rtsp://admin:s3cret@192.0.2.10:554/x\n"
+            "        path: rtsp://admin:s3cret@192.0.2.10:554/y\n",
+            "line 6, column 9",
+        ),
+    ],
+)
+def test_invalid_yaml_error_does_not_print_the_config_text(tmp_path, capsys, broken_lines, position):
+    path = tmp_path / "config.yml"
+    text = "cameras:\n  ipcam:\n    ffmpeg:\n      inputs:\n" + broken_lines
+    path.write_text(text)
+
+    assert migrate.run(path) == 1
+    printed = output(capsys)
+    assert f"tm-control migrate: ERROR reading {path}: invalid YAML (" in printed
+    assert f") at {position}\n" in printed
+    assert "s3cret" not in printed and "admin" not in printed and "192.0.2.10" not in printed
+    assert path.read_text() == text
+
+
+def test_invalid_yaml_error_without_a_position_names_only_the_error_type(tmp_path, capsys):
+    path = tmp_path / "config.yml"
+    path.write_text("cameras: \x07\n")
+
+    assert migrate.run(path) == 1
+    printed = output(capsys)
+    assert printed == f"tm-control migrate: ERROR reading {path}: invalid YAML (ReaderError)\n"
+
+
 def test_migrated_inputs_match_what_new_installs_get():
     template = (REPO / "container" / "frigate" / "config" / "config.yml.j2").read_text()
     assert migrate.HOST_GO2RTC_RTSP_WITH_CREDENTIALS + "picam_h265_detect" in template

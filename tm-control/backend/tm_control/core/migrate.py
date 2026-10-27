@@ -81,14 +81,6 @@ def _add_credentials_to_streams(config):
     return changed
 
 
-def add_go2rtc_rtsp_credentials(config):
-    """Point inputs and go2rtc stream sources that read the host's go2rtc at its credentialed URL.
-
-    Return how many changed.
-    """
-    return _add_credentials_to_inputs(config) + _add_credentials_to_streams(config)
-
-
 def _needs_a_person(source):
     """Check whether a source may read a go2rtc stream without credentials in a way this migration can't rewrite.
 
@@ -162,16 +154,32 @@ def _warn(kind, name, problem, detail):
     print(f"{PREFIX} WARNING {message}", file=sys.stderr)
 
 
+def _describe_yaml_error(error):
+    """Name a YAML error and where it is.
+
+    Never its message: that quotes the broken line, which may hold a camera password.
+    """
+    description = f"invalid YAML ({type(error).__name__})"
+    mark = getattr(error, "problem_mark", None)
+    if mark is not None:
+        description += f" at line {mark.line + 1}, column {mark.column + 1}"
+    return description
+
+
 def run(frigate_config, dry_run=False):
     """Apply every migration step to Frigate's config.yml. Return a process exit code.
 
     Warnings never print a source in full: only its scheme, host, port, and path, or just its stream name, so no
-    credential or query string reaches the install log.
+    credential or query string reaches the install log. Errors print the path and what went wrong, never the
+    file's text.
     """
     try:
         document = RoundTripFile(frigate_config)
-    except (OSError, YAMLError) as error:
+    except OSError as error:
         print(f"{PREFIX} ERROR reading {frigate_config}: {error}", file=sys.stderr)
+        return 1
+    except YAMLError as error:
+        print(f"{PREFIX} ERROR reading {frigate_config}: {_describe_yaml_error(error)}", file=sys.stderr)
         return 1
 
     inputs_changed = _add_credentials_to_inputs(document.data)
