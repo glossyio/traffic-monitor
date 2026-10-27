@@ -1035,11 +1035,14 @@
             "3948096e595acf1d",
             "41deab2c99a209b8",
             "8a12d83e700bcaa6",
-            "513356e9f9a779df",
             "9297900926075b54",
             "b5bcea3d8a40c33b",
             "5f1603d1e44fcab7",
-            "c5bbedde83cba5a7"
+            "c5bbedde83cba5a7",
+            "3a226e9922929100",
+            "6b71ab080a582bd2",
+            "a7ea83d9c70f2981",
+            "d4485dfc776d50fc"
         ],
         "x": 4,
         "y": 1859,
@@ -12102,7 +12105,7 @@
         "width": "0",
         "height": "0",
         "head": "",
-        "format": "<template>\n    <text>\n        <p>Click the button below to download the entire Traffic Monitor SQLite database(s) to your computer. \n            Database will include data for all connected sensors including events, radar, air quality, and more \n            while the Traffic Monitor was deployed and capturing, only from this device.</p>\n    </text>\n</template>\n",
+        "format": "<template>\n    <text>\n        <p>Click the button below to download the entire Traffic Monitor SQLite database(s) to your computer. \n            Database will include data for all connected sensors including events, radar, air quality, and more \n            while the Traffic Monitor was deployed and capturing, only from this device.</p>\n        <p>The device first makes a consistent copy of the database, so a large database can take\n            a minute or two before the download starts.</p>\n    </text>\n</template>\n",
         "storeOutMessages": true,
         "passthru": true,
         "resendOnRefresh": true,
@@ -13712,7 +13715,7 @@
         "z": "7c7dba965ad4a266",
         "g": "92451286ca48378d",
         "name": "setup test",
-        "func": "// setup test source & downloaded filenames\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nmsg.payload.filepath = ' -C /db tmdb-db-salal-2025-12-28a.sqlite';\nconst filename = \"test.tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "func": "// setup test source & downloaded filenames\nmsg.tarArgs = ' -C /db tmdb-db-salal-2025-12-28a.sqlite';\nmsg.downloadName = \"test.tar.gz\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -13865,13 +13868,11 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "Test for error",
-        "property": "res.statusCode",
+        "property": "statusCode",
         "propertyType": "msg",
         "rules": [
             {
-                "t": "eq",
-                "v": "0",
-                "vt": "str"
+                "t": "null"
             },
             {
                 "t": "else"
@@ -13884,7 +13885,7 @@
         "y": 1980,
         "wires": [
             [
-                "30d1dd9d6d580fa4"
+                "a7ea83d9c70f2981"
             ],
             [
                 "8a12d83e700bcaa6",
@@ -13898,7 +13899,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "command": "tar czvf  - --checkpoint=1000",
-        "addpay": "payload.filepath",
+        "addpay": "tarArgs",
         "append": "",
         "useSpawn": "true",
         "timer": "0",
@@ -13926,7 +13927,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.res.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.res.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.res.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nmsg.payload.filepath = ' -C ' + baseDir + ' ' + (files == '/db/tmdb.sqlite' ? 'tmdb.sqlite' : filepath);\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// set browser download headers\nmsg.res._res.append('Content-Type', 'application/octet-stream');\nconst filename = prefix + name + \".tar.gz\";\nmsg.res._res.append('Content-Disposition', 'attachment; filename=\"' + filename + '\"');\nmsg.res.statusCode = 0;\nreturn msg;",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\nlet files = msg.payload.files.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n  // Only plain file names: tar gets each name as an argument, so spaces or a leading \"-\" would become tar options\n  if (baseDir != \"/db\" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {\n    node.error(\"Invalid file name: \" + fileName);\n    msg.statusCode = 400;\n    msg.payload = \"Invalid file name.\";\n    return msg;\n  }\n\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir + path.sep)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nif (files == '/db/tmdb.sqlite') {\n  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by \"copy database for download\"\n  msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';\n} else {\n  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;\n}\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// \"download chunks\" sets the download headers with the first chunk, so an error before then is a plain HTTP error\nmsg.downloadName = prefix + name + \".tar.gz\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -13992,7 +13993,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "download chunks",
-        "func": "msg.res._res.write(msg.payload);\nreturn msg;",
+        "func": "// Set the download headers with the first chunk, so a failure before any data is a plain HTTP error.\nconst res = msg.res._res;\nif (!res.headersSent) {\n    res.setHeader('Content-Type', 'application/octet-stream');\n    res.setHeader('Content-Disposition', 'attachment; filename=\"' + msg.downloadName + '\"');\n}\nres.write(msg.payload);\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -14011,8 +14012,8 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "handle end of file or error",
-        "func": "if (Object.hasOwn(msg.payload, \"code\")) {\n    if (msg.payload.code == 0) {\n        msg.res._res.end(); // send end-of-file\n        msg.payload = null; // to indicate success to next switch node\n    } else {\n        node.error(\"unexpected tar error: \" + msg.payload.message + \", return code: \" + msg.payload.code);\n        if (Object.hasOwn(msg.payload, \"message\")) {        \n            msg.payload = msg.payload.message;\n        } else {\n            msg.payload = \"unknown error\";\n        }\n    }\n} else {\n    msg.payload = null;\n}\nreturn msg;",
-        "outputs": 1,
+        "func": "// Remove the database copy, if this download made one\nif (msg.snapshot) {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n}\n\n// tar has finished. The exec node gives its exit code as msg.payload.code (0 means the archive\n// is complete), and msg.payload.signal when it was stopped, as the Cancel button does.\nif (msg.payload.code === 0) {\n    msg.res._res.end(); // send end-of-file\n    return null;\n}\n\nif (msg.payload.signal) {\n    msg.payload = \"Download stopped\";\n} else {\n    msg.payload = \"Download failed: tar exited with code \" + msg.payload.code;\n    node.error(msg.payload);\n}\n\n// Output 1 sends an HTTP error, output 2 shows the message on the Dashboard.\nif (msg.res._res.headersSent) {\n    // Part of the archive already went out with status 200. Closing the connection makes\n    // the browser mark the download as failed instead of saving a cut-off file.\n    msg.res._res.destroy();\n    return [null, msg];\n}\nmsg.statusCode = 500;\nreturn [msg, msg];",
+        "outputs": 2,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -14022,7 +14023,10 @@
         "y": 2100,
         "wires": [
             [
-                "513356e9f9a779df"
+                "8a12d83e700bcaa6"
+            ],
+            [
+                "9297900926075b54"
             ]
         ]
     },
@@ -14037,35 +14041,6 @@
         "x": 1080,
         "y": 2120,
         "wires": []
-    },
-    {
-        "id": "513356e9f9a779df",
-        "type": "switch",
-        "z": "7c7dba965ad4a266",
-        "g": "c3e71a6b79637b6f",
-        "name": "check result",
-        "property": "payload.code",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "null"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 490,
-        "y": 2100,
-        "wires": [
-            [],
-            [
-                "8a12d83e700bcaa6",
-                "9297900926075b54"
-            ]
-        ]
     },
     {
         "id": "9297900926075b54",
@@ -14171,5 +14146,88 @@
                 "30d1dd9d6d580fa4"
             ]
         ]
+    },
+    {
+        "type": "function",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "id": "3a226e9922929100",
+        "name": "database copy failed",
+        "x": 1090,
+        "y": 2060,
+        "wires": [
+            [
+                "8a12d83e700bcaa6",
+                "9297900926075b54",
+                "8f8958d08aa3a85d"
+            ]
+        ],
+        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\nglobal.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f"
+    },
+    {
+        "id": "6b71ab080a582bd2",
+        "type": "sqlite",
+        "name": "copy database for download",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "x": 860,
+        "y": 2060,
+        "wires": [
+            [
+                "30d1dd9d6d580fa4"
+            ]
+        ],
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f"
+    },
+    {
+        "type": "function",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "id": "a7ea83d9c70f2981",
+        "name": "copy database first?",
+        "x": 860,
+        "y": 1920,
+        "wires": [
+            [
+                "30d1dd9d6d580fa4"
+            ],
+            [
+                "6b71ab080a582bd2"
+            ]
+        ],
+        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    if (fs.statSync(dir).mtimeMs < stale) {\n        fs.rmSync(dir, { recursive: true, force: true });\n    }\n}\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f"
+    },
+    {
+        "id": "d4485dfc776d50fc",
+        "type": "catch",
+        "name": "catch database copy",
+        "scope": [
+            "a7ea83d9c70f2981",
+            "6b71ab080a582bd2"
+        ],
+        "uncaught": false,
+        "x": 870,
+        "y": 2100,
+        "wires": [
+            [
+                "3a226e9922929100"
+            ]
+        ],
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f"
     }
 ]
