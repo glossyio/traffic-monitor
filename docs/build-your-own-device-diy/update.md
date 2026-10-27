@@ -22,7 +22,7 @@ git pull
 bash script/tmsetup.sh
 ```
 
-Run the whole installer rather than a single tag. The camera stream's login and Frigate's settings for it are updated together, so running only `-t go2rtc` leaves Frigate without the login and the camera dark until `-t frigate` runs.
+Run the whole installer rather than a single tag, because one version's changes can span several components. For example, the reverse proxy serves port 80 on the host's network, which works only after the pod stops using that port, so both have to be updated together.
 
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](../data-and-payloads/data-overview.md#schema-versions) describes the copy it saves first.
 
@@ -33,6 +33,8 @@ Restart when the installer asks. When the services come back, the Node-RED servi
     ```bash
     grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
     ```
+
+A Frigate configuration from a backup may lack the camera stream login. After you restore one, run `bash script/tmsetup.sh -t frigate` to add it.
 
 Open `http://<device>/` and check the [Monitoring dashboard](../ui/monitoring.md) for new counts.
 

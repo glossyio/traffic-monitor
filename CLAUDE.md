@@ -51,6 +51,8 @@ bash script/tmsetup.sh -C plate_recognizer            # enable the optional Plat
 bash script/tmsetup.sh -H <ip>[,<ip>] -l <user> -k    # from a dev machine: install to remote Pis over SSH
 ```
 
+A single `-t` assumes the rest of the device already runs the same version. To update a device to a new version, run the whole installer, because some changes span tags: revproxy's host-network port 80 needs the pod to stop publishing it, and the go2rtc RTSP login needs Frigate's `config.yml` updated with it.
+
 Always use `tmsetup.sh` rather than calling `ansible-playbook` directly. The script supplies extra vars the role depends on (e.g. `tmsetup_reboot_touch_file`) and handles the reboot prompt.
 
 From a dev machine, against a bench Pi defined in the local dev-Pi inventory (`script/devpi/README.md`):

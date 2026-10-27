@@ -47,14 +47,14 @@ Each tag reruns one part of the install. Without `-t`, everything runs.
 | `base` | Operating system packages, the owner account, and Cockpit. It runs with every `-t`. |
 | `full_upgrade` | The `apt full-upgrade`, when `-u` is given |
 | `wifi` | Wi-Fi setup |
-| `go2rtc` | The camera streaming service on the host |
+| `go2rtc` | The camera streaming service on the host, and the stream login Frigate uses to read it |
 | `detectors` | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later). |
 | `podman` | The container runtime and the pod |
 | `frigate` | Frigate's container, settings, and the devices it needs |
 | `node-red-tm` | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar. |
 | `plate-recognizer` | The optional Plate Recognizer container |
 | `revproxy` | The home page and reverse proxy |
-| `tm-control` | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` tag installs it too and runs it to update Frigate's `config.yml`. |
+| `tm-control` | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` and `go2rtc` tags install it too and run it to give Frigate's `config.yml` the stream login. |
 
 ## What `-f` replaces
 

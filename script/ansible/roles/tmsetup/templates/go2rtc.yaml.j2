@@ -13,6 +13,7 @@ rtsp:
   password: "{{ tmsetup_secrets['go2rtc_rtsp_password'] }}"
 exec:
   # Streams may only run rpicam-vid. go2rtc already refuses exec sources sent through its API.
+  # go2rtc runs ffmpeg: sources through exec as ffmpeg, so a stream using ffmpeg: also needs ffmpeg here.
   allow_paths: [rpicam-vid]
 streams:
   # low quality but CPU-lite h265 (hevc) encoding for detection; decrease the libav-codec-opts crf value for higher quality/bitrate
