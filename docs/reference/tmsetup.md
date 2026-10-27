@@ -20,7 +20,7 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 | `-f` | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces). |
 | `-t TAG` | Run only one component. Repeat for several. See [Tags](#tags). |
 | `-T` | List the tags and exit. |
-| `-C NAME[,NAME]` | Turn on an optional component. The only one is `plate_recognizer`; see [Plate Recognizer](../add-ons/plate-recognizer.md). |
+| `-C NAME[,NAME]` | Turn on an optional component: `plate_recognizer` (see [Plate Recognizer](../add-ons/plate-recognizer.md)), or `mqtt_lan`, which creates an MQTT broker login when there isn't one (see [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices)). |
 | `-u` | Also upgrade the operating system's packages (`apt full-upgrade`). |
 | `-d PATH` | Install folder. Default `/opt/traffic-monitor`. The docs assume the default. |
 | `-o USER` | Owner of the installed files and processes. Default `tmadmin`, created by the installer. |
@@ -54,6 +54,7 @@ Each tag reruns one part of the install. Without `-t`, everything runs.
 | `node-red-tm` | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar. |
 | `plate-recognizer` | The optional Plate Recognizer container |
 | `revproxy` | The home page and reverse proxy |
+| `tm-control` | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` tag installs it too and runs it to update Frigate's `config.yml`. |
 
 ## What `-f` replaces
 
@@ -65,7 +66,7 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 * `/opt/traffic-monitor/frigate/frigate.env`
 * `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
-With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](../setup-guide.md).
+With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](../setup-guide.md).
 
 ## Add an accelerator later
 

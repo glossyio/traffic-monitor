@@ -9,12 +9,12 @@ An update reruns the installer from a newer copy of the repository. Your data an
 ## Before you update
 
 * Read the [release notes](https://github.com/glossyio/traffic-monitor/releases). A release that needs a fresh image says so.
-* Download a copy of the database from the [Data export](../ui/database.md#download-the-database) page. Open that page on Node-RED's port, as it explains, because downloads through the home page's `/dashboard/` path fail.
+* Download a copy of the database from the [Data export](../ui/database.md#download-the-database) page.
 * Make sure the device has an internet connection. The update downloads packages and rebuilds the container images. Rebuilding Frigate's image compiles ffmpeg on the device, which can take about 20 minutes.
 
 ## Update
 
-Connect to the device over SSH, then update the clone you installed from and rerun the installer:
+Connect to the device over SSH, then update the clone you installed from and rerun the whole installer:
 
 ```bash
 cd traffic-monitor
@@ -22,7 +22,17 @@ git pull
 bash script/tmsetup.sh
 ```
 
+Run the whole installer rather than a single tag. The camera stream's login and Frigate's settings for it are updated together, so running only `-t go2rtc` leaves Frigate without the login and the camera dark until `-t frigate` runs.
+
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](../data-and-payloads/data-overview.md#schema-versions) describes the copy it saves first.
+
+??? warning "The installer printed `tm-control migrate: WARNING`"
+
+    A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](../configuration/frigate-config.md#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is. To find the warning later:
+
+    ```bash
+    grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
+    ```
 
 Open `http://<device>/` and check the [Monitoring dashboard](../ui/monitoring.md) for new counts.
 

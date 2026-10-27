@@ -42,11 +42,14 @@ The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.
 See [Setup Guide](https://docs.trafficmonitor.ai/latest/setup-guide/).
 
 ## User Interfaces (UI) / port numbers references 🖥️
-- `http://<device_ip_address>:1880/ui` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
-- `http://<device_ip_address>:5000` to view the [Frigate](https://github.com/blakeblackshear/frigate) interface and make any configuration changes specific to your deployment
-- `http://<device_ip_address>:1984` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) configured camera settings on the Raspberri Pi. Use this if your cameras are giving errors in Frigate.
+- `http://<device_ip_address>/` is the home page, with links to every app below.
+- `http://<device_ip_address>/ui/` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
+- `http://<device_ip_address>/frigate/` to view the [Frigate](https://github.com/blakeblackshear/frigate) interface and make any configuration changes specific to your deployment
+- `http://<device_ip_address>/feeds/` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) camera streams on the Raspberry Pi, for viewing only. Use this if your cameras are giving errors in Frigate.
 - `http://<device_ip_address>/system/` opens [Cockpit](https://cockpit-project.org/) for system administration: services, logs, updates, containers, and a terminal. Log in with your Raspberry Pi user account. Cockpit also answers directly on port `9090`.
-- `http://<device_ip_address>:1880` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
+- `http://<device_ip_address>/nr/` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers. The default admin login is admin/password.
+
+See [Network ports](https://docs.trafficmonitor.ai/latest/reference/network/) for the ports the device opens.
 
 ## Troubleshooting ⚠️
 
@@ -60,7 +63,7 @@ No events are being captured? Review the [Setup Guide](https://docs.trafficmonit
 If you are having detection issues, review the [Frigate Camera Setup](https://docs.frigate.video/frigate/camera_setup) documentation.
 
 ## Screenshots
-Device dashboard available at `http://<device_ip_address>:1880/ui`.
+Device dashboard available at `http://<device_ip_address>/ui/`.
 
 Cumulative events by object for the day (resets daily).
 ![events-counts-daily](static/img/events-counts-daily.png)

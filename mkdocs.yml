@@ -135,6 +135,7 @@ nav:
       - config.yml settings: configuration/node-red-config.md
       - node-red-tm.env settings: configuration/environment.md
       - Installer options: reference/tmsetup.md
+      - Network ports: reference/network.md
       - Data:
           - Data and privacy: data-and-payloads/data-overview.md
           - Events: data-and-payloads/events-payload.md

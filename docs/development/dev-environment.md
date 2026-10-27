@@ -14,7 +14,7 @@ The [repository](https://github.com/glossyio/traffic-monitor) is a monorepo with
 
 To develop on a device:
 
-1. Open the Node-RED editor at `http://<device>:1880` and log in as `admin` with password `password`.
+1. Open the Node-RED editor at `http://<device>/nr/` and log in as `admin` with password `password`.
 2. Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.
 3. Point the project's flow and package files at `container/node-red-tm/data/flows.json` and `package.json`, so your edits land in the repository's files.
 4. Commit your changes to a branch of your fork.
