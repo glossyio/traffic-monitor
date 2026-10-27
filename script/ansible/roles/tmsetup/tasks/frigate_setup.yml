@@ -51,39 +51,6 @@
     src: 'container/{{ item }}.j2'
   notify: Restart frigate.service
 
-- name: TMSetup - Frigate Setup - Add go2rtc RTSP credentials to frigate.env
-  become: true
-  no_log: true
-  loop:
-    - { key: FRIGATE_GO2RTC_RTSP_USER, value: '{{ tmsetup_go2rtc_rtsp_user }}' }
-    - { key: FRIGATE_GO2RTC_RTSP_PASSWORD, value: "{{ tmsetup_secrets['go2rtc_rtsp_password'] }}" }
-  ansible.builtin.lineinfile:
-    path: '{{ tmsetup_codedir }}/frigate/frigate.env'
-    regexp: '^{{ item.key }}='
-    line: '{{ item.key }}={{ item.value }}'
-  notify: Restart frigate.service
-
-- name: TMSetup - Frigate Setup - Update Frigate config from older installs
-  become: true
-  ansible.builtin.command:
-    argv:
-      - /usr/sbin/runuser
-      - -u
-      - '{{ tmsetup_codeowner }}'
-      - --
-      - /usr/local/bin/tm-control
-      - migrate
-      - --frigate-config
-      - '{{ tmsetup_codedir }}/frigate/config/config.yml'
-  register: tmsetup_frigate_migrate_register
-  changed_when: "'updated' in tmsetup_frigate_migrate_register.stdout"
-  notify: Restart frigate.service
-
-- name: TMSetup - Frigate Setup - Show warnings from the Frigate config update
-  ansible.builtin.debug:
-    msg: '{{ tmsetup_frigate_migrate_register.stderr_lines }}'
-  when: "'WARNING' in tmsetup_frigate_migrate_register.stderr"
-
 - name: TMSetup - Frigate Setup - Create Frigate-TM Container file
   become: true
   ansible.builtin.template:

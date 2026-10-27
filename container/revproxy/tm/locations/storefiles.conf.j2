@@ -5,4 +5,6 @@ location /storefiles {
     include /etc/nginx/tm/snippets/proxy-common.conf;
     # Stream the download as Node-RED writes it; a whole tmdb.sqlite can be several GB.
     proxy_buffering off;
+    # A database download first copies tmdb.sqlite, which can take minutes before the first byte.
+    proxy_read_timeout 30m;
 }

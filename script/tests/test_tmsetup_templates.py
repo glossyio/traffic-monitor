@@ -21,6 +21,7 @@ def test_data_export_downloads_are_proxied_to_node_red():
     assert "location /storefiles {" in conf
     assert "proxy_pass http://127.0.0.1:1880;" in conf
     assert "proxy_buffering off;" in conf
+    assert "proxy_read_timeout 30m;" in conf
 
 
 def published_ports(unit_text):
@@ -85,7 +86,7 @@ def test_feeds_accepts_only_get_and_plain_stream_names():
     assert "limit_except GET { deny all; }" in conf
     assert 'if ($arg_src !~ "^[A-Za-z0-9_-]*$") { return 403; }' in conf
     assert 'if ($args !~ "^([a-z0-9_]+(=[^&]*)?(&|$))*$") { return 403; }' in conf
-    assert "if ($arg_dst) { return 403; }" in conf
+    assert 'if ($args ~ "(^|&)dst(=|&|$)") { return 403; }' in conf
 
 
 def denied_api_pattern():
@@ -98,6 +99,10 @@ def src_pattern():
 
 def args_pattern():
     return re.search(r'\$args !~ "([^"]+)"', location("go2rtc.conf")).group(1)
+
+
+def dst_pattern():
+    return re.search(r'\$args ~ "([^"]+)"', location("go2rtc.conf")).group(1)
 
 
 @pytest.mark.parametrize(
@@ -164,6 +169,25 @@ def test_feeds_accepts_only_stream_names_as_src(src, allowed):
 def test_feeds_accepts_only_plain_parameter_names(args, allowed):
     """nginx matches $arg_src ignoring case and undecoded; go2rtc decodes names and is case-sensitive."""
     assert bool(re.search(args_pattern(), args)) is allowed
+
+
+@pytest.mark.parametrize(
+    "args, denied",
+    [
+        ("dst=0", True),
+        ("dst=", True),
+        ("dst", True),
+        ("src=a&dst=b", True),
+        ("dst=picam_h265_detect", True),
+        ("src=a", False),
+        ("xdst=1", False),
+        ("dstx=1", False),
+        ("", False),
+    ],
+)
+def test_feeds_refuses_any_dst_parameter(args, denied):
+    """nginx's if ($arg_dst) is false for dst= and dst=0, so the check matches the name in $args."""
+    assert bool(re.search(dst_pattern(), args)) is denied
 
 
 TM_CONTROL_DIR = "/usr/local/lib/traffic-monitor/tm-control"

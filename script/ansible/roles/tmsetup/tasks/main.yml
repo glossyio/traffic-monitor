@@ -68,6 +68,7 @@
   tags:
     - tm-control
     - frigate
+    - go2rtc
   ansible.builtin.import_tasks:
     file: tm-control_setup.yml
 
@@ -76,6 +77,13 @@
     - frigate
   ansible.builtin.import_tasks:
     file: frigate_setup.yml
+
+- name: TMSetup - Main - Give Frigate the go2rtc RTSP login
+  tags:
+    - go2rtc
+    - frigate
+  ansible.builtin.import_tasks:
+    file: frigate_credentials.yml
 
 - name: TMSetup - Main - Setup Node-Red-TM
   tags:
