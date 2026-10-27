@@ -220,7 +220,7 @@ def test_frigate_env_carries_the_go2rtc_credentials():
         tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
         tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
         tmsetup_frigate_version="0.18.1",
-        tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
+        tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS, tmsetup_mqtt_broker_login=NO_LOGIN,
     ).splitlines()
     assert "FRIGATE_GO2RTC_RTSP_USER=frigate" in lines
     assert "FRIGATE_GO2RTC_RTSP_PASSWORD=s3cret" in lines
@@ -237,3 +237,43 @@ def test_pod_starts_even_if_its_network_unit_fails_once():
     assert "Network=tmnet.network" not in pod
     assert "Wants=tmnet-network.service" in pod
     assert "After=tmnet-network.service" in pod
+
+
+LOGIN = {"username": "tm", "password": "s3cret"}
+NO_LOGIN = {"username": "", "password": ""}
+
+
+def mqtt_lines(text):
+    # Only the MQTT settings, so a failing assert can't print other values, such as the credential secret
+    return [line for line in text.splitlines() if "MQTT_" in line and not line.startswith("#")]
+
+
+def node_red_env(login):
+    return mqtt_lines(render(
+        "container/node-red-tm/node-red-tm.env.j2",
+        ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
+        tmsetup_mqtt_broker_login=login,
+    ))
+
+
+def frigate_env(login):
+    return mqtt_lines(render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate", tmsetup_secrets=SECRETS,
+        tmsetup_mqtt_broker_login=login,
+    ))
+
+
+def test_env_templates_render_the_broker_login():
+    assert "TM_MQTT_BROKER_USERNAME=tm" in node_red_env(LOGIN)
+    assert "TM_MQTT_BROKER_PASSWORD=s3cret" in node_red_env(LOGIN)
+    assert "FRIGATE_MQTT_USER=tm" in frigate_env(LOGIN)
+    assert "FRIGATE_MQTT_PASSWORD=s3cret" in frigate_env(LOGIN)
+
+
+def test_env_templates_without_a_login():
+    assert "TM_MQTT_BROKER_USERNAME=" in node_red_env(NO_LOGIN)
+    assert "TM_MQTT_BROKER_PASSWORD=" in node_red_env(NO_LOGIN)
+    assert "FRIGATE_MQTT_USER=mqtt_user" in frigate_env(NO_LOGIN)

@@ -42,3 +42,14 @@ def test_download_names_cannot_become_tar_options():
     assert '!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)' in validate["func"]
     assert "msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;" in validate["func"]
     assert "msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';" in validate["func"]
+
+
+def test_mqtt_nodes_keep_their_ids():
+    """flows_cred.json stores the broker login by node id, so these nodes must keep their ids (Task 10)."""
+    types = {node["id"]: node["type"] for node in json.loads(FLOWS.read_text())}
+    assert types.get("9ca3b6ed1a6334c0") == "aedes broker"
+    assert types.get("a5d65dd0e3566daa") == "mqtt-broker"
+
+
+def test_flows_cred_is_still_encrypted():
+    assert list(json.loads((FLOWS.parent / "flows_cred.json").read_text())) == ["$"]

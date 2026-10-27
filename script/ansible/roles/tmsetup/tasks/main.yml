@@ -19,6 +19,14 @@
   ansible.builtin.import_tasks:
     file: secrets.yml
 
+- name: TMSetup - Main - Read the MQTT broker login
+  tags:
+    - podman
+    - frigate
+    - node-red-tm
+  ansible.builtin.import_tasks:
+    file: mqtt_broker.yml
+
 - name: TMSetup - Main - Apt Full Upgrade (for remote hosts)
   tags:
     - full_upgrade

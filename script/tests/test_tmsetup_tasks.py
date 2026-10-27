@@ -108,3 +108,43 @@ def test_go2rtc_config_with_the_password_is_root_only_and_never_diffed():
     template = task["ansible.builtin.template"]
     assert (template["src"], template["owner"], template["mode"]) == ("go2rtc.yaml.j2", "root", "0600")
     assert task["diff"] is False
+
+
+def mqtt_broker_tasks():
+    return {task["name"]: task for task in load_role_yaml("tasks/mqtt_broker.yml")}
+
+
+def test_broker_login_is_read_on_every_run_that_renders_the_pod():
+    main = load_role_yaml("tasks/main.yml")
+    names = [task["name"] for task in main]
+    login = main[names.index("TMSetup - Main - Read the MQTT broker login")]
+    assert set(login["tags"]) == {"podman", "frigate", "node-red-tm"}
+    secrets = names.index("TMSetup - Main - Generate and read device secrets")
+    assert names.index("TMSetup - Main - Read the MQTT broker login") == secrets + 1
+
+
+def test_broker_login_tasks_hide_the_values():
+    for name, task in mqtt_broker_tasks().items():
+        if any(module in task for module in ("ansible.builtin.slurp", "ansible.builtin.set_fact", "ansible.builtin.lineinfile")):
+            assert task.get("no_log") is True, name
+
+
+def test_both_broker_keys_are_written_even_when_blank():
+    """Node-RED keeps a missing variable's ${...} text, and the broker would then require it as the login."""
+    task = mqtt_broker_tasks()["TMSetup - MQTT Broker - Write the broker login to node-red-tm.env"]
+    assert [item["key"] for item in task["loop"]] == ["TM_MQTT_BROKER_USERNAME", "TM_MQTT_BROKER_PASSWORD"]
+    assert "tmsetup_mqtt_lan_open" not in str(task.get("when", ""))
+
+
+def test_a_login_change_restarts_both_ends():
+    tasks = mqtt_broker_tasks()
+    for name in ("TMSetup - MQTT Broker - Write the broker login to node-red-tm.env",
+                 "TMSetup - MQTT Broker - Give Frigate the broker login"):
+        assert set(tasks[name]["notify"]) == {"Restart frigate.service", "Restart node-red-tm.service"}, name
+
+
+def test_node_red_env_template_hides_its_diff():
+    """node-red-tm.env.j2 renders the broker login, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
+    task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
+                if t["name"] == "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs")
+    assert task["diff"] is False

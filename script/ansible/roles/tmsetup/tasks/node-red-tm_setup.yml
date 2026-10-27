@@ -103,6 +103,7 @@
 
 - name: TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs
   become: true
+  diff: false
   loop:
     - config/config.yml
     - node-red-tm.env
