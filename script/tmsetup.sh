@@ -28,7 +28,7 @@ _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
 _MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy")
-declare -a _VALID_CUSTOM_VARS=("plate_recognizer")
+declare -a _VALID_CUSTOM_VARS=("plate_recognizer" "mqtt_lan")
 declare -a _CUSTOM_VARS=()
 
 ## FUNCTIONS
@@ -338,7 +338,8 @@ do
         # Validate the variable name against the allowed list.
         if [[ ! " ${_VALID_CUSTOM_VARS[*]} " =~ " ${v} " ]]; then
           printf "Error: Custom variable '%s' is not permitted.\n" "$v"
-          printf "Valid values are:\n  %s\n" "${_VALID_CUSTOM_VARS}"
+          printf "Valid values are:\n"
+          printf "  %s\n" "${_VALID_CUSTOM_VARS[@]}"
           _usage
           exit 1
         fi

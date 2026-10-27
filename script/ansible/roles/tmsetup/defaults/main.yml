@@ -62,6 +62,9 @@ tmsetup_tmp_dir: ~/.tmsetup
 tmsetup_reboot_touch_file: "{{ tmsetup_tmpdir }}/reboot-required"
 
 tmsetup_bool_plate_recognizer: false
+# Creates an MQTT broker login in node-red-tm.env if it has none (tmsetup.sh -C mqtt_lan).
+# The login is what opens port 1883 to the network; see tasks/mqtt_broker.yml.
+tmsetup_bool_mqtt_lan: false
 
 tmsetup_homepage_font: 'Helvetica'
 tmsetup_homepage_colors:
