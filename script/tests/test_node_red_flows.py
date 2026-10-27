@@ -78,12 +78,13 @@ def test_repeated_files_parameter_is_handled():
     assert "Array.isArray(msg.payload.files)" in by_name["Validate filenames, setup tar"]["func"]
 
 
-def test_database_copy_checks_free_space_and_records_its_start():
-    """The copy must not fill the disk, and Cancel needs to know when the copy started."""
+def test_database_copy_checks_free_space_and_records_the_cancel_count():
+    """The copy must not fill the disk, and "stop if cancelled" needs the Cancel count from when the copy started."""
     by_name, _ = _download_nodes()
     func = by_name["copy database first?"]["func"]
     assert "statfsSync" in func
-    assert "msg.copyStartedAt = Date.now();" in func
+    assert 'msg.cancelCountAtCopy = flow.get("downloadCancelCount") || 0;' in func
+    assert "copyStartedAt" not in func
     assert func.index("statfsSync") < func.index("mkdirSync(msg.snapshot")
 
 
@@ -95,10 +96,11 @@ def test_cancel_stops_a_database_download_during_the_copy():
     assert stop["outputs"] == 2
     assert stop["wires"][0] == [by_name["zip files"]["id"]]
     assert set(stop["wires"][1]) == {"8a12d83e700bcaa6", "9297900926075b54"}
-    assert "downloadCancelledAt" in stop["func"]
+    assert '(flow.get("downloadCancelCount") || 0) !== msg.cancelCountAtCopy' in stop["func"]
+    assert "Date.now()" not in stop["func"]
     remember = by_name["remember Cancel"]
     assert remember["id"] in by_id["88d154342ef138bf"]["wires"][0]
-    assert 'flow.set("downloadCancelledAt", Date.now());' in remember["func"]
+    assert 'flow.set("downloadCancelCount", (flow.get("downloadCancelCount") || 0) + 1);' in remember["func"]
 
 
 def test_database_copies_left_by_a_restart_are_removed_at_start():
@@ -107,6 +109,16 @@ def test_database_copies_left_by_a_restart_are_removed_at_start():
     cleanup = by_name["remove database copies left by a restart"]
     starts = [node for node in by_id.values() if node["type"] == "inject" and node.get("once") is True and cleanup["id"] in node["wires"][0]]
     assert len(starts) == 1 and starts[0]["repeat"] == ""
+    # Runs before a download can start, so it can't remove a copy a download is making
+    assert float(starts[0]["onceDelay"]) == 0.1
     assert '"/db/snapshot"' in cleanup["func"]
     for name in ("on start", "remove database copies left by a restart", "stop if cancelled", "remember Cancel"):
         assert by_name[name]["id"] in by_id["c3e71a6b79637b6f"]["nodes"]
+
+
+def test_failed_removal_of_the_database_copy_still_answers_the_download():
+    """An error from rmSync would stop the function before it ends or fails the response."""
+    by_name, _ = _download_nodes()
+    func = by_name["handle end of file or error"]["func"]
+    removal = func.index("rmSync(msg.snapshot")
+    assert func.rindex("try {", 0, removal) < removal < func.index("} catch (err) {", removal)

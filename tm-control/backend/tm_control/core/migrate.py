@@ -95,7 +95,8 @@ def _needs_a_person(source):
     Return None if not, or (problem, detail), where problem is one of:
     - "invalid": the source isn't a valid URL (detail is None);
     - "no-login": an RTSP URL on port 8554 of a host other than Frigate's own (e.g. a LAN IP), with no userinfo;
-      detail is scheme://host:port/path, with no userinfo, query, or fragment;
+      detail is scheme://host:port/path, with no userinfo, query, or fragment, and without the path if an
+      "@" follows the "//" anywhere in the source;
     - "wrapped": the source reads this device's go2rtc inside another source type (e.g. ffmpeg:rtsp://...)
       without the login placeholders; detail is only the stream name.
     The detail is safe to print.
@@ -118,7 +119,10 @@ def _needs_a_person(source):
         return None
     if ":" in host:
         host = f"[{host}]"
-    return "no-login", f"{url.scheme}://{host}:{port}{url.path}"
+    # This URL has no userinfo, so an "@" after the "//" (in the path, query, or fragment) means a
+    # password held an unencoded "/", "?", or "#", and the path may hold the rest of it.
+    path = "" if "@" in source.partition("//")[2] else url.path
+    return "no-login", f"{url.scheme}://{host}:{port}{path}"
 
 
 # What a warning calls the unparsable string, by the kind of entry it came from.

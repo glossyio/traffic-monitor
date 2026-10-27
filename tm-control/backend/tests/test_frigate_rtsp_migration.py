@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from tm_control.core import migrate
 
 REPO = Path(__file__).resolve().parents[3]
@@ -149,6 +151,27 @@ def test_warning_leaves_out_the_query_and_fragment(frigate_config, capsys):
     printed = output(capsys)
     assert "WARNING camera 'by_token' reads rtsp://192.0.2.50:8554/cam without credentials" in printed
     assert "token=abc" not in printed and "frag" not in printed
+
+
+def test_warning_leaves_out_a_path_that_holds_a_password_with_an_unencoded_slash(frigate_config, capsys):
+    add_camera(frigate_config, "slash_password", "rtsp://admin:8554/s3cret@192.0.2.5:8554/x")
+
+    assert migrate.run(frigate_config) == 0
+    printed = output(capsys)
+    assert "WARNING camera 'slash_password' reads rtsp://admin:8554 without credentials" in printed
+    assert "s3cret" not in printed and "@192.0.2.5" not in printed
+
+
+@pytest.mark.parametrize("separator", ["?", "#"])
+def test_warning_leaves_out_the_path_when_an_unencoded_slash_password_runs_into_a_query_or_fragment(
+    frigate_config, capsys, separator
+):
+    add_camera(frigate_config, "slash_password", f"rtsp://admin:8554/s3cret{separator}x@192.0.2.5:8554/x")
+
+    assert migrate.run(frigate_config) == 0
+    printed = output(capsys)
+    assert "WARNING camera 'slash_password' reads rtsp://admin:8554 without credentials" in printed
+    assert "s3cret" not in printed and "@192.0.2.5" not in printed
 
 
 def test_warning_keeps_the_brackets_on_an_ipv6_host(frigate_config, capsys):
