@@ -30,6 +30,21 @@ RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate
                     "revproxy.service"]
 
 
+class Redacted(str):
+    """A string, such as the Pi's address or a login, that pytest's output shows only as a placeholder.
+
+    pytest prints a failing test's arguments, and with -l its locals, so a plain value there would show.
+    """
+
+    def __new__(cls, value, label):
+        self = super().__new__(cls, value)
+        self.label = label
+        return self
+
+    def __repr__(self):
+        return f"<{self.label}>"
+
+
 @functools.cache
 def role_defaults():
     """The tmsetup role's defaults/main.yml, so the tests use the same device paths as the install."""

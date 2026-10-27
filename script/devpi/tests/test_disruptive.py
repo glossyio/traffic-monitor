@@ -3,6 +3,7 @@
 These stop the pod or the whole Pi, so they run only with tmdev.py test --disruptive.
 """
 
+import shlex
 import time
 
 import pytest
@@ -92,3 +93,50 @@ def test_frigate_follows_the_decoder_after_its_number_changes(host):
     assert host.run(f"readlink -f {HEVC_SYMLINK}").stdout.strip() == after
     wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
     assert after in frigate_host_devices(host), f"Frigate was restarted but got {frigate_host_devices(host)}, not {after}"
+
+
+def proxy_status(host, address, path):
+    # Host header as a browser's would be, so the nginx image's stock default.conf (server_name localhost) doesn't answer.
+    # host.run, not check_output: when curl can't connect it exits non-zero and still prints 000.
+    return host.run(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 -H 'Host: {address}' "
+                    f"http://localhost{path}").stdout.strip()
+
+
+def test_home_page_survives_a_stopped_pod(host, address):
+    """nginx runs outside the pod, so with the pod stopped the home page loads and the apps answer 502."""
+    try:
+        with host.sudo():
+            host.check_output("systemctl stop traffic-monitor.service")
+        statuses = (proxy_status(host, address, "/"), proxy_status(host, address, "/frigate/"))
+        assert statuses == ("200", "502"), f"with the pod stopped, / and /frigate/ answered {statuses}"
+    finally:
+        with host.sudo():
+            host.check_output("systemctl start traffic-monitor.service")
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
+# Makes the network unit's next start fail once, like the Podman panic in #232; its Restart=on-failure then brings it up.
+NETWORK_DROPIN = "/run/systemd/system/tmnet-network.service.d/tmdev-fail-once.conf"
+NETWORK_FAILED_ONCE = "/run/tmdev-tmnet-failed-once"
+FAIL_ONCE = f'[Service]\nExecStartPre=/bin/sh -c "test -e {NETWORK_FAILED_ONCE} || {{ touch {NETWORK_FAILED_ONCE}; exit 1; }}"\n'
+
+
+def test_pod_starts_after_its_network_unit_fails_once(host):
+    """One failed start of tmnet-network.service, as at boot in #232, doesn't keep the pod down."""
+    try:
+        # Inside the try, so a setup that fails partway is still undone: each cleanup step is safe to run twice.
+        with host.sudo():
+            host.check_output("systemctl stop traffic-monitor.service tmnet-network.service")
+            host.check_output(f"mkdir -p {NETWORK_DROPIN.rsplit('/', 1)[0]} && rm -f {NETWORK_FAILED_ONCE} "
+                              f"&& printf %s {shlex.quote(FAIL_ONCE)} > {NETWORK_DROPIN} && systemctl daemon-reload")
+            host.run("systemctl start traffic-monitor.service")  # before #232's fix, a dependency job fails here
+        deadline = time.monotonic() + 120
+        while host.run("systemctl is-active traffic-monitor.service").stdout.strip() != "active":
+            assert time.monotonic() < deadline, "the pod didn't start after tmnet-network.service failed once (#232)"
+            time.sleep(5)
+        assert host.file(NETWORK_FAILED_ONCE).exists, "the drop-in didn't make tmnet-network.service fail"
+    finally:
+        with host.sudo():
+            host.check_output(f"rm -f {NETWORK_DROPIN} {NETWORK_FAILED_ONCE} && systemctl daemon-reload")
+            host.check_output("systemctl start tmnet-network.service traffic-monitor.service")
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
