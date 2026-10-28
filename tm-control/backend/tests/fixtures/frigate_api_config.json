@@ -1,0 +1,166 @@
+{
+    "version": "0.18-0",
+    "safe_mode": false,
+    "environment_vars": {},
+    "auth": {
+        "enabled": false,
+        "reset_admin_password": false,
+        "session_length": 86400
+    },
+    "proxy": {
+        "header_map": {
+            "user": "x-forwarded-user",
+            "role": "x-forwarded-groups"
+        },
+        "logout_url": "/logout",
+        "auth_secret": "********",
+        "default_role": "viewer"
+    },
+    "mqtt": {
+        "enabled": true,
+        "host": "localhost",
+        "port": 1883,
+        "topic_prefix": "frigate",
+        "client_id": "frigate",
+        "stats_interval": 60,
+        "user": "********",
+        "password": "********",
+        "tls_insecure": null,
+        "qos": 0
+    },
+    "detectors": {
+        "coral": {
+            "type": "edgetpu",
+            "device": "usb",
+            "model": {
+                "path": "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite",
+                "labelmap_path": "/config/labels-coco17.txt",
+                "width": 512,
+                "height": 512,
+                "input_tensor": "nhwc",
+                "input_pixel_format": "rgb",
+                "input_dtype": "int",
+                "model_type": "yolo-generic"
+            }
+        }
+    },
+    "ffmpeg": {
+        "path": "default",
+        "global_args": ["-hide_banner", "-loglevel", "warning", "-threads", "2"],
+        "hwaccel_args": "-hwaccel drm",
+        "input_args": "preset-rtsp-generic",
+        "retry_interval": 10.0
+    },
+    "cameras": {
+        "picam_h265": {
+            "name": "picam_h265",
+            "friendly_name": null,
+            "enabled": true,
+            "type": "generic",
+            "best_image_timeout": 60,
+            "mqtt": {
+                "enabled": false,
+                "timestamp": true,
+                "bounding_box": true,
+                "crop": true,
+                "height": 270,
+                "required_zones": [],
+                "quality": 70
+            },
+            "ffmpeg": {
+                "path": "default",
+                "global_args": ["-hide_banner", "-loglevel", "warning", "-threads", "2"],
+                "hwaccel_args": "-hwaccel drm",
+                "input_args": "preset-rtsp-generic",
+                "retry_interval": 10.0,
+                "inputs": [
+                    {
+                        "path": "rtsp://*:*@host.containers.internal:8554/picam_h265_detect",
+                        "roles": ["detect", "record"],
+                        "global_args": [],
+                        "hwaccel_args": [],
+                        "input_args": []
+                    }
+                ]
+            },
+            "detect": {
+                "enabled": true,
+                "height": 864,
+                "width": 1536,
+                "fps": 10,
+                "min_initialized": 2,
+                "max_disappeared": 50,
+                "annotation_offset": 0,
+                "stationary": {
+                    "interval": 50,
+                    "threshold": 50
+                }
+            },
+            "zones": {
+                "zone_capture": {
+                    "filters": {},
+                    "coordinates": "1.0,1.0,0.0,1.0,0.0,0.38,0.433,0.207,1.0,0.367",
+                    "distances": [],
+                    "inertia": 3,
+                    "loitering_time": 0,
+                    "speed_threshold": null,
+                    "objects": [],
+                    "friendly_name": null,
+                    "color": [176, 53, 112]
+                },
+                "zone_far": {
+                    "filters": {},
+                    "coordinates": "0.542,0.429,0.402,0.383,0.1,0.507,0.207,0.593",
+                    "distances": [],
+                    "inertia": 3,
+                    "loitering_time": 0,
+                    "speed_threshold": null,
+                    "objects": [],
+                    "friendly_name": null,
+                    "color": [40, 143, 190]
+                },
+                "zone_near": {
+                    "filters": {},
+                    "coordinates": "0.734,0.536,0.588,0.434,0.186,0.582,0.358,0.758",
+                    "distances": [],
+                    "inertia": 3,
+                    "loitering_time": 0,
+                    "speed_threshold": null,
+                    "objects": [],
+                    "friendly_name": null,
+                    "color": [199, 81, 33]
+                },
+                "zone_radar": {
+                    "filters": {},
+                    "coordinates": "0.169,0.489,0.451,0.358,0.821,0.528,0.472,0.796",
+                    "distances": [],
+                    "inertia": 3,
+                    "loitering_time": 0,
+                    "speed_threshold": null,
+                    "objects": [],
+                    "friendly_name": null,
+                    "color": [92, 160, 64]
+                }
+            },
+            "record": {
+                "enabled": true,
+                "continuous": {
+                    "days": 0
+                },
+                "motion": {
+                    "days": 0
+                }
+            },
+            "snapshots": {
+                "enabled": true,
+                "timestamp": false,
+                "bounding_box": false,
+                "crop": true,
+                "quality": 70
+            }
+        }
+    },
+    "objects": {
+        "track": ["bicycle", "person", "car", "bus", "motorcycle", "dog"]
+    }
+}

@@ -139,7 +139,7 @@ def device_checks(client):
 
 def test_the_system_module_has_the_device_group_and_comes_last_for_now():
     ids = [m.id for m in MODULES]
-    assert ids[ids.index("services") + 1] == "system"
+    assert ids[-1] == "system"
     (system,) = [m for m in MODULES if m.id == "system"]
     assert [g.id for g in system.check_groups] == ["device"]
 
