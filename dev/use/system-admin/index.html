@@ -1154,6 +1154,8 @@
       
         
       
+        
+      
     
     
     
@@ -1289,6 +1291,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1312,10 +1342,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1333,8 +1363,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1994,7 +2024,7 @@
 <h2 id="cockpit">Cockpit<a class="headerlink" href="#cockpit" title="Permanent link">&para;</a></h2>
 <p>Open <code>http://&lt;device&gt;/system/</code> and log in with your Raspberry Pi user account. <a href="https://cockpit-project.org/">Cockpit</a> shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.</p>
 <h2 id="services">Services<a class="headerlink" href="#services" title="Permanent link">&para;</a></h2>
-<p>The Traffic Monitor runs as systemd services. The containers run inside one Podman pod.</p>
+<p>The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx runs on the host network, outside the pod, so the home page stays up when the pod is down.</p>
 <table>
 <thead>
 <tr>
@@ -2005,7 +2035,7 @@
 <tbody>
 <tr>
 <td><code>traffic-monitor.service</code></td>
-<td>The pod that holds the containers below</td>
+<td>The pod that holds Frigate, Node-RED, and Plate Recognizer if installed</td>
 </tr>
 <tr>
 <td><code>frigate.service</code></td>
@@ -2051,6 +2081,10 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 <tr>
 <td>Edit <code>node-red-tm.env</code></td>
 <td><code>sudo systemctl restart node-red-tm.service</code>. The container reads the file only when it starts.</td>
+</tr>
+<tr>
+<td>Change the MQTT broker login in <code>node-red-tm.env</code></td>
+<td><code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>. A restart isn't enough; <a href="../../configuration/environment/">node-red-tm.env settings</a> explains why.</td>
 </tr>
 <tr>
 <td>Change Frigate's config in its UI</td>

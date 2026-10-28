@@ -36,6 +36,7 @@ The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an 
 
 - [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md)
 - [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md)
+- [Network ports](https://docs.trafficmonitor.ai/dev/reference/network/index.md)
 - [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md)
 - [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md)
 - [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md)

@@ -16,7 +16,7 @@
         <link rel="prev" href="../../configuration/environment/">
       
       
-        <link rel="next" href="../../data-and-payloads/data-overview/">
+        <link rel="next" href="../network/">
       
       
         
@@ -1063,6 +1063,8 @@
       
         
       
+        
+      
     
     
     
@@ -1300,6 +1302,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1323,10 +1353,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1344,8 +1374,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2043,7 +2073,7 @@
 </tr>
 <tr>
 <td><code>-t TAG</code></td>
-<td>Run only one component. Repeat for several. See <a href="#tags">Tags</a>.</td>
+<td>Run one component, plus anything that has to change with it. Repeat for several. See <a href="#tags">Tags</a>.</td>
 </tr>
 <tr>
 <td><code>-T</code></td>
@@ -2051,7 +2081,7 @@
 </tr>
 <tr>
 <td><code>-C NAME[,NAME]</code></td>
-<td>Turn on an optional component. The only one is <code>plate_recognizer</code>; see <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a>.</td>
+<td>Turn on an optional component: <code>plate_recognizer</code> (see <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a>), or <code>mqtt_lan</code>, which creates an MQTT broker login when there isn't one (see <a href="../../data-and-payloads/integrations/#connect-from-other-devices">Connect from other devices</a>).</td>
 </tr>
 <tr>
 <td><code>-u</code></td>
@@ -2111,7 +2141,7 @@
 </tbody>
 </table>
 <h2 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h2>
-<p>Each tag reruns one part of the install. Without <code>-t</code>, everything runs.</p>
+<p>Each tag reruns one part of the install. Without <code>-t</code>, everything runs. The pod and the reverse proxy have to change together, so the <code>podman</code>, <code>frigate</code>, <code>node-red-tm</code>, <code>go2rtc</code>, and <code>revproxy</code> tags each update both.</p>
 <table>
 <thead>
 <tr>
@@ -2134,7 +2164,7 @@
 </tr>
 <tr>
 <td><code>go2rtc</code></td>
-<td>The camera streaming service on the host</td>
+<td>The camera streaming service on the host, and the stream login Frigate uses to read it</td>
 </tr>
 <tr>
 <td><code>detectors</code></td>
@@ -2160,6 +2190,10 @@
 <td><code>revproxy</code></td>
 <td>The home page and reverse proxy</td>
 </tr>
+<tr>
+<td><code>tm-control</code></td>
+<td>Installs the <code>tm-control</code> command, which updates settings files from earlier versions. The <code>frigate</code> and <code>go2rtc</code> tags install it too and run it to give Frigate's <code>config.yml</code> the stream login.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="what-f-replaces">What <code>-f</code> replaces<a class="headerlink" href="#what-f-replaces" title="Permanent link">&para;</a></h2>
@@ -2171,7 +2205,7 @@
 <li><code>/opt/traffic-monitor/frigate/frigate.env</code></li>
 <li><code>/opt/traffic-monitor/plate-recognizer/plate-recognizer.env</code>, if Plate Recognizer is installed</li>
 </ul>
-<p>With <code>-f</code>, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in <a href="../../setup-guide/">First-time setup</a>.</p>
+<p>With <code>-f</code>, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh <code>node-red-tm.env</code> and <code>frigate.env</code>. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in <a href="../../setup-guide/">First-time setup</a>.</p>
 <h2 id="add-an-accelerator-later">Add an accelerator later<a class="headerlink" href="#add-an-accelerator-later" title="Permanent link">&para;</a></h2>
 <p>After you add or change a Coral or Hailo accelerator, rerun two tags and reboot when the installer asks:</p>
 <div class="highlight"><pre><span></span><code>bash<span class="w"> </span>traffic-monitor/script/tmsetup.sh<span class="w"> </span>-t<span class="w"> </span>detectors<span class="w"> </span>-t<span class="w"> </span>frigate

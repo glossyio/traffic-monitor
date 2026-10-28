@@ -1063,6 +1063,8 @@
       
         
       
+        
+      
     
     
     
@@ -1196,6 +1198,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1223,10 +1253,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1244,8 +1274,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1450,6 +1480,17 @@
     <span class="md-ellipsis">
       
         tm/events
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connect-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connect from other devices
       
     </span>
   </a>
@@ -1952,6 +1993,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#connect-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connect from other devices
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2017,9 +2069,9 @@
   
   <h1 id="mqtt-and-thingsboard">MQTT and ThingsBoard<a class="headerlink" href="#mqtt-and-thingsboard" title="Permanent link">&para;</a></h1>
 <p class="tm-description">The device&#39;s MQTT broker and topics, the daily counts it publishes, and the optional ThingsBoard upload with config backup.</p>
-<p>The MQTT broker is on by default, and anyone on your network can subscribe to it. The ThingsBoard upload is off until you turn it on.</p>
+<p>The MQTT broker is on by default and accepts connections only from the device itself. The ThingsBoard upload is off until you turn it on.</p>
 <h2 id="mqtt">MQTT<a class="headerlink" href="#mqtt" title="Permanent link">&para;</a></h2>
-<p>Node-RED hosts an MQTT broker on the device at port <code>1883</code>, with no authentication. Settings are in <a href="../../configuration/environment/">node-red-tm.env</a>. Any MQTT client on your network can subscribe, for example Home Assistant or a display board that shows the day's counts.</p>
+<p>Node-RED hosts an MQTT broker on the device at port <code>1883</code>. Frigate, the air quality sensor, and Node-RED connect to it on the device. Other devices on your network, such as Home Assistant or a display board that shows the day's counts, can connect once you give the broker a login; see <a href="#connect-from-other-devices">Connect from other devices</a>. Settings are in <a href="../../configuration/environment/">node-red-tm.env</a>.</p>
 <table>
 <thead>
 <tr>
@@ -2037,7 +2089,7 @@
 <tr>
 <td><code>frigate/&lt;camera&gt;/&lt;object&gt;/snapshot</code></td>
 <td>Frigate to subscribers</td>
-<td>A cropped JPEG of each detected object, which can show a person. The Traffic Monitor doesn't use it. To turn it off, see <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>.</td>
+<td>A cropped JPEG of each detected object, which can show a person. Frigate publishes it only when the camera's <code>mqtt</code> setting is on, and new installs turn it off. The Traffic Monitor doesn't use it. See <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>.</td>
 </tr>
 <tr>
 <td><code>aq/&lt;sensor&gt;/readings</code></td>
@@ -2081,8 +2133,38 @@
 </tbody>
 </table>
 <p>To watch it from another computer:</p>
-<div class="highlight"><pre><span></span><code>mosquitto_sub<span class="w"> </span>-h<span class="w"> </span>&lt;device&gt;<span class="w"> </span>-t<span class="w"> </span>tm/events
+<div class="highlight"><pre><span></span><code>mosquitto_sub<span class="w"> </span>-h<span class="w"> </span>&lt;device&gt;<span class="w"> </span>-u<span class="w"> </span>&lt;username&gt;<span class="w"> </span>-P<span class="w"> </span>&lt;password&gt;<span class="w"> </span>-t<span class="w"> </span>tm/events
 </code></pre></div>
+<h3 id="connect-from-other-devices">Connect from other devices<a class="headerlink" href="#connect-from-other-devices" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p>Give the broker a login:</p>
+<div class="highlight"><pre><span></span><code>bash<span class="w"> </span>traffic-monitor/script/tmsetup.sh<span class="w"> </span>-t<span class="w"> </span>node-red-tm<span class="w"> </span>-C<span class="w"> </span>mqtt_lan
+</code></pre></div>
+<p>This creates the username <code>tm</code> and a random password. To choose your own instead, set <code>TM_MQTT_BROKER_USERNAME</code> and <code>TM_MQTT_BROKER_PASSWORD</code> in <code>/opt/traffic-monitor/node-red-tm/node-red-tm.env</code> and run the command without <code>-C mqtt_lan</code>. Use only letters, digits, <code>.</code>, <code>_</code>, and <code>-</code>, with no quotes and no comment after the value on the same line; otherwise the installer stops with a message.</p>
+<p>The broker then requires the login from every client, the installer gives it to Frigate, and port 1883 opens to your network.</p>
+</li>
+<li>
+<p>Read the login:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>grep<span class="w"> </span>^TM_MQTT_BROKER_<span class="w"> </span>/opt/traffic-monitor/node-red-tm/node-red-tm.env
+</code></pre></div>
+</li>
+<li>
+<p>Give it to the <a href="../../add-ons/air-quality/">air quality sensor</a> and to each MQTT client.</p>
+</li>
+<li>
+<p>Check from another computer:</p>
+<div class="highlight"><pre><span></span><code>mosquitto_sub<span class="w"> </span>-h<span class="w"> </span>&lt;device&gt;<span class="w"> </span>-u<span class="w"> </span>&lt;username&gt;<span class="w"> </span>-P<span class="w"> </span>&lt;password&gt;<span class="w"> </span>-t<span class="w"> </span>tm/events
+</code></pre></div>
+</li>
+<li>
+<p>To change the login, edit the two values and run <code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code> again. To remove it, leave both values blank and run the same command: the broker stops checking logins and port 1883 closes to the network.</p>
+</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The login crosses the network unencrypted, and anyone who has it can read every topic and publish false data. Open MQTT only on a network you trust.</p>
+</div>
 <h2 id="thingsboard">ThingsBoard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
 <p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on in the <code>thingsboard</code> section of <a href="../../configuration/node-red-config/#thingsboard">config.yml</a> with the server's hostname and the device's access token. The device picks up the change when you save the file.</p>
 <p>Once connected, the device sends over ThingsBoard's HTTP API:</p>

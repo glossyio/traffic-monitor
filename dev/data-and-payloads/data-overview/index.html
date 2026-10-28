@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/data-and-payloads/data-overview/">
       
       
-        <link rel="prev" href="../../reference/tmsetup/">
+        <link rel="prev" href="../../reference/network/">
       
       
         <link rel="next" href="../events-payload/">
@@ -1063,6 +1063,8 @@
       
         
       
+        
+      
     
     
     
@@ -1196,6 +1198,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1223,10 +1253,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1244,8 +1274,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2102,7 +2132,7 @@
 <h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h2>
 <p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number.</p>
 <p>Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>. To keep them longer, raise the retention there, and treat the device as holding images of people.</p>
-<p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; <a href="../../use/home-page/">Home page and apps</a> shows which apps ask for one. Frigate also publishes a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>, which has no login either. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows how to turn those snapshots off.</p>
+<p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; <a href="../../use/home-page/">Home page and apps</a> shows which apps ask for one. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting.</p>
 <p>The database stops being de-identified if you:</p>
 <ul>
 <li>Install the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Plate numbers go into the <code>plate_recognizer</code> table. Don't share a database from a device that has ever had the add-on on.</li>

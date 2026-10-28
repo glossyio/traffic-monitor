@@ -1063,6 +1063,8 @@
       
         
       
+        
+      
     
     
     
@@ -1263,6 +1265,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1286,10 +1316,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1307,8 +1337,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1943,6 +1973,13 @@
 <p>After editing it, restart the service:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>node-red-tm.service
 </code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">After changing the MQTT broker login</p>
+<p>A restart or reboot isn't enough after you change <code>TM_MQTT_BROKER_USERNAME</code> or <code>TM_MQTT_BROKER_PASSWORD</code>. Run the installer instead, so Frigate gets the same login and port 1883 opens or closes to match:</p>
+<div class="highlight"><pre><span></span><code>bash<span class="w"> </span>traffic-monitor/script/tmsetup.sh<span class="w"> </span>-t<span class="w"> </span>node-red-tm
+</code></pre></div>
+<p>Otherwise the broker refuses Frigate's connection, and no events are recorded.</p>
+</div>
 <table>
 <thead>
 <tr>
@@ -1990,12 +2027,12 @@
 <tr>
 <td><code>TM_MQTT_BROKER_USERNAME</code></td>
 <td>empty</td>
-<td>The username Node-RED's own MQTT client logs in with. The broker doesn't check it, so setting it adds no authentication.</td>
+<td>The broker's login username. When it and the password are both set, the broker requires the login from every client, and port 1883 opens to the network. Letters, digits, <code>.</code>, <code>_</code>, and <code>-</code> only, with no quotes and no comment after the value. See <a href="../../data-and-payloads/integrations/#connect-from-other-devices">Connect from other devices</a>.</td>
 </tr>
 <tr>
 <td><code>TM_MQTT_BROKER_PASSWORD</code></td>
 <td>empty</td>
-<td>The password that goes with it, also unchecked.</td>
+<td>The broker's login password, with the same rules as the username.</td>
 </tr>
 <tr>
 <td><code>TM_RADAR_SERIAL_PORT_00</code> to <code>TM_RADAR_SERIAL_PORT_03</code></td>

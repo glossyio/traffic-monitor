@@ -8,22 +8,22 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 
 ## Flags
 
-| Flag             | Meaning                                                                                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `-h`             | Show the usage text and exit.                                                                                                                                      |
-| `-y`             | Answer yes to every prompt, including the reboot.                                                                                                                  |
-| `-v`             | Verbose output. Repeat for more.                                                                                                                                   |
-| `-f`             | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces).                                         |
-| `-t TAG`         | Run only one component. Repeat for several. See [Tags](#tags).                                                                                                     |
-| `-T`             | List the tags and exit.                                                                                                                                            |
-| `-C NAME[,NAME]` | Turn on an optional component. The only one is `plate_recognizer`; see [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md).   |
-| `-u`             | Also upgrade the operating system's packages (`apt full-upgrade`).                                                                                                 |
-| `-d PATH`        | Install folder. Default `/opt/traffic-monitor`. The docs assume the default.                                                                                       |
-| `-o USER`        | Owner of the installed files and processes. Default `tmadmin`, created by the installer.                                                                           |
-| `-g GROUP`       | Group of the installed files. Default `tmadmin`.                                                                                                                   |
-| `-z TIMEZONE`    | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`. |
-| `-L PATH`        | Where to write the installer's log.                                                                                                                                |
-| `-a ARG`         | Pass an extra argument to the underlying Ansible run, without its leading hyphen.                                                                                  |
+| Flag             | Meaning                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`             | Show the usage text and exit.                                                                                                                                                                                                                                                                                                                               |
+| `-y`             | Answer yes to every prompt, including the reboot.                                                                                                                                                                                                                                                                                                           |
+| `-v`             | Verbose output. Repeat for more.                                                                                                                                                                                                                                                                                                                            |
+| `-f`             | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces).                                                                                                                                                                                                                                  |
+| `-t TAG`         | Run one component, plus anything that has to change with it. Repeat for several. See [Tags](#tags).                                                                                                                                                                                                                                                         |
+| `-T`             | List the tags and exit.                                                                                                                                                                                                                                                                                                                                     |
+| `-C NAME[,NAME]` | Turn on an optional component: `plate_recognizer` (see [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md)), or `mqtt_lan`, which creates an MQTT broker login when there isn't one (see [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices)). |
+| `-u`             | Also upgrade the operating system's packages (`apt full-upgrade`).                                                                                                                                                                                                                                                                                          |
+| `-d PATH`        | Install folder. Default `/opt/traffic-monitor`. The docs assume the default.                                                                                                                                                                                                                                                                                |
+| `-o USER`        | Owner of the installed files and processes. Default `tmadmin`, created by the installer.                                                                                                                                                                                                                                                                    |
+| `-g GROUP`       | Group of the installed files. Default `tmadmin`.                                                                                                                                                                                                                                                                                                            |
+| `-z TIMEZONE`    | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`.                                                                                                                                                                                          |
+| `-L PATH`        | Where to write the installer's log.                                                                                                                                                                                                                                                                                                                         |
+| `-a ARG`         | Pass an extra argument to the underlying Ansible run, without its leading hyphen.                                                                                                                                                                                                                                                                           |
 
 Remote runs:
 
@@ -36,20 +36,21 @@ Remote runs:
 
 ## Tags
 
-Each tag reruns one part of the install. Without `-t`, everything runs.
+Each tag reruns one part of the install. Without `-t`, everything runs. The pod and the reverse proxy have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, and `revproxy` tags each update both.
 
-| Tag                | What it does                                                                                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                        |
-| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                 |
-| `wifi`             | Wi-Fi setup                                                                                                                                                |
-| `go2rtc`           | The camera streaming service on the host                                                                                                                   |
-| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later). |
-| `podman`           | The container runtime and the pod                                                                                                                          |
-| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                    |
-| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                        |
-| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                    |
-| `revproxy`         | The home page and reverse proxy                                                                                                                            |
+| Tag                | What it does                                                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                               |
+| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                        |
+| `wifi`             | Wi-Fi setup                                                                                                                                                                                       |
+| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                            |
+| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                        |
+| `podman`           | The container runtime and the pod                                                                                                                                                                 |
+| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                           |
+| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                               |
+| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                           |
+| `revproxy`         | The home page and reverse proxy                                                                                                                                                                   |
+| `tm-control`       | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` and `go2rtc` tags install it too and run it to give Frigate's `config.yml` the stream login. |
 
 ## What `-f` replaces
 
@@ -61,7 +62,7 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/frigate/frigate.env`
 - `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
-With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
 ## Add an accelerator later
 

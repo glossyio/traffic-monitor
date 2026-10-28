@@ -1061,6 +1061,8 @@
       
         
       
+        
+      
     
     
     
@@ -1196,6 +1198,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1219,10 +1249,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1240,8 +1270,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2023,7 +2053,7 @@
 <p><a href="https://nodered.org/">Node-RED</a> runs the Traffic Monitor's logic: it receives events from Frigate and readings from the radar, pairs events with speeds, writes the database, serves the dashboards, and sends data on. The flows are in the repository at <code>container/node-red-tm/data/flows.json</code>, and the installer copies them to the device on every run, so changes made only in a device's editor are lost on the next update.</p>
 <p>To develop on a device:</p>
 <ol>
-<li>Open the Node-RED editor at <code>http://&lt;device&gt;:1880</code> and log in as <code>admin</code> with password <code>password</code>.</li>
+<li>Open the Node-RED editor at <code>http://&lt;device&gt;/nr/</code> and log in as <code>admin</code> with password <code>password</code>.</li>
 <li>Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.</li>
 <li>Point the project's flow and package files at <code>container/node-red-tm/data/flows.json</code> and <code>package.json</code>, so your edits land in the repository's files.</li>
 <li>Commit your changes to a branch of your fork.</li>

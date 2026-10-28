@@ -36,13 +36,13 @@ Frigate's [masks](https://docs.frigate.video/configuration/masks) page has the d
 
 The Pi camera is set up to produce two streams. Frigate uses `picam_h265_detect` at 1536×864 by default, which gives the best balance of detail and load. A second stream, `picam_h265_detect_hr`, runs at 2304×1296 for cases where objects are small in the frame.
 
-To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Then redraw the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
+To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Frigate fills in the `{…}` values from `frigate.env`. Then redraw the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
 
 ## Recordings and snapshots
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md) describes what the device stores.
 
-Frigate also publishes a cropped snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt), which anyone on your network can subscribe to. The Traffic Monitor doesn't use these snapshots. To stop them, add `mqtt: enabled: false` under the existing `cameras: picam_h265:` in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.
+Frigate can also publish a cropped snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). The Traffic Monitor doesn't use these snapshots, so new installs turn them off with `mqtt: enabled: false` under `cameras: picam_h265:`. On an older install, add those lines in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.
 
 ```
 cameras:

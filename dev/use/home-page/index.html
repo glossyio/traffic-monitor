@@ -1128,6 +1128,8 @@
       
         
       
+        
+      
     
     
     
@@ -1263,6 +1265,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1286,10 +1316,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1307,8 +1337,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1978,7 +2008,7 @@
 <tr>
 <td>Go2RTC Feeds</td>
 <td><code>/feeds/</code></td>
-<td>The camera streams the Pi camera produces, for checking that the camera works.</td>
+<td>The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1998,8 +2028,8 @@
 </ul>
 </details>
 <details class="note">
-<summary>Direct ports</summary>
-<p>Each app also answers on its own port, which is useful when the home page is down. Node-RED and the dashboards are on <code>1880</code> (the dashboards at <code>:1880/dashboard</code>, the legacy dashboard at <code>:1880/ui</code>), Frigate on <code>5000</code>, the camera feeds on <code>1984</code>, Cockpit on <code>9090</code>, and the MQTT broker on <code>1883</code>.</p>
+<summary>If the home page doesn't load</summary>
+<p>The apps accept connections only from the device, so they have no address of their own on your network. Open Cockpit at <code>http://&lt;device&gt;:9090</code>, log in with your Raspberry Pi user account, and check the services as described in <a href="../system-admin/">System administration</a>. <a href="../../reference/network/">Network ports</a> lists what the device opens.</p>
 </details>
   
 

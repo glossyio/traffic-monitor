@@ -1176,6 +1176,8 @@
       
         
       
+        
+      
     
     
     
@@ -1311,6 +1313,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1334,10 +1364,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1355,8 +1385,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2064,10 +2094,10 @@
 <p>Frigate's <a href="https://docs.frigate.video/configuration/masks">masks</a> page has the details.</p>
 <h2 id="higher-resolution-stream">Higher-resolution stream<a class="headerlink" href="#higher-resolution-stream" title="Permanent link">&para;</a></h2>
 <p>The Pi camera is set up to produce two streams. Frigate uses <code>picam_h265_detect</code> at 1536×864 by default, which gives the best balance of detail and load. A second stream, <code>picam_h265_detect_hr</code>, runs at 2304×1296 for cases where objects are small in the frame.</p>
-<p>To switch, change two things in the configuration editor under <code>cameras: picam_h265:</code>: the input <code>path</code> to <code>rtsp://host.containers.internal:8554/picam_h265_detect_hr</code>, and <code>detect: width: 2304</code> with <code>height: 1296</code>. Then redraw the <a href="../../setup-guide/#3-adjust-the-zones">zones</a> for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.</p>
+<p>To switch, change two things in the configuration editor under <code>cameras: picam_h265:</code>: the input <code>path</code> to <code>rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr</code>, and <code>detect: width: 2304</code> with <code>height: 1296</code>. Frigate fills in the <code>{…}</code> values from <code>frigate.env</code>. Then redraw the <a href="../../setup-guide/#3-adjust-the-zones">zones</a> for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.</p>
 <h2 id="recordings-and-snapshots">Recordings and snapshots<a class="headerlink" href="#recordings-and-snapshots" title="Permanent link">&para;</a></h2>
 <p>By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The <code>record:</code> and <code>snapshots:</code> sections control this: set <code>enabled: false</code> to keep nothing, or raise <code>retain: days</code> to keep more. <a href="../../data-and-payloads/data-overview/">Data and privacy</a> describes what the device stores.</p>
-<p>Frigate also publishes a cropped snapshot of each detected object on the device's <a href="../../data-and-payloads/integrations/#mqtt">MQTT broker</a>, which anyone on your network can subscribe to. The Traffic Monitor doesn't use these snapshots. To stop them, add <code>mqtt: enabled: false</code> under the existing <code>cameras: picam_h265:</code> in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.</p>
+<p>Frigate can also publish a cropped snapshot of each detected object on the device's <a href="../../data-and-payloads/integrations/#mqtt">MQTT broker</a>. The Traffic Monitor doesn't use these snapshots, so new installs turn them off with <code>mqtt: enabled: false</code> under <code>cameras: picam_h265:</code>. On an older install, add those lines in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">cameras</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">picam_h265</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">mqtt</span><span class="p">:</span>

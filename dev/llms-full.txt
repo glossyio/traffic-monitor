@@ -317,12 +317,12 @@ An update reruns the installer from a newer copy of the repository. Your data an
 ## Before you update
 
 - Read the [release notes](https://github.com/glossyio/traffic-monitor/releases). A release that needs a fresh image says so.
-- Download a copy of the database from the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page. Open that page on Node-RED's port, as it explains, because downloads through the home page's `/dashboard/` path fail.
+- Download a copy of the database from the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page.
 - Make sure the device has an internet connection. The update downloads packages and rebuilds the container images. Rebuilding Frigate's image compiles ffmpeg on the device, which can take about 20 minutes.
 
 ## Update
 
-Connect to the device over SSH, then update the clone you installed from and rerun the installer:
+Connect to the device over SSH, then update the clone you installed from and rerun the whole installer:
 
 ```
 cd traffic-monitor
@@ -330,7 +330,21 @@ git pull
 bash script/tmsetup.sh
 ```
 
+Run the whole installer rather than a single tag, because one version's changes can span several components.
+
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#schema-versions) describes the copy it saves first.
+
+The installer printed `tm-control migrate: WARNING`
+
+A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is. To find the warning later:
+
+```
+grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
+```
+
+A Frigate configuration from a backup may lack the camera stream login. After you restore one, run `bash script/tmsetup.sh -t frigate` to add it.
+
+Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices).
 
 Open `http://<device>/` and check the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md) for new counts.
 
@@ -346,7 +360,7 @@ Node-RED flow changes made in the editor on the device are replaced on every upd
 
 ## Update one component
 
-Each installer tag reruns one component. For example, after plugging in a radar:
+Each installer tag reruns one component, plus anything that has to change with it; see [Tags](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#tags). For example, after plugging in a radar:
 
 ```
 bash script/tmsetup.sh -t node-red-tm
@@ -595,7 +609,7 @@ The home page links to every app on the device.
 | Frigate                               | `/frigate/`   | Object detection: live view, detections with snapshots and clips, zones, masks, and the Frigate settings. See [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md).                                                                                                                                                                                                              | None                           |
 | Legacy Dashboard                      | `/ui/`        | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | None                           |
 | Node-RED admin console                | `/nr/`        | The flow editor, for developers. See [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md).                                                                                                                                                                                                                                                                                              | `admin` / `password`           |
-| Go2RTC Feeds                          | `/feeds/`     | The camera streams the Pi camera produces, for checking that the camera works.                                                                                                                                                                                                                                                                                                                                                | None                           |
+| Go2RTC Feeds                          | `/feeds/`     | The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here.                                                                                                                                                                                                                                                 | None                           |
 | Cockpit-Project system administration | `/system/`    | Services, logs, containers, and a terminal. See [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md).                                                                                                                                                                                                                                                                                        | Your Raspberry Pi user account |
 
 Finding the device's address
@@ -604,9 +618,9 @@ Finding the device's address
 - Otherwise, look the device up in your router's list of connected devices, or see [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address).
 - A pre-built unit may host its own Wi-Fi network. Connect to it and use the hostname or the gateway address. Your provider's instructions take precedence.
 
-Direct ports
+If the home page doesn't load
 
-Each app also answers on its own port, which is useful when the home page is down. Node-RED and the dashboards are on `1880` (the dashboards at `:1880/dashboard`, the legacy dashboard at `:1880/ui`), Frigate on `5000`, the camera feeds on `1984`, Cockpit on `9090`, and the MQTT broker on `1883`.
+The apps accept connections only from the device, so they have no address of their own on your network. Open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md). [Network ports](https://docs.trafficmonitor.ai/dev/reference/network/index.md) lists what the device opens.
 
 # System administration
 
@@ -616,11 +630,11 @@ Open `http://<device>/system/` and log in with your Raspberry Pi user account. [
 
 ## Services
 
-The Traffic Monitor runs as systemd services. The containers run inside one Podman pod.
+The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx runs on the host network, outside the pod, so the home page stays up when the pod is down.
 
 | Service                    | What it runs                                                                                                 |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `traffic-monitor.service`  | The pod that holds the containers below                                                                      |
+| `traffic-monitor.service`  | The pod that holds Frigate, Node-RED, and Plate Recognizer if installed                                      |
 | `frigate.service`          | Frigate, object detection                                                                                    |
 | `node-red-tm.service`      | Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker                                   |
 | `revproxy.service`         | nginx, which serves the home page and the `/dashboard/`, `/frigate/`, and other paths                        |
@@ -638,14 +652,15 @@ sudo podman ps                                  # running containers
 
 ## When to restart what
 
-| After you                         | Do this                                                                                                                                                                                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Edit Node-RED's `config.yml`      | Nothing. The Traffic Monitor reads the file again when you save it. If the change doesn't show, check the file for a YAML error.                                                                             |
-| Edit `node-red-tm.env`            | `sudo systemctl restart node-red-tm.service`. The container reads the file only when it starts.                                                                                                              |
-| Change Frigate's config in its UI | Choose **Save & Restart** in Frigate's config editor, or restart `frigate.service`.                                                                                                                          |
-| Plug in a radar                   | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.                                                                           |
-| Add or change an AI accelerator   | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#add-an-accelerator-later). |
-| Move the device to a new site     | Follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) again: adjust the zones and update the location.                                                                          |
+| After you                                         | Do this                                                                                                                                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Edit Node-RED's `config.yml`                      | Nothing. The Traffic Monitor reads the file again when you save it. If the change doesn't show, check the file for a YAML error.                                                                             |
+| Edit `node-red-tm.env`                            | `sudo systemctl restart node-red-tm.service`. The container reads the file only when it starts.                                                                                                              |
+| Change the MQTT broker login in `node-red-tm.env` | `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. A restart isn't enough; [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md) explains why.             |
+| Change Frigate's config in its UI                 | Choose **Save & Restart** in Frigate's config editor, or restart `frigate.service`.                                                                                                                          |
+| Plug in a radar                                   | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.                                                                           |
+| Add or change an AI accelerator                   | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#add-an-accelerator-later). |
+| Move the device to a new site                     | Follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) again: adjust the zones and update the location.                                                                          |
 
 ## Where things are
 
@@ -676,13 +691,9 @@ A comment is a timestamped note stored in the `comments` table, for whoever anal
 
 ## Download the database
 
-Downloads the whole database as a compressed archive named `<hostname>_<time>_tmdb.tar.gz`. The page shows the database's size in megabytes. A large database takes a while: a 3 GB file can take about 5 minutes to compress and several more to download.
+Downloads the whole database as a compressed archive named `<hostname>_<time>_tmdb.tar.gz`. The page shows the database's size in megabytes. The device first makes a consistent copy of the database, so a large one can take a minute or two before the download starts. The copy needs free space about the size of the database; if there isn't enough, the page says so. A 3 GB file can then take about 5 minutes to compress and several more to download. Cancel also works while the copy is being made: the download stops once the copy is done, and no archive is sent. If a download fails, you see the reason instead of a broken file.
 
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
-
-Download from Node-RED's port
-
-Downloads fail when you open this page through the home page's `/dashboard/` path, for the database and for JSON alike. Open the page on Node-RED's port instead, `http://<device>:1880/dashboard/database`, and download from there.
 
 ## Download JSON
 
@@ -797,13 +808,13 @@ Frigate's [masks](https://docs.frigate.video/configuration/masks) page has the d
 
 The Pi camera is set up to produce two streams. Frigate uses `picam_h265_detect` at 1536×864 by default, which gives the best balance of detail and load. A second stream, `picam_h265_detect_hr`, runs at 2304×1296 for cases where objects are small in the frame.
 
-To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Then redraw the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
+To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Frigate fills in the `{…}` values from `frigate.env`. Then redraw the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
 
 ## Recordings and snapshots
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md) describes what the device stores.
 
-Frigate also publishes a cropped snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt), which anyone on your network can subscribe to. The Traffic Monitor doesn't use these snapshots. To stop them, add `mqtt: enabled: false` under the existing `cameras: picam_h265:` in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.
+Frigate can also publish a cropped snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). The Traffic Monitor doesn't use these snapshots, so new installs turn them off with `mqtt: enabled: false` under `cameras: picam_h265:`. On an older install, add those lines in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.
 
 ```
 cameras:
@@ -915,18 +926,53 @@ After editing it, restart the service:
 sudo systemctl restart node-red-tm.service
 ```
 
-| Variable                                               | Default                          | Meaning                                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TM_VERSION`                                           | the installed release            | The Traffic Monitor version, shown on the dashboards and sent with telemetry. The installer sets it; don't edit it.                                                                                                                                                                                                                                     |
-| `TM_RPI_SN`                                            | the Raspberry Pi's serial number | Identifies the device in ThingsBoard, and fills `deviceName` in [deployment](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#deployment) records. Set by the installer.                                                                                                                                                             |
-| `TM_HOSTNAME`                                          | the device's hostname at install | Prefix for the file names of [data exports](https://docs.trafficmonitor.ai/dev/ui/database/index.md). Set by the installer.                                                                                                                                                                                                                             |
-| `NODE_RED_CREDENTIAL_SECRET`                           | `myNodeRED1234`                  | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it.                                                                                                                  |
-| `TM_DATABASE_PATH_TMDB`                                | `/db/tmdb.sqlite`                | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path.                                                                                                                                                                           |
-| `TM_MQTT_BROKER_HOST`                                  | `localhost`                      | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).                                                                                                                                                          |
-| `TM_MQTT_BROKER_PORT`                                  | `1883`                           | The broker's port.                                                                                                                                                                                                                                                                                                                                      |
-| `TM_MQTT_BROKER_USERNAME`                              | empty                            | The username Node-RED's own MQTT client logs in with. The broker doesn't check it, so setting it adds no authentication.                                                                                                                                                                                                                                |
-| `TM_MQTT_BROKER_PASSWORD`                              | empty                            | The password that goes with it, also unchecked.                                                                                                                                                                                                                                                                                                         |
-| `TM_RADAR_SERIAL_PORT_00` to `TM_RADAR_SERIAL_PORT_03` | `/dev/ttyACM0` to `/dev/ttyACM3` | The serial port of each radar. The variable's name is the radar's name in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorsradars). The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
+After changing the MQTT broker login
+
+A restart or reboot isn't enough after you change `TM_MQTT_BROKER_USERNAME` or `TM_MQTT_BROKER_PASSWORD`. Run the installer instead, so Frigate gets the same login and port 1883 opens or closes to match:
+
+```
+bash traffic-monitor/script/tmsetup.sh -t node-red-tm
+```
+
+Otherwise the broker refuses Frigate's connection, and no events are recorded.
+
+| Variable                                               | Default                          | Meaning                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TM_VERSION`                                           | the installed release            | The Traffic Monitor version, shown on the dashboards and sent with telemetry. The installer sets it; don't edit it.                                                                                                                                                                                                                                                               |
+| `TM_RPI_SN`                                            | the Raspberry Pi's serial number | Identifies the device in ThingsBoard, and fills `deviceName` in [deployment](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#deployment) records. Set by the installer.                                                                                                                                                                                       |
+| `TM_HOSTNAME`                                          | the device's hostname at install | Prefix for the file names of [data exports](https://docs.trafficmonitor.ai/dev/ui/database/index.md). Set by the installer.                                                                                                                                                                                                                                                       |
+| `NODE_RED_CREDENTIAL_SECRET`                           | `myNodeRED1234`                  | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it.                                                                                                                                            |
+| `TM_DATABASE_PATH_TMDB`                                | `/db/tmdb.sqlite`                | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path.                                                                                                                                                                                                     |
+| `TM_MQTT_BROKER_HOST`                                  | `localhost`                      | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).                                                                                                                                                                                    |
+| `TM_MQTT_BROKER_PORT`                                  | `1883`                           | The broker's port.                                                                                                                                                                                                                                                                                                                                                                |
+| `TM_MQTT_BROKER_USERNAME`                              | empty                            | The broker's login username. When it and the password are both set, the broker requires the login from every client, and port 1883 opens to the network. Letters, digits, `.`, `_`, and `-` only, with no quotes and no comment after the value. See [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices). |
+| `TM_MQTT_BROKER_PASSWORD`                              | empty                            | The broker's login password, with the same rules as the username.                                                                                                                                                                                                                                                                                                                 |
+| `TM_RADAR_SERIAL_PORT_00` to `TM_RADAR_SERIAL_PORT_03` | `/dev/ttyACM0` to `/dev/ttyACM3` | The serial port of each radar. The variable's name is the radar's name in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorsradars). The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.                           |
+
+# Network ports
+
+Other computers reach the Traffic Monitor's apps through the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) on port 80. The apps themselves accept connections only from the device.
+
+| Port       | Used for                                                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 22         | SSH                                                                                                                                          |
+| 80         | The home page and every app it links to                                                                                                      |
+| 1883       | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). |
+| 5353 (UDP) | `<hostname>.local` names (mDNS)                                                                                                              |
+| 8554       | The camera stream (RTSP), with a username and password                                                                                       |
+| 9090       | Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load.                                                                 |
+
+When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
+
+## Camera stream login
+
+The camera stream on port 8554 needs the username `frigate` and a password generated on the device at install. To play the stream in another program, such as VLC, read the password on the device:
+
+```
+sudo cat /etc/traffic-monitor/secrets/go2rtc_rtsp_password
+```
+
+Then open `rtsp://frigate:<password>@<device>:8554/picam_h265_detect`.
 
 # Installer options
 
@@ -938,22 +984,22 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 
 ## Flags
 
-| Flag             | Meaning                                                                                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `-h`             | Show the usage text and exit.                                                                                                                                      |
-| `-y`             | Answer yes to every prompt, including the reboot.                                                                                                                  |
-| `-v`             | Verbose output. Repeat for more.                                                                                                                                   |
-| `-f`             | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces).                                         |
-| `-t TAG`         | Run only one component. Repeat for several. See [Tags](#tags).                                                                                                     |
-| `-T`             | List the tags and exit.                                                                                                                                            |
-| `-C NAME[,NAME]` | Turn on an optional component. The only one is `plate_recognizer`; see [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md).   |
-| `-u`             | Also upgrade the operating system's packages (`apt full-upgrade`).                                                                                                 |
-| `-d PATH`        | Install folder. Default `/opt/traffic-monitor`. The docs assume the default.                                                                                       |
-| `-o USER`        | Owner of the installed files and processes. Default `tmadmin`, created by the installer.                                                                           |
-| `-g GROUP`       | Group of the installed files. Default `tmadmin`.                                                                                                                   |
-| `-z TIMEZONE`    | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`. |
-| `-L PATH`        | Where to write the installer's log.                                                                                                                                |
-| `-a ARG`         | Pass an extra argument to the underlying Ansible run, without its leading hyphen.                                                                                  |
+| Flag             | Meaning                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`             | Show the usage text and exit.                                                                                                                                                                                                                                                                                                                               |
+| `-y`             | Answer yes to every prompt, including the reboot.                                                                                                                                                                                                                                                                                                           |
+| `-v`             | Verbose output. Repeat for more.                                                                                                                                                                                                                                                                                                                            |
+| `-f`             | Replace the user-editable settings files with fresh copies from the templates. See [What `-f` replaces](#what-f-replaces).                                                                                                                                                                                                                                  |
+| `-t TAG`         | Run one component, plus anything that has to change with it. Repeat for several. See [Tags](#tags).                                                                                                                                                                                                                                                         |
+| `-T`             | List the tags and exit.                                                                                                                                                                                                                                                                                                                                     |
+| `-C NAME[,NAME]` | Turn on an optional component: `plate_recognizer` (see [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md)), or `mqtt_lan`, which creates an MQTT broker login when there isn't one (see [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices)). |
+| `-u`             | Also upgrade the operating system's packages (`apt full-upgrade`).                                                                                                                                                                                                                                                                                          |
+| `-d PATH`        | Install folder. Default `/opt/traffic-monitor`. The docs assume the default.                                                                                                                                                                                                                                                                                |
+| `-o USER`        | Owner of the installed files and processes. Default `tmadmin`, created by the installer.                                                                                                                                                                                                                                                                    |
+| `-g GROUP`       | Group of the installed files. Default `tmadmin`.                                                                                                                                                                                                                                                                                                            |
+| `-z TIMEZONE`    | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`.                                                                                                                                                                                          |
+| `-L PATH`        | Where to write the installer's log.                                                                                                                                                                                                                                                                                                                         |
+| `-a ARG`         | Pass an extra argument to the underlying Ansible run, without its leading hyphen.                                                                                                                                                                                                                                                                           |
 
 Remote runs:
 
@@ -966,20 +1012,21 @@ Remote runs:
 
 ## Tags
 
-Each tag reruns one part of the install. Without `-t`, everything runs.
+Each tag reruns one part of the install. Without `-t`, everything runs. The pod and the reverse proxy have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, and `revproxy` tags each update both.
 
-| Tag                | What it does                                                                                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                        |
-| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                 |
-| `wifi`             | Wi-Fi setup                                                                                                                                                |
-| `go2rtc`           | The camera streaming service on the host                                                                                                                   |
-| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later). |
-| `podman`           | The container runtime and the pod                                                                                                                          |
-| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                    |
-| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                        |
-| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                    |
-| `revproxy`         | The home page and reverse proxy                                                                                                                            |
+| Tag                | What it does                                                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                               |
+| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                        |
+| `wifi`             | Wi-Fi setup                                                                                                                                                                                       |
+| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                            |
+| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                        |
+| `podman`           | The container runtime and the pod                                                                                                                                                                 |
+| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                           |
+| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                               |
+| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                           |
+| `revproxy`         | The home page and reverse proxy                                                                                                                                                                   |
+| `tm-control`       | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` and `go2rtc` tags install it too and run it to give Frigate's `config.yml` the stream login. |
 
 ## What `-f` replaces
 
@@ -991,7 +1038,7 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/frigate/frigate.env`
 - `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
-With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
 ## Add an accelerator later
 
@@ -1101,7 +1148,7 @@ We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized d
 
 Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
-By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) shows which apps ask for one. Frigate also publishes a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt), which has no login either. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows how to turn those snapshots off.
+By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) shows which apps ask for one. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows the setting.
 
 The database stops being de-identified if you:
 
@@ -1233,18 +1280,18 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 
 # MQTT and ThingsBoard
 
-The MQTT broker is on by default, and anyone on your network can subscribe to it. The ThingsBoard upload is off until you turn it on.
+The MQTT broker is on by default and accepts connections only from the device itself. The ThingsBoard upload is off until you turn it on.
 
 ## MQTT
 
-Node-RED hosts an MQTT broker on the device at port `1883`, with no authentication. Settings are in [node-red-tm.env](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md). Any MQTT client on your network can subscribe, for example Home Assistant or a display board that shows the day's counts.
+Node-RED hosts an MQTT broker on the device at port `1883`. Frigate, the air quality sensor, and Node-RED connect to it on the device. Other devices on your network, such as Home Assistant or a display board that shows the day's counts, can connect once you give the broker a login; see [Connect from other devices](#connect-from-other-devices). Settings are in [node-red-tm.env](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md).
 
-| Topic                                | Direction                                                                                                    | Contents                                                                                                                                                                                                                                     |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `frigate/events`                     | Frigate to the Traffic Monitor                                                                               | Frigate's [event messages](https://docs.frigate.video/integrations/mqtt). The Traffic Monitor records the ones with `type: "end"` as [events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md).                 |
-| `frigate/<camera>/<object>/snapshot` | Frigate to subscribers                                                                                       | A cropped JPEG of each detected object, which can show a person. The Traffic Monitor doesn't use it. To turn it off, see [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots). |
-| `aq/<sensor>/readings`               | [Air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) to the Traffic Monitor | One JSON reading. See [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md).                                                                                                                   |
-| `tm/events`                          | The Traffic Monitor to subscribers                                                                           | Today's cumulative counts, mainly for a display board. Published with QoS 1 and retained, so a new subscriber gets the latest counts at once. See below.                                                                                     |
+| Topic                                | Direction                                                                                                    | Contents                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frigate/events`                     | Frigate to the Traffic Monitor                                                                               | Frigate's [event messages](https://docs.frigate.video/integrations/mqtt). The Traffic Monitor records the ones with `type: "end"` as [events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md).                                                                                                 |
+| `frigate/<camera>/<object>/snapshot` | Frigate to subscribers                                                                                       | A cropped JPEG of each detected object, which can show a person. Frigate publishes it only when the camera's `mqtt` setting is on, and new installs turn it off. The Traffic Monitor doesn't use it. See [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots). |
+| `aq/<sensor>/readings`               | [Air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) to the Traffic Monitor | One JSON reading. See [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md).                                                                                                                                                                                                   |
+| `tm/events`                          | The Traffic Monitor to subscribers                                                                           | Today's cumulative counts, mainly for a display board. Published with QoS 1 and retained, so a new subscriber gets the latest counts at once. See below.                                                                                                                                                                     |
 
 `tm/event`, without the `s`, is the per-event message inside Node-RED. Each recorded event carries it to the dashboards and to the ThingsBoard upload. It isn't published on the broker, so MQTT clients such as Home Assistant can't subscribe to it.
 
@@ -1262,8 +1309,40 @@ A JSON object with the same counts as **Today's counts** on the [Monitoring](htt
 To watch it from another computer:
 
 ```
-mosquitto_sub -h <device> -t tm/events
+mosquitto_sub -h <device> -u <username> -P <password> -t tm/events
 ```
+
+### Connect from other devices
+
+1. Give the broker a login:
+
+   ```
+   bash traffic-monitor/script/tmsetup.sh -t node-red-tm -C mqtt_lan
+   ```
+
+   This creates the username `tm` and a random password. To choose your own instead, set `TM_MQTT_BROKER_USERNAME` and `TM_MQTT_BROKER_PASSWORD` in `/opt/traffic-monitor/node-red-tm/node-red-tm.env` and run the command without `-C mqtt_lan`. Use only letters, digits, `.`, `_`, and `-`, with no quotes and no comment after the value on the same line; otherwise the installer stops with a message.
+
+   The broker then requires the login from every client, the installer gives it to Frigate, and port 1883 opens to your network.
+
+1. Read the login:
+
+   ```
+   sudo grep ^TM_MQTT_BROKER_ /opt/traffic-monitor/node-red-tm/node-red-tm.env
+   ```
+
+1. Give it to the [air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) and to each MQTT client.
+
+1. Check from another computer:
+
+   ```
+   mosquitto_sub -h <device> -u <username> -P <password> -t tm/events
+   ```
+
+1. To change the login, edit the two values and run `bash traffic-monitor/script/tmsetup.sh -t node-red-tm` again. To remove it, leave both values blank and run the same command: the broker stops checking logins and port 1883 closes to the network.
+
+Warning
+
+The login crosses the network unencrypted, and anyone who has it can read every topic and publish false data. Open MQTT only on a network you trust.
 
 ## ThingsBoard
 
@@ -1383,14 +1462,15 @@ The Pimoroni [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) b
 
 The sensor is read by [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor), a Python service that runs on the Raspberry Pi and publishes readings to the device's MQTT broker. Install it following that repository's instructions, then set these keys in its `config.json` ([key reference](https://github.com/greendormer/enviroplus-monitor/blob/main/config_readme.md)):
 
-| Key                               | Value                        | Why                                                                                                         |
-| --------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `enable_send_data_to_homemanager` | `true`                       | Publish readings over MQTT                                                                                  |
-| `mqtt_broker_name`                | `"localhost"`                | The Traffic Monitor's broker, on port 1883                                                                  |
-| `indoor_outdoor_function`         | `"Outdoor"`                  | Use the outdoor topic                                                                                       |
-| `outdoor_mqtt_topic`              | `"aq/sensorname01/readings"` | The topic must start with `aq/`, and the middle part is the sensor's name in the Traffic Monitor's settings |
-| `enable_display`                  | `false`                      | The board's screen is inside the enclosure                                                                  |
-| `long_update_delay`               | `300`                        | Seconds between readings                                                                                    |
+| Key                               | Value                        | Why                                                                                                                                                                  |
+| --------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enable_send_data_to_homemanager` | `true`                       | Publish readings over MQTT                                                                                                                                           |
+| `mqtt_broker_name`                | `"localhost"`                | The Traffic Monitor's broker, on port 1883                                                                                                                           |
+| `mqtt_username`, `mqtt_password`  | The broker's login           | Needed once the broker has a login. See [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices). |
+| `indoor_outdoor_function`         | `"Outdoor"`                  | Use the outdoor topic                                                                                                                                                |
+| `outdoor_mqtt_topic`              | `"aq/sensorname01/readings"` | The topic must start with `aq/`, and the middle part is the sensor's name in the Traffic Monitor's settings                                                          |
+| `enable_display`                  | `false`                      | The board's screen is inside the enclosure                                                                                                                           |
+| `long_update_delay`               | `300`                        | Seconds between readings                                                                                                                                             |
 
 Set the location keys for your site as well. The software uses them to calibrate the pressure and gas readings for altitude, and to work out sunrise and sunset:
 
@@ -1707,7 +1787,7 @@ The [repository](https://github.com/glossyio/traffic-monitor) is a monorepo with
 
 To develop on a device:
 
-1. Open the Node-RED editor at `http://<device>:1880` and log in as `admin` with password `password`.
+1. Open the Node-RED editor at `http://<device>/nr/` and log in as `admin` with password `password`.
 1. Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.
 1. Point the project's flow and package files at `container/node-red-tm/data/flows.json` and `package.json`, so your edits land in the repository's files.
 1. Commit your changes to a branch of your fork.

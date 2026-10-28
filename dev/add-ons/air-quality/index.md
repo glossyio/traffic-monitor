@@ -16,14 +16,15 @@ The Pimoroni [Enviro+](https://www.pishop.us/product/enviro-for-raspberry-pi/) b
 
 The sensor is read by [greendormer/enviroplus-monitor](https://github.com/greendormer/enviroplus-monitor), a Python service that runs on the Raspberry Pi and publishes readings to the device's MQTT broker. Install it following that repository's instructions, then set these keys in its `config.json` ([key reference](https://github.com/greendormer/enviroplus-monitor/blob/main/config_readme.md)):
 
-| Key                               | Value                        | Why                                                                                                         |
-| --------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `enable_send_data_to_homemanager` | `true`                       | Publish readings over MQTT                                                                                  |
-| `mqtt_broker_name`                | `"localhost"`                | The Traffic Monitor's broker, on port 1883                                                                  |
-| `indoor_outdoor_function`         | `"Outdoor"`                  | Use the outdoor topic                                                                                       |
-| `outdoor_mqtt_topic`              | `"aq/sensorname01/readings"` | The topic must start with `aq/`, and the middle part is the sensor's name in the Traffic Monitor's settings |
-| `enable_display`                  | `false`                      | The board's screen is inside the enclosure                                                                  |
-| `long_update_delay`               | `300`                        | Seconds between readings                                                                                    |
+| Key                               | Value                        | Why                                                                                                                                                                  |
+| --------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enable_send_data_to_homemanager` | `true`                       | Publish readings over MQTT                                                                                                                                           |
+| `mqtt_broker_name`                | `"localhost"`                | The Traffic Monitor's broker, on port 1883                                                                                                                           |
+| `mqtt_username`, `mqtt_password`  | The broker's login           | Needed once the broker has a login. See [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices). |
+| `indoor_outdoor_function`         | `"Outdoor"`                  | Use the outdoor topic                                                                                                                                                |
+| `outdoor_mqtt_topic`              | `"aq/sensorname01/readings"` | The topic must start with `aq/`, and the middle part is the sensor's name in the Traffic Monitor's settings                                                          |
+| `enable_display`                  | `false`                      | The board's screen is inside the enclosure                                                                                                                           |
+| `long_update_delay`               | `300`                        | Seconds between readings                                                                                                                                             |
 
 Set the location keys for your site as well. The software uses them to calibrate the pressure and gas readings for altitude, and to work out sunrise and sunset:
 

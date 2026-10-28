@@ -1169,6 +1169,8 @@
       
         
       
+        
+      
     
     
     
@@ -1304,6 +1306,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1327,10 +1357,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -1348,8 +1378,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2028,12 +2058,8 @@
 <h2 id="comments">Comments<a class="headerlink" href="#comments" title="Permanent link">&para;</a></h2>
 <p>A comment is a timestamped note stored in the <code>comments</code> table, for whoever analyzes the data later: a settings change, road work, an event in the area. Give it an effective date and an optional expiry date, the text, and your name; only the name is required. The form also has time fields, but only the dates are kept. Without an effective date, the comment takes effect when you save it. <a href="../../data-and-payloads/data-overview/#comments">Data and privacy</a> lists the columns.</p>
 <h2 id="download-the-database">Download the database<a class="headerlink" href="#download-the-database" title="Permanent link">&para;</a></h2>
-<p>Downloads the whole database as a compressed archive named <code>&lt;hostname&gt;_&lt;time&gt;_tmdb.tar.gz</code>. The page shows the database's size in megabytes. A large database takes a while: a 3 GB file can take about 5 minutes to compress and several more to download.</p>
+<p>Downloads the whole database as a compressed archive named <code>&lt;hostname&gt;_&lt;time&gt;_tmdb.tar.gz</code>. The page shows the database's size in megabytes. The device first makes a consistent copy of the database, so a large one can take a minute or two before the download starts. The copy needs free space about the size of the database; if there isn't enough, the page says so. A 3 GB file can then take about 5 minutes to compress and several more to download. Cancel also works while the copy is being made: the download stops once the copy is done, and no archive is sent. If a download fails, you see the reason instead of a broken file.</p>
 <p>Unpack the archive with <code>tar -xvzf</code> on Linux or Mac, or with <a href="https://www.7-zip.org/">7-Zip</a> on Windows. Inside is <code>tmdb.sqlite</code>, which opens in <a href="https://sqlitebrowser.org/">DB Browser for SQLite</a> or any SQLite library.</p>
-<div class="admonition warning">
-<p class="admonition-title">Download from Node-RED's port</p>
-<p>Downloads fail when you open this page through the home page's <code>/dashboard/</code> path, for the database and for JSON alike. Open the page on Node-RED's port instead, <code>http://&lt;device&gt;:1880/dashboard/database</code>, and download from there.</p>
-</div>
 <h2 id="download-json">Download JSON<a class="headerlink" href="#download-json" title="Permanent link">&para;</a></h2>
 <p>Exports part of the data as JSON files in a compressed archive named <code>&lt;hostname&gt;_&lt;time&gt;_json.tar.gz</code>. Choose what to export and a start and end time, which default to the last 7 days:</p>
 <table>
