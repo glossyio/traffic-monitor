@@ -5,3 +5,5 @@
 -r ../tm-control/backend/requirements.txt
 pytest>=8
 pytest-testinfra>=10
+# FastAPI's TestClient
+httpx==0.28.1
