@@ -393,6 +393,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Info */
+        get: operations["info_api_v1_system_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diagnostics Text
+         * @description The diagnostics text as a download, with every secret redacted.
+         */
+        get: operations["diagnostics_text_api_v1_system_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/reboot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reboot */
+        post: operations["reboot_api_v1_system_reboot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/power-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Power Off */
+        post: operations["power_off_api_v1_system_power_off_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/password": {
         parameters: {
             query?: never;
@@ -450,6 +521,17 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** Disk */
+        Disk: {
+            /** Path */
+            path: string;
+            /** Total */
+            total: number;
+            /** Used */
+            used: number;
+            /** Free */
+            free: number;
+        };
         /** EulaAcceptance */
         EulaAcceptance: {
             /** Version */
@@ -504,6 +586,13 @@ export interface components {
             /** Log */
             log: string[];
         };
+        /** Memory */
+        Memory: {
+            /** Total */
+            total: number;
+            /** Available */
+            available: number;
+        };
         /** NewPassword */
         NewPassword: {
             /** New Password */
@@ -522,6 +611,14 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PowerQueued */
+        PowerQueued: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "reboot" | "power_off";
         };
         /** Report */
         Report: {
@@ -556,10 +653,56 @@ export interface components {
             /** Restartable */
             restartable: boolean;
         };
+        /** SystemInfo */
+        SystemInfo: {
+            /** Hostname */
+            hostname: string;
+            /** Serial */
+            serial: string;
+            /** Model */
+            model: string | null;
+            /** Os */
+            os: string | null;
+            /** Kernel */
+            kernel: string | null;
+            /** Uptime Seconds */
+            uptime_seconds: number | null;
+            memory: components["schemas"]["Memory"] | null;
+            /** Disks */
+            disks: components["schemas"]["Disk"][];
+            tm: components["schemas"]["TmInstall"];
+            /** Components */
+            components: {
+                [key: string]: string;
+            };
+            /** Soc Temperature C */
+            soc_temperature_c: number | null;
+            throttled: components["schemas"]["Throttled"] | null;
+        };
         /** SystemPassword */
         SystemPassword: {
             /** Password */
             password: string;
+        };
+        /** Throttled */
+        Throttled: {
+            /** Raw */
+            raw: string;
+            /** Now */
+            now: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
+            /** Since Boot */
+            since_boot: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
+        };
+        /** TmInstall */
+        TmInstall: {
+            /** Version */
+            version: string;
+            /** Commit */
+            commit: string;
+            /** Branch */
+            branch: string;
+            /** Installing User */
+            installing_user: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1120,6 +1263,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    info_api_v1_system_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
+    diagnostics_text_api_v1_system_diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    reboot_api_v1_system_reboot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PowerQueued"];
+                };
+            };
+        };
+    };
+    power_off_api_v1_system_power_off_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PowerQueued"];
                 };
             };
         };
