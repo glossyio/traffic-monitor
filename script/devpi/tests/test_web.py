@@ -13,7 +13,7 @@ import urllib.parse
 
 import pytest
 from devpi_checks import (API, UNCLAIMED, Redacted, is_claimed, request_from_this_machine, retry_after, role_vars,
-                          session)
+                          session, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -131,18 +131,28 @@ def admin_session(address, tm_login):
     return session(address, username, password)
 
 
-def delete_user(address, admin_session, username):
-    """Delete the account with this name, if there is one. It's found by name, so it goes even when the request that
-    created it failed after the account was made."""
+def user_ids_named(address, admin_session, username):
+    """(status of the user list, ids of the accounts with this name, or None if the list couldn't be read).
+
+    Only ids come back, so no caller's local holds the other accounts' names for pytest -l to print.
+    """
     listing = request_from_this_machine(address, f"{API}/users", cookie=admin_session)
     found = listing.json() if listing.status == 200 else None
     users = found.get("users") if isinstance(found, dict) else None
-    assert isinstance(users, list), f"couldn't list the users to delete {username}: HTTP {listing.status}"
-    for user in users:
-        if user.get("username") == username:
-            deleted = request_from_this_machine(address, f"{API}/users/{user['id']}", "DELETE", admin_session)
-            assert deleted.status == 204, (f"deleting the test account {username} answered HTTP {deleted.status}; "
-                                           "delete it on the device's Users page")
+    if not isinstance(users, list):
+        return listing.status, None
+    return listing.status, [user["id"] for user in users if user.get("username") == username]
+
+
+def delete_user(address, admin_session, username):
+    """Delete the account with this name, if there is one. It's found by name, so it goes even when the request that
+    created it failed after the account was made."""
+    status, ids = user_ids_named(address, admin_session, username)
+    assert ids is not None, f"couldn't list the users to delete {username}: HTTP {status}"
+    for user_id in ids:
+        deleted = request_from_this_machine(address, f"{API}/users/{user_id}", "DELETE", admin_session)
+        assert deleted.status == 204, (f"deleting the test account {username} answered HTTP {deleted.status}; "
+                                       "delete it on the device's Users page")
 
 
 @pytest.fixture(scope="module")
@@ -412,12 +422,27 @@ def test_redirects_are_relative(address):
     assert (answer.status, answer.headers.get("Location")) == (301, "/frigate/")
 
 
-@pytest.mark.parametrize("path", [f"{API}/auth/verify", f"{API}/auth/verify%0A", f"{API}/auth/verif%79",
-                                  f"{API}/auth/verify/x", f"{API}/auth/verifyx", "/_auth", "/_auth_admin"])
+HIDDEN_PATHS = {
+    "verify": f"{API}/auth/verify",
+    "verify-newline": f"{API}/auth/verify%0A",
+    "verify-encoded-y": f"{API}/auth/verif%79",
+    "verify-subpath": f"{API}/auth/verify/x",
+    "verify-suffix": f"{API}/auth/verifyx",
+    "auth": "/_auth",
+    "auth-admin": "/_auth_admin",
+}
+
+
+@pytest.mark.parametrize("path", HIDDEN_PATHS.values(), ids=HIDDEN_PATHS.keys())
 def test_verify_and_auth_locations_are_hidden(address, path):
-    """Only nginx's internal /_auth locations may ask tm-control who's logged in, even when a client names a role."""
-    status = request_from_this_machine(address, path, headers={"X-TM-Required-Role": "admin"}).status
-    assert status == 404, f"{path} answered {status}"
+    """Only nginx's internal /_auth locations may ask tm-control who's logged in, even when a client names a role.
+
+    nginx itself answers: its HTML 404 page, not tm-control's JSON error, so the request never reached tm-control.
+    """
+    answer = request_from_this_machine(address, path, headers={"X-TM-Required-Role": "admin"})
+    from_nginx = (answer.headers.get("Content-Type", "").startswith("text/html") and answer.json() is None
+                  and b"<center>nginx" in answer.body)
+    assert (answer.status, from_nginx) == (404, True), f"{path}: (status, nginx's own 404 page)"
 
 
 def test_unavailable_page_is_served_for_errors(address):
@@ -431,7 +456,7 @@ ADMIN_OPENS = [("/dashboard/", {200}), ("/frigate/", {200}), ("/ui/", {200}), ("
                ("/storefiles", {400}), ("/system/", {200, 303})]
 
 
-@pytest.mark.parametrize("path, expected", ADMIN_OPENS)
+@pytest.mark.parametrize("path, expected", ADMIN_OPENS, ids=[path for path, _ in ADMIN_OPENS])
 def test_admin_session_opens_every_app(address, admin_session, path, expected):
     status = status_from_this_machine(address, path, cookie=admin_session)
     assert status in expected, f"{path} with the admin session answered {status}"
@@ -441,7 +466,7 @@ VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403)
                    (f"{API}/users", 403), ("/dashboard/", 200), ("/ui/", 200), ("/frigate/", 200)]
 
 
-@pytest.mark.parametrize("path, expected", VIEWER_STATUSES)
+@pytest.mark.parametrize("path, expected", VIEWER_STATUSES, ids=[path for path, _ in VIEWER_STATUSES])
 def test_viewer_gets_403_on_admin_paths(address, viewer_session, path, expected):
     """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list."""
     status = status_from_this_machine(address, path, cookie=viewer_session)
@@ -472,32 +497,43 @@ def test_frigate_admin_page_opens_for_the_admin(address, admin_session):
     assert status == 200, f"{FRIGATE_ADMIN_ONLY} with the admin session answered {status}"
 
 
+def user_in_json(address, path, cookie, username, *keys):
+    """What an app's JSON at `path` says about its user, as (status, is JSON, the user found, it's `username`, role).
+
+    Only bools and the role come back, so no local in a test holds a name for a failure or pytest -l to print.
+    The user is at body[keys...]["username"]; tm-control lowercases usernames.
+    """
+    answer = request_from_this_machine(address, path, cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    is_json = isinstance(found, dict)
+    for key in keys:
+        found = found.get(key) if isinstance(found, dict) else None
+    named = found.get("username") if isinstance(found, dict) else None
+    role = found.get("role") if isinstance(found, dict) else None
+    return answer.status, is_json, bool(named), named == username.lower(), role
+
+
 def test_frigate_knows_the_user(address, admin_session, tm_login):
     """The proxy passes who's logged in, and Frigate takes it: its profile is the inventory's admin, as admin."""
-    username, _ = tm_login
-    answer = request_from_this_machine(address, "/frigate/api/profile", cookie=admin_session)
-    profile = answer.json() if answer.status == 200 else None
-    assert isinstance(profile, dict), f"/frigate/api/profile answered {answer.status}, not a profile"
-    role = profile.get("role")
-    # A bool, so a failure can't print either name; tm-control lowercases usernames
-    same_user = profile.get("username") == username.lower()
+    status, is_json, has_user, same_user, role = user_in_json(address, "/frigate/api/profile", admin_session,
+                                                              tm_login[0])
+    assert is_json and has_user, f"/frigate/api/profile answered {status} without a user"
     assert same_user, "Frigate's profile names another user than tm_control_login's"
     assert role == "admin", f"Frigate gives the admin the role {role!r}"
 
 
 def test_node_red_editor_opens_with_the_proxy_token(address, admin_session, tm_login):
     """For an admin, the proxy adds the editor token, so the editor opens without a login of its own (settings.js)."""
-    username, _ = tm_login
     without = status_from_this_machine(address, "/nr/settings")
     assert without == 302, f"/nr/settings without a session answered {without}"
-    answer = request_from_this_machine(address, "/nr/settings", cookie=admin_session)
-    settings = answer.json() if answer.status == 200 else None
-    assert isinstance(settings, dict), f"/nr/settings with the admin session answered {answer.status}, not settings"
-    user = settings.get("user")
-    has_user = isinstance(user, dict) and bool(user.get("username"))
+    status, is_json, has_user, same_user, _ = user_in_json(address, "/nr/settings", admin_session, tm_login[0],
+                                                           "user")
+    assert is_json, f"/nr/settings with the admin session answered {status}, not settings"
     assert has_user, "Node-RED's settings name no user, so the editor would ask for its own login"
-    same_user = user["username"] == username.lower()
     assert same_user, "Node-RED's editor names another user than tm_control_login's"
+
+
+LISTEN_SHOWN = {"127.0.0.1", "[::1]", "0.0.0.0", "[::]", "*", "[::ffff:127.0.0.1]"}
 
 
 def test_tm_control_listens_on_loopback_only(host):
@@ -505,7 +541,9 @@ def test_tm_control_listens_on_loopback_only(host):
     with host.sudo():
         lines = [line for line in host.check_output(f"ss -Htlnp 'sport = :{TM_CONTROL_PORT}'").splitlines()
                  if line.strip()]
-    listening = sorted({line.split()[3] for line in lines})
+    # Loopback and wildcard addresses as they are; any other is the Pi's own address, which stays out of the run log
+    listening = sorted({local if local.rsplit(":", 1)[0] in LISTEN_SHOWN else "<a LAN address>"
+                        for local in (line.split()[3] for line in lines)})
     assert listening == [f"127.0.0.1:{TM_CONTROL_PORT}"], f"listening on port {TM_CONTROL_PORT}: {listening}"
     pids = sorted(set(re.findall(r"pid=(\d+)", "\n".join(lines))))
     with host.sudo():
@@ -522,17 +560,22 @@ sudo test -s {secret} || exit 4
 printf %s "$cfg" | sudo grep -c -F -f {secret}"""
 
 
+def frigate_config_counts(host, address, cookie):
+    """FRIGATE_CONFIG_COUNTS's exit code and counts. The command holds the cookie, so its CommandResult stays in here,
+    where neither an assertion nor pytest -l in the test can print it."""
+    result = host.run(FRIGATE_CONFIG_COUNTS.format(host_header=shlex.quote(f"Host: {address}"),
+                                                   cookie_header=shlex.quote(f"Cookie: {cookie}"),
+                                                   secret=f"{SECRETS_DIR}/frigate_proxy_secret"))
+    return result.rc, result.stdout.split()
+
+
 def test_frigate_config_hides_the_proxy_secret(host, address, expect, admin_session):
     """Frigate's config, which an admin reads through the proxy, doesn't show the secret that proves a request came
     through the proxy (FRIGATE_PROXY_AUTH_SECRET in frigate.env). Compared on the Pi, so the value never leaves it."""
     if not expect["pii_free"]:
         pytest.skip("compares a device secret with Frigate's config; set tm_expect.pii_free: true (bench units only)")
-    result = host.run(FRIGATE_CONFIG_COUNTS.format(host_header=shlex.quote(f"Host: {address}"),
-                                                   cookie_header=shlex.quote(f"Cookie: {admin_session}"),
-                                                   secret=f"{SECRETS_DIR}/frigate_proxy_secret"))
-    # Plain values: an assertion on result.rc would print the whole result, command and cookie included
-    rc, counts = result.rc, result.stdout.split()
-    assert rc != 3, "couldn't read /frigate/api/config through the proxy with the admin session"
+    rc, counts = frigate_config_counts(host, address, admin_session)
+    assert rc != 3,"couldn't read /frigate/api/config through the proxy with the admin session"
     assert rc != 4, "the frigate_proxy_secret file is missing or empty"
     assert len(counts) == 2 and counts[0] != "0", f"/frigate/api/config isn't Frigate's config: {counts}"
     assert counts[1] == "0", "Frigate's /api/config shows the proxy secret"
@@ -571,18 +614,27 @@ def test_no_secret_in_the_install_log(host, expect):
 
 
 # Last in the module: it leaves this machine's address backing off for a few seconds.
-def test_login_backs_off(address):
+def test_login_backs_off(request, address):
     """After five failed logins, the next one must wait (tm_control/core/auth.py Backoff) and is told how long.
 
-    The user is made up, but the backoff also counts this machine's address. The test waits out the Retry-After,
-    and the next successful login from this machine clears the count.
+    The user is made up, but the backoff also counts this machine's address, and remembers it for 15 minutes after
+    the last failure. So the test starts from a clean count: with tm_control_login, a successful login clears it;
+    without one, it skips if the address is still backing off from an earlier run. At the end it waits out the
+    Retry-After, and the next successful login from this machine clears the count.
     """
     if not is_claimed(address):
         pytest.skip(UNCLAIMED)
+    login = tm_login_or_none(request)
+    if login is not None:
+        session(address, *login)  # a fresh login, not the module's cached one, so it resets this address's count
     username = f"tmdev-nobody-{secrets.token_hex(4)}"
-    answers = [request_from_this_machine(address, f"{API}/auth/login", "POST",
-                                         body={"username": username, "password": "tmdev-wrong-password"})
-               for _ in range(6)]
+    answers = []
+    for _ in range(6):
+        answers.append(request_from_this_machine(address, f"{API}/auth/login", "POST",
+                                                 body={"username": username, "password": "tmdev-wrong-password"}))
+        if login is None and len(answers) < 6 and answers[-1].status == 429:
+            pytest.skip("this machine's address is still backing off from an earlier run: log in once from this "
+                        "machine, or wait 15 minutes (or add tm_control_login, which lets the test clear it)")
     statuses = [answer.status for answer in answers]
     wait = answers[-1].headers.get("Retry-After") or ""
     if statuses[-1] == 429:

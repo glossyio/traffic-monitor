@@ -12,6 +12,7 @@ skipped, so running the repo's other tests never touches a Pi.
 
 import collections
 import json
+import logging
 import os
 import re
 import sys
@@ -39,6 +40,9 @@ HOST_PROBLEMS = pytest.StashKey[dict]()
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "disruptive: restarts services or reboots the Pi; runs only with TM_DEV_DISRUPTIVE=1")
+    # testinfra logs every command and its output ("RUN <CommandResult>") at debug level. Some commands carry a
+    # session cookie, and reset-admin's output holds a setup code, so --log-level=DEBUG must not capture them.
+    logging.getLogger("testinfra").setLevel(logging.INFO)
     hosts = os.environ.get("TM_DEV_HOSTS")
     if not hosts:
         config.stash[SKIP_REASON] = "device tests run only through tmdev.py test (or with TM_DEV_HOSTS set)"

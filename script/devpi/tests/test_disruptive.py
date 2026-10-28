@@ -10,7 +10,7 @@ import time
 
 import pytest
 from devpi_checks import (API, RESTARTING_UNITS, Redacted, find_hevc_decoder, frigate_host_devices,
-                          request_from_this_machine, role_vars, session)
+                          request_from_this_machine, role_vars, session, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
 
@@ -110,10 +110,12 @@ def proxy_status(host, address, path):
 
 def admin_session_or_none(request, address):
     """The admin's session cookie when the inventory has tm_control_login and the unit is claimed, otherwise None."""
+    login = tm_login_or_none(request)
+    if login is None:
+        return None
     try:
-        username, password = request.getfixturevalue("tm_login")
-        return session(address, username, password)
-    except pytest.skip.Exception:
+        return session(address, *login)
+    except pytest.skip.Exception:  # unclaimed
         return None
 
 
@@ -191,24 +193,66 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     assert home == "200", f"with tm-control stopped, / answered {home}"
 
 
-SETUP_CODE = re.compile(r"Setup code: ([A-Z2-9]{4}-[A-Z2-9]{4})")
+CODE = r"[A-Z2-9]{4}-[A-Z2-9]{4}"
+SETUP_CODE = re.compile(rf"Setup code: ({CODE})")
 SETUP_CODE_FILE = f"{role_vars()['tmsetup_etc_dir']}/setup-code"
-UNCLAIMED_NOW = ("the unit is unclaimed now: run `sudo tm-control reset-admin` on the Pi and claim it at /setup with "
-                 "the inventory's tm_control_login")
+UNCLAIMED_NOW = (f"the unit is unclaimed now. Its setup code is in {SETUP_CODE_FILE} on the Pi (root only): claim it "
+                 "at /setup with the inventory's tm_control_login, or run `sudo tm-control reset-admin` for a new code")
 
 
 def reset_admin(host):
-    """Run sudo tm-control reset-admin and return the new setup code, Redacted.
+    """Run sudo tm-control reset-admin: (exit code, why it failed or None, the new setup code Redacted or None).
 
-    The command's output holds the code, so it stays in this function and never reaches an assertion message.
+    The command's output holds the code, so the CommandResult and the match are deleted here, before anything can
+    fail with them in a local for pytest -l to print.
     """
     with host.sudo():
         result = host.run("tm-control reset-admin")
-    found = SETUP_CODE.search(result.stdout) if result.rc == 0 else None
-    if found is None:
-        problem = (result.stderr.strip().splitlines() or ["no setup code in its output"])[-1]
-        pytest.fail(f"sudo tm-control reset-admin exited {result.rc}: {problem}", pytrace=False)
-    return Redacted(found[1], "setup code")
+    rc = result.rc
+    found = SETUP_CODE.search(result.stdout) if rc == 0 else None
+    problem = None if found else (result.stderr.strip().splitlines() or ["no setup code in its output"])[-1]
+    del result
+    code = Redacted(found[1], "setup code") if found else None
+    del found
+    return rc, problem, code
+
+
+def setup_code_from_file(host):
+    """The setup code reset-admin wrote to its root-only file on the Pi, Redacted, or None. Never printed."""
+    try:
+        with host.sudo():
+            result = host.run(f"cat {SETUP_CODE_FILE}")
+    except RuntimeError:  # testinfra's SSH failure
+        return None
+    found = re.fullmatch(CODE, result.stdout.strip()) if result.rc == 0 else None
+    del result
+    code = Redacted(found[0], "setup code") if found else None
+    del found
+    return code
+
+
+def claim_again(host, address, login, version, code):
+    """Claim the unit with the inventory's login after reset-admin. Returns None when the unit is claimed afterwards,
+    by this claim or because the reset never unclaimed it; otherwise why not, saying the unit is unclaimed.
+
+    Without the code from reset-admin's output (it didn't parse, or SSH dropped), it reads the code file instead.
+    """
+    if code is None:
+        code = setup_code_from_file(host)
+    if code is not None:
+        username, password = login
+        status = request_from_this_machine(address, f"{API}/setup/claim", "POST",
+                                           body={"setup_code": code, "username": username, "password": password,
+                                                 "eula_version": version}).status
+        if status == 201:
+            return None
+        why = f"claiming with the new setup code answered {status}"
+    else:
+        why = f"couldn't read the new setup code from reset-admin's output or {SETUP_CODE_FILE}"
+    state = request_from_this_machine(address, f"{API}/setup/status").json()
+    if isinstance(state, dict) and state.get("claimed"):
+        return None
+    return f"{why}; {UNCLAIMED_NOW}"
 
 
 def test_reset_admin_then_claim(host, address, expect, tm_login):
@@ -229,15 +273,17 @@ def test_reset_admin_then_claim(host, address, expect, tm_login):
     version = found.get("version") if isinstance(found, dict) else None
     assert version, f"GET {API}/setup/eula answered {eula.status} without a version"
 
-    code = reset_admin(host)
+    rc, problem, code = None, None, None
     try:
+        rc, problem, code = reset_admin(host)
         redirect = request_from_this_machine(address, "/dashboard/")
     finally:
-        # Claimed again even when the check above fails
-        claim = request_from_this_machine(address, f"{API}/setup/claim", "POST",
-                                          body={"setup_code": code, "username": username, "password": password,
-                                                "eula_version": version})
-    assert claim.status == 201, f"claiming with the new setup code answered {claim.status}; {UNCLAIMED_NOW}"
+        # Claimed again even when something above fails. A failure here is the one to report: it replaces any
+        # other, because the unit is left without an admin.
+        unclaimed = claim_again(host, address, tm_login, version, code)
+        if unclaimed:
+            pytest.fail(unclaimed, pytrace=False)
+    assert (rc, problem) == (0, None), "sudo tm-control reset-admin (exit code, problem); the unit is claimed again"
     with host.sudo():
         host.check_output(f"rm -f {SETUP_CODE_FILE}")  # as tmsetup.sh does once the unit is claimed
     assert (redirect.status, redirect.headers.get("Location")) == (302, "/setup"), "/dashboard/ after reset-admin"

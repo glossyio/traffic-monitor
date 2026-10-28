@@ -186,6 +186,14 @@ def tm_control_login(hostvars):
             Redacted(str(login["password"]), "tm_control_login password"))
 
 
+def tm_login_or_none(request):
+    """The tm_login fixture's (username, password), or None when the inventory has no tm_control_login."""
+    try:
+        return request.getfixturevalue("tm_login")
+    except pytest.skip.Exception:
+        return None
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
         return None  # report the 3xx itself
@@ -220,8 +228,10 @@ def request_from_this_machine(address, path, method="GET", cookie=None, body=Non
     send it; tm-control refuses any other write (tm_control/core/csrf.py). Never raises for an HTTP or network
     error, so no traceback shows the cookie or the body.
     """
-    data = json.dumps(body).encode() if body is not None else None
-    request = urllib.request.Request(f"http://{address}{path}", data=data, method=method)
+    # The body goes straight into the request, whose repr doesn't show it: a local holding it as bytes would print
+    # under pytest -l, password included.
+    request = urllib.request.Request(f"http://{address}{path}", method=method,
+                                     data=json.dumps(body).encode() if body is not None else None)
     for name, value in (headers or {}).items():
         request.add_header(name, value)
     if cookie is not None:
