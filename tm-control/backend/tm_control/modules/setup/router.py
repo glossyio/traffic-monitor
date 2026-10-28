@@ -25,10 +25,16 @@ def _check_eula_version(request: Request, version: str) -> None:
 
 @router.get("/status")
 def status(request: Request):
+    """Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in."""
     app_state = request.app.state
     device = Device(app_state.state)
     version = app_state.eula.version
-    return {"claimed": device.is_claimed(), "eula": {"version": version, "accepted": device.eula_accepted(version)}}
+    homepage = app_state.manifest.homepage
+    return {
+        "claimed": device.is_claimed(),
+        "eula": {"version": version, "accepted": device.eula_accepted(version)},
+        "theme": {"font": homepage.font, "colors": homepage.colors},
+    }
 
 
 @router.get("/eula")

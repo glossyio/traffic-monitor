@@ -17,6 +17,7 @@ router = APIRouter(prefix="/system", tags=["system"])
 
 SERIAL_PATH = Path("/sys/firmware/devicetree/base/serial-number")
 FAKE_SERIAL = "0000000012345678"
+FAKE_HOSTNAME = "tm-fake"  # fake mode runs on a laptop, whose own name shouldn't end up in screenshots
 
 # The home page's app tiles, in order: (revproxy location file, id, path, title, admin_only). A tile shows only when
 # tmsetup installed its location (the manifest's revproxy_locations); viewers don't see admin_only tiles.
@@ -50,7 +51,7 @@ def device(request: Request, user: User = Depends(current_user)):
         if location in installed and (user.role == "admin" or not admin_only)
     ]
     return {
-        "hostname": socket.gethostname(),
+        "hostname": FAKE_HOSTNAME if app_state.settings.fake else socket.gethostname(),
         "serial": FAKE_SERIAL if app_state.settings.fake else read_serial(),
         "tm_version": manifest.tm_version,
         "time": datetime.now().astimezone().isoformat(timespec="seconds"),

@@ -1,6 +1,7 @@
 """Command line for tm-control. On a device, run it as `tm-control <command>`."""
 
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -65,16 +66,38 @@ def main(argv=None):
         "or TM_CONTROL_SETUP_CODE_FILE)",
     )
 
+    commands.add_parser(
+        "fake-reset",
+        help="start the fake device over, unclaimed, and print its setup code (fake mode only)",
+        description="With TM_CONTROL_FAKE=1, delete the fake device's state (by default in ./.tm-control-fake/state) "
+        "and print a new setup code. Refuses outside fake mode.",
+    )
+    commands.add_parser(
+        "dump-openapi",
+        help="print the API's OpenAPI document as JSON (for development)",
+        description="Print the OpenAPI document the UI's client is typed from. Builds the app in fake mode with "
+        "throwaway state, so it needs no device files.",
+    )
+
     args = parser.parse_args(argv)
     if args.command == "migrate":
         return migrate.run(args.frigate_config, dry_run=args.dry_run)
     if args.command == "serve":
         return serve()
+    if args.command == "dump-openapi":
+        from tm_control import fake
+
+        print(json.dumps(fake.openapi_document(), indent=2))
+        return 0
     # Imported here, like serve's imports, so that `migrate` doesn't need the auth dependencies.
     from tm_control.core import claim_cli
     from tm_control.core.settings import Settings
 
     settings = Settings.from_env()
+    if args.command == "fake-reset":
+        from tm_control import fake
+
+        return claim_cli.run(fake.reset, settings)
     if args.command == "claim-status":
         return claim_cli.run(claim_cli.claim_status, settings)
     if args.command == "set-setup-code":

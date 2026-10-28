@@ -36,7 +36,8 @@ def test_device_card_and_apps_for_an_admin(claimed_client, login):
     r = claimed_client.get("/api/v1/system/device")
     assert r.status_code == 200
     body = r.json()
-    assert body["hostname"] == socket.gethostname()
+    # Fake mode's own name and serial, so screenshots from a laptop don't show the laptop's name
+    assert body["hostname"] == "tm-fake" != socket.gethostname()
     assert body["serial"] == "0000000012345678"
     assert body["tm_version"] == "0.7.1-test"
     assert datetime.fromisoformat(body["time"]).utcoffset() is not None

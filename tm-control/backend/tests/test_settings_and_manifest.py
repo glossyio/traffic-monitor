@@ -63,6 +63,20 @@ def test_fake_mode_defaults_to_the_fixture_manifest():
     assert s.manifest_path == Path("/d/manifest.json")
 
 
+def test_fake_mode_keeps_its_state_under_the_current_directory(tmp_path, monkeypatch):
+    """A laptop has no /var/lib/tm-control or /run/tm-control; fake mode uses ./.tm-control-fake/, which git ignores."""
+    monkeypatch.chdir(tmp_path)
+    s = Settings.from_env({"TM_CONTROL_FAKE": "1"})
+    assert s.state_dir == tmp_path / ".tm-control-fake" / "state"
+    assert s.runtime_dir == tmp_path / ".tm-control-fake" / "run"
+    assert s.setup_code_file == tmp_path / ".tm-control-fake" / "setup-code"
+
+
+def test_fake_mode_still_follows_the_directory_variables():
+    s = Settings.from_env({"TM_CONTROL_FAKE": "1", "TM_CONTROL_STATE_DIR": "/a", "TM_CONTROL_RUNTIME_DIR": "/b"})
+    assert (s.state_dir, s.runtime_dir) == (Path("/a"), Path("/b"))
+
+
 def test_manifest_fixture_loads():
     m = load_manifest(FIXTURES / "manifest.json")
     assert m.installing_user == "pi" and "frigate.conf" in m.revproxy_locations

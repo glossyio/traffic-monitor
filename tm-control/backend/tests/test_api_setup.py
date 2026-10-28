@@ -8,6 +8,11 @@ from tm_control.modules import MODULES
 ORIGIN = {"Origin": "http://tm-test.local"}
 CLAIM = "/api/v1/setup/claim"
 ADMIN = ("admin", "correct horse 1")
+# The fixture manifest's home-page theme
+THEME = {
+    "font": "Helvetica",
+    "colors": {"background": "#0C1120", "header_text": "#3a82ff", "body_text": "#f8fafc", "link_hover_text": "#8895a7"},
+}
 
 
 def claim_body(code, **changes):
@@ -32,9 +37,16 @@ def test_setup_and_account_modules_are_registered():
 
 def test_status_and_eula_are_open(client):
     r = client.get("/api/v1/setup/status")
-    assert r.status_code == 200 and r.json() == {"claimed": False, "eula": {"version": "1", "accepted": False}}
+    assert r.status_code == 200
+    assert r.json() == {"claimed": False, "eula": {"version": "1", "accepted": False}, "theme": THEME}
     r = client.get("/api/v1/setup/eula")
     assert r.status_code == 200 and r.json()["version"] == "1" and "placeholder" in r.json()["markdown"]
+
+
+def test_status_gives_the_theme_before_anyone_logs_in(client):
+    """The setup and login pages use the device's colors, so the open status carries the manifest's theme."""
+    assert COOKIE_NAME not in client.cookies
+    assert client.get("/api/v1/setup/status").json()["theme"] == THEME
 
 
 def test_claim_with_the_right_code_creates_the_admin_and_logs_in(client, setup_code):
@@ -43,7 +55,8 @@ def test_claim_with_the_right_code_creates_the_admin_and_logs_in(client, setup_c
     assert r.json()["user"]["role"] == "admin" and r.json()["user"]["username"] == "owner"
     assert set(r.json()["user"]) == {"id", "username", "role", "created_at"}
     assert COOKIE_NAME in r.cookies
-    assert client.get("/api/v1/setup/status").json() == {"claimed": True, "eula": {"version": "1", "accepted": True}}
+    status = client.get("/api/v1/setup/status").json()
+    assert (status["claimed"], status["eula"]) == (True, {"version": "1", "accepted": True})
     assert client.get("/api/v1/auth/session").json()["user"]["username"] == "owner"
     assert Device(client.app.state.state).setup_code_hash() is None  # the code works once
 
