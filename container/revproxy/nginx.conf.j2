@@ -40,13 +40,7 @@ http {
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log;
 
-        # Home Page
-        location / {
-            root /usr/share/nginx/html;
-            index index.html;
-        }
-
-        # One file per app, listed in tmsetup_revproxy_locations
+        # One file per app, and tm-control's own (its UI serves /), listed in tmsetup_revproxy_locations
         include /etc/nginx/tm/locations/*.conf;
     }
 }

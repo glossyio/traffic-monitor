@@ -5,13 +5,13 @@ import re
 
 import pytest
 import yaml
-from tmsetup_render import load_role_yaml, render
+from tmsetup_render import REPO, load_role_yaml, render
 
 LOCATIONS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_locations"]
 
 
 def location(name):
-    return render(f"container/revproxy/tm/locations/{name}.j2")
+    return render(f"container/revproxy/tm/locations/{name}.j2", **load_role_yaml("vars/main.yml"))
 
 
 def test_data_export_downloads_are_proxied_to_node_red():
@@ -78,6 +78,156 @@ def test_revproxy_keeps_retrying_while_port_80_is_still_taken():
 @pytest.mark.parametrize("name", LOCATIONS)
 def test_no_location_goes_through_host_containers_internal(name):
     assert "host.containers.internal" not in location(name)
+
+
+# Which login check each app's location includes. Viewers may open the dashboards and Frigate; the Node-RED editor,
+# the camera feeds, the database downloads, and Cockpit are for administrators.
+APP_LOCATIONS = {
+    "cockpit.conf": "auth-admin",
+    "dashboard.conf": "auth-viewer",
+    "frigate.conf": "auth-viewer",
+    "go2rtc.conf": "auth-admin",
+    "legacy-ui.conf": "auth-viewer",
+    "nodered.conf": "auth-admin",
+    "storefiles.conf": "auth-admin",
+}
+TM_CONTROL_LOCATIONS = {"tm-control-ui.conf", "tm-control-api.conf", "tm-control-auth.conf"}
+IDENTITY_VARIABLES = ["tm_user", "tm_role", "tm_nr_token", "tm_frigate_secret", "tm_redirect"]
+
+
+def snippet(name):
+    return render(f"container/revproxy/tm/snippets/{name}.j2")
+
+
+def location_block(conf, header):
+    """One location block's text, from its header to the first closing brace at the start of a line."""
+    start = conf.index(header)
+    return conf[start:conf.index("\n}", start) + 2]
+
+
+def test_every_listed_location_is_an_app_or_tm_control():
+    """A new app location must be added to APP_LOCATIONS, so it can't ship without a login check."""
+    assert set(LOCATIONS) == set(APP_LOCATIONS) | TM_CONTROL_LOCATIONS
+
+
+@pytest.mark.parametrize("name, auth", APP_LOCATIONS.items())
+def test_every_app_location_includes_exactly_one_auth_snippet(name, auth):
+    conf = location(name)
+    assert conf.count("/etc/nginx/tm/snippets/auth-") == 1
+    assert f"include /etc/nginx/tm/snippets/{auth}.conf;" in conf
+
+
+def test_feeds_checks_the_login_before_its_rules_and_the_api_denial_stays_as_it_is():
+    conf = location("go2rtc.conf")
+    feeds = location_block(conf, "location /feeds/ {")
+    assert feeds.index("include /etc/nginx/tm/snippets/auth-admin.conf;") < feeds.index("if (")
+    denied = conf[conf.index("location ~ "):]
+    assert "auth-" not in denied and "proxy_pass" not in denied
+
+
+@pytest.mark.parametrize("name", list(APP_LOCATIONS))
+def test_no_app_location_adds_its_own_headers(name):
+    """The snippet's add_header Set-Cookie must be the location's only add_header, or the two would interact."""
+    assert "add_header" not in location(name)
+
+
+def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
+    nginx_conf = render("container/revproxy/nginx.conf.j2")
+    assert TM_CONTROL_LOCATIONS <= set(LOCATIONS)
+    assert "location / " not in nginx_conf
+    assert "include /etc/nginx/tm/locations/*.conf;" in nginx_conf
+    assert not (REPO / "container/revproxy/html/index.html.j2").exists()
+
+
+def test_snippets_are_listed():
+    assert load_role_yaml("vars/main.yml")["tmsetup_revproxy_snippets"] == [
+        "proxy-common.conf", "auth-viewer.conf", "auth-admin.conf",
+    ]
+
+
+@pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])
+def test_auth_snippets_set_every_identity_variable_and_the_error_pages(name):
+    conf = snippet(name)
+    for variable in IDENTITY_VARIABLES:
+        assert f"auth_request_set ${variable} $upstream_http_x_{variable};" in conf
+    assert "error_page 401 = @tm_login;" in conf
+    assert "error_page 500 502 503 504 =503 /unavailable.html;" in conf
+
+
+@pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])
+def test_auth_snippets_pass_the_refreshed_session_cookie_to_the_browser(name):
+    """auth_request drops the subrequest's Set-Cookie, so verify's rolling refresh is copied onto the response.
+    nginx skips an add_header whose value is empty, so a request without a refresh gets no Set-Cookie from it."""
+    conf = snippet(name)
+    assert "auth_request_set $tm_set_cookie $upstream_http_set_cookie;" in conf
+    assert "add_header Set-Cookie $tm_set_cookie;" in conf.splitlines()  # without "always": 2xx and 3xx only
+
+
+def test_viewer_and_admin_snippets_differ_only_in_the_auth_location():
+    viewer = snippet("auth-viewer.conf").splitlines()
+    admin = snippet("auth-admin.conf").splitlines()
+    assert len(viewer) == len(admin)
+    assert [(v, a) for v, a in zip(viewer, admin) if v != a] == [("auth_request /_auth;", "auth_request /_auth_admin;")]
+
+
+@pytest.mark.parametrize("path, role", [("/_auth", "viewer"), ("/_auth_admin", "admin")])
+def test_auth_locations_are_internal_and_name_the_role(path, role):
+    block = location_block(location("tm-control-auth.conf"), f"location = {path} {{")
+    assert "internal;" in block
+    assert "proxy_pass http://127.0.0.1:8090/api/v1/auth/verify;" in block
+    assert f"proxy_set_header X-TM-Required-Role {role};" in block
+    assert "proxy_set_header X-Original-URI $request_uri;" in block
+    assert "proxy_method GET;" in block
+    assert "proxy_pass_request_body off;" in block
+    assert 'proxy_set_header Content-Length "";' in block
+
+
+def test_failed_logins_redirect_and_the_rescue_page_is_internal():
+    conf = location("tm-control-auth.conf")
+    assert "location @tm_login { return 302 $tm_redirect; }" in conf
+    assert "location = /unavailable.html { internal; root /usr/share/nginx/html; }" in conf
+
+
+def test_verify_is_unreachable_from_the_network():
+    assert "location = /api/v1/auth/verify { return 404; }" in location("tm-control-api.conf")
+
+
+def test_api_and_logout_are_proxied_to_tm_control_on_loopback():
+    conf = location("tm-control-api.conf")
+    api = location_block(conf, "location /api/ {")
+    assert "proxy_pass http://127.0.0.1:8090/api/;" in api
+    assert "include /etc/nginx/tm/snippets/proxy-common.conf;" in api
+    logout = conf[conf.index("location = /logout {"):]
+    assert "proxy_pass http://127.0.0.1:8090/logout;" in logout
+    assert "include /etc/nginx/tm/snippets/proxy-common.conf;" in logout
+    assert "auth-" not in conf  # tm-control checks its own API calls
+
+
+def test_ui_root_serves_the_built_app_with_history_fallback():
+    """The UI is built into the image, outside the bind-mounted html directory, and stays open for login and setup."""
+    conf = location("tm-control-ui.conf")
+    assert "location / {" in conf
+    assert "root /usr/share/nginx/ui;" in conf
+    assert "try_files $uri $uri/ /index.html;" in conf
+    assert "auth-" not in conf
+
+
+def test_unavailable_page_names_cockpit_and_the_service():
+    page = render(
+        "container/revproxy/html/unavailable.html.j2",
+        tmsetup_homepage_colors=load_role_yaml("defaults/main.yml")["tmsetup_homepage_colors"],
+        tmsetup_homepage_font="Helvetica",
+        ansible_facts={"hostname": "tm"},
+    )
+    assert "http://tm:9090/" in page
+    assert "tm-control.service" in page
+    assert "sudo systemctl restart tm-control.service" in page
+    assert "<script" not in page
+
+
+@pytest.mark.parametrize("name", LOCATIONS)
+def test_no_location_carries_a_secret_value(name):
+    assert "tmsetup_secrets" not in (REPO / f"container/revproxy/tm/locations/{name}.j2").read_text()
 
 
 def test_host_apps_are_proxied_on_loopback():

@@ -1,6 +1,6 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
-from tmsetup_render import load_role_yaml
+from tmsetup_render import evaluate, load_role_yaml
 
 # Every tag whose run renders the pod, revproxy, the broker login, tm-control, or Frigate's credentials. nginx's
 # auth snippets need tm-control, so a single-tag run of any of them must install and start all of these.
@@ -416,3 +416,36 @@ def test_setup_code_notice_is_the_last_task_and_runs_only_while_unclaimed():
     msg = notice["ansible.builtin.debug"]["msg"]
     assert "{{ tmsetup_tm_control_setup_code_register.content | b64decode | trim }}" in msg
     assert "The code works once." in msg
+
+
+def revproxy_tasks():
+    return {task["name"]: task for task in load_role_yaml("tasks/revproxy_setup.yml")}
+
+
+def test_revproxy_renders_every_snippet_in_the_check_and_the_deployment():
+    role_vars = load_role_yaml("vars/main.yml")
+    snippets, locations = role_vars["tmsetup_revproxy_snippets"], role_vars["tmsetup_revproxy_locations"]
+    tasks = revproxy_tasks()
+    check_block = {task["name"]: task for task in tasks["TMSetup - revproxy Setup - Check NGinx config before deploying it"]["block"]}
+    check = check_block["TMSetup - revproxy Setup - Render NGinx config for the check"]
+    assert evaluate(check["loop"], tmsetup_revproxy_snippets=snippets, tmsetup_revproxy_locations=locations) == (
+        ["nginx.conf"] + [f"tm/snippets/{name}" for name in snippets] + [f"tm/locations/{name}" for name in locations])
+    deployed = tasks["TMSetup - revproxy Setup - Create NGinx config file"]
+    assert evaluate(deployed["loop"], tmsetup_revproxy_snippets=snippets) == (
+        ["revproxy/nginx.conf"] + [f"revproxy/tm/snippets/{name}" for name in snippets])
+    assert deployed["ansible.builtin.template"]["src"] == "container/{{ item }}.j2"
+
+
+def test_revproxy_no_longer_writes_the_hand_written_home_page():
+    tasks = revproxy_tasks()
+    names = list(tasks)
+    assert "TMSetup - revproxy Setup - Create NGinx home page" not in names
+    # nginx serves the bind-mounted html directory at once, so both run only after the check passed
+    check = names.index("TMSetup - revproxy Setup - Check NGinx config before deploying it")
+    assert check < names.index("TMSetup - revproxy Setup - Remove the old home page")
+    assert check < names.index("TMSetup - revproxy Setup - Create the rescue page")
+    assert tasks["TMSetup - revproxy Setup - Remove the old home page"]["ansible.builtin.file"] == {
+        "path": "{{ tmsetup_codedir }}/revproxy/html/index.html", "state": "absent"}
+    page = tasks["TMSetup - revproxy Setup - Create the rescue page"]["ansible.builtin.template"]
+    assert (page["src"], page["dest"], page["mode"]) == (
+        "container/revproxy/html/unavailable.html.j2", "{{ tmsetup_codedir }}/revproxy/html/unavailable.html", "0644")

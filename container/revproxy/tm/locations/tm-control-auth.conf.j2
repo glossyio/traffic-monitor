@@ -1,0 +1,25 @@
+# tm-control's login check (auth_request) and where a request goes when it fails.
+location = /_auth {
+    internal;
+    proxy_pass http://127.0.0.1:{{ tmsetup_tm_control_port }}/api/v1/auth/verify;
+    # The check is a GET without a body, whatever the app request was
+    proxy_method GET;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_set_header X-TM-Required-Role viewer;
+}
+location = /_auth_admin {
+    internal;
+    proxy_pass http://127.0.0.1:{{ tmsetup_tm_control_port }}/api/v1/auth/verify;
+    # The check is a GET without a body, whatever the app request was
+    proxy_method GET;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_set_header X-TM-Required-Role admin;
+}
+# A 401 from the check: tm-control said where to go (/setup, /welcome, or /login?next=...)
+location @tm_login { return 302 $tm_redirect; }
+# tm-control isn't answering; the page says how to start it again
+location = /unavailable.html { internal; root /usr/share/nginx/html; }

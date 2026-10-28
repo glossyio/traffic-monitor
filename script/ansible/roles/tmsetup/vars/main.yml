@@ -59,7 +59,8 @@ tmsetup_revproxy_config_mounts:
   - { path: nginx.conf, target: /etc/nginx/nginx.conf }
   - { path: tm, target: /etc/nginx/tm }
 
-# Reverse proxy location files, one per app (container/revproxy/tm/locations).
+# Reverse proxy location files, one per app plus tm-control's own (container/revproxy/tm/locations).
+# Each app's file includes auth-viewer.conf or auth-admin.conf.
 # Deployed location files not listed here are removed from the device.
 tmsetup_revproxy_locations:
   - cockpit.conf
@@ -69,6 +70,14 @@ tmsetup_revproxy_locations:
   - legacy-ui.conf
   - nodered.conf
   - storefiles.conf
+  - tm-control-api.conf
+  - tm-control-auth.conf
+  - tm-control-ui.conf
+# Files the location files include (container/revproxy/tm/snippets)
+tmsetup_revproxy_snippets:
+  - proxy-common.conf
+  - auth-viewer.conf
+  - auth-admin.conf
 
 # Secrets generated once on the device by tasks/secrets.yml. Only names here; values never in the repo.
 tmsetup_secrets_dir: /etc/traffic-monitor/secrets

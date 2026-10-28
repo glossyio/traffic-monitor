@@ -1,0 +1,8 @@
+# tm-control's UI: the home page, login, and setup. It's built into the revproxy image at
+# /usr/share/nginx/ui, outside the bind-mounted html directory, which would hide it.
+# No auth snippet: the login and setup pages must open without a session, and the UI's API
+# calls are checked by tm-control. Unknown paths get index.html so the UI's own routes load.
+location / {
+    root /usr/share/nginx/ui;
+    try_files $uri $uri/ /index.html;
+}

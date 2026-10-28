@@ -1,0 +1,16 @@
+# Login check for app paths. tm-control answers 200 with the identity headers, 401 (go log in, or
+# set the device up), or 403. If tm-control is down, nginx's own 500 becomes the rescue page;
+# an app's own error pages pass through unchanged (proxy_intercept_errors is off).
+auth_request /_auth_admin;
+auth_request_set $tm_user $upstream_http_x_tm_user;
+auth_request_set $tm_role $upstream_http_x_tm_role;
+auth_request_set $tm_nr_token $upstream_http_x_tm_nr_token;
+auth_request_set $tm_frigate_secret $upstream_http_x_tm_frigate_secret;
+auth_request_set $tm_redirect $upstream_http_x_tm_redirect;
+# auth_request drops the check's Set-Cookie, so pass on tm-control's rolling session refresh. nginx
+# skips an add_header whose value is empty, and without "always" adds it to 2xx and 3xx only. An
+# app location must not set an add_header of its own, or the two would mix.
+auth_request_set $tm_set_cookie $upstream_http_set_cookie;
+add_header Set-Cookie $tm_set_cookie;
+error_page 401 = @tm_login;
+error_page 500 502 503 504 =503 /unavailable.html;
