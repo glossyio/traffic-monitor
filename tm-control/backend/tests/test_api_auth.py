@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from fastapi.testclient import TestClient
 
 from tm_control.app import create_app
-from tm_control.core.auth import COOKIE_NAME, MAX_AGE, Device, NodeRedToken, Users
+from tm_control.core.auth import COOKIE_NAME, MAX_AGE, Device, NodeRedToken, SetupCode, Users
 from tm_control.core.secrets import FakeSecrets
 from tm_control.modules import MODULES, Module
 from tm_control.modules.auth.deps import current_user, require_admin
@@ -142,6 +142,36 @@ def test_verify_rejects_a_cookie_after_the_user_is_deleted(claimed_client, login
     users = Users(claimed_client.app.state.state)
     users.delete(users.by_username("viewer").id)
     assert verify(claimed_client).status_code == 401
+
+
+def test_a_deleted_users_cookie_never_becomes_a_new_users_session(claimed_client, login):
+    add_viewer(claimed_client)
+    cookie = login(claimed_client, *VIEWER)
+    users = Users(claimed_client.app.state.state)
+    viewer = users.by_username("viewer")
+    users.delete(viewer.id)
+    newcomer = users.create("newcomer", "newcomer pass 1", "admin")
+    assert newcomer.id != viewer.id
+    claimed_client.cookies.set(COOKIE_NAME, cookie)
+    assert verify(claimed_client, "/nr/", role="admin").status_code == 401
+
+
+def test_the_previous_owners_cookie_dies_with_a_new_claim(claimed_client, login):
+    cookie = login(claimed_client, *ADMIN)
+    device = Device(claimed_client.app.state.state)
+    device.unclaim(SetupCode.hash_code(SetupCode.generate()))
+    device.claim("newowner", "another pass 12", claimed_client.app.state.eula.version)
+    claimed_client.cookies.set(COOKIE_NAME, cookie)
+    assert verify(claimed_client, "/nr/", role="admin").status_code == 401
+
+
+def test_a_cookie_from_a_recreated_database_is_refused(claimed_client):
+    """A fresh state.sqlite would hand out id 1 again; the random first epoch still refuses the old cookie."""
+    admin = Users(claimed_client.app.state.state).by_username("admin")
+    for epoch in (0, 1):
+        if epoch != admin.session_epoch:
+            claimed_client.cookies.set(COOKIE_NAME, claimed_client.app.state.sessions.issue(admin.id, epoch))
+            assert verify(claimed_client).status_code == 401
 
 
 def test_login_sets_a_cookie_and_session_shows_the_user(claimed_client):

@@ -45,7 +45,11 @@ def refresh_if_old(request: Request, response: Response, user: User, claims: Ses
 
 
 def current_user(request: Request, response: Response) -> User:
-    """The logged-in user (401 `unauthenticated` without one). Re-issues an old cookie on the endpoint's response."""
+    """The logged-in user (401 `unauthenticated` without one). Re-issues an old cookie on the endpoint's response.
+
+    The re-issued cookie reaches the browser only when the endpoint lets FastAPI build the response (it returns
+    data, or None with a status_code). An endpoint that returns its own Response object must copy the cookie over.
+    """
     found = session_user(request)
     if found is None:
         raise ApiError(401, "unauthenticated", "Log in to continue.")

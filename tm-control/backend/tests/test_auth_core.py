@@ -148,6 +148,13 @@ def test_backoff_caps_at_five_minutes():
     assert b.check("k", now=0) == 300.0
 
 
+def test_backoff_survives_a_huge_failure_count():
+    b = Backoff()
+    for _ in range(2000):  # 2.0 ** 1996 would overflow a float
+        b.record_failure("k", now=0)
+    assert b.check("k", now=0) == 300.0
+
+
 def test_backoff_forgets_a_key_15_minutes_after_its_last_failure():
     b = Backoff()
     for _ in range(10):
@@ -235,13 +242,13 @@ def test_unclaim_removes_every_user_and_sets_a_new_code(state):
 def test_set_password_bumps_the_epoch(state):
     users = Users(state)
     user = users.create("viewer", "viewer pass 1", "viewer")
-    assert user.session_epoch == 0
+    first = user.session_epoch
     users.set_password(user.id, "viewer pass 2")
-    assert users.get(user.id).session_epoch == 1
+    assert users.get(user.id).session_epoch == first + 1
     assert users.authenticate("viewer", "viewer pass 2").id == user.id
     assert users.authenticate("viewer", "viewer pass 1") is None
     users.bump_epoch(user.id)
-    assert users.get(user.id).session_epoch == 2
+    assert users.get(user.id).session_epoch == first + 2
 
 
 def test_set_password_checks_the_rules(state):
@@ -249,7 +256,24 @@ def test_set_password_checks_the_rules(state):
     user = users.create("viewer", "viewer pass 1", "viewer")
     with pytest.raises(ApiError):
         users.set_password(user.id, "short")
-    assert users.get(user.id).session_epoch == 0
+    assert users.get(user.id).session_epoch == user.session_epoch
+
+
+def test_user_ids_are_never_reused(state):
+    users = Users(state)
+    users.create("first", "first pass 1", "admin")
+    second = users.create("second", "second pass 1", "viewer")
+    users.delete(second.id)
+    assert users.create("third", "third pass 1", "viewer").id > second.id
+    Device(state).unclaim(SetupCode.hash_code("WXYZ-2345"))  # deletes every user
+    assert Device(state).claim("owner", "owner pass 12", "1").id > second.id + 1
+
+
+def test_new_users_start_at_a_random_epoch(state):
+    users = Users(state)
+    epochs = {users.create(f"user{n}", "user pass 12", "viewer").session_epoch for n in range(4)}
+    assert len(epochs) == 4 and all(0 <= e < 2**62 for e in epochs)
+    assert Device(state).claim("owner", "owner pass 12", "1").session_epoch not in epochs
 
 
 def test_users_create_list_count_and_delete(state):

@@ -10,7 +10,7 @@ from pathlib import Path
 MIGRATIONS = [
     """
     CREATE TABLE users (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,  -- never reused: an old cookie or audit row never names a new user
         username TEXT NOT NULL UNIQUE COLLATE NOCASE,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL CHECK (role IN ('admin', 'viewer')),

@@ -73,5 +73,9 @@ def test_get_is_never_checked(claimed_client):
     assert claimed_client.get("/api/v1/auth/session", headers={"Origin": "http://evil.example"}).status_code == 200
 
 
+def test_unknown_api_paths_are_checked_before_routing(claimed_client):
+    assert_forbidden(claimed_client.post("/api/v1/nope", json={}))
+
+
 def test_paths_outside_the_api_are_not_checked(claimed_client):
     assert claimed_client.post("/logout").status_code == 405

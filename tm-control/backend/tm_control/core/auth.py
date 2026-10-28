@@ -5,7 +5,6 @@ Passwords and the setup code are hashed with argon2id and compared only through 
 """
 
 import base64
-import functools
 import hashlib
 import hmac
 import json
@@ -47,10 +46,9 @@ def verify_password(hash: str, password: str) -> bool:
         return False
 
 
-@functools.cache
-def _dummy_hash() -> str:
-    """A hash no password matches, verified for unknown usernames so they take as long as a wrong password."""
-    return hash_password(secrets.token_urlsafe(16))
+# A hash no password matches, verified for unknown usernames so they take as long as a wrong password. Made at
+# import, so the first such login doesn't also pay for hashing it.
+_DUMMY_HASH = hash_password(secrets.token_urlsafe(16))
 
 
 def check_password_rules(password: str) -> None:
@@ -187,7 +185,8 @@ class Backoff:
             count, last = self._failures.get(key, (0, now))
         if count < self.threshold or now - last >= self.FORGET_AFTER:
             return 0.0
-        wait = min(self.base ** (count - self.threshold + 1), self.cap)
+        exponent = min(count - self.threshold + 1, 32)  # past the cap long before; keeps base ** n from overflowing
+        wait = min(self.base ** exponent, self.cap)
         return max(0.0, last + wait - now)
 
     def record_failure(self, key: str, now: float) -> None:
@@ -283,10 +282,13 @@ def _not_found():
 def _insert_user(con, username: str, password_hash: str, role: str, created_at: str) -> User:
     if role not in ROLES:
         raise ValueError(f"unknown role {role!r}")
+    # A random first epoch, so a cookie from an earlier database (a deleted and recreated state.sqlite) never
+    # matches a new user. Bumps add 1.
+    epoch = secrets.randbits(62)
     try:
         cur = con.execute(
-            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
-            (username, password_hash, role, created_at),
+            "INSERT INTO users (username, password_hash, role, session_epoch, created_at) VALUES (?, ?, ?, ?, ?)",
+            (username, password_hash, role, epoch, created_at),
         )
     except sqlite3.IntegrityError:
         raise ApiError(409, "conflict", "That username is taken.") from None
@@ -317,7 +319,7 @@ class Users:
                 f"SELECT {_USER_COLUMNS}, password_hash FROM users WHERE username = ?", (username.lower(),)
             ).fetchone()
         if row is None:
-            verify_password(_dummy_hash(), password)
+            verify_password(_DUMMY_HASH, password)
             return None
         return _user(row) if verify_password(row["password_hash"], password) else None
 
