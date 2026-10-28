@@ -422,7 +422,7 @@ def test_tm_control_wrapper_runs_only_the_root_owned_copy():
     ast.parse(script)
 
 
-SECRETS = {"go2rtc_rtsp_password": "s3cret"}
+SECRETS = {"go2rtc_rtsp_password": "s3cret", "frigate_proxy_secret": "placeholder-secret"}
 CREDENTIALED_INPUT = "rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect"
 
 
@@ -471,6 +471,47 @@ def test_frigate_env_carries_the_go2rtc_credentials():
     assert "FRIGATE_GO2RTC_RTSP_USER=frigate" in lines
     assert "FRIGATE_GO2RTC_RTSP_PASSWORD=s3cret" in lines
     assert "FRIGATE_RTSP_PASSWORD=password" in lines  # operators' own variable is untouched
+
+
+def test_new_frigate_configs_use_proxy_auth():
+    """nginx logs people in and passes who they are; Frigate trusts that only with the proxy secret."""
+    config = yaml.safe_load(render("container/frigate/config/config.yml.j2", tmsetup_detectors={}))
+    assert config["auth"] == {"enabled": False}
+    assert config["proxy"] == {
+        "header_map": {"user": "x-forwarded-user", "role": "x-forwarded-groups"},
+        "auth_secret": "{FRIGATE_PROXY_AUTH_SECRET}",
+        "default_role": "viewer",
+        "logout_url": "/logout",
+    }
+    assert config["tls"] == {"enabled": False}
+
+
+def test_frigate_env_carries_the_proxy_secret():
+    lines = render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate",
+        tmsetup_secrets={"go2rtc_rtsp_password": "p", "frigate_proxy_secret": "s"}, tmsetup_mqtt_broker_login=NO_LOGIN,
+    ).splitlines()
+    assert "FRIGATE_PROXY_AUTH_SECRET=s" in lines
+
+
+def test_frigate_location_uses_the_authenticated_port_and_fixed_identity_headers():
+    """Frigate takes the role from X-Forwarded-Groups and also reads the Remote-* headers, so nginx sets the first
+    two from the login check and blanks the rest: a header the client sent never reaches Frigate."""
+    conf = location("frigate.conf")
+    assert "proxy_pass http://127.0.0.1:8971/;" in conf
+    assert "5000" not in conf
+    for header in [
+        "X-Proxy-Secret $tm_frigate_secret",
+        "X-Forwarded-User $tm_user",
+        "X-Forwarded-Groups $tm_role",
+        'Remote-User ""',
+        'Remote-Groups ""',
+        'Remote-Role ""',
+    ]:
+        assert f"proxy_set_header {header};" in conf
 
 
 def test_pod_starts_even_if_its_network_unit_fails_once():

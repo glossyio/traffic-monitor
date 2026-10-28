@@ -106,16 +106,38 @@ def test_frigate_credentials_skip_files_a_device_does_not_have_yet():
         "{{ tmsetup_codedir }}/frigate/frigate.env",
         "{{ tmsetup_codedir }}/frigate/config/config.yml",
     ]
-    env = tasks["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials to frigate.env"]
+    env = tasks["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
     migrate = tasks["TMSetup - Frigate Credentials - Update Frigate config from older installs"]
     assert env["when"] == "tmsetup_frigate_settings_stat_register.results[0].stat.exists"
     assert migrate["when"] == "tmsetup_frigate_settings_stat_register.results[1].stat.exists"
 
 
 def test_existing_frigate_env_gets_both_credentials_without_printing_them():
-    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials to frigate.env"]
+    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
     assert task["no_log"] is True
-    assert [item["key"] for item in task["loop"]] == ["FRIGATE_GO2RTC_RTSP_USER", "FRIGATE_GO2RTC_RTSP_PASSWORD"]
+    assert [item["key"] for item in task["loop"]][:2] == ["FRIGATE_GO2RTC_RTSP_USER", "FRIGATE_GO2RTC_RTSP_PASSWORD"]
+
+
+def test_existing_frigate_env_gets_the_proxy_secret_without_printing_it():
+    """-t frigate, -t revproxy, or any edge tag on a device whose frigate.env predates proxy auth (Review Focus 2)."""
+    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    assert task["no_log"] is True
+    item = next(item for item in task["loop"] if item["key"] == "FRIGATE_PROXY_AUTH_SECRET")
+    assert item["value"] == "{{ tmsetup_secrets['frigate_proxy_secret'] }}"
+    assert task["notify"] == "Restart frigate.service"
+
+
+def test_frigate_config_update_counts_added_settings_as_a_change():
+    """migrate prints "updated ..." for the camera inputs and "added proxy auth settings" alone when only those change."""
+    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Update Frigate config from older installs"]
+    changed_when = task["changed_when"]
+    for stdout, changed in [
+        ("tm-control migrate: /c.yml: up to date", False),
+        ("tm-control migrate: /c.yml: updated 1 camera input(s), added proxy auth settings (backup: /b)", True),
+        ("tm-control migrate: /c.yml: added proxy auth settings (backup: /b)", True),
+        ("tm-control migrate: /c.yml: updated 1 camera input(s) (backup: /b)", True),
+    ]:
+        assert evaluate("{{ %s }}" % changed_when, tmsetup_frigate_migrate_register={"stdout": stdout}) is changed
 
 
 def test_frigate_env_template_hides_its_diff():
