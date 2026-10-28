@@ -287,12 +287,10 @@ def test_reset_admin_then_claim(host, address, expect, tm_login):
         # other, because the unit is left without an admin.
         unclaimed = claim_again(host, address, tm_login, version, code)
         if unclaimed:
-            pytest.fail(unclaimed, pytrace=False)
-    try:
-        assert (rc, problem) == (0, None), "sudo tm-control reset-admin (exit code, problem); the unit is claimed again"
-    finally:
+            pytest.fail(unclaimed, pytrace=False)  # keeps the code file, which the message points to
         with host.sudo():
             host.check_output(f"rm -f {SETUP_CODE_FILE}")  # as tmsetup.sh does once the unit is claimed
+    assert (rc, problem) == (0, None), "sudo tm-control reset-admin (exit code, problem); the unit is claimed again"
     assert (redirect.status, redirect.headers.get("Location")) == (302, "/setup"), "/dashboard/ after reset-admin"
     dashboard = request_from_this_machine(address, "/dashboard/", cookie=session(address, username, password))
     assert dashboard.status == 200, f"/dashboard/ with the reclaimed admin's session answered {dashboard.status}"

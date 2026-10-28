@@ -147,7 +147,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
    - **200** with `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and for admins `X-TM-NR-Token`. nginx passes Frigate `X-Forwarded-User`/`X-Forwarded-Groups` and the secret as `X-Proxy-Secret`.
    - **401** → redirect to `/login?next=…`.
    - **403** → forbidden.
-3. verify also sends the user to `/setup` while the device is unclaimed and to `/welcome` until the EULA is accepted.
+3. verify also sends the user to `/setup` while the device is unclaimed and, until the EULA is accepted, an admin to `/welcome` and a viewer to `/waiting`.
 
 **In the location files** (#210's layout)
 - Two snippets carry the login check: `tm/snippets/auth-viewer.conf` and `tm/snippets/auth-admin.conf`. Each holds `auth_request` plus the identity headers.
@@ -305,7 +305,7 @@ tm-control/
 
 **Structure**
 - `App.vue`: the app bar and a responsive nav drawer.
-- `router.ts`: sends unclaimed devices to `/setup`, unaccepted EULAs to `/welcome`, and missing sessions to `/login`.
+- `router.ts`: sends unclaimed devices to `/setup`, unaccepted EULAs to `/welcome` (admins) or `/waiting` (viewers), and missing sessions to `/login`.
 - `api/`: the generated client.
 - `stores/session.ts`: the only Pinia store.
 - `modules/<name>/`: pages plus an `index.ts` that exports `{id, routes, nav, wizardSteps}`. `modules/index.ts` collects them.
@@ -524,7 +524,7 @@ Keep device names and addresses out of the PR.
 
 *M2*
 - Claiming works with the setup code, and a wrong code is rate-limited.
-- `/frigate/` redirects to `/welcome` before the EULA is accepted.
+- `/frigate/` redirects an admin to `/welcome` and a viewer to `/waiting` before the EULA is accepted.
 - After logging in on iPhone Safari, Frigate live view and Dashboard 2.0 live updates work.
 - The Node-RED editor opens without a second login.
 - A viewer gets 403 on `/nr/`, `/feeds/`, and `/storefiles`.

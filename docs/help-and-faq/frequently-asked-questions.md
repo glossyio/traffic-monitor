@@ -22,6 +22,10 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
     Without an AI accelerator, Frigate detects on the CPU and can't keep up with a busy road. [Hardware](../build-your-own-device-diy/recommended-hardware.md#ai-accelerator) lists the supported accelerators. If you added one after installing, see [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). With an accelerator, see [Tune object detection](../configuration/frigate-config.md).
 
+??? question "The home page opens on a computer but not on an Android phone"
+
+    On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (**Settings > Apps > Chrome**, for example), allow **Nearby devices** or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone.
+
 ??? question "The first install seems stuck"
 
     Building Frigate's container image compiles ffmpeg on the device, which takes about 20 minutes with little output. Leave it running. The whole first install takes 30 minutes or more.

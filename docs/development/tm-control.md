@@ -43,7 +43,7 @@ browser ──GET /frigate/──▶ nginx (port 80)
        ▼                     ▼                          ▼                          ▼
   200 + identity       401 + X-TM-Redirect         403 forbidden        no answer (down, timeout)
   headers               (/setup, /login?next=…,     nginx returns 403    nginx returns 503 with
-       │                 or /welcome)                                    the rescue page
+       │                 /welcome, or /waiting)                          the rescue page
        │                nginx answers 302
        ▼
   nginx proxies to the app, adding the headers that app needs
@@ -86,7 +86,7 @@ Rules live in the backend; the UI shows what the API returns and posts what the 
 
 ### Root jobs
 
-tm-control never runs as root and never uses sudo. polkit lets its user start, stop, and restart a fixed list of units (`tmsetup_tm_control_polkit` in the role's `vars/main.yml`), and that's all. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. The one job so far, `system-password`, sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0, and `tmsetup.sh` refuses to run as root, so the installing user is never root.
+tm-control never runs as root and never uses sudo. polkit lets its user start, stop, and restart a fixed list of units (`tmsetup_tm_control_polkit` in the role's `vars/main.yml`), and that's all. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. The one job so far, `system-password`, sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts.
 
 ## Run it on a laptop
 

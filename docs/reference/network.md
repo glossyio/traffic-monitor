@@ -4,7 +4,7 @@ description: The network ports a Traffic Monitor opens, and the login the camera
 
 # Network ports
 
-Other computers reach the Traffic Monitor's apps through the [home page](../use/home-page.md) on port 80. The apps themselves listen only on the device itself (loopback), and so does the control app, on port 8090.
+Other computers reach the Traffic Monitor's apps through the [home page](../use/home-page.md) on port 80. The apps themselves, and the control app on port 8090, listen only on the device itself (loopback). The ports in the table below are the ones other computers can reach.
 
 | Port | Used for |
 |---|---|

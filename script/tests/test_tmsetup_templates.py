@@ -72,6 +72,7 @@ def test_revproxy_keeps_retrying_while_port_80_is_still_taken():
     assert "StartLimitIntervalSec=300" in unit_section
     assert "StartLimitBurst=20" in unit_section
     assert "StartLimitIntervalSec=0" not in unit
+    assert "RestartSec=5" in unit
 
 
 def test_revproxy_starts_after_tm_control_but_not_only_with_it():
@@ -83,7 +84,6 @@ def test_revproxy_starts_after_tm_control_but_not_only_with_it():
     hard = ("Requires=", "Requisite=", "BindsTo=", "PartOf=")
     assert not [line for line in unit if line.startswith(hard)]
     assert not [line for line in unit_section if "traffic-monitor" in line or ".pod" in line]  # nothing on the pod
-    assert "RestartSec=5" in unit
 
 
 @pytest.mark.parametrize("name", LOCATIONS)

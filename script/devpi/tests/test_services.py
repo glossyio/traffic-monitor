@@ -47,12 +47,14 @@ def test_plate_recognizer_absent_on_pii_free_unit(host, expect):
 
 
 def test_ui_build_unit_finished(host):
-    """The revproxy image, which builds tm-control's UI, was built by its Quadlet build unit, which then stays
-    active (exited)."""
-    output = host.check_output("systemctl show -p ActiveState -p SubState revproxy-build.service")
+    """The revproxy image, which builds tm-control's UI, was built by its Quadlet build unit. The unit doesn't remain
+    active after it exits, so this checks its last run: it ran, exited 0, and systemd counted it a success."""
+    output = host.check_output(
+        "systemctl show -p Result -p ExecMainStatus -p ExecMainExitTimestamp revproxy-build.service")
     state = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
-    found = (state.get("ActiveState"), state.get("SubState"))
-    assert found == ("active", "exited"), f"revproxy-build.service is {found}"
+    assert state.get("ExecMainExitTimestamp"), "revproxy-build.service hasn't run since boot"
+    found = (state.get("Result"), state.get("ExecMainStatus"))
+    assert found == ("success", "0"), f"revproxy-build.service's last run (result, exit status) is {found}"
 
 
 # tm-control runs as the code owner, and polkit lets that user start, stop, and restart only the units in
