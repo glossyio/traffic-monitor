@@ -535,12 +535,16 @@ def mqtt_lines(text):
     return [line for line in text.splitlines() if "MQTT_" in line and not line.startswith("#")]
 
 
-def node_red_env(login):
-    return mqtt_lines(render(
+def render_node_red_env(login):
+    return render(
         "container/node-red-tm/node-red-tm.env.j2",
         ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
-        tmsetup_mqtt_broker_login=login,
-    ))
+        tmsetup_mqtt_broker_login=login, tmsetup_secrets={"node_red_token_key": "placeholder-token-key"},
+    )
+
+
+def node_red_env(login):
+    return mqtt_lines(render_node_red_env(login))
 
 
 def frigate_env(login):
@@ -564,6 +568,20 @@ def test_env_templates_without_a_login():
     assert "TM_MQTT_BROKER_USERNAME=" in node_red_env(NO_LOGIN)
     assert "TM_MQTT_BROKER_PASSWORD=" in node_red_env(NO_LOGIN)
     assert "FRIGATE_MQTT_USER=mqtt_user" in frigate_env(NO_LOGIN)
+
+
+def test_node_red_env_template_carries_the_token_key():
+    """settings.js reads TM_NR_TOKEN_KEY to check the editor login nginx passes on."""
+    lines = render_node_red_env(NO_LOGIN).splitlines()
+    key = lines.index("TM_NR_TOKEN_KEY=placeholder-token-key")
+    assert lines[key - 1].startswith("# ")
+    assert lines[key - 2].startswith("NODE_RED_CREDENTIAL_SECRET=")
+
+
+def test_nodered_location_passes_the_proxy_token():
+    """The admin snippet sets $tm_nr_token only for admins; setting the header also replaces one a client sent."""
+    conf = location("nodered.conf")
+    assert "proxy_set_header x-tm-nr-token $tm_nr_token;" in conf
 
 
 TM_CONTROL_TEMPLATES = "script/ansible/roles/tmsetup/templates/tm-control"

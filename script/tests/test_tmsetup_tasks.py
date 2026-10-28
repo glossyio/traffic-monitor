@@ -236,6 +236,28 @@ def test_node_red_env_template_hides_its_diff():
     assert task["diff"] is False
 
 
+def test_node_red_token_key_is_written_on_every_run_without_printing_it():
+    """A node-red-tm.env from before the proxy login has no TM_NR_TOKEN_KEY, and -t node-red-tm doesn't rewrite
+    the file without -f, so the key goes in on its own (Review Focus 4). A changed key restarts Node-RED."""
+    tasks = load_role_yaml("tasks/node-red-tm_setup.yml")
+    names = [task["name"] for task in tasks]
+    (key,) = [task for task in tasks if task.get("ansible.builtin.lineinfile", {}).get("regexp") == "^TM_NR_TOKEN_KEY="]
+    stat = tasks[names.index("TMSetup - Node-RED-TM Setup - Check for node-red-tm.env")]
+    assert stat["ansible.builtin.stat"]["path"] == "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env"
+    assert key["when"] == f"{stat['register']}.stat.exists"
+    assert key["no_log"] is True
+    assert key["become"] is True
+    assert key["notify"] == "Restart node-red-tm.service"
+    assert key["ansible.builtin.lineinfile"]["path"] == "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env"
+    assert key["ansible.builtin.lineinfile"]["line"] == "TM_NR_TOKEN_KEY={{ tmsetup_secrets['node_red_token_key'] }}"
+    assert "loop" not in key and "tags" not in key
+    quadlets = names.index("TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red")
+    assert names.index(stat["name"]) < names.index(key["name"]) < quadlets
+    main = load_role_yaml("tasks/main.yml")
+    setup = next(task for task in main if task.get("ansible.builtin.import_tasks", {}).get("file") == "node-red-tm_setup.yml")
+    assert "node-red-tm" in setup["tags"]
+
+
 def test_installer_says_when_an_update_closes_mqtt_to_the_network():
     tasks = mqtt_broker_tasks()
     stat = tasks["TMSetup - MQTT Broker - Check for the installed pod unit"]

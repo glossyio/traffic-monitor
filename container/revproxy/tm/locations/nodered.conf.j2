@@ -3,4 +3,6 @@ location /nr/ {
     proxy_pass http://127.0.0.1:1880/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
     include /etc/nginx/tm/snippets/auth-admin.conf;
+    # The editor's login: tm-control's token for admins. Setting it here also replaces one a client sent.
+    proxy_set_header x-tm-nr-token $tm_nr_token;
 }
