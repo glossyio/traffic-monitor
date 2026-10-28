@@ -12,4 +12,7 @@ class Module:
     root_router: APIRouter | None = None  # mounted at the app root, for the few non-API paths such as GET /logout
 
 
-MODULES: list[Module] = []
+# The modules import Module from here, so they come after it.
+from tm_control.modules import auth  # noqa: E402
+
+MODULES: list[Module] = [auth.module]

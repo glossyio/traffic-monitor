@@ -25,12 +25,13 @@ HTTP_STATUS_CODES = {
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str, detail=None):
+    def __init__(self, status: int, code: str, message: str, detail=None, headers: dict[str, str] | None = None):
         super().__init__(message)
         self.status = status
         self.code = code
         self.message = message
         self.detail = detail
+        self.headers = headers  # such as Retry-After on a 429
 
 
 def error_response(status, code, message, detail=None, headers=None):
@@ -45,7 +46,7 @@ def _log(request, exc, status):
 
 async def _api_error(request, exc: ApiError):
     _log(request, exc, exc.status)
-    return error_response(exc.status, exc.code, exc.message, exc.detail)
+    return error_response(exc.status, exc.code, exc.message, exc.detail, headers=exc.headers)
 
 
 async def _validation_error(request, exc: RequestValidationError):

@@ -25,7 +25,7 @@ def test_errors_use_one_shape(client):
 
 
 def test_method_not_allowed_uses_the_shape(client):
-    r = client.post("/api/v1/health")
+    r = client.post("/api/v1/health", json={}, headers={"Origin": "http://tm-test.local"})  # passes the CSRF check
     assert r.status_code == 405 and r.json()["error"]["code"] == "method_not_allowed"
 
 
@@ -66,7 +66,11 @@ def test_module_routers_mount_and_render_errors(settings, monkeypatch):
     assert client.get("/api/v1/thing").status_code == 409
     assert client.get("/logout").json() == {"bye": True}
 
-    r = client.post("/api/v1/thing", json={"password": 12345, "other": "placeholder-password"})
+    r = client.post(
+        "/api/v1/thing",
+        json={"password": 12345, "other": "placeholder-password"},
+        headers={"Origin": "http://tm-test.local"},
+    )
     assert r.status_code == 422 and r.json()["error"]["code"] == "validation"
     assert "placeholder-password" not in r.text and "12345" not in r.text
 
