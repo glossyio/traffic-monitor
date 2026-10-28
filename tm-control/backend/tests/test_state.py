@@ -70,6 +70,22 @@ def test_usernames_are_unique_ignoring_case(tmp_path):
         _add_user(con, "Admin")
 
 
+def test_deleting_a_user_keeps_their_eula_acceptance_and_jobs(tmp_path):
+    con = _migrated(tmp_path).connect()
+    _add_user(con, "admin")
+    user_id = con.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()[0]
+    with con:
+        con.execute("INSERT INTO eula_acceptances (version, accepted_at, user_id) VALUES ('1', ?, ?)", (NOW, user_id))
+        con.execute(
+            "INSERT INTO jobs (id, name, requested_by, requested_at, status) VALUES ('j1', 'x', ?, ?, 'succeeded')",
+            (user_id, NOW),
+        )
+    with con:
+        con.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    assert [tuple(row) for row in con.execute("SELECT version, user_id FROM eula_acceptances")] == [("1", None)]
+    assert [tuple(row) for row in con.execute("SELECT id, requested_by FROM jobs")] == [("j1", None)]
+
+
 def test_jobs_refer_to_existing_users(tmp_path):
     con = _migrated(tmp_path).connect()
     with pytest.raises(sqlite3.IntegrityError), con:

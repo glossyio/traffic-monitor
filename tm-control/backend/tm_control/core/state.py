@@ -23,12 +23,12 @@ MIGRATIONS = [
         id INTEGER PRIMARY KEY,
         version TEXT NOT NULL,
         accepted_at TEXT NOT NULL,
-        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL  -- kept as device history when the user goes
     );
     CREATE TABLE jobs (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        requested_by INTEGER REFERENCES users(id),
+        requested_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
         requested_at TEXT NOT NULL,
         finished_at TEXT,
         status TEXT NOT NULL
