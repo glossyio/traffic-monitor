@@ -17,6 +17,27 @@
 
 **Status:** written 2026-10-27 against `dev` at `127d242` (the #224 merge). The maintainer approved all 14 decisions below on 2026-10-27. Implementation started the same day on `feature/tm-control-core-login/201`, which carries this file at `design/plans/2026-10-27-tm-control-m2-core-and-login.md`. Task 0 found `dev` still at `127d242`, the off-device baseline at 257 passing tests, and every pinned version current.
 
+**Changed during implementation** (the tasks below are corrected to match; each item is in the code and tested):
+- State migration 1: `users.id` is `AUTOINCREMENT`, each new user starts at a random `session_epoch` (`secrets.randbits(62)`), and `eula_acceptances.user_id` and `jobs.requested_by` are nullable with `ON DELETE SET NULL`, because unclaiming deletes every user. The API's user objects leave out `session_epoch`.
+- State migration 2 adds `jobs.prior_invocation` and `jobs.invocation`. Job status follows the unit's InvocationID, and after systemd unloads a finished oneshot, PID 1's journal entries (`INVOCATION_ID`, `JOB_RESULT`). Status only moves forward, a final status is written once, a stale request file is cleared, and a failed `systemctl start` marks the job failed.
+- Error codes `internal` (unhandled 500) and `error` (unmapped statuses) join the list.
+- Usernames are lowercased on input; the `[a-z0-9._-]{3,32}` rule applies to the lowercased form.
+- Login backoff: a key is forgotten 15 minutes after its last failure, a successful login clears both keys, and a failure is recorded before the password check. Wrong passwords for one account make that account wait up to 5 minutes from any address; existing sessions keep working. Claim and the account password change use the same pattern.
+- verify needs `X-TM-Required-Role` and the exact path `/api/v1/auth/verify`, or answers 404. `next` is percent-encoded. The rolling refresh re-issues the cookie from verify (nginx passes it through) and from API calls.
+- The state commands (`claim-status`, `set-setup-code`, `reset-admin`) drop to the state directory's owner when run as root; `reset-admin` writes the setup-code file (0600) as root first. New commands: `tm-control dump-openapi` and `tm-control fake-reset` (fake mode only).
+- `GET /api/v1/setup/status` also returns the home-page theme, so setup and login use the device's colors. Fake mode keeps state in `./.tm-control-fake/` and reports the hostname `tm-fake`.
+- The UI's response types are hand-written; the routers don't declare response models yet (follow-up).
+- The edge tag set `[podman, frigate, node-red-tm, go2rtc, revproxy, tm-control]` renders the pod, revproxy, the broker login, tm-control, Frigate's credentials and proxy settings, and Start Services together.
+- `polkitd` joins `tmsetup_packages`, and `rsync` doesn't. `tm-control.service` has `SupplementaryGroups=systemd-journal`; the job unit has `StartLimitIntervalSec=0`. Any change to tm-control's code, requirements, wrapper, units, job script, or manifest restarts it.
+- The setup code is generated with `community.general.random_string` straight into the root-only file, given to tm-control on stdin on every unclaimed run, printed by the end-of-run notice, and removed once the device is claimed.
+- `defaults/main.yml`'s `link_hover_text` typo (`#8895a7S`) is fixed.
+- The UI sources reach the device as an archive of the files git lists under `tm-control/ui` (built on the controller, unpacked with become), not with `synchronize`. `revproxy-build.service` restarts when the Containerfile, `.containerignore`, or UI sources change.
+- The UI is built into the image at `/usr/share/nginx/ui`, outside the bind-mounted `html/`. `index.html` is served `no-cache`, and missing hashed `/assets/` files are a 404.
+- nginx: only the login check's own failure becomes the rescue page (`error_page 500 =503`); the verify guard is `location ^~ /api/v1/auth/verify { return 404; }`; `/api/` clears `X-TM-Required-Role`; `absolute_redirect off`; the check sends no `Authorization` header and uses `proxy_method GET`; both auth snippets pass verify's refreshed cookie through.
+- `tm-control migrate` adds `auth: {enabled: false}` only when there's no unsafe `proxy:` section; next to one, it leaves Frigate's own login on and warns by key path only. The Ansible task reports a change unless the output ends in `: up to date`.
+- `verifyProxyToken` in `settings.js` refuses every token when the key is empty or the time isn't a finite number.
+- Task 1's spikes held: Node-RED 5.0.8 honors the token header on the admin API and on the `/comms` upgrade, and Frigate 0.18.1 serves a request with only the secret as `default_role` viewer, so nginx always sends both forwarded headers.
+
 **Where M1 left things (from the M1 plan's Status):**
 - Everything M1 planned is on `dev`: loopback pod ports, revproxy on the host network, `/feeds/` view-only, `/storefiles`, go2rtc RTSP credentials, the broker login, #232's pod ordering, device secrets (`tasks/secrets.yml`, one secret so far), and the `tm-control` package with `migrate` installed root-owned under `/usr/local/lib/traffic-monitor/tm-control` with its venv. `files/tm-control` is already a symlink to the top-level `tm-control/`.
 - Still open from M1's Pi plan: the person-only items (`/feeds/` on an iPhone, `/frigate/` live, `/dashboard/` live, the Node-RED watch test). Task 12 repeats the ones M2 changes.
@@ -29,8 +50,8 @@
 
 1. **Frigate's identity headers are `X-Forwarded-User` and `X-Forwarded-Groups`**, not `X-TM-User`/`X-TM-Role`. Frigate 0.18.1 accepts only a fixed list of trusted proxy headers (`Remote-User`, `Remote-Groups`, `X-Forwarded-User`, `X-Forwarded-Groups`, …) unless its nginx config is replaced. `X-TM-*` stay as the headers between nginx and tm-control. nginx also blanks `Remote-User`, `Remote-Groups`, and `Remote-Role` on the way to Frigate, so a client can't carry its own.
 2. **Frigate's proxy secret reaches nginx through the verify response** (`X-TM-Frigate-Secret`), which nginx copies into `X-Proxy-Secret`. So no secret is written into an nginx file, and `revproxy_setup.yml` keeps showing its diffs.
-3. **The UI is built inside the `revproxy` image** (multi-stage Containerfile: `node:22.23.4-alpine` builds, `nginx:1.31.0` serves) instead of a throwaway container writing `ui-dist` under `{{ tmsetup_codedir }}`. Same result, no new mechanism: the `.build` unit, Podman's layer cache ("only when sources change"), and `nginx -t` already exist. A failed UI build fails the build unit, and the running proxy keeps its old image. The UI sources reach the device with `ansible.posix.synchronize`, excluding `node_modules` and `dist`.
-4. **`verify` stays at `/api/v1/auth/verify`** as the spec says, and the `/api/` location returns 404 for that exact path, so only nginx's internal `/_auth` locations reach it.
+3. **The UI is built inside the `revproxy` image** (multi-stage Containerfile: `node:22.23.4-alpine` builds, `nginx:1.31.0` serves) instead of a throwaway container writing `ui-dist` under `{{ tmsetup_codedir }}`. Same result, no new mechanism: the `.build` unit, Podman's layer cache ("only when sources change"), and `nginx -t` already exist. A failed UI build fails the build unit, and the running proxy keeps its old image. The UI sources reach the device as an archive of the files git lists under `tm-control/ui`, built on the controller and unpacked with become, so `node_modules` and `dist` never travel.
+4. **`verify` stays at `/api/v1/auth/verify`** as the spec says. A prefix location, `location ^~ /api/v1/auth/verify { return 404; }`, refuses it from the network (an exact match would miss `verify%0A`), `/api/` clears `X-TM-Required-Role`, and verify answers 404 without that header, so only nginx's internal `/_auth` locations reach it.
 5. **The setup code follows the spec's two halves:** tmsetup writes the plain code to `/etc/traffic-monitor/setup-code` (root, 0600) and pushes its hash into tm-control's state through `tm-control set-setup-code`, run as `tmadmin` with `runuser`, on every run while the device is unclaimed. `sudo tm-control reset-admin` writes the root file first, then drops to `tmadmin` for the state change. tm-control stays the only writer of `state.sqlite`.
 6. **Jobs are polled in M2.** `GET /api/v1/jobs/{id}` returns the status and the journal lines. The spec's SSE log stream comes with M3's longer jobs.
 7. **One admin, any number of viewers.** Admins create, delete, and reset viewer accounts. A second admin isn't needed until someone asks.
@@ -267,14 +288,15 @@ git commit -m "Record the Node-RED token header and Frigate proxy auth spikes fo
 
 **State schema (migration 1):**
 ```sql
-CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('admin','viewer')),
-  session_epoch INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+  session_epoch INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);  -- inserts set a random epoch (randbits(62))
 CREATE TABLE device (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- setup_code_hash, claimed_at
 CREATE TABLE eula_acceptances (id INTEGER PRIMARY KEY, version TEXT NOT NULL, accepted_at TEXT NOT NULL,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL);
-CREATE TABLE jobs (id TEXT PRIMARY KEY, name TEXT NOT NULL, requested_by INTEGER REFERENCES users(id),
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL);
+CREATE TABLE jobs (id TEXT PRIMARY KEY, name TEXT NOT NULL, requested_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   requested_at TEXT NOT NULL, finished_at TEXT, status TEXT NOT NULL);
+-- Migration 2: ALTER TABLE jobs ADD COLUMN prior_invocation TEXT; ALTER TABLE jobs ADD COLUMN invocation TEXT;
 CREATE TABLE audit (id INTEGER PRIMARY KEY, at TEXT NOT NULL, user_id INTEGER, action TEXT NOT NULL, detail TEXT);
 ```
 
@@ -373,12 +395,12 @@ git commit -m "Add tm-control's core: settings, versioned state database, secret
   - `NodeRedToken(key: str)`: `.mint(username: str, role: str, now=None, ttl: int = 300) -> str`, `.verify(token: str, now=None) -> dict | None`. Format: `base64url(json.dumps({"u", "r", "exp"}, separators=(",", ":")))` + `.` + `base64url(hmac_sha256(key, body))`, both without `=` padding.
   - `Backoff(threshold: int = 5, base: float = 2.0, cap: float = 300.0)`: `.check(key: str, now) -> float` (seconds to wait, 0 when allowed), `.record_failure(key, now)`, `.reset(key)`. After `threshold` failures the wait is `base ** (failures - threshold + 1)` seconds, capped.
   - `SetupCode`: `generate() -> str` (8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, formatted `XXXX-XXXX`), `normalize(text) -> str` (uppercase, hyphens and spaces removed), `hash_code(code) -> str` (argon2 of the normalized code), `verify_code(hash, code) -> bool`.
-  - `Users(state: State)`: `.count_admins() -> int`, `.get(user_id) -> User | None`, `.by_username(username) -> User | None`, `.create(username, password, role) -> User`, `.delete(user_id)`, `.set_password(user_id, password)` (also bumps epoch), `.bump_epoch(user_id)`, `.list() -> list[User]`. `User` is a pydantic model `{id, username, role, session_epoch, created_at}`.
+  - `Users(state: State)`: `.count_admins() -> int`, `.get(user_id) -> User | None`, `.by_username(username) -> User | None`, `.create(username, password, role) -> User`, `.delete(user_id)`, `.set_password(user_id, password)` (also bumps epoch), `.bump_epoch(user_id)`, `.list() -> list[User]`. `User` is a pydantic model `{id, username, role, session_epoch, created_at}`; serialization leaves out `session_epoch`.
   - `Device(state: State)`: `.is_claimed() -> bool` (an admin exists), `.setup_code_hash() -> str | None`, `.set_setup_code_hash(hash)`, `.clear_setup_code()`, `.claim(username, password, eula_version, now) -> User` (one transaction: create the admin, record the acceptance, clear the hash, set `claimed_at`), `.unclaim(new_code_hash)` (delete every user, bump nothing else needed, set the new hash, clear `claimed_at`), `.eula_accepted(version) -> bool`, `.accept_eula(version, user_id, now)`.
   - `Audit(state)`: `.record(user_id: int | None, action: str, detail: str | None = None)`.
 - Produces, in `modules/auth/deps.py`: FastAPI dependencies `current_user(request) -> User` (401 `unauthenticated` when missing or invalid), `require_admin(user) -> User` (403 `forbidden`), `client_ip(request) -> str`.
 - Produces, in `modules/auth/router.py` (prefix `/auth`):
-  - `GET /verify`: reads `X-Original-URI`, `X-TM-Required-Role` (`viewer` default), the cookie. Order: unclaimed → 401 with `X-TM-Redirect: /setup`; no valid session → 401 with `X-TM-Redirect: /login?next=<safe uri>`; EULA not accepted for the current version → admin 401 with `/welcome`, viewer 403; role below required → 403; else 200 with `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and for admins `X-TM-NR-Token`. The safe uri keeps only a path that starts with one `/` (not `//`) and its query; anything else becomes `/`.
+  - `GET /verify`: reads `X-Original-URI`, `X-TM-Required-Role` (required: `viewer` or `admin`; without it, or on any path other than exactly `/api/v1/auth/verify`, 404), the cookie. Order: unclaimed → 401 with `X-TM-Redirect: /setup`; no valid session → 401 with `X-TM-Redirect: /login?next=<safe uri>`; EULA not accepted for the current version → admin 401 with `/welcome`, viewer 403; role below required → 403; else 200 with `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and for admins `X-TM-NR-Token`. The safe uri keeps only a path that starts with one `/` (not `//`) and its query; anything else becomes `/`.
   - `POST /login {username, password}` → 200 `{user}` and the cookie; 401 `unauthenticated` on a wrong login (same message for unknown user and wrong password); 429 `rate_limited` with `Retry-After` when backoff applies (checked before the password); 409 `not_claimed` when no admin exists. Failures are logged at WARNING with the IP and the username, never the password.
   - `POST /logout` → 204 and clears the cookie. `GET /logout` (the module's `root_router`, so it's at the app root, not under `/api/v1`) → 302 to `/login` and clears the cookie; this is Frigate's `logout_url`.
   - `POST /logout-everywhere` → 204; bumps the user's epoch and clears the cookie.
@@ -651,7 +673,7 @@ git commit -m "Add tm-control's job runner, the system-password root job, and th
 - Modify: `script/ansible/roles/tmsetup/tasks/start_services.yml` (`tm-control.service` before `revproxy.service`)
 - Modify: `script/ansible/roles/tmsetup/handlers/main.yml` (`Restart tm-control.service`)
 - Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`tmsetup_secret_names`, `tmsetup_tm_control_port: 8090`, `tmsetup_libexec_dir: /usr/local/libexec/traffic-monitor`, `tmsetup_tm_control_polkit`, `tmsetup_etc_dir: /etc/traffic-monitor`)
-- Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`rsync` in `tmsetup_packages`, for Task 10)
+- Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`polkitd` in `tmsetup_packages`)
 - Test: `script/tests/test_tmsetup_templates.py`, `script/tests/test_tmsetup_tasks.py`
 
 **Interfaces:**
@@ -712,7 +734,7 @@ polkit.addRule(function (action, subject) {
 2. `Check whether the device is claimed`: `runuser -u {{ tmsetup_codeowner }} -- /usr/local/bin/tm-control claim-status`, `changed_when: false`, register `tmsetup_tm_control_claim_register`.
 3. `Check for the setup code file`: stat `{{ tmsetup_etc_dir }}/setup-code`.
 4. `Remove the setup code once the device is claimed`: `file: absent` when stdout is `claimed`.
-5. `Generate a setup code` (`no_log`, when unclaimed and the file is missing): `set_fact` with `lookup('community.general.random_string', length=8, override_all='ABCDEFGHJKLMNPQRSTUVWXYZ23456789')` formatted `XXXX-XXXX`; `copy` it to the file, `owner: root`, `group: root`, `mode: '0600'`.
+5. `Generate a setup code` (`no_log`, when unclaimed and the file is missing): `copy` with `content` from two `lookup('community.general.random_string', length=4, override_all='ABCDEFGHJKLMNPQRSTUVWXYZ23456789')` joined as `XXXX-XXXX`, straight into the file, `force: false`, `owner: root`, `group: root`, `mode: '0600'`.
 6. `Read the setup code` (`no_log`, when unclaimed): `slurp` the file.
 7. `Give tm-control the setup code` (`no_log`, when unclaimed): `command` `runuser -u … -- /usr/local/bin/tm-control set-setup-code` with `stdin: "{{ code }}"`, `changed_when: false`. Runs on every unclaimed run, so a run that wrote the file but failed before this step is repaired by the next one.
 8. At the end of `main.yml`, after `Start Services`, under the edge tags: `Show the setup code` (`debug`, when unclaimed): `This device isn't claimed yet. Open http://{{ ansible_facts['hostname'] }}.local/ (or its IP address) and enter the setup code {{ code }} to create the administrator account. The code works once.`
@@ -800,16 +822,20 @@ git commit -m "Install tm-control as a sandboxed host service with polkit rules,
 **Snippet `auth-viewer.conf.j2`** (`auth-admin.conf.j2` is identical except `auth_request /_auth_admin;`):
 ```nginx
 # Login check for app paths. tm-control answers 200 with the identity headers, 401 (go log in, or
-# set the device up), or 403. If tm-control is down, nginx's own 500 becomes the rescue page;
-# an app's own error pages pass through unchanged (proxy_intercept_errors is off).
+# set the device up), or 403. When tm-control is down or times out, auth_request turns the check's
+# 502 or 504 into a 500, and only that 500 becomes the rescue page. An app's own outage keeps
+# nginx's normal 502/504, and an app's own error pages pass through (proxy_intercept_errors is off).
 auth_request /_auth;
 auth_request_set $tm_user $upstream_http_x_tm_user;
 auth_request_set $tm_role $upstream_http_x_tm_role;
 auth_request_set $tm_nr_token $upstream_http_x_tm_nr_token;
 auth_request_set $tm_frigate_secret $upstream_http_x_tm_frigate_secret;
 auth_request_set $tm_redirect $upstream_http_x_tm_redirect;
+# Pass on tm-control's rolling session refresh, which auth_request would drop
+auth_request_set $tm_set_cookie $upstream_http_set_cookie;
+add_header Set-Cookie $tm_set_cookie;
 error_page 401 = @tm_login;
-error_page 500 502 503 504 =503 /unavailable.html;
+error_page 500 =503 /unavailable.html;
 ```
 
 **`tm-control-auth.conf.j2`:**
@@ -818,8 +844,10 @@ error_page 500 502 503 504 =503 /unavailable.html;
 location = /_auth {
     internal;
     proxy_pass http://127.0.0.1:{{ tmsetup_tm_control_port }}/api/v1/auth/verify;
+    proxy_method GET;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
+    proxy_set_header Authorization "";   # Cockpit's Basic login stays out of tm-control
     proxy_set_header X-Original-URI $request_uri;
     proxy_set_header X-TM-Required-Role viewer;
 }
@@ -834,13 +862,14 @@ location /api/ {
     proxy_pass http://127.0.0.1:{{ tmsetup_tm_control_port }}/api/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
     proxy_buffering off;
+    proxy_set_header X-TM-Required-Role "";
 }
-# Only nginx's internal /_auth locations may call verify
-location = /api/v1/auth/verify { return 404; }
+# Only nginx's internal /_auth locations may call verify. A prefix match, not =, so verify%0A can't slip past.
+location ^~ /api/v1/auth/verify { return 404; }
 location = /logout { proxy_pass http://127.0.0.1:{{ tmsetup_tm_control_port }}/logout; include /etc/nginx/tm/snippets/proxy-common.conf; }
 ```
 
-**`tm-control-ui.conf.j2`:** `location / { root /usr/share/nginx/html/ui; try_files $uri $uri/ /index.html; }` with a comment that the UI is built into the image (Task 10) and that login and setup pages must stay open.
+**`tm-control-ui.conf.j2`:** `location / { root /usr/share/nginx/ui; try_files $uri $uri/ /index.html; add_header Cache-Control "no-cache" always; }` and `location /assets/ { root /usr/share/nginx/ui; try_files $uri =404; }` (cached for good), with a comment that the UI is built into the image (Task 10) outside the bind-mounted `html/`, and that login and setup pages must stay open. `nginx.conf.j2` sets `absolute_redirect off;`, so login redirects keep the browser's port.
 
 **`unavailable.html.j2`:** a static page: "The Traffic Monitor's control app isn't answering, so the apps can't check your login. Open Cockpit at `http://<hostname>:9090/`, log in with your Raspberry Pi user account, and start `tm-control.service`, or over SSH run `sudo systemctl restart tm-control.service`." Uses the homepage colors; no JavaScript.
 
@@ -854,12 +883,12 @@ SNIPPETS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_snippets"]
 APP_LOCATIONS = {"cockpit.conf": "auth-admin", "dashboard.conf": "auth-viewer", "frigate.conf": "auth-viewer", "go2rtc.conf": "auth-admin", "legacy-ui.conf": "auth-viewer", "nodered.conf": "auth-admin", "storefiles.conf": "auth-admin"}
 def test_every_app_location_includes_exactly_one_auth_snippet(): for name, snippet in APP_LOCATIONS.items(): conf = location(name); assert conf.count("/etc/nginx/tm/snippets/auth-") == 1 and f"snippets/{snippet}.conf" in conf, name
 def test_tm_control_locations_are_listed_and_the_home_page_is_gone(): assert {"tm-control-ui.conf", "tm-control-api.conf", "tm-control-auth.conf"} <= set(LOCATIONS); assert "location / " not in render("container/revproxy/nginx.conf.j2")
-@pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"]) def test_auth_snippets_set_every_identity_variable_and_the_error_pages(name): s = render(f"container/revproxy/tm/snippets/{name}.j2"); for v in ["tm_user", "tm_role", "tm_nr_token", "tm_frigate_secret", "tm_redirect"]: assert f"auth_request_set ${v} $upstream_http_x_{v};" in s; assert "error_page 401 = @tm_login;" in s and "error_page 500 502 503 504 =503 /unavailable.html;" in s
+@pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"]) def test_auth_snippets_set_every_identity_variable_and_the_error_pages(name): s = render(f"container/revproxy/tm/snippets/{name}.j2"); for v in ["tm_user", "tm_role", "tm_nr_token", "tm_frigate_secret", "tm_redirect"]: assert f"auth_request_set ${v} $upstream_http_x_{v};" in s; assert "error_page 401 = @tm_login;" in s and "error_page 500 =503 /unavailable.html;" in s
 def test_viewer_and_admin_snippets_differ_only_in_the_auth_location(): ...  # diff of the two renders is the /_auth vs /_auth_admin line
 def test_auth_locations_are_internal_and_name_the_role(): conf = location("tm-control-auth.conf"); assert "location = /_auth {" in conf and "internal;" in conf and "X-TM-Required-Role viewer" in conf and "X-TM-Required-Role admin" in conf and "proxy_pass_request_body off;" in conf
-def test_verify_is_unreachable_from_the_network(): assert "location = /api/v1/auth/verify { return 404; }" in location("tm-control-api.conf")
+def test_verify_is_unreachable_from_the_network(): assert "location ^~ /api/v1/auth/verify { return 404; }" in location("tm-control-api.conf")
 def test_api_and_logout_are_proxied_to_tm_control_on_loopback(): ... "proxy_pass http://127.0.0.1:8090/api/;" and "location = /logout"
-def test_ui_root_serves_the_built_app_with_history_fallback(): assert "try_files $uri $uri/ /index.html;" in location("tm-control-ui.conf") and "root /usr/share/nginx/html/ui;" in ...
+def test_ui_root_serves_the_built_app_with_history_fallback(): assert "try_files $uri $uri/ /index.html;" in location("tm-control-ui.conf") and "root /usr/share/nginx/ui;" in ...
 def test_unavailable_page_names_cockpit_and_the_service(): page = render("container/revproxy/html/unavailable.html.j2", tmsetup_homepage_colors=..., tmsetup_homepage_font="Helvetica", ansible_facts={"hostname": "tm"}); assert ":9090" in page and "tm-control.service" in page and "<script" not in page
 def test_no_location_carries_a_secret_value(): for name in LOCATIONS: assert "tmsetup_secrets" not in Path(f"container/revproxy/tm/locations/{name}.j2").read_text()
 ```
@@ -913,7 +942,7 @@ git commit -m "Put tm-control's login check in front of every app path and repla
 
 **Interfaces:**
 - Consumes: Task 7's `$tm_user`, `$tm_role`, `$tm_frigate_secret`; `tmsetup_secrets['frigate_proxy_secret']`.
-- Produces: `migrate.run(frigate_config, dry_run)` now applies two steps and reports each: `add_proxy_auth(config) -> bool` adds, when the top-level key is absent, `auth: {enabled: false}`, `proxy: {header_map: {user: x-forwarded-user, role: x-forwarded-groups}, auth_secret: "{FRIGATE_PROXY_AUTH_SECRET}", default_role: viewer, logout_url: /logout}`, and `tls: {enabled: false}`; keys that exist are left alone, and a warning names the key (`auth.enabled is true`, `proxy.auth_secret is missing`, `tls.enabled is true`) when the existing value would break the proxy login. Output lines: `updated: <n> camera input(s)`, `added proxy auth settings`, as a comma-joined list after `{PREFIX} {path}:`.
+- Produces: `migrate.run(frigate_config, dry_run)` now applies two steps and reports each: `add_proxy_auth(config) -> bool` adds, when the top-level key is absent, `auth: {enabled: false}`, `proxy: {header_map: {user: x-forwarded-user, role: x-forwarded-groups}, auth_secret: "{FRIGATE_PROXY_AUTH_SECRET}", default_role: viewer, logout_url: /logout}`, and `tls: {enabled: false}`; keys that exist are left alone, and a warning names the key path, never its value (`auth.enabled is true`, `proxy.auth_secret is missing`, `tls.enabled is true`), when the existing value would break the proxy login. Next to an existing `proxy:` section that doesn't match ours (header map, secret placeholder, default role), `auth:` isn't added either, so Frigate's own login stays on, and a warning says so. Output lines: `updated: <n> camera input(s)`, `added proxy auth settings`, as a comma-joined list after `{PREFIX} {path}:`.
 
 `config.yml.j2` gets, after `mqtt:`:
 ```yaml
@@ -1053,7 +1082,8 @@ git commit -m "Open the Node-RED editor with the proxy's token instead of its ow
 - Create: `tm-control/backend/tests/test_openapi_document.py`
 - Create: `tm-control/backend/tm_control/fake.py` (fake-mode seeding) and the `tm-control fake-reset` CLI command
 - Modify: `container/revproxy/Containerfile.j2` (multi-stage), `container/revproxy/.containerignore`
-- Modify: `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml` (sync `tm-control/ui/` to `{{ tmsetup_codedir }}/revproxy/ui/` before the build)
+- Modify: `script/ansible/roles/tmsetup/tasks/revproxy_setup.yml` (copy `tm-control/ui/` to `{{ tmsetup_codedir }}/revproxy/ui/` as an archive before the build)
+- Create: `script/ansible/roles/tmsetup/files/pack-ui-sources.sh`, `script/tests/test_pack_ui_sources.py`
 - Modify: `script/ansible/roles/tmsetup/vars/main.yml` (`tmsetup_node_image: docker.io/library/node:22.23.4-alpine`)
 - Modify: `.gitignore` (`tm-control/ui/node_modules/`, `tm-control/ui/dist/`, `.tm-control-fake/`)
 - Test: `script/tests/test_tmsetup_templates.py`, `script/tests/test_tmsetup_tasks.py`
@@ -1064,7 +1094,7 @@ git commit -m "Open the Node-RED editor with the proxy's token instead of its ow
   - Routes: `/` (home), `/login`, `/setup` (welcome → EULA → claim → optional system password → home), `/welcome` (EULA re-acceptance), `/account`, `/users` (admin). `router.ts` guards: before each navigation it loads `/setup/status` and `/auth/session` once (cached in the Pinia store): unclaimed → `/setup`; no user → `/login?next=…`; EULA not accepted → admin `/welcome`, viewer a "waiting for an administrator" page; `/users` → admin only.
   - `modules/<name>/index.ts` exports `{ id, routes, nav }`; `modules/index.ts` collects them.
   - `src/api/client.ts`: `openapi-fetch` client typed by `schema.d.ts`, with `credentials: "same-origin"`, `Content-Type: application/json`, and a response hook that turns the API's error shape into a thrown `ApiError`.
-  - Theme: `theme.ts` builds the Vuetify theme from `/system/device`'s `theme.colors` with the M1 home page defaults as fallback; system fonts; `@mdi/js` icons only.
+  - Theme: `theme.ts` builds the Vuetify theme from `/setup/status`'s `theme.colors` (open, so setup and login use them too) with the M1 home page defaults as fallback; system fonts; `@mdi/js` icons only.
   - Pages are thin: forms post, show the API's `message`, and route on success. The claim page shows the setup code input as two groups of four, uppercases, and accepts the hyphen. The system-password step has the "same password as my account" checkbox (spec) and polls `/jobs/{id}` until it finishes.
   - Build: `npm run build` → `dist/`; `npm test` runs Vitest (router guards and the setup flow against a mocked client); `npm run api:generate` → `openapi-typescript src/api/openapi.json -o src/api/schema.d.ts`.
   - CLI: `tm-control dump-openapi` prints the app's OpenAPI document as JSON; `tm-control fake-reset` empties the fake state directory and prints a setup code.
@@ -1078,10 +1108,10 @@ git commit -m "Open the Node-RED editor with the proxy's token instead of its ow
     COPY ui/ ./
     RUN npm run build
     FROM docker.io/nginx:{{ tmsetup_nginx_version }}
-    COPY --from=ui /ui/dist /usr/share/nginx/html/ui
+    COPY --from=ui /ui/dist /usr/share/nginx/ui
     ```
     `.containerignore`: `html`, `tm`, `nginx.conf`, `ui/node_modules`, `ui/dist`.
-  - Task: `TMSetup - revproxy Setup - Copy the control app's UI sources` with `ansible.posix.synchronize` (`src: tm-control/ui/`, `dest: {{ tmsetup_codedir }}/revproxy/ui/`, `delete: true`, `rsync_opts: ['--exclude=node_modules', '--exclude=dist', '--chmod=D750,F640']`, `become: true`), placed before `Create NGinx Containerfile`, notifying `Restart revproxy.service`. `rsync` joins `tmsetup_packages` (Task 6 added it). If `synchronize` misbehaves with `become` on a remote install (its known rough edge), the fallback is a tarball built on the controller from `git ls-files -co --exclude-standard tm-control/ui` and `ansible.builtin.unarchive` on the device; keep the same excludes either way.
+  - Task block: `TMSetup - revproxy Setup - Copy the control app's UI sources`, placed before `Create NGinx Containerfile`. On the controller, `files/pack-ui-sources.sh` packs the files git lists under `tm-control/ui` (never `node_modules` or `dist`) into a temporary archive; `ansible.builtin.unarchive` unpacks it with become into `{{ tmsetup_codedir }}/revproxy/ui/`, which works with a sudo password on remote installs (`synchronize` can't), and a `find`/`file` pair removes files no longer in the repo. No `rsync`. `Build container` restarts `revproxy-build.service` when the UI sources, the Containerfile, or `.containerignore` changed, because a `.build` unit that already ran stays active.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1094,8 +1124,8 @@ def test_committed_openapi_document_matches_the_app(settings): committed = json.
 `tm-control/ui/tests/router.spec.ts`: an unclaimed status routes `/` to `/setup`; no session routes `/account` to `/login?next=/account`; a viewer can't open `/users`; an admin with the EULA outstanding lands on `/welcome`.
 `tm-control/ui/tests/setup-flow.spec.ts`: the claim form posts `{setup_code: "ABCD-EFGH", username, password, eula_version: "1"}` and moves to the system-password step; "same password" fills the field; skipping the step routes home.
 
-Append to `script/tests/test_tmsetup_templates.py`: `test_revproxy_image_builds_the_ui_from_a_pinned_node_image` (the Containerfile has `FROM docker.io/library/node:22.23.4-alpine AS ui`, `npm ci`, `COPY --from=ui /ui/dist /usr/share/nginx/html/ui`, and the final `FROM docker.io/nginx:1.31.0`).
-Append to `script/tests/test_tmsetup_tasks.py`: `test_ui_sources_are_synced_without_node_modules_before_the_image_build` (the synchronize task exists, excludes `node_modules` and `dist`, deletes extras, and comes before `Create NGinx Containerfile`).
+Append to `script/tests/test_tmsetup_templates.py`: `test_revproxy_image_builds_the_ui_from_a_pinned_node_image` (the Containerfile has `FROM docker.io/library/node:22.23.4-alpine AS ui`, `npm ci`, `COPY --from=ui /ui/dist /usr/share/nginx/ui`, and the final `FROM docker.io/nginx:1.31.0`).
+Append to `script/tests/test_tmsetup_tasks.py`: `test_ui_sources_are_copied_without_node_modules_before_the_image_build` and `test_ui_sources_no_longer_in_the_repo_are_deleted_from_the_device`; `script/tests/test_pack_ui_sources.py` checks that the archive holds only the files git lists, never `node_modules` or `dist`.
 `.containerignore` test: `test_revproxy_build_context_leaves_out_the_mounted_config_and_node_modules`.
 
 - [ ] **Step 2: Run the tests to see them fail**

@@ -76,7 +76,7 @@ It doesn't replace Frigate, the Node-RED dashboards, or Cockpit.
 | Topic | Decision |
 |---|---|
 | Backend placement | Host systemd service `tm-control` (Python 3.11+, FastAPI). Runs as the code owner (`tmadmin`) in a systemd sandbox. Doesn't depend on Podman, so it keeps working when containers don't. |
-| Privilege | polkit rules from one Ansible allowlist cover TM units, time, and reboot. NetworkManager comes later. Fixed, root-owned `tm-job-<name>.service` units handle everything else. tm-control never runs as root. |
+| Privilege | polkit rules from one Ansible allowlist cover TM units, time, and reboot (M2 ships the unit rules; the time and reboot rules come with M3, which uses them). NetworkManager comes later. Fixed, root-owned `tm-job-<name>.service` units handle everything else. tm-control never runs as root. |
 | Edge | `revproxy` (nginx) leaves the pod and runs with `Network=host`. It's the only LAN web listener. Everything else binds to `127.0.0.1`. nginx keeps #210's layout: one location file per app, bind-mounted, and checked with `nginx -t` before each restart. |
 | Auth | tm-control serves the login and issues session cookies. nginx `auth_request` checks every app path. Identity is passed on to Frigate (port 8971 proxy headers plus `X-Proxy-Secret`) and to the Node-RED editor (signed token in `tokenHeader`). Roles: admin and viewer. |
 | Why not off-the-shelf SSO | Authelia and tinyauth need HTTPS and real domains or subdomains, which rules out IPs and `.local`. Basic Auth isn't sent on WebSocket upgrades by Safari, which breaks Frigate live view and Dashboard 2.0 on iPhones. Using Frigate's login for everything would lock everyone out whenever Frigate breaks. |
@@ -97,7 +97,7 @@ This is the end state after M2. M1 keeps `/frigate/` on :5000 and the current No
 
 ```
 Phone / laptop ──HTTP :80──▶ nginx (revproxy, host network)
-  /                 UI static files ({{codedir}}/tm-control/ui-dist)   open: login, setup, assets
+  /                 UI static files (built into the revproxy image)    open: login, setup, assets
   /api/             tm-control   127.0.0.1:8090                         tm-control checks its own cookie
   /frigate/         Frigate      127.0.0.1:8971 (TLS off)               auth_request, any role
   /dashboard/ /ui/  Node-RED     127.0.0.1:1880                         auth_request, any role
@@ -142,9 +142,9 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
 ### Login and first run
 
 **Request flow**
-1. nginx runs `auth_request /_auth`, which calls `GET 127.0.0.1:8090/api/v1/auth/verify` with `X-Original-URI` and the proxy secret.
+1. nginx runs `auth_request /_auth` (or `/_auth_admin`), which calls `GET 127.0.0.1:8090/api/v1/auth/verify` with `X-Original-URI` and the required role in `X-TM-Required-Role`, not a proxy secret; nginx refuses the verify path from the network.
 2. The response is one of:
-   - **200** with `X-TM-User`, `X-TM-Role`, and `X-TM-NR-Token`.
+   - **200** with `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and for admins `X-TM-NR-Token`. nginx passes Frigate `X-Forwarded-User`/`X-Forwarded-Groups` and the secret as `X-Proxy-Secret`.
    - **401** → redirect to `/login?next=…`.
    - **403** → forbidden.
 3. verify also sends the user to `/setup` while the device is unclaimed and to `/welcome` until the EULA is accepted.
@@ -221,13 +221,13 @@ tm-control/
 - Checks never raise. They report `unknown` or `error` with a reason, so the status page always renders.
 
 **Privilege**
-- `tm-control.service` runs as `User=tmadmin` with `SupplementaryGroups=systemd-journal video`.
+- `tm-control.service` runs as `User=tmadmin` with `SupplementaryGroups=systemd-journal video`. (M2 runs with `systemd-journal` only and no `ReadWritePaths=`; `video` and the config path come when M3 needs them.)
 - Sandbox: `NoNewPrivileges`, `ProtectSystem=strict`, `StateDirectory=tm-control`, `RuntimeDirectory=tm-control` (for job requests), `PrivateTmp`, and `RestrictAddressFamilies`.
 - `ReadWritePaths=` is limited to `{{codedir}}/node-red-tm/config`. Feature specs add paths only when they need them, for example Frigate's `model_cache` for model upload.
 - polkit rules (`/etc/polkit-1/rules.d/50-traffic-monitor.rules`, rendered from the `tmsetup_tm_control_polkit` list in `vars/main.yml`) allow:
-  - `systemd1.manage-units` for named TM units, with the verbs start, stop, and restart.
-  - `timedate1.set-time`, `set-timezone`, and `set-ntp`.
-  - `login1.reboot` and `power-off`.
+  - `systemd1.manage-units` for named TM units, with the verbs start, stop, and restart. M2 ships only these unit rules, including the job units.
+  - `timedate1.set-time`, `set-timezone`, and `set-ntp` (M3).
+  - `login1.reboot` and `power-off` (M3).
 - Root jobs:
   1. The API writes a request to `/run/tm-control/jobs/<name>.json`.
   2. It starts `tm-job-<name>.service`.
@@ -253,7 +253,7 @@ tm-control/
 
 **API**
 - JSON under `/api/v1/`, with one error shape: `{error: {code, message, detail}}`.
-- Long-running actions return 202 and a job id. `GET /jobs/{id}` reports status, and an SSE stream carries the log.
+- Long-running actions return 202 and a job id. `GET /jobs/{id}` reports status, and an SSE stream carries the log. (In M2 the UI polls `GET /jobs/{id}`, which also returns the log lines; the SSE stream comes with M3's longer jobs.)
 - The status page polls about every 10 seconds.
 - The OpenAPI document generates the UI's typed client.
 
@@ -316,8 +316,7 @@ tm-control/
 - Theme colors come from `tmsetup_homepage_colors`.
 
 **Build**
-- tmsetup runs `npm ci && npm run build` in a throwaway, pinned `docker.io/node:22-alpine` container, only when the UI sources change (tracked by a hash stamp).
-- The output goes to `{{codedir}}/tm-control/ui-dist`, which is mounted read-only into nginx.
+- The revproxy image builds the UI in a multi-stage Containerfile: a pinned `docker.io/library/node:22.x-alpine` stage runs `npm ci && npm run build`, and the nginx stage serves the result from `/usr/share/nginx/ui`. tmsetup rebuilds the image when the UI sources change.
 
 **Fake mode**
 - `TM_CONTROL_FAKE=1` runs the backend on recorded fixtures, and `npm run dev` proxies `/api` to it.
@@ -412,7 +411,7 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 
 **Modified**
 - `container/traffic-monitor.pod.j2`: loopback ports and removals, and the network named instead of required (#232).
-- `container/revproxy/revproxy.container.j2`: `Network=host` and no `Pod=`. #210's bind mounts stay, and M2 adds the `ui-dist` mount.
+- `container/revproxy/revproxy.container.j2`: `Network=host` and no `Pod=`. #210's bind mounts stay. M2 adds no mount: the UI is built into the revproxy image.
 - `container/revproxy/tm/locations/*.conf.j2`:
   - `go2rtc.conf` gets the `/feeds/` restrictions and `127.0.0.1:1984`.
   - `cockpit.conf` changes to `127.0.0.1:9090`.
