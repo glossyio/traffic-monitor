@@ -14,14 +14,16 @@ Important resources (many coming soon):
 
 ## Testing
 
-The only CI checks are the docs build and GitHub's CodeQL scanning, and most of the project is tested by installing it on a Raspberry Pi. The database schema has an automated test suite that runs on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
+The only CI checks are the docs build and GitHub's CodeQL scanning, and most of the project is tested by installing it on a Raspberry Pi. The database schema, the installer's templates and tasks, and the control app (`tm-control`) have automated tests that run on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
 
     python3 -m venv .venv
     .venv/bin/pip install -r script/requirements-dev
 
 Then run the tests:
 
-    .venv/bin/python -m pytest container/node-red-tm/schema/tests
+    .venv/bin/python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests
+
+The control app's web pages have their own tests, run with npm; see [tm-control/ui/README.md](tm-control/ui/README.md).
 
 Add new development tools to `script/requirements-dev` so everyone uses the same environment. Help us extend testing to the rest of the project!
 

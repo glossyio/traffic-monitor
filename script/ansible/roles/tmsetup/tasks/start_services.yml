@@ -33,6 +33,7 @@
   loop:
     - go2rtc_server.service
     - traffic-monitor.service
+    - tm-control.service
     - revproxy.service
   ansible.builtin.systemd_service:
     daemon_reload: true

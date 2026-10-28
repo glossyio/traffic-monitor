@@ -8,6 +8,19 @@ mqtt:
   password: "{FRIGATE_MQTT_PASSWORD}"
 {% endraw %}
 
+# The reverse proxy logs users in and passes who they are; Frigate's own login is off (tm-control).
+auth:
+  enabled: false
+proxy:
+  header_map:
+    user: x-forwarded-user
+    role: x-forwarded-groups
+  auth_secret: "{FRIGATE_PROXY_AUTH_SECRET}"
+  default_role: viewer
+  logout_url: /logout
+tls:
+  enabled: false
+
 detectors:
 {% set detector_found = namespace(any=false) %}
 {% for name, detector in tmsetup_detectors.items() %}

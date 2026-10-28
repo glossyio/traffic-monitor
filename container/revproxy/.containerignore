@@ -1,0 +1,8 @@
+# The revproxy image's build context is {{ tmsetup_codedir }}/revproxy on the device. Only ui/ goes into the
+# image; the nginx config and html are bind-mounted at runtime (revproxy.container).
+html
+tm
+nginx.conf
+.nginx-check.*
+ui/node_modules
+ui/dist

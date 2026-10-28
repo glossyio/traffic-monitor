@@ -1,0 +1,29 @@
+/*
+  A visible keyboard focus ring: the one global style rule, because the accessibility floor outranks "no custom CSS".
+  Vuetify's own focus cue is an overlay of the element's text color at --v-focus-opacity (0.12). On a filled blue
+  button with navy text that's about 1.2:1 against the unfocused button, and even 0.4 only reaches about 2:1 (a focus
+  indicator needs 3:1) while making the button look pressed. The ring is the primary color, which is 5.2:1 on the
+  navy page, 2 px outside the element.
+
+  Each rule covers the app and .v-overlay-container: Vuetify moves dialogs and menus there, to the end of <body>,
+  outside .v-application, and the confirm dialogs need the ring most.
+
+  Left out: text fields, which Vuetify already outlines in the primary color when focused, and elements that only
+  script focuses (tabindex="-1", such as the setup steps' headings).
+*/
+:is(.v-application, .v-overlay-container) :focus-visible:not(.v-field__input):not([tabindex='-1']) {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+/* Menu rows sit edge to edge, so their ring goes just inside them (more specific than the rule above) */
+:is(.v-application, .v-overlay-container) .v-list .v-list-item:focus-visible:not([tabindex='-1']) {
+  outline-offset: -2px;
+}
+
+/* A checkbox's focused <input> is invisible (opacity 0), so the ring goes on the round control around it, inside
+   its edge so it doesn't cover the label */
+:is(.v-application, .v-overlay-container) .v-selection-control--focus-visible .v-selection-control__input {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+}

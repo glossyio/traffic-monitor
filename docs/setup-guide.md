@@ -4,17 +4,26 @@ description: Turn on detection, adjust the zones to your roadway, and record the
 
 # First-time setup
 
-Do these steps once the device is [mounted](deployment-and-mounting-guide.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and an SSH client for step 4.
+Do these steps once the device is [mounted](deployment-and-mounting-guide.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, the device's setup code or administrator login, and an SSH client for step 4.
 
 As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
-## 1. Open the home page
+## 1. Claim the device
 
 Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](use/home-page.md) explains each link and how to find the address.
 
+A device that hasn't been claimed opens its setup page:
+
+1. Choose **Start setup**, and read and accept the license agreement.
+2. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.
+3. Create the administrator account with a username and password, and choose **Claim this device**.
+4. Optionally, set a new system password for Cockpit and SSH.
+
+[Control app and login](use/control-app.md) explains each step, and how to add accounts for other people. If the device was claimed already, log in as the administrator.
+
 ## 2. Turn on detection
 
-1. Open **Frigate** from the home page.
+1. Open **Frigate** from the home page, logged in as the administrator.
 2. Go to **Settings > Configuration editor**.
 3. Under `cameras: picam_h265: detect:`, change `enabled: false` to `enabled: true`.
 4. Choose **Save & Restart**.
@@ -81,7 +90,7 @@ Open **Dashboard** from the home page and choose **Monitoring** in the sidebar. 
 
     Work down the list:
 
-    1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Go2RTC Feeds** from the home page to check that the camera itself streams.
+    1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Camera feeds** from the home page to check that the camera itself streams.
     2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.
     3. **Counts but no speeds.** The radar must be `enabled: true` and named in the camera's `camera_radar`, `zone_radar` must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
     4. **Still nothing.** Look at the logs in [System administration](use/system-admin.md), then ask in the [chat](help-and-faq/where-can-i-get-support.md).

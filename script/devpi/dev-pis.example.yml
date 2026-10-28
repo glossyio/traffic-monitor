@@ -20,6 +20,11 @@ all:
           ansible_ssh_private_key_file: ~/.ssh/tm_dev
           # ansible_port: 22
           # tmsetup_codedir: /opt/traffic-monitor   # only if installed elsewhere; passed to tmsetup.sh -d
+          # The dev Pi's admin login for the device tests' login checks, which skip without it. Set it after
+          # claiming the unit at http://<pi>/setup. It's a real password, so never commit the real file.
+          # tm_control_login:
+          #   username: tmdev-admin
+          #   password: replace-with-the-admin-password
           tm_expect:
             # true only for a bench unit that has never recorded real-world data and never had
             # plate recognition enabled. Turns on the checks that read config.yml and tmdb.sqlite.

@@ -4,6 +4,10 @@ Description=Traffic Monitor NGinx Reverse Proxy container
 # instead of restarting forever.
 StartLimitIntervalSec=300
 StartLimitBurst=20
+# Start after tm-control at boot, so nginx's login checks find it answering. Both are soft: nginx still starts
+# when tm-control fails, and serves the "control app isn't answering" page.
+Wants=tm-control.service
+After=tm-control.service
 
 [Container]
 ContainerName=revproxy
