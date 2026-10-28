@@ -136,6 +136,17 @@
     line: "TM_NR_TOKEN_KEY={{ tmsetup_secrets['node_red_token_key'] }}"
   notify: Restart node-red-tm.service
 
+# The same for the token tm-control sends to Node-RED's /tm-internal/ endpoints, which refuse every request without it.
+- name: TMSetup - Node-RED-TM Setup - Add the internal status token to node-red-tm.env
+  become: true
+  no_log: true
+  when: tmsetup_node_red_env_stat_register.stat.exists
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    regexp: '^TM_INTERNAL_TOKEN='
+    line: "TM_INTERNAL_TOKEN={{ tmsetup_secrets['node_red_internal_token'] }}"
+  notify: Restart node-red-tm.service
+
 - name: TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red
   become: true
   loop:

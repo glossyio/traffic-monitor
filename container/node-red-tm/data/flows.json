@@ -1534,6 +1534,53 @@
         "h": 82
     },
     {
+        "id": "d9d94c0d493873b9",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "name": "tm-control status: GET /tm-internal/status",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "5cafb80984a9d01b",
+            "cbc268130cc14c58",
+            "a88895e60521585e",
+            "0f73112a20b2e8e5",
+            "ac4c55fdbd3e51dc",
+            "99132403b74d7a50",
+            "accff8a668ecbc04",
+            "b586e0ff85dbff1b",
+            "11d84b6cc7755d49",
+            "e813005490ef2e46",
+            "2b50b0bfb900ff09"
+        ],
+        "x": 74,
+        "y": 1099,
+        "w": 952,
+        "h": 302
+    },
+    {
+        "id": "484071aff09e5ec2",
+        "type": "group",
+        "z": "1c71c8f26f5b7b19",
+        "name": "tm-control status: radar ports",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "dd3ea6f72d3ed5bd",
+            "257037800851e32b",
+            "bbe03ccd2a4b3f19",
+            "64831844845c92cd",
+            "dbf7f079d1a7ce46",
+            "eec2d8808f36d055"
+        ],
+        "x": 1494,
+        "y": 59,
+        "w": 532,
+        "h": 262
+    },
+    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -2473,7 +2520,7 @@
         "y": 300,
         "wires": [
             [
-                "7e988d24a7912d71"
+                "b586e0ff85dbff1b"
             ]
         ]
     },
@@ -2501,7 +2548,8 @@
         "y": 380,
         "wires": [
             [
-                "ac8b2de05ec27001"
+                "ac8b2de05ec27001",
+                "2b50b0bfb900ff09"
             ]
         ]
     },
@@ -2511,7 +2559,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\n//time\nmsg.payload.time.npt_set === false ? false : true;\n\nreturn msg;",
+        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`, msg);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2539,7 +2587,7 @@
         "y": 340,
         "wires": [
             [
-                "7e988d24a7912d71"
+                "b586e0ff85dbff1b"
             ]
         ]
     },
@@ -2866,6 +2914,209 @@
         "wires": []
     },
     {
+        "id": "5cafb80984a9d01b",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "",
+        "url": "/tm-internal/status",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 190,
+        "y": 1140,
+        "wires": [
+            [
+                "cbc268130cc14c58"
+            ]
+        ]
+    },
+    {
+        "id": "cbc268130cc14c58",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 1140,
+        "wires": [
+            [
+                "a88895e60521585e"
+            ],
+            [
+                "ac4c55fdbd3e51dc"
+            ]
+        ]
+    },
+    {
+        "id": "a88895e60521585e",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: build status",
+        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// When Node-RED started, for uptime_seconds. Global context lasts until Node-RED restarts, so a deploy keeps it.\nif (typeof global.get(\"tm_status.started_at\") !== \"number\") {\n    global.set(\"tm_status.started_at\", Date.now());\n}",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 1140,
+        "wires": [
+            [
+                "0f73112a20b2e8e5"
+            ]
+        ]
+    },
+    {
+        "id": "0f73112a20b2e8e5",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 910,
+        "y": 1140,
+        "wires": []
+    },
+    {
+        "id": "ac4c55fdbd3e51dc",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 680,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "99132403b74d7a50",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "catch: config.yml load errors",
+        "scope": [
+            "7e988d24a7912d71",
+            "a328d3aa7640102a",
+            "94136e5a6f092bb6"
+        ],
+        "uncaught": false,
+        "x": 200,
+        "y": 1240,
+        "wires": [
+            [
+                "accff8a668ecbc04"
+            ]
+        ]
+    },
+    {
+        "id": "accff8a668ecbc04",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: record config error",
+        "func": "// Only the first line: a YAML error goes on to quote the lines of config.yml around the mistake, which can hold\n// thingsboard.access_token. The watch can read one save twice, so an error already listed isn't added again.\nconst message = String((msg.error && msg.error.message) || \"\").split(\"\\n\")[0].trim() || \"unknown error\";\nconst errors = global.get(\"tm_status.config.errors\") || [];\nif (!errors.includes(message)) {\n    errors.push(message);\n}\nglobal.set(\"tm_status.config.errors\", errors);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 1240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b586e0ff85dbff1b",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: config load started",
+        "func": "// A new read of config.yml: its errors replace the last read's\nglobal.set(\"tm_status.config\", { loaded_at: new Date().toISOString(), errors: [] });\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 1300,
+        "wires": [
+            [
+                "7e988d24a7912d71",
+                "11d84b6cc7755d49"
+            ]
+        ]
+    },
+    {
+        "id": "11d84b6cc7755d49",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "fixed",
+        "sql": "PRAGMA user_version",
+        "name": "read schema version",
+        "x": 470,
+        "y": 1300,
+        "wires": [
+            [
+                "e813005490ef2e46"
+            ]
+        ]
+    },
+    {
+        "id": "e813005490ef2e46",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: record schema version",
+        "func": "// tmdb's user_version: the last schema migration applied (container/node-red-tm/schema/README.md)\nconst row = Array.isArray(msg.payload) ? msg.payload[0] : undefined;\nconst version = row ? row.user_version : undefined;\nglobal.set(\"tm_status.schema_version\", Number.isInteger(version) ? version : null);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 1300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2b50b0bfb900ff09",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-internal: config loaded",
+        "func": "// After each load of config.yml that set global.config: which radars it enables, and the deployment\nconst config = global.get(\"config\") || {};\nconst deployment = config.deployment || {};\nconst value = (v) => (v === undefined || v === \"\" ? null : v);\nglobal.set(\"tm_status.deployment\", {\n    lat: value(deployment.lat),\n    lon: value(deployment.lon),\n    bearing: value(deployment.bearing),\n});\nconst radars = global.get(\"tm_status.radars\") || {};\nconst configured = (config.sensors && config.sensors.radars) || {};\nfor (const name of Object.keys(radars)) {\n    radars[name].enabled = false;\n}\nfor (const [name, radar] of Object.entries(configured)) {\n    radars[name] = Object.assign({}, radars[name], { enabled: Boolean(radar) && radar.enabled === true });\n}\nglobal.set(\"tm_status.radars\", radars);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 200,
+        "y": 1360,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "0612ca7936dee14a",
         "type": "comment",
         "z": "1c71c8f26f5b7b19",
@@ -2936,7 +3187,8 @@
         "y": 120,
         "wires": [
             [
-                "c744236bdcd86cf3"
+                "c744236bdcd86cf3",
+                "bbe03ccd2a4b3f19"
             ]
         ]
     },
@@ -3668,7 +3920,8 @@
         "y": 200,
         "wires": [
             [
-                "b9d0ad874b671281"
+                "b9d0ad874b671281",
+                "64831844845c92cd"
             ]
         ]
     },
@@ -3732,7 +3985,8 @@
         "y": 280,
         "wires": [
             [
-                "c733b3b6871f335b"
+                "c733b3b6871f335b",
+                "dbf7f079d1a7ce46"
             ]
         ]
     },
@@ -3796,7 +4050,8 @@
         "y": 360,
         "wires": [
             [
-                "be612a06e6fce8b1"
+                "be612a06e6fce8b1",
+                "eec2d8808f36d055"
             ]
         ]
     },
@@ -4872,6 +5127,121 @@
                 "99c67a76992c8de8",
                 "2ea13e7fb927749d"
             ]
+        ]
+    },
+    {
+        "id": "dd3ea6f72d3ed5bd",
+        "type": "status",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "status: radar serial ports",
+        "scope": [
+            "926ac6db07adc540",
+            "917b8f4b46895cee",
+            "9353b933e36e8b9e",
+            "e221212a505a78ac"
+        ],
+        "x": 1610,
+        "y": 100,
+        "wires": [
+            [
+                "257037800851e32b"
+            ]
+        ]
+    },
+    {
+        "id": "257037800851e32b",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "tm-internal: radar port status",
+        "func": "// The serial nodes report \"node-red:common.status.connected\" when their port opens, and not-connected or stopped\n// when it closes. Their first \"not connected\" comes before this node starts, so a port that never opened isn't\n// listed here, and /tm-internal/status reports it as not open.\nconst radars = {\n    \"926ac6db07adc540\": \"TM_RADAR_SERIAL_PORT_00\",\n    \"917b8f4b46895cee\": \"TM_RADAR_SERIAL_PORT_01\",\n    \"9353b933e36e8b9e\": \"TM_RADAR_SERIAL_PORT_02\",\n    \"e221212a505a78ac\": \"TM_RADAR_SERIAL_PORT_03\",\n};\nconst name = radars[msg.status.source.id];\nif (name) {\n    global.set(`tm_status.radars.${name}.port_open`, /(^|[.:])connected$/.test(String(msg.status.text || \"\")));\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1880,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bbe03ccd2a4b3f19",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "tm-internal: RADAR_00 last reading",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_00.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1640,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "64831844845c92cd",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "tm-internal: RADAR_01 last reading",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_01.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1640,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dbf7f079d1a7ce46",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "tm-internal: RADAR_02 last reading",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_02.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1640,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "eec2d8808f36d055",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "tm-internal: RADAR_03 last reading",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_03.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1640,
+        "y": 280,
+        "wires": [
+            []
         ]
     },
     {

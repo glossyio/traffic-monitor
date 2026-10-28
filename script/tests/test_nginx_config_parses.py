@@ -4,6 +4,7 @@ The same check tmsetup runs on the device before it deploys the config, so a nam
 a duplicate location fails here first. Skipped without Podman.
 """
 
+import re
 import shutil
 import subprocess
 
@@ -47,3 +48,18 @@ def test_rendered_config_passes_nginx_t(tmp_path):
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stderr
     assert "syntax is ok" in result.stderr
+
+
+def test_nr_tm_internal_is_denied(tmp_path):
+    """Review Focus 5: Node-RED's internal endpoints are for tm-control on loopback, so /nr/ never proxies them, even
+    for an admin. The whole config, this block included, passes nginx -t in test_rendered_config_passes_nginx_t."""
+    render_config(tmp_path)
+    conf = (tmp_path / "tm/locations/nodered.conf").read_text().splitlines()
+    assert "location ^~ /nr/tm-internal/ { return 404; }" in conf
+    # Node-RED's routes ignore case, so a case variant would otherwise reach it through location /nr/
+    assert 'location ~* "^/nr/tm-internal(/|$)" { return 404; }' in conf
+    pattern = re.compile(r"^/nr/tm-internal(/|$)", re.IGNORECASE)
+    for path in ("/nr/TM-Internal/status", "/nr/tm-INTERNAL/", "/nr/Tm-Internal"):
+        assert pattern.search(path), path
+    for path in ("/nr/", "/nr/flows", "/nr/tm-internals", "/tm-internal/status"):
+        assert not pattern.search(path), path

@@ -259,6 +259,27 @@ def test_node_red_token_key_is_written_on_every_run_without_printing_it():
     assert "node-red-tm" in setup["tags"]
 
 
+def test_node_red_env_gains_the_internal_token_on_every_run():
+    """Like TM_NR_TOKEN_KEY: an existing node-red-tm.env isn't rewritten without -f, and Node-RED refuses every
+    /tm-internal/ request without TM_INTERNAL_TOKEN, so the token goes in on every -t node-red-tm run."""
+    assert "node_red_internal_token" in load_role_yaml("vars/main.yml")["tmsetup_secret_names"]
+    tasks = load_role_yaml("tasks/node-red-tm_setup.yml")
+    names = [task["name"] for task in tasks]
+    (token,) = [task for task in tasks
+                if task.get("ansible.builtin.lineinfile", {}).get("regexp") == "^TM_INTERNAL_TOKEN="]
+    stat = tasks[names.index("TMSetup - Node-RED-TM Setup - Check for node-red-tm.env")]
+    assert token["when"] == f"{stat['register']}.stat.exists"
+    assert token["no_log"] is True
+    assert token["become"] is True
+    assert token["notify"] == "Restart node-red-tm.service"
+    assert token["ansible.builtin.lineinfile"]["path"] == "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env"
+    assert token["ansible.builtin.lineinfile"]["line"] == (
+        "TM_INTERNAL_TOKEN={{ tmsetup_secrets['node_red_internal_token'] }}")
+    assert "loop" not in token and "tags" not in token
+    quadlets = names.index("TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red")
+    assert names.index(stat["name"]) < names.index(token["name"]) < quadlets
+
+
 def test_installer_says_when_an_update_closes_mqtt_to_the_network():
     tasks = mqtt_broker_tasks()
     stat = tasks["TMSetup - MQTT Broker - Check for the installed pod unit"]
