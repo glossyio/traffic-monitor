@@ -66,11 +66,13 @@ def test_settings_have_no_built_in_user_and_read_the_proxy_header():
 @pytest.mark.parametrize("key, token, expected", [
     (KEY, mint("admin", "admin"), "admin"),
     ("", mint("admin", "admin"), None),
+    # Anyone can sign with an empty key, so without a key even a token signed that way is refused
+    ("", mint("admin", "admin", key=""), None),
     ("other-key", mint("admin", "admin"), None),
     (KEY, mint("v", "viewer"), None),
     (KEY, mint("admin", "admin", now=NOW - 600), None),
     (KEY, "garbage", None),
-], ids=["admin", "no-key", "wrong-key", "viewer", "expired", "garbage"])
+], ids=["admin", "no-key", "no-key-forged-with-empty-key", "wrong-key", "viewer", "expired", "garbage"])
 def test_javascript_verifier_agrees_with_the_python_minter(key, token, expected):
     out = verify(token, key)
     if expected is None:
@@ -133,13 +135,30 @@ def test_an_independently_signed_admin_token_is_accepted():
 
 @needs_node
 def test_editor_login_reads_the_key_from_the_environment_and_fails_closed_without_it():
-    """A node-red-tm.env from before the proxy login has no TM_NR_TOKEN_KEY: every token is refused (Review Focus 4)."""
-    script = (
-        f"s.adminAuth.tokens({json.dumps(mint('admin', 'admin', now=None))})"
-        ".then((u) => console.log(u === null ? 'null' : u.username + ' ' + u.permissions));"
-    )
+    """A node-red-tm.env from before the proxy login has no TM_NR_TOKEN_KEY: every token is refused (Review Focus 4),
+    including one signed with an empty key, which anyone can make."""
+    def tokens(token):
+        return (
+            f"s.adminAuth.tokens({json.dumps(token)})"
+            ".then((u) => console.log(u === null ? 'null' : u.username + ' ' + u.permissions));"
+        )
+
+    real = tokens(mint("admin", "admin", now=None))
+    forged = tokens(mint("admin", "admin", now=None, key=""))
     env = {key: value for key, value in os.environ.items() if key != "TM_NR_TOKEN_KEY"}
-    assert run_node(script, env=env) == "null"
-    assert run_node(script, env={**env, "TM_NR_TOKEN_KEY": ""}) == "null"
-    assert run_node(script, env={**env, "TM_NR_TOKEN_KEY": "other-key"}) == "null"
-    assert run_node(script, env={**env, "TM_NR_TOKEN_KEY": KEY}) == "admin *"
+    for script in (real, forged):
+        assert run_node(script, env=env) == "null"
+        assert run_node(script, env={**env, "TM_NR_TOKEN_KEY": ""}) == "null"
+    assert run_node(real, env={**env, "TM_NR_TOKEN_KEY": "other-key"}) == "null"
+    assert run_node(real, env={**env, "TM_NR_TOKEN_KEY": KEY}) == "admin *"
+
+
+@needs_node
+@pytest.mark.parametrize("now", ["NaN", "undefined", "null", '"1800000000"', "Infinity"])
+def test_javascript_verifier_refuses_tokens_when_the_time_is_not_a_number(now):
+    """exp <= NaN is false, so a bad clock value must not let a token through."""
+    out = run_node(
+        f"const u = s.verifyProxyToken({json.dumps(mint('admin', 'admin'))}, {json.dumps(KEY)}, {now});\n"
+        "console.log(u === null ? 'null' : JSON.stringify(u));"
+    )
+    assert out == "null"

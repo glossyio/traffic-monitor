@@ -12,7 +12,7 @@ const crypto = require("crypto");
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 
 function verifyProxyToken(token, key, nowSeconds) {
-  if (typeof token !== "string" || typeof key !== "string" || key === "") {
+  if (typeof token !== "string" || typeof key !== "string" || key === "" || !Number.isFinite(nowSeconds)) {
     return null;
   }
   const parts = token.split(".");
