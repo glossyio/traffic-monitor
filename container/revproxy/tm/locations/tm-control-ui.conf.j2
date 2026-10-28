@@ -2,7 +2,19 @@
 # /usr/share/nginx/ui, outside the bind-mounted html directory, which would hide it.
 # No auth snippet: the login and setup pages must open without a session, and the UI's API
 # calls are checked by tm-control. Unknown paths get index.html so the UI's own routes load.
+# index.html is revalidated on every load: after an upgrade, a cached copy would name assets
+# that no longer exist.
 location / {
     root /usr/share/nginx/ui;
     try_files $uri $uri/ /index.html;
+    add_header Cache-Control "no-cache" always;
+}
+
+# The built scripts and styles. Their names carry a hash of their content, so they can be cached
+# for good. A missing one is a 404, never index.html, which a browser would fail to run as a
+# script and show a blank page.
+location /assets/ {
+    root /usr/share/nginx/ui;
+    try_files $uri =404;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
 }

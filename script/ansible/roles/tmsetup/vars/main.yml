@@ -36,7 +36,6 @@ tmsetup_packages:
   - sysstat
   - python3-venv
   - polkitd
-  - rsync
 
 tmsetup_packages_backports:
   - cockpit

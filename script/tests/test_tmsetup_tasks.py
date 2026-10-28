@@ -1,7 +1,5 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
-from fnmatch import fnmatch
-
 import pytest
 from tmsetup_render import evaluate, load_role_yaml
 
@@ -514,17 +512,24 @@ def test_node_image_for_the_ui_build_is_pinned():
     assert load_role_yaml("vars/main.yml")["tmsetup_node_image"] == "docker.io/library/node:22.23.4-alpine"
 
 
+def test_rsync_is_not_installed_for_the_ui_copy():
+    """The UI sources travel as an archive (synchronize can't use a sudo password), so nothing needs rsync."""
+    assert "rsync" not in load_role_yaml("vars/main.yml")["tmsetup_packages"]
+
+
 def test_ui_sources_are_copied_without_node_modules_before_the_image_build():
     names = list(revproxy_tasks())
     assert names.index(COPY_UI) < names.index("TMSetup - revproxy Setup - Create NGinx Containerfile")
     tasks = ui_copy_tasks()
-    pack = tasks["TMSetup - revproxy Setup - Pack the UI sources"]["community.general.archive"]
-    assert pack["path"] == "{{ role_path }}/files/tm-control/ui"
-    # The patterns match archive member names, which start at ui/
-    excluded = [name for name in ("ui/node_modules", "ui/node_modules/vue/index.js", "ui/dist", "ui/dist/index.html",
-                                  "ui/src/main.ts", "ui/package.json", "ui/src/distance.ts")
-                if any(fnmatch(name, pattern) for pattern in pack["exclusion_patterns"])]
-    assert excluded == ["ui/node_modules", "ui/node_modules/vue/index.js", "ui/dist", "ui/dist/index.html"]
+    # The script's own behavior (git's file list, the no-git fallback, the exclusions) is in test_pack_ui_sources.py
+    pack = tasks["TMSetup - revproxy Setup - Pack the UI sources"]
+    assert pack["ansible.builtin.command"]["argv"] == [
+        "bash",
+        "{{ role_path }}/files/pack-ui-sources.sh",
+        "{{ role_path }}/files/tm-control",
+        "{{ tmsetup_revproxy_ui_archive_register['path'] }}",
+    ]
+    assert pack["changed_when"] is False
     unpack = tasks["TMSetup - revproxy Setup - Unpack the UI sources"]
     assert unpack["become"] is True
     assert unpack["ansible.builtin.unarchive"] == {
@@ -548,14 +553,20 @@ def test_ui_archive_is_made_and_removed_on_the_controller_without_sudo():
 
 
 def test_ui_sources_no_longer_in_the_repo_are_deleted_from_the_device():
-    remove = ui_copy_tasks()["TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"]
+    tasks = ui_copy_tasks()
+    remove = tasks["TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"]
     assert remove["ansible.builtin.file"]["state"] == "absent"
+    # Files only: an archive made from git's file list has no directory entries, so comparing directories would
+    # delete ui/src and everything in it.
+    assert tasks["TMSetup - revproxy Setup - Find the deployed UI sources"]["ansible.builtin.find"]["file_type"] == "file"
     deployed = {"files": [{"path": f"/opt/traffic-monitor/revproxy/ui/{name}"}
-                          for name in ("package.json", "src", "src/main.ts", "src/old.ts", "old-dir", "old-dir/x.ts")]}
-    unpacked = {"files": ["ui/package.json", "ui/src/", "ui/src/main.ts"]}
-    stale = evaluate(remove["loop"], tmsetup_codedir="/opt/traffic-monitor",
-                     tmsetup_revproxy_ui_find_register=deployed, tmsetup_revproxy_ui_unpack_register=unpacked)
-    assert sorted(stale) == ["ui/old-dir", "ui/old-dir/x.ts", "ui/src/old.ts"]  # `difference` doesn't keep order
+                          for name in ("package.json", "src/main.ts", "src/old.ts", "old-dir/x.ts")]}
+    for unpacked in (["ui/package.json", "ui/src/main.ts"],  # from git's file list
+                     ["ui/", "ui/package.json", "ui/src/", "ui/src/main.ts"]):  # from the directory, without git
+        stale = evaluate(remove["loop"], tmsetup_codedir="/opt/traffic-monitor",
+                         tmsetup_revproxy_ui_find_register=deployed,
+                         tmsetup_revproxy_ui_unpack_register={"files": unpacked})
+        assert sorted(stale) == ["ui/old-dir/x.ts", "ui/src/old.ts"]  # `difference` doesn't keep order
 
 
 def test_ui_source_changes_restart_the_proxy():

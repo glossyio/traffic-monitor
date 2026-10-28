@@ -18,8 +18,9 @@
   notify: Restart revproxy.service
 
 # The image builds tm-control's UI from {{ tmsetup_codedir }}/revproxy/ui. The sources travel as an archive made
-# on the machine running tmsetup, without node_modules and dist, because the synchronize module can't use a sudo
-# password on a remote install (-K). unarchive reports a change only when a file's content or time differs.
+# on the machine running tmsetup (files/pack-ui-sources.sh: the files git lists, never node_modules or dist),
+# because the synchronize module can't use a sudo password on a remote install (-K). unarchive reports a change
+# only when a file's content or time differs.
 - name: TMSetup - revproxy Setup - Copy the control app's UI sources
   block:
     - name: TMSetup - revproxy Setup - Create a temporary file for the UI sources
@@ -31,20 +32,15 @@
       changed_when: false
       register: tmsetup_revproxy_ui_archive_register
 
-    # The patterns match names in the archive, which start at ui/
     - name: TMSetup - revproxy Setup - Pack the UI sources
       become: false
       delegate_to: localhost
-      community.general.archive:
-        dest: '{{ tmsetup_revproxy_ui_archive_register["path"] }}'
-        exclusion_patterns:
-          - ui/node_modules
-          - ui/node_modules/*
-          - ui/dist
-          - ui/dist/*
-        force_archive: true
-        format: gz
-        path: '{{ role_path }}/files/tm-control/ui'
+      ansible.builtin.command:
+        argv:
+          - bash
+          - '{{ role_path }}/files/pack-ui-sources.sh'
+          - '{{ role_path }}/files/tm-control'
+          - "{{ tmsetup_revproxy_ui_archive_register['path'] }}"
       changed_when: false
 
     - name: TMSetup - revproxy Setup - Unpack the UI sources
@@ -59,10 +55,12 @@
       register: tmsetup_revproxy_ui_unpack_register
       notify: Restart revproxy.service
 
+    # Files only: an archive made from git's file list has no directory entries. A directory emptied this way stays,
+    # which the build doesn't mind.
     - name: TMSetup - revproxy Setup - Find the deployed UI sources
       become: true
       ansible.builtin.find:
-        file_type: any
+        file_type: file
         hidden: true
         paths: '{{ tmsetup_codedir }}/revproxy/ui'
         recurse: true

@@ -274,10 +274,23 @@ def test_api_and_logout_are_proxied_to_tm_control_on_loopback():
 def test_ui_root_serves_the_built_app_with_history_fallback():
     """The UI is built into the image, outside the bind-mounted html directory, and stays open for login and setup."""
     conf = location("tm-control-ui.conf")
-    assert "location / {" in conf
-    assert "root /usr/share/nginx/ui;" in conf
-    assert "try_files $uri $uri/ /index.html;" in conf
+    blocks = dict(top_level_blocks(conf))
+    root = blocks["location /"]
+    assert "root /usr/share/nginx/ui;" in root
+    assert "try_files $uri $uri/ /index.html;" in root
     assert "auth-" not in conf
+
+
+def test_ui_page_is_revalidated_and_missing_assets_are_404():
+    """After an upgrade, a cached index.html would name deleted assets, and the fallback would answer HTML for the
+    missing .js: a blank page. So index.html is always revalidated, and /assets/ never falls back."""
+    blocks = dict(top_level_blocks(location("tm-control-ui.conf")))
+    assert 'add_header Cache-Control "no-cache" always;' in blocks["location /"]
+    assets = blocks["location /assets/"]
+    assert "root /usr/share/nginx/ui;" in assets
+    assert "try_files $uri =404;" in assets
+    assert "index.html" not in assets
+    assert 'add_header Cache-Control "public, max-age=31536000, immutable" always;' in assets
 
 
 def test_unavailable_page_names_cockpit_and_the_service():
