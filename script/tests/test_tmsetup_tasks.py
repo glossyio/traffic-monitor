@@ -128,11 +128,15 @@ def test_existing_frigate_env_gets_the_proxy_secret_without_printing_it():
 
 
 def test_frigate_config_update_counts_added_settings_as_a_change():
-    """migrate prints "updated ..." for the camera inputs and "added proxy auth settings" alone when only those change."""
+    """migrate prints "updated ..." for the camera inputs and "added proxy auth settings" alone when only those change.
+
+    The line starts with the config's path, so a code dir whose name holds "added" or "updated" must not count.
+    """
     task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Update Frigate config from older installs"]
     changed_when = task["changed_when"]
     for stdout, changed in [
         ("tm-control migrate: /c.yml: up to date", False),
+        ("tm-control migrate: /srv/added-updated/c.yml: up to date", False),
         ("tm-control migrate: /c.yml: updated 1 camera input(s), added proxy auth settings (backup: /b)", True),
         ("tm-control migrate: /c.yml: added proxy auth settings (backup: /b)", True),
         ("tm-control migrate: /c.yml: updated 1 camera input(s) (backup: /b)", True),

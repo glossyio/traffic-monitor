@@ -189,11 +189,15 @@ def add_proxy_auth(config):
     """Add whichever of the auth:, proxy:, and tls: sections are missing. Return whether any were.
 
     They go right after mqtt: (or at the top if there is none), with the comment and blank line config.yml.j2 has, so
-    the file reads like a new install's. Sections that exist are left alone; proxy_auth_problems checks them.
+    the file reads like a new install's. Sections that exist are left alone; proxy_auth_problems checks them. If an
+    existing proxy: section has a problem, auth: isn't added either: Frigate's own login stays on, because turning it
+    off would let Frigate trust headers the reverse proxy doesn't set.
     """
     if not isinstance(config, CommentedMap):
         return False
     missing = [key for key in PROXY_AUTH_SECTIONS if key not in config]
+    if "auth" in missing and _proxy_section_is_unsafe(config):
+        missing.remove("auth")
     if not missing:
         return False
     keys = list(config)
@@ -241,6 +245,18 @@ def proxy_auth_problems(config):
     return problems
 
 
+def _proxy_section_is_unsafe(config):
+    return "proxy" in config and any(problem.startswith("proxy.") for problem in proxy_auth_problems(config))
+
+
+# What each section's problem does to Frigate behind the reverse proxy, for the warning.
+_PROXY_AUTH_CONSEQUENCE = {
+    "auth": "so Frigate asks for its own login as well as the reverse proxy's",
+    "proxy": "so Frigate may trust headers the reverse proxy doesn't set",
+    "tls": "so Frigate serves port 8971 over TLS, which the reverse proxy doesn't use",
+}
+
+
 def _describe_yaml_error(error):
     """Name a YAML error and where it is.
 
@@ -276,9 +292,14 @@ def run(frigate_config, dry_run=False):
         _warn(kind, name, problem, detail)
     proxy_auth_added = add_proxy_auth(document.data)
     for problem in proxy_auth_problems(document.data):
+        consequence = _PROXY_AUTH_CONSEQUENCE[problem.partition(".")[0]]
         print(
-            f"{PREFIX} WARNING {problem}, so Frigate won't accept the reverse proxy's login. "
-            "Set it as a new install's config.yml has it.",
+            f"{PREFIX} WARNING {problem}, {consequence}. Set it as a new install's config.yml has it.",
+            file=sys.stderr,
+        )
+    if isinstance(document.data, dict) and "auth" not in document.data:
+        print(
+            f"{PREFIX} WARNING auth was not added, so Frigate's own login stays on until proxy is fixed.",
             file=sys.stderr,
         )
     if not changed and not proxy_auth_added:

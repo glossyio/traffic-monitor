@@ -102,12 +102,58 @@ def test_existing_sections_are_left_alone_and_warned_about(frigate_config, capsy
     assert "auth.enabled is true" in capsys.readouterr().err
 
 
-def test_proxy_section_without_a_secret_warns(frigate_config, capsys):
+def test_proxy_section_without_a_secret_warns_and_keeps_frigates_login_on(frigate_config, capsys):
     prepend(frigate_config, "proxy:\n  header_map:\n    user: x-forwarded-user\n    role: x-forwarded-groups\n")
 
     assert migrate.run(frigate_config) == 0
-    assert "auth_secret" not in yaml.safe_load(frigate_config.read_text())["proxy"]
-    assert "WARNING proxy.auth_secret is missing" in capsys.readouterr().err
+    doc = yaml.safe_load(frigate_config.read_text())
+    assert "auth_secret" not in doc["proxy"]
+    assert "auth" not in doc
+    assert doc["tls"] == {"enabled": False}
+    err = capsys.readouterr().err
+    assert "WARNING proxy.auth_secret is missing, so Frigate may trust headers the reverse proxy doesn't set" in err
+    assert "WARNING auth was not added, so Frigate's own login stays on until proxy is fixed" in err
+
+
+@pytest.mark.parametrize(
+    "proxy",
+    [
+        # nginx blanks Remote-Groups, so every user would get default_role, here admin.
+        "proxy:\n  header_map:\n    user: remote-user\n    role: remote-groups\n"
+        "  auth_secret: \"{FRIGATE_PROXY_AUTH_SECRET}\"\n  default_role: admin\n",
+        # nginx passes a client's X-Authentik-Groups through, so a viewer could send admin.
+        "proxy:\n  header_map:\n    user: x-forwarded-user\n    role: x-authentik-groups\n"
+        "  auth_secret: \"{FRIGATE_PROXY_AUTH_SECRET}\"\n",
+    ],
+    ids=["remote-headers-default-admin", "client-supplied-role-header"],
+)
+def test_unsafe_proxy_section_keeps_frigates_login_on(frigate_config, capsys, proxy):
+    prepend(frigate_config, proxy)
+
+    assert migrate.run(frigate_config) == 0
+    text = frigate_config.read_text()
+    assert text.startswith(proxy)
+    assert "auth" not in yaml.safe_load(text)
+    err = capsys.readouterr().err
+    assert "WARNING proxy.header_map." in err
+    assert "WARNING auth was not added" in err
+
+    capsys.readouterr()
+    assert migrate.run(frigate_config) == 0
+    assert "auth" not in yaml.safe_load(frigate_config.read_text())
+    assert "up to date" in capsys.readouterr().out
+
+
+def test_proxy_section_like_ours_still_gets_auth_turned_off(frigate_config, capsys):
+    prepend(
+        frigate_config,
+        "proxy:\n  header_map:\n    user: X-Forwarded-User\n    role: x-forwarded-groups\n"
+        "  auth_secret: \"{FRIGATE_PROXY_AUTH_SECRET}\"\n",
+    )
+
+    assert migrate.run(frigate_config) == 0
+    assert yaml.safe_load(frigate_config.read_text())["auth"] == {"enabled": False}
+    assert "WARNING" not in output(capsys)
 
 
 @pytest.mark.parametrize(
