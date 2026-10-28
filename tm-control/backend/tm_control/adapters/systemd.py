@@ -1,18 +1,22 @@
-"""systemd through its command-line tools: start or restart a unit, read its properties, and read its journal.
+"""systemd through its command-line tools: start or restart a unit, read its properties, read its journal, and
+reboot or power off the device.
 
-tm-control runs unprivileged; polkit lets it start, stop, and restart the named units (tmsetup_tm_control_polkit).
-Reading properties needs no privilege, and reading a system unit's journal needs the systemd-journal (or adm) group.
+tm-control runs unprivileged; polkit lets it start, stop, and restart the named units, reboot, and power off
+(tmsetup_tm_control_polkit). Reading properties needs no privilege, and reading a system unit's journal needs the
+systemd-journal (or adm) group.
 """
 
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from tm_control.adapters.command import CommandResult, run
+from tm_control.adapters.command import TRUNCATED, CommandResult, run
 
 log = logging.getLogger(__name__)
 
 JOURNAL_MAX_OUTPUT = 1024 * 1024
+JOURNAL_TAIL_MAX_OUTPUT = 256 * 1024
+JOURNAL_CUT = "[The rest of the journal was cut here: it was longer than tm-control keeps.]"
 SHOW_TIMEOUT = 4  # seconds; show_units is a status probe
 SHOW_MAX_OUTPUT = 16384
 
@@ -25,6 +29,33 @@ def start_unit(name: str) -> CommandResult:
 def restart_unit(name: str) -> CommandResult:
     """Queue a restart and return at once (--no-block)."""
     return run(["systemctl", "restart", "--no-block", name], timeout=30)
+
+
+def reboot() -> CommandResult:
+    """Ask logind to reboot; polkit allows org.freedesktop.login1.reboot (and -multiple-sessions)."""
+    return run(["systemctl", "reboot"], timeout=30)
+
+
+def power_off() -> CommandResult:
+    """Ask logind to power off; polkit allows org.freedesktop.login1.power-off (and -multiple-sessions)."""
+    return run(["systemctl", "poweroff"], timeout=30)
+
+
+LOGIND = ["busctl", "call", "org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager"]
+CAN_TIMEOUT = 4  # seconds; asked before the API answers
+
+
+def can(method: str) -> bool:
+    """Whether logind would reboot or power off now (method CanReboot or CanPowerOff): only a plain "yes" counts.
+
+    "challenge" means polkit would ask for a password, and anything else, or a failure, means no; a block inhibitor
+    (an update, say) is one reason. Asked first, because systemctl's refusal would come after the 202.
+    """
+    try:
+        result = run([*LOGIND, method], timeout=CAN_TIMEOUT, max_output=4096)
+    except OSError:
+        return False
+    return result.returncode == 0 and not result.timed_out and result.stdout.strip() == 's "yes"'
 
 
 def _properties(stdout: str, properties: list[str]) -> dict[str, str]:
@@ -136,3 +167,20 @@ def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | 
             if len(lines) >= limit:
                 break
     return lines
+
+
+def journal_tail(unit: str, lines: int) -> list[str] | None:
+    """The unit's last `lines` journal lines as journalctl prints them, with ISO 8601 times; None if the journal
+    can't be read."""
+    argv = ["journalctl", "-u", unit, "-n", str(lines), "--no-pager", "-o", "short-iso"]
+    try:
+        result = run(argv, timeout=10, max_output=JOURNAL_TAIL_MAX_OUTPUT)
+    except OSError:
+        return None
+    if result.returncode != 0 or result.timed_out:
+        log.warning("journalctl for %s failed with exit status %s", unit, result.returncode)
+        return None
+    if not result.stdout.endswith(TRUNCATED):
+        return result.stdout.splitlines()
+    # The cap cut the output mid-line, and a secret cut in two can't be matched by its value: drop that line.
+    return result.stdout.removesuffix(TRUNCATED).splitlines()[:-1] + [JOURNAL_CUT]

@@ -56,6 +56,45 @@ def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, s
     return {name: {key: values.get(key, "") for key in properties} for name, values in states.items()}
 
 
+def system_info(disk_paths: list[str]) -> dict:
+    """Fake mode's host readings, as the sysinfo adapter returns them: a Pi 5 up for two days, its storage 87% used
+    (as the fake status report says), each disk path on the same card."""
+    total, free = 58 * 2**30, int(7.5 * 2**30)
+    return {
+        "model": "Raspberry Pi 5 Model B Rev 1.0",
+        "os": "Debian GNU/Linux 13 (trixie)",
+        "kernel": "6.12.47+rpt-rpi-2712",
+        "uptime_seconds": 2 * 86400 + 3 * 3600,
+        "memory": {"total": 8 * 2**30, "available": int(5.5 * 2**30)},
+        "disks": [{"path": path, "total": total, "used": total - free, "free": free} for path in disk_paths],
+        "soc_temperature_c": 52.7,
+        "throttled": {"raw": "0x0", "now": [], "since_boot": []},
+    }
+
+
+def time_state() -> list[str]:
+    """Fake mode's stand-in for timedatectl show."""
+    now = time.strftime("%a %Y-%m-%d %H:%M:%S %Z")
+    return [
+        "Timezone=America/Los_Angeles",
+        "LocalRTC=no",
+        "CanNTP=yes",
+        "NTP=yes",
+        "NTPSynchronized=yes",
+        f"TimeUSec={now}",
+        f"RTCTimeUSec={now}",
+    ]
+
+
+def journal_tail(unit: str, lines: int) -> list[str]:
+    """Fake mode's stand-in for systemd.journal_tail: a few ordinary lines."""
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(time.time() - 2 * 3600))
+    return [
+        f"{stamp} tm-fake systemd[1]: Starting {unit}...",
+        f"{stamp} tm-fake systemd[1]: Started {unit}.",
+    ][-lines:]
+
+
 def status_groups(path: Path = FAKE_STATUS) -> list[CheckGroup]:
     """Fake mode's check groups: the fixture's groups, which between them show every status and kind of fix."""
     groups = [Group.model_validate(group) for group in json.loads(path.read_text())["groups"]]
