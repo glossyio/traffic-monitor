@@ -151,7 +151,9 @@ def test_auth_snippets_set_every_identity_variable_and_the_error_pages(name):
     for variable in IDENTITY_VARIABLES:
         assert f"auth_request_set ${variable} $upstream_http_x_{variable};" in conf
     assert "error_page 401 = @tm_login;" in conf
-    assert "error_page 500 502 503 504 =503 /unavailable.html;" in conf
+    # Only a failed check (auth_request's 500) gets the rescue page; an app that is down keeps nginx's 502/504
+    assert "error_page 500 =503 /unavailable.html;" in conf.splitlines()
+    assert not [line for line in conf.splitlines() if line.startswith("error_page") and "502" in line]
 
 
 @pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])
