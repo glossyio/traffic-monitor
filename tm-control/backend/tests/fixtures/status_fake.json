@@ -17,7 +17,7 @@
                     "detail": "Stopped after it failed 3 times in a row.",
                     "fix": {
                         "kind": "restart",
-                        "text": "Restart Frigate.",
+                        "text": "Restart Frigate",
                         "unit": "frigate.service"
                     }
                 },
@@ -34,7 +34,7 @@
                     "detail": "Restarted 4 times in the last hour.",
                     "fix": {
                         "kind": "restart",
-                        "text": "Restart the camera streams.",
+                        "text": "Restart Camera streams (go2rtc)",
                         "unit": "go2rtc_server.service"
                     }
                 }

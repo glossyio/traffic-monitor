@@ -342,6 +342,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Services */
+        get: operations["services_api_v1_services_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/services/{unit}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restart */
+        post: operations["restart_api_v1_services__unit__restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/device": {
         parameters: {
             query?: never;
@@ -499,6 +533,28 @@ export interface components {
             };
             /** Groups */
             groups: components["schemas"]["Group"][];
+        };
+        /** RestartQueued */
+        RestartQueued: {
+            /** Unit */
+            unit: string;
+        };
+        /** Service */
+        Service: {
+            /** Unit */
+            unit: string;
+            /** Title */
+            title: string;
+            /** Active State */
+            active_state: string;
+            /** Sub State */
+            sub_state: string;
+            /** Since */
+            since: string | null;
+            /** Restarts */
+            restarts: number;
+            /** Restartable */
+            restartable: boolean;
         };
         /** SystemPassword */
         SystemPassword: {
@@ -993,6 +1049,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Report"];
+                };
+            };
+        };
+    };
+    services_api_v1_services_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"][];
+                };
+            };
+        };
+    };
+    restart_api_v1_services__unit__restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestartQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
