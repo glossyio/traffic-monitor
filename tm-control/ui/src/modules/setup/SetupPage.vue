@@ -62,9 +62,10 @@ const claiming = ref(false)
 const claimError = ref('')
 const alreadyClaimed = ref(false)
 
-// Typed or pasted as "abcd efgh", "ABCDEFGH", or "ABCD-EFGH": shown as the card prints it, ABCD-EFGH
+// Typed or pasted as "abcd efgh", "ABCDEFGH", or "ABCD-EFGH": shown as the card prints it, ABCD-EFGH. Nothing is cut
+// off: a longer paste ("Code: ABCD-EFGH") stays too long, and wholeCode refuses it, rather than becoming another code.
 function formatSetupCode(text: string) {
-  const chars = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+  const chars = text.toUpperCase().replace(/[^A-Z0-9]/g, '')
   return chars.length > 4 ? `${chars.slice(0, 4)}-${chars.slice(4)}` : chars
 }
 

@@ -290,7 +290,8 @@ def test_ui_page_is_revalidated_and_missing_assets_are_404():
     assert "root /usr/share/nginx/ui;" in assets
     assert "try_files $uri =404;" in assets
     assert "index.html" not in assets
-    assert 'add_header Cache-Control "public, max-age=31536000, immutable" always;' in assets
+    # Without "always", so only a found asset is cached for good, never a 404
+    assert 'add_header Cache-Control "public, max-age=31536000, immutable";' in assets
 
 
 def test_unavailable_page_names_cockpit_and_the_service():

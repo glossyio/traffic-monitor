@@ -62,6 +62,16 @@ describe('setup', () => {
     expect(wrapper.text()).toContain('The setup code has 8 letters and digits.')
   })
 
+  it("doesn't cut a longer paste down to 8 characters and spend a try on it", async () => {
+    const api = unclaimedDevice()
+    const { wrapper } = await mountApp('/setup')
+    await fillClaimForm(wrapper)
+    await field(wrapper, 'Setup code').setValue('Code: ABCD-EFGH')
+    await click(wrapper, 'Claim this device')
+    expect(api.sent.some((r) => r.path === '/api/v1/setup/claim')).toBe(false)
+    expect(wrapper.text()).toContain('The setup code has 8 letters and digits.')
+  })
+
   it('says what to do when the device does not answer', async () => {
     unclaimedDevice({ 'POST /api/v1/setup/claim': () => Promise.reject(new TypeError('Failed to fetch')) })
     const { wrapper } = await mountApp('/setup')
