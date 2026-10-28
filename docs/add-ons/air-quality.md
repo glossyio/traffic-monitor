@@ -20,6 +20,7 @@ The sensor is read by [greendormer/enviroplus-monitor](https://github.com/greend
 |---|---|---|
 | `enable_send_data_to_homemanager` | `true` | Publish readings over MQTT |
 | `mqtt_broker_name` | `"localhost"` | The Traffic Monitor's broker, on port 1883 |
+| `mqtt_username`, `mqtt_password` | The broker's login | Needed once the broker has a login. See [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices). |
 | `indoor_outdoor_function` | `"Outdoor"` | Use the outdoor topic |
 | `outdoor_mqtt_topic` | `"aq/sensorname01/readings"` | The topic must start with `aq/`, and the middle part is the sensor's name in the Traffic Monitor's settings |
 | `enable_display` | `false` | The board's screen is inside the enclosure |

@@ -1,0 +1,119 @@
+---
+# TMSetup - MQTT Broker: port 1883 is open to the network exactly when node-red-tm.env sets a broker
+# login, and the broker enforces it. main.yml imports this with every tag that renders the pod.
+# Tasks that handle the login set no_log, because tmsetup.sh copies all output into ~/tmsetup-*.log.
+- name: TMSetup - MQTT Broker - Check for the env files
+  become: true
+  loop:
+    - '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    - '{{ tmsetup_codedir }}/frigate/frigate.env'
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  register: tmsetup_mqtt_env_stat_register
+
+- name: TMSetup - MQTT Broker - Read node-red-tm.env
+  become: true
+  no_log: true
+  ansible.builtin.slurp:
+    src: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+  register: tmsetup_mqtt_env_register
+  when: tmsetup_mqtt_env_stat_register.results[0].stat.exists
+
+- name: TMSetup - MQTT Broker - Set the broker login
+  no_log: true
+  vars:
+    env_text: "{{ tmsetup_mqtt_env_register.content | b64decode if tmsetup_mqtt_env_stat_register.results[0].stat.exists else '' }}"
+    found_username: "{{ (env_text | regex_search('(?m)^TM_MQTT_BROKER_USERNAME=.*$') or '') | regex_replace('^TM_MQTT_BROKER_USERNAME=', '') | trim }}"
+    found_password: "{{ (env_text | regex_search('(?m)^TM_MQTT_BROKER_PASSWORD=.*$') or '') | regex_replace('^TM_MQTT_BROKER_PASSWORD=', '') | trim }}"
+    create: "{{ (tmsetup_bool_mqtt_lan | default(false) | bool) and not found_username and not found_password }}"
+  ansible.builtin.set_fact:
+    tmsetup_mqtt_broker_login_created: '{{ create }}'
+    tmsetup_mqtt_broker_login:
+      username: "{{ 'tm' if create else found_username }}"
+      password: "{{ lookup('community.general.random_string', length=32, special=false) if create else found_password }}"
+
+- name: TMSetup - MQTT Broker - Open port 1883 only with a login
+  no_log: true
+  ansible.builtin.set_fact:
+    tmsetup_mqtt_lan_open: "{{ tmsetup_mqtt_broker_login.username != '' and tmsetup_mqtt_broker_login.password != '' }}"
+
+# The failed expression names variables, never values, so this task can show its message.
+- name: TMSetup - MQTT Broker - Check the broker login
+  ansible.builtin.assert:
+    that:
+      - (tmsetup_mqtt_broker_login.username == '') == (tmsetup_mqtt_broker_login.password == '')
+      - tmsetup_mqtt_broker_login.username is regex('^[A-Za-z0-9._-]*$')
+      - tmsetup_mqtt_broker_login.password is regex('^[A-Za-z0-9._-]*$')
+    fail_msg: >-
+      TM_MQTT_BROKER_USERNAME and TM_MQTT_BROKER_PASSWORD in node-red-tm.env must both be set or both be blank,
+      using only letters, digits, '.', '_', and '-', with no quotes. Fix the file, then run tmsetup.sh again.
+    quiet: true
+
+- name: TMSetup - MQTT Broker - Write the broker login to node-red-tm.env
+  become: true
+  no_log: true
+  loop:
+    - { key: TM_MQTT_BROKER_USERNAME, value: '{{ tmsetup_mqtt_broker_login.username }}' }
+    - { key: TM_MQTT_BROKER_PASSWORD, value: '{{ tmsetup_mqtt_broker_login.password }}' }
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  when: tmsetup_mqtt_env_stat_register.results[0].stat.exists
+  notify:
+    - Restart frigate.service
+    - Restart node-red-tm.service
+
+- name: TMSetup - MQTT Broker - Give Frigate the broker login
+  become: true
+  no_log: true
+  loop:
+    - { key: FRIGATE_MQTT_USER, value: '{{ tmsetup_mqtt_broker_login.username }}' }
+    - { key: FRIGATE_MQTT_PASSWORD, value: '{{ tmsetup_mqtt_broker_login.password }}' }
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/frigate/frigate.env'
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  register: tmsetup_mqtt_frigate_lines_register
+  when:
+    - tmsetup_mqtt_lan_open
+    - tmsetup_mqtt_env_stat_register.results[1].stat.exists
+  notify:
+    - Restart frigate.service
+    - Restart node-red-tm.service
+
+- name: TMSetup - MQTT Broker - Remind about the other MQTT clients
+  ansible.builtin.debug:
+    msg: >-
+      The MQTT broker now requires the login in {{ tmsetup_codedir }}/node-red-tm/node-red-tm.env, and port 1883 is
+      open to the network. Give that login to the air quality sensor (mqtt_username and mqtt_password in its
+      config.json) and to every other MQTT client, such as Home Assistant or a display board.
+  when: tmsetup_mqtt_lan_open and (tmsetup_mqtt_broker_login_created or tmsetup_mqtt_frigate_lines_register is changed)
+
+# Devices installed before M1 published MQTT to the network with no login. This file runs before
+# podman_setup.yml renders the new pod, so the installed unit still shows whether 1883 was open.
+- name: TMSetup - MQTT Broker - Check for the installed pod unit
+  become: true
+  ansible.builtin.stat:
+    path: /etc/containers/systemd/traffic-monitor.pod
+  register: tmsetup_mqtt_pod_stat_register
+
+- name: TMSetup - MQTT Broker - Read the installed pod unit
+  become: true
+  no_log: true
+  ansible.builtin.slurp:
+    src: /etc/containers/systemd/traffic-monitor.pod
+  register: tmsetup_mqtt_pod_register
+  when: tmsetup_mqtt_pod_stat_register.stat.exists
+
+- name: TMSetup - MQTT Broker - Say that port 1883 closes to the network
+  ansible.builtin.debug:
+    msg: >-
+      Port 1883 now accepts MQTT only from this device. To let other devices, such as a display board or Home
+      Assistant, connect, give the broker a login with 'bash script/tmsetup.sh -t node-red-tm -C mqtt_lan' and give
+      that login to each client (see "Connect from other devices" in the docs).
+  when:
+    - not tmsetup_mqtt_lan_open
+    - tmsetup_mqtt_pod_stat_register.stat.exists
+    - (tmsetup_mqtt_pod_register.content | b64decode) is regex('^PublishPort=1883:1883$', multiline=true)
+...

@@ -9,12 +9,12 @@ An update reruns the installer from a newer copy of the repository. Your data an
 ## Before you update
 
 * Read the [release notes](https://github.com/glossyio/traffic-monitor/releases). A release that needs a fresh image says so.
-* Download a copy of the database from the [Data export](../ui/database.md#download-the-database) page. Open that page on Node-RED's port, as it explains, because downloads through the home page's `/dashboard/` path fail.
+* Download a copy of the database from the [Data export](../ui/database.md#download-the-database) page.
 * Make sure the device has an internet connection. The update downloads packages and rebuilds the container images. Rebuilding Frigate's image compiles ffmpeg on the device, which can take about 20 minutes.
 
 ## Update
 
-Connect to the device over SSH, then update the clone you installed from and rerun the installer:
+Connect to the device over SSH, then update the clone you installed from and rerun the whole installer:
 
 ```bash
 cd traffic-monitor
@@ -22,7 +22,21 @@ git pull
 bash script/tmsetup.sh
 ```
 
+Run the whole installer rather than a single tag, because one version's changes can span several components.
+
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](../data-and-payloads/data-overview.md#schema-versions) describes the copy it saves first.
+
+??? warning "The installer printed `tm-control migrate: WARNING`"
+
+    A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](../configuration/frigate-config.md#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is. To find the warning later:
+
+    ```bash
+    grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
+    ```
+
+A Frigate configuration from a backup may lack the camera stream login. After you restore one, run `bash script/tmsetup.sh -t frigate` to add it.
+
+Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices).
 
 Open `http://<device>/` and check the [Monitoring dashboard](../ui/monitoring.md) for new counts.
 
@@ -38,7 +52,7 @@ Node-RED flow changes made in the editor on the device are replaced on every upd
 
 ## Update one component
 
-Each installer tag reruns one component. For example, after plugging in a radar:
+Each installer tag reruns one component, plus anything that has to change with it; see [Tags](../reference/tmsetup.md#tags). For example, after plugging in a radar:
 
 ```bash
 bash script/tmsetup.sh -t node-red-tm

@@ -44,10 +44,12 @@ cameras:
   picam_h265:
     enabled: true
     type: generic
+    mqtt:
+      enabled: false
     ffmpeg:
       hwaccel_args: -hwaccel drm
       inputs:
-        - path: rtsp://host.containers.internal:8554/picam_h265_detect
+        - path: rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect
           roles:
             - detect
             - record

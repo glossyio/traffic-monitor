@@ -31,6 +31,7 @@ tmsetup_packages:
   - cron
   - rpicam-apps
   - sysstat
+  - python3-venv
 
 tmsetup_packages_backports:
   - cockpit
@@ -65,5 +66,17 @@ tmsetup_revproxy_locations:
   - go2rtc.conf
   - legacy-ui.conf
   - nodered.conf
+  - storefiles.conf
+
+# Secrets generated once on the device by tasks/secrets.yml. Only names here; values never in the repo.
+tmsetup_secrets_dir: /etc/traffic-monitor/secrets
+tmsetup_secret_names:
+  - go2rtc_rtsp_password
+
+# tm-control code and venv: root-owned, outside tmsetup_codedir (which the code owner can write)
+tmsetup_tm_control_dir: /usr/local/lib/traffic-monitor/tm-control
+
+# go2rtc RTSP user that Frigate logs in as; the password is tmsetup_secrets['go2rtc_rtsp_password']
+tmsetup_go2rtc_rtsp_user: frigate
 
 ...

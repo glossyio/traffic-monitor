@@ -17,13 +17,9 @@ A comment is a timestamped note stored in the `comments` table, for whoever anal
 
 ## Download the database
 
-Downloads the whole database as a compressed archive named `<hostname>_<time>_tmdb.tar.gz`. The page shows the database's size in megabytes. A large database takes a while: a 3 GB file can take about 5 minutes to compress and several more to download.
+Downloads the whole database as a compressed archive named `<hostname>_<time>_tmdb.tar.gz`. The page shows the database's size in megabytes. The device first makes a consistent copy of the database, so a large one can take a minute or two before the download starts. The copy needs free space about the size of the database; if there isn't enough, the page says so. A 3 GB file can then take about 5 minutes to compress and several more to download. Cancel also works while the copy is being made: the download stops once the copy is done, and no archive is sent. If a download fails, you see the reason instead of a broken file.
 
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
-
-!!! warning "Download from Node-RED's port"
-
-    Downloads fail when you open this page through the home page's `/dashboard/` path, for the database and for JSON alike. Open the page on Node-RED's port instead, `http://<device>:1880/dashboard/database`, and download from there.
 
 ## Download JSON
 

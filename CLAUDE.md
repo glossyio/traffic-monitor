@@ -10,11 +10,13 @@ Traffic Monitor turns a Raspberry Pi 5 with a camera, OmniPreSense Doppler radar
 - `container/`: Jinja templates per container (Containerfile, Podman Quadlet units, env/config files). `docker/` is a symlink to it.
 - `container/node-red-tm/data/flows.json`: nearly all application logic (Node-RED flows).
 - `utils/`: helper scripts and configs that get copied to `{{ tmsetup_codedir }}/utils` on the device.
+- `tm-control/`: the Traffic Monitor control app (spec in `design/specs/`). So far only `tm-control migrate`, which tmsetup runs to update config files from older installs. It's installed root-owned to `/usr/local/lib/traffic-monitor/tm-control` and `/usr/local/bin/tm-control`.
+- `design/`: specs and implementation plans. Not published to the docs site.
 - `docs/`: source for docs.trafficmonitor.ai, built with Material for MkDocs (`mkdocs.yml` holds the nav) and published by `.github/workflows/docs.yml` with mike to the `gh-pages` branch: pushes to `dev` → `/dev/`, release tags → `/vX.Y.Z/` and `/latest/`. Use admonitions (`!!! info`), relative `.md` links, and Markdown images in `docs/assets/images/`. New pages must be added to `nav:`, whose sections are named for the reader's job, and a page outside the folders the `llmstxt` plugin already lists also to that plugin's matching section, which generates `llms.txt`. Keep file paths stable when moving a page in the nav; a path that does change needs a row in the `moved` map in `docs-site/pages-root/404.html`. Build tooling is in `docs-site/`: hash-pinned requirements, theme override, and root `404.html` that redirects GitBook-era URLs.
 
 ## Commands
 
-The only CI is the docs build (`.github/workflows/docs.yml`, `mkdocs build --strict` on PRs that touch docs) and GitHub's CodeQL scanning. The off-device tests cover the tmdb schema (`container/node-red-tm/schema/tests`). Device tests (`script/devpi/tests`) check a bench Pi over SSH and run only through `tmdev.py test` (or with `TM_DEV_HOSTS` set). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
+The only CI is the docs build (`.github/workflows/docs.yml`, `mkdocs build --strict` on PRs that touch docs) and GitHub's CodeQL scanning. The off-device tests cover the tmdb schema (`container/node-red-tm/schema/tests`), the role's templates and tasks and `flows.json` (`script/tests`), and tm-control (`tm-control/backend/tests`). Device tests (`script/devpi/tests`) check a bench Pi over SSH and run only through `tmdev.py test` (or with `TM_DEV_HOSTS` set). Install only works on a Raspberry Pi running Raspberry Pi OS 64-bit. The role reads the Pi serial number from devicetree, edits `/boot/firmware/config.txt`, builds kernel drivers, and may reboot, so never run `tmsetup.sh` against a dev machine.
 
 Local checks (any Linux box):
 
@@ -23,7 +25,7 @@ Local checks (any Linux box):
 python3 -m venv .venv && .venv/bin/pip install -r script/requirements-dev
 . .venv/bin/activate
 
-python -m pytest container/node-red-tm/schema/tests  # schema runner, migrations, and flows.json SQL vs. schema
+python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests  # schema, role templates and tasks, tm-control
 (cd script/ansible && ansible-playbook -i localhost setup.yml --syntax-check)  # task/YAML structure; does not render templates
 (cd script/ansible && ansible-playbook -i localhost setup.yml --list-tags)
 python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files '*.j2')
@@ -42,12 +44,14 @@ On a Pi (re-running a single tag is the closest thing to running a single test):
 
 ```bash
 bash script/tmsetup.sh                    # full local install; -y skips prompts, -v for verbose Ansible
-bash script/tmsetup.sh -T                 # list tags: base full_upgrade wifi go2rtc detectors podman frigate node-red-tm plate-recognizer revproxy
-bash script/tmsetup.sh -t node-red-tm     # redeploy one component (-t can repeat)
+bash script/tmsetup.sh -T                 # list tags: base full_upgrade wifi go2rtc detectors podman frigate node-red-tm plate-recognizer revproxy tm-control
+bash script/tmsetup.sh -t node-red-tm     # redeploy a component (-t can repeat)
 bash script/tmsetup.sh -f                 # also overwrite user-editable configs from templates (timestamped backups kept)
 bash script/tmsetup.sh -C plate_recognizer            # enable the optional Plate Recognizer container
 bash script/tmsetup.sh -H <ip>[,<ip>] -l <user> -k    # from a dev machine: install to remote Pis over SSH
 ```
+
+A single `-t` assumes the rest of the device already runs the same version; to update a device to a new version, run the whole installer. The podman, frigate, node-red-tm, go2rtc, and revproxy tags always render the pod and revproxy together (`tasks/main.yml`).
 
 Always use `tmsetup.sh` rather than calling `ansible-playbook` directly. The script supplies extra vars the role depends on (e.g. `tmsetup_reboot_touch_file`) and handles the reboot prompt.
 
@@ -86,7 +90,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - `*.env.j2` and `config/config.yml.j2` hold user-editable settings.
 
   Other rendered files land in `{{ tmsetup_codedir }}/<svc>/` (default `/opt/traffic-monitor`). When adding a component, copy `revproxy`, the newest complete example. That means a task file, an import in `tasks/main.yml` with its tag, a `Restart <svc>.service` handler, and the tag added to the `start_services.yml` import and to `_VALID_TAGS`.
-- **Overwrite semantics:** the `config.yml` and `*.env` templates use `force: '{{ tmsetup_force_configs }}'`, so they're written only on first install or with `-f`. Changes to those templates won't reach existing devices otherwise. Containerfiles, Quadlet units, nginx files, Node-RED `flows.json`/`settings.js`/`package.json`, and the tmdb schema files from `container/node-red-tm/schema/` (all but `tests/`) are overwritten on every run. Flow edits made in a device's Node-RED editor are lost unless they're committed back here.
+- **Overwrite semantics:** the `config.yml` and `*.env` templates use `force: '{{ tmsetup_force_configs }}'`, so they're written only on first install or with `-f`. Changes to those templates won't reach existing devices otherwise. Containerfiles, Quadlet units, nginx files, Node-RED `flows.json`/`settings.js`/`package.json`, and the tmdb schema files from `container/node-red-tm/schema/` (all but `tests/`) are overwritten on every run. Flow edits made in a device's Node-RED editor are lost unless they're committed back here. To change an existing device's `config.yml` without `-f`, add a step to `tm-control migrate` (round-trip edit with a backup), as tmsetup does for the go2rtc RTSP credentials. Add new `*.env` keys with `lineinfile`.
 - **Hardware is detected at install time** and baked into rendered files.
   - `detectors_check.yml` probes for Coral USB/PCIe and Hailo-8L (`tmsetup_detectors` in `defaults/main.yml`). The results drive Frigate's `AddDevice` lines, the `detectors:`/`model:` sections of Frigate's `config.yml`, and `/boot/firmware/traffic-monitor-config.txt`.
   - Radars present at `/dev/ttyACM0-3` become `AddDevice` lines for node-red-tm.
@@ -100,18 +104,18 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 
 ### Runtime topology
 
-- All containers (frigate, node-red-tm, revproxy, optional plate-recognizer) run in one pod, `container/traffic-monitor.pod.j2`, which also lists the published ports. They share the pod's network namespace:
+- The app containers (frigate, node-red-tm, optional plate-recognizer) run in one pod, `container/traffic-monitor.pod.j2`, which also lists the published ports. The pod publishes its ports on 127.0.0.1 only (1880, 1883, 5000, 8971). 1883 also opens to the LAN when `node-red-tm.env` sets a broker login, which the Aedes broker enforces (`tasks/mqtt_broker.yml`); `-C mqtt_lan` creates one. The containers share the pod's network namespace:
   - Frigate publishes MQTT to `localhost:1883`. That broker is Aedes, running inside Node-RED.
   - Node-RED calls `http://frigate:5000/api/...`.
-  - nginx proxies to `127.0.0.1:<port>`.
-- go2rtc runs on the host, not in the pod (`go2rtc_server.service`, config from `roles/tmsetup/files/go2rtc.yaml`), because it runs `rpicam-vid` to reach the Pi camera. Frigate reads `rtsp://host.containers.internal:8554/picam_h265_detect`. The pod's port 1984 (Frigate's bundled go2rtc) is published as host port 1964 because the host go2rtc already uses 1984.
+- go2rtc runs on the host, not in the pod (`go2rtc_server.service`, config from `roles/tmsetup/templates/go2rtc.yaml.j2`), because it runs `rpicam-vid` to reach the Pi camera. Its API listens on 127.0.0.1:1984. Its RTSP server needs credentials. Frigate reads `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect`; the values are in `frigate.env`, and the password comes from `/etc/traffic-monitor/secrets/` (generated by `tasks/secrets.yml`). `app.modules` leaves out `webrtc`, and `exec.allow_paths` allows only `rpicam-vid`; a new stream command must be added there.
 - The Frigate image adds a Raspberry Pi ffmpeg fork compiled for hardware HEVC decoding (`-hwaccel drm`, `/dev/video19`, and the decoder's `/dev/media*` device). The decoder's number can change between boots, so a udev rule (`templates/60-traffic-monitor-hevc-dec.rules.j2`) adds the symlink `/dev/rpi-hevc-dec` (`tmsetup_hevc_device` in `vars/main.yml`), and Frigate's unit passes that symlink with no container path. Podman resolves it to the real `/dev/mediaN`, which is the name ffmpeg scans for, so never give it a container path.
-- UIs: Node-RED editor `:1880` (admin/password), legacy dashboard `:1880/ui`, Dashboard 2.0 `:1880/dashboard`, Frigate `:5000`, host go2rtc `:1984`, host Cockpit `:9090`.
-- nginx (`revproxy`) serves a home page on `:80` and proxies `/dashboard`, `/frigate`, `/ui`, `/nr`, `/feeds`, and `/system` (Cockpit, on the host). Its config is plain nginx, bind-mounted into the container rather than built into the image:
+- UIs: the home page on `:80` links to each app. Node-RED editor `/nr/` (admin/password), legacy dashboard `/ui/`, Dashboard 2.0 `/dashboard/`, Frigate `/frigate/`, go2rtc streams `/feeds/` (viewing only), and Cockpit `/system/`. Apart from Cockpit's own `:9090`, its rescue console, nginx is the only web server the LAN can reach.
+- nginx (`revproxy`) runs on the host network, outside the pod, so the home page stays up when the pod is down. It reaches every app on `127.0.0.1:<port>`, the pod's published ports and the host's go2rtc and Cockpit. It serves a home page on `:80` and proxies `/dashboard`, `/frigate`, `/ui`, `/nr`, `/feeds`, `/system` (Cockpit, on the host), and `/storefiles` (the Dashboard database page's downloads). Its config is plain nginx, bind-mounted into the container rather than built into the image:
   - Each app's `location` block is its own file in `container/revproxy/tm/locations/`, listed in `tmsetup_revproxy_locations` (`vars/main.yml`). Each one includes `tm/snippets/proxy-common.conf` for the forwarding and WebSocket headers.
   - Setup renders the config into a throwaway directory and runs `nginx -t` on it before writing the device's copy, so a bad config never replaces a good one. It also deletes location files on the device that aren't in the list.
   - To proxy a new app, add its location file, list it, and add a link to the hand-written `html/index.html.j2`.
   - Frigate runs under `/frigate`, set by `FRIGATE_BASE_PATH` and `X-Ingress-Path`.
+  - `go2rtc.conf` limits `/feeds` to viewing: GET only, lowercase unencoded parameter names (nginx and go2rtc must read the same `src`), no `dst`, plain stream names as `src`, and a sibling regex location that returns 403 for go2rtc API paths the players don't use.
 
 ### Node-RED flows (application logic)
 
@@ -141,7 +145,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - Edit programmatically and re-serialize the way Node-RED does, to keep diffs minimal. Either of these reproduces the current file byte-for-byte:
   - JS `JSON.stringify(flows, null, 4)`, with no trailing newline.
   - Python `json.dumps(flows, indent=4, ensure_ascii=False)`.
-- `flows_cred.json` is encrypted with `NODE_RED_CREDENTIAL_SECRET` from `node-red-tm.env`; don't hand-edit it.
+- `flows_cred.json` is encrypted with `NODE_RED_CREDENTIAL_SECRET` from `node-red-tm.env`; don't hand-edit it. It holds the MQTT nodes' `${TM_MQTT_BROKER_*}` credential references, stored by node id. Change it only with the container procedure in `design/plans/2026-10-02-tm-control-m1-edge-and-ports.md`, Task 10 Step 4, and keep the MQTT nodes' ids.
 
 ## Conventions
 

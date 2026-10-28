@@ -1,20 +1,26 @@
 [Unit]
 Description=Traffic Monitor pod
+# Start after the network unit without requiring it. With Network=tmnet.network, Quadlet adds Requires=,
+# and one failed start of tmnet-network.service at boot kept the pod down (#232). The network persists
+# in /etc/containers/networks/, so the pod can start even when the unit fails.
+Wants=tmnet-network.service
+After=tmnet-network.service
 
 [Pod]
 PodName=traffic-monitor
 ServiceName=traffic-monitor
-Network=tmnet.network
-PublishPort=1880:1880
+Network=tmnet
+# Published on 127.0.0.1 only: the reverse proxy (host network) and host services reach these,
+# the LAN doesn't. Every app is served to the network by the reverse proxy on port 80.
+PublishPort=127.0.0.1:1880:1880
+{% if tmsetup_mqtt_lan_open | default(false) | bool %}
+# MQTT on all interfaces, because node-red-tm.env sets a broker login the broker enforces (tasks/mqtt_broker.yml).
 PublishPort=1883:1883
-PublishPort=1964:1984
-PublishPort=5000:5000
-PublishPort=8080:8080
-PublishPort=8564:8554
-PublishPort=8565:8555/tcp
-PublishPort=8566:8555/udp
-PublishPort=8971:8971
-PublishPort=80:80
+{% else %}
+PublishPort=127.0.0.1:1883:1883
+{% endif %}
+PublishPort=127.0.0.1:5000:5000
+PublishPort=127.0.0.1:8971:8971
 ShmSize=1024m
 
 [Service]

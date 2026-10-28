@@ -1,0 +1,10 @@
+# storefiles - data export downloads from the Dashboard's database page (an http-in node on Node-RED's root).
+# The page links to /storefiles?files=... from the site root, so it needs its own location.
+location /storefiles {
+    proxy_pass http://127.0.0.1:1880;
+    include /etc/nginx/tm/snippets/proxy-common.conf;
+    # Stream the download as Node-RED writes it; a whole tmdb.sqlite can be several GB.
+    proxy_buffering off;
+    # A database download first copies tmdb.sqlite, which can take minutes before the first byte.
+    proxy_read_timeout 30m;
+}

@@ -1,0 +1,2 @@
+# tm-control runtime dependencies, pinned. Installed on the device into a venv by tmsetup.sh (tm-control tag).
+ruamel.yaml==0.19.1

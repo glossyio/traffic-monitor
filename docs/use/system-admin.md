@@ -10,11 +10,11 @@ Open `http://<device>/system/` and log in with your Raspberry Pi user account. [
 
 ## Services
 
-The Traffic Monitor runs as systemd services. The containers run inside one Podman pod.
+The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx runs on the host network, outside the pod, so the home page stays up when the pod is down.
 
 | Service | What it runs |
 |---|---|
-| `traffic-monitor.service` | The pod that holds the containers below |
+| `traffic-monitor.service` | The pod that holds Frigate, Node-RED, and Plate Recognizer if installed |
 | `frigate.service` | Frigate, object detection |
 | `node-red-tm.service` | Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker |
 | `revproxy.service` | nginx, which serves the home page and the `/dashboard/`, `/frigate/`, and other paths |
@@ -36,6 +36,7 @@ sudo podman ps                                  # running containers
 |---|---|
 | Edit Node-RED's `config.yml` | Nothing. The Traffic Monitor reads the file again when you save it. If the change doesn't show, check the file for a YAML error. |
 | Edit `node-red-tm.env` | `sudo systemctl restart node-red-tm.service`. The container reads the file only when it starts. |
+| Change the MQTT broker login in `node-red-tm.env` | `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. A restart isn't enough; [node-red-tm.env settings](../configuration/environment.md) explains why. |
 | Change Frigate's config in its UI | Choose **Save & Restart** in Frigate's config editor, or restart `frigate.service`. |
 | Plug in a radar | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
 | Add or change an AI accelerator | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). |

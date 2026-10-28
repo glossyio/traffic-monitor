@@ -37,6 +37,7 @@
 
 - name: TMSetup - Frigate Setup - Create Frigate container configuration files
   become: true
+  diff: false
   loop:
     - frigate/config/config.yml
     - frigate/frigate.env

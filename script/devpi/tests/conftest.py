@@ -22,7 +22,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import devlog  # noqa: E402
-from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, pi_json, read_root_file,  # noqa: E402
+from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, Redacted, pi_json, read_root_file,  # noqa: E402
                           require_pii_free, validate_expect)
 
 HERE = Path(__file__).resolve().parent
@@ -197,6 +197,13 @@ def pi_ready(request):
 @pytest.fixture(scope="module")
 def hostvars(host):
     return host.ansible.get_variables()
+
+
+@pytest.fixture(scope="module")
+def address(host, hostvars):
+    """The address this machine reaches the Pi at. Tests take this rather than hostvars, which pytest
+    prints in full when a test fails."""
+    return Redacted(hostvars.get("ansible_host", host.backend.hostname), "the Pi's address")
 
 
 @pytest.fixture(scope="module")

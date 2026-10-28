@@ -1,4 +1,20 @@
-# /var/lib/go2rtc/go2rtc.yaml
+# /var/lib/go2rtc/go2rtc.yaml - written by tmsetup.sh (go2rtc tag); edits here are overwritten
+app:
+  # Load only what the camera, Frigate, and /feeds use. Without the webrtc module, WebRTC is off
+  # (webrtc.listen: "" would only drop the fixed port), and players use MSE through the proxy.
+  modules: [api, ws, rtsp, exec, ffmpeg, mp4, hls, mjpeg]
+api:
+  # Only this device can reach the API and web UI; the reverse proxy serves the viewing pages at /feeds/.
+  listen: "127.0.0.1:1984"
+rtsp:
+  # Frigate reads the camera here from the pod, so RTSP stays on all interfaces but needs credentials.
+  listen: ":8554"
+  username: "{{ tmsetup_go2rtc_rtsp_user }}"
+  password: "{{ tmsetup_secrets['go2rtc_rtsp_password'] }}"
+exec:
+  # Streams may only run rpicam-vid. go2rtc already refuses exec sources sent through its API.
+  # go2rtc runs ffmpeg: sources through exec as ffmpeg, so a stream using ffmpeg: also needs ffmpeg here.
+  allow_paths: [rpicam-vid]
 streams:
   # low quality but CPU-lite h265 (hevc) encoding for detection; decrease the libav-codec-opts crf value for higher quality/bitrate
   picam_h265_detect: exec:rpicam-vid --camera 0 --mode 1536:864 --width 1536 --height 864 --framerate 10 --exposure sport --hdr --timeout 0 --nopreview --codec libav --libav-format hevc --libav-video-codec libx265 --libav-video-codec-opts "preset=ultrafast;threads=1;tune=fastdecode;crf=30;bf=0;g=60;x265-params=rd=1:ref=1:me=1:subme=1:analyse=0:no-asm=0" -o -

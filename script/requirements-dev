@@ -2,5 +2,6 @@
 # Set up the repo's dev venv:
 #   python3 -m venv .venv && .venv/bin/pip install -r script/requirements-dev
 -r requirements
+-r ../tm-control/backend/requirements.txt
 pytest>=8
 pytest-testinfra>=10

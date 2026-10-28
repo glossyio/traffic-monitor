@@ -14,7 +14,7 @@ The home page links to every app on the device.
 | Frigate | `/frigate/` | Object detection: live view, detections with snapshots and clips, zones, masks, and the Frigate settings. See [Tune object detection](../configuration/frigate-config.md). | None |
 | Legacy Dashboard | `/ui/` | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](../add-ons/air-quality.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | None |
 | Node-RED admin console | `/nr/` | The flow editor, for developers. See [Dev environment](../development/dev-environment.md). | `admin` / `password` |
-| Go2RTC Feeds | `/feeds/` | The camera streams the Pi camera produces, for checking that the camera works. | None |
+| Go2RTC Feeds | `/feeds/` | The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here. | None |
 | Cockpit-Project system administration | `/system/` | Services, logs, containers, and a terminal. See [System administration](system-admin.md). | Your Raspberry Pi user account |
 
 ??? note "Finding the device's address"
@@ -23,6 +23,6 @@ The home page links to every app on the device.
     * Otherwise, look the device up in your router's list of connected devices, or see [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address).
     * A pre-built unit may host its own Wi-Fi network. Connect to it and use the hostname or the gateway address. Your provider's instructions take precedence.
 
-??? note "Direct ports"
+??? note "If the home page doesn't load"
 
-    Each app also answers on its own port, which is useful when the home page is down. Node-RED and the dashboards are on `1880` (the dashboards at `:1880/dashboard`, the legacy dashboard at `:1880/ui`), Frigate on `5000`, the camera feeds on `1984`, Cockpit on `9090`, and the MQTT broker on `1883`.
+    The apps accept connections only from the device, so they have no address of their own on your network. Open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](system-admin.md). [Network ports](../reference/network.md) lists what the device opens.

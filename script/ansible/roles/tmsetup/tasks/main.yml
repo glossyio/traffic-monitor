@@ -13,6 +13,25 @@
   ansible.builtin.import_tasks:
     file: base_setup.yml
 
+- name: TMSetup - Main - Generate and read device secrets
+  tags:
+    - always
+  ansible.builtin.import_tasks:
+    file: secrets.yml
+
+# The pod and revproxy must change together: the pod stopped publishing port 80 when nginx moved to the
+# host network, and nginx proxies to go2rtc's API on loopback. So the MQTT login read (the pod uses it),
+# the pod, and revproxy each run under all of these tags.
+- name: TMSetup - Main - Read the MQTT broker login
+  tags:
+    - podman
+    - frigate
+    - node-red-tm
+    - revproxy
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: mqtt_broker.yml
+
 - name: TMSetup - Main - Apt Full Upgrade (for remote hosts)
   tags:
     - full_upgrade
@@ -31,6 +50,8 @@
     - podman
     - frigate
     - node-red-tm
+    - revproxy
+    - go2rtc
   ansible.builtin.import_tasks:
     file: podman_setup.yml
 
@@ -50,11 +71,26 @@
   ansible.builtin.import_tasks:
     file: detectors_install.yml
 
+- name: TMSetup - Main - Setup tm-control command line
+  tags:
+    - tm-control
+    - frigate
+    - go2rtc
+  ansible.builtin.import_tasks:
+    file: tm-control_setup.yml
+
 - name: TMSetup - Main - Setup Frigate
   tags:
     - frigate
   ansible.builtin.import_tasks:
     file: frigate_setup.yml
+
+- name: TMSetup - Main - Give Frigate the go2rtc RTSP login
+  tags:
+    - go2rtc
+    - frigate
+  ansible.builtin.import_tasks:
+    file: frigate_credentials.yml
 
 - name: TMSetup - Main - Setup Node-Red-TM
   tags:
@@ -72,6 +108,10 @@
 - name: TMSetup - Main - Setup NGinx Reverse Proxy
   tags:
     - revproxy
+    - podman
+    - frigate
+    - node-red-tm
+    - go2rtc
   ansible.builtin.import_tasks:
     file: revproxy_setup.yml
 

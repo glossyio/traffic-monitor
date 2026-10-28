@@ -12,6 +12,16 @@ After editing it, restart the service:
 sudo systemctl restart node-red-tm.service
 ```
 
+!!! warning "After changing the MQTT broker login"
+
+    A restart or reboot isn't enough after you change `TM_MQTT_BROKER_USERNAME` or `TM_MQTT_BROKER_PASSWORD`. Run the installer instead, so Frigate gets the same login and port 1883 opens or closes to match:
+
+    ```bash
+    bash traffic-monitor/script/tmsetup.sh -t node-red-tm
+    ```
+
+    Otherwise the broker refuses Frigate's connection, and no events are recorded.
+
 | Variable | Default | Meaning |
 |---|---|---|
 | `TM_VERSION` | the installed release | The Traffic Monitor version, shown on the dashboards and sent with telemetry. The installer sets it; don't edit it. |
@@ -21,6 +31,6 @@ sudo systemctl restart node-red-tm.service
 | `TM_DATABASE_PATH_TMDB` | `/db/tmdb.sqlite` | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path. |
 | `TM_MQTT_BROKER_HOST` | `localhost` | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md). |
 | `TM_MQTT_BROKER_PORT` | `1883` | The broker's port. |
-| `TM_MQTT_BROKER_USERNAME` | empty | The username Node-RED's own MQTT client logs in with. The broker doesn't check it, so setting it adds no authentication. |
-| `TM_MQTT_BROKER_PASSWORD` | empty | The password that goes with it, also unchecked. |
+| `TM_MQTT_BROKER_USERNAME` | empty | The broker's login username. When it and the password are both set, the broker requires the login from every client, and port 1883 opens to the network. Letters, digits, `.`, `_`, and `-` only, with no quotes and no comment after the value. See [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices). |
+| `TM_MQTT_BROKER_PASSWORD` | empty | The broker's login password, with the same rules as the username. |
 | `TM_RADAR_SERIAL_PORT_00` to `TM_RADAR_SERIAL_PORT_03` | `/dev/ttyACM0` to `/dev/ttyACM3` | The serial port of each radar. The variable's name is the radar's name in [config.yml](node-red-config.md#sensorsradars). The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |

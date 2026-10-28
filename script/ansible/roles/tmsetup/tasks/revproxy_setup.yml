@@ -100,15 +100,12 @@
       changed_when: false
 
     # Runs nginx -t in a throwaway container and waits for it; a non-zero exit fails the task.
-    # etc_hosts lets nginx resolve the go2rtc upstream inside the container.
     - name: TMSetup - revproxy Setup - Check NGinx config
       become: true
       containers.podman.podman_container:
         command: -t
         detach: false
         entrypoint: nginx
-        etc_hosts:
-          host.containers.internal: 127.0.0.1
         image: '{{ tmsetup_revproxy_image }}'
         name: revproxy-nginx-check
         rm: true
