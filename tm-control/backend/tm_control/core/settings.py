@@ -32,6 +32,7 @@ class Settings:
     port: int
     fake: bool
     eula_path: Path
+    setup_code_file: Path  # the root-only copy of the setup code that tmsetup and reset-admin write
 
     @classmethod
     def from_env(cls, environ=None):
@@ -54,4 +55,5 @@ class Settings:
             port=port,
             fake=fake,
             eula_path=PACKAGE_DIR / "modules" / "setup" / "EULA.md",
+            setup_code_file=Path(env.get("TM_CONTROL_SETUP_CODE_FILE") or "/etc/traffic-monitor/setup-code"),
         )

@@ -43,9 +43,42 @@ def main(argv=None):
         "environment variables configure it.",
     )
 
+    commands.add_parser(
+        "claim-status", help="print whether the device is claimed", description="Print claimed or unclaimed."
+    )
+    commands.add_parser(
+        "set-setup-code",
+        help="store the setup code read from stdin (unclaimed devices only)",
+        description="Read the setup code from one line of stdin and store its hash while the device is unclaimed. "
+        "Prints stored, or prints claimed and exits 3 when the device is already claimed.",
+    )
+    reset_parser = commands.add_parser(
+        "reset-admin",
+        help="delete every user and print a new setup code (run with sudo)",
+        description="Unclaim the device: delete every user and print a new setup code for claiming it again. "
+        "Must run as root.",
+    )
+    reset_parser.add_argument(
+        "--setup-code-file",
+        type=Path,
+        help="where to keep the root-only copy of the code (default: /etc/traffic-monitor/setup-code, "
+        "or TM_CONTROL_SETUP_CODE_FILE)",
+    )
+
     args = parser.parse_args(argv)
     if args.command == "migrate":
         return migrate.run(args.frigate_config, dry_run=args.dry_run)
     if args.command == "serve":
         return serve()
+    # Imported here, like serve's imports, so that `migrate` doesn't need the auth dependencies.
+    from tm_control.core import claim_cli
+    from tm_control.core.settings import Settings
+
+    settings = Settings.from_env()
+    if args.command == "claim-status":
+        return claim_cli.run(claim_cli.claim_status, settings)
+    if args.command == "set-setup-code":
+        return claim_cli.run(claim_cli.set_setup_code, settings)
+    if args.command == "reset-admin":
+        return claim_cli.run(claim_cli.reset_admin, settings, setup_code_file=args.setup_code_file)
     return 2

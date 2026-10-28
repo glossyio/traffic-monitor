@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import tm_control  # noqa: E402
 from tm_control.app import create_app  # noqa: E402
-from tm_control.core.auth import Device  # noqa: E402
+from tm_control.core.auth import Device, SetupCode  # noqa: E402
 from tm_control.core.settings import Settings  # noqa: E402
 from tm_control.modules.setup.eula import load_eula  # noqa: E402
 
@@ -44,6 +44,7 @@ def settings(tmp_path):
         port=0,
         fake=True,
         eula_path=Path(tm_control.__file__).parent / "modules" / "setup" / "EULA.md",
+        setup_code_file=tmp_path / "etc" / "setup-code",
     )
 
 
@@ -61,6 +62,14 @@ def claimed_client(client, settings):
     """The client, after its device was claimed by admin/correct horse 1 with the current EULA. Not logged in."""
     Device(client.app.state.state).claim(ADMIN, ADMIN_PASSWORD, load_eula(settings.eula_path).version)
     return client
+
+
+@pytest.fixture
+def setup_code(client):
+    """A new setup code whose hash the client's unclaimed device holds, as tmsetup's set-setup-code leaves it."""
+    code = SetupCode.generate()
+    Device(client.app.state.state).set_setup_code_hash(SetupCode.hash_code(code))
+    return code
 
 
 @pytest.fixture

@@ -19,7 +19,7 @@ from typing import Literal, NamedTuple
 
 import argon2
 from itsdangerous import BadSignature, TimestampSigner, URLSafeTimedSerializer
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tm_control.core.errors import ApiError
 from tm_control.core.state import State
@@ -264,7 +264,8 @@ class User(BaseModel):
     id: int
     username: str
     role: Literal["admin", "viewer"]
-    session_epoch: int
+    # Left out of every serialization, so the API never shows it: only the cookie check needs it.
+    session_epoch: int = Field(exclude=True)
     created_at: str
 
 

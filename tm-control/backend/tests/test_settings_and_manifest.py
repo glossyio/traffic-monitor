@@ -17,6 +17,7 @@ def test_settings_default_to_the_device_paths():
     assert s.runtime_dir == Path("/run/tm-control")
     assert s.secrets_dir == Path("/etc/traffic-monitor/secrets")
     assert s.manifest_path == Path("/etc/traffic-monitor/manifest.json")
+    assert s.setup_code_file == Path("/etc/traffic-monitor/setup-code")
     assert (s.host, s.port) == ("127.0.0.1", 8090)
     assert not s.fake
 
@@ -36,9 +37,11 @@ def test_settings_variables_override_systemd_directories():
             "TM_CONTROL_SECRETS_DIR": "/c",
             "TM_CONTROL_MANIFEST": "/d/manifest.json",
             "TM_CONTROL_BIND": "0.0.0.0:9000",
+            "TM_CONTROL_SETUP_CODE_FILE": "/e/setup-code",
         }
     )
     assert (s.state_dir, s.runtime_dir, s.secrets_dir) == (Path("/a"), Path("/b"), Path("/c"))
+    assert s.setup_code_file == Path("/e/setup-code")
     assert s.manifest_path == Path("/d/manifest.json")
     assert (s.host, s.port) == ("0.0.0.0", 9000)
 

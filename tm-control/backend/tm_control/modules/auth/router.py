@@ -4,7 +4,6 @@ verify's status codes and X-TM-* headers are a contract with the auth snippets i
 """
 
 import logging
-import math
 import time
 from urllib.parse import quote, urlsplit
 
@@ -17,6 +16,7 @@ from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import (
     clear_session_cookie,
     client_ip,
+    rate_limited,
     refresh_if_old,
     session_user,
     set_session_cookie,
@@ -103,14 +103,7 @@ def login(body: Credentials, request: Request, response: Response):
     wait = max(backoff.check(key, time.monotonic()) for key in keys)
     if wait > 0:  # before the password is checked, so guesses during the wait cost nothing and tell nothing
         log.warning("login refused while backing off: from %s as %r", ip, username)
-        seconds = math.ceil(wait)
-        raise ApiError(
-            429,
-            "rate_limited",
-            "Too many failed logins. Try again later.",
-            detail={"retry_after": seconds},
-            headers={"Retry-After": str(seconds)},
-        )
+        raise rate_limited(wait, "Too many failed logins. Try again later.")
 
     # Counted as a failure before the slow password check and forgiven on success, so parallel guesses can't all
     # slip past the check above while argon2 runs.

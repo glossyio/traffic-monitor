@@ -1,5 +1,6 @@
 """FastAPI dependencies and helpers for the logged-in user and their session cookie."""
 
+import math
 import time
 
 from fastapi import Depends, Request, Response
@@ -11,6 +12,14 @@ from tm_control.core.errors import ApiError
 def client_ip(request: Request) -> str:
     """The browser's address. uvicorn's proxy headers take it from nginx's X-Forwarded-For."""
     return request.client.host if request.client else "unknown"
+
+
+def rate_limited(wait: float, message: str) -> ApiError:
+    """The 429 for an attempt made while its backoff key must still wait `wait` seconds."""
+    seconds = math.ceil(wait)
+    return ApiError(
+        429, "rate_limited", message, detail={"retry_after": seconds}, headers={"Retry-After": str(seconds)}
+    )
 
 
 def session_user(request: Request) -> tuple[User, SessionClaims] | None:

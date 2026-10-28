@@ -46,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessions = Sessions(secrets.session_key)
     app.state.nr_token = NodeRedToken(secrets.node_red_token_key)
     app.state.login_backoff = Backoff()
+    app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)
 

@@ -13,6 +13,6 @@ class Module:
 
 
 # The modules import Module from here, so they come after it.
-from tm_control.modules import auth  # noqa: E402
+from tm_control.modules import account, auth, setup  # noqa: E402
 
-MODULES: list[Module] = [auth.module]
+MODULES: list[Module] = [auth.module, setup.module, account.module]

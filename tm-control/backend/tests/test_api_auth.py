@@ -177,7 +177,7 @@ def test_a_cookie_from_a_recreated_database_is_refused(claimed_client):
 def test_login_sets_a_cookie_and_session_shows_the_user(claimed_client):
     r = claimed_client.post("/api/v1/auth/login", json={"username": "Admin", "password": ADMIN[1]}, headers=ORIGIN)
     assert r.status_code == 200 and r.json()["user"]["username"] == "admin"
-    assert set(r.json()["user"]) == {"id", "username", "role", "session_epoch", "created_at"}
+    assert set(r.json()["user"]) == {"id", "username", "role", "created_at"}  # no session_epoch
     cookie = r.headers["set-cookie"]
     assert cookie.startswith(f"{COOKIE_NAME}=")
     flags = [part.strip().lower() for part in cookie.split(";")[1:]]
