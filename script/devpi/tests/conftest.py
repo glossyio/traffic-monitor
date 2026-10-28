@@ -23,7 +23,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import devlog  # noqa: E402
 from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, Redacted, pi_json, read_root_file,  # noqa: E402
-                          require_pii_free, validate_expect)
+                          require_pii_free, tm_control_login, validate_expect)
 
 HERE = Path(__file__).resolve().parent
 OUTCOME_ORDER = ("passed", "failed", "error", "skipped")
@@ -220,6 +220,15 @@ def codedir(hostvars):
 @pytest.fixture(scope="module")
 def codeowner(hostvars):
     return hostvars.get("tmsetup_codeowner", DEFAULT_CODEOWNER)
+
+
+@pytest.fixture(scope="module")
+def tm_login(hostvars):
+    """The dev Pi's tm-control admin login, as Redacted (username, password). Skips when the inventory has none.
+
+    Tests take this rather than hostvars, which now holds the password.
+    """
+    return tm_control_login(hostvars)
 
 
 @pytest.fixture(scope="module")

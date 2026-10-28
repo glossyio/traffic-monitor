@@ -4,10 +4,14 @@ Named devpi_checks, not helpers, so it can't collide with another test directory
 module when several run in one pytest session.
 """
 
+import email.message
 import functools
 import json
 import re
 import shlex
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -27,7 +31,13 @@ FIND_HEVC = """for device in /dev/media*; do
 done; true"""
 # Units with Restart= set, where NRestarts counts crashes since the unit was last started.
 RESTARTING_UNITS = ["go2rtc_server.service", "traffic-monitor.service", "frigate.service", "node-red-tm.service",
-                    "revproxy.service"]
+                    "revproxy.service", "tm-control.service"]
+# tm-control's API through nginx, and its session cookie's name (tm_control/core/auth.py COOKIE_NAME)
+API = "/api/v1"
+SESSION_COOKIE = "tm_session"
+UNCLAIMED = ("the unit isn't claimed yet: open http://<pi>/setup, follow setup with the code the installer printed, "
+             "then put that admin login in the inventory as tm_control_login")
+LOGIN_ATTEMPTS = 4
 
 
 class Redacted(str):
@@ -155,3 +165,120 @@ def db_query(host, codedir, sql):
     with host.sudo():
         output = host.check_output(f"python3 -c {shlex.quote(script)} {shlex.quote(database)} {shlex.quote(sql)}")
     return json.loads(output)
+
+
+# --- tm-control's login, over HTTP from this machine -------------------------------------------------------------
+# Logins, cookies, and setup codes stay out of assertion messages: values are Redacted, answers show only their
+# status, and comparisons with a login are made into a bool before they're asserted, so pytest can't print them.
+
+def tm_control_login(hostvars):
+    """The dev Pi's admin login from the inventory's tm_control_login, as Redacted (username, password).
+
+    Skips when the inventory has none, so the login checks wait until a person has claimed the unit.
+    """
+    login = hostvars.get("tm_control_login")
+    if not login:
+        pytest.skip("needs the dev Pi's admin login: claim the unit, then set tm_control_login in the inventory "
+                    "(see dev-pis.example.yml)")
+    if not isinstance(login, dict) or not login.get("username") or not login.get("password"):
+        pytest.fail("tm_control_login in the inventory must be a mapping with username and password", pytrace=False)
+    return (Redacted(str(login["username"]), "tm_control_login username"),
+            Redacted(str(login["password"]), "tm_control_login password"))
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None  # report the 3xx itself
+
+
+class Answer:
+    """One HTTP answer: status (an int, or a string saying why there was none), headers, and body.
+
+    Its repr shows only the status: the headers can carry a session cookie, and the body a username.
+    """
+
+    def __init__(self, status, headers=None, body=b""):
+        self.status = status
+        self.headers = headers if headers is not None else email.message.Message()
+        self.body = body
+
+    def __repr__(self):
+        return f"<HTTP {self.status}>"
+
+    def json(self):
+        """The body parsed as JSON, or None if it isn't JSON."""
+        try:
+            return json.loads(self.body)
+        except ValueError:
+            return None
+
+
+def request_from_this_machine(address, path, method="GET", cookie=None, body=None, headers=None):
+    """Send one request to the Pi's port 80 from this machine and return its Answer. Redirects aren't followed.
+
+    A write (any method but GET and HEAD) is sent as JSON with Origin: http://<address>, as the device's own pages
+    send it; tm-control refuses any other write (tm_control/core/csrf.py). Never raises for an HTTP or network
+    error, so no traceback shows the cookie or the body.
+    """
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(f"http://{address}{path}", data=data, method=method)
+    for name, value in (headers or {}).items():
+        request.add_header(name, value)
+    if cookie is not None:
+        request.add_header("Cookie", cookie)
+    if method not in ("GET", "HEAD"):
+        request.add_header("Content-Type", "application/json")
+        request.add_header("Origin", f"http://{address}")
+    try:
+        with urllib.request.build_opener(NoRedirect).open(request, timeout=30) as response:
+            return Answer(response.status, response.headers, response.read())
+    except urllib.error.HTTPError as error:
+        return Answer(error.code, error.headers, error.read())
+    except (urllib.error.URLError, OSError) as error:
+        return Answer(f"no answer ({type(getattr(error, 'reason', error)).__name__})")
+
+
+def is_claimed(address):
+    """Whether the device has an admin, from tm-control's open /setup/status."""
+    answer = request_from_this_machine(address, f"{API}/setup/status")
+    status = answer.json() if answer.status == 200 else None
+    if not isinstance(status, dict) or "claimed" not in status:
+        pytest.fail(f"GET {API}/setup/status answered HTTP {answer.status}, not tm-control's status", pytrace=False)
+    return bool(status["claimed"])
+
+
+def session_cookie(answer):
+    """The Cookie header value for the session cookie an answer sets (Redacted), or None."""
+    for header in answer.headers.get_all("Set-Cookie") or []:
+        pair = header.split(";", 1)[0].strip()
+        if pair.startswith(SESSION_COOKIE + "="):
+            return Redacted(pair, "session cookie")
+    return None
+
+
+def retry_after(answer):
+    try:
+        return min(max(int(answer.headers.get("Retry-After", "5")), 1), 60)
+    except ValueError:
+        return 5
+
+
+def session(address, username, password):
+    """Log in over HTTP from this machine, as the login page does, and return the Cookie header value (Redacted).
+
+    Skips while the unit is unclaimed. Waits out the login backoff (429 with Retry-After) a few times, since
+    test_login_backs_off leaves this machine's address backing off for a few seconds.
+    """
+    for _ in range(LOGIN_ATTEMPTS):
+        answer = request_from_this_machine(address, f"{API}/auth/login", "POST",
+                                           body={"username": username, "password": password})
+        if answer.status != 429:
+            break
+        time.sleep(retry_after(answer))
+    if answer.status == 409:
+        pytest.skip(UNCLAIMED)
+    cookie = session_cookie(answer) if answer.status == 200 else None
+    if cookie is None:
+        pytest.fail(f"logging in as {username!r} from this machine answered HTTP {answer.status}"
+                    + (" without a session cookie" if answer.status == 200 else ""), pytrace=False)
+    return cookie

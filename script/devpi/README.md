@@ -68,6 +68,8 @@ Keep device names, addresses, and log contents out of commits and PR text. Use p
 
    To test what `tmsetup.sh` does when sudo asks for a password, add a second entry for the same Pi that logs in as your own account. Use another name, such as `tm-dev-01-owner`.
 
+   Once you've claimed the Pi (open `http://<pi>/setup` and use the setup code the installer printed), add its administrator login as `tm_control_login`, with `username` and `password`. The device tests log in with it to check the login in front of the apps. Without it, those checks are skipped. The tests make their own viewer account, `tmdev-viewer-<random>`, and delete it afterwards.
+
 ## Deploying
 
 ```bash
@@ -161,23 +163,25 @@ A failure therefore tells you whether to look at the hardware, the inventory, or
 .venv/bin/python script/devpi/tmdev.py test                                    # every Pi in the inventory
 .venv/bin/python script/devpi/tmdev.py test tm-dev-01,tm-dev-02                # several Pis
 .venv/bin/python script/devpi/tmdev.py test tm-dev-01 -- -k radar              # pytest options after --
-.venv/bin/python script/devpi/tmdev.py test tm-dev-01 --disruptive             # also restart the pod and reboot the Pi
+.venv/bin/python script/devpi/tmdev.py test tm-dev-01 --disruptive             # also restart services and reboot the Pi
 ```
 
 | Module | Checks |
 |---|---|
 | `test_platform.py` | Pi 5, 64-bit OS, no throttling or under-voltage, free space, SoC temperature |
-| `test_services.py` | Host services and pod containers active, image builds succeeded, no crash restarts, no Plate Recognizer on `pii_free` units |
-| `test_web.py` | `nginx -t`; every location in the running proxy config answers; Node-RED, Frigate, and go2rtc ports on the Pi; the home page from your machine; from your machine, the app ports are closed, `/feeds/` is view-only, and the camera stream asks for a login; Frigate's API doesn't show the camera stream's password; data export errors; Frigate logged in to the MQTT broker; and, on `pii_free` units, a failed download ending, a failed database copy answering with an error, the database download tarring a copy, and MQTT on port 1883 open only with a broker login that the broker enforces |
+| `test_services.py` | Host services, `tm-control.service`, and pod containers active, image builds succeeded and the UI's build unit finished, no crash restarts, no Plate Recognizer on `pii_free` units; polkit refuses the control app's user any unit not on its list and any transient unit; PID 1 logs how each start job ended, which the control app reads for its jobs |
+| `test_web.py` | `nginx -t`; every location in the running proxy config answers; Node-RED, Frigate, go2rtc, and control app ports on the Pi, and the control app listening on 127.0.0.1 only; the home page from your machine; from your machine, the app ports are closed, `/feeds/` is view-only, and the camera stream asks for a login; Frigate's API doesn't show the camera stream's password; data export errors; Frigate logged in to the MQTT broker; and, on `pii_free` units, a failed download ending, a failed database copy answering with an error, the database download tarring a copy, and MQTT on port 1883 open only with a broker login that the broker enforces |
+| `test_web.py` (login) | Without a session every app path redirects to the login page (or to `/setup` while unclaimed); the login check's own paths and the rescue page are hidden; redirects are relative; repeated wrong logins back off. With `tm_control_login`: the admin opens every app; a viewer gets 403 on the admin apps; Frigate ignores roles a client sends and knows who's logged in; the Node-RED editor opens without its own login. On `pii_free` units, Frigate's config and the install logs don't show the control app's secrets |
 | `test_ai_coprocessor.py` | The expected co-processor and no other, its device and driver, Frigate's `AddDevice`, and a detector process (that has run an inference, with `live_traffic`) |
 | `test_radars.py` | Expected serial ports and no extras, Node-RED's `AddDevice` lines, and the `TM_RADAR_SERIAL_PORT_*` names in `node-red-tm.env` and `config.yml` |
 | `test_cameras.py` | CSI sensors, the HEVC decoder's udev symlink and the decoder passed to the running Frigate container, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
 | `test_environmental.py` | Air-quality monitors enabled in `config.yml` and writing recent readings |
 | `test_dataflow.py` | `tmdb_migrate.py --check` passes (skipped for code from before #208), no plate reads, and new radar and event rows (with `live_traffic`) |
-| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot: units active, and Frigate, Node-RED, and nginx answering; Frigate follows the HEVC decoder after its `/dev/media` number changes; the home page loads with the pod stopped; the pod starts after its network unit fails once (`--disruptive` only) |
+| `test_disruptive.py` | The stack recovers after a pod restart and after a reboot: units active, and Frigate, Node-RED, nginx, and the control app answering; Frigate follows the HEVC decoder after its `/dev/media` number changes; the home page loads with the pod stopped; the pod starts after its network unit fails once; with the control app stopped, app paths answer 503 with the rescue page; on `pii_free` units with `tm_control_login`, `sudo tm-control reset-admin` sends app paths to `/setup`, and claiming the Pi again with the inventory's login works (`--disruptive` only) |
 
 Some checks need a particular setup. Without it they're skipped, and the summary says why:
-- **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`, or that write into the Pi's data folder.
+- **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`, that write into the Pi's data folder, that compare the Pi's secrets with what it shows (on the Pi, so no value leaves it), or that reset the control app's accounts.
+- **`tm_control_login`:** checks that log in to the control app. They're also skipped, with a message, while the Pi is unclaimed.
 - **`live_traffic`:** checks for new radar and event rows, and that the detector has run an inference.
 - **The relevant hardware in `tm_expect`:** the radar, camera, and environmental checks.
 
