@@ -27,7 +27,7 @@
           "auth"
         ],
         "summary": "Verify",
-        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., or /welcome. 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.",
+        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.",
         "operationId": "verify_api_v1_auth_verify_get",
         "responses": {
           "200": {

@@ -34,7 +34,8 @@ export interface paths {
          *
          *     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
          *     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
-         *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., or /welcome. 403 is forbidden.
+         *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
+         *     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
          *     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
          */
         get: operations["verify_api_v1_auth_verify_get"];

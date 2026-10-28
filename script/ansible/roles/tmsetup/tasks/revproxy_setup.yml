@@ -55,8 +55,8 @@
       register: tmsetup_revproxy_ui_unpack_register
       notify: Restart revproxy.service
 
-    # Files only: an archive made from git's file list has no directory entries. A directory emptied this way stays,
-    # which the build doesn't mind.
+    # Files only. The archive lists directories too, but only files are compared, so a directory is never deleted
+    # with everything in it. A directory emptied this way stays, which the build doesn't mind.
     - name: TMSetup - revproxy Setup - Find the deployed UI sources
       become: true
       ansible.builtin.find:

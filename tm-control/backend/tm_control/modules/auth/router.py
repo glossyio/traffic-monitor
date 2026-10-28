@@ -50,7 +50,8 @@ def verify(request: Request):
 
     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
-    401 with X-TM-Redirect sends the browser to /setup, /login?next=..., or /welcome. 403 is forbidden.
+    401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
+    agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
     """
     required = request.headers.get("x-tm-required-role")
@@ -72,9 +73,8 @@ def verify(request: Request):
 
     if not device.eula_accepted(app_state.eula.version):
         message = "The license agreement has changed; an admin must accept it."
-        if user.role == "admin":
-            raise ApiError(401, "eula_required", message, headers={"X-TM-Redirect": "/welcome"})
-        raise ApiError(403, "eula_required", message)
+        page = "/welcome" if user.role == "admin" else "/waiting"
+        raise ApiError(401, "eula_required", message, headers={"X-TM-Redirect": page})
 
     if ROLES.index(user.role) < ROLES.index(required):
         raise ApiError(403, "forbidden", "You don't have access to this page.")
@@ -134,7 +134,11 @@ def logout(response: Response):
 
 @root_router.get("/logout", include_in_schema=False)
 def logout_and_go_to_login():
-    """Frigate's logout_url: end the session and show the login page."""
+    """Frigate's logout_url: end the session and show the login page.
+
+    A GET that changes state, on purpose: Frigate's logout_url is a plain link. The worst another site can do with it
+    is log the user out.
+    """
     response = RedirectResponse("/login", status_code=302)
     clear_session_cookie(response)
     return response

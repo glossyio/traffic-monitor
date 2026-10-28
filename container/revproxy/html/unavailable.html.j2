@@ -41,8 +41,8 @@
         <h1>Traffic Monitor</h1>
         <p>The Traffic Monitor's control app isn't answering, so the apps can't check your login.</p>
         <p>
-            Open Cockpit at <a href="http://{{ ansible_facts['hostname'] }}:9090/">http://{{ ansible_facts['hostname'] }}:9090/</a>
-            (or this device's IP address with port 9090), log in with your Raspberry Pi user account,
+            Open Cockpit at <a href="http://{{ ansible_facts['hostname'] }}.local:9090/">http://{{ ansible_facts['hostname'] }}.local:9090/</a>
+            (or the device's IP address with port 9090), log in with your Raspberry Pi user account,
             and start <code>tm-control.service</code>.
         </p>
         <p>Or over SSH, run <code>sudo systemctl restart tm-control.service</code>.</p>

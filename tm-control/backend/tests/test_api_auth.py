@@ -151,7 +151,7 @@ def test_verify_with_a_suffix_never_answers_with_identity(claimed_client, login,
     assert not [name for name in IDENTITY_HEADERS if name in r.headers]
 
 
-def test_verify_blocks_an_admin_until_the_current_eula_is_accepted(claimed_client, login, monkeypatch):
+def test_verify_blocks_everyone_until_the_current_eula_is_accepted(claimed_client, login, monkeypatch):
     add_viewer(claimed_client)
     viewer = other_client(claimed_client)
     login(claimed_client, *ADMIN)
@@ -161,8 +161,9 @@ def test_verify_blocks_an_admin_until_the_current_eula_is_accepted(claimed_clien
     r = verify(claimed_client, "/frigate/")
     assert (r.status_code, r.headers["X-TM-Redirect"]) == (401, "/welcome")
     assert r.json()["error"]["code"] == "eula_required"
-    r = verify(viewer, "/frigate/")
-    assert r.status_code == 403 and r.json()["error"]["code"] == "eula_required"
+    r = verify(viewer, "/frigate/")  # a redirect to the waiting page, not nginx's bare 403 page
+    assert (r.status_code, r.headers["X-TM-Redirect"]) == (401, "/waiting")
+    assert r.json()["error"]["code"] == "eula_required"
 
     Device(claimed_client.app.state.state).accept_eula("2", 1)
     assert verify(claimed_client, "/frigate/").status_code == 200

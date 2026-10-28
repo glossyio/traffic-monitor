@@ -72,6 +72,17 @@ def test_revproxy_keeps_retrying_while_port_80_is_still_taken():
     assert "StartLimitIntervalSec=300" in unit_section
     assert "StartLimitBurst=20" in unit_section
     assert "StartLimitIntervalSec=0" not in unit
+
+
+def test_revproxy_starts_after_tm_control_but_not_only_with_it():
+    """At boot nginx waits for tm-control, softly: a failed tm-control or a stopped pod never keeps it down."""
+    unit = revproxy_unit()
+    unit_section = unit[:unit.index("[Container]")]
+    assert "Wants=tm-control.service" in unit_section
+    assert "After=tm-control.service" in unit_section
+    hard = ("Requires=", "Requisite=", "BindsTo=", "PartOf=")
+    assert not [line for line in unit if line.startswith(hard)]
+    assert not [line for line in unit_section if "traffic-monitor" in line or ".pod" in line]  # nothing on the pod
     assert "RestartSec=5" in unit
 
 
@@ -301,7 +312,8 @@ def test_unavailable_page_names_cockpit_and_the_service():
         tmsetup_homepage_font="Helvetica",
         ansible_facts={"hostname": "tm"},
     )
-    assert "http://tm:9090/" in page
+    assert '<a href="http://tm.local:9090/">' in page
+    assert "or the device's IP address with port 9090" in page
     assert "tm-control.service" in page
     assert "sudo systemctl restart tm-control.service" in page
     assert "<script" not in page

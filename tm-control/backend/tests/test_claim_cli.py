@@ -13,10 +13,20 @@ from tm_control.core.state import State
 
 CODE = re.compile(r"Setup code: ([A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})$", re.MULTILINE)
 
+# The as_root tests drop to the state directory's owner, which is the test's own user. When the suite really runs as
+# root that owner is root, and the CLI rightly refuses a root-owned state directory, so those tests can't run.
+needs_a_non_root_owner = pytest.mark.skipif(
+    os.geteuid() == 0, reason="the test's state directory is root's, which the CLI refuses as root"
+)
+
 
 @pytest.fixture
 def cli_env(settings, monkeypatch):
-    """The environment the CLI reads its Settings from, pointing at the test's state dir and setup-code file."""
+    """The environment the CLI reads its Settings from, pointing at the test's state dir and setup-code file.
+
+    The CLI runs as a normal user (the code owner) unless a test says otherwise, even when the suite runs as root.
+    """
+    monkeypatch.setattr(os, "geteuid", lambda: 1000)
     monkeypatch.delenv("STATE_DIRECTORY", raising=False)
     monkeypatch.setenv("TM_CONTROL_STATE_DIR", str(settings.state_dir))
     monkeypatch.setenv("TM_CONTROL_SETUP_CODE_FILE", str(settings.setup_code_file))
@@ -67,6 +77,7 @@ def test_claim_status_reports_unclaimed_then_claimed(cli_env, capsys):
     assert capsys.readouterr().out == "claimed\n"
 
 
+@needs_a_non_root_owner
 @pytest.mark.parametrize("command", ["claim-status", "set-setup-code"])
 def test_state_commands_run_as_root_drop_to_the_state_dirs_owner_first(as_root, monkeypatch, capsys, command):
     stdin(monkeypatch, "ABCD-EFGH\n")
@@ -122,12 +133,12 @@ def test_set_setup_code_on_a_claimed_device_exits_3(cli_env, capsys, monkeypatch
 
 
 def test_reset_admin_refuses_without_root(cli_env, monkeypatch, capsys):
-    monkeypatch.setattr(os, "geteuid", lambda: 1000)
     assert main(["reset-admin"]) == 2
     assert "root" in capsys.readouterr().err
     assert not cli_env.setup_code_file.exists()
 
 
+@needs_a_non_root_owner
 def test_reset_admin_as_root_writes_the_file_then_unclaims(as_root, cli_env, tmp_path, capsys):
     claimed = device(cli_env).claim("admin", "correct horse 1", "1")
     code_file = tmp_path / "elsewhere"
@@ -149,12 +160,14 @@ def test_reset_admin_as_root_writes_the_file_then_unclaims(as_root, cli_env, tmp
     con.close()
 
 
+@needs_a_non_root_owner
 def test_reset_admin_writes_the_file_before_dropping_privileges(as_root, cli_env, capsys):
     assert main(["reset-admin"]) == 0
     assert ("code file existed", True) in as_root
     assert CODE.search(capsys.readouterr().out).group(1) == cli_env.setup_code_file.read_text().strip()
 
 
+@needs_a_non_root_owner
 def test_reset_admin_makes_an_existing_code_file_private(as_root, cli_env, capsys):
     cli_env.setup_code_file.write_text("OLDC-ODE2 and more text than a code\n")
     cli_env.setup_code_file.chmod(0o644)

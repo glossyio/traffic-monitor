@@ -24,14 +24,15 @@
     mode: '0644'
   notify: Restart tm-control.service
 
+# As secrets.yml's directory below it: tm-control reads the manifest through the code group, and root reads everything
 - name: TMSetup - tm-control Service - Create the configuration directory
   become: true
   ansible.builtin.file:
     path: '{{ tmsetup_etc_dir }}'
     state: directory
     owner: root
-    group: root
-    mode: '0755'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
 
 # The repo is on the machine running tmsetup.sh, which for -H installs isn't the device. git may refuse a repo
 # another user owns (safe.directory); the manifest then says unknown rather than failing the install.

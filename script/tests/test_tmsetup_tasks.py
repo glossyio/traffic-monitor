@@ -359,6 +359,14 @@ def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():
     assert "polkitd" in load_role_yaml("vars/main.yml")["tmsetup_packages"]
 
 
+def test_configuration_directory_is_root_and_the_code_group_only():
+    """Like the secrets directory inside it: tm-control reads the manifest through the code group."""
+    task = tm_control_service_tasks()["TMSetup - tm-control Service - Create the configuration directory"]
+    directory = task["ansible.builtin.file"]
+    assert (directory["path"], directory["state"]) == ("{{ tmsetup_etc_dir }}", "directory")
+    assert (directory["owner"], directory["group"], directory["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0750")
+
+
 def test_setup_code_tasks_hide_the_code_and_write_a_root_only_file():
     tasks = tm_control_service_tasks()
     code_tasks = [n for n in tasks if "setup code" in n.lower() and "Check" not in n and "Remove" not in n]
@@ -556,13 +564,13 @@ def test_ui_sources_no_longer_in_the_repo_are_deleted_from_the_device():
     tasks = ui_copy_tasks()
     remove = tasks["TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"]
     assert remove["ansible.builtin.file"]["state"] == "absent"
-    # Files only: an archive made from git's file list has no directory entries, so comparing directories would
-    # delete ui/src and everything in it.
+    # Files only: the archive lists directories too, but only files are compared, so a directory is never deleted
+    # with everything in it.
     assert tasks["TMSetup - revproxy Setup - Find the deployed UI sources"]["ansible.builtin.find"]["file_type"] == "file"
     deployed = {"files": [{"path": f"/opt/traffic-monitor/revproxy/ui/{name}"}
                           for name in ("package.json", "src/main.ts", "src/old.ts", "old-dir/x.ts")]}
-    for unpacked in (["ui/package.json", "ui/src/main.ts"],  # from git's file list
-                     ["ui/", "ui/package.json", "ui/src/", "ui/src/main.ts"]):  # from the directory, without git
+    for unpacked in (["ui/package.json", "ui/src/main.ts"],  # files alone
+                     ["ui/", "ui/package.json", "ui/src/", "ui/src/main.ts"]):  # files and their directories
         stale = evaluate(remove["loop"], tmsetup_codedir="/opt/traffic-monitor",
                          tmsetup_revproxy_ui_find_register=deployed,
                          tmsetup_revproxy_ui_unpack_register={"files": unpacked})
