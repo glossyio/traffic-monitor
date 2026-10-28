@@ -523,6 +523,73 @@
         }
       }
     },
+    "/api/v1/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Services",
+        "operationId": "services_api_v1_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Service"
+                  },
+                  "type": "array",
+                  "title": "Response Services Api V1 Services Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services/{unit}/restart": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Restart",
+        "operationId": "restart_api_v1_services__unit__restart_post",
+        "parameters": [
+          {
+            "name": "unit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Unit"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestartQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -925,6 +992,69 @@
           "groups"
         ],
         "title": "Report"
+      },
+      "RestartQueued": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit"
+        ],
+        "title": "RestartQueued"
+      },
+      "Service": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "active_state": {
+            "type": "string",
+            "title": "Active State"
+          },
+          "sub_state": {
+            "type": "string",
+            "title": "Sub State"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "restarts": {
+            "type": "integer",
+            "title": "Restarts"
+          },
+          "restartable": {
+            "type": "boolean",
+            "title": "Restartable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit",
+          "title",
+          "active_state",
+          "sub_state",
+          "since",
+          "restarts",
+          "restartable"
+        ],
+        "title": "Service"
       },
       "SystemPassword": {
         "properties": {

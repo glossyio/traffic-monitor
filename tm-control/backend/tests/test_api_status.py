@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from tm_control.adapters.command import CommandResult
 from tm_control.core.auth import Users
 from tm_control.core.checks import Group
 from tm_control.modules import MODULES
@@ -92,13 +93,22 @@ def test_openapi_declares_the_report_model(client):
     assert set(report["properties"]) == {"generated_at", "summary", "groups"}
 
 
-def test_device_client_serves_an_empty_report(device_client, login):
+def test_device_client_serves_the_modules_groups(device_client, login, monkeypatch):
+    def systemctl(argv, **kwargs):
+        assert argv[:2] == ["systemctl", "show"], argv
+        return CommandResult(0, "LoadState=loaded\nActiveState=active\nSubState=running\nNRestarts=0\n", "", False)
+
+    monkeypatch.setattr("tm_control.adapters.systemd.run", systemctl)
     assert device_client.app.state.settings.fake is False
     login(device_client, *VIEWER)
     r = device_client.get("/api/v1/status")
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["groups"] == []
-    assert body["summary"] == {"ok": 0, "warn": 0, "error": 0, "unknown": 0}
+    groups = [group.id for module in MODULES for group in module.check_groups]
+    assert [g["id"] for g in body["groups"]] == groups
+    assert "services" in groups
+    assert datetime.fromisoformat(body["generated_at"]).utcoffset() is not None
+    assert set(body["summary"]) == {"ok", "warn", "error", "unknown"}
+    assert sum(body["summary"].values()) == sum(len(g["checks"]) for g in body["groups"])
     login(device_client, *ADMIN)
     assert device_client.post("/api/v1/status/rescan", json={}, headers=ORIGIN).status_code == 200

@@ -1,22 +1,40 @@
-"""systemd through its command-line tools: start a unit, read its properties, and read its journal.
+"""systemd through its command-line tools: start or restart a unit, read its properties, and read its journal.
 
-tm-control runs unprivileged; polkit lets it start the named units (Task 6's rules). Reading properties needs no
-privilege, and reading a system unit's journal needs the systemd-journal (or adm) group.
+tm-control runs unprivileged; polkit lets it start, stop, and restart the named units (tmsetup_tm_control_polkit).
+Reading properties needs no privilege, and reading a system unit's journal needs the systemd-journal (or adm) group.
 """
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from tm_control.adapters.command import CommandResult, run
 
 log = logging.getLogger(__name__)
 
 JOURNAL_MAX_OUTPUT = 1024 * 1024
+SHOW_TIMEOUT = 4  # seconds; show_units is a status probe
+SHOW_MAX_OUTPUT = 16384
 
 
 def start_unit(name: str) -> CommandResult:
     """Queue a start and return at once (--no-block); the caller follows the run with show_unit."""
     return run(["systemctl", "start", "--no-block", name], timeout=30)
+
+
+def restart_unit(name: str) -> CommandResult:
+    """Queue a restart and return at once (--no-block)."""
+    return run(["systemctl", "restart", "--no-block", name], timeout=30)
+
+
+def _properties(stdout: str, properties: list[str]) -> dict[str, str]:
+    """systemctl show's Key=Value lines as the named properties; one it doesn't print is ""."""
+    values = dict.fromkeys(properties, "")
+    for line in stdout.splitlines():
+        key, sep, value = line.partition("=")
+        if sep and key in values:
+            values[key] = value
+    return values
 
 
 def show_unit(name: str, properties: list[str]) -> dict[str, str]:
@@ -28,12 +46,30 @@ def show_unit(name: str, properties: list[str]) -> dict[str, str]:
     result = run(["systemctl", "show", f"--property={','.join(properties)}", name], timeout=10)
     if result.returncode != 0 or result.timed_out:
         raise RuntimeError(f"systemctl show {name} failed with exit status {result.returncode}")
-    values = dict.fromkeys(properties, "")
-    for line in result.stdout.splitlines():
-        key, sep, value = line.partition("=")
-        if sep and key in values:
-            values[key] = value
-    return values
+    return _properties(result.stdout, properties)
+
+
+def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
+    """Each unit's values of the named properties, from one `systemctl show` per unit, all run at the same time so
+    a slow systemd costs one timeout. Timestamps are in --timestamp=unix form, `@<unix seconds>` ("" when unset).
+
+    A unit that isn't installed still answers (LoadState=not-found). A unit whose read fails or times out is left
+    out of the result; only its exit status is logged.
+    """
+
+    def show(name):
+        argv = ["systemctl", "show", "--timestamp=unix", f"--property={','.join(properties)}", name]
+        result = run(argv, timeout=SHOW_TIMEOUT, max_output=SHOW_MAX_OUTPUT)
+        if result.returncode != 0 or result.timed_out:
+            log.warning("systemctl show %s failed with exit status %s", name, result.returncode)
+            return None
+        return _properties(result.stdout, properties)
+
+    if not names:
+        return {}
+    with ThreadPoolExecutor(max_workers=len(names), thread_name_prefix="systemctl-show") as pool:
+        results = list(pool.map(show, names))
+    return {name: values for name, values in zip(names, results) if values is not None}
 
 
 def _message(value) -> str | None:

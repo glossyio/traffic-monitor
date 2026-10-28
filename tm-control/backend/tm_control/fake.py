@@ -7,6 +7,7 @@ Neither needs a device's secrets, manifest, or state.
 
 import json
 import tempfile
+import time
 from pathlib import Path
 
 from tm_control.core.auth import Device, SetupCode
@@ -16,6 +17,13 @@ from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, FAKE_STATUS, Sett
 from tm_control.core.state import State
 
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
+
+# Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
+# a failed, and a starting unit, as the fake status report does.
+FAKE_UNIT_STATES = {
+    "frigate.service": {"ActiveState": "failed", "SubState": "failed", "NRestarts": "3"},
+    "go2rtc_server.service": {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "4"},
+}
 
 
 def reset(settings: Settings) -> int:
@@ -32,6 +40,20 @@ def reset(settings: Settings) -> int:
     print(f"Fake device reset in {settings.state_dir}. Setup code: {code}")
     print("Restart `tm-control serve` if it's running, then open the UI's /setup page.")
     return 0
+
+
+def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
+    """Fake mode's stand-in for systemd.show_units: FAKE_UNIT_STATES, and every other unit running for two hours."""
+    running = {
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "running",
+        "NRestarts": "0",
+        "ActiveEnterTimestamp": f"@{int(time.time()) - 2 * 3600}",
+        "InvocationID": "00000000000000000000000000000000",
+    }
+    states = {name: running | FAKE_UNIT_STATES.get(name, {}) for name in names}
+    return {name: {key: values.get(key, "") for key in properties} for name, values in states.items()}
 
 
 def status_groups(path: Path = FAKE_STATUS) -> list[CheckGroup]:
