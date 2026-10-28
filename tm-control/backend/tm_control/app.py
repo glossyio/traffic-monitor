@@ -2,9 +2,10 @@
 
 from fastapi import FastAPI, Request
 
-from tm_control import modules
+from tm_control import fake, modules
 from tm_control.adapters import systemd
 from tm_control.core.auth import Backoff, NodeRedToken, Sessions
+from tm_control.core.checks import Context, StatusCache
 from tm_control.core.csrf import CsrfMiddleware
 from tm_control.core.errors import install_error_handlers
 from tm_control.core.jobs import FakeJobRunner, JobRunner
@@ -50,6 +51,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.login_backoff = Backoff()
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
+    check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
+    app.state.status = StatusCache(
+        check_groups, lambda: Context(app.state.settings, app.state.manifest, app.state.secrets)
+    )
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)
 
