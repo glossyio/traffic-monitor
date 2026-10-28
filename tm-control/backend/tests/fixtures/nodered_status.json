@@ -1,0 +1,37 @@
+{
+    "status": "ok",
+    "tm_version": "0.0.0-test",
+    "uptime_seconds": 11,
+    "config": {
+        "loaded_at": "2026-10-28T22:54:49.426Z",
+        "errors": []
+    },
+    "schema_version": 1,
+    "radars": {
+        "TM_RADAR_SERIAL_PORT_00": {
+            "enabled": true,
+            "port_open": true,
+            "last_reading_at": "2026-10-28T22:55:01.112Z"
+        },
+        "TM_RADAR_SERIAL_PORT_01": {
+            "enabled": false,
+            "port_open": false,
+            "last_reading_at": null
+        },
+        "TM_RADAR_SERIAL_PORT_02": {
+            "enabled": false,
+            "port_open": false,
+            "last_reading_at": null
+        },
+        "TM_RADAR_SERIAL_PORT_03": {
+            "enabled": false,
+            "port_open": false,
+            "last_reading_at": null
+        }
+    },
+    "deployment": {
+        "lat": 45.0,
+        "lon": -122.0,
+        "bearing": "n"
+    }
+}
