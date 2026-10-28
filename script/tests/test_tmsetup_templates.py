@@ -715,3 +715,33 @@ def test_homepage_colors_are_css_hex_colors():
     """The colors go into the install manifest and the UI theme."""
     for name, value in load_role_yaml("defaults/main.yml")["tmsetup_homepage_colors"].items():
         assert re.fullmatch(r"#[0-9A-Fa-f]{6}", value), name
+
+
+def revproxy_containerfile():
+    lines = render("container/revproxy/Containerfile.j2", **load_role_yaml("vars/main.yml")).splitlines()
+    return [line for line in lines if line.strip() and not line.startswith("#")]
+
+
+def test_revproxy_image_builds_the_ui_from_a_pinned_node_image():
+    lines = revproxy_containerfile()
+    assert "FROM docker.io/library/node:22.23.4-alpine AS ui" in lines
+    # The package files first, so the npm ci layer is reused while only the sources change
+    copy_packages = lines.index("COPY ui/package.json ui/package-lock.json ./")
+    npm_ci = lines.index("RUN npm ci --no-audit --no-fund")
+    copy_sources = lines.index("COPY ui/ ./")
+    assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build")
+    assert [line for line in lines if line.startswith("FROM ")][-1] == "FROM docker.io/nginx:1.31.0"
+    assert lines[-1] == "COPY --from=ui /ui/dist /usr/share/nginx/ui"
+
+
+def test_revproxy_image_puts_the_ui_where_its_location_serves_it():
+    """Outside /usr/share/nginx/html, which revproxy.container bind-mounts over the image's copy."""
+    copy = revproxy_containerfile()[-1]
+    assert f"root {copy.split()[-1]};" in location("tm-control-ui.conf")
+    assert ":/usr/share/nginx/html:ro" in "\n".join(revproxy_unit())
+    assert not copy.split()[-1].startswith("/usr/share/nginx/html")
+
+
+def test_revproxy_build_context_leaves_out_the_mounted_config_and_node_modules():
+    ignored = (REPO / "container/revproxy/.containerignore").read_text().split()
+    assert {"html", "tm", "nginx.conf", "ui/node_modules", "ui/dist"} <= set(ignored)

@@ -10,6 +10,9 @@ tmsetup_frigate_version: '0.18.1'
 tmsetup_node_red_tm_version: '5.0.8'
 tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
+# Builds tm-control's UI in the revproxy image (container/revproxy/Containerfile.j2), with the Node release that
+# tm-control/ui/package-lock.json was made with
+tmsetup_node_image: docker.io/library/node:22.23.4-alpine
 tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 # udev symlink to the Pi 5 HEVC decoder (model rpi-hevc-dec); its /dev/media number changes between boots (#231).

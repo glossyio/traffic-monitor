@@ -1,6 +1,6 @@
 """Render tmsetup role templates the way Ansible's template module does, so tests can check them off-device.
 
-Uses Jinja2 with Ansible's filters, Ansible's trim_blocks default, and StrictUndefined, so a template
+Uses Jinja2 with Ansible's filters and core tests, Ansible's trim_blocks default, and StrictUndefined, so a template
 that needs a variable the test didn't pass fails loudly. Jinja's own `default`/`d` are kept because
 ansible-core 2.19+ replaces them with versions that don't recognize plain Jinja undefined values.
 """
@@ -12,6 +12,7 @@ from pathlib import Path
 import jinja2
 import yaml
 from ansible.plugins.filter import core, encryption, mathstuff, urls, urlsplit
+from ansible.plugins.test import core as core_tests
 
 REPO = Path(__file__).resolve().parents[2]
 ROLE = REPO / "script" / "ansible" / "roles" / "tmsetup"
@@ -27,6 +28,7 @@ def _environment():
     )
     for module in (core, encryption, mathstuff, urls, urlsplit):
         env.filters.update({name: f for name, f in module.FilterModule().filters().items() if name not in ("default", "d")})
+    env.tests.update(core_tests.TestModule().tests())  # such as `is changed` on a registered result
     return env
 
 

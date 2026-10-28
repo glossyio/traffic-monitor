@@ -9,12 +9,87 @@
     - { path: '{{ tmsetup_codedir }}/revproxy/tm', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy/tm/locations', mode: '0750' }
     - { path: '{{ tmsetup_codedir }}/revproxy/tm/snippets', mode: '0750' }
+    - { path: '{{ tmsetup_codedir }}/revproxy/ui', mode: '0750' }
   ansible.builtin.file:
     mode: '{{ item["mode"] }}'
     owner: '{{ tmsetup_codeowner }}'
     path: '{{ item["path"] }}'
     state: directory
   notify: Restart revproxy.service
+
+# The image builds tm-control's UI from {{ tmsetup_codedir }}/revproxy/ui. The sources travel as an archive made
+# on the machine running tmsetup, without node_modules and dist, because the synchronize module can't use a sudo
+# password on a remote install (-K). unarchive reports a change only when a file's content or time differs.
+- name: TMSetup - revproxy Setup - Copy the control app's UI sources
+  block:
+    - name: TMSetup - revproxy Setup - Create a temporary file for the UI sources
+      become: false
+      delegate_to: localhost
+      ansible.builtin.tempfile:
+        prefix: 'tm-control-ui.'
+        suffix: '.tar.gz'
+      changed_when: false
+      register: tmsetup_revproxy_ui_archive_register
+
+    # The patterns match names in the archive, which start at ui/
+    - name: TMSetup - revproxy Setup - Pack the UI sources
+      become: false
+      delegate_to: localhost
+      community.general.archive:
+        dest: '{{ tmsetup_revproxy_ui_archive_register["path"] }}'
+        exclusion_patterns:
+          - ui/node_modules
+          - ui/node_modules/*
+          - ui/dist
+          - ui/dist/*
+        force_archive: true
+        format: gz
+        path: '{{ role_path }}/files/tm-control/ui'
+      changed_when: false
+
+    - name: TMSetup - revproxy Setup - Unpack the UI sources
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmsetup_revproxy_ui_archive_register['path'] }}"
+        dest: '{{ tmsetup_codedir }}/revproxy'
+        owner: '{{ tmsetup_codeowner }}'
+        group: '{{ tmsetup_codegroup }}'
+        mode: 'u=rwX,g=rX,o='
+        list_files: true
+      register: tmsetup_revproxy_ui_unpack_register
+      notify: Restart revproxy.service
+
+    - name: TMSetup - revproxy Setup - Find the deployed UI sources
+      become: true
+      ansible.builtin.find:
+        file_type: any
+        hidden: true
+        paths: '{{ tmsetup_codedir }}/revproxy/ui'
+        recurse: true
+      register: tmsetup_revproxy_ui_find_register
+
+    # unarchive never deletes, so a file removed from the repo would stay in the build
+    - name: TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo
+      become: true
+      loop: >-
+        {{ tmsetup_revproxy_ui_find_register['files']
+           | map(attribute='path')
+           | map('relpath', tmsetup_codedir ~ '/revproxy')
+           | difference(tmsetup_revproxy_ui_unpack_register['files'] | map('regex_replace', '/$', '') | list) }}
+      ansible.builtin.file:
+        path: '{{ tmsetup_codedir }}/revproxy/{{ item }}'
+        state: absent
+      register: tmsetup_revproxy_ui_stale_register
+      notify: Restart revproxy.service
+  always:
+    - name: TMSetup - revproxy Setup - Remove the temporary UI sources file
+      become: false
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: '{{ tmsetup_revproxy_ui_archive_register["path"] }}'
+        state: absent
+      changed_when: false
+      when: tmsetup_revproxy_ui_archive_register["path"] is defined
 
 - name: TMSetup - revproxy Setup - Create NGinx Containerfile
   become: true
@@ -26,6 +101,19 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: 'container/revproxy/Containerfile.j2'
+  register: tmsetup_revproxy_containerfile_register
+  notify: Restart revproxy.service
+
+# Keeps the bind-mounted config and any node_modules or dist out of the build context
+- name: TMSetup - revproxy Setup - Create NGinx build ignore file
+  become: true
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_codedir }}/revproxy/.containerignore'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+    owner: '{{ tmsetup_codeowner }}'
+    src: 'container/revproxy/.containerignore'
+  register: tmsetup_revproxy_containerignore_register
   notify: Restart revproxy.service
 
 - name: TMSetup - revproxy Setup - Create NGinx quadlets
@@ -41,13 +129,21 @@
     src: 'container/revproxy/{{ item }}.j2'
   notify: Restart revproxy.service
 
+# A .build unit that already ran stays active, so `started` wouldn't build again: restart it when the image's
+# inputs changed, or an upgraded device keeps the old UI until it reboots.
 - name: TMSetup - revproxy Setup - Build container
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true
     enabled: true
     name: revproxy-build.service
-    state: started
+    state: >-
+      {{ 'restarted'
+         if (tmsetup_revproxy_ui_unpack_register is changed
+             or tmsetup_revproxy_ui_stale_register is changed
+             or tmsetup_revproxy_containerfile_register is changed
+             or tmsetup_revproxy_containerignore_register is changed)
+         else 'started' }}
   notify: Restart revproxy.service
 
 - name: TMSetup - revproxy Setup - Find NGinx check directories left by an interrupted run

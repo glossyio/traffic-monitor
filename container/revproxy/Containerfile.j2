@@ -1,2 +1,11 @@
-# Containerfile to build nginx image
+# Containerfile to build nginx image, with tm-control's UI (tm-control/ui) built into it
+FROM {{ tmsetup_node_image }} AS ui
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY ui/ ./
+RUN npm run build
+
 FROM docker.io/nginx:{{ tmsetup_nginx_version }}
+# Outside /usr/share/nginx/html, which revproxy.container bind-mounts over the image's copy
+COPY --from=ui /ui/dist /usr/share/nginx/ui

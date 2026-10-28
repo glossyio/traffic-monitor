@@ -1,5 +1,8 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
+from fnmatch import fnmatch
+
+import pytest
 from tmsetup_render import evaluate, load_role_yaml
 
 # Every tag whose run renders the pod, revproxy, the broker login, tm-control, or Frigate's credentials. nginx's
@@ -497,3 +500,105 @@ def test_revproxy_no_longer_writes_the_hand_written_home_page():
     page = tasks["TMSetup - revproxy Setup - Create the rescue page"]["ansible.builtin.template"]
     assert (page["src"], page["dest"], page["mode"]) == (
         "container/revproxy/html/unavailable.html.j2", "{{ tmsetup_codedir }}/revproxy/html/unavailable.html", "0644")
+
+
+COPY_UI = "TMSetup - revproxy Setup - Copy the control app's UI sources"
+
+
+def ui_copy_tasks():
+    block = revproxy_tasks()[COPY_UI]
+    return {task["name"]: task for task in block["block"] + block["always"]}
+
+
+def test_node_image_for_the_ui_build_is_pinned():
+    assert load_role_yaml("vars/main.yml")["tmsetup_node_image"] == "docker.io/library/node:22.23.4-alpine"
+
+
+def test_ui_sources_are_copied_without_node_modules_before_the_image_build():
+    names = list(revproxy_tasks())
+    assert names.index(COPY_UI) < names.index("TMSetup - revproxy Setup - Create NGinx Containerfile")
+    tasks = ui_copy_tasks()
+    pack = tasks["TMSetup - revproxy Setup - Pack the UI sources"]["community.general.archive"]
+    assert pack["path"] == "{{ role_path }}/files/tm-control/ui"
+    # The patterns match archive member names, which start at ui/
+    excluded = [name for name in ("ui/node_modules", "ui/node_modules/vue/index.js", "ui/dist", "ui/dist/index.html",
+                                  "ui/src/main.ts", "ui/package.json", "ui/src/distance.ts")
+                if any(fnmatch(name, pattern) for pattern in pack["exclusion_patterns"])]
+    assert excluded == ["ui/node_modules", "ui/node_modules/vue/index.js", "ui/dist", "ui/dist/index.html"]
+    unpack = tasks["TMSetup - revproxy Setup - Unpack the UI sources"]
+    assert unpack["become"] is True
+    assert unpack["ansible.builtin.unarchive"] == {
+        "src": "{{ tmsetup_revproxy_ui_archive_register['path'] }}",
+        "dest": "{{ tmsetup_codedir }}/revproxy",
+        "owner": "{{ tmsetup_codeowner }}",
+        "group": "{{ tmsetup_codegroup }}",
+        "mode": "u=rwX,g=rX,o=",
+        "list_files": True,
+    }
+
+
+def test_ui_archive_is_made_and_removed_on_the_controller_without_sudo():
+    """A remote install's controller is a laptop: no sudo there, and the archive goes in its temp directory."""
+    tasks = ui_copy_tasks()
+    for name in ("TMSetup - revproxy Setup - Create a temporary file for the UI sources",
+                 "TMSetup - revproxy Setup - Pack the UI sources",
+                 "TMSetup - revproxy Setup - Remove the temporary UI sources file"):
+        assert (tasks[name]["delegate_to"], tasks[name]["become"]) == ("localhost", False), name
+    assert revproxy_tasks()[COPY_UI]["always"][0]["name"] == "TMSetup - revproxy Setup - Remove the temporary UI sources file"
+
+
+def test_ui_sources_no_longer_in_the_repo_are_deleted_from_the_device():
+    remove = ui_copy_tasks()["TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"]
+    assert remove["ansible.builtin.file"]["state"] == "absent"
+    deployed = {"files": [{"path": f"/opt/traffic-monitor/revproxy/ui/{name}"}
+                          for name in ("package.json", "src", "src/main.ts", "src/old.ts", "old-dir", "old-dir/x.ts")]}
+    unpacked = {"files": ["ui/package.json", "ui/src/", "ui/src/main.ts"]}
+    stale = evaluate(remove["loop"], tmsetup_codedir="/opt/traffic-monitor",
+                     tmsetup_revproxy_ui_find_register=deployed, tmsetup_revproxy_ui_unpack_register=unpacked)
+    assert sorted(stale) == ["ui/old-dir", "ui/old-dir/x.ts", "ui/src/old.ts"]  # `difference` doesn't keep order
+
+
+def test_ui_source_changes_restart_the_proxy():
+    tasks = ui_copy_tasks()
+    for name in ("TMSetup - revproxy Setup - Unpack the UI sources",
+                 "TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"):
+        assert tasks[name]["notify"] == "Restart revproxy.service", name
+
+
+def test_build_context_ignore_file_is_copied_before_the_build():
+    tasks = revproxy_tasks()
+    names = list(tasks)
+    copy = tasks["TMSetup - revproxy Setup - Create NGinx build ignore file"]["ansible.builtin.copy"]
+    assert (copy["src"], copy["dest"]) == ("container/revproxy/.containerignore",
+                                           "{{ tmsetup_codedir }}/revproxy/.containerignore")
+    assert names.index("TMSetup - revproxy Setup - Create NGinx build ignore file") < names.index(
+        "TMSetup - revproxy Setup - Build container")
+
+
+BUILD_INPUTS = ("tmsetup_revproxy_ui_unpack_register", "tmsetup_revproxy_ui_stale_register",
+                "tmsetup_revproxy_containerfile_register", "tmsetup_revproxy_containerignore_register")
+
+
+@pytest.mark.parametrize("changed", BUILD_INPUTS)
+def test_image_is_rebuilt_when_its_build_inputs_change(changed):
+    """A .build unit that already ran stays active, so `started` alone would keep the old image until a reboot."""
+    build = revproxy_tasks()["TMSetup - revproxy Setup - Build container"]["ansible.builtin.systemd_service"]
+    registers = {name: {"changed": name == changed} for name in BUILD_INPUTS}
+    assert evaluate(build["state"], **registers) == "restarted"
+
+
+def test_image_build_is_only_started_when_nothing_changed():
+    build = revproxy_tasks()["TMSetup - revproxy Setup - Build container"]["ansible.builtin.systemd_service"]
+    assert evaluate(build["state"], **{name: {"changed": False} for name in BUILD_INPUTS}) == "started"
+    tasks = revproxy_tasks()
+    for name, register in (("TMSetup - revproxy Setup - Create NGinx Containerfile", BUILD_INPUTS[2]),
+                           ("TMSetup - revproxy Setup - Create NGinx build ignore file", BUILD_INPUTS[3])):
+        assert tasks[name]["register"] == register, name
+    copy = ui_copy_tasks()
+    assert copy["TMSetup - revproxy Setup - Unpack the UI sources"]["register"] == BUILD_INPUTS[0]
+    assert copy["TMSetup - revproxy Setup - Remove UI sources that are no longer in the repo"]["register"] == BUILD_INPUTS[1]
+
+
+def test_ui_source_directory_belongs_to_the_code_owner():
+    directories = revproxy_tasks()["TMSetup - revproxy Setup - Create NGinx directory"]["loop"]
+    assert {"path": "{{ tmsetup_codedir }}/revproxy/ui", "mode": "0750"} in directories
