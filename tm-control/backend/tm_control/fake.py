@@ -5,12 +5,14 @@ dump-openapi` prints the API's OpenAPI document, from which the UI's client is t
 Neither needs a device's secrets, manifest, or state.
 """
 
+import json
 import tempfile
 from pathlib import Path
 
 from tm_control.core.auth import Device, SetupCode
+from tm_control.core.checks import CheckGroup, Group
 from tm_control.core.claim_cli import CommandError
-from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, Settings
+from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, FAKE_STATUS, Settings
 from tm_control.core.state import State
 
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
@@ -30,6 +32,20 @@ def reset(settings: Settings) -> int:
     print(f"Fake device reset in {settings.state_dir}. Setup code: {code}")
     print("Restart `tm-control serve` if it's running, then open the UI's /setup page.")
     return 0
+
+
+def status_groups(path: Path = FAKE_STATUS) -> list[CheckGroup]:
+    """Fake mode's check groups: the fixture's groups, which between them show every status and kind of fix."""
+    groups = [Group.model_validate(group) for group in json.loads(path.read_text())["groups"]]
+    return [CheckGroup(group.id, group.title, [_fixed_checks(group)]) for group in groups]
+
+
+def _fixed_checks(group: Group):
+    def checks(context):
+        return [check.model_copy(deep=True) for check in group.checks]
+
+    checks.__name__ = group.id
+    return checks
 
 
 def openapi_document() -> dict:

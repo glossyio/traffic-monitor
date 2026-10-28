@@ -1,0 +1,168 @@
+{
+    "groups": [
+        {
+            "id": "services",
+            "title": "Services",
+            "checks": [
+                {
+                    "id": "services.traffic-monitor.service",
+                    "title": "Traffic Monitor pod",
+                    "status": "ok",
+                    "detail": "Running since 2 hours ago."
+                },
+                {
+                    "id": "services.frigate.service",
+                    "title": "Frigate",
+                    "status": "error",
+                    "detail": "Stopped after it failed 3 times in a row.",
+                    "fix": {
+                        "kind": "restart",
+                        "text": "Restart Frigate.",
+                        "unit": "frigate.service"
+                    }
+                },
+                {
+                    "id": "services.node-red-tm.service",
+                    "title": "Node-RED",
+                    "status": "ok",
+                    "detail": "Running since 2 hours ago."
+                },
+                {
+                    "id": "services.go2rtc_server.service",
+                    "title": "Camera streams (go2rtc)",
+                    "status": "warn",
+                    "detail": "Restarted 4 times in the last hour.",
+                    "fix": {
+                        "kind": "restart",
+                        "text": "Restart the camera streams.",
+                        "unit": "go2rtc_server.service"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "apps",
+            "title": "Apps",
+            "checks": [
+                {
+                    "id": "apps.frigate.api",
+                    "title": "Frigate answers",
+                    "status": "unknown",
+                    "detail": "The check didn't finish within 5 seconds."
+                },
+                {
+                    "id": "apps.nodered.schema",
+                    "title": "Database schema",
+                    "status": "error",
+                    "detail": "The database is at schema version 0; this release expects version 3.",
+                    "fix": {
+                        "kind": "hint",
+                        "text": "The migration failed when Node-RED started. Open Diagnostics on the Device page and look for tmdb_migrate in the node-red-tm journal."
+                    }
+                },
+                {
+                    "id": "apps.mqtt.broker",
+                    "title": "MQTT broker",
+                    "status": "ok",
+                    "detail": "Listening on port 1883, for this device only."
+                }
+            ]
+        },
+        {
+            "id": "config",
+            "title": "Configuration",
+            "checks": [
+                {
+                    "id": "config.cameras.match",
+                    "title": "Cameras match",
+                    "status": "ok",
+                    "detail": "Frigate's camera picam_h265 is enabled in Node-RED's config.yml."
+                },
+                {
+                    "id": "config.zones.names",
+                    "title": "Zones",
+                    "status": "warn",
+                    "detail": "Camera picam_h265 has no zone_near or zone_far, so events get no direction from the zones.",
+                    "fix": {
+                        "kind": "hint",
+                        "text": "Draw zone_near and zone_far in Frigate's mask and zone editor."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "hardware",
+            "title": "Hardware",
+            "checks": [
+                {
+                    "id": "hardware.camera",
+                    "title": "Camera",
+                    "status": "ok",
+                    "detail": "Raspberry Pi camera module found."
+                },
+                {
+                    "id": "hardware.detector.edgetpu_pci",
+                    "title": "Coral (PCIe)",
+                    "status": "error",
+                    "detail": "Installed with a Coral PCIe accelerator, which isn't found now.",
+                    "fix": {
+                        "kind": "rescan",
+                        "text": "Check the accelerator's cable, then check again."
+                    }
+                },
+                {
+                    "id": "hardware.radar.TM_RADAR_SERIAL_PORT_00",
+                    "title": "Radar 1",
+                    "status": "ok",
+                    "detail": "Found at /dev/ttyACM0."
+                }
+            ]
+        },
+        {
+            "id": "device",
+            "title": "Device",
+            "checks": [
+                {
+                    "id": "device.disk",
+                    "title": "Storage",
+                    "status": "warn",
+                    "detail": "87% of the storage card is used.",
+                    "fix": {
+                        "kind": "link",
+                        "text": "See the storage details on the Device page.",
+                        "href": "/device"
+                    }
+                },
+                {
+                    "id": "device.throttled",
+                    "title": "Power and temperature",
+                    "status": "unknown",
+                    "detail": "tm-control can't read the firmware's throttling flags."
+                }
+            ]
+        },
+        {
+            "id": "time",
+            "title": "Date and time",
+            "checks": [
+                {
+                    "id": "time.plausible",
+                    "title": "Clock",
+                    "status": "error",
+                    "detail": "The device's clock says 1970-01-01, and no time server has set it.",
+                    "fix": {
+                        "kind": "link",
+                        "text": "Set the date and time.",
+                        "href": "/time"
+                    }
+                },
+                {
+                    "id": "time.ntp",
+                    "title": "Time server",
+                    "status": "warn",
+                    "detail": "Not synchronized with a time server."
+                }
+            ]
+        }
+    ]
+}

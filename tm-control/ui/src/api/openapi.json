@@ -481,6 +481,48 @@
         }
       }
     },
+    "/api/v1/status": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Status",
+        "operationId": "status_api_v1_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/rescan": {
+      "post": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Rescan",
+        "operationId": "rescan_api_v1_status_rescan_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -543,6 +585,50 @@
   },
   "components": {
     "schemas": {
+      "Check": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warn",
+              "error",
+              "unknown"
+            ],
+            "title": "Status"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "fix": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Fix"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "detail"
+        ],
+        "title": "Check"
+      },
       "Claim": {
         "properties": {
           "setup_code": {
@@ -608,6 +694,79 @@
           "version"
         ],
         "title": "EulaAcceptance"
+      },
+      "Fix": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "restart",
+              "rescan",
+              "link",
+              "hint"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "Fix",
+        "description": "What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read."
+      },
+      "Group": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "checks"
+        ],
+        "title": "Group"
       },
       "HTTPValidationError": {
         "properties": {
@@ -729,6 +888,43 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "Report": {
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "ok",
+                "warn",
+                "error",
+                "unknown"
+              ]
+            },
+            "type": "object",
+            "title": "Summary"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "summary",
+          "groups"
+        ],
+        "title": "Report"
       },
       "SystemPassword": {
         "properties": {

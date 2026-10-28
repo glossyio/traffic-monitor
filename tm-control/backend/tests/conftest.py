@@ -1,3 +1,4 @@
+import dataclasses
 import shutil
 import sys
 from pathlib import Path
@@ -14,7 +15,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import tm_control  # noqa: E402
 from tm_control.app import create_app  # noqa: E402
-from tm_control.core.auth import Device, SetupCode  # noqa: E402
+from tm_control.core.auth import Device, SetupCode, Users  # noqa: E402
+from tm_control.core.secrets import NAMES  # noqa: E402
 from tm_control.core.settings import Settings  # noqa: E402
 from tm_control.modules.setup.eula import load_eula  # noqa: E402
 
@@ -55,6 +57,7 @@ def client(settings):
 
 ORIGIN = "http://tm-test.local"  # what a browser on the client's base URL sends; TestClient sends no Origin itself
 ADMIN, ADMIN_PASSWORD = "admin", "correct horse 1"
+VIEWER, VIEWER_PASSWORD = "viewer", "viewer pass 1"
 
 
 @pytest.fixture
@@ -84,3 +87,23 @@ def login():
         return r.cookies["tm_session"]
 
     return login
+
+
+@pytest.fixture
+def device_client(settings):
+    """A client for an app built as on a device (fake=False), so its real code paths run; patch what they call.
+
+    Its secrets are synthetic files (test-<name>-value) and its manifest the fixture's. The device is claimed by
+    admin/correct horse 1 and has a viewer, viewer/viewer pass 1; log in with `login`. Not logged in.
+    """
+    settings = dataclasses.replace(settings, fake=False)
+    settings.secrets_dir.mkdir(mode=0o700, parents=True)
+    for name in NAMES:
+        path = settings.secrets_dir / name
+        path.write_text(f"test-{name}-value\n")
+        path.chmod(0o600)
+    client = TestClient(create_app(settings), base_url="http://tm-test.local")
+    state = client.app.state.state
+    Device(state).claim(ADMIN, ADMIN_PASSWORD, load_eula(settings.eula_path).version)
+    Users(state).create(VIEWER, VIEWER_PASSWORD, "viewer")
+    return client

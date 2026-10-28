@@ -7,6 +7,7 @@ from pathlib import Path
 PACKAGE_DIR = Path(__file__).resolve().parents[1]
 # Fake mode (a dev machine, no device files) reads the test fixture unless TM_CONTROL_MANIFEST says otherwise.
 FAKE_MANIFEST = PACKAGE_DIR.parent / "tests" / "fixtures" / "manifest.json"
+FAKE_STATUS = PACKAGE_DIR.parent / "tests" / "fixtures" / "status_fake.json"  # fake mode's status report groups
 # Fake mode's files, under the directory it runs in (the repo root's is in .gitignore), unless variables say otherwise
 FAKE_DIR = ".tm-control-fake"
 EULA_PATH = PACKAGE_DIR / "modules" / "setup" / "EULA.md"
