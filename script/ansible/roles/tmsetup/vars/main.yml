@@ -88,6 +88,7 @@ tmsetup_secret_names:
   - tm_control_session_key
   - frigate_proxy_secret
   - node_red_token_key
+  - node_red_internal_token
 
 # Install facts that only tmsetup writes: the secrets above, manifest.json, and the setup code while unclaimed
 tmsetup_etc_dir: /etc/traffic-monitor

@@ -565,7 +565,9 @@ def render_node_red_env(login):
     return render(
         "container/node-red-tm/node-red-tm.env.j2",
         ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
-        tmsetup_mqtt_broker_login=login, tmsetup_secrets={"node_red_token_key": "placeholder-token-key"},
+        tmsetup_mqtt_broker_login=login,
+        tmsetup_secrets={"node_red_token_key": "placeholder-token-key",
+                         "node_red_internal_token": "placeholder-internal-token"},
     )
 
 
@@ -602,6 +604,19 @@ def test_node_red_env_template_carries_the_token_key():
     key = lines.index("TM_NR_TOKEN_KEY=placeholder-token-key")
     assert lines[key - 1].startswith("# ")
     assert lines[key - 2].startswith("NODE_RED_CREDENTIAL_SECRET=")
+
+
+def test_node_red_env_template_has_the_internal_token():
+    """The flows check GET /tm-internal/status's X-TM-Internal-Token header against TM_INTERNAL_TOKEN."""
+    lines = render_node_red_env(NO_LOGIN).splitlines()
+    token = lines.index("TM_INTERNAL_TOKEN=placeholder-internal-token")
+    assert lines[token - 1].startswith("# ")
+
+
+def test_node_red_config_template_has_no_time_section():
+    """Nothing reads time:; the time zone is set at install (tmsetup_timezone) and later in the control app."""
+    config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
+    assert set(config) == {"thingsboard", "deployment", "sensors"}
 
 
 def test_nodered_location_passes_the_proxy_token():

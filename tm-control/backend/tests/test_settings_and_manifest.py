@@ -1,11 +1,13 @@
+import dataclasses
 import json
 from pathlib import Path
 
 import pytest
 
 from tm_control.adapters.command import run
+from tm_control.app import create_app
 from tm_control.core.manifest import ManifestError, load_manifest
-from tm_control.core.secrets import FakeSecrets, MissingSecret, Secrets
+from tm_control.core.secrets import DEVICE_SECRETS, NAMES, NODE_RED_INTERNAL_TOKEN, FakeSecrets, MissingSecret, Secrets
 from tm_control.core.settings import Settings
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -126,6 +128,24 @@ def test_secrets_are_read_with_whitespace_stripped(tmp_path):
     assert secrets.frigate_proxy_secret == "placeholder-value"
     with pytest.raises(MissingSecret):
         secrets.node_red_token_key
+
+
+def test_secrets_require_the_internal_token(settings):
+    """tm-control reads Node-RED's /tm-internal/status with node_red_internal_token, so it doesn't start without it,
+    and diagnostics redacts it with the other device secrets."""
+    assert NODE_RED_INTERNAL_TOKEN == "node_red_internal_token"
+    assert NODE_RED_INTERNAL_TOKEN in NAMES and NODE_RED_INTERNAL_TOKEN in DEVICE_SECRETS
+    settings = dataclasses.replace(settings, fake=False)
+    settings.secrets_dir.mkdir(parents=True)
+    for name in NAMES:
+        if name != NODE_RED_INTERNAL_TOKEN:
+            (settings.secrets_dir / name).write_text(f"test-{name}-value\n")
+    with pytest.raises(MissingSecret) as error:
+        create_app(settings)
+    assert error.value.name == NODE_RED_INTERNAL_TOKEN
+    (settings.secrets_dir / NODE_RED_INTERNAL_TOKEN).write_text("test-internal-token-value\n")
+    assert Secrets(settings.secrets_dir).node_red_internal_token == "test-internal-token-value"
+    create_app(settings)
 
 
 def test_fake_secrets_are_fixed_strings():

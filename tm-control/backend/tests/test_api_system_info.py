@@ -503,7 +503,7 @@ def test_diagnostics_never_contains_a_secret_value(device_client, login, host):
         if name not in NAMES:
             (secrets_dir / name).write_text(f"test-{name}-value\n")
     values = [device_client.app.state.secrets.read(name) for name in DEVICE_SECRETS]
-    assert len(values) == len(DEVICE_SECRETS) == 4
+    assert len(values) == len(DEVICE_SECRETS) == 5
     planted = [f"connecting with {value} failed" for value in values]
     planted += ["TM_MQTT_BROKER_PASSWORD=hunter2", "Setup code: ABCD-EFGH", 'auth {"token": "tb-token-1"}']
     host.journal = lambda unit, lines: planted
