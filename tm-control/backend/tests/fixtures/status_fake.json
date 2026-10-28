@@ -111,7 +111,7 @@
                     }
                 },
                 {
-                    "id": "hardware.radar.TM_RADAR_SERIAL_PORT_00",
+                    "id": "hardware.radar.ttyACM0",
                     "title": "Radar 1",
                     "status": "ok",
                     "detail": "Found at /dev/ttyACM0."

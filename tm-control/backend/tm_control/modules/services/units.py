@@ -75,6 +75,15 @@ def active_since(values: dict[str, str]) -> datetime | None:
     return datetime.fromtimestamp(seconds).astimezone() if seconds > 0 else None
 
 
+SHOW_UNITS = "services.show_units"
+
+
+def unit_states(context) -> dict[str, dict[str, str]]:
+    """read_units for the install's units, once per status report for every check that needs a unit's state."""
+    units = units_for(context.manifest)
+    return context.probe(SHOW_UNITS, lambda: read_units(context.settings, units))
+
+
 def restarts(values: dict[str, str]) -> int:
     try:
         return max(0, int(values.get("NRestarts", "")))

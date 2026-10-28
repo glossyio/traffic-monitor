@@ -99,13 +99,22 @@ def device_client(settings, monkeypatch):
 
     The apps (Frigate, Node-RED, go2rtc, the broker) don't answer and config.yml is missing, so a status report
     doesn't reach whatever runs on this machine's ports or read its files; the `apps` fixture answers for them.
+    Likewise the hardware: no USB ids or PCI listing, device paths, unit files, kernel modules, media devices, or
+    node-red-tm.env (test_hardware_checks.FakeHardware stands in for them).
     """
-    from tm_control.adapters import httpjson, mqtt, nodered
+    from tm_control.adapters import hardware, httpjson, mqtt, nodered
     from tm_control.adapters.command import CommandResult
 
     monkeypatch.setattr(httpjson, "get", lambda url, headers=None, timeout=None: (None, None))
     monkeypatch.setattr(mqtt, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
     monkeypatch.setattr(nodered, "config", lambda codedir: nodered.ConfigRead(None, "missing"))
+    monkeypatch.setattr(hardware, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
+    monkeypatch.setattr(hardware, "path_exists", lambda path: False)
+    monkeypatch.setattr(hardware, "USB_DEVICES", settings.state_dir / "no-usb")
+    monkeypatch.setattr(hardware, "UNIT_DIR", settings.state_dir / "no-units")
+    monkeypatch.setattr(hardware, "PROC_MODULES", settings.state_dir / "no-modules")
+    monkeypatch.setattr(hardware, "MEDIA_DEVICES", settings.state_dir / "no-media")
+    monkeypatch.setattr(hardware, "radar_ports", lambda codedir: None)
     settings = dataclasses.replace(settings, fake=False)
     settings.secrets_dir.mkdir(mode=0o700, parents=True)
     for name in NAMES:

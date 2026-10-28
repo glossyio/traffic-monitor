@@ -1,5 +1,7 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
+import subprocess
+
 import pytest
 from tmsetup_render import evaluate, load_role_yaml
 
@@ -642,3 +644,17 @@ def test_image_build_is_only_started_when_nothing_changed():
 def test_ui_source_directory_belongs_to_the_code_owner():
     directories = revproxy_tasks()["TMSetup - revproxy Setup - Create NGinx directory"]["loop"]
     assert {"path": "{{ tmsetup_codedir }}/revproxy/ui", "mode": "0750"} in directories
+
+
+@pytest.mark.parametrize("line, found", [
+    ("Bus 002 Device 002: ID 1a6e:089a Global Unichip Corp.", True),  # before the runtime loads the firmware
+    ("Bus 002 Device 003: ID 18d1:9302 Google Inc.", True),  # after it (#217)
+    ("Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub", False),
+])
+def test_coral_usb_probe_matches_both_usb_ids(line, found):
+    """detectors_check.yml runs check_exists in a shell; here lsusb is a function that prints one synthetic line."""
+    check_exists = load_role_yaml("defaults/main.yml")["tmsetup_detectors"]["edgetpu_usb"]["check_exists"]
+    assert check_exists.startswith("lsusb | ")
+    script = f'lsusb() {{ printf "%s\\n" "$LSUSB_LINE"; }}\n{check_exists} >/dev/null'
+    result = subprocess.run(["bash", "-c", script], env={"LSUSB_LINE": line, "PATH": "/usr/bin:/bin"}, check=False)
+    assert (result.returncode == 0) is found

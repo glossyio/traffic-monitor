@@ -3,7 +3,7 @@
 from datetime import date
 
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
-from tm_control.modules.services.units import Unit, active_since, read_units, restart_fix, restarts, units_for
+from tm_control.modules.services.units import Unit, active_since, restart_fix, restarts, unit_states, units_for
 
 
 def _running(values: dict[str, str], today: date) -> str:
@@ -47,10 +47,9 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date) -> Check:
 
 
 def service_checks(context: Context) -> list[Check]:
-    units = units_for(context.manifest)
-    values = context.probe("services.show_units", lambda: read_units(context.settings, units))
+    values = unit_states(context)
     today = date.today()
-    return [unit_check(unit, values.get(unit.unit), today) for unit in units]
+    return [unit_check(unit, values.get(unit.unit), today) for unit in units_for(context.manifest)]
 
 
 GROUP = CheckGroup("services", "Services", [service_checks])
