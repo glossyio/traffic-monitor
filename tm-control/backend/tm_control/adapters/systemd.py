@@ -37,7 +37,7 @@ def show_unit(name: str, properties: list[str]) -> dict[str, str]:
 
 
 def _message(value) -> str | None:
-    """journalctl's JSON MESSAGE: a string, a list of byte values when it isn't UTF-8, or null when too large."""
+    """A journalctl JSON field: a string, a list of byte values when it isn't UTF-8, or null when too large."""
     if isinstance(value, str):
         return value
     if isinstance(value, list) and all(isinstance(b, int) and 0 <= b < 256 for b in value):
@@ -45,11 +45,16 @@ def _message(value) -> str | None:
     return None
 
 
-def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | None = None) -> list[str]:
-    """The first `limit` MESSAGE fields the unit logged since `since` (a journalctl time, such as @<unix seconds>).
+# PID 1 logs the end of the unit's start job ("Finished …", "Failed …") with INVOCATION_ID, JOB_TYPE, JOB_RESULT;
+# the unit's own processes log with _SYSTEMD_INVOCATION_ID.
+JOURNAL_FIELDS = ["MESSAGE", "_SYSTEMD_INVOCATION_ID", "INVOCATION_ID", "JOB_TYPE", "JOB_RESULT"]
 
-    With invocation_id, only the messages of that run (_SYSTEMD_INVOCATION_ID). On any failure to read the journal
-    this returns [], so a job's status still shows when its log can't.
+
+def journal_entries(unit: str, since: str) -> list[dict[str, str]]:
+    """The unit's journal entries since `since` (a journalctl time, such as @<unix seconds>), oldest first, each
+    with whichever of JOURNAL_FIELDS it has, as strings.
+
+    On any failure to read the journal this returns [], so a caller can't mistake it for an outcome.
     """
     argv = [
         "journalctl",
@@ -60,25 +65,38 @@ def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | 
         "--since",
         since,
         "--output=json",
-        "--output-fields=MESSAGE,_SYSTEMD_INVOCATION_ID",
+        f"--output-fields={','.join(JOURNAL_FIELDS)}",
     ]
     result = run(argv, timeout=10, max_output=JOURNAL_MAX_OUTPUT)
     if result.returncode != 0 or result.timed_out:
         log.warning("journalctl for %s failed with exit status %s", unit, result.returncode)
         return []
-    lines = []
+    entries = []
     for line in result.stdout.splitlines():
         try:
-            entry = json.loads(line)
+            raw = json.loads(line)
         except ValueError:
             continue  # the output cap cut this entry short
-        if not isinstance(entry, dict):
+        if not isinstance(raw, dict):
             continue
+        entry = {}
+        for field in JOURNAL_FIELDS:
+            value = _message(raw.get(field))
+            if value is not None:
+                entry[field] = value
+        entries.append(entry)
+    return entries
+
+
+def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | None = None) -> list[str]:
+    """The first `limit` MESSAGE fields the unit logged since `since`; with invocation_id, only that run's own
+    (_SYSTEMD_INVOCATION_ID). [] if the journal can't be read, so a job's status still shows when its log can't."""
+    lines = []
+    for entry in journal_entries(unit, since):
         if invocation_id is not None and entry.get("_SYSTEMD_INVOCATION_ID") != invocation_id:
             continue
-        message = _message(entry.get("MESSAGE"))
-        if message is not None:
-            lines.append(message)
+        if "MESSAGE" in entry:
+            lines.append(entry["MESSAGE"])
             if len(lines) >= limit:
                 break
     return lines

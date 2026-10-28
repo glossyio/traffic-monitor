@@ -70,6 +70,10 @@ def set_system_password(body: SystemPassword, request: Request, admin: User = De
     # chpasswd reads one user:password line, so a line break would end the password early (or start another line).
     if any(char in body.password for char in "\n\r\x00"):
         raise ApiError(422, "validation", "A password can't contain line breaks.")
+    try:
+        body.password.encode("utf-8")  # FastAPI's body validation refuses a lone surrogate today; don't rely on it
+    except UnicodeEncodeError:
+        raise ApiError(422, "validation", "The password is not valid text.") from None
     app_state = request.app.state
     request_body = {"username": app_state.manifest.installing_user, "password": body.password}
     job = app_state.jobs.start("system-password", request_body, admin.id)

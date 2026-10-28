@@ -134,6 +134,11 @@ def test_system_password_enforces_the_rules(claimed_client, login):
         assert r.status_code == 422 and r.json()["error"]["code"] == "validation", password
     r = claimed_client.post("/api/v1/system/password", json={}, headers=ORIGIN)
     assert r.status_code == 422
+    # A lone surrogate is valid JSON, but no UTF-8 encodes it, so chpasswd could never be given it.
+    body = '{"password": "\\ud800' + "x" * 12 + '"}'
+    headers = {**ORIGIN, "Content-Type": "application/json"}
+    r = claimed_client.post("/api/v1/system/password", content=body, headers=headers)
+    assert r.status_code == 422 and r.json()["error"]["code"] == "validation"
     assert claimed_client.app.state.jobs.last_request is None
 
 
