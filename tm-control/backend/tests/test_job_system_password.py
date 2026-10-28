@@ -1,4 +1,8 @@
-"""The system-password root job, run as a script against a fake chpasswd that records its input."""
+"""The system-password root job, run as a script against a fake chpasswd that records its input.
+
+fixtures/run_job.py runs it with stand-in accounts (pi is uid 1000 unless a test says otherwise) and a non-root euid,
+so the fake chpasswd is used even when the suite runs as root.
+"""
 
 import importlib.machinery
 import importlib.util
@@ -13,6 +17,8 @@ import pytest
 
 JOB = Path(__file__).resolve().parents[2] / "jobs" / "tm-job-system-password"
 FIXTURE_MANIFEST = Path(__file__).resolve().parent / "fixtures" / "manifest.json"
+RUNNER = Path(__file__).resolve().parent / "fixtures" / "run_job.py"
+ACCOUNTS = {"pi": 1000}
 PASSWORD = "correct horse 1"
 
 
@@ -70,10 +76,14 @@ def write_request(tmp_path, body):
     return path
 
 
-def run_job(request_path, chpasswd, manifest):
-    env = {"CHPASSWD": str(chpasswd), "TM_CONTROL_MANIFEST": str(manifest)}
+def run_job(request_path, chpasswd, manifest, accounts=ACCOUNTS):
+    env = {"CHPASSWD": str(chpasswd), "TM_CONTROL_MANIFEST": str(manifest), "TEST_ACCOUNTS": json.dumps(accounts)}
     return subprocess.run(
-        [sys.executable, "-I", str(JOB), str(request_path)], env=env, capture_output=True, text=True, timeout=30
+        [sys.executable, "-I", str(RUNNER), str(JOB), str(request_path)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
 
 
@@ -189,6 +199,30 @@ def test_refuses_an_installing_user_that_is_not_a_plain_username(tmp_path, chpas
     request = write_request(tmp_path, {"username": "pi:0", "password": PASSWORD})
     result = run_job(request, chpasswd, write_manifest(tmp_path, codeowner=me(), installing_user="pi:0"))
     assert result.returncode == 1 and recorded(tmp_path) is None
+
+
+@pytest.mark.parametrize(
+    ("user", "accounts"),
+    [
+        ("root", ACCOUNTS),  # an install run as root
+        ("toor", {**ACCOUNTS, "toor": 0}),  # root under another name
+    ],
+)
+def test_refuses_a_root_account_even_as_the_installing_user(tmp_path, chpasswd, user, accounts):
+    request = write_request(tmp_path, {"username": user, "password": PASSWORD})
+    result = run_job(request, chpasswd, write_manifest(tmp_path, codeowner=me(), installing_user=user), accounts)
+    assert result.returncode == 1 and recorded(tmp_path) is None and not request.exists()
+    assert f"refused: {user} is a root account (uid 0)" in result.stdout
+    assert "password set" not in result.stdout and PASSWORD not in result.stdout + result.stderr
+
+
+def test_refuses_an_installing_user_with_no_account(tmp_path, chpasswd):
+    request = write_request(tmp_path, {"username": "nosuchuser", "password": PASSWORD})
+    manifest = write_manifest(tmp_path, codeowner=me(), installing_user="nosuchuser")
+    result = run_job(request, chpasswd, manifest, accounts={})
+    assert result.returncode == 1 and recorded(tmp_path) is None and not request.exists()
+    assert "refused: there is no account nosuchuser on this device" in result.stdout
+    assert PASSWORD not in result.stdout + result.stderr
 
 
 def test_missing_request_is_an_error(tmp_path, chpasswd, manifest, jobs_dir):

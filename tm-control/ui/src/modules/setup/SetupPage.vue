@@ -332,7 +332,7 @@ function finish() {
           </v-alert>
           <v-alert v-if="systemError" type="error" class="mb-6">{{ systemError }}</v-alert>
           <v-alert v-if="job?.status === 'failed'" type="error" class="mb-6">
-            The system password wasn't changed. The device's log says:
+            The system password wasn't set, so the account keeps the password it had. The device's log says:
             <pre v-if="job.log.length" class="text-body-2 mt-2 text-wrap">{{ job.log.join('\n') }}</pre>
           </v-alert>
           <div class="d-flex ga-3 flex-wrap">

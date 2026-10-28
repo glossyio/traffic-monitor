@@ -161,6 +161,27 @@ describe('setup', () => {
     expect(router.currentRoute.value.fullPath).toBe('/')
   })
 
+  it('says plainly that the system password was not set when the job fails', async () => {
+    unclaimedDevice({
+      'POST /api/v1/system/password': json(202, { id: 'job3' }),
+      'GET /api/v1/jobs/job3': json(200, {
+        id: 'job3', name: 'system-password', status: 'failed',
+        requested_at: '2026-10-27T12:00:00+00:00', finished_at: '2026-10-27T12:00:01+00:00',
+        log: ["refused: root is a root account (uid 0), and root's password is never set from tm-control"],
+      }),
+    })
+    const { wrapper } = await mountApp('/setup')
+    await fillClaimForm(wrapper)
+    await click(wrapper, 'Claim this device')
+    await field(wrapper, 'Use the same password as my account').setValue(true)
+    await click(wrapper, 'Set system password')
+    await flushPromises()
+    expect(wrapper.text()).toContain("The system password wasn't set, so the account keeps the password it had.")
+    expect(wrapper.text()).toContain('refused: root is a root account (uid 0)')
+    expect(wrapper.text()).not.toContain('System password set.')
+    expect(button(wrapper, 'Skip for now').attributes('disabled')).toBeUndefined()
+  })
+
   function jobThatNeverFinishes() {
     const job = { polls: 0 }
     const api = unclaimedDevice({
