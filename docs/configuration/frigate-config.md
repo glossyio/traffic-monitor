@@ -6,7 +6,9 @@ description: Use Frigate's debug view, object filters, masks, and camera streams
 
 [Frigate](https://frigate.video/) does the object detection. How well it works depends on the mounting height and angle, the camera, and the weather, so expect to adjust it for each site. The Traffic Monitor is not affiliated with the Frigate project.
 
-The Traffic Monitor's [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2) is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at **Settings > Configuration editor**. Frigate's [configuration reference](https://docs.frigate.video/configuration/) explains every setting.
+The Traffic Monitor's [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2) is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at **Settings > Configuration editor**, when you're logged in to the device as the administrator. Frigate's [configuration reference](https://docs.frigate.video/configuration/) explains every setting.
+
+Frigate's own login is off. The device's [login](../use/control-app.md) passes your username and role on to Frigate: the administrator gets Frigate's admin role, and viewers its viewer role, which can watch and review but not change settings. Frigate's **Logout** logs you out of the device. Keep `auth: enabled: false` and the `proxy:` section as they are; with Frigate's login on, Frigate asks for a second login of its own, separate from the device's accounts.
 
 ## See what Frigate sees
 

@@ -16,7 +16,7 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ??? question "Frigate shows no camera image"
 
-    Open **Go2RTC Feeds** from the home page. If the `picam_h265_detect` stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where `cameras: picam_h265:` needs `enabled: true`, or Frigate's video decoding is failing, which shows as ffmpeg errors in the `frigate.service` log. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](../use/system-admin.md).
+    Open **Camera feeds** from the home page, logged in as the administrator. If the `picam_h265_detect` stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where `cameras: picam_h265:` needs `enabled: true`, or Frigate's video decoding is failing, which shows as ffmpeg errors in the `frigate.service` log. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](../use/system-admin.md).
 
 ??? question "Detection is slow or misses objects"
 
@@ -38,7 +38,7 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ### What does the device record?
 
-The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. Anyone on your network can still see the live view, the recordings, and Frigate's snapshots, because none of them has a login. [Data and privacy](../data-and-payloads/data-overview.md#privacy) explains, and lists the features that would change what's stored.
+The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. The live view, the recordings, and Frigate's snapshots are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account can see them, and they're ordinary files on the device's card. [Data and privacy](../data-and-payloads/data-overview.md#privacy) explains, and lists the features that would change what's stored.
 
 ### Why this design?
 

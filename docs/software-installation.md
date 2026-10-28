@@ -33,7 +33,9 @@ bash traffic-monitor/script/tmsetup.sh
 
 The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-Near the end, the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/` and continue with [First-time setup](setup-guide.md).
+Near the end, the installer prints the device's **setup code**, which you need once to claim the device and create its administrator account. Keep it; [Control app and login](use/control-app.md#claim-the-device) says where else to find it.
+
+Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](setup-guide.md).
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](reference/tmsetup.md).
 
@@ -53,9 +55,9 @@ bash traffic-monitor/script/tmsetup.sh -H <address>[,<address>] -l <username> -k
 | `-k` | Ask for the SSH password |
 | `-K` | Ask for the password for administrator rights. Raspberry Pi OS requires it. |
 
-Remote devices reboot by themselves when the install needs it.
+Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address.
 
 ## Next steps
 
 1. [Choose a site and mount](deployment-and-mounting-guide.md) the device.
-2. [First-time setup](setup-guide.md): turn on detection, adjust the zones, and record the location.
+2. [First-time setup](setup-guide.md): claim the device, turn on detection, adjust the zones, and record the location.

@@ -4,16 +4,16 @@ description: The network ports a Traffic Monitor opens, and the login the camera
 
 # Network ports
 
-Other computers reach the Traffic Monitor's apps through the [home page](../use/home-page.md) on port 80. The apps themselves accept connections only from the device.
+Other computers reach the Traffic Monitor's apps through the [home page](../use/home-page.md) on port 80. The apps themselves, and the control app behind the login on port 8090, accept connections only from the device.
 
 | Port | Used for |
 |---|---|
 | 22 | SSH |
-| 80 | The home page and every app it links to |
+| 80 | The [control app](../use/control-app.md) and every app behind its login |
 | 1883 | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md#mqtt). |
 | 5353 (UDP) | `<hostname>.local` names (mDNS) |
 | 8554 | The camera stream (RTSP), with a username and password |
-| 9090 | Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load. |
+| 9090 | Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering. |
 
 When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
 
