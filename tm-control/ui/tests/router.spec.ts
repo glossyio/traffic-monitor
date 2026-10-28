@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { createAppRouter } from '../src/router'
+import { useSession } from '../src/stores/session'
 import { ADMIN, VIEWER, fakeApi, session, status } from './fake-api'
 
 function device(claimed: boolean, user: object | null, accepted = claimed) {
@@ -59,6 +60,17 @@ describe('router', () => {
     expect(await landing('/setup')).toBe('/')
     expect(await landing('/welcome')).toBe('/')
     expect(await landing('/login')).toBe('/')
+  })
+
+  it('keeps guarding with what it last knew when a refresh fails', async () => {
+    const api = device(true, VIEWER)
+    const router = createAppRouter(createMemoryHistory())
+    await router.push('/')
+    api.fetch.mockRejectedValue(new TypeError('Failed to fetch')) // the device stops answering
+    await useSession().refresh()
+    expect(useSession().loadError).not.toBe('')
+    await router.push('/users')
+    expect(router.currentRoute.value.fullPath).toBe('/')
   })
 
   it('loads the status and session once, not on every navigation', async () => {

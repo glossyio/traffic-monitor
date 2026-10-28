@@ -5,6 +5,7 @@ import App from './App.vue'
 import { createAppRouter } from './router'
 import { useSession } from './stores/session'
 import { createAppVuetify } from './theme'
+import './styles/focus.css' // after Vuetify's styles, which theme.ts loads
 
 async function start() {
   const pinia = createPinia()

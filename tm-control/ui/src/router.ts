@@ -48,7 +48,9 @@ export function createAppRouter(history: RouterHistory = createWebHistory()) {
   router.beforeEach(async (to) => {
     const session = useSession()
     await session.load()
-    if (session.loadError) return true // App.vue shows the error instead of the page
+    // Never loaded: App.vue shows the error instead of the page. A later refresh that failed leaves the last known
+    // state, which keeps guarding.
+    if (!session.loaded) return true
     return redirectFor(to, session)
   })
 

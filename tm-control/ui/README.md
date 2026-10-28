@@ -89,9 +89,12 @@ falls back unpredictably on Android and Windows. The scale uses Vuetify's typogr
 - The setup code field: monospace, larger, with wider letter spacing, so it reads like the code printed on the card.
 
 The font stack and sentence-case buttons are set in `src/styles/settings.scss`, Vuetify's documented SASS settings,
-because Vuetify writes Roboto and capitals into its CSS. Two small scoped style blocks are the only other CSS: the
-setup code field, and spacing for the license agreement's headings and paragraphs, which come from markdown and
-can't take Vuetify's classes.
+because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
+
+- `src/styles/focus.css`: a 2 px keyboard focus ring in the primary color. Vuetify's own focus cue is too faint to
+  see on the filled buttons (about 1.2:1), and raising its opacity can't reach the 3:1 a focus indicator needs.
+- Two small scoped style blocks: the setup code field, and spacing for the license agreement's headings and
+  paragraphs, which come from markdown and can't take Vuetify's classes.
 
 ### Layout
 
@@ -132,7 +135,7 @@ Home (desktop; on a phone the drawer hides behind the menu button and the tiles 
 |           |  | Serial number   Device time              |  |
 |           |  | 000000001234    2026-10-27 14:32 (UTC-4) |  |
 |           |  +------------------------------------------+  |
-|           |  Traffic data                                  |
+|           |  Apps                                          |
 |           |  [Dashboard] [Frigate] [Legacy dashboard]      |
 |           |  Device administration         (admins only)   |
 |           |  [Node-RED] [Camera feeds] [Cockpit]           |
@@ -162,6 +165,9 @@ data, an "Add a viewer" form, and the list of accounts, each viewer with a menu 
   largest text in the app. Everything else is quiet.
 - Cards only for things that are objects (the device, an app to open); forms sit directly on the page.
 - Nothing depends on hover. The main action on each page is a large button (44 px tall), and menu rows are 48 px.
+- Keyboard focus is always visible, and moving between setup steps puts the focus on the new step's heading.
+- Nothing waits forever: the system-password step stops waiting for the device after two minutes and lets setup go
+  on, and "Skip for now" works while it waits.
 
 ### What the screenshot review changed
 

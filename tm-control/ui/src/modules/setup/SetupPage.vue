@@ -4,7 +4,7 @@
   answers, posts them, and shows the API's messages.
 -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { Eula, Job } from '../../api/types'
@@ -14,6 +14,7 @@ import { useSession } from '../../stores/session'
 
 const STEPS = ['Welcome', 'License agreement', 'Administrator account', 'System password']
 const JOB_POLL_MS = 1000
+const JOB_DEADLINE_MS = 120_000 // after this, stop waiting for the job and let setup go on
 
 const session = useSession()
 const router = useRouter()
@@ -21,6 +22,13 @@ const route = useRoute()
 
 const step = ref(1)
 const progress = computed(() => (step.value / STEPS.length) * 100)
+
+// Each step's heading takes the keyboard focus, so a screen reader announces the new step
+const heading = ref<HTMLElement | null>(null)
+watch(step, async () => {
+  await nextTick()
+  heading.value?.focus()
+})
 
 const required = (value: string) => !!value || 'Fill this in.'
 
@@ -60,7 +68,17 @@ function formatSetupCode(text: string) {
   return chars.length > 4 ? `${chars.slice(0, 4)}-${chars.slice(4)}` : chars
 }
 
+// The raw text first, then the formatted code: when formatting gives the code the field already had (a pasted
+// " ABCD-EFGH" over ABCD-EFGH), Vue would see no change and leave the raw text showing.
+async function onSetupCodeInput(text: string) {
+  setupCode.value = text
+  await nextTick()
+  setupCode.value = formatSetupCode(text)
+}
+
 const passwordsMatch = (value: string) => value === password.value || "The passwords don't match."
+// Checked here so a mistyped code doesn't use up one of the device's limited tries
+const wholeCode = (value: string) => value.replace('-', '').length === 8 || 'The setup code has 8 letters and digits.'
 
 async function claim() {
   claimError.value = ''
@@ -79,7 +97,10 @@ async function claim() {
     await session.refresh()
     step.value = 4
   } catch (error) {
-    claimError.value = messageOf(error)
+    const wrongCode = error instanceof ApiError && error.code === 'invalid_setup_code'
+    claimError.value = wrongCode
+      ? `${messageOf(error)} Check the code on the card or in the installer's output and try again.`
+      : messageOf(error)
     alreadyClaimed.value = error instanceof ApiError && error.code === 'already_claimed'
   } finally {
     claiming.value = false
@@ -94,6 +115,7 @@ const confirmSystemPassword = ref('')
 const systemError = ref('')
 const job = ref<Job | null>(null)
 const jobRunning = ref(false)
+const jobTimedOut = ref(false) // the job never reported a result within JOB_DEADLINE_MS
 
 const systemPasswordsMatch = (value: string) => value === systemPassword.value || "The passwords don't match."
 
@@ -102,26 +124,45 @@ watch(samePassword, (same) => {
   confirmSystemPassword.value = same ? password.value : ''
 })
 
+// Leaving the page (Skip for now, or the browser's back button) stops the polling
+let left = false
+let pollTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => {
+  left = true
+  clearTimeout(pollTimer)
+})
+
 function pause(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => {
+    pollTimer = setTimeout(resolve, ms)
+  })
 }
 
 async function setSystemPassword() {
   systemError.value = ''
   job.value = null
+  jobTimedOut.value = false
   if (!(await systemForm.value?.validate())?.valid) return
   jobRunning.value = true
   try {
     const { data } = await api.POST('/api/v1/system/password', { body: { password: systemPassword.value } })
     const id = (data as { id: string }).id
-    let current: Job
+    const deadline = Date.now() + JOB_DEADLINE_MS
     for (;;) {
       const answer = await api.GET('/api/v1/jobs/{job_id}', { params: { path: { job_id: id } } })
-      current = answer.data as Job
-      if (current.status === 'succeeded' || current.status === 'failed') break
+      if (left) return
+      const current = answer.data as Job
+      if (current.status === 'succeeded' || current.status === 'failed') {
+        job.value = current
+        return
+      }
+      // queued or running: the device may never say more, for example when tm-control can't read the journal
+      if (Date.now() >= deadline) {
+        jobTimedOut.value = true
+        return
+      }
       await pause(JOB_POLL_MS)
     }
-    job.value = current
   } catch (error) {
     systemError.value = messageOf(error)
   } finally {
@@ -140,7 +181,7 @@ function finish() {
     <v-progress-linear :model-value="progress" color="primary" rounded height="4" class="mb-8" />
 
     <section v-if="step === 1">
-      <h1 class="text-h5 text-primary mb-4">Set up this Traffic Monitor</h1>
+      <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Set up this Traffic Monitor</h1>
       <p class="text-body-1 mb-4">
         Setup takes a few minutes. You'll accept the license agreement, create the administrator account for this
         device, and can give the device a new system password.
@@ -153,7 +194,7 @@ function finish() {
     </section>
 
     <section v-else-if="step === 2">
-      <h1 class="text-h5 text-primary mb-4">Read the license agreement</h1>
+      <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Read the license agreement</h1>
       <v-alert v-if="eulaError" type="error" class="mb-4">
         {{ eulaError }}
         <template #append>
@@ -177,7 +218,7 @@ function finish() {
     </section>
 
     <section v-else-if="step === 3">
-      <h1 class="text-h5 text-primary mb-4">Create the administrator account</h1>
+      <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Create the administrator account</h1>
       <p class="text-body-1 mb-6">
         The administrator can change settings and add accounts for other people. Choose a password you don't use
         anywhere else.
@@ -187,15 +228,14 @@ function finish() {
           :model-value="setupCode"
           label="Setup code"
           placeholder="XXXX-XXXX"
-          hint="8 letters and digits, from the card that came with the device"
+          hint="8 letters and digits, from the card that came with the device or the end of the installer's output"
           persistent-hint
           autocomplete="off"
           autocapitalize="characters"
           spellcheck="false"
-          maxlength="9"
           class="setup-code mb-4"
-          :rules="[required]"
-          @update:model-value="setupCode = formatSetupCode($event)"
+          :rules="[required, wholeCode]"
+          @update:model-value="onSetupCodeInput"
         />
         <v-text-field
           v-model="username"
@@ -241,10 +281,18 @@ function finish() {
     </section>
 
     <section v-else>
-      <h1 class="text-h5 text-primary mb-4">Set the system password</h1>
+      <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Set the system password</h1>
       <template v-if="job?.status === 'succeeded'">
         <v-alert type="success" class="mb-6">
           System password set. Use it from now on to log in to Cockpit (the device's system tools) and over SSH.
+        </v-alert>
+        <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
+      </template>
+      <template v-else-if="jobTimedOut">
+        <v-alert type="warning" class="mb-6">
+          The device hasn't reported whether the system password changed. It may still change in a moment, and you
+          can go on with setup. Later, log in to Cockpit with the new password. If it doesn't work, use the old one,
+          and change it on Cockpit's Accounts page.
         </v-alert>
         <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
       </template>
@@ -278,14 +326,16 @@ function finish() {
             class="mb-2"
             :rules="[required, systemPasswordsMatch]"
           />
-          <v-alert v-if="jobRunning" type="info" class="mb-6">Setting the system password. This takes a few seconds.</v-alert>
+          <v-alert v-if="jobRunning" type="info" class="mb-6">
+            Setting the system password. This usually takes a few seconds; you can skip ahead without waiting.
+          </v-alert>
           <v-alert v-if="systemError" type="error" class="mb-6">{{ systemError }}</v-alert>
           <v-alert v-if="job?.status === 'failed'" type="error" class="mb-6">
             The system password wasn't changed. The device's log says:
             <pre v-if="job.log.length" class="text-body-2 mt-2 text-wrap">{{ job.log.join('\n') }}</pre>
           </v-alert>
           <div class="d-flex ga-3 flex-wrap">
-            <v-btn variant="text" size="large" :disabled="jobRunning" @click="finish">Skip for now</v-btn>
+            <v-btn variant="text" size="large" @click="finish">Skip for now</v-btn>
             <v-spacer />
             <v-btn type="submit" color="primary" size="large" :loading="jobRunning">Set system password</v-btn>
           </div>
