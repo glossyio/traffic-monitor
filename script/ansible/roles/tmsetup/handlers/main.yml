@@ -72,6 +72,13 @@
     name: traffic-monitor.service
     state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
 
+- name: Restart tm-control.service
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: tm-control.service
+    state: "{{ 'stopped' if tmsetup_restart_required else 'restarted' }}"
+
 - name: Restart revproxy.service
   become: true
   ansible.builtin.systemd_service:

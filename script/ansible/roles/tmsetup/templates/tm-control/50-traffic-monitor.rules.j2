@@ -1,0 +1,12 @@
+// /etc/polkit-1/rules.d/50-traffic-monitor.rules, installed by tmsetup.sh (tm-control tag)
+// tm-control runs as {{ tmsetup_codeowner }} and may start, stop, and restart these units and nothing else.
+// The list is tmsetup_tm_control_polkit in the tmsetup role's vars/main.yml. polkitd reloads this file on its own.
+polkit.addRule(function (action, subject) {
+    if (subject.user !== "{{ tmsetup_codeowner }}") { return polkit.Result.NOT_HANDLED; }
+    if (action.id === "org.freedesktop.systemd1.manage-units") {
+        var units = [{% for u in tmsetup_tm_control_polkit.units %}"{{ u }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+        var verbs = [{% for v in tmsetup_tm_control_polkit.unit_verbs %}"{{ v }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+        if (units.indexOf(action.lookup("unit")) >= 0 && verbs.indexOf(action.lookup("verb")) >= 0) { return polkit.Result.YES; }
+    }
+    return polkit.Result.NOT_HANDLED;
+});

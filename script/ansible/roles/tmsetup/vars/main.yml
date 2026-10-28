@@ -32,6 +32,8 @@ tmsetup_packages:
   - rpicam-apps
   - sysstat
   - python3-venv
+  - polkitd
+  - rsync
 
 tmsetup_packages_backports:
   - cockpit
@@ -72,9 +74,33 @@ tmsetup_revproxy_locations:
 tmsetup_secrets_dir: /etc/traffic-monitor/secrets
 tmsetup_secret_names:
   - go2rtc_rtsp_password
+  - tm_control_session_key
+  - frigate_proxy_secret
+  - node_red_token_key
+
+# Install facts that only tmsetup writes: the secrets above, manifest.json, and the setup code while unclaimed
+tmsetup_etc_dir: /etc/traffic-monitor
 
 # tm-control code and venv: root-owned, outside tmsetup_codedir (which the code owner can write)
 tmsetup_tm_control_dir: /usr/local/lib/traffic-monitor/tm-control
+# tm-control's root job scripts, run by tm-job-<name>.service units; root-owned like the code
+tmsetup_libexec_dir: /usr/local/libexec/traffic-monitor
+# tm-control listens on loopback only; nginx proxies to it
+tmsetup_tm_control_port: 8090
+# What polkit lets tm-control's user (the code owner) do: these verbs on these units, nothing else
+tmsetup_tm_control_polkit:
+  units:
+    - traffic-monitor.service
+    - frigate.service
+    - node-red-tm.service
+    - plate-recognizer.service
+    - revproxy.service
+    - go2rtc_server.service
+    - tm-job-system-password.service
+  unit_verbs:
+    - start
+    - stop
+    - restart
 
 # go2rtc RTSP user that Frigate logs in as; the password is tmsetup_secrets['go2rtc_rtsp_password']
 tmsetup_go2rtc_rtsp_user: frigate

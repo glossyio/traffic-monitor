@@ -6,6 +6,7 @@ ansible-core 2.19+ replaces them with versions that don't recognize plain Jinja 
 """
 
 import functools
+import re
 from pathlib import Path
 
 import jinja2
@@ -32,6 +33,20 @@ def _environment():
 def render(template, **variables):
     """Render a template given by its path relative to the repo root."""
     return _environment().get_template(template).render(**variables)
+
+
+def evaluate(value, **variables):
+    """Evaluate a task's argument the way Ansible's native templating does, for values that are a single
+    {{ expression }}: dicts and lists recursively, each expression to its Python value, anything else unchanged."""
+    if isinstance(value, dict):
+        return {key: evaluate(item, **variables) for key, item in value.items()}
+    if isinstance(value, list):
+        return [evaluate(item, **variables) for item in value]
+    if isinstance(value, str):
+        match = re.fullmatch(r"\{\{(.*)\}\}", value.strip(), re.DOTALL)
+        if match:
+            return _environment().compile_expression(match.group(1).strip(), undefined_to_none=False)(**variables)
+    return value
 
 
 def load_role_yaml(relative_path):

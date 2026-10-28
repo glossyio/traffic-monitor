@@ -1,0 +1,201 @@
+---
+# TMSetup - tm-control Service tasks: the unit, its polkit rules, the root job unit, the install manifest, and the
+# setup code. main.yml imports this right after tm-control_setup.yml (the code), under every tag that renders the pod
+# or revproxy, because nginx's auth checks need tm-control running. start_services.yml starts it.
+- name: TMSetup - tm-control Service - Install the polkit rules
+  become: true
+  ansible.builtin.template:
+    src: tm-control/50-traffic-monitor.rules.j2
+    dest: /etc/polkit-1/rules.d/50-traffic-monitor.rules
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - tm-control Service - Install the unit files
+  become: true
+  loop:
+    - tm-control.service
+    - tm-job-system-password.service
+  ansible.builtin.template:
+    src: tm-control/{{ item }}.j2
+    dest: /etc/systemd/system/{{ item }}
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart tm-control.service
+
+- name: TMSetup - tm-control Service - Create the configuration directory
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_etc_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# The repo is on the machine running tmsetup.sh, which for -H installs isn't the device. git may refuse a repo
+# another user owns (safe.directory); the manifest then says unknown rather than failing the install.
+- name: TMSetup - tm-control Service - Read the git commit
+  become: false
+  delegate_to: localhost
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - '{{ playbook_dir }}/../..'
+      - rev-parse
+      - HEAD
+  register: tmsetup_tm_control_git_commit_register
+  changed_when: false
+  failed_when: false
+
+- name: TMSetup - tm-control Service - Read the git branch
+  become: false
+  delegate_to: localhost
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - '{{ playbook_dir }}/../..'
+      - rev-parse
+      - --abbrev-ref
+      - HEAD
+  register: tmsetup_tm_control_git_branch_register
+  changed_when: false
+  failed_when: false
+
+- name: TMSetup - tm-control Service - Check for the plate-recognizer unit
+  become: true
+  ansible.builtin.stat:
+    path: /etc/containers/systemd/plate-recognizer.container
+    get_checksum: false
+  register: tmsetup_tm_control_plate_recognizer_stat_register
+
+# Must match tm-control's Manifest model (tm-control/backend/tm_control/core/manifest.py)
+- name: TMSetup - tm-control Service - Collect the install manifest
+  ansible.builtin.set_fact:
+    tmsetup_tm_control_manifest:
+      manifest_version: 1
+      tm_version: '{{ tmsetup_tm_version }}'
+      git:
+        commit: >-
+          {{ tmsetup_tm_control_git_commit_register.stdout
+             if tmsetup_tm_control_git_commit_register.rc | default(1) == 0 else 'unknown' }}
+        branch: >-
+          {{ tmsetup_tm_control_git_branch_register.stdout
+             if tmsetup_tm_control_git_branch_register.rc | default(1) == 0 else 'unknown' }}
+      installing_user: "{{ ansible_facts['user_id'] }}"
+      codedir: '{{ tmsetup_codedir }}'
+      codeowner: '{{ tmsetup_codeowner }}'
+      components:
+        frigate: '{{ tmsetup_frigate_version }}'
+        node_red: '{{ tmsetup_node_red_tm_version }}'
+        go2rtc: '{{ tmsetup_go2rtc_version }}'
+        nginx: '{{ tmsetup_nginx_version }}'
+        hailo: '{{ tmsetup_hailo_version }}'
+      options:
+        plate_recognizer: '{{ tmsetup_tm_control_plate_recognizer_stat_register.stat.exists }}'
+      revproxy_locations: '{{ tmsetup_revproxy_locations }}'
+      probes:
+        # Only each detector's static probe settings, not this run's results
+        detectors: >-
+          {{ dict(tmsetup_detectors.keys() | zip(tmsetup_detectors.values()
+             | map('dict2items')
+             | map('selectattr', 'key', 'in', ['dev_path', 'check_exists', 'frigate_type', 'frigate_device'])
+             | map('list') | map('items2dict'))) }}
+        radar_paths: '{{ tmsetup_radar_paths }}'
+        hevc_device: '{{ tmsetup_hevc_device }}'
+      homepage:
+        font: '{{ tmsetup_homepage_font }}'
+        colors: '{{ tmsetup_homepage_colors }}'
+
+- name: TMSetup - tm-control Service - Write the install manifest
+  become: true
+  ansible.builtin.template:
+    src: tm-control/manifest.json.j2
+    dest: '{{ tmsetup_etc_dir }}/manifest.json'
+    owner: root
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0640'
+  notify: Restart tm-control.service
+
+# tm-control.service would create it too, but the setup-code commands below run before the service has started
+- name: TMSetup - tm-control Service - Create the state directory
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/tm-control
+    state: directory
+    owner: '{{ tmsetup_codeowner }}'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0700'
+
+# The setup code claims an unclaimed device once. tmsetup keeps it in a root-only file and gives tm-control its
+# hash on every unclaimed run; main.yml prints it at the end. Only that notice shows the code.
+- name: TMSetup - tm-control Service - Check whether the device is claimed
+  become: true
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/runuser
+      - -u
+      - '{{ tmsetup_codeowner }}'
+      - --
+      - /usr/local/bin/tm-control
+      - claim-status
+  register: tmsetup_tm_control_claim_register
+  changed_when: false
+
+- name: TMSetup - tm-control Service - Check for the setup code file
+  become: true
+  ansible.builtin.stat:
+    path: '{{ tmsetup_etc_dir }}/setup-code'
+    get_checksum: false
+  register: tmsetup_tm_control_setup_code_stat_register
+
+- name: TMSetup - tm-control Service - Remove the setup code once the device is claimed
+  become: true
+  when: tmsetup_tm_control_claim_register.stdout == 'claimed'
+  ansible.builtin.file:
+    path: '{{ tmsetup_etc_dir }}/setup-code'
+    state: absent
+
+- name: TMSetup - tm-control Service - Generate a setup code
+  become: true
+  no_log: true
+  when:
+    - tmsetup_tm_control_claim_register.stdout == 'unclaimed'
+    - not tmsetup_tm_control_setup_code_stat_register.stat.exists
+  ansible.builtin.copy:
+    dest: '{{ tmsetup_etc_dir }}/setup-code'
+    # XXXX-XXXX, without 0, O, 1, or I, as tm-control's SetupCode
+    content: >-
+      {{ lookup('community.general.random_string', length=4, override_all='ABCDEFGHJKLMNPQRSTUVWXYZ23456789') }}-{{
+         lookup('community.general.random_string', length=4, override_all='ABCDEFGHJKLMNPQRSTUVWXYZ23456789') }}
+    force: false
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: TMSetup - tm-control Service - Read the setup code
+  become: true
+  no_log: true
+  when: tmsetup_tm_control_claim_register.stdout == 'unclaimed'
+  ansible.builtin.slurp:
+    src: '{{ tmsetup_etc_dir }}/setup-code'
+  register: tmsetup_tm_control_setup_code_register
+
+# Every unclaimed run, so a run that wrote the file but failed before this step is repaired by the next one
+- name: TMSetup - tm-control Service - Give tm-control the setup code
+  become: true
+  no_log: true
+  when: tmsetup_tm_control_claim_register.stdout == 'unclaimed'
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/runuser
+      - -u
+      - '{{ tmsetup_codeowner }}'
+      - --
+      - /usr/local/bin/tm-control
+      - set-setup-code
+    stdin: '{{ tmsetup_tm_control_setup_code_register.content | b64decode | trim }}'
+  changed_when: false
+...
