@@ -18,7 +18,7 @@ def other_client(client):
 
 
 def verify(client):
-    return client.get("/api/v1/auth/verify", headers={"X-Original-URI": "/"})
+    return client.get("/api/v1/auth/verify", headers={"X-Original-URI": "/", "X-TM-Required-Role": "viewer"})
 
 
 def change_password(client, current, new):

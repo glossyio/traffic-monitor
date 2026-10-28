@@ -35,6 +35,9 @@ http {
     server {
         listen 80 default_server;
         server_name _;  # This will match any hostname
+        # Relative Location headers (login and trailing-slash redirects), so they keep the host and
+        # port the browser used, such as a port-forward or an SSH tunnel, rather than port 80
+        absolute_redirect off;
 
         #Logs for Nginx access and errors
         access_log /var/log/nginx/access.log;

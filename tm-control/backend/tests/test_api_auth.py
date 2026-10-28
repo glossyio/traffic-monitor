@@ -28,11 +28,9 @@ def add_viewer(client):
     Users(client.app.state.state).create(*VIEWER, "viewer")
 
 
-def verify(client, uri="/dashboard/", role=None):
-    headers = {"X-Original-URI": uri}
-    if role:
-        headers["X-TM-Required-Role"] = role
-    return client.get("/api/v1/auth/verify", headers=headers)
+def verify(client, uri="/dashboard/", role="viewer"):
+    """verify as nginx's /_auth (role viewer) or /_auth_admin (role admin) calls it."""
+    return client.get("/api/v1/auth/verify", headers={"X-Original-URI": uri, "X-TM-Required-Role": role})
 
 
 def login_next(r):
@@ -56,7 +54,7 @@ def test_auth_module_is_registered():
 
 
 def test_verify_sends_an_unclaimed_device_to_setup(client):
-    r = client.get("/api/v1/auth/verify", headers={"X-Original-URI": "/frigate/"})
+    r = verify(client, "/frigate/")
     assert (r.status_code, r.headers["X-TM-Redirect"]) == (401, "/setup")
 
 
@@ -86,7 +84,7 @@ def test_verify_sanitizes_next(claimed_client, uri, expected):
 
 
 def test_verify_without_an_original_uri_uses_the_root(claimed_client):
-    r = claimed_client.get("/api/v1/auth/verify")
+    r = claimed_client.get("/api/v1/auth/verify", headers={"X-TM-Required-Role": "viewer"})
     assert r.status_code == 401 and login_next(r) == "/"
 
 
@@ -113,9 +111,44 @@ def test_verify_gives_viewers_no_node_red_token_and_403_on_admin_paths(claimed_c
     assert "X-TM-User" not in r.headers and "X-TM-Redirect" not in r.headers
 
 
-def test_verify_refuses_an_unknown_required_role(claimed_client, login):
+IDENTITY_HEADERS = ("X-TM-User", "X-TM-Role", "X-TM-Frigate-Secret", "X-TM-NR-Token", "X-TM-Redirect")
+
+
+def assert_not_found_without_identity(r):
+    assert r.status_code == 404 and r.json()["error"]["code"] == "not_found"
+    assert not [name for name in IDENTITY_HEADERS if name in r.headers]
+    assert "set-cookie" not in r.headers
+
+
+@pytest.mark.parametrize("headers", [
+    {},
+    {"X-TM-Required-Role": ""},
+    {"X-TM-Required-Role": "root"},
+    {"X-TM-Required-Role": "Viewer"},
+    {"X-TM-Required-Role": "admin "},
+    {"X-TM-Required-Role": "viewer,admin"},
+])
+def test_verify_is_not_found_without_the_role_header_only_nginx_sets(claimed_client, login, headers):
+    """Only nginx's /_auth locations set X-TM-Required-Role; any other caller gets 404 and no identity."""
     login(claimed_client, *ADMIN)
-    assert verify(claimed_client, "/nr/", role="root").status_code == 403
+    assert_not_found_without_identity(claimed_client.get("/api/v1/auth/verify", headers={"X-Original-URI": "/nr/", **headers}))
+
+
+def test_verify_is_not_found_without_the_role_header_on_an_unclaimed_device(client):
+    assert_not_found_without_identity(client.get("/api/v1/auth/verify"))
+
+
+@pytest.mark.parametrize("path", ["/api/v1/auth/verify%0A", "/api/v1/auth/verify%0a", "/api/v1/auth/verify/"])
+@pytest.mark.parametrize("role", [None, "viewer"])
+def test_verify_with_a_suffix_never_answers_with_identity(claimed_client, login, path, role):
+    """nginx re-escapes a decoded newline when it proxies /api/, and Starlette's route pattern ends in $, which
+    Python also matches before a trailing newline. Refused even if a role header got through."""
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    headers = {"X-Original-URI": "/frigate/", **({"X-TM-Required-Role": role} if role else {})}
+    r = claimed_client.get(path, headers=headers, follow_redirects=False)
+    assert r.status_code != 200
+    assert not [name for name in IDENTITY_HEADERS if name in r.headers]
 
 
 def test_verify_blocks_an_admin_until_the_current_eula_is_accepted(claimed_client, login, monkeypatch):

@@ -41,13 +41,23 @@ def safe_next(uri: str) -> str:
     return parts.path + (f"?{parts.query}" if parts.query else "")
 
 
+VERIFY_PATH = "/api/v1/auth/verify"
+
+
 @router.get("/verify")
 def verify(request: Request):
-    """nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role (default viewer)?
+    """nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?
 
+    Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
+    nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., or /welcome. 403 is forbidden.
     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
     """
+    required = request.headers.get("x-tm-required-role")
+    # The exact path too: Starlette's route pattern ends in $, which also matches before a trailing newline (%0A)
+    if required not in ROLES or request.scope["path"] != VERIFY_PATH:
+        raise ApiError(404, "not_found", "Not Found")
+
     app_state = request.app.state
     device = Device(app_state.state)
     if not device.is_claimed():
@@ -66,10 +76,6 @@ def verify(request: Request):
             raise ApiError(401, "eula_required", message, headers={"X-TM-Redirect": "/welcome"})
         raise ApiError(403, "eula_required", message)
 
-    required = request.headers.get("x-tm-required-role", "viewer")
-    if required not in ROLES:
-        log.warning("verify: unknown X-TM-Required-Role %r; refusing", required[:32])
-        raise ApiError(403, "forbidden", "You don't have access to this page.")
     if ROLES.index(user.role) < ROLES.index(required):
         raise ApiError(403, "forbidden", "You don't have access to this page.")
 

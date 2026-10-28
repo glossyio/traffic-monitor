@@ -110,11 +110,63 @@ def test_every_listed_location_is_an_app_or_tm_control():
     assert set(LOCATIONS) == set(APP_LOCATIONS) | TM_CONTROL_LOCATIONS
 
 
+def top_level_blocks(conf):
+    """(header, body) for each top-level { } block of an nginx file, skipping comments and quoted text."""
+    blocks, depth, header, body, quote, i = [], 0, "", "", None, 0
+    while i < len(conf):
+        char = conf[i]
+        if quote is None and char == "#":
+            i = conf.find("\n", i)
+            i = len(conf) if i < 0 else i
+            continue
+        if quote is None and char in "\"'":
+            quote = char
+        elif char == quote and conf[i - 1] != "\\":
+            quote = None
+        elif quote is None and char == "{":
+            depth += 1
+            if depth == 1:
+                i += 1
+                continue
+        elif quote is None and char == "}":
+            depth -= 1
+            if depth == 0:
+                blocks.append((" ".join(header.split()), body))
+                header, body = "", ""
+                i += 1
+                continue
+        if depth == 0:
+            header = "" if char == ";" else header + char
+        else:
+            body += char
+        i += 1
+    assert depth == 0 and quote is None
+    return blocks
+
+
+def test_top_level_blocks_reads_nested_blocks_and_ignores_braces_in_comments_and_quotes():
+    conf = 'location /a/ {\n    if ($x ~ "{") { return 403; }  # }\n    include x;\n}\nlocation ~ "^/b" { return 403; }\n'
+    assert top_level_blocks(conf) == [
+        ("location /a/", '\n    if ($x ~ "{") { return 403; }  \n    include x;\n'),
+        ('location ~ "^/b"', " return 403; "),
+    ]
+
+
+def only_returns(body):
+    return re.fullmatch(r"\s*return \d{3};\s*", body) is not None
+
+
 @pytest.mark.parametrize("name, auth", APP_LOCATIONS.items())
-def test_every_app_location_includes_exactly_one_auth_snippet(name, auth):
-    conf = location(name)
-    assert conf.count("/etc/nginx/tm/snippets/auth-") == 1
-    assert f"include /etc/nginx/tm/snippets/{auth}.conf;" in conf
+def test_every_app_location_block_includes_exactly_one_auth_snippet_or_only_returns(name, auth):
+    """Per location block, so a second block in the same file can't proxy without a login check."""
+    blocks = top_level_blocks(location(name))
+    assert blocks and all(header.startswith("location ") for header, _ in blocks)
+    for header, body in blocks:
+        if only_returns(body):
+            continue
+        assert body.count("/etc/nginx/tm/snippets/auth-") == 1, header
+        assert f"include /etc/nginx/tm/snippets/{auth}.conf;" in body, header
+    assert any(not only_returns(body) for _, body in blocks)
 
 
 def test_feeds_checks_the_login_before_its_rules_and_the_api_denial_stays_as_it_is():
@@ -137,6 +189,12 @@ def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
     assert "location / " not in nginx_conf
     assert "include /etc/nginx/tm/locations/*.conf;" in nginx_conf
     assert not (REPO / "container/revproxy/html/index.html.j2").exists()
+
+
+def test_redirects_keep_the_port_the_browser_used():
+    """Relative Location headers, so the login redirect works behind a port-forward or an SSH tunnel."""
+    (server,) = [body for header, body in top_level_blocks(render("container/revproxy/nginx.conf.j2")) if header == "http"]
+    assert "absolute_redirect off;" in dict(top_level_blocks(server))["server"]
 
 
 def test_snippets_are_listed():
@@ -182,6 +240,9 @@ def test_auth_locations_are_internal_and_name_the_role(path, role):
     assert "proxy_method GET;" in block
     assert "proxy_pass_request_body off;" in block
     assert 'proxy_set_header Content-Length "";' in block
+    # Cockpit's login sends the Pi account's password as Basic auth; the check gets the cookie, not that
+    assert 'proxy_set_header Authorization "";' in block
+    assert "proxy_set_header Cookie" not in block and "proxy_pass_request_headers" not in block
 
 
 def test_failed_logins_redirect_and_the_rescue_page_is_internal():
@@ -191,7 +252,12 @@ def test_failed_logins_redirect_and_the_rescue_page_is_internal():
 
 
 def test_verify_is_unreachable_from_the_network():
-    assert "location = /api/v1/auth/verify { return 404; }" in location("tm-control-api.conf")
+    """A prefix match, so /api/v1/auth/verify%0A (decoded to a trailing newline) or a trailing slash can't miss it
+    and fall through to /api/. ^~ wins over regex locations too. Nothing through /api/ carries a required role."""
+    blocks = dict(top_level_blocks(location("tm-control-api.conf")))
+    assert blocks["location ^~ /api/v1/auth/verify"].strip() == "return 404;"
+    assert "location = /api/v1/auth/verify" not in blocks
+    assert 'proxy_set_header X-TM-Required-Role "";' in blocks["location /api/"]
 
 
 def test_api_and_logout_are_proxied_to_tm_control_on_loopback():

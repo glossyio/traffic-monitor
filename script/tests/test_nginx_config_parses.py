@@ -24,12 +24,24 @@ def render_config(root):
         path.write_text(render(f"container/revproxy/{name}.j2", **ROLE_VARS))
 
 
+def have_image(image):
+    """True if Podman has the image, or can pull it once."""
+    if subprocess.run(["podman", "image", "exists", image], capture_output=True).returncode == 0:
+        return True
+    try:
+        return subprocess.run(["podman", "pull", "--quiet", image], capture_output=True, timeout=300).returncode == 0
+    except subprocess.TimeoutExpired:
+        return False
+
+
 @pytest.mark.skipif(shutil.which("podman") is None, reason="needs Podman")
 def test_rendered_config_passes_nginx_t(tmp_path):
+    image = f"docker.io/library/nginx:{ROLE_VARS['tmsetup_nginx_version']}"
+    if not have_image(image):
+        pytest.skip(f"{image} is neither cached nor pullable")
     render_config(tmp_path)
     volumes = [arg for mount in ROLE_VARS["tmsetup_revproxy_config_mounts"]
                for arg in ("-v", f"{tmp_path / mount['path']}:{mount['target']}:ro,Z")]
-    image = f"docker.io/library/nginx:{ROLE_VARS['tmsetup_nginx_version']}"
     # Like tmsetup's check: nginx as the entrypoint, so the image's startup scripts don't run
     result = subprocess.run(["podman", "run", "--rm", "--entrypoint", "nginx", *volumes, image, "-t"],
                             capture_output=True, text=True, timeout=120)
