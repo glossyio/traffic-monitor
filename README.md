@@ -47,7 +47,7 @@ Every path below needs the device's login. On a new device, the home page first 
 - `http://<device_ip_address>/` is the home page, with links to every app below that your account can open.
 - `http://<device_ip_address>/ui/` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
 - `http://<device_ip_address>/frigate/` to view the [Frigate](https://github.com/blakeblackshear/frigate) interface and make any configuration changes specific to your deployment
-- `http://<device_ip_address>/feeds/` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) camera streams on the Raspberry Pi, for viewing only. Use this if your cameras are giving errors in Frigate.
+- `http://<device_ip_address>/feeds/` shows the [go2rtc](https://github.com/AlexxIT/go2rtc) camera streams on the Raspberry Pi, for viewing only, and opens for the device's administrator. Use this if your cameras are giving errors in Frigate.
 - `http://<device_ip_address>/system/` opens [Cockpit](https://cockpit-project.org/) for system administration: services, logs, updates, containers, and a terminal. After the device's administrator login, log in with your Raspberry Pi user account. Cockpit also answers directly on port `9090`, with only the Raspberry Pi login.
 - `http://<device_ip_address>/nr/` is the Node-RED flow editor used to develop the logic to connect events to speeds, create event records, capture radar readings, and more. This is primarily used by developers, and opens for the device's administrator.
 

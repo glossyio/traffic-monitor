@@ -103,7 +103,7 @@ In fake mode the API's interactive docs are at `/api/v1/docs`. `tm-control/ui/RE
 Run the backend's tests with the rest of the off-device tests:
 
 ```bash
-.venv/bin/python -m pytest tm-control/backend/tests script/tests
+.venv/bin/python -m pytest tm-control/backend/tests script/tests container/node-red-tm/schema/tests
 ```
 
 ## Add a module

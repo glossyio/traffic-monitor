@@ -4,7 +4,7 @@ description: Claim a Traffic Monitor with its setup code, log in, add viewer acc
 
 # Control app and login
 
-The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens every app on the device: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card, which the control app calls the **system password**.
+The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 !!! info "What the login protects"
 
@@ -24,7 +24,7 @@ You need the **setup code**, eight letters and digits written as `XXXX-XXXX`. It
     to create the administrator account. The code works once.
     ```
 
-    The installer prints the same code on every run until the device is claimed. Its log in your home folder (`~/tmsetup-<date>-<time>.log`) has the same output; keep the log on the device. On the device, `sudo cat /etc/traffic-monitor/setup-code` also shows the code.
+    The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo cat /etc/traffic-monitor/setup-code` also shows the code.
 
 To claim the device:
 

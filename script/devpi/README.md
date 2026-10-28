@@ -189,6 +189,8 @@ Two login checks leave something behind:
 - **The reset-admin test** (`--disruptive`, `pii_free` units with `tm_control_login`) deletes every control app account on the Pi, including viewers that people made, and ends every browser session. It then re-creates only the inventory's administrator, so everyone else has to be added again.
 - **The login backoff test** makes six wrong logins. The control app remembers the failures against your machine's address for 15 minutes, unless a successful login from it clears them sooner. Meanwhile, one more wrong password from your machine makes you wait a few seconds. Without `tm_control_login`, a second run within those 15 minutes skips the test, because it can't clear the count first.
 
+The tests keep secrets, such as session cookies and setup codes, out of their normal output. Don't add `-vv` or `--log-level=DEBUG` to a run whose output you'll share: the more detail pytest prints, the likelier it is to show one.
+
 Each run is logged as `summary.md` and `results.jsonl`. Their code is what the last deploy to that host put on the Pi (with several hosts, the summary lists each one's last deploy), which can be another checkout (see [Testing another branch](#testing-another-branch)). `tmdev.py test` turns off pytest's cache, because its entries would name the host inside the repo.
 
 The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it; if you run pytest yourself, set it. Otherwise every device test is skipped, so running the repo's other tests never touches a Pi. If it's set but the inventory is missing, pytest stops with an error instead of skipping.

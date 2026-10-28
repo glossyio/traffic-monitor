@@ -137,7 +137,7 @@ Outside nginx: SSH :22, Cockpit :9090 (rescue console), mDNS, hotspot DHCP/DNS,
   - Outbound connections, such as a future ThingsBoard MQTT link, are unaffected.
 - **Secrets:**
   - Generated once on the device under `/etc/traffic-monitor/` (root:tmadmin 0640). Never in the repo.
-  - They cover the session key, the Frigate proxy secret, the Node-RED token key, the internal token, and the RTSP password.
+  - They cover the session key, the Frigate proxy secret, the Node-RED token key, and the RTSP password.
 
 ### Login and first run
 

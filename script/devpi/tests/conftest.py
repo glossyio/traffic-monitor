@@ -37,12 +37,15 @@ SUITE = pytest.StashKey[dict]()
 HOST_PROBLEMS = pytest.StashKey[dict]()
 
 
+# trylast, like testinfra's own pytest_configure, and registered after it, so this one runs after it
+@pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "disruptive: restarts services or reboots the Pi; runs only with TM_DEV_DISRUPTIVE=1")
-    # testinfra logs every command and its output ("RUN <CommandResult>") at debug level. Some commands carry a
-    # session cookie, and reset-admin's output holds a setup code, so --log-level=DEBUG must not capture them.
-    logging.getLogger("testinfra").setLevel(logging.INFO)
+    # testinfra logs every command and its output ("RUN <CommandResult>") at debug level, and its pytest_configure
+    # turns that on for -vv. Some commands carry a session cookie, and reset-admin's output holds a setup code, so
+    # keep testinfra at WARNING: neither -vv nor --log-level=DEBUG may capture them.
+    logging.getLogger("testinfra").setLevel(logging.WARNING)
     hosts = os.environ.get("TM_DEV_HOSTS")
     if not hosts:
         config.stash[SKIP_REASON] = "device tests run only through tmdev.py test (or with TM_DEV_HOSTS set)"

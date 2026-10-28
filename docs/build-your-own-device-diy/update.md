@@ -41,7 +41,7 @@ Every app asks for the device's login, and the Node-RED editor has no login of i
     **An `auth`, `proxy`, or `tls` setting.** The installer adds the settings that turn off Frigate's own login and let Frigate trust the user and role that the device's login passes on. It leaves a section that's already there as it is, and warns when a setting in it would get in the way:
 
     * `auth.enabled` or `tls.enabled` is true or missing: Frigate asks for its own login as well as the device's, or serves its port over TLS, which the device doesn't use.
-    * A `proxy` setting doesn't match, followed by `auth was not added`: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
+    * A `proxy` setting doesn't match, followed by `auth was not added` when the file had no `auth` section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
 
     Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
 

@@ -536,16 +536,22 @@ def test_node_red_editor_opens_with_the_proxy_token(address, admin_session, tm_l
 LISTEN_SHOWN = {"127.0.0.1", "[::1]", "0.0.0.0", "[::]", "*", "[::ffff:127.0.0.1]"}
 
 
-def test_tm_control_listens_on_loopback_only(host):
-    """tm-control listens on 127.0.0.1 only, and the listener is tm-control.service's own process."""
+def tm_control_listeners(host):
+    """The addresses tm-control's port listens on, and the listening pids. The raw ss output can hold the Pi's LAN
+    address, so it stays in here, where pytest -l in the test can't print it."""
     with host.sudo():
         lines = [line for line in host.check_output(f"ss -Htlnp 'sport = :{TM_CONTROL_PORT}'").splitlines()
                  if line.strip()]
     # Loopback and wildcard addresses as they are; any other is the Pi's own address, which stays out of the run log
     listening = sorted({local if local.rsplit(":", 1)[0] in LISTEN_SHOWN else "<a LAN address>"
                         for local in (line.split()[3] for line in lines)})
+    return listening, sorted(set(re.findall(r"pid=(\d+)", "\n".join(lines))))
+
+
+def test_tm_control_listens_on_loopback_only(host):
+    """tm-control listens on 127.0.0.1 only, and the listener is tm-control.service's own process."""
+    listening, pids = tm_control_listeners(host)
     assert listening == [f"127.0.0.1:{TM_CONTROL_PORT}"], f"listening on port {TM_CONTROL_PORT}: {listening}"
-    pids = sorted(set(re.findall(r"pid=(\d+)", "\n".join(lines))))
     with host.sudo():
         cgroups = {pid: host.check_output(f"cat /proc/{pid}/cgroup") for pid in pids}
     others = {pid: cgroup for pid, cgroup in cgroups.items() if "/tm-control.service" not in cgroup}
@@ -575,7 +581,7 @@ def test_frigate_config_hides_the_proxy_secret(host, address, expect, admin_sess
     if not expect["pii_free"]:
         pytest.skip("compares a device secret with Frigate's config; set tm_expect.pii_free: true (bench units only)")
     rc, counts = frigate_config_counts(host, address, admin_session)
-    assert rc != 3,"couldn't read /frigate/api/config through the proxy with the admin session"
+    assert rc != 3, "couldn't read /frigate/api/config through the proxy with the admin session"
     assert rc != 4, "the frigate_proxy_secret file is missing or empty"
     assert len(counts) == 2 and counts[0] != "0", f"/frigate/api/config isn't Frigate's config: {counts}"
     assert counts[1] == "0", "Frigate's /api/config shows the proxy secret"

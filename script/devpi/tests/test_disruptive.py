@@ -196,8 +196,8 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
 CODE = r"[A-Z2-9]{4}-[A-Z2-9]{4}"
 SETUP_CODE = re.compile(rf"Setup code: ({CODE})")
 SETUP_CODE_FILE = f"{role_vars()['tmsetup_etc_dir']}/setup-code"
-UNCLAIMED_NOW = (f"the unit is unclaimed now. Its setup code is in {SETUP_CODE_FILE} on the Pi (root only): claim it "
-                 "at /setup with the inventory's tm_control_login, or run `sudo tm-control reset-admin` for a new code")
+CODE_HELP = (f"Its setup code is in {SETUP_CODE_FILE} on the Pi (root only): claim it at /setup with the inventory's "
+             "tm_control_login, or run `sudo tm-control reset-admin` for a new code")
 
 
 def reset_admin(host):
@@ -233,7 +233,8 @@ def setup_code_from_file(host):
 
 def claim_again(host, address, login, version, code):
     """Claim the unit with the inventory's login after reset-admin. Returns None when the unit is claimed afterwards,
-    by this claim or because the reset never unclaimed it; otherwise why not, saying the unit is unclaimed.
+    by this claim or because the reset never unclaimed it; otherwise why not, saying whether the unit is unclaimed
+    or its state is unknown (the Pi didn't answer), and where the code is.
 
     Without the code from reset-admin's output (it didn't parse, or SSH dropped), it reads the code file instead.
     """
@@ -249,10 +250,14 @@ def claim_again(host, address, login, version, code):
         why = f"claiming with the new setup code answered {status}"
     else:
         why = f"couldn't read the new setup code from reset-admin's output or {SETUP_CODE_FILE}"
-    state = request_from_this_machine(address, f"{API}/setup/status").json()
-    if isinstance(state, dict) and state.get("claimed"):
+    answer = request_from_this_machine(address, f"{API}/setup/status")
+    state = answer.json() if answer.status == 200 else None
+    if not isinstance(state, dict) or "claimed" not in state:
+        return (f"{why}; the unit's state is unknown, because GET {API}/setup/status answered {answer.status}. "
+                f"If it's unclaimed: {CODE_HELP}")
+    if state["claimed"]:
         return None
-    return f"{why}; {UNCLAIMED_NOW}"
+    return f"{why}; the unit is unclaimed now. {CODE_HELP}"
 
 
 def test_reset_admin_then_claim(host, address, expect, tm_login):
@@ -283,9 +288,11 @@ def test_reset_admin_then_claim(host, address, expect, tm_login):
         unclaimed = claim_again(host, address, tm_login, version, code)
         if unclaimed:
             pytest.fail(unclaimed, pytrace=False)
-    assert (rc, problem) == (0, None), "sudo tm-control reset-admin (exit code, problem); the unit is claimed again"
-    with host.sudo():
-        host.check_output(f"rm -f {SETUP_CODE_FILE}")  # as tmsetup.sh does once the unit is claimed
+    try:
+        assert (rc, problem) == (0, None), "sudo tm-control reset-admin (exit code, problem); the unit is claimed again"
+    finally:
+        with host.sudo():
+            host.check_output(f"rm -f {SETUP_CODE_FILE}")  # as tmsetup.sh does once the unit is claimed
     assert (redirect.status, redirect.headers.get("Location")) == (302, "/setup"), "/dashboard/ after reset-admin"
     dashboard = request_from_this_machine(address, "/dashboard/", cookie=session(address, username, password))
     assert dashboard.status == 200, f"/dashboard/ with the reclaimed admin's session answered {dashboard.status}"
