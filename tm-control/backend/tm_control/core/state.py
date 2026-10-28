@@ -35,6 +35,12 @@ MIGRATIONS = [
     );
     CREATE TABLE audit (id INTEGER PRIMARY KEY, at TEXT NOT NULL, user_id INTEGER, action TEXT NOT NULL, detail TEXT);
     """,
+    # Which run of a job's unit is the job's own (core/jobs.py): the unit's InvocationID when the job was requested,
+    # and its run's InvocationID once seen.
+    """
+    ALTER TABLE jobs ADD COLUMN prior_invocation TEXT;
+    ALTER TABLE jobs ADD COLUMN invocation TEXT;
+    """,
 ]
 
 
