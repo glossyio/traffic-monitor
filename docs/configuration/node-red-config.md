@@ -44,6 +44,8 @@ A `deployment:` block with the same three settings under any sensor overrides th
 
 One entry per camera, named exactly as the camera is named in Frigate. The default camera is `picam_h265`. Events from a camera that isn't listed here, or is disabled, are ignored.
 
+To rename a camera, rename it in Frigate's config and choose **Save & Restart**. Frigate uses a new camera name only after it restarts, so **Save** alone changes nothing yet. Then rename its entry here to match. Until both names agree, that camera's events aren't recorded, and the Status page's **Cameras in config.yml** check shows an error.
+
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `true` for `picam_h265` | Record this camera's events. Frigate keeps running either way. |
