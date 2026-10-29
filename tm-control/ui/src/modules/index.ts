@@ -2,8 +2,11 @@
 import type { RouteRecordRaw } from 'vue-router'
 import account from './account'
 import auth from './auth'
+import device from './device'
 import home from './home'
 import setup from './setup'
+import status from './status'
+import time from './time'
 
 export interface NavItem {
   title: string
@@ -19,4 +22,4 @@ export interface Module {
 }
 
 // In menu order
-export const MODULES: Module[] = [home, account, auth, setup]
+export const MODULES: Module[] = [home, status, device, time, account, auth, setup]
