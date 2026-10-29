@@ -773,6 +773,11 @@ export interface components {
              * @default false
              */
             ntp_left_off: boolean;
+            /**
+             * Ntp Took Over
+             * @default false
+             */
+            ntp_took_over: boolean;
         };
         /** TimeState */
         TimeState: {

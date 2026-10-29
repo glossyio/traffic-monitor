@@ -1573,6 +1573,11 @@
             "type": "boolean",
             "title": "Ntp Left Off",
             "default": false
+          },
+          "ntp_took_over": {
+            "type": "boolean",
+            "title": "Ntp Took Over",
+            "default": false
           }
         },
         "type": "object",

@@ -83,6 +83,10 @@ function clearResults() {
 function setOutcome(result: TimeResult, timezone: string) {
   const restarting = result.restarting.length > 0 // only a time zone change restarts anything
   let text = 'Time set from this browser.'
+  if (result.ntp_took_over) {
+    // Online but not yet synced: turning internet time back on reached a time source, whose time replaced the browser's
+    text = "The device got the time from the internet while setting it, so it now keeps that time, not this browser's."
+  }
   if (result.timezone_unknown) {
     // A browser's time zone list can be newer than the device's: the time went on, the zone is left for the picker
     if (result.time_kept_from_ntp) text = "The device already keeps time from the internet, so its time didn't change."

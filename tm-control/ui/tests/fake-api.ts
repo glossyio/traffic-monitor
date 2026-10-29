@@ -140,6 +140,12 @@ export const TIMEZONES = ['America/Los_Angeles', 'Etc/UTC', 'Europe/Berlin']
 
 // POST /time's answer: the clock as it is afterwards, and what happened
 export function timeResult(changes: Partial<TimeResult>): TimeResult {
-  const outcome = { time_kept_from_ntp: false, restarting: [], timezone_unknown: false, ntp_left_off: false }
+  const outcome = {
+    time_kept_from_ntp: false,
+    restarting: [],
+    timezone_unknown: false,
+    ntp_left_off: false,
+    ntp_took_over: false,
+  }
   return { ...TIME_STATE, ...outcome, ...changes }
 }

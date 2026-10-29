@@ -146,6 +146,22 @@ describe('the Date and time page', () => {
     )
   })
 
+  it('says when the device got the time from the internet while setting it', async () => {
+    admin({
+      [`POST ${TIME}`]: timeResult({
+        device_time: '2026-10-28T14:35:12-07:00',
+        ntp: { enabled: true, synchronized: true, available: true },
+        ntp_took_over: true,
+      }),
+    })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      "The device got the time from the internet while setting it, so it now keeps that time, not this browser's.",
+    )
+    expect(wrapper.text()).not.toContain('Time set from this browser')
+  })
+
   it("shows the API's message when the time couldn't be set", async () => {
     admin({ [`POST ${TIME}`]: apiError(500, 'internal', "The time couldn't be set.") })
     const { wrapper } = await mountApp('/time')
