@@ -97,7 +97,8 @@ def zones(context: Context) -> list[Check]:
 
 
 def radar_names(context: Context) -> list[Check]:
-    """Each radar under sensors.radars has a radar's name, and each enabled camera's camera_radar is enabled."""
+    """Each radar under sensors.radars is named as in node-red-tm.env, and each enabled camera's camera_radar is
+    enabled."""
 
     def check(status, detail):
         return [Check(id="config.radars", title="Radar names", status=status, detail=detail)]
@@ -127,7 +128,7 @@ def radar_names(context: Context) -> list[Check]:
         problems += unpaired + ["Enable that radar under sensors.radars, or pair the camera with an enabled one."]
     if problems:
         return check("error", " ".join(problems))
-    return check("ok", "Each radar has a radar's name, and each camera's radar is enabled.")
+    return check("ok", "Each radar in config.yml is named as in node-red-tm.env, and each camera's radar is enabled.")
 
 
 def _number_in(value, low: float, high: float) -> bool:
