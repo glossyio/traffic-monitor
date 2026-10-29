@@ -1568,6 +1568,11 @@
             "type": "boolean",
             "title": "Timezone Unknown",
             "default": false
+          },
+          "ntp_left_off": {
+            "type": "boolean",
+            "title": "Ntp Left Off",
+            "default": false
           }
         },
         "type": "object",

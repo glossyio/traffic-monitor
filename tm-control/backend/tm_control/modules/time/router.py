@@ -3,13 +3,14 @@ user); POST /time (admins) sets the time from the browser, NTP, and the time zon
 
 The browser's time is used only when NTP doesn't have the time. With NTP on but no time source reachable, NTP is
 turned off for set-time and back on after it, so the device resyncs once it's online; only `ntp: false` leaves it
-off. A new time zone restarts the pod and nginx after the response, so the containers see it. A time sent with a
-zone the device doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and reported. Fake
-mode keeps a fake clock in memory."""
+off. If starting systemd-timesyncd again puts back the later time it saved (the device's clock was ahead), the time
+is set again and NTP is left off. A new time zone restarts the pod and nginx after the response, so the containers
+see it. A time sent with a zone the device doesn't know (a phone's tzdata can be newer) is still set, and the zone is
+skipped and reported. Fake mode keeps a fake clock in memory."""
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, Field
@@ -30,6 +31,11 @@ CEILING = datetime.fromisoformat("2046-01-01T00:00:00Z")
 # Frigate, Node-RED, and nginx bind-mount /etc/localtime, which a container keeps seeing as the old zone's file until
 # it restarts; restarting the pod restarts its containers.
 CONTAINERS = ["traffic-monitor.service", "revproxy.service"]
+# After NTP is back on offline, how long the clock is watched for systemd-timesyncd putting back the time it saved
+# (timedated doesn't wait for it to start), and how far the clock may be from the browser's time
+SETTLE_SECONDS = 3
+SETTLE_INTERVAL = 0.25
+SETTLE_TOLERANCE = 10
 
 
 class TimeChange(BaseModel):
@@ -42,6 +48,7 @@ class TimeResult(TimeState):
     time_kept_from_ntp: bool  # a time was sent, but NTP has the time, so the device kept its own
     restarting: list[str]  # units restarting after a time zone change
     timezone_unknown: bool = False  # a time was sent with a zone the device doesn't know, so the zone was skipped
+    ntp_left_off: bool = False  # offline, turning NTP back on put back the time service's saved time, so it's off
 
 
 def _clock(app_state):
@@ -88,6 +95,18 @@ def _done(result: CommandResult, what: str, message: str) -> None:
         raise ApiError(500, "internal", message)
 
 
+def _put_back(clock, when: datetime, set_at: float) -> bool:
+    """Whether, within SETTLE_SECONDS, the clock moved away from `when`, which set-time set at monotonic `set_at`."""
+    deadline = time.monotonic() + SETTLE_SECONDS
+    while True:
+        expected = when + timedelta(seconds=time.monotonic() - set_at)
+        if abs((clock.now() - expected).total_seconds()) > SETTLE_TOLERANCE:
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(SETTLE_INTERVAL)
+
+
 def _restart_containers() -> None:
     """Restart the pod and nginx, run after the response has been sent: nginx carries it."""
     for unit in CONTAINERS:
@@ -128,6 +147,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
 
     ntp = before.ntp.enabled
     kept = False
+    left_off = False
     zone_changed = False
     changed: set[str] = set()  # for the audit: which settings changed, never their values
     finished = False
@@ -145,6 +165,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
         elif when is not None and ntp:
             # No time source reachable: set the time, and keep NTP on so it takes over once one is.
             _done(clock.set_ntp(False), "set-ntp", "NTP couldn't be turned off, so the time wasn't set.")
+            set_at = time.monotonic()
             time_set = not _failed(clock.set_time(when), "set-time")
             ntp_back = not _failed(clock.set_ntp(True), "set-ntp")
             if time_set:
@@ -160,6 +181,16 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             if not ntp_back:
                 raise ApiError(500, "internal", "The time was set, but NTP couldn't be turned back on, so it's now "
                                                 "off.")
+            if _put_back(clock, when, set_at):
+                # timesyncd moved the clock forward to the time it saved: set the time again, with NTP off this time
+                again = when + timedelta(seconds=time.monotonic() - set_at)
+                _done(clock.set_ntp(False), "set-ntp", "The device put its own time back, and NTP couldn't be turned "
+                                                       "off to set the time again.")
+                ntp = False
+                changed.add("ntp")
+                _done(clock.set_time(again), "set-time", "The device put its own time back, and the time couldn't be "
+                                                         "set again; NTP is now off.")
+                left_off = True
         elif when is not None:
             _done(clock.set_time(when), "set-time", "The time couldn't be set.")
             changed.add("time")
@@ -193,4 +224,4 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
         )
     restarting = list(CONTAINERS) if zone_changed else []
     return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=restarting,
-                      timezone_unknown=zone_unknown)
+                      timezone_unknown=zone_unknown, ntp_left_off=left_off)

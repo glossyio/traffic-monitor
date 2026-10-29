@@ -34,13 +34,14 @@ export function wallClock(instant: number, offset: number) {
   return { time, date, zone }
 }
 
-// The device's clock against this phone's. `seconds` is the device's time minus the phone's; the zones are the same
-// when the clocks show the same offset from UTC, so two names for one zone (Etc/UTC and UTC) don't count as different.
+// The device's clock against this browser's. `seconds` is the device's time minus the browser's; the zones are the
+// same when the clocks show the same offset from UTC, so two names for one zone (Etc/UTC and UTC) don't count as
+// different.
 export function comparison(seconds: number, sameZone: boolean): string {
   const sentences = []
   if (Math.abs(seconds) > TOLERANCE_S) {
-    sentences.push(`The device is ${duration(seconds)} ${seconds < 0 ? 'behind' : 'ahead of'} this phone.`)
+    sentences.push(`The device is ${duration(seconds)} ${seconds < 0 ? 'behind' : 'ahead of'} this browser.`)
   }
-  if (!sameZone) sentences.push("The device's time zone differs from this phone's.")
-  return sentences.length ? sentences.join(' ') : 'The device and this phone agree.'
+  if (!sameZone) sentences.push("The device's time zone differs from this browser's.")
+  return sentences.length ? sentences.join(' ') : 'The device and this browser agree.'
 }

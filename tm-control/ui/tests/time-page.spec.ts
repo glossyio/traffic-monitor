@@ -1,4 +1,4 @@
-// The Date and time page: the device's clock beside this phone's, and for admins setting the time, the time zone,
+// The Date and time page: the device's clock beside this browser's, and for admins setting the time, the time zone,
 // and NTP.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,7 +21,7 @@ function buttonTexts(wrapper: VueWrapper) {
 
 describe('the Date and time page', () => {
   const zone = process.env.TZ
-  // This phone, for these tests, is in Los Angeles: 21:35:12 UTC is 14:35:12 there
+  // This browser, for these tests, is in Los Angeles: 21:35:12 UTC is 14:35:12 there
   beforeAll(() => {
     process.env.TZ = 'America/Los_Angeles'
   })
@@ -38,35 +38,35 @@ describe('the Date and time page', () => {
     admin()
     const { wrapper } = await mountApp('/time')
     expect(wrapper.text()).toContain('14:32:12') // the device
-    expect(wrapper.text()).toContain('14:35:12') // this phone
+    expect(wrapper.text()).toContain('14:35:12') // this browser
     await vi.advanceTimersByTimeAsync(2_000)
     expect(wrapper.text()).toContain('14:32:14')
     expect(wrapper.text()).toContain('14:35:14')
   })
 
-  it('says how far the device is behind this phone', async () => {
+  it('says how far the device is behind this browser', async () => {
     admin()
     const { wrapper } = await mountApp('/time')
-    expect(wrapper.text()).toContain('The device is 3 minutes behind this phone.')
+    expect(wrapper.text()).toContain('The device is 3 minutes behind this browser.')
   })
 
-  it('says when the device and this phone agree', async () => {
+  it('says when the device and this browser agree', async () => {
     admin({ [`GET ${TIME}`]: { ...TIME_STATE, device_time: '2026-10-28T14:35:10-07:00' } })
     const { wrapper } = await mountApp('/time')
-    expect(wrapper.text()).toContain('The device and this phone agree.')
+    expect(wrapper.text()).toContain('The device and this browser agree.')
   })
 
-  it("says when the device's time zone differs from this phone's", async () => {
+  it("says when the device's time zone differs from this browser's", async () => {
     admin({ [`GET ${TIME}`]: { ...TIME_STATE, device_time: '2026-10-28T21:35:12+00:00', timezone: 'Etc/UTC' } })
     const { wrapper } = await mountApp('/time')
-    expect(wrapper.text()).toContain("The device's time zone differs from this phone's.")
+    expect(wrapper.text()).toContain("The device's time zone differs from this browser's.")
   })
 
   it('shows a viewer the clocks and the time zone, with nothing to change', async () => {
     const api = signedIn(VIEWER, { [`GET ${TIME}`]: TIME_STATE })
     const { wrapper } = await mountApp('/time')
     expect(wrapper.text()).toContain('14:32:12')
-    expect(wrapper.text()).toContain('The device is 3 minutes behind this phone.')
+    expect(wrapper.text()).toContain('The device is 3 minutes behind this browser.')
     expect(wrapper.text()).toContain('America/Los_Angeles')
     expect(wrapper.text()).toContain('The device has no time source right now, so its clock runs on its own.')
     expect(wrapper.text()).toContain('An administrator can set the time and time zone here.')
@@ -80,9 +80,9 @@ describe('the Date and time page', () => {
     const { wrapper } = await mountApp('/time')
     await click(wrapper, 'Set from this browser')
     expect(posts(api.sent)).toEqual([{ time: '2026-10-28T21:35:12.000Z', timezone: 'America/Los_Angeles' }])
-    expect(wrapper.text()).toContain('Time set from this phone.')
+    expect(wrapper.text()).toContain('Time set from this browser.')
     expect(wrapper.text()).not.toContain('restarting')
-    expect(wrapper.text()).toContain('The device and this phone agree.')
+    expect(wrapper.text()).toContain('The device and this browser agree.')
   })
 
   it('says when the device kept the time it had from the internet, and only the time zone changed', async () => {
@@ -106,27 +106,43 @@ describe('the Date and time page', () => {
     const { wrapper } = await mountApp('/time')
     await click(wrapper, 'Set from this browser')
     expect(wrapper.text()).toContain(
-      "The device already keeps time from the internet and uses this phone's time zone, so nothing changed.",
+      "The device already keeps time from the internet and uses this browser's time zone, so nothing changed.",
     )
   })
 
-  it("sets the time when the device doesn't know this phone's time zone, and asks for one from the list", async () => {
+  it("sets the time when the device doesn't know this browser's time zone, and asks for one from the list", async () => {
     admin({ [`POST ${TIME}`]: timeResult({ timezone_unknown: true }) })
     const { wrapper } = await mountApp('/time')
     await click(wrapper, 'Set from this browser')
     expect(wrapper.text()).toContain(
-      "Time set from this phone. The device doesn't know this phone's time zone (America/Los_Angeles), so pick one below.",
+      "Time set from this browser. The device doesn't know this browser's time zone (America/Los_Angeles), so pick one below.",
     )
     expect(wrapper.text()).not.toContain('restarting')
   })
 
-  it("says the time didn't change when the device keeps time from the internet and doesn't know this phone's zone", async () => {
+  it("says the time didn't change when the device keeps time from the internet and doesn't know this browser's zone", async () => {
     admin({ [`POST ${TIME}`]: timeResult({ time_kept_from_ntp: true, timezone_unknown: true }) })
     const { wrapper } = await mountApp('/time')
     await click(wrapper, 'Set from this browser')
     expect(wrapper.text()).toContain(
       "The device already keeps time from the internet, so its time didn't change. The device doesn't know this " +
-        "phone's time zone (America/Los_Angeles), so pick one below.",
+        "browser's time zone (America/Los_Angeles), so pick one below.",
+    )
+  })
+
+  it('says when internet time was left off so that the time stays set', async () => {
+    admin({
+      [`POST ${TIME}`]: timeResult({
+        device_time: '2026-10-28T14:35:12-07:00',
+        ntp: { enabled: false, synchronized: false, available: true },
+        ntp_left_off: true,
+      }),
+    })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      "Time set from this browser. Internet time is now off, because turning it back on put the device's own, " +
+        'wrong time back. Turn on Keep time from the internet once the device is online.',
     )
   })
 

@@ -121,6 +121,9 @@ class FakeClock:
             rtc_time=None,
         )
 
+    def now(self) -> datetime:
+        return datetime.now().astimezone()
+
     def list_timezones(self) -> list[str]:
         return list(self.TIMEZONES)
 

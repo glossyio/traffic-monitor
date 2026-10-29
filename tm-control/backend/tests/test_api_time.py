@@ -1,3 +1,4 @@
+import importlib
 import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,9 @@ from tm_control.core.checks import Context, Fix
 from tm_control.modules import MODULES
 from tm_control.modules.time.checks import clock
 
+# The module, not the APIRouter that tm_control.modules.time exports under the same name
+time_router = importlib.import_module("tm_control.modules.time.router")
+
 ORIGIN = {"Origin": "http://tm-test.local"}
 ADMIN = ("admin", "correct horse 1")
 VIEWER = ("viewer", "viewer pass 1")
@@ -21,7 +25,9 @@ PROPERTIES = ["Timezone", "NTP", "NTPSynchronized", "CanNTP", "RTCTimeUSec"]
 
 class FakeTimedatectl:
     """Stands in for command.run in the timedate adapter: answers `timedatectl show` and `list-timezones` from its
-    attributes, records every argv and its keyword arguments, and applies the set-* commands it accepts."""
+    attributes, records every argv and its keyword arguments, and applies the set-* commands it accepts. It also
+    keeps the device's clock (now()), which set-time moves; `saved`, when set, is the time systemd-timesyncd saved,
+    and turning NTP on moves a clock that's behind it forward to it, as timesyncd does when it starts."""
 
     def __init__(self):
         self.props = {
@@ -36,6 +42,11 @@ class FakeTimedatectl:
         self.zones = list(ZONES)
         self.failing = {}  # verb, or verb and argument ("set-ntp true") -> exit status
         self.calls = []
+        self.offset = timedelta(0)  # the device's clock minus the real one
+        self.saved = None
+
+    def now(self):
+        return (datetime.now(timezone.utc) + self.offset).astimezone()
 
     def __call__(self, argv, **kwargs):
         argv = list(argv)
@@ -59,7 +70,12 @@ class FakeTimedatectl:
             self.props["NTP"] = "yes" if enabled else "no"
             if not enabled:  # turning it on doesn't reach a time source by itself
                 self.props["NTPSynchronized"] = "no"
-        elif verb != "set-time":
+            elif self.saved is not None and self.now() < self.saved:
+                self.offset = self.saved - datetime.now(timezone.utc)
+        elif verb == "set-time":
+            when = datetime.fromisoformat(argv[2]).replace(tzinfo=timezone.utc)
+            self.offset = when - datetime.now(timezone.utc)
+        else:
             raise AssertionError(f"unexpected command {argv}")
         return CommandResult(0, "", "", False)
 
@@ -75,10 +91,17 @@ def no_cached_timezones(monkeypatch):
     monkeypatch.setattr(timedate, "_timezones", None)
 
 
+@pytest.fixture(autouse=True)
+def short_settle(monkeypatch):
+    """The offline set-time watches the clock for a moment after NTP is back on; not for 3 seconds a test."""
+    monkeypatch.setattr(time_router, "SETTLE_SECONDS", 0.05)
+
+
 @pytest.fixture
 def timedatectl(monkeypatch):
     fake = FakeTimedatectl()
     monkeypatch.setattr(timedate, "run", fake)
+    monkeypatch.setattr(timedate, "now", fake.now)
     return fake
 
 
@@ -222,6 +245,57 @@ def test_set_from_browser_without_ntp_sync_sets_the_time_turns_ntp_back_on_then_
     assert body["restarting"] == CONTAINERS
     assert body["ntp"]["enabled"] is True
     assert systemctl == [["systemctl", "restart", "--no-block", unit] for unit in CONTAINERS] and tzset == [True]
+
+
+def test_offline_a_time_the_time_service_puts_back_is_set_again_with_ntp_left_off(
+    device_client, login, timedatectl, systemctl
+):
+    """The device's clock is ahead: timesyncd saved a later time than the browser's, and starting it again moves the
+    clock forward to that time. So the time is set again, and NTP stays off."""
+    timedatectl.props["NTPSynchronized"] = "no"
+    sent = datetime.now(timezone.utc).replace(microsecond=0)
+    timedatectl.saved = sent + timedelta(minutes=5)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": sent.isoformat()})
+    assert r.status_code == 200, r.text
+    changes = timedatectl.changes()
+    assert changes[:3] == [["set-ntp", "false"], ["set-time", f"{sent:%Y-%m-%d %H:%M:%S}"], ["set-ntp", "true"]]
+    assert [argv[0] for argv in changes[3:]] == ["set-ntp", "set-time"] and changes[3] == ["set-ntp", "false"]
+    assert abs(timedatectl.now() - datetime.now(timezone.utc)) < timedelta(seconds=5)
+    body = r.json()
+    assert body["ntp_left_off"] is True and body["ntp"]["enabled"] is False
+    assert [row for row in audit_rows(device_client) if row[0] == "time.set"] == [("time.set", "ntp, time")]
+
+
+def test_offline_a_time_put_back_a_moment_later_is_caught(device_client, login, timedatectl, systemctl, monkeypatch):
+    """timedated doesn't wait for timesyncd to start, so the clock can move after set-ntp has returned."""
+    timedatectl.props["NTPSynchronized"] = "no"
+    sent = datetime.now(timezone.utc).replace(microsecond=0)
+    reads = []
+
+    def now():
+        reads.append(True)
+        if len(reads) == 2 and timedatectl.props["NTP"] == "yes":  # timesyncd has started by the second read
+            timedatectl.offset = timedelta(minutes=5)
+        return timedatectl.now()
+
+    monkeypatch.setattr(timedate, "now", now)
+    monkeypatch.setattr(time_router, "SETTLE_INTERVAL", 0.01)
+    login(device_client, *ADMIN)
+    reads.clear()
+    r = change(device_client, {"time": sent.isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["ntp_left_off"] is True and timedatectl.props["NTP"] == "no"
+
+
+def test_offline_a_time_that_stays_keeps_ntp_on(device_client, login, timedatectl, systemctl):
+    timedatectl.props["NTPSynchronized"] = "no"
+    timedatectl.saved = datetime.now(timezone.utc) - timedelta(hours=1)  # the device was off for a while
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()})
+    assert r.status_code == 200, r.text
+    assert len(timedatectl.changes()) == 3
+    assert r.json()["ntp_left_off"] is False and r.json()["ntp"]["enabled"] is True
 
 
 def test_a_zone_change_alone_queues_the_restart(device_client, login, timedatectl, systemctl, tzset):
@@ -538,7 +612,7 @@ def test_openapi_declares_the_time_models(client):
     assert schema("/api/v1/time/timezones", "get")["type"] == "array"
     result = document["components"]["schemas"]["TimeResult"]
     assert set(result["properties"]) == {"device_time", "timezone", "ntp", "rtc_time", "time_kept_from_ntp",
-                                         "restarting", "timezone_unknown"}
+                                         "restarting", "timezone_unknown", "ntp_left_off"}
 
 
 # The check

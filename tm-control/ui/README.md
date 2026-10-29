@@ -314,11 +314,11 @@ Date and time (below 600 px the clocks stack, the device's first):
 | 14:32:07                    (h4) |
 | Oct 28, 2026                     |
 | UTC-07:00                        |
-| This phone                       |
+| This browser                     |
 | 14:35:12                    (h4) |
 | ...                              |
 | The device is 3 minutes behind   |
-| this phone.                      |
+| this browser.                    |
 | [Set from this browser]          |
 |                                  |
 | [Time zone: America/Los_A... v]  |
@@ -333,12 +333,14 @@ Date and time (below 600 px the clocks stack, the device's first):
 
 - Both clocks tick on from the last answer. The sentence under them compares the instants, and the offsets from UTC
   the clocks show, so two names for one zone (`Etc/UTC` and `UTC`) don't read as different. The device reports whole
-  seconds, so its clock can trail the phone's by a second; the sentence allows five.
+  seconds, so its clock can trail the browser's by a second; the sentence allows five.
 - "Set from this browser" is the filled main button when the clocks differ, and outlined when they agree. It sends
-  the browser's time and time zone, and the result says what the device did: "Time set from this phone.", or "The
+  the browser's time and time zone, and the result says what the device did: "Time set from this browser.", or "The
   device already keeps time from the internet, so only the time zone changed.", followed by "Frigate and Node-RED are
-  restarting." when the zone changed. When the device doesn't know the phone's zone (its tzdata can be older), the
-  time still goes on and the result adds "The device doesn't know this phone's time zone (<zone>), so pick one below."
+  restarting." when the zone changed. When the device doesn't know the browser's zone (its tzdata can be older), the
+  time still goes on and the result adds "The device doesn't know this browser's time zone (<zone>), so pick one
+  below." When the device had to leave internet time off to keep the new time (`ntp_left_off`), the result says so
+  and asks to turn on Keep time from the internet once the device is online.
 - Each change on the page clears the results of earlier ones, which it may have made untrue.
 - A viewer sees the clocks, the sentence, the time zone, and whether the device keeps time from the internet, with
   no button, picker, or switch, and the page ends with "An administrator can set the time and time zone here."
