@@ -62,6 +62,19 @@ def test_the_fake_report_shows_every_status_and_fix_kind(claimed_client, login):
     assert {f["href"] for f in fixes if f["kind"] == "link"} == {"/device", "/time"}
 
 
+def test_the_fake_report_has_the_real_groups_and_fixes():
+    from tm_control.modules.apps.checks import DIAGNOSTICS
+    from tm_control.modules.hardware.checks import RESCAN
+    from tm_control.modules.time.checks import SET_IT
+
+    groups = fake_groups()
+    assert [(g["id"], g["title"]) for g in groups] == [(g.id, g.title) for m in MODULES for g in m.check_groups]
+    fixes = [c["fix"] for g in groups for c in g["checks"] if c["fix"] and c["fix"]["kind"] in ("rescan", "link")]
+    assert {tuple(f.items()) for f in fixes} == {tuple(f.model_dump().items()) for f in (DIAGNOSTICS, RESCAN, SET_IT)}
+    for group in groups:
+        assert all(c["id"].startswith(f"{group['id']}.") for c in group["checks"])
+
+
 def test_rescan_is_admin_only_and_audited(claimed_client, login, settings):
     Users(claimed_client.app.state.state).create(*VIEWER, "viewer")
     login(claimed_client, *VIEWER)

@@ -8,8 +8,12 @@ Neither needs a device's secrets, manifest, or state.
 import json
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from tm_control.adapters.command import CommandResult
+from tm_control.adapters.timedate import Ntp, TimeState
 from tm_control.core.auth import Device, SetupCode
 from tm_control.core.checks import CheckGroup, Group
 from tm_control.core.claim_cli import CommandError
@@ -73,10 +77,10 @@ def system_info(disk_paths: list[str]) -> dict:
 
 
 def time_state() -> list[str]:
-    """Fake mode's stand-in for timedatectl show."""
-    now = time.strftime("%a %Y-%m-%d %H:%M:%S %Z")
+    """Fake mode's stand-in for timedatectl show, in FakeClock's starting time zone."""
+    now = time.strftime("%a %Y-%m-%d %H:%M:%S UTC", time.gmtime())
     return [
-        "Timezone=America/Los_Angeles",
+        "Timezone=Etc/UTC",
         "LocalRTC=no",
         "CanNTP=yes",
         "NTP=yes",
@@ -84,6 +88,52 @@ def time_state() -> list[str]:
         f"TimeUSec={now}",
         f"RTCTimeUSec={now}",
     ]
+
+
+class FakeClock:
+    """Fake mode's stand-in for the timedate adapter, kept in memory so the Date and time page sees its own changes.
+    NTP starts on and synchronized; the time is the laptop's, shown in the fake time zone; nothing is set."""
+
+    TIMEZONES = [
+        "America/Los_Angeles",
+        "America/New_York",
+        "Asia/Tokyo",
+        "Australia/Sydney",
+        "Etc/UTC",
+        "Europe/Berlin",
+        "Europe/London",
+        "Pacific/Auckland",
+    ]
+
+    def __init__(self):
+        self.timezone = "Etc/UTC"
+        self.ntp = True
+
+    def show(self) -> TimeState:
+        try:
+            now = datetime.now(ZoneInfo(self.timezone))
+        except ZoneInfoNotFoundError:  # a laptop without the tz database
+            now = datetime.now().astimezone()
+        return TimeState(
+            device_time=now.isoformat(timespec="seconds"),
+            timezone=self.timezone,
+            ntp=Ntp(enabled=self.ntp, synchronized=self.ntp, available=True),
+            rtc_time=None,
+        )
+
+    def list_timezones(self) -> list[str]:
+        return list(self.TIMEZONES)
+
+    def set_timezone(self, name: str) -> CommandResult:
+        self.timezone = name
+        return CommandResult(0, "", "", False)
+
+    def set_ntp(self, enabled: bool) -> CommandResult:
+        self.ntp = enabled
+        return CommandResult(0, "", "", False)
+
+    def set_time(self, when: datetime) -> CommandResult:
+        return CommandResult(0, "", "", False)
 
 
 def journal_tail(unit: str, lines: int) -> list[str]:

@@ -137,9 +137,9 @@ def device_checks(client):
 # Device info
 
 
-def test_the_system_module_has_the_device_group_and_comes_last_for_now():
+def test_the_system_module_has_the_device_group_and_comes_before_time():
     ids = [m.id for m in MODULES]
-    assert ids[-1] == "system"
+    assert ids[-2:] == ["system", "time"]
     (system,) = [m for m in MODULES if m.id == "system"]
     assert [g.id for g in system.check_groups] == ["device"]
 

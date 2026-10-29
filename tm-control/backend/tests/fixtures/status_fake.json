@@ -8,13 +8,13 @@
                     "id": "services.traffic-monitor.service",
                     "title": "Traffic Monitor pod",
                     "status": "ok",
-                    "detail": "Running since 2 hours ago."
+                    "detail": "Running since 07:12."
                 },
                 {
                     "id": "services.frigate.service",
                     "title": "Frigate",
                     "status": "error",
-                    "detail": "Stopped after it failed 3 times in a row.",
+                    "detail": "Stopped after a failure.",
                     "fix": {
                         "kind": "restart",
                         "text": "Restart Frigate",
@@ -25,18 +25,25 @@
                     "id": "services.node-red-tm.service",
                     "title": "Node-RED",
                     "status": "ok",
-                    "detail": "Running since 2 hours ago."
+                    "detail": "Running since 07:12."
                 },
                 {
                     "id": "services.go2rtc_server.service",
                     "title": "Camera streams (go2rtc)",
                     "status": "warn",
-                    "detail": "Restarted 4 times in the last hour.",
-                    "fix": {
-                        "kind": "restart",
-                        "text": "Restart Camera streams (go2rtc)",
-                        "unit": "go2rtc_server.service"
-                    }
+                    "detail": "Waiting to restart after a failure."
+                },
+                {
+                    "id": "services.revproxy.service",
+                    "title": "Web proxy (nginx)",
+                    "status": "ok",
+                    "detail": "Running since 07:12."
+                },
+                {
+                    "id": "services.tm-control.service",
+                    "title": "Control app",
+                    "status": "ok",
+                    "detail": "Running since 07:12."
                 }
             ]
         },
@@ -45,26 +52,61 @@
             "title": "Apps",
             "checks": [
                 {
-                    "id": "apps.frigate.api",
-                    "title": "Frigate answers",
+                    "id": "apps.frigate.reachable",
+                    "title": "Frigate",
+                    "status": "error",
+                    "detail": "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page.",
+                    "fix": {
+                        "kind": "restart",
+                        "text": "Restart Frigate",
+                        "unit": "frigate.service"
+                    }
+                },
+                {
+                    "id": "apps.frigate.cameras",
+                    "title": "Cameras",
                     "status": "unknown",
-                    "detail": "The check didn't finish within 5 seconds."
+                    "detail": "Frigate isn't answering, so its cameras can't be checked."
+                },
+                {
+                    "id": "apps.nodered.reachable",
+                    "title": "Node-RED",
+                    "status": "ok",
+                    "detail": "Node-RED up 2 hours."
+                },
+                {
+                    "id": "apps.nodered.config",
+                    "title": "Node-RED configuration",
+                    "status": "ok",
+                    "detail": "Node-RED loaded config.yml without errors."
                 },
                 {
                     "id": "apps.nodered.schema",
                     "title": "Database schema",
                     "status": "error",
-                    "detail": "The database is at schema version 0; this release expects version 3.",
+                    "detail": "The database schema is behind (0 of 1), so Node-RED can't write new data. See why with sudo journalctl -u node-red-tm | grep tmdb-migrate, or in the diagnostics.",
                     "fix": {
-                        "kind": "hint",
-                        "text": "The migration failed when Node-RED started. Open Diagnostics on the Device page and look for tmdb_migrate in the node-red-tm journal."
+                        "kind": "link",
+                        "text": "Diagnostics",
+                        "href": "/device"
                     }
                 },
                 {
-                    "id": "apps.mqtt.broker",
+                    "id": "apps.go2rtc.streams",
+                    "title": "Camera streams",
+                    "status": "error",
+                    "detail": "go2rtc isn't answering, so the cameras get no video. Restart it.",
+                    "fix": {
+                        "kind": "restart",
+                        "text": "Restart Camera streams (go2rtc)",
+                        "unit": "go2rtc_server.service"
+                    }
+                },
+                {
+                    "id": "apps.broker.login",
                     "title": "MQTT broker",
                     "status": "ok",
-                    "detail": "Listening on port 1883, for this device only."
+                    "detail": "Broker on this device only: port 1883 isn't open to the network."
                 }
             ]
         },
@@ -73,20 +115,28 @@
             "title": "Configuration",
             "checks": [
                 {
-                    "id": "config.cameras.match",
-                    "title": "Cameras match",
-                    "status": "ok",
-                    "detail": "Frigate's camera picam_h265 is enabled in Node-RED's config.yml."
+                    "id": "config.cameras",
+                    "title": "Cameras in config.yml",
+                    "status": "unknown",
+                    "detail": "Frigate isn't answering, so its cameras can't be compared with config.yml."
                 },
                 {
-                    "id": "config.zones.names",
+                    "id": "config.zones",
                     "title": "Zones",
-                    "status": "warn",
-                    "detail": "Camera picam_h265 has no zone_near or zone_far, so events get no direction from the zones.",
-                    "fix": {
-                        "kind": "hint",
-                        "text": "Draw zone_near and zone_far in Frigate's mask and zone editor."
-                    }
+                    "status": "unknown",
+                    "detail": "Frigate isn't answering, so the cameras' zones can't be checked."
+                },
+                {
+                    "id": "config.radars",
+                    "title": "Radar names",
+                    "status": "ok",
+                    "detail": "Each radar has a radar's name, and each camera's radar is enabled."
+                },
+                {
+                    "id": "config.deployment",
+                    "title": "Location",
+                    "status": "ok",
+                    "detail": "No location is set."
                 }
             ]
         },
@@ -95,26 +145,47 @@
             "title": "Hardware",
             "checks": [
                 {
-                    "id": "hardware.camera",
-                    "title": "Camera",
-                    "status": "ok",
-                    "detail": "Raspberry Pi camera module found."
-                },
-                {
-                    "id": "hardware.detector.edgetpu_pci",
-                    "title": "Coral (PCIe)",
-                    "status": "error",
-                    "detail": "Installed with a Coral PCIe accelerator, which isn't found now.",
+                    "id": "hardware.detector.edgetpu_usb",
+                    "title": "Coral USB Accelerator",
+                    "status": "unknown",
+                    "detail": "Frigate isn't answering, so it's unknown whether Frigate uses it.",
                     "fix": {
                         "kind": "rescan",
-                        "text": "Check the accelerator's cable, then check again."
+                        "text": "Re-scan hardware"
+                    }
+                },
+                {
+                    "id": "hardware.hevc.present",
+                    "title": "HEVC decoder",
+                    "status": "ok",
+                    "detail": "/dev/media1, reached through /dev/rpi-hevc-dec."
+                },
+                {
+                    "id": "hardware.hevc.passed",
+                    "title": "HEVC decoder in Frigate",
+                    "status": "error",
+                    "detail": "Frigate gets the decoder, but isn't running. Restart Frigate.",
+                    "fix": {
+                        "kind": "restart",
+                        "text": "Restart Frigate",
+                        "unit": "frigate.service"
                     }
                 },
                 {
                     "id": "hardware.radar.ttyACM0",
-                    "title": "Radar 1",
+                    "title": "Radar on /dev/ttyACM0",
                     "status": "ok",
-                    "detail": "Found at /dev/ttyACM0."
+                    "detail": "TM_RADAR_SERIAL_PORT_00, open in Node-RED. Last reading less than a minute ago."
+                },
+                {
+                    "id": "hardware.radar.ttyACM1",
+                    "title": "Radar on /dev/ttyACM1",
+                    "status": "warn",
+                    "detail": "A radar is plugged in as TM_RADAR_SERIAL_PORT_01, but it isn't enabled. Enable sensors.radars.TM_RADAR_SERIAL_PORT_01 in config.yml.",
+                    "fix": {
+                        "kind": "rescan",
+                        "text": "Re-scan hardware"
+                    }
                 }
             ]
         },
@@ -123,21 +194,32 @@
             "title": "Device",
             "checks": [
                 {
-                    "id": "device.disk",
-                    "title": "Storage",
-                    "status": "warn",
-                    "detail": "87% of the storage card is used.",
-                    "fix": {
-                        "kind": "link",
-                        "text": "See the storage details on the Device page.",
-                        "href": "/device"
-                    }
+                    "id": "device.storage",
+                    "title": "Storage on /",
+                    "status": "ok",
+                    "detail": "7.5 GB free of 58.0 GB."
                 },
                 {
-                    "id": "device.throttled",
-                    "title": "Power and temperature",
+                    "id": "device.memory",
+                    "title": "Memory",
+                    "status": "ok",
+                    "detail": "5.5 GB of 8.0 GB available."
+                },
+                {
+                    "id": "device.temperature",
+                    "title": "Temperature",
+                    "status": "ok",
+                    "detail": "52.7 °C."
+                },
+                {
+                    "id": "device.power",
+                    "title": "Power supply and throttling",
                     "status": "unknown",
-                    "detail": "tm-control can't read the firmware's throttling flags."
+                    "detail": "tm-control can't read the firmware's power flags: it needs the video group.",
+                    "fix": {
+                        "kind": "hint",
+                        "text": "Run the installer (tmsetup.sh) again."
+                    }
                 }
             ]
         },
@@ -148,19 +230,13 @@
                 {
                     "id": "time.plausible",
                     "title": "Clock",
-                    "status": "error",
-                    "detail": "The device's clock says 1970-01-01, and no time server has set it.",
+                    "status": "warn",
+                    "detail": "No time source reachable (offline?); the clock runs on its own.",
                     "fix": {
                         "kind": "link",
-                        "text": "Set the date and time.",
+                        "text": "Set the date and time",
                         "href": "/time"
                     }
-                },
-                {
-                    "id": "time.ntp",
-                    "title": "Time server",
-                    "status": "warn",
-                    "detail": "Not synchronized with a time server."
                 }
             ]
         }
