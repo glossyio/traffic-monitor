@@ -6,7 +6,7 @@ description: The device's home page and the apps it links to: dashboards, Frigat
 
 Open `http://<device>/` in a browser on the same network. `<device>` is the hostname you set when you imaged the card, followed by `.local` (for example `http://tm-01.local/`), or the device's IP address.
 
-The home page is the device's [control app](control-app.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, and links to the apps your account can open. Its menu has your **Account**, the **Users** page for administrators, and **Log out**.
+The home page is the device's [control app](control-app.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, a one-line summary of its health, and links to the apps your account can open. Its menu has **Status**, **Device**, and **Date and time** (see [Check and fix the device](device-health.md)), your **Account**, the **Users** page for administrators, and **Log out**.
 
 | Link | Path | What it is | Who can open it |
 |---|---|---|---|

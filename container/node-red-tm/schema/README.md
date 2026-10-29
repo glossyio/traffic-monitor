@@ -69,6 +69,7 @@ They use synthetic data only. Never add a copy of a device's database.
 - `node-red-tm.service` runs the script as `ExecStartPre`, as the code owner, so the tables are current before any flow runs.
 - If a migration fails, it's rolled back, and Node-RED starts anyway on the previous version.
 - The runner is stopped after 25 minutes, before the service's 30-minute start timeout, so Node-RED still starts. An unfinished migration is rolled back, and the next start tries again.
+- Node-RED reports the database's `user_version` as `schema_version` at its internal `/tm-internal/status`. tm-control's Status page compares it with the newest migration in the install's `migrations/`: behind is an error that tells the operator to run `sudo journalctl -u node-red-tm | grep tmdb-migrate` (or read the diagnostics), and newer is a warning.
 - Deploying from the Node-RED editor doesn't restart the service, so it doesn't apply migrations. See "Database schema" in `docs/development/dev-environment.md`.
 
 Read the runner's output:

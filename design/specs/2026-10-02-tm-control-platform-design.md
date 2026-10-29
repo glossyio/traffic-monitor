@@ -213,21 +213,21 @@ tm-control/
 **Adapters**
 - The only code that touches the OS or other apps. They return Pydantic models.
 - Commands go through one runner: argv lists (never a shell), timeouts, and output caps.
-- Commands use machine-readable output: `systemctl show`, `journalctl -o json`, `timedatectl show`, `lspci -nn`, `lsusb`, and `/sys`.
+- Commands use machine-readable output: `systemctl show`, `journalctl -o json`, `timedatectl show`, `lspci -nn`, and `/sys`. (`lsusb` can't start in the sandbox, which has no netlink socket, so M3 reads USB ids from `/sys/bus/usb/devices`; `ss` falls back to `/proc/net` there.)
 
 **Modules**
 - Each module declares an `id`, a router, status checks, and wizard steps. A check returns an id, title, status (ok/warn/error/unknown), detail, and a fix action or link.
-- The core loads modules from the manifest's enabled list, so plate-recognizer appears only when it's installed.
+- The core loads modules from the manifest's enabled list, so plate-recognizer appears only when it's installed. (Through M3 the core uses a fixed `MODULES` list; only the Plate Recognizer unit, in the services list and its check, depends on the manifest's options, and the home page's tiles depend on its proxied locations.)
 - Checks never raise. They report `unknown` or `error` with a reason, so the status page always renders.
 
 **Privilege**
-- `tm-control.service` runs as `User=tmadmin` with `SupplementaryGroups=systemd-journal video`. (M2 runs with `systemd-journal` only and no `ReadWritePaths=`; `video` and the config path come when M3 needs them.)
+- `tm-control.service` runs as `User=tmadmin` with `SupplementaryGroups=systemd-journal video`. (M2 ran with `systemd-journal` only; M3 adds `video` for `vcgencmd get_throttled`.)
 - Sandbox: `NoNewPrivileges`, `ProtectSystem=strict`, `StateDirectory=tm-control`, `RuntimeDirectory=tm-control` (for job requests), `PrivateTmp`, and `RestrictAddressFamilies`.
-- `ReadWritePaths=` is limited to `{{codedir}}/node-red-tm/config`. Feature specs add paths only when they need them, for example Frigate's `model_cache` for model upload.
+- `ReadWritePaths=` is limited to `{{codedir}}/node-red-tm/config`. Feature specs add paths only when they need them, for example Frigate's `model_cache` for model upload. (Through M3 there is none: M3 reads `config.yml` and never writes it, so the config path comes with the first feature that edits it.)
 - polkit rules (`/etc/polkit-1/rules.d/50-traffic-monitor.rules`, rendered from the `tmsetup_tm_control_polkit` list in `vars/main.yml`) allow:
   - `systemd1.manage-units` for named TM units, with the verbs start, stop, and restart. M2 ships only these unit rules, including the job units.
   - `timedate1.set-time`, `set-timezone`, and `set-ntp` (M3).
-  - `login1.reboot` and `power-off` (M3).
+  - `login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` (M3). The `-ignore-inhibit` actions aren't granted: tm-control asks logind's `CanReboot`/`CanPowerOff` first and answers 409 while an inhibitor holds the device up.
 - Root jobs:
   1. The API writes a request to `/run/tm-control/jobs/<name>.json`.
   2. It starts `tm-job-<name>.service`.
@@ -253,7 +253,7 @@ tm-control/
 
 **API**
 - JSON under `/api/v1/`, with one error shape: `{error: {code, message, detail}}`.
-- Long-running actions return 202 and a job id. `GET /jobs/{id}` reports status, and an SSE stream carries the log. (In M2 the UI polls `GET /jobs/{id}`, which also returns the log lines; the SSE stream comes with M3's longer jobs.)
+- Long-running actions return 202 and a job id. `GET /jobs/{id}` reports status, and an SSE stream carries the log. (The UI polls `GET /jobs/{id}`, which also returns the log lines. M3 has no root job, since its restarts, time, and reboot go through polkit, so the SSE stream comes with the first feature whose job runs longer than a few seconds, such as TM update.)
 - The status page polls about every 10 seconds.
 - The OpenAPI document generates the UI's typed client.
 
@@ -266,12 +266,12 @@ tm-control/
 - Node-RED reloads the file through the `init-config` `watch` node. That node uses `node-watch`, which watches the parent directory, so renames count. The fallback is an explicit reload endpoint.
 
 **Node-RED state**
-- New `http in` endpoints under `/tm-internal/` cover status, the last config errors from `init config defaults`, and deployment and radar state.
-- Each endpoint checks `X-TM-Internal-Token`, and nginx denies `/nr/tm-internal/`.
+- New `http in` endpoints under `/tm-internal/` cover status, the last config errors from `init config defaults`, and deployment and radar state. (M3 ships one, `GET /tm-internal/status`, that carries all of them.)
+- Each endpoint checks `X-TM-Internal-Token` (`TM_INTERNAL_TOKEN` in `node-red-tm.env`, from the device secret `node_red_internal_token`) and refuses every request when it's unset, and nginx denies `/nr/tm-internal/` (in any letter case, since Node-RED matches paths case-insensitively).
 - Add them by script, as CLAUDE.md describes, on top of whatever flows have merged. #197 and #208 both changed `flows.json`, and M1's Task 8 changes the download nodes.
 - **Schema version.** Node-RED starts even when `tmdb_migrate.py` fails (#208). On a fresh install it then writes into an empty database, every insert fails with "no such table", and only the journal says why. M3 compares the database's `PRAGMA user_version` with the newest deployed migration.
-  - When the schema is behind, the status page keeps a warning up, with the `journalctl -u node-red-tm | grep tmdb-migrate` hint. The check is documented in `docs/data-and-payloads/` and the schema README.
-  - tm-control only reads the version, from Node-RED's `/tm-internal/` status or from `tmdb_migrate.py --check`, which changes nothing. M3 planning picks one. A second connection's read lock can make Node-RED's writes fail, because they have no busy timeout.
+  - When the schema is behind, the status page keeps a check up, with the `journalctl -u node-red-tm | grep tmdb-migrate` hint. (M3 makes it an error, since Node-RED can't write new data; a schema newer than the install is a warning.) The check is documented in `docs/data-and-payloads/` and the schema README.
+  - tm-control only reads the version, from Node-RED's `/tm-internal/` status or from `tmdb_migrate.py --check`, which changes nothing. (M3 reads it from Node-RED's status, which holds no second connection.) A second connection's read lock can make Node-RED's writes fail, because they have no busy timeout.
 
 **Frigate**
 - Reads: `/api/config`, `/api/stats`, and `/api/version`.
@@ -296,10 +296,10 @@ tm-control/
 
   The first failing layer names the fix.
 - With no accelerator, Frigate runs its `cpu` detector (#222). The detector check reports that as a warning ("detecting on the CPU, slow"), not an error.
-- The HEVC decoder (#218, #242) gets two layers. "Present" compares `readlink -f /dev/rpi-hevc-dec` with a `udevadm` scan for the decoder. "Passed to Frigate" compares the decoder with the running container's devices from `podman inspect`, as #242's `test_frigate_gets_the_hevc_decoder` does.
+- The HEVC decoder (#218, #242) gets two layers. "Present" compares `readlink -f /dev/rpi-hevc-dec` with a `udevadm` scan for the decoder. "Passed to Frigate" compares the decoder with the running container's devices from `podman inspect`, as #242's `test_frigate_gets_the_hevc_decoder` does. (M3: "present" scans `/sys/bus/media/devices/mediaN/model` instead of `udevadm`. "Passed", for the decoder, the detectors, and the radars, reads the rendered Quadlet unit's `AddDevice=` lines and checks that the unit is active, because `podman inspect` needs root for rootful containers.)
 - The fix actions ship in the detector feature spec: "Use in Frigate", an "Install support" job running `tmsetup.sh -t detectors -t frigate`, and "Switch detector". The platform ships the checks and a restart button.
 - #215's device tests check the same layers from the dev machine: expected, present, configured, and working. M3 uses the same layer names and the same probe commands, so a failure reads the same in both.
-- **Open question for M3 planning:** should #215's device tests assert against tm-control's `/api/v1/status` instead of keeping their own probes? That would remove duplication, but the tests would then depend on tm-control working.
+- **Open question for M3 planning:** should #215's device tests assert against tm-control's `/api/v1/status` instead of keeping their own probes? That would remove duplication, but the tests would then depend on tm-control working. (M3's plan answers it: the device tests keep their own probes and add one test that the status report agrees with them.)
 
 ### UI (`tm-control/ui/`)
 
@@ -344,12 +344,12 @@ tm-control/
      - The time is plausible.
 4. **System info:**
    - Versions with commit, OS and kernel, uptime, and memory and disk.
-   - **Copy diagnostics**, with secrets stripped.
+   - **Copy diagnostics**, with secrets stripped. (M3 offers a download and a copy, admins only.)
 5. **Date and time:**
    - Device time shown next to browser time.
-   - **Set from this browser** sets time and timezone, turning NTP off first if needed.
+   - **Set from this browser** sets time and timezone, turning NTP off first if needed. (M3 keeps the device's time when NTP has synchronized it, and changes only the zone. With NTP on but no time source, it turns NTP off just long enough to set the time and back on, so the device resyncs once it's online.)
    - A timezone picker and an NTP toggle.
-   - A timezone change restarts the containers, which read `/etc/localtime` at start, and Node-RED re-sends the radar time.
+   - A timezone change restarts the containers, which read `/etc/localtime` at start, and Node-RED re-sends the radar time. (M3 restarts the pod and revproxy. The time zone lives only in the OS: M3 removed `config.yml`'s unused `time.timezone` and `time.npt_set` keys.)
 
 **Later, each with its own spec:**
 - Wi-Fi/hotspot and a captive portal. These use NetworkManager checkpoint rollback, plus a host-level auto-hotspot watchdog that evolves `utils/wlan_check.sh`.
@@ -391,8 +391,8 @@ Each milestone gets its own implementation plan in `design/plans/` and can ship 
 **M3: status and system.**
 - Status and config checks, the Node-RED `/tm-internal/` endpoints, and restart actions. The checks include the tmdb schema version (see "Node-RED state").
 - Hardware handling:
-  - M3 planning chooses how optional detectors and radars reach the containers. Quadlet's optional `AddDevice=-<path>` can't: its generator checks the path before udev creates the devices at boot (#242).
-  - The Coral USB probe matches both `1a6e:089a` and `18d1:9302` (#217). The ID changes after Frigate initializes the device.
+  - M3 planning chooses how optional detectors and radars reach the containers. Quadlet's optional `AddDevice=-<path>` can't: its generator checks the path before udev creates the devices at boot (#242). (Chosen: install-time `AddDevice=` lines stay; M3's checks report a device present on the host but not passed, with the `tmsetup.sh` tags that fix it.)
+  - The Coral USB probe matches both `1a6e:089a` and `18d1:9302` (#217). The ID changes after Frigate initializes the device. (tm-control reads the ids from sysfs at each check.)
 - The system info and date/time pages.
 
 ## Critical files

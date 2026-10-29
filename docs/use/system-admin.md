@@ -12,12 +12,14 @@ Log in to the device as the administrator, open **Cockpit** from the home page, 
 
 The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx and the control app run on the host, outside the pod, so the home page and the login stay up when the pod is down.
 
+Start with the control app's [Status page](device-health.md#the-status-page): it shows each service's state, and when one has stopped or keeps failing, its check has a **Restart** button. Use Cockpit or SSH for the rest, such as restarting the control app itself, or a service that looks running but misbehaves.
+
 | Service | What it runs |
 |---|---|
 | `traffic-monitor.service` | The pod that holds Frigate, Node-RED, and Plate Recognizer if installed |
 | `frigate.service` | Frigate, object detection |
 | `node-red-tm.service` | Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker |
-| `tm-control.service` | The [control app](control-app.md): the home page's data, the login, and the device's accounts. nginx asks it to check the login for every app. |
+| `tm-control.service` | The [control app](control-app.md): the home page's data, the login, the device's accounts, and the status checks. nginx asks it to check the login for every app. |
 | `revproxy.service` | nginx, which serves the home page and the `/dashboard/`, `/frigate/`, and other paths |
 | `plate-recognizer.service` | The optional [Plate Recognizer](../add-ons/plate-recognizer.md) add-on |
 | `go2rtc_server.service` | go2rtc, which reads the Pi camera and streams it to Frigate. It runs on the host, not in the pod. |
