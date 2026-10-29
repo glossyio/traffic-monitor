@@ -68,9 +68,9 @@ When you ask for help, send the diagnostics with your question. It's a text file
 
 ## The Date and time page
 
-The page shows two clocks side by side: **This device** and **This phone** (the browser you're using), each with its date and offset from UTC. Under them, a sentence says whether they agree, or how far apart they are and whether their time zones differ.
+The page shows two clocks side by side: **This device** and **This browser** (the phone or computer you're using), each with its date and offset from UTC. Under them, a sentence says whether they agree, or how far apart they are and whether their time zones differ.
 
-* **Set from this browser** sends your phone's time and time zone to the device. If the device already has its time from the internet, it keeps that time, and only the time zone changes. Otherwise it takes your phone's time. If the device doesn't know your phone's time zone, which can happen when the phone's list of zones is newer, it still takes the time, leaves its time zone as it was, and asks you to pick one from the list.
+* **Set from this browser** sends your browser's time and time zone to the device. If the device already has its time from the internet, it keeps that time, and only the time zone changes. Otherwise it takes your browser's time. If the device doesn't know your browser's time zone, which can happen when your phone or computer has a newer list of zones, it still takes the time, leaves its time zone as it was, and asks you to pick one from the list.
 * **Time zone**: pick a zone, type part of its name to find it, then choose **Save time zone**. The installer sets the first time zone (its `-z` option, see [Installer options](../reference/tmsetup.md)); this page changes it later. The dashboards show times, and start each day at 04:00, in the device's time zone.
 * **Keep time from the internet** turns internet time on or off. The sentence under the switch says where the device's time comes from now.
 
@@ -80,7 +80,7 @@ Moving the clock ahead by more than about 20 seconds makes Frigate think the cam
 
 !!! info "When the device has no internet"
 
-    A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's **Clock** check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open **Date and time** on your phone and choose **Set from this browser**. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. A device that is never online keeps time from its own clock, which drifts; set it again now and then.
+    A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's **Clock** check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open **Date and time** on your phone or computer and choose **Set from this browser**. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. If the device's clock was ahead, turning internet time back on would put that wrong time back, so the device leaves internet time off instead and the page says so. Turn on **Keep time from the internet** once the device is online. A device that is never online keeps time from its own clock, which drifts; set it again now and then.
 
 ## What viewers see
 

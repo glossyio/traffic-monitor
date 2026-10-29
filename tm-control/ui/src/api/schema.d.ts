@@ -768,6 +768,11 @@ export interface components {
              * @default false
              */
             timezone_unknown: boolean;
+            /**
+             * Ntp Left Off
+             * @default false
+             */
+            ntp_left_off: boolean;
         };
         /** TimeState */
         TimeState: {

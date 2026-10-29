@@ -347,7 +347,7 @@ tm-control/
    - **Copy diagnostics**, with secrets stripped. (M3 offers a download and a copy, admins only.)
 5. **Date and time:**
    - Device time shown next to browser time.
-   - **Set from this browser** sets time and timezone, turning NTP off first if needed. (M3 keeps the device's time when NTP has synchronized it, and changes only the zone. With NTP on but no time source, it turns NTP off just long enough to set the time and back on, so the device resyncs once it's online.)
+   - **Set from this browser** sets time and timezone, turning NTP off first if needed. (M3 keeps the device's time when NTP has synchronized it, and changes only the zone. With NTP on but no time source, it turns NTP off just long enough to set the time and back on, so the device resyncs once it's online. If turning NTP back on puts back the later time systemd-timesyncd saved, it sets the time again and leaves NTP off.)
    - A timezone picker and an NTP toggle.
    - A timezone change restarts the containers, which read `/etc/localtime` at start, and Node-RED re-sends the radar time. (M3 restarts the pod and revproxy. The time zone lives only in the OS: M3 removed `config.yml`'s unused `time.timezone` and `time.npt_set` keys.)
 

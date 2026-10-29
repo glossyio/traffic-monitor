@@ -1,5 +1,5 @@
 <!--
-  The Date and time page (GET /time): the device's clock beside this phone's, both ticking, and the difference in
+  The Date and time page (GET /time): the device's clock beside this browser's, both ticking, and the difference in
   words. Admins set the device's time and time zone from this browser, pick a time zone from the device's list
   (GET /time/timezones), and turn NTP on or off, each with POST /time. Viewers see the clocks, the time zone, and
   whether the device keeps time from the internet.
@@ -46,10 +46,10 @@ async function load() {
 }
 
 const clocks = computed(() => {
-  const phone = { label: 'This phone', ...wallClock(now.value, browserOffset(now.value)) }
-  if (!device.value) return [{ label: 'This device', time: 'Unknown', date: '', zone: '' }, phone]
+  const browser = { label: 'This browser', ...wallClock(now.value, browserOffset(now.value)) }
+  if (!device.value) return [{ label: 'This device', time: 'Unknown', date: '', zone: '' }, browser]
   const deviceNow = device.value.instant + (now.value - device.value.at)
-  return [{ label: 'This device', ...wallClock(deviceNow, device.value.offset) }, phone]
+  return [{ label: 'This device', ...wallClock(deviceNow, device.value.offset) }, browser]
 })
 
 // How far the device's clock is from this browser's, in seconds, and whether they show the same offset
@@ -82,16 +82,22 @@ function clearResults() {
 
 function setOutcome(result: TimeResult, timezone: string) {
   const restarting = result.restarting.length > 0 // only a time zone change restarts anything
-  let text = 'Time set from this phone.'
+  let text = 'Time set from this browser.'
   if (result.timezone_unknown) {
-    // A phone's time zone list can be newer than the device's: the time went on, the zone is left for the picker
+    // A browser's time zone list can be newer than the device's: the time went on, the zone is left for the picker
     if (result.time_kept_from_ntp) text = "The device already keeps time from the internet, so its time didn't change."
-    return `${text} The device doesn't know this phone's time zone (${timezone}), so pick one below.`
+    return `${text} The device doesn't know this browser's time zone (${timezone}), so pick one below.`
+  }
+  if (result.ntp_left_off) {
+    // The device's clock was ahead: turning internet time back on would have put that time back
+    text +=
+      " Internet time is now off, because turning it back on put the device's own, wrong time back. Turn on Keep " +
+      'time from the internet once the device is online.'
   }
   if (result.time_kept_from_ntp) {
     text = restarting
       ? 'The device already keeps time from the internet, so only the time zone changed.'
-      : "The device already keeps time from the internet and uses this phone's time zone, so nothing changed."
+      : "The device already keeps time from the internet and uses this browser's time zone, so nothing changed."
   }
   return restarting ? `${text} ${RESTARTING}` : text
 }
