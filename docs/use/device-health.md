@@ -29,7 +29,7 @@ The checks come in groups:
 
 | Group | What it checks |
 |---|---|
-| Services | Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. |
+| Services | Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure. |
 | Apps | Frigate answers and gets frames from each camera. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run. The MQTT broker requires its login while port 1883 is open to the network. |
 | Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, each camera's radar is enabled, and the location values are valid. See [config.yml settings](../configuration/node-red-config.md) and [First-time setup](../setup-guide.md). |
 | Hardware | Each AI accelerator, from plugged in to used by Frigate, or a warning when there's none and Frigate detects on the CPU. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED. |

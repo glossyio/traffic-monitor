@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from tm_control.adapters import systemd
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.modules.services.units import Unit, active_since, restart_fix, restarts, unit_states, units_for
 
@@ -15,7 +16,18 @@ def _running(values: dict[str, str], today: date) -> str:
     return f"Running since {since:%Y-%m-%d %H:%M}"
 
 
-def unit_check(unit: Unit, values: dict[str, str] | None, today: date) -> Check:
+def restarted_itself(context: Context, unit: Unit, count: int) -> bool:
+    """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
+    from PID 1's journal this boot (read once per report). False when the journal can't tell."""
+    if unit.restarts_itself_with is None or context.settings.fake:
+        return False
+    exits = context.probe(f"services.restart_exits.{unit.unit}", lambda: systemd.automatic_restart_exits(unit.unit))
+    if exits is None or len(exits) < count:
+        return False
+    return all(status == unit.restarts_itself_with for status in exits[-count:])
+
+
+def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: Context) -> Check:
     def check(status, detail, fix=None):
         return Check(id=f"services.{unit.unit}", title=unit.title, status=status, detail=detail, fix=fix)
 
@@ -29,6 +41,9 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date) -> Check:
         count = restarts(values)
         if count:
             times = "1 time" if count == 1 else f"{count} times"
+            if restarted_itself(context, unit, count):
+                return check("ok", f"{_running(values, today)}. It restarted itself {times}, as {unit.title} does "
+                                   "when its config is saved.")
             return check("warn", f"{_running(values, today)}, but it restarted {times} after failures.", restart)
         return check("ok", f"{_running(values, today)}.")
     if state == "activating":
@@ -49,7 +64,7 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date) -> Check:
 def service_checks(context: Context) -> list[Check]:
     values = unit_states(context)
     today = date.today()
-    return [unit_check(unit, values.get(unit.unit), today) for unit in units_for(context.manifest)]
+    return [unit_check(unit, values.get(unit.unit), today, context) for unit in units_for(context.manifest)]
 
 
 GROUP = CheckGroup("services", "Services", [service_checks])

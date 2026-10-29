@@ -163,6 +163,50 @@ def journal_entries(unit: str, since: str) -> list[dict[str, str]]:
     return entries
 
 
+# PID 1's catalog message ids: a unit's main process exited (with EXIT_CODE and EXIT_STATUS), and a restart after a
+# failure was scheduled (with N_RESTARTS).
+UNIT_PROCESS_EXITED = "98e322203f7a4ed290d09fe03c09fe15"
+UNIT_RESTART_SCHEDULED = "5eb03494b6584870a536b337290809b3"
+
+
+def automatic_restart_exits(unit: str) -> list[str | None] | None:
+    """For each restart systemd scheduled for the unit this boot, oldest first, the EXIT_STATUS of the main-process
+    exit logged just before it (None when there was none, or it had no status). None if the journal can't be read."""
+    argv = [
+        "journalctl",
+        "--quiet",
+        "--no-pager",
+        "-b",
+        "_PID=1",
+        f"UNIT={unit}",
+        f"MESSAGE_ID={UNIT_PROCESS_EXITED}",
+        f"MESSAGE_ID={UNIT_RESTART_SCHEDULED}",
+        "--output=json",
+        "--output-fields=MESSAGE_ID,EXIT_STATUS",
+    ]
+    try:
+        result = run(argv, timeout=4, max_output=JOURNAL_MAX_OUTPUT)
+    except OSError:
+        return None
+    if result.returncode != 0 or result.timed_out:
+        log.warning("journalctl for %s's restarts failed with exit status %s", unit, result.returncode)
+        return None
+    exits, last_exit = [], None
+    for line in result.stdout.splitlines():
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue  # the output cap cut this entry short
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("MESSAGE_ID") == UNIT_PROCESS_EXITED:
+            last_exit = _message(entry.get("EXIT_STATUS"))
+        elif entry.get("MESSAGE_ID") == UNIT_RESTART_SCHEDULED:
+            exits.append(last_exit)
+            last_exit = None
+    return exits
+
+
 def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | None = None) -> list[str]:
     """The first `limit` MESSAGE fields the unit logged since `since`; with invocation_id, only that run's own
     (_SYSTEMD_INVOCATION_ID). [] if the journal can't be read, so a job's status still shows when its log can't."""

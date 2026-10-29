@@ -342,6 +342,30 @@ def test_restart_from_the_control_app(host, address, tm_login):
     assert not waiting, f"{UNIT_RESTART_SECONDS} s after the restart was queued, {waiting} wasn't active again"
 
 
+def test_frigate_restarting_itself_stays_ok(host, address, tm_login):
+    """Frigate restarts itself when its config is saved, which systemd counts as a restart after a failure. Restarted
+    through Frigate's own API, as its Save does, the Services row stays ok and says so. A restart from the control app
+    then clears the count, so the unit is as before."""
+    cookie = session(address, *tm_login)
+    before = {"frigate.service": invocation(host, "frigate.service")}
+    try:
+        host.check_output("curl -sS -o /dev/null --max-time 10 -X POST http://127.0.0.1:5000/api/restart")
+        waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
+        assert not waiting, f"{UNIT_RESTART_SECONDS} s after Frigate's own restart, frigate.service wasn't active again"
+        count = host.check_output("systemctl show -p NRestarts --value frigate.service")
+        assert count != "0", "systemd didn't count Frigate's own restart, so this test can't check the Services row"
+        # The report is cached for 5 seconds, and may be from while Frigate was starting.
+        found = wait_for_check(address, cookie, "services.frigate.service", "ok", 30)
+        assert found[0] == "ok" and "restarted itself" in (found[1] or ""), (
+            f"services.frigate.service after Frigate restarted itself: {found}")
+    finally:
+        # Put NRestarts back to 0, as a person's restart from the Status page would.
+        before = {"frigate.service": invocation(host, "frigate.service")}
+        request_from_this_machine(address, f"{API}/services/frigate.service/restart", "POST", cookie, {})
+        not_restarted(host, before, UNIT_RESTART_SECONDS)
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)
 ZONE_UNITS = ["traffic-monitor.service", "revproxy.service"]
 TEST_ZONES = ["Pacific/Auckland", "UTC", "America/Los_Angeles"]

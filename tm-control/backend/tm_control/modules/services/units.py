@@ -16,12 +16,15 @@ class Unit:
     title: str
     option: str | None = None  # the manifest option that installs it; None when every install has it
     restartable: bool = True  # tm-control can restart it (the unit is in tmsetup_tm_control_polkit)
+    # The main process's exit status when the app restarts itself, which systemd counts in NRestarts like a failure
+    restarts_itself_with: str | None = None
 
 
 # tm-control restarting itself is Cockpit's job, or the rescue console's; it isn't in the polkit list.
 UNITS = [
     Unit("traffic-monitor.service", "Traffic Monitor pod"),
-    Unit("frigate.service", "Frigate"),
+    # Saving Frigate's config, or restarting it from its own page, stops the container with SIGTERM (143).
+    Unit("frigate.service", "Frigate", restarts_itself_with="143"),
     Unit("node-red-tm.service", "Node-RED"),
     Unit("plate-recognizer.service", "Plate Recognizer", option="plate_recognizer"),
     Unit("go2rtc_server.service", "Camera streams (go2rtc)"),
