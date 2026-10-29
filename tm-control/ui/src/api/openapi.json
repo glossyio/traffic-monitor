@@ -733,6 +733,92 @@
           }
         }
       }
+    },
+    "/api/v1/time": {
+      "get": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Time State",
+        "operationId": "time_state_api_v1_time_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Change",
+        "description": "The time (with what NTP needs for it), then an NTP toggle, then the time zone, whose change restarts the\ncontainers.",
+        "operationId": "change_api_v1_time_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/timezones": {
+      "get": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Timezones",
+        "operationId": "timezones_api_v1_time_timezones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Timezones Api V1 Time Timezones Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1067,6 +1153,29 @@
         ],
         "title": "NewUser"
       },
+      "Ntp": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "synchronized": {
+            "type": "boolean",
+            "title": "Synchronized"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "synchronized",
+          "available"
+        ],
+        "title": "Ntp"
+      },
       "PasswordChange": {
         "properties": {
           "current_password": {
@@ -1378,6 +1487,128 @@
           "since_boot"
         ],
         "title": "Throttled"
+      },
+      "TimeChange": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "ntp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ntp"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          }
+        },
+        "type": "object",
+        "title": "TimeChange"
+      },
+      "TimeResult": {
+        "properties": {
+          "device_time": {
+            "type": "string",
+            "title": "Device Time"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "ntp": {
+            "$ref": "#/components/schemas/Ntp"
+          },
+          "rtc_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtc Time"
+          },
+          "time_kept_from_ntp": {
+            "type": "boolean",
+            "title": "Time Kept From Ntp"
+          },
+          "restarting": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarting"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_time",
+          "timezone",
+          "ntp",
+          "rtc_time",
+          "time_kept_from_ntp",
+          "restarting"
+        ],
+        "title": "TimeResult"
+      },
+      "TimeState": {
+        "properties": {
+          "device_time": {
+            "type": "string",
+            "title": "Device Time"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "ntp": {
+            "$ref": "#/components/schemas/Ntp"
+          },
+          "rtc_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtc Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_time",
+          "timezone",
+          "ntp",
+          "rtc_time"
+        ],
+        "title": "TimeState"
       },
       "TmInstall": {
         "properties": {

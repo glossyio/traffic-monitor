@@ -7,7 +7,6 @@ import logging
 import re
 import socket
 import string
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -15,7 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from tm_control.adapters import systemd
+from tm_control.adapters import systemd, timedate
 from tm_control.core.auth import Audit, User, check_password_rules
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import current_user, require_admin
@@ -78,7 +77,7 @@ def device(request: Request, user: User = Depends(current_user)):
         "hostname": hostname(app_state),
         "serial": serial(app_state),
         "tm_version": manifest.tm_version,
-        "time": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "time": timedate.device_time(),
         "apps": apps,
         "theme": {"font": manifest.homepage.font, "colors": manifest.homepage.colors},
     }
@@ -95,7 +94,7 @@ def diagnostics_text(request: Request, admin: User = Depends(require_admin)):
     """The diagnostics text as a download, with every secret redacted."""
     app_state = request.app.state
     name = safe_hostname(hostname(app_state))
-    now = datetime.now().astimezone()
+    now = timedate.now()
     text = diagnostics.build(app_state, system_info(app_state, hostname(app_state), serial(app_state)), name, now)
     filename = f"tm-diagnostics-{name}-{now:%Y%m%d-%H%M%S}.txt"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "no-store"}

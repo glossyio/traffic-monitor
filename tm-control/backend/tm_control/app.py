@@ -50,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.nr_token = NodeRedToken(secrets.node_red_token_key)
     app.state.login_backoff = Backoff()
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
+    app.state.fake_clock = fake.FakeClock() if settings.fake else None
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
     check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
     app.state.status = StatusCache(

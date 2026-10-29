@@ -169,3 +169,11 @@ def test_command_runner_passes_input_and_keeps_stderr():
 def test_command_runner_refuses_a_command_string():
     with pytest.raises(TypeError):
         run("echo hi")
+
+
+def test_command_runner_adds_to_the_environment(monkeypatch):
+    monkeypatch.setenv("TM_TEST_KEPT", "kept")
+    r = run(["sh", "-c", 'printf "%s %s" "$TZ" "$TM_TEST_KEPT"'], env={"TZ": "UTC"})
+    assert (r.returncode, r.stdout) == (0, "UTC kept")
+    monkeypatch.setenv("TZ", "Europe/Berlin")
+    assert run(["sh", "-c", 'printf "%s" "$TZ"']).stdout == "Europe/Berlin"

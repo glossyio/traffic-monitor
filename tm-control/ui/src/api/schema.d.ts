@@ -484,6 +484,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Time State */
+        get: operations["time_state_api_v1_time_get"];
+        put?: never;
+        /**
+         * Change
+         * @description The time (with what NTP needs for it), then an NTP toggle, then the time zone, whose change restarts the
+         *     containers.
+         */
+        post: operations["change_api_v1_time_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time/timezones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Timezones */
+        get: operations["timezones_api_v1_time_timezones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -605,6 +644,15 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** Ntp */
+        Ntp: {
+            /** Enabled */
+            enabled: boolean;
+            /** Synchronized */
+            synchronized: boolean;
+            /** Available */
+            available: boolean;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
@@ -692,6 +740,39 @@ export interface components {
             now: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
             /** Since Boot */
             since_boot: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
+        };
+        /** TimeChange */
+        TimeChange: {
+            /** Timezone */
+            timezone?: string | null;
+            /** Ntp */
+            ntp?: boolean | null;
+            /** Time */
+            time?: string | null;
+        };
+        /** TimeResult */
+        TimeResult: {
+            /** Device Time */
+            device_time: string;
+            /** Timezone */
+            timezone: string;
+            ntp: components["schemas"]["Ntp"];
+            /** Rtc Time */
+            rtc_time: string | null;
+            /** Time Kept From Ntp */
+            time_kept_from_ntp: boolean;
+            /** Restarting */
+            restarting: string[];
+        };
+        /** TimeState */
+        TimeState: {
+            /** Device Time */
+            device_time: string;
+            /** Timezone */
+            timezone: string;
+            ntp: components["schemas"]["Ntp"];
+            /** Rtc Time */
+            rtc_time: string | null;
         };
         /** TmInstall */
         TmInstall: {
@@ -1376,6 +1457,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    time_state_api_v1_time_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeState"];
+                };
+            };
+        };
+    };
+    change_api_v1_time_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    timezones_api_v1_time_timezones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };
