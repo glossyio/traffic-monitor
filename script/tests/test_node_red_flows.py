@@ -460,6 +460,61 @@ def test_radars_report_config_port_and_last_reading():
     assert radars["TM_RADAR_SERIAL_PORT_03"] == {"enabled": False, "port_open": False, "last_reading_at": None}
 
 
+RADAR_JUNCTION, RADAR_DIRECTOR = "05a58d9ee463c696", "e9bd400bfc06d988"  # where the hourly time sync goes
+
+
+def test_a_reopened_radar_port_gets_the_time_through_the_radar_director():
+    """A radar that lost power restarts its clock at zero, and its readings carry that clock's time. So when a port
+    opens, the port-status node sends that radar the time, the way the hourly sync does, a few seconds later: while
+    the port opens, Linux echoes the start of the radar's greeting back to it, and the radar drops a command that
+    follows that echo within a moment (seen on a bench unit)."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    port_status = named(flows, "tm-internal: radar port status")
+    [[delay_id]] = port_status["wires"]
+    delay = by_id[delay_id]
+    assert (delay["type"], delay["pauseType"], delay["timeout"], delay["timeoutUnits"]) == (
+        "delay", "delay", "5", "seconds")
+    assert delay["z"] == port_status["z"] and delay["g"] == port_status["g"]
+    assert delay_id in by_id[port_status["g"]]["nodes"]
+    # The time is read after the delay, as the hourly sync reads it, so the radar isn't set 5 seconds behind.
+    [[set_time_id]] = delay["wires"]
+    set_time = by_id[set_time_id]
+    hourly = named(flows, "init: sync radar time, every 60-min")
+    assert set_time["type"] == "change" and set_time["g"] == port_status["g"]
+    assert set_time["rules"] == [{"t": "set", "p": "payload", "pt": "msg", "to": hourly["payload"], "tot": "jsonata"}]
+    assert set_time["wires"] == [[RADAR_JUNCTION]]
+    assert by_id[RADAR_JUNCTION]["wires"] == [[RADAR_DIRECTOR]]
+    assert hourly["wires"] == [[RADAR_JUNCTION]]
+
+
+@needs_node
+def test_a_reopened_radar_port_is_sent_the_time_only_when_enabled():
+    """Only to an enabled radar: the radar director's "enabled?" switch sends anything for a disabled radar, or one
+    whose config isn't loaded yet, on as PI (idle), which would idle a radar that's about to be set up."""
+    flows = json.loads(FLOWS.read_text())
+    port_status = named(flows, "tm-internal: radar port status")
+
+    def port(serial_id, text):
+        return (port_status, {"status": {"text": text, "source": {"id": serial_id, "type": "serial in"}}})
+
+    config = {"sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True},
+                                     "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
+    out = run_functions([
+        port("926ac6db07adc540", "node-red:common.status.connected"),
+        port("926ac6db07adc540", "node-red:common.status.not-connected"),
+        port("917b8f4b46895cee", "node-red:common.status.connected"),
+        port("9353b933e36e8b9e", "node-red:common.status.connected"),
+    ], context={"config": config})
+    opened, closed, disabled, unconfigured = (step["result"] for step in out["results"])
+    assert opened == {"topic": "TM_RADAR_SERIAL_PORT_00"}  # the change node after the delay adds the time
+    assert closed is None and disabled is None and unconfigured is None
+    assert out["global"]["tm_status"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["port_open"] is False
+    # Before config.yml's first load, nothing is sent; startup's own time sync follows 30 seconds after the start.
+    [early] = run_functions([port("926ac6db07adc540", "node-red:common.status.connected")])["results"]
+    assert early["result"] is None
+
+
 @needs_node
 def test_a_radar_removed_from_the_config_is_no_longer_enabled():
     flows = json.loads(FLOWS.read_text())

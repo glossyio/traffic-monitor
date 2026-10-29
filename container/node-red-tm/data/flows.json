@@ -1573,7 +1573,9 @@
             "bbe03ccd2a4b3f19",
             "64831844845c92cd",
             "dbf7f079d1a7ce46",
-            "eec2d8808f36d055"
+            "eec2d8808f36d055",
+            "6900ae224c9b9d85",
+            "1951ec836a6ded5c"
         ],
         "x": 1494,
         "y": 59,
@@ -5155,7 +5157,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "484071aff09e5ec2",
         "name": "tm-internal: radar port status",
-        "func": "// The serial nodes report \"node-red:common.status.connected\" when their port opens, and not-connected or stopped\n// when it closes. Their first \"not connected\" comes before this node starts, so a port that never opened isn't\n// listed here, and /tm-internal/status reports it as not open.\nconst radars = {\n    \"926ac6db07adc540\": \"TM_RADAR_SERIAL_PORT_00\",\n    \"917b8f4b46895cee\": \"TM_RADAR_SERIAL_PORT_01\",\n    \"9353b933e36e8b9e\": \"TM_RADAR_SERIAL_PORT_02\",\n    \"e221212a505a78ac\": \"TM_RADAR_SERIAL_PORT_03\",\n};\nconst name = radars[msg.status.source.id];\nif (name) {\n    global.set(`tm_status.radars.${name}.port_open`, /(^|[.:])connected$/.test(String(msg.status.text || \"\")));\n}\nreturn null;",
+        "func": "// The serial nodes report \"node-red:common.status.connected\" when their port opens, and not-connected or stopped\n// when it closes. Their first \"not connected\" comes before this node starts, so a port that never opened isn't\n// listed here, and /tm-internal/status reports it as not open.\nconst radars = {\n    \"926ac6db07adc540\": \"TM_RADAR_SERIAL_PORT_00\",\n    \"917b8f4b46895cee\": \"TM_RADAR_SERIAL_PORT_01\",\n    \"9353b933e36e8b9e\": \"TM_RADAR_SERIAL_PORT_02\",\n    \"e221212a505a78ac\": \"TM_RADAR_SERIAL_PORT_03\",\n};\nconst name = radars[msg.status.source.id];\nif (!name) {\n    return null;\n}\nconst open = /(^|[.:])connected$/.test(String(msg.status.text || \"\"));\nglobal.set(`tm_status.radars.${name}.port_open`, open);\n// A radar that lost power, for example unplugged and plugged back in, restarts its clock at zero, and its readings\n// carry that clock's time. So when its port opens, send it the time, as the hourly sync does: the nodes after this\n// one wait 5 seconds, then set the time. While the port opens, Linux echoes the start of the radar's greeting back to\n// it, and the radar drops a command that follows that echo within a moment. Only to an enabled radar: the radar\n// director's \"enabled?\" switch turns a message for any other radar, or one sent before config.yml's first load, into\n// PI (idle mode). Startup has its own sync, 30 seconds after the flows start.\nif (open && global.get(`config.sensors.radars.${name}.enabled`) === true) {\n    return { topic: name };\n}\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -5165,7 +5167,63 @@
         "x": 1880,
         "y": 100,
         "wires": [
-            []
+            [
+                "6900ae224c9b9d85"
+            ]
+        ]
+    },
+    {
+        "id": "6900ae224c9b9d85",
+        "type": "delay",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "after the port's echo",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1880,
+        "y": 160,
+        "wires": [
+            [
+                "1951ec836a6ded5c"
+            ]
+        ]
+    },
+    {
+        "id": "1951ec836a6ded5c",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "g": "484071aff09e5ec2",
+        "name": "the time now",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "\"C=\" & $ceil($millis()/1000) & \"\\n\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1880,
+        "y": 220,
+        "wires": [
+            [
+                "05a58d9ee463c696"
+            ]
         ]
     },
     {
