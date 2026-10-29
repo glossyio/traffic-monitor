@@ -4,10 +4,10 @@ user); POST /time (admins) sets the time from the browser, NTP, and the time zon
 The browser's time is used only when NTP doesn't have the time. With NTP on but no time source reachable, NTP is
 turned off for set-time and back on after it, so the device resyncs once it's online; only `ntp: false` leaves it
 off. If starting systemd-timesyncd again puts back the later time it saved (the device's clock was ahead), the time
-is set again and NTP is left off, unless NTP synced during the watch and so has the time (`ntp_took_over`). A new time
-zone restarts the pod and nginx after the response, so the containers see it. A time sent with a zone the device
-doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps a fake
-clock in memory."""
+is set again and NTP is left off, unless NTP syncs within a moment of the put-back (the device is online) and so has the
+time (`ntp_took_over`). A new time zone restarts the pod and nginx after the response, so the containers see it. A time
+sent with a zone the device doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and
+reported. Fake mode keeps a fake clock in memory."""
 
 import logging
 import time
@@ -32,12 +32,15 @@ CEILING = datetime.fromisoformat("2046-01-01T00:00:00Z")
 # Frigate, Node-RED, and nginx bind-mount /etc/localtime, which a container keeps seeing as the old zone's file until
 # it restarts; restarting the pod restarts its containers.
 CONTAINERS = ["traffic-monitor.service", "revproxy.service"]
-# After NTP is back on offline, how long the clock is watched for systemd-timesyncd putting back the time it saved, and
-# how far the clock may be from the browser's time. timedated answers set-ntp once timesyncd's start job is done, after
-# timesyncd has moved the clock, so the first read sees it; the watch covers a timesyncd that failed and restarted.
+# After NTP is back on offline, how long the clock is watched for systemd-timesyncd putting back the time it saved, how
+# often it's read, and how far the clock may be from the browser's time. On a Pi the put-back lands 70 to 200 ms after
+# set-ntp returns, so the watch's first read can miss it; a timesyncd that failed and restarted takes longer. After a
+# put-back, how long NTP gets to sync: a reachable time source answers within a moment of the put-back, and NTP then
+# has the time, which a browser's clock may not.
 SETTLE_SECONDS = 1
 SETTLE_INTERVAL = 0.25
 SETTLE_TOLERANCE = 10
+SYNC_SECONDS = 1
 
 
 class TimeChange(BaseModel):
@@ -104,6 +107,19 @@ def _put_back(clock, when: datetime, set_at: float) -> bool:
     while True:
         expected = when + timedelta(seconds=time.monotonic() - set_at)
         if abs((clock.now() - expected).total_seconds()) > SETTLE_TOLERANCE:
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(SETTLE_INTERVAL)
+
+
+def _synced(clock) -> bool:
+    """Whether NTP reports itself synchronized within SYNC_SECONDS: after a put-back, a time source that answers has
+    the time. A state that can't be read counts as not synchronized."""
+    deadline = time.monotonic() + SYNC_SECONDS
+    while True:
+        state = clock.show()
+        if state is not None and state.ntp.synchronized:
             return True
         if time.monotonic() >= deadline:
             return False
@@ -186,9 +202,8 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
                 raise ApiError(500, "internal", "The time was set, but NTP couldn't be turned back on, so it's now "
                                                 "off.")
             if _put_back(clock, when, set_at):
-                state = clock.show()
-                if state is not None and state.ntp.synchronized:
-                    took_over = True  # timesyncd reached a time source meanwhile, so NTP has the time
+                if _synced(clock):
+                    took_over = True  # timesyncd reached a time source right after, so NTP has the time
                 else:
                     # timesyncd moved the clock forward to the time it saved: set the time again, with NTP off
                     again = when + timedelta(seconds=time.monotonic() - set_at)
