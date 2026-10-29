@@ -49,13 +49,21 @@ def can(method: str) -> bool:
     """Whether logind would reboot or power off now (method CanReboot or CanPowerOff): only a plain "yes" counts.
 
     "challenge" means polkit would ask for a password, and anything else, or a failure, means no; a block inhibitor
-    (an update, say) is one reason. Asked first, because systemctl's refusal would come after the 202.
+    (an update, say) is one reason. Asked first, because systemctl's refusal would come after the 202. A failure to
+    ask is logged by its exit status or timeout, never busctl's output.
     """
     try:
         result = run([*LOGIND, method], timeout=CAN_TIMEOUT, max_output=4096)
-    except OSError:
+    except OSError as exc:
+        log.warning("busctl %s failed (%s)", method, type(exc).__name__)
         return False
-    return result.returncode == 0 and not result.timed_out and result.stdout.strip() == 's "yes"'
+    if result.timed_out:
+        log.warning("busctl %s timed out", method)
+        return False
+    if result.returncode != 0:
+        log.warning("busctl %s failed with exit status %s", method, result.returncode)
+        return False
+    return result.stdout.strip() == 's "yes"'
 
 
 def _properties(stdout: str, properties: list[str]) -> dict[str, str]:

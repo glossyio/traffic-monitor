@@ -143,15 +143,15 @@ describe('the Status page', () => {
     expect(wrapper.text()).not.toContain('Frigate is restarting.')
   })
 
-  it("shows the API's message under the button when a restart fails", async () => {
+  it("shows the API's message under the button when a restart is refused", async () => {
     signedIn(ADMIN, {
       [`GET ${STATUS}`]: report([SERVICES]),
-      'POST /api/v1/services/frigate.service/restart': apiError(500, 'internal', "Frigate (frigate.service) couldn't be restarted."),
+      'POST /api/v1/services/frigate.service/restart': apiError(404, 'not_found', 'There is no such service to restart.'),
     })
     const { wrapper } = await mountApp('/status')
     await click(wrapper, 'Restart Frigate')
     await clickInDialog('Restart Frigate')
-    expect(wrapper.text()).toContain("Frigate (frigate.service) couldn't be restarted.")
+    expect(wrapper.text()).toContain('There is no such service to restart.')
   })
 
   it('re-scans the hardware and shows the new checks in place', async () => {

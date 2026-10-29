@@ -1563,6 +1563,11 @@
             },
             "type": "array",
             "title": "Restarting"
+          },
+          "timezone_unknown": {
+            "type": "boolean",
+            "title": "Timezone Unknown",
+            "default": false
           }
         },
         "type": "object",

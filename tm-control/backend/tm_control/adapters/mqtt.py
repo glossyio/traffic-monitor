@@ -54,7 +54,10 @@ def anonymous_connect_refused(host: str = "127.0.0.1", port: int = 1883, timeout
             if reply[0] != 0x20 or reply[1] != 2:
                 return None
             if reply[3] == 0:
-                connection.sendall(b"\xe0\x00")  # DISCONNECT, so the broker doesn't log a lost client
+                try:
+                    connection.sendall(b"\xe0\x00")  # DISCONNECT, so the broker doesn't log a lost client
+                except OSError:
+                    pass  # a courtesy: the broker has already accepted a client without a login
                 return False
             return True if reply[3] in (4, 5) else None
     except Exception:

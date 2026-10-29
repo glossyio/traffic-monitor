@@ -80,7 +80,9 @@ describe('the Device page', () => {
   })
 
   it("shows the API's message, and not \"Rebooting\", when the device can't reboot right now", async () => {
-    const refused = "The device can't reboot right now: something, such as an update, is holding it off."
+    const refused =
+      "The device can't reboot right now. Something, such as an update, is holding it off, or the control app isn't " +
+      'allowed to; try again in a few minutes, and download the diagnostics if it keeps happening.'
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'POST /api/v1/system/reboot': apiError(409, 'conflict', refused) })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Reboot the device')

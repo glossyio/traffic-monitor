@@ -679,10 +679,38 @@ def test_reboot_and_power_off_refused_while_logind_says_no(device_client, login,
     assert r.status_code == 409, r.text
     error = r.json()["error"]
     assert error["code"] == "conflict"
-    assert "try again in a few minutes" in error["message"].lower()
+    doing = "reboot" if path == "reboot" else "shut down"
+    assert error["message"] == (
+        f"The device can't {doing} right now. Something, such as an update, is holding it off, or the control app "
+        "isn't allowed to; try again in a few minutes, and download the diagnostics if it keeps happening."
+    )
     assert "synthetic-busctl-detail" not in r.text and "challenge" not in r.text
     assert logind.queued() == []
     assert not [row for row in audit_rows(device_client) if row[0] == action]
+
+
+@pytest.mark.parametrize(
+    ("answer", "logged"),
+    [
+        (CommandResult(1, "", "Call failed: synthetic-busctl-detail", False), "failed with exit status 1"),
+        (CommandResult(-9, "partial synthetic-busctl-detail", "", True), "timed out"),
+        (FileNotFoundError(2, "No such file or directory"), "failed (FileNotFoundError)"),
+    ],
+)
+def test_a_failed_logind_question_is_logged_without_its_output(monkeypatch, caplog, answer, logged):
+    monkeypatch.setattr(systemd, "run", Logind(answer=answer))
+    assert systemd.can("CanReboot") is False
+    (record,) = [r for r in caplog.records if r.name == systemd.__name__]
+    assert record.levelname == "WARNING"
+    assert record.getMessage() == f"busctl CanReboot {logged}"
+    assert "synthetic-busctl-detail" not in caplog.text
+
+
+@pytest.mark.parametrize("stdout", ['s "yes"\n', 's "challenge"\n', 's "na"\n'])
+def test_a_logind_answer_is_not_logged(monkeypatch, caplog, stdout):
+    monkeypatch.setattr(systemd, "run", Logind(answer=CommandResult(0, stdout, "", False)))
+    assert systemd.can("CanPowerOff") is (stdout == 's "yes"\n')
+    assert not [r for r in caplog.records if r.name == systemd.__name__]
 
 
 def test_reboot_needs_a_session(device_client, monkeypatch):

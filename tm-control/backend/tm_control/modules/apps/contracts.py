@@ -89,7 +89,7 @@ def zones(context: Context) -> list[Check]:
             continue
         problem = f"Camera {name} has no {listed(missing, 'or')} in Frigate"
         if any(zone in missing for zone in DIRECTION_ZONES):
-            problem += "; without zone_near and zone_far, events get no direction (#243)"
+            problem += "; without zone_near and zone_far, events get a direction only from the radar (#243)"
         problems.append(f"{problem}.")
     if problems:
         return check("warn", " ".join(problems) + " Draw the missing zones in Frigate, named exactly as listed.")

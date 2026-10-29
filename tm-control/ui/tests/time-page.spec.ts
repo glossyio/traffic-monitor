@@ -110,11 +110,31 @@ describe('the Date and time page', () => {
     )
   })
 
-  it("shows the API's message when the device doesn't know this browser's time zone", async () => {
-    admin({ [`POST ${TIME}`]: apiError(422, 'validation', "The device doesn't know that time zone.") })
+  it("sets the time when the device doesn't know this phone's time zone, and asks for one from the list", async () => {
+    admin({ [`POST ${TIME}`]: timeResult({ timezone_unknown: true }) })
     const { wrapper } = await mountApp('/time')
     await click(wrapper, 'Set from this browser')
-    expect(wrapper.text()).toContain("The device doesn't know that time zone.")
+    expect(wrapper.text()).toContain(
+      "Time set from this phone. The device doesn't know this phone's time zone (America/Los_Angeles), so pick one below.",
+    )
+    expect(wrapper.text()).not.toContain('restarting')
+  })
+
+  it("says the time didn't change when the device keeps time from the internet and doesn't know this phone's zone", async () => {
+    admin({ [`POST ${TIME}`]: timeResult({ time_kept_from_ntp: true, timezone_unknown: true }) })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      "The device already keeps time from the internet, so its time didn't change. The device doesn't know this " +
+        "phone's time zone (America/Los_Angeles), so pick one below.",
+    )
+  })
+
+  it("shows the API's message when the time couldn't be set", async () => {
+    admin({ [`POST ${TIME}`]: apiError(500, 'internal', "The time couldn't be set.") })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain("The time couldn't be set.")
   })
 
   it('saves a time zone chosen from the list, sending only the zone', async () => {
