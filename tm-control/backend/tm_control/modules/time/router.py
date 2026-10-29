@@ -4,9 +4,10 @@ user); POST /time (admins) sets the time from the browser, NTP, and the time zon
 The browser's time is used only when NTP doesn't have the time. With NTP on but no time source reachable, NTP is
 turned off for set-time and back on after it, so the device resyncs once it's online; only `ntp: false` leaves it
 off. If starting systemd-timesyncd again puts back the later time it saved (the device's clock was ahead), the time
-is set again and NTP is left off, unless NTP synced during the watch and so has the time. A new time zone restarts the
-pod and nginx after the response, so the containers see it. A time sent with a zone the device doesn't know (a phone's
-tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps a fake clock in memory."""
+is set again and NTP is left off, unless NTP synced during the watch and so has the time (`ntp_took_over`). A new time
+zone restarts the pod and nginx after the response, so the containers see it. A time sent with a zone the device
+doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps a fake
+clock in memory."""
 
 import logging
 import time
@@ -50,6 +51,7 @@ class TimeResult(TimeState):
     restarting: list[str]  # units restarting after a time zone change
     timezone_unknown: bool = False  # a time was sent with a zone the device doesn't know, so the zone was skipped
     ntp_left_off: bool = False  # offline, turning NTP back on put back the time service's saved time, so it's off
+    ntp_took_over: bool = False  # NTP reached a time source while the time was being set, so its time replaced it
 
 
 def _clock(app_state):
@@ -149,6 +151,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
     ntp = before.ntp.enabled
     kept = False
     left_off = False
+    took_over = False
     zone_changed = False
     changed: set[str] = set()  # for the audit: which settings changed, never their values
     finished = False
@@ -185,7 +188,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             if _put_back(clock, when, set_at):
                 state = clock.show()
                 if state is not None and state.ntp.synchronized:
-                    kept = True  # timesyncd reached a time source meanwhile, so NTP has the time
+                    took_over = True  # timesyncd reached a time source meanwhile, so NTP has the time
                 else:
                     # timesyncd moved the clock forward to the time it saved: set the time again, with NTP off
                     again = when + timedelta(seconds=time.monotonic() - set_at)
@@ -229,4 +232,4 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
         )
     restarting = list(CONTAINERS) if zone_changed else []
     return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=restarting,
-                      timezone_unknown=zone_unknown, ntp_left_off=left_off)
+                      timezone_unknown=zone_unknown, ntp_left_off=left_off, ntp_took_over=took_over)

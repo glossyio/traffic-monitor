@@ -324,7 +324,7 @@ def test_offline_a_sync_during_the_watch_keeps_ntp_on(device_client, login, time
     assert len(changes) == 3 and changes[0] == ["set-ntp", "false"] and changes[1][0] == "set-time"
     assert changes[2] == ["set-ntp", "true"]
     body = r.json()
-    assert body["ntp_left_off"] is False and body["time_kept_from_ntp"] is True
+    assert body["ntp_left_off"] is False and body["ntp_took_over"] is True and body["time_kept_from_ntp"] is False
     assert body["ntp"]["enabled"] is True and body["ntp"]["synchronized"] is True
     assert [row for row in audit_rows(device_client) if row[0] == "time.set"] == [("time.set", "time")]
 
@@ -653,7 +653,7 @@ def test_openapi_declares_the_time_models(client):
     assert schema("/api/v1/time/timezones", "get")["type"] == "array"
     result = document["components"]["schemas"]["TimeResult"]
     assert set(result["properties"]) == {"device_time", "timezone", "ntp", "rtc_time", "time_kept_from_ntp",
-                                         "restarting", "timezone_unknown", "ntp_left_off"}
+                                         "restarting", "timezone_unknown", "ntp_left_off", "ntp_took_over"}
 
 
 # The check
