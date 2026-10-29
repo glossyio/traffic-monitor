@@ -43,7 +43,7 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: 
             times = "1 time" if count == 1 else f"{count} times"
             if restarted_itself(context, unit, count):
                 return check("ok", f"{_running(values, today)}. It restarted itself {times}, as {unit.title} does "
-                                   "when its config is saved.")
+                                   f"when {unit.restarts_itself_when}.")
             return check("warn", f"{_running(values, today)}, but it restarted {times} after failures.", restart)
         return check("ok", f"{_running(values, today)}.")
     if state == "activating":

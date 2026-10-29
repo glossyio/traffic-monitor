@@ -19,6 +19,8 @@ JOURNAL_TAIL_MAX_OUTPUT = 256 * 1024
 JOURNAL_CUT = "[The rest of the journal was cut here: it was longer than tm-control keeps.]"
 SHOW_TIMEOUT = 4  # seconds; show_units is a status probe
 SHOW_MAX_OUTPUT = 16384
+RESTART_EXIT_TIMEOUT = 2  # seconds; it runs after show_units, in the Services group's 5 seconds
+RESTART_EXIT_WINDOW = 60  # seconds from a main-process exit to the restart it caused
 
 
 def start_unit(name: str) -> CommandResult:
@@ -169,9 +171,17 @@ UNIT_PROCESS_EXITED = "98e322203f7a4ed290d09fe03c09fe15"
 UNIT_RESTART_SCHEDULED = "5eb03494b6584870a536b337290809b3"
 
 
+def _boot_seconds(entry: dict) -> float | None:
+    try:
+        return int(entry["__MONOTONIC_TIMESTAMP"]) / 1_000_000
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def automatic_restart_exits(unit: str) -> list[str | None] | None:
     """For each restart systemd scheduled for the unit this boot, oldest first, the EXIT_STATUS of the main-process
-    exit logged just before it (None when there was none, or it had no status). None if the journal can't be read."""
+    exit logged in the RESTART_EXIT_WINDOW before it (None when there was none, or it had no status). None if the
+    journal can't be read, or was longer than the cap (which drops the newest entries)."""
     argv = [
         "journalctl",
         "--quiet",
@@ -182,28 +192,35 @@ def automatic_restart_exits(unit: str) -> list[str | None] | None:
         f"MESSAGE_ID={UNIT_PROCESS_EXITED}",
         f"MESSAGE_ID={UNIT_RESTART_SCHEDULED}",
         "--output=json",
-        "--output-fields=MESSAGE_ID,EXIT_STATUS",
+        # Time since boot, not the wall clock, which tm-control can set
+        "--output-fields=MESSAGE_ID,EXIT_STATUS,__MONOTONIC_TIMESTAMP",
     ]
     try:
-        result = run(argv, timeout=4, max_output=JOURNAL_MAX_OUTPUT)
+        result = run(argv, timeout=RESTART_EXIT_TIMEOUT, max_output=JOURNAL_MAX_OUTPUT)
     except OSError:
         return None
     if result.returncode != 0 or result.timed_out:
         log.warning("journalctl for %s's restarts failed with exit status %s", unit, result.returncode)
         return None
-    exits, last_exit = [], None
+    if result.stdout.endswith(TRUNCATED):
+        log.warning("journalctl for %s's restarts was longer than tm-control keeps", unit)
+        return None
+    exits, last_exit = [], (None, None)  # (seconds since boot, status)
     for line in result.stdout.splitlines():
         try:
             entry = json.loads(line)
         except ValueError:
-            continue  # the output cap cut this entry short
+            continue
         if not isinstance(entry, dict):
             continue
         if entry.get("MESSAGE_ID") == UNIT_PROCESS_EXITED:
-            last_exit = _message(entry.get("EXIT_STATUS"))
+            last_exit = (_boot_seconds(entry), _message(entry.get("EXIT_STATUS")))
         elif entry.get("MESSAGE_ID") == UNIT_RESTART_SCHEDULED:
-            exits.append(last_exit)
-            last_exit = None
+            exited_at, status = last_exit
+            restarted_at = _boot_seconds(entry)
+            soon_after = None not in (exited_at, restarted_at) and 0 <= restarted_at - exited_at <= RESTART_EXIT_WINDOW
+            exits.append(status if soon_after else None)
+            last_exit = (None, None)
     return exits
 
 
