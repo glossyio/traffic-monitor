@@ -8,7 +8,7 @@ Three pages in the [control app](control-app.md)'s menu tell you whether the dev
 
 * **Status** checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.
 * **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
-* **Date and time** compares the device's clock with your phone's and sets it.
+* **Date and time** compares the device's clock with your phone's or computer's and sets it.
 
 The [home page](home-page.md) shows the Status page's summary under the device's name, such as **Everything is working**. Tap it to open the Status page.
 
@@ -80,7 +80,7 @@ Moving the clock ahead by more than about 20 seconds makes Frigate think the cam
 
 !!! info "When the device has no internet"
 
-    A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's **Clock** check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open **Date and time** on your phone or computer and choose **Set from this browser**. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. If the device's clock was ahead, turning internet time back on would put that wrong time back, so the device leaves internet time off instead and the page says so. Turn on **Keep time from the internet** once the device is online. A device that is never online keeps time from its own clock, which drifts; set it again now and then.
+    A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's **Clock** check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open **Date and time** on your phone or computer and choose **Set from this browser**. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. If the device's clock was ahead, turning internet time back on puts that wrong time back, so the device sets your time again, leaves internet time off, and the page says so. Turn on **Keep time from the internet** once the device is online. A device that is never online keeps time from its own clock, which drifts; set it again now and then.
 
 ## What viewers see
 
