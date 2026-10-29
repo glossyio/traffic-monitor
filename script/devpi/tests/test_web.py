@@ -29,8 +29,8 @@ PROBE_INSTEAD = {"/api/": f"{API}/health"}
 # Locations that must answer exactly this. The rest pass with anything but a 404, a 5xx, or no answer, which
 # includes the app paths' 302 to the login page.
 MUST_ANSWER = {"/": "200", "/api/": "200", "/assets/": "200"}
-# 404 on purpose; test_verify_and_auth_locations_are_hidden checks it
-HIDDEN_LOCATIONS = {f"{API}/auth/verify"}
+# 404 on purpose; test_verify_and_auth_locations_are_hidden and test_tm_internal_is_hidden_behind_the_proxy check them
+HIDDEN_LOCATIONS = {f"{API}/auth/verify", "/nr/tm-internal/"}
 ASSET = re.compile(r"/assets/[\w.-]+\.(?:js|css)")
 
 

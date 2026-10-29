@@ -130,7 +130,7 @@
                     "id": "config.radars",
                     "title": "Radar names",
                     "status": "ok",
-                    "detail": "Each radar has a radar's name, and each camera's radar is enabled."
+                    "detail": "Each radar in config.yml is named as in node-red-tm.env, and each camera's radar is enabled."
                 },
                 {
                     "id": "config.deployment",

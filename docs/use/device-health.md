@@ -76,6 +76,8 @@ The page shows two clocks side by side: **This device** and **This phone** (the 
 
 Changing the time zone restarts Frigate, Node-RED, and the web proxy, so they all use the new zone. The page stops answering for a moment, and traffic isn't counted for about a minute.
 
+Moving the clock ahead by more than about 20 seconds makes Frigate think the camera stopped sending, so it restarts its camera feed. The Status page's **Cameras** check shows a problem for a minute or two, and traffic isn't counted until the feed is back. Frigate does this by itself; you don't need to restart it.
+
 !!! info "When the device has no internet"
 
     A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's **Clock** check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open **Date and time** on your phone and choose **Set from this browser**. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. A device that is never online keeps time from its own clock, which drifts; set it again now and then.
