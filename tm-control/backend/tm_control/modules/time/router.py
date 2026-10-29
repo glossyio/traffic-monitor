@@ -4,9 +4,9 @@ user); POST /time (admins) sets the time from the browser, NTP, and the time zon
 The browser's time is used only when NTP doesn't have the time. With NTP on but no time source reachable, NTP is
 turned off for set-time and back on after it, so the device resyncs once it's online; only `ntp: false` leaves it
 off. If starting systemd-timesyncd again puts back the later time it saved (the device's clock was ahead), the time
-is set again and NTP is left off. A new time zone restarts the pod and nginx after the response, so the containers
-see it. A time sent with a zone the device doesn't know (a phone's tzdata can be newer) is still set, and the zone is
-skipped and reported. Fake mode keeps a fake clock in memory."""
+is set again and NTP is left off, unless NTP synced during the watch and so has the time. A new time zone restarts the
+pod and nginx after the response, so the containers see it. A time sent with a zone the device doesn't know (a phone's
+tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps a fake clock in memory."""
 
 import logging
 import time
@@ -31,9 +31,10 @@ CEILING = datetime.fromisoformat("2046-01-01T00:00:00Z")
 # Frigate, Node-RED, and nginx bind-mount /etc/localtime, which a container keeps seeing as the old zone's file until
 # it restarts; restarting the pod restarts its containers.
 CONTAINERS = ["traffic-monitor.service", "revproxy.service"]
-# After NTP is back on offline, how long the clock is watched for systemd-timesyncd putting back the time it saved
-# (timedated doesn't wait for it to start), and how far the clock may be from the browser's time
-SETTLE_SECONDS = 3
+# After NTP is back on offline, how long the clock is watched for systemd-timesyncd putting back the time it saved, and
+# how far the clock may be from the browser's time. timedated answers set-ntp once timesyncd's start job is done, after
+# timesyncd has moved the clock, so the first read sees it; the watch covers a timesyncd that failed and restarted.
+SETTLE_SECONDS = 1
 SETTLE_INTERVAL = 0.25
 SETTLE_TOLERANCE = 10
 
@@ -182,20 +183,24 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
                 raise ApiError(500, "internal", "The time was set, but NTP couldn't be turned back on, so it's now "
                                                 "off.")
             if _put_back(clock, when, set_at):
-                # timesyncd moved the clock forward to the time it saved: set the time again, with NTP off this time
-                again = when + timedelta(seconds=time.monotonic() - set_at)
-                _done(clock.set_ntp(False), "set-ntp", "The device put its own time back, and NTP couldn't be turned "
-                                                       "off to set the time again.")
-                ntp = False
-                changed.add("ntp")
-                _done(clock.set_time(again), "set-time", "The device put its own time back, and the time couldn't be "
-                                                         "set again; NTP is now off.")
-                left_off = True
+                state = clock.show()
+                if state is not None and state.ntp.synchronized:
+                    kept = True  # timesyncd reached a time source meanwhile, so NTP has the time
+                else:
+                    # timesyncd moved the clock forward to the time it saved: set the time again, with NTP off
+                    again = when + timedelta(seconds=time.monotonic() - set_at)
+                    _done(clock.set_ntp(False), "set-ntp", "The device put its own time back, and NTP couldn't be "
+                                                           "turned off to set the time again.")
+                    ntp = False
+                    changed.add("ntp")
+                    _done(clock.set_time(again), "set-time", "The device put its own time back, and the time couldn't "
+                                                             "be set again; NTP is now off.")
+                    left_off = True
         elif when is not None:
             _done(clock.set_time(when), "set-time", "The time couldn't be set.")
             changed.add("time")
-        # 2. An NTP toggle that step 1 didn't already make.
-        if body.ntp is not None and body.ntp != ntp:
+        # 2. An NTP toggle that step 1 didn't already make. Not after a put-back: turning NTP on would undo the time.
+        if body.ntp is not None and body.ntp != ntp and not left_off:
             _done(clock.set_ntp(body.ntp), "set-ntp", f"NTP couldn't be turned {'on' if body.ntp else 'off'}.")
             ntp = body.ntp
             changed.add("ntp")
