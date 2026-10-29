@@ -1,16 +1,20 @@
-"""Recovery: the stack comes back after a restart and after a reboot; the login fails closed and can be reset.
+"""Recovery: the stack comes back after a restart and after a reboot; the login fails closed and can be reset; the
+control app's restart, time, and reboot actions work.
 
-These stop services, reboot the Pi, or reset the unit's tm-control accounts, so they run only with
-tmdev.py test --disruptive.
+These stop services, reboot the Pi, change its clock or time zone, or reset the unit's tm-control accounts, so they
+run only with tmdev.py test --disruptive. Ask the person first. Two of them reboot the Pi: test_reboot_recovers and
+test_reboot_from_the_control_app.
 """
 
 import re
 import shlex
 import time
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, Redacted, find_hevc_decoder, frigate_host_devices,
-                          request_from_this_machine, role_vars, session, tm_login_or_none)
+from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, find_hevc_decoder, frigate_host_devices, pi_now,
+                          request_from_this_machine, role_vars, session, status_checks, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
 
@@ -294,3 +298,319 @@ def test_reset_admin_then_claim(host, address, expect, tm_login):
     assert (redirect.status, redirect.headers.get("Location")) == (302, "/setup"), "/dashboard/ after reset-admin"
     dashboard = request_from_this_machine(address, "/dashboard/", cookie=session(address, username, password))
     assert dashboard.status == 200, f"/dashboard/ with the reclaimed admin's session answered {dashboard.status}"
+
+
+# --- The control app's actions (tm-control M3) ------------------------------------------------------------------------
+# Each test logs in for itself: test_reset_admin_then_claim ends the sessions made before it.
+
+UNIT_RESTART_SECONDS = 120  # a restart queued through the API: the unit stops, then starts with a new InvocationID
+INVOCATION_ID = re.compile(r"[0-9a-f]{32}")
+
+
+def invocation(host, unit):
+    return host.check_output(f"systemctl show -p InvocationID --value {unit}")
+
+
+def not_restarted(host, before, timeout):
+    """Wait until each unit in before ({unit: its InvocationID}) is active with another InvocationID, for at most
+    timeout seconds; the units that aren't."""
+    deadline = time.monotonic() + timeout
+    while True:
+        waiting = [unit for unit, old in before.items()
+                   if host.run(f"systemctl is-active {unit}").stdout.strip() != "active"
+                   or invocation(host, unit) in ("", old)]
+        if not waiting or time.monotonic() >= deadline:
+            return waiting
+        time.sleep(5)
+
+
+def post_time(address, cookie, change):
+    """POST /time: (HTTP status, the answer's JSON, or an empty dict when it isn't a 200)."""
+    answer = request_from_this_machine(address, f"{API}/time", "POST", cookie, change)
+    found = answer.json() if answer.status == 200 else None
+    return answer.status, found if isinstance(found, dict) else {}
+
+
+def test_restart_from_the_control_app(host, address, tm_login):
+    """An admin's restart from the Status page restarts the unit, through polkit."""
+    cookie = session(address, *tm_login)
+    before = {"frigate.service": invocation(host, "frigate.service")}
+    answer = request_from_this_machine(address, f"{API}/services/frigate.service/restart", "POST", cookie, {})
+    assert answer.status == 202, f"POST {API}/services/frigate.service/restart answered {answer.status}"
+    waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
+    wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+    assert not waiting, f"{UNIT_RESTART_SECONDS} s after the restart was queued, {waiting} wasn't active again"
+
+
+# POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)
+ZONE_UNITS = ["traffic-monitor.service", "revproxy.service"]
+TEST_ZONES = ["Pacific/Auckland", "UTC", "America/Los_Angeles"]
+# Node-RED starts each log line with its own time, in its container's zone ("28 Oct 14:41:35 - [info] ..."). This keeps
+# each such line's journal time, in seconds since the epoch, and Node-RED's time, and nothing else: a line can quote
+# the broker password.
+NODE_RED_TIMES = r"s/^([0-9]+)\.[0-9]+ .*: [0-9]{1,2} [A-Z][a-z]{2} ([0-9]{2}:[0-9]{2}:[0-9]{2}) - \[.*/\1 \2/p"
+CLOCK_SLACK_SECONDS = 60
+API_UP_SECONDS = 120  # nginx and tm-control back after a time zone change, before the zone is put back
+
+
+def device_zone(host):
+    return host.check_output("timedatectl show -p Timezone --value")
+
+
+def other_zone(zone):
+    """A test zone whose offset from UTC isn't zone's now, so a container still in zone shows in its log times."""
+    now = datetime.now(UTC)
+    offset = now.astimezone(ZoneInfo(zone)).utcoffset()
+    return next(test_zone for test_zone in TEST_ZONES if now.astimezone(ZoneInfo(test_zone)).utcoffset() != offset)
+
+
+def node_red_clock_offsets(host, invocation_id, zone):
+    """For Node-RED's last log lines in this run of node-red-tm.service: how many seconds the time Node-RED wrote is
+    from the journal's time for the line, read in zone."""
+    assert INVOCATION_ID.fullmatch(invocation_id), "node-red-tm.service has no invocation ID"
+    with host.sudo():
+        output = host.check_output(f"journalctl _SYSTEMD_INVOCATION_ID={invocation_id} -o short-unix --no-pager "
+                                   f"| sed -nE {shlex.quote(NODE_RED_TIMES)} | tail -n 5")
+    offsets = []
+    for line in output.splitlines():
+        epoch, clock = line.split()
+        journal = datetime.fromtimestamp(int(epoch), ZoneInfo(zone))
+        hours, minutes, seconds = map(int, clock.split(":"))
+        logged = hours * 3600 + minutes * 60 + seconds
+        difference = logged - (journal.hour * 3600 + journal.minute * 60 + journal.second)
+        offsets.append((difference + 43200) % 86400 - 43200)  # a line logged across midnight
+    return offsets
+
+
+def api_answers(host, address, timeout):
+    """Whether tm-control answers through nginx within timeout seconds: all that a request to the API needs. The apps
+    in the pod may still be down."""
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            if proxy_status(host, address, f"{API}/health") == "200":
+                return True
+        except RuntimeError:  # testinfra's SSH failure
+            pass
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(5)
+
+
+def restore_zone(host, address, cookie, zone):
+    """Put the device's time zone back through the API, as a person would, or, when that fails or the containers don't
+    restart, with timedatectl and a restart of the containers. Only then wait for the whole stack: a container that
+    didn't come back after the change mustn't keep the zone from being restored."""
+    if device_zone(host) == zone:
+        return
+    restored = False
+    if api_answers(host, address, API_UP_SECONDS):
+        try:
+            before = {unit: invocation(host, unit) for unit in ZONE_UNITS}
+            status, _ = post_time(address, cookie, {"timezone": zone})
+            if status == 200:
+                restored = not not_restarted(host, before, UNIT_RESTART_SECONDS) and device_zone(host) == zone
+        except Exception:  # anything that went wrong here: the fallback below does it instead
+            restored = False
+    if not restored:
+        with host.sudo():
+            host.check_output(f"timedatectl set-timezone {shlex.quote(zone)}")
+            host.check_output("systemctl restart " + " ".join(ZONE_UNITS))
+    assert device_zone(host) == zone, "the device's time zone wasn't restored; set it on the Date and time page"
+    wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
+def test_timezone_change_restarts_the_containers(host, address, tm_login):
+    """A new time zone from the Date and time page restarts the pod and nginx, so the containers see it: Node-RED's
+    log times match the journal's, read in the new zone. The original zone is put back afterwards, which restarts
+    them again."""
+    cookie = session(address, *tm_login)
+    original = device_zone(host)
+    zone = other_zone(original)
+    before = {unit: invocation(host, unit) for unit in [*ZONE_UNITS, "node-red-tm.service"]}
+    try:
+        status, result = post_time(address, cookie, {"timezone": zone})
+        assert status == 200, f"POST {API}/time with the time zone {zone} answered {status}"
+        restarting = result.get("restarting")
+        assert sorted(restarting or []) == sorted(ZONE_UNITS), f"POST {API}/time's restarting is {restarting}"
+        waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
+        assert device_zone(host) == zone, f"timedatectl doesn't show {zone}"
+        assert not waiting, f"{UNIT_RESTART_SECONDS} s after the time zone changed, {waiting} hadn't restarted"
+        wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+        offsets = node_red_clock_offsets(host, invocation(host, "node-red-tm.service"), zone)
+        assert offsets, "Node-RED has logged no line with its own time since it restarted"
+        assert all(abs(offset) <= CLOCK_SLACK_SECONDS for offset in offsets), (
+            f"Node-RED's log times are {offsets} s from the journal's read in {zone}: its container is in another zone")
+    finally:
+        restore_zone(host, address, cookie, original)
+
+
+TIME_AHEAD_SECONDS = 120
+TIME_SLACK_SECONDS = 5
+
+
+NTP_READ_SECONDS = 10
+
+
+def iso(epoch):
+    return datetime.fromtimestamp(epoch, UTC).isoformat()
+
+
+def ntp_enabled(address, cookie):
+    """Whether GET /time shows NTP on within NTP_READ_SECONDS."""
+    deadline = time.monotonic() + NTP_READ_SECONDS
+    while True:
+        answer = request_from_this_machine(address, f"{API}/time", cookie=cookie)
+        state = answer.json() if answer.status == 200 else None
+        if isinstance(state, dict) and (state.get("ntp") or {}).get("enabled") is True:
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(2)
+
+
+def test_set_time_from_the_api(host, address, expect, tm_login):
+    """With NTP off, the time an admin sets from the browser becomes the device's. The test sets it 2 minutes ahead,
+    then back, and turns NTP on again; a unit with a time source then resyncs."""
+    if not expect["pii_free"]:
+        pytest.skip("changes the device's clock; set tm_expect.pii_free: true (bench units only)")
+    cookie = session(address, *tm_login)
+    answer = request_from_this_machine(address, f"{API}/time", cookie=cookie)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/time answered {answer.status}"
+    if (state.get("ntp") or {}).get("enabled") is not True:
+        pytest.skip("NTP is off on this unit; the test turns it off and back on")
+    moved = fell_back = False
+    try:
+        status, _ = post_time(address, cookie, {"ntp": False})
+        assert status == 200, f"POST {API}/time turning NTP off answered {status}"
+        target = int(pi_now(host)) + TIME_AHEAD_SECONDS
+        status, result = post_time(address, cookie, {"time": iso(target)})
+        moved = status == 200
+        assert status == 200, f"POST {API}/time with a time answered {status}"
+        assert result.get("time_kept_from_ntp") is False, "with NTP off, the device kept its own time"
+        off = pi_now(host) - target
+        assert abs(off) <= TIME_SLACK_SECONDS, f"the Pi's clock is {off:.0f} s from the time that was set"
+    finally:
+        # Each step runs even when the one before it fails. Whether NTP is back on is the Pi's word, not the API's.
+        try:
+            if moved:  # back to about the right time, for a unit without a time source
+                post_time(address, cookie, {"time": iso(int(pi_now(host)) - TIME_AHEAD_SECONDS)})
+        finally:
+            try:
+                post_time(address, cookie, {"ntp": True})
+            finally:
+                if host.run("timedatectl show -p NTP --value").stdout.strip() != "yes":
+                    with host.sudo():
+                        host.check_output("timedatectl set-ntp true")
+                    fell_back = True
+    assert not fell_back, f"POST {API}/time didn't turn NTP back on; it was turned on with timedatectl"
+    assert ntp_enabled(address, cookie), f"GET {API}/time doesn't show NTP on {NTP_READ_SECONDS} s after it was"
+
+
+# Clears node-red-tm.service's ExecStartPre, which is only tmdb_migrate.py, for the next start, so Node-RED runs on a
+# database that the migration hasn't brought up to date, as after a failed one. Without it, the migration would re-apply
+# 0001_baseline.sql, which is CREATE ... IF NOT EXISTS only, and bring user_version back.
+SKIP_MIGRATION = "/run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf"
+SKIP_MIGRATION_CONF = "[Service]\nExecStartPre=\n"
+NODE_RED_DB = "node-red-tm/db/tmdb.sqlite"
+SET_USER_VERSION = ("import sqlite3, sys; con = sqlite3.connect(sys.argv[1], isolation_level=None); "
+                    "con.execute('PRAGMA user_version = %d' % int(sys.argv[2])); con.close()")
+SCHEMA_TIMEOUT_SECONDS = 180  # Node-RED's start, then its first status
+STATUS_POLL_SECONDS = 6  # GET /status is cached for 5 seconds
+
+
+def set_user_version(host, codeowner, codedir, version):
+    """Set tmdb.sqlite's user_version as the code owner, who owns it. Only while node-red-tm.service is stopped."""
+    host.check_output(f"sudo -n runuser -u {shlex.quote(codeowner)} -- python3 -c {shlex.quote(SET_USER_VERSION)} "
+                      f"{shlex.quote(f'{codedir}/{NODE_RED_DB}')} {int(version)}")
+
+
+def wait_for_check(address, cookie, check_id, wanted, timeout):
+    """Read the status report until check_id has the status wanted, for at most timeout seconds; its last
+    (status, detail)."""
+    deadline = time.monotonic() + timeout
+    while True:
+        found = status_checks(address, cookie).get(check_id, ("missing", None))
+        if found[0] == wanted or time.monotonic() >= deadline:
+            return found
+        time.sleep(STATUS_POLL_SECONDS)
+
+
+def test_schema_behind_shows_an_error(host, address, expect, codedir, codeowner, tm_login):
+    """While Node-RED runs on a database whose schema is behind this install's migrations, the status page's schema
+    check is an error that points to the migration's journal lines. Sets tmdb.sqlite's user_version to 0 with Node-RED
+    stopped, starts it once without the migration, and puts both back afterwards."""
+    if not expect["pii_free"]:
+        pytest.skip("writes the schema version of the Pi's tmdb.sqlite; set tm_expect.pii_free: true "
+                    "(bench units only)")
+    cookie = session(address, *tm_login)
+    before = status_checks(address, cookie).get("apps.nodered.schema")
+    assert before and before[0] == "ok", f"apps.nodered.schema before the test: {before}"
+    pre = host.check_output("systemctl show -p ExecStartPre --value node-red-tm.service")
+    only_migration = pre.count("path=") == 1 and "tmdb_migrate.py" in pre
+    assert only_migration, "node-red-tm.service's ExecStartPre isn't only tmdb_migrate.py; the drop-in would skip more"
+    original = None
+    try:
+        with host.sudo():
+            host.check_output("systemctl stop node-red-tm.service")
+        original = db_query(host, codedir, "PRAGMA user_version")[0][0]
+        set_user_version(host, codeowner, codedir, 0)
+        with host.sudo():
+            host.check_output(f"mkdir -p {SKIP_MIGRATION.rsplit('/', 1)[0]} "
+                              f"&& printf %s {shlex.quote(SKIP_MIGRATION_CONF)} > {SKIP_MIGRATION} "
+                              "&& systemctl daemon-reload && systemctl start node-red-tm.service")
+        behind = wait_for_check(address, cookie, "apps.nodered.schema", "error", SCHEMA_TIMEOUT_SECONDS)
+    finally:
+        # Each step runs even when the one before it fails, and each is safe to run twice, so a setup that failed
+        # partway is still undone. Without the drop-in, the migration at the start brings user_version back anyway.
+        try:
+            with host.sudo():
+                host.check_output("systemctl stop node-red-tm.service")
+            if original is not None:
+                set_user_version(host, codeowner, codedir, original)
+        finally:
+            try:
+                with host.sudo():
+                    host.check_output(f"rm -f {SKIP_MIGRATION} && systemctl daemon-reload")
+            finally:
+                with host.sudo():
+                    host.check_output("systemctl start node-red-tm.service")
+                wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+    assert behind[0] == "error" and "journalctl" in (behind[1] or ""), (
+        f"apps.nodered.schema with user_version 0: {behind}")
+    after = wait_for_check(address, cookie, "apps.nodered.schema", "ok", SCHEMA_TIMEOUT_SECONDS)
+    assert after[0] == "ok", f"apps.nodered.schema after user_version was put back: {after}"
+
+
+def boot_id(host):
+    """This boot's id, or None while the Pi doesn't answer over SSH."""
+    try:
+        result = host.run("cat /proc/sys/kernel/random/boot_id")
+    except RuntimeError:  # testinfra's SSH failure while the Pi reboots
+        return None
+    return result.stdout.strip() if result.rc == 0 else None
+
+
+# Last in the module: it reboots the Pi.
+def test_reboot_from_the_control_app(host, address, tm_login):
+    """Reboots the Pi. An admin's reboot from the Device page goes through polkit, and the stack comes back without
+    tm-control or nginx restarting after a failure."""
+    cookie = session(address, *tm_login)
+    before = boot_id(host)
+    assert before, "couldn't read the Pi's boot id"
+    answer = request_from_this_machine(address, f"{API}/system/reboot", "POST", cookie, {})
+    if answer.status == 409:
+        pytest.fail("tm-control answered 409: logind won't reboot now. Something may be holding it off, such as an "
+                    "update (systemd-inhibit --list on the Pi), or polkit doesn't allow it "
+                    "(test_polkit_allows_only_the_listed_actions)", pytrace=False)
+    assert answer.status == 202, f"POST {API}/system/reboot answered {answer.status}"
+    deadline = time.monotonic() + REBOOT_TIMEOUT_SECONDS
+    while boot_id(host) in (before, None):
+        assert time.monotonic() < deadline, (
+            f"the Pi didn't reboot and come back within {REBOOT_TIMEOUT_SECONDS // 60} minutes")
+        time.sleep(10)
+    wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
+    restarts = {unit: host.check_output(f"systemctl show -p NRestarts --value {unit}")
+                for unit in ("tm-control.service", "revproxy.service")}
+    assert restarts == dict.fromkeys(restarts, "0"), f"restarts after failures since the reboot: {restarts}"
