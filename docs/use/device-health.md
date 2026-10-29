@@ -60,7 +60,7 @@ When you ask for help, send the diagnostics with your question. It's a text file
 
 ### Reboot or shut down
 
-**Reboot the device** and **Shut down the device** each ask before they act. A reboot takes about two minutes, during which no page answers. If something such as a system update is holding the device up, the device says it can't reboot or shut down right now; try again in a few minutes.
+**Reboot the device** and **Shut down the device** each ask before they act. A reboot takes about two minutes, during which no page answers. If something such as a system update is holding the device up, or the control app isn't allowed to, the device says it can't reboot or shut down right now. Try again in a few minutes, and if it keeps happening, download the diagnostics.
 
 !!! warning "Shut down only when you can reach the device"
 
@@ -70,7 +70,7 @@ When you ask for help, send the diagnostics with your question. It's a text file
 
 The page shows two clocks side by side: **This device** and **This phone** (the browser you're using), each with its date and offset from UTC. Under them, a sentence says whether they agree, or how far apart they are and whether their time zones differ.
 
-* **Set from this browser** sends your phone's time and time zone to the device. If the device already has its time from the internet, it keeps that time, and only the time zone changes. Otherwise it takes your phone's time.
+* **Set from this browser** sends your phone's time and time zone to the device. If the device already has its time from the internet, it keeps that time, and only the time zone changes. Otherwise it takes your phone's time. If the device doesn't know your phone's time zone, which can happen when the phone's list of zones is newer, it still takes the time, leaves its time zone as it was, and asks you to pick one from the list.
 * **Time zone**: pick a zone, type part of its name to find it, then choose **Save time zone**. The installer sets the first time zone (its `-z` option, see [Installer options](../reference/tmsetup.md)); this page changes it later. The dashboards show times, and start each day at 04:00, in the device's time zone.
 * **Keep time from the internet** turns internet time on or off. The sentence under the switch says where the device's time comes from now.
 

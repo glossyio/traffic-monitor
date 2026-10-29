@@ -763,6 +763,11 @@ export interface components {
             time_kept_from_ntp: boolean;
             /** Restarting */
             restarting: string[];
+            /**
+             * Timezone Unknown
+             * @default false
+             */
+            timezone_unknown: boolean;
         };
         /** TimeState */
         TimeState: {

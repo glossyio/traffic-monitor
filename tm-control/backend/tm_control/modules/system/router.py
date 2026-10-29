@@ -125,8 +125,8 @@ def _queue_power(request: Request, background: BackgroundTasks, admin: User, act
         raise ApiError(
             409,
             "conflict",
-            f"The device can't {doing} right now: something, such as an update, is holding it off. "
-            "Try again in a few minutes.",
+            f"The device can't {doing} right now. Something, such as an update, is holding it off, or the control "
+            "app isn't allowed to; try again in a few minutes, and download the diagnostics if it keeps happening.",
         )
     Audit(app_state.state).record(admin.id, f"system.{action}")
     if not app_state.settings.fake:

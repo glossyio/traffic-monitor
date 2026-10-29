@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 
 from tm_control.adapters import systemd
 from tm_control.adapters.command import CommandResult
@@ -11,7 +12,8 @@ from tm_control.core.settings import FAKE_STATUS
 from tm_control.modules import MODULES
 from tm_control.modules.services.units import UNITS, restart_fix, units_for
 
-ORIGIN = {"Origin": "http://tm-test.local"}
+BASE = "http://tm-test.local"
+ORIGIN = {"Origin": BASE}
 ADMIN = ("admin", "correct horse 1")
 VIEWER = ("viewer", "viewer pass 1")
 INSTALLED = [
@@ -165,13 +167,38 @@ def test_services_list_when_a_unit_cannot_be_read(device_client, login, systemct
     assert services["node-red-tm.service"]["active_state"] == "active"
 
 
-def test_restart_queues_a_no_block_restart(device_client, login, systemctl):
-    login(device_client, *ADMIN)
-    r = restart(device_client, "frigate.service")
+def recording(app, events):
+    """The app, wrapped so that each response's start is recorded in `events` as it's sent."""
+
+    async def wrapped(scope, receive, send):
+        async def send_and_record(message):
+            if message["type"] == "http.response.start":
+                events.append(("response", message["status"]))
+            await send(message)
+
+        await app(scope, receive, send_and_record)
+
+    return wrapped
+
+
+@pytest.mark.parametrize("unit", ["frigate.service", "revproxy.service"])
+def test_restart_queues_a_no_block_restart_after_the_response(device_client, login, systemctl, monkeypatch, unit):
+    """Restarting revproxy stops the nginx that carries the answer, so the restart runs only once the 202 is sent."""
+    events = []
+
+    def run(argv, **kwargs):
+        events.append(("run", list(argv)))
+        return systemctl(argv, **kwargs)
+
+    monkeypatch.setattr("tm_control.adapters.systemd.run", run)
+    client = TestClient(recording(device_client.app, events), base_url=BASE)
+    login(client, *ADMIN)
+    events.clear()
+    r = restart(client, unit)
     assert r.status_code == 202, r.text
-    assert r.json() == {"unit": "frigate.service"}
-    assert systemctl.restarts() == [["systemctl", "restart", "--no-block", "frigate.service"]]
-    assert ("services.restart", "frigate.service") in audit_rows(device_client)
+    assert r.json() == {"unit": unit}
+    assert events == [("response", 202), ("run", ["systemctl", "restart", "--no-block", unit])]
+    assert ("services.restart", unit) in audit_rows(device_client)
 
 
 @pytest.mark.parametrize(
@@ -207,17 +234,28 @@ def test_restart_needs_a_session(device_client, systemctl):
     assert systemctl.calls == []
 
 
-def test_restart_failure_is_an_api_error(device_client, login, systemctl, caplog):
+def test_a_failed_restart_is_logged_without_its_output(device_client, login, systemctl, caplog):
+    """The 202 means queued: a restart that then fails can only be logged, and the Status page shows the unit's
+    state on its next refresh."""
     systemctl.restart_rc = 1
     login(device_client, *ADMIN)
     r = restart(device_client, "frigate.service")
-    assert r.status_code == 500
-    error = r.json()["error"]
-    assert error["code"] == "internal"
-    assert "frigate.service" in error["message"]
-    assert "synthetic-stderr-detail" not in r.text
+    assert r.status_code == 202, r.text
+    assert systemctl.restarts() == [["systemctl", "restart", "--no-block", "frigate.service"]]
+    assert "systemctl restart frigate.service failed with exit status 1" in caplog.text
     assert "synthetic-stderr-detail" not in caplog.text
-    assert not [row for row in audit_rows(device_client) if row[0] == "services.restart"]
+    assert ("services.restart", "frigate.service") in audit_rows(device_client)
+
+
+def test_a_restart_that_cant_run_systemctl_is_logged(device_client, login, monkeypatch, caplog):
+    def missing(argv, **kwargs):
+        raise FileNotFoundError(2, "No such file or directory")
+
+    login(device_client, *ADMIN)
+    monkeypatch.setattr("tm_control.adapters.systemd.run", missing)
+    r = restart(device_client, "frigate.service")
+    assert r.status_code == 202, r.text
+    assert "systemctl restart frigate.service failed (FileNotFoundError)" in caplog.text
 
 
 def test_service_checks_name_the_fix(device_client, login, systemctl):

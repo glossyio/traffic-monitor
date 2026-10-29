@@ -191,8 +191,8 @@ def test_groups_run_concurrently_so_a_report_takes_about_one_timeout():
         return []
 
     groups = [CheckGroup("a", "A", [hangs]), CheckGroup("b", "B", [hangs_too])]
-    cache = StatusCache(groups, context, timeout=0.2)
+    cache = StatusCache(groups, context, timeout=0.3)
     started = time.monotonic()
     report = cache.report()
-    assert time.monotonic() - started < 0.35
+    assert time.monotonic() - started < 0.6  # one timeout and room to spare; two in series take at least 0.6 s
     assert [c.status for g in report.groups for c in g.checks] == ["unknown", "unknown"]

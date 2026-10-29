@@ -64,7 +64,8 @@ const agree = computed(
   () => !!difference.value && Math.abs(difference.value.seconds) <= TOLERANCE_S && difference.value.sameZone,
 )
 
-// "Set from this browser": the browser's instant and time zone. The device keeps NTP's time if NTP has it.
+// "Set from this browser": the browser's instant and time zone. The device keeps NTP's time if NTP has it, and
+// skips a time zone it doesn't know.
 const setting = ref(false)
 
 // What the last change said, under the control that made it. Each change clears the earlier results, which it may
@@ -79,9 +80,14 @@ function clearResults() {
   ntpError.value = ''
 }
 
-function setOutcome(result: TimeResult) {
+function setOutcome(result: TimeResult, timezone: string) {
   const restarting = result.restarting.length > 0 // only a time zone change restarts anything
   let text = 'Time set from this phone.'
+  if (result.timezone_unknown) {
+    // A phone's time zone list can be newer than the device's: the time went on, the zone is left for the picker
+    if (result.time_kept_from_ntp) text = "The device already keeps time from the internet, so its time didn't change."
+    return `${text} The device doesn't know this phone's time zone (${timezone}), so pick one below.`
+  }
   if (result.time_kept_from_ntp) {
     text = restarting
       ? 'The device already keeps time from the internet, so only the time zone changed.'
@@ -98,7 +104,7 @@ async function setFromBrowser() {
     const { data } = await api.POST('/api/v1/time', { body: { time: new Date().toISOString(), timezone } })
     const result = data as TimeResult
     show(result)
-    setResult.value = { text: setOutcome(result), error: false }
+    setResult.value = { text: setOutcome(result, timezone), error: false }
   } catch (error) {
     setResult.value = { text: messageOf(error), error: true }
   } finally {

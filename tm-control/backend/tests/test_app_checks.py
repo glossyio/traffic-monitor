@@ -2,6 +2,7 @@
 
 import http.server
 import socket
+import struct
 import threading
 import time
 
@@ -394,6 +395,65 @@ def test_anonymous_connect_reads_the_connack(reply, expected):
     finally:
         broker.close()
     assert broker.received == mqtt.connect_packet()
+
+
+def test_a_broker_that_accepts_then_closes_before_the_disconnect_still_accepts_anonymous(monkeypatch):
+    """The courtesy DISCONNECT can fail once the CONNACK said yes; the broker still accepted a client without a
+    login, so the answer stays False rather than None."""
+    closed = threading.Event()
+    server = socket.create_server(("127.0.0.1", 0))
+
+    def serve():
+        connection, _ = server.accept()
+        connection.recv(1024)
+        connection.sendall(b"\x20\x02\x00\x00")
+        connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))  # close with a reset
+        connection.close()
+        closed.set()
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    failures = []
+    create_connection = socket.create_connection
+
+    class Client:
+        """The real connection, holding the DISCONNECT back until the broker's reset has arrived."""
+
+        def __init__(self, *args, **kwargs):
+            self.connection = create_connection(*args, **kwargs)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            self.connection.close()
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def sendall(self, data):
+            if data == b"\xe0\x00":
+                assert closed.wait(2)
+                self.connection.settimeout(2)
+                try:
+                    while self.connection.recv(1):
+                        pass
+                except OSError:
+                    pass
+                try:
+                    return self.connection.sendall(data)
+                except OSError as exc:
+                    failures.append(type(exc).__name__)
+                    raise
+            return self.connection.sendall(data)
+
+    monkeypatch.setattr(mqtt.socket, "create_connection", Client)
+    try:
+        assert mqtt.anonymous_connect_refused("127.0.0.1", server.getsockname()[1], timeout=2) is False
+    finally:
+        server.close()
+        thread.join(timeout=2)
+    assert failures, "the DISCONNECT went through, so this test proved nothing"
 
 
 def free_port():

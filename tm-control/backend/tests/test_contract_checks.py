@@ -74,7 +74,7 @@ def test_missing_zones_name_the_direction_problem(apps):
     check = config_group(apps)["config.zones"]
     assert check.status == "warn"
     assert "zone_near" in check.detail and "zone_far" in check.detail and "picam_h265" in check.detail
-    assert "without zone_near and zone_far, events get no direction (#243)" in check.detail
+    assert "without zone_near and zone_far, events get a direction only from the radar (#243)" in check.detail
 
 
 def test_a_missing_capture_zone_is_a_warning_without_the_direction_note(apps):

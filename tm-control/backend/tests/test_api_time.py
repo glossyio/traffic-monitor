@@ -360,7 +360,8 @@ def test_turning_on_ntp_where_there_is_none_is_refused(device_client, login, tim
         {"time": "2026-10-28T21:41:35"},  # no offset
         {"time": "2026-10-28"},
         {"time": "yesterday"},
-        {"time": "2026-10-28T21:41:35Z", "timezone": "Mars/Olympus"},
+        {"ntp": False, "timezone": "Mars/Olympus"},
+        {"ntp": True, "timezone": "Mars/Olympus"},
         {},
         {"timezone": None, "ntp": None, "time": None},
     ],
@@ -373,6 +374,43 @@ def test_refuses_an_unknown_timezone_and_an_implausible_time(device_client, logi
     assert r.json()["error"]["code"] == "validation"
     assert timedatectl.changes() == [] and systemctl == []
     assert [row for row in audit_rows(device_client) if row[0] == "time.set"] == []
+
+
+@pytest.mark.parametrize("ntp", ["synchronized", "offline", "off"])
+def test_a_time_with_an_unknown_timezone_sets_the_time_and_skips_the_zone(
+    device_client, login, timedatectl, systemctl, tzset, ntp
+):
+    """A phone can report a zone the device's tzdata lacks; the time still goes on, by the usual NTP rules, and the
+    zone is reported back as unknown rather than refusing the whole request."""
+    timedatectl.props |= {
+        "synchronized": {},
+        "offline": {"NTPSynchronized": "no"},
+        "off": {"NTP": "no", "NTPSynchronized": "no"},
+    }[ntp]
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": "2026-10-28T21:41:35Z", "timezone": "Etc/Unknown"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["timezone_unknown"] is True
+    assert body["timezone"] == "America/Los_Angeles" and body["restarting"] == []
+    assert systemctl == [] and tzset == []
+    assert timedatectl.ran("set-timezone") == 0
+    expected = {
+        "synchronized": [],
+        "offline": [["set-ntp", "false"], ["set-time", "2026-10-28 21:41:35"], ["set-ntp", "true"]],
+        "off": [["set-time", "2026-10-28 21:41:35"]],
+    }[ntp]
+    assert timedatectl.changes() == expected
+    assert body["time_kept_from_ntp"] is (ntp == "synchronized")
+    rows = [row for row in audit_rows(device_client) if row[0] == "time.set"]
+    assert rows == [("time.set", None if ntp == "synchronized" else "time")]
+
+
+def test_a_known_timezone_is_not_reported_unknown(device_client, login, timedatectl, systemctl, tzset):
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": "2026-10-28T21:41:35Z", "timezone": "America/Los_Angeles"})
+    assert r.status_code == 200, r.text
+    assert r.json()["timezone_unknown"] is False
 
 
 @pytest.mark.parametrize(
@@ -473,6 +511,10 @@ def test_fake_mode_keeps_its_own_clock(claimed_client, login, monkeypatch):
     assert set(ZONES) <= set(zones)
 
     assert change(claimed_client, {"timezone": "Mars/Olympus"}).status_code == 422
+    r = change(claimed_client, {"time": "2026-10-28T21:41:35Z", "timezone": "Mars/Olympus"})
+    assert r.status_code == 200, r.text
+    assert r.json()["timezone_unknown"] is True and r.json()["timezone"] == "Etc/UTC"
+    assert r.json()["restarting"] == []
     r = change(claimed_client, {"time": "2026-10-28T21:41:35Z", "timezone": "Europe/Berlin"})
     assert r.status_code == 200, r.text
     assert r.json()["time_kept_from_ntp"] is True and r.json()["restarting"] == CONTAINERS
@@ -496,7 +538,7 @@ def test_openapi_declares_the_time_models(client):
     assert schema("/api/v1/time/timezones", "get")["type"] == "array"
     result = document["components"]["schemas"]["TimeResult"]
     assert set(result["properties"]) == {"device_time", "timezone", "ntp", "rtc_time", "time_kept_from_ntp",
-                                         "restarting"}
+                                         "restarting", "timezone_unknown"}
 
 
 # The check

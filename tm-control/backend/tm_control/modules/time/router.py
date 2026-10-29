@@ -3,8 +3,9 @@ user); POST /time (admins) sets the time from the browser, NTP, and the time zon
 
 The browser's time is used only when NTP doesn't have the time. With NTP on but no time source reachable, NTP is
 turned off for set-time and back on after it, so the device resyncs once it's online; only `ntp: false` leaves it
-off. A new time zone restarts the pod and nginx after the response, so the containers see it. Fake mode keeps a fake
-clock in memory."""
+off. A new time zone restarts the pod and nginx after the response, so the containers see it. A time sent with a
+zone the device doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and reported. Fake
+mode keeps a fake clock in memory."""
 
 import logging
 import time
@@ -40,6 +41,7 @@ class TimeChange(BaseModel):
 class TimeResult(TimeState):
     time_kept_from_ntp: bool  # a time was sent, but NTP has the time, so the device kept its own
     restarting: list[str]  # units restarting after a time zone change
+    timezone_unknown: bool = False  # a time was sent with a zone the device doesn't know, so the zone was skipped
 
 
 def _clock(app_state):
@@ -117,7 +119,8 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
     if body.timezone is None and body.ntp is None and body.time is None:
         raise ApiError(422, "validation", "There is nothing to change: send a time, a time zone, or NTP on or off.")
     when = _parse_time(body.time) if body.time is not None else None
-    if body.timezone is not None and body.timezone not in _timezones(clock):
+    zone_unknown = body.timezone is not None and body.timezone not in _timezones(clock)
+    if zone_unknown and when is None:
         raise ApiError(422, "validation", "The device doesn't know that time zone.")
     before = _show(clock)
     if body.ntp and not before.ntp.enabled and not before.ntp.available:
@@ -166,7 +169,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             ntp = body.ntp
             changed.add("ntp")
         # 3. The time zone last: once it has changed, nothing can fail before the restart is queued.
-        if body.timezone is not None and body.timezone != before.timezone:
+        if body.timezone is not None and not zone_unknown and body.timezone != before.timezone:
             _done(clock.set_timezone(body.timezone), "set-timezone", "The time zone couldn't be changed.")
             zone_changed = True
             changed.add("timezone")
@@ -189,4 +192,5 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             }
         )
     restarting = list(CONTAINERS) if zone_changed else []
-    return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=restarting)
+    return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=restarting,
+                      timezone_unknown=zone_unknown)

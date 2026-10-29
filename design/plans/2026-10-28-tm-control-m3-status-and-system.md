@@ -465,7 +465,7 @@ git commit -m "Add Node-RED's internal status endpoint with its token, and drop 
   - `apps.broker.login`: 1883 on loopback only → `ok` "broker on this device only"; open and refuses → `ok` "login enforced on the network port"; open and accepts → `error` (decision 16); open and no answer → `unknown`.
 - Produces: `CheckGroup("config", "Configuration", [camera_contract, zone_contract, radar_contract, deployment_contract])`, from `config.yml` and Frigate's config:
   - `config.cameras`: every Frigate camera is in `sensors.cameras` and enabled → `ok`; a Frigate camera missing or disabled there → `error` "events from <name> are not recorded" (the #249/camera-rename case); a config camera Frigate doesn't have → `warn`.
-  - `config.zones`: each enabled camera has `zone_capture`, `zone_near`, `zone_far`, and `zone_radar` in Frigate → `ok`; missing ones → `warn` listing them, with "without zone_near and zone_far, events get no direction (#243)" when those are the missing ones.
+  - `config.zones`: each enabled camera has `zone_capture`, `zone_near`, `zone_far`, and `zone_radar` in Frigate → `ok`; missing ones → `warn` listing them, with "without zone_near and zone_far, events get a direction only from the radar (#243)" when those are the missing ones.
   - `config.radars`: each `sensors.radars.<name>` is a `TM_RADAR_SERIAL_PORT_0N` name → else `error`; each enabled camera's `camera_radar` names an enabled radar → else `error` "camera <name> is paired with radar <r>, which isn't enabled; its events are dropped (#255)".
   - `config.deployment`: `lat` in [-90, 90], `lon` in [-180, 180], `bearing` in `n s e w ne nw se sw` or empty → `ok`; else `error` naming the key.
 
