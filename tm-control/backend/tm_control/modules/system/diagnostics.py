@@ -2,8 +2,9 @@
 time state, the status report, the services, the manifest, and the last lines of each unit's journal.
 
 The whole text is redacted before it leaves the device: every device secret's value, every secret-looking value in
-the apps' .env files (the broker password can show up inside a URL in a log line), and the value after any
-password-, token-, or secret-style key.
+the apps' .env files (the broker password can show up inside a URL in a log line), config.yml's ThingsBoard access
+token (Node-RED's journal can show it as the MQTT username), and the value after any password-, token-, or
+secret-style key.
 """
 
 import json
@@ -14,7 +15,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from tm_control import fake
-from tm_control.adapters import sysinfo, systemd
+from tm_control.adapters import nodered, sysinfo, systemd
 from tm_control.adapters.redact import redact
 from tm_control.core.checks import Report
 from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret
@@ -49,8 +50,20 @@ def env_secret_values(codedir: Path) -> list[str]:
     return values
 
 
+def config_secret_values(codedir: Path) -> list[str]:
+    """config.yml's thingsboard.access_token, its one secret, as written and URL-encoded; none when it's blank or
+    short, or config.yml can't be read."""
+    thingsboard = (nodered.config(codedir).data or {}).get("thingsboard")
+    token = thingsboard.get("access_token") if isinstance(thingsboard, dict) else None
+    if not isinstance(token, (str, int)) or isinstance(token, bool):
+        return []
+    token = str(token).strip()
+    return [v for v in {token, quote(token, safe="")} if len(v) >= ENV_MIN_VALUE]
+
+
 def secret_values(app_state) -> list[str]:
-    """Every value to redact: each device secret that can be read, and on a device the .env files' secret values."""
+    """Every value to redact: each device secret that can be read, and on a device the .env files' secret values and
+    the ThingsBoard access token."""
     values = []
     for name in DEVICE_SECRETS:
         try:
@@ -59,6 +72,7 @@ def secret_values(app_state) -> list[str]:
             continue
     if not app_state.settings.fake:
         values += env_secret_values(Path(app_state.manifest.codedir))
+        values += config_secret_values(Path(app_state.manifest.codedir))
     return values
 
 
