@@ -258,15 +258,51 @@ def test_go2rtc_streams_with_a_running_producer_are_ok(apps):
 
 
 def test_go2rtc_stream_without_producer_is_an_error(apps):
-    # An idle producer is listed with only its source URL.
+    # An idle producer is listed with only its source URL; Frigate is still reading, so the source is go2rtc's to fix.
     apps.edit_json(GO2RTC_STREAMS, lambda streams: streams["picam_h265_detect"].update(
-        producers=[{"url": "exec:rpicam-vid --camera 0 -o -"}], consumers=None,
+        producers=[{"url": "exec:rpicam-vid --camera 0 -o -"}],
     ))
     check = apps_group(apps)["apps.go2rtc.streams"]
     assert check.status == "error"
     assert "picam_h265_detect" in check.detail and "picam_h265 " in check.detail
     assert "exec:" not in check.detail and "rtsp://" not in check.detail and "8554" not in check.detail
     assert check.fix == Fix(kind="restart", text="Restart Camera streams (go2rtc)", unit="go2rtc_server.service")
+
+
+def test_a_stream_frigate_isnt_reading_asks_for_a_frigate_restart(apps):
+    """go2rtc starts an exec: source only while someone reads the stream, so no reader means Frigate's capture
+    stopped: restarting go2rtc doesn't help, restarting Frigate does (seen on a bench unit after a clock jump)."""
+    apps.edit_json(GO2RTC_STREAMS, lambda streams: streams["picam_h265_detect"].update(
+        producers=[{"url": "exec:rpicam-vid --camera 0 -o -"}], consumers=None,
+    ))
+    check = apps_group(apps)["apps.go2rtc.streams"]
+    assert check.status == "error"
+    assert check.detail.startswith("Frigate isn't reading stream picam_h265_detect for camera picam_h265")
+    assert "exec:" not in check.detail and "rtsp://" not in check.detail and "8554" not in check.detail
+    assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+
+
+def test_a_running_stream_without_a_reader_is_still_frigates(apps):
+    apps.edit_json(GO2RTC_STREAMS, lambda streams: streams["picam_h265_detect"].update(consumers=[]))
+    check = apps_group(apps)["apps.go2rtc.streams"]
+    assert check.status == "error" and check.fix.unit == "frigate.service"
+
+
+def test_a_stream_nobody_reads_and_one_without_a_source_name_both_and_fix_frigate_first(apps):
+    def edit(config):
+        camera = config["cameras"]["picam_h265"]
+        config["cameras"]["second"] = {**camera, "ffmpeg": {"inputs": [
+            {"path": "rtsp://*:*@host.containers.internal:8554/second_detect", "roles": ["detect"]}]}}
+
+    apps.edit_json(CONFIG, edit)
+    apps.edit_json(GO2RTC_STREAMS, lambda streams: streams.update(
+        picam_h265_detect={**streams["picam_h265_detect"], "consumers": None},
+        second_detect={"producers": [{"url": "exec:x"}], "consumers": [{"id": 9, "format_name": "rtsp"}]},
+    ))
+    check = apps_group(apps)["apps.go2rtc.streams"]
+    assert check.status == "error" and check.fix.unit == "frigate.service"
+    assert "Frigate isn't reading stream picam_h265_detect" in check.detail
+    assert "stream second_detect for camera second has no running source" in check.detail
 
 
 def test_go2rtc_without_the_stream_frigate_reads_is_an_error(apps):

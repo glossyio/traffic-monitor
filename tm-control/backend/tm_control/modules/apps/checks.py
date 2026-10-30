@@ -189,8 +189,15 @@ def _running(producer) -> bool:
     return isinstance(producer, dict) and any(key != "url" for key in producer)
 
 
+def _read(stream) -> bool:
+    """go2rtc lists the stream's readers under consumers; null or empty means nobody, Frigate included, reads it."""
+    return bool(probes.mapping(stream).get("consumers"))
+
+
 def camera_streams(context: Context) -> list[Check]:
-    """Each go2rtc stream that a camera enabled in Frigate reads has a running source."""
+    """Each go2rtc stream that a camera enabled in Frigate reads has a reader (Frigate itself; a `/feeds` viewer also
+    counts) and a running source. Without a reader go2rtc never starts an `exec:` source, so the reader is judged
+    first."""
 
     def check(status, detail, fix=None):
         return [Check(id="apps.go2rtc.streams", title="Camera streams", status=status, detail=detail, fix=fix)]
@@ -211,15 +218,23 @@ def camera_streams(context: Context) -> list[Check]:
     if not reads:
         return check("ok", "No camera in Frigate reads a go2rtc stream.")
     problems = []
+    frigates = False  # a stream Frigate reads has no reader, so its capture stopped
     for stream, camera_name in reads.items():
         if stream not in streams:
             problems.append(f"go2rtc has no stream {stream}, which camera {camera_name} reads")
+        elif not _read(streams[stream]):
+            problems.append(f"Frigate isn't reading stream {stream} for camera {camera_name}, so it gets no video")
+            frigates = True
         elif not any(_running(p) for p in probes.mapping(streams[stream]).get("producers") or []):
             problems.append(f"stream {stream} for camera {camera_name} has no running source")
     if problems:
         detail = "; ".join(problems)
-        return check("error", f"{detail[0].upper()}{detail[1:]}. Restart go2rtc; if that doesn't help, check the "
-                              "camera and its cable.", restart)
+        detail = f"{detail[0].upper()}{detail[1:]}"
+        if frigates:
+            return check("error", f"{detail}. Restart Frigate; if that doesn't help, download the diagnostics on "
+                                  "the Device page.", restart_fix("frigate.service"))
+        return check("error", f"{detail}. Restart go2rtc; if that doesn't help, check the camera and its cable.",
+                     restart)
     return check("ok", f"{'Stream' if len(reads) == 1 else 'Streams'} {listed(reads)} running.")
 
 
