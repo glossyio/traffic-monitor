@@ -101,6 +101,34 @@ describe('the Date and time page', () => {
     )
   })
 
+  it('says Frigate is restarting when the clock moved ahead', async () => {
+    admin({ [`POST ${TIME}`]: timeResult({ device_time: '2026-10-28T14:35:12-07:00', restarting: ['frigate.service'] }) })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      'Time set from this browser. The clock moved ahead, so Frigate is restarting. The camera view is back in about a minute.',
+    )
+    expect(wrapper.text()).not.toContain('Node-RED')
+  })
+
+  it('says Frigate is restarting after internet time corrected the clock forward', async () => {
+    admin({ [`POST ${TIME}`]: timeResult({ ntp_took_over: true, restarting: ['frigate.service'] }) })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      "not this browser's. The clock moved ahead, so Frigate is restarting. The camera view is back in about a minute.",
+    )
+  })
+
+  it('says Frigate is restarting when the clock moved ahead and the time zone is unknown', async () => {
+    admin({ [`POST ${TIME}`]: timeResult({ timezone_unknown: true, restarting: ['frigate.service'] }) })
+    const { wrapper } = await mountApp('/time')
+    await click(wrapper, 'Set from this browser')
+    expect(wrapper.text()).toContain(
+      'so pick one below. The clock moved ahead, so Frigate is restarting. The camera view is back in about a minute.',
+    )
+  })
+
   it('says when nothing changed because the device already had the time from the internet and this zone', async () => {
     admin({ [`POST ${TIME}`]: timeResult({ time_kept_from_ntp: true }) })
     const { wrapper } = await mountApp('/time')

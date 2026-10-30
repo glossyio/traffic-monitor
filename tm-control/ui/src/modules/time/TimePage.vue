@@ -10,12 +10,15 @@ import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import type { Note } from '../../components/status'
 import { useSession } from '../../stores/session'
+import { restartFor } from '../status/restarts'
 import { TOLERANCE_S, browserOffset, comparison, parseDeviceTime, wallClock } from './clock'
 
 type TimeState = components['schemas']['TimeState']
 type TimeResult = components['schemas']['TimeResult']
 
 const RESTARTING = 'Frigate and Node-RED are restarting.'
+// The Status page's result for Restart Frigate, so the two can't drift; it starts with the name, kept capitalized
+const FRIGATE_RESTARTING = `The clock moved ahead, so ${restartFor('frigate.service').result}`
 
 const session = useSession()
 const state = ref<TimeState | null>(null)
@@ -80,8 +83,16 @@ function clearResults() {
   ntpError.value = ''
 }
 
+// The pod after a new time zone, or Frigate alone after the clock moved ahead, which stops its camera feed
+function restartingSentence(restarting: string[]): string {
+  if (restarting.includes('traffic-monitor.service')) return RESTARTING
+  if (restarting.includes('frigate.service')) return FRIGATE_RESTARTING
+  return ''
+}
+
 function setOutcome(result: TimeResult, timezone: string) {
-  const restarting = result.restarting.length > 0 // only a time zone change restarts anything
+  const zoneChanged = result.restarting.includes('traffic-monitor.service') // the pod restarts only for a new zone
+  const tail = restartingSentence(result.restarting)
   let text = 'Time set from this browser.'
   if (result.ntp_took_over) {
     // Online but not yet synced: turning internet time back on reached a time source, whose time replaced the browser's
@@ -90,7 +101,8 @@ function setOutcome(result: TimeResult, timezone: string) {
   if (result.timezone_unknown) {
     // A browser's time zone list can be newer than the device's: the time went on, the zone is left for the picker
     if (result.time_kept_from_ntp) text = "The device already keeps time from the internet, so its time didn't change."
-    return `${text} The device doesn't know this browser's time zone (${timezone}), so pick one below.`
+    text += ` The device doesn't know this browser's time zone (${timezone}), so pick one below.`
+    return tail ? `${text} ${tail}` : text
   }
   if (result.ntp_left_off) {
     // The device's clock was ahead: turning internet time back on would have put that time back
@@ -99,11 +111,11 @@ function setOutcome(result: TimeResult, timezone: string) {
       'time from the internet once the device is online.'
   }
   if (result.time_kept_from_ntp) {
-    text = restarting
+    text = zoneChanged
       ? 'The device already keeps time from the internet, so only the time zone changed.'
       : "The device already keeps time from the internet and uses this browser's time zone, so nothing changed."
   }
-  return restarting ? `${text} ${RESTARTING}` : text
+  return tail ? `${text} ${tail}` : text
 }
 
 async function setFromBrowser() {
