@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from ruamel.yaml import YAML
 
-from tm_control.adapters import command, sysinfo, systemd
+from tm_control.adapters import command, nodered, sysinfo, systemd
 from tm_control.adapters.command import CommandResult
 from tm_control.adapters.redact import redact
 from tm_control.core.secrets import DEVICE_SECRETS, NAMES
@@ -26,6 +26,7 @@ GIB = 2**30
 MIB = 2**20
 SERIAL = "10000000abcdef01"
 THROTTLED = sysinfo.throttled  # the real reader, before the host fixture replaces it
+READ_CONFIG = nodered.config  # the real reader, before device_client replaces it
 SYSTEM_ROUTER = importlib.import_module("tm_control.modules.system.router")  # the package's `router` is the APIRouter
 INSTALLED = [
     "traffic-monitor.service",
@@ -110,6 +111,15 @@ def host(monkeypatch, device_client, tmp_path):
     monkeypatch.setattr(systemd, "show_units", show_units)
     monkeypatch.setattr(SYSTEM_ROUTER, "read_serial", lambda: SERIAL)
     return host
+
+
+@pytest.fixture
+def config_yml(monkeypatch, host):
+    """config.yml under the host fixture's codedir, read for real: write it to see what diagnostics does with it."""
+    path = Path(host.codedir) / "node-red-tm" / "config" / "config.yml"
+    path.parent.mkdir(parents=True)
+    monkeypatch.setattr(nodered, "config", READ_CONFIG)
+    return path
 
 
 def audit_rows(client):
@@ -566,6 +576,25 @@ def test_diagnostics_redacts_the_env_file_values(device_client, login, host, env
     assert "mqtt://tm:<redacted>@localhost:1883" in text
     assert "user tm, abc stays" in text  # not a secret's key, or too short to redact safely
     assert env_files_read == [codedir]
+
+
+def test_diagnostics_redacts_the_thingsboard_access_token(device_client, login, host, config_yml):
+    """config.yml's one secret: Node-RED's journal can show it as the MQTT username of the ThingsBoard connection."""
+    config_yml.write_text("thingsboard:\n  enabled: true\n  access_token: tb-placeholder-345\n")
+    host.journal = lambda unit, lines: ["mqtt connect as tb-placeholder-345 refused", "mqtt://tb-placeholder-345@tb"]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert "tb-placeholder-345" not in text
+    assert "mqtt connect as <redacted> refused" in text
+
+
+@pytest.mark.parametrize("token", ["", "abc", None])
+def test_a_blank_or_short_thingsboard_access_token_redacts_nothing(device_client, login, host, config_yml, token):
+    """As installed the token is blank; a short one would redact ordinary words."""
+    config_yml.write_text(f"thingsboard:\n  access_token: {'' if token is None else token}\n")
+    host.journal = lambda unit, lines: ["abc stays"]
+    login(device_client, *ADMIN)
+    assert "abc stays" in diagnostics(device_client).text
 
 
 def test_frigate_env_defaults_do_not_hide_the_secret_after_a_key(device_client, login, host):
