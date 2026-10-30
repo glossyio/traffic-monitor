@@ -380,6 +380,45 @@ def test_online_a_sync_that_doesnt_come_after_the_put_back_leaves_ntp_off(device
     assert body["ntp_left_off"] is True and body["ntp_took_over"] is False and body["ntp"]["enabled"] is False
 
 
+def test_ntp_off_a_time_sent_with_ntp_on_that_is_put_back_is_set_again_with_ntp_left_off(
+    device_client, login, timedatectl, systemctl
+):
+    """NTP off, and the time sent with ntp: true: turning NTP on after set-time can put timesyncd's saved time back
+    just as the offline case does, so the same watch runs."""
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    timedatectl.online = True
+    timedatectl.sync_after_shows = 1000  # never, within the wait
+    sent = datetime.now(timezone.utc).replace(microsecond=0)
+    timedatectl.saved = sent + timedelta(minutes=5)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": sent.isoformat(), "ntp": True})
+    assert r.status_code == 200, r.text
+    changes = timedatectl.changes()
+    assert changes[:2] == [["set-time", f"{sent:%Y-%m-%d %H:%M:%S}"], ["set-ntp", "true"]]
+    assert changes[2:3] == [["set-ntp", "false"]] and [argv[0] for argv in changes[3:]] == ["set-time"]
+    assert abs(timedatectl.now() - datetime.now(timezone.utc)) < timedelta(seconds=5)
+    body = r.json()
+    assert body["ntp_left_off"] is True and body["ntp_took_over"] is False and body["ntp"]["enabled"] is False
+    assert [row for row in audit_rows(device_client) if row[0] == "time.set"] == [("time.set", "ntp, time")]
+
+
+def test_ntp_off_a_time_sent_with_ntp_on_and_a_sync_after_the_put_back_keeps_ntp_on(
+    device_client, login, timedatectl, systemctl
+):
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    timedatectl.online = True
+    timedatectl.sync_after_shows = 2
+    sent = datetime.now(timezone.utc) - timedelta(minutes=2)
+    timedatectl.saved = datetime.now(timezone.utc) + timedelta(minutes=3)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": sent.isoformat(), "ntp": True})
+    assert r.status_code == 200, r.text
+    assert [argv[0] for argv in timedatectl.changes()] == ["set-time", "set-ntp"]
+    body = r.json()
+    assert body["ntp_left_off"] is False and body["ntp_took_over"] is True
+    assert body["ntp"]["enabled"] is True and body["ntp"]["synchronized"] is True
+
+
 def test_offline_a_time_that_stays_keeps_ntp_on(device_client, login, timedatectl, systemctl):
     timedatectl.props["NTPSynchronized"] = "no"
     timedatectl.saved = datetime.now(timezone.utc) - timedelta(hours=1)  # the device was off for a while
