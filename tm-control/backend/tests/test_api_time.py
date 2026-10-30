@@ -2,6 +2,7 @@ import importlib
 import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 
@@ -417,6 +418,32 @@ def test_ntp_off_a_time_sent_with_ntp_on_and_a_sync_after_the_put_back_keeps_ntp
     body = r.json()
     assert body["ntp_left_off"] is False and body["ntp_took_over"] is True
     assert body["ntp"]["enabled"] is True and body["ntp"]["synchronized"] is True
+
+
+def test_the_time_set_again_after_a_put_back_counts_the_time_turning_ntp_off_took(
+    device_client, login, timedatectl, systemctl, monkeypatch
+):
+    """The second set-time is the browser's time plus the time since the first, including however long set-ntp false
+    took to stop timesyncd (here 30 s on a monotonic clock that the fake moves forward)."""
+    timedatectl.props["NTPSynchronized"] = "no"
+    sent = datetime.now(timezone.utc).replace(microsecond=0)
+    timedatectl.saved = sent + timedelta(minutes=5)
+    skew = [0.0]
+    monkeypatch.setattr(time_router, "time", SimpleNamespace(
+        monotonic=lambda: time.monotonic() + skew[0], sleep=time.sleep, tzset=time.tzset))
+
+    def run(argv, **kwargs):
+        if list(argv[1:3]) == ["set-ntp", "false"] and timedatectl.ran("set-time"):
+            skew[0] += 30
+        return timedatectl(argv, **kwargs)
+
+    monkeypatch.setattr(timedate, "run", run)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": sent.isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["ntp_left_off"] is True
+    (*_, again) = [datetime.fromisoformat(argv[1]) for argv in timedatectl.changes() if argv[0] == "set-time"]
+    assert abs(again.replace(tzinfo=timezone.utc) - (sent + timedelta(seconds=30))) < timedelta(seconds=3)
 
 
 def test_offline_a_time_that_stays_keeps_ntp_on(device_client, login, timedatectl, systemctl):

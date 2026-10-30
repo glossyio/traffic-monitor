@@ -133,10 +133,10 @@ def _hold_time(clock, when: datetime, set_at: float, changed: set[str]) -> tuple
         return False, False
     if _synced(clock):
         return True, False  # timesyncd reached a time source right after, so NTP has the time
-    again = when + timedelta(seconds=time.monotonic() - set_at)
     _done(clock.set_ntp(False), "set-ntp", "The device put its own time back, and NTP couldn't be turned off to set "
                                            "the time again.")
     changed.add("ntp")
+    again = when + timedelta(seconds=time.monotonic() - set_at)  # after set-ntp, which can take a moment
     _done(clock.set_time(again), "set-time", "The device put its own time back, and the time couldn't be set again; "
                                              "NTP is now off.")
     return False, True
