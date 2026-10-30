@@ -292,3 +292,29 @@ def session(address, username, password):
         pytest.fail(f"logging in as {username!r} from this machine answered HTTP {answer.status}"
                     + (" without a session cookie" if answer.status == 200 else ""), pytrace=False)
     return cookie
+
+
+def status_checks(address, cookie):
+    """tm-control's status report (GET /status, cached for 5 seconds) as {check id: (status, detail)}.
+
+    Details name cameras, zones, radars, and device paths, never a secret, so a failure may show them.
+    """
+    answer = request_from_this_machine(address, f"{API}/status", cookie=cookie)
+    report = answer.json() if answer.status == 200 else None
+    groups = report.get("groups") if isinstance(report, dict) else None
+    if not isinstance(groups, list):
+        pytest.fail(f"GET {API}/status answered HTTP {answer.status}, not a status report", pytrace=False)
+    return {check["id"]: (check["status"], check["detail"]) for group in groups for check in group.get("checks", [])}
+
+
+def tm_internal_token(host):
+    """Node-RED's internal token, which tm-control sends with each read of 127.0.0.1:1880/tm-internal/status, read as
+    root and Redacted. Never print it; only tests on pii_free units read it."""
+    path = f"{role_vars()['tmsetup_secrets_dir']}/node_red_internal_token"
+    with host.sudo():
+        result = host.run(f"cat {path}")
+    token = Redacted(result.stdout.strip() if result.rc == 0 else "", "node_red_internal_token")
+    del result
+    if not token:
+        pytest.fail(f"{path} is missing or empty on the Pi; re-run tmsetup.sh", pytrace=False)
+    return token

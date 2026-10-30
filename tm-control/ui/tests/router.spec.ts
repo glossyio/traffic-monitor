@@ -39,6 +39,19 @@ describe('router', () => {
     expect(await landing('/users')).toBe('/')
   })
 
+  it('lets a viewer open the Status, Device, and Date and time pages', async () => {
+    device(true, VIEWER)
+    expect(await landing('/status')).toBe('/status')
+    expect(await landing('/device')).toBe('/device')
+    expect(await landing('/time')).toBe('/time')
+  })
+
+  it('has no page under /system, which nginx sends to Cockpit', () => {
+    device(true, ADMIN)
+    const paths = createAppRouter(createMemoryHistory()).getRoutes().map((route) => route.path)
+    expect(paths.filter((path) => path === '/system' || path.startsWith('/system/'))).toEqual([])
+  })
+
   it('lets an admin open the users page', async () => {
     device(true, ADMIN)
     expect(await landing('/users')).toBe('/users')

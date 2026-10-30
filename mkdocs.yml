@@ -126,6 +126,7 @@ nav:
   - Use the device:
       - Home page and apps: use/home-page.md
       - Control app and login: use/control-app.md
+      - Check and fix the device: use/device-health.md
       - Dashboards:
           - Monitoring: ui/monitoring.md
           - Movements: ui/movements.md

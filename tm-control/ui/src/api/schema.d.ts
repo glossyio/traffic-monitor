@@ -308,6 +308,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/status/rescan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescan */
+        post: operations["rescan_api_v1_status_rescan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Services */
+        get: operations["services_api_v1_services_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/services/{unit}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restart */
+        post: operations["restart_api_v1_services__unit__restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/device": {
         parameters: {
             query?: never;
@@ -319,6 +387,77 @@ export interface paths {
         get: operations["device_api_v1_system_device_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Info */
+        get: operations["info_api_v1_system_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diagnostics Text
+         * @description The diagnostics text as a download, with every secret redacted.
+         */
+        get: operations["diagnostics_text_api_v1_system_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/reboot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reboot */
+        post: operations["reboot_api_v1_system_reboot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/power-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Power Off */
+        post: operations["power_off_api_v1_system_power_off_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -345,10 +484,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Time State */
+        get: operations["time_state_api_v1_time_get"];
+        put?: never;
+        /**
+         * Change
+         * @description The time (with what NTP needs for it), then an NTP toggle, then the time zone, whose change restarts the
+         *     containers.
+         */
+        post: operations["change_api_v1_time_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/time/timezones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Timezones */
+        get: operations["timezones_api_v1_time_timezones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Check */
+        Check: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "warn" | "error" | "unknown";
+            /** Detail */
+            detail: string;
+            fix?: components["schemas"]["Fix"] | null;
+        };
         /** Claim */
         Claim: {
             /** Setup Code */
@@ -367,10 +560,47 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** Disk */
+        Disk: {
+            /** Path */
+            path: string;
+            /** Total */
+            total: number;
+            /** Used */
+            used: number;
+            /** Free */
+            free: number;
+        };
         /** EulaAcceptance */
         EulaAcceptance: {
             /** Version */
             version: string;
+        };
+        /**
+         * Fix
+         * @description What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read.
+         */
+        Fix: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "restart" | "rescan" | "link" | "hint";
+            /** Text */
+            text: string;
+            /** Unit */
+            unit?: string | null;
+            /** Href */
+            href?: string | null;
+        };
+        /** Group */
+        Group: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Checks */
+            checks: components["schemas"]["Check"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -395,6 +625,13 @@ export interface components {
             /** Log */
             log: string[];
         };
+        /** Memory */
+        Memory: {
+            /** Total */
+            total: number;
+            /** Available */
+            available: number;
+        };
         /** NewPassword */
         NewPassword: {
             /** New Password */
@@ -407,6 +644,15 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** Ntp */
+        Ntp: {
+            /** Enabled */
+            enabled: boolean;
+            /** Synchronized */
+            synchronized: boolean;
+            /** Available */
+            available: boolean;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
@@ -414,10 +660,145 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** PowerQueued */
+        PowerQueued: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "reboot" | "power_off";
+        };
+        /** Report */
+        Report: {
+            /** Generated At */
+            generated_at: string;
+            /** Summary */
+            summary: {
+                [key: string]: number;
+            };
+            /** Groups */
+            groups: components["schemas"]["Group"][];
+        };
+        /** RestartQueued */
+        RestartQueued: {
+            /** Unit */
+            unit: string;
+        };
+        /** Service */
+        Service: {
+            /** Unit */
+            unit: string;
+            /** Title */
+            title: string;
+            /** Active State */
+            active_state: string;
+            /** Sub State */
+            sub_state: string;
+            /** Since */
+            since: string | null;
+            /** Restarts */
+            restarts: number;
+            /** Restartable */
+            restartable: boolean;
+        };
+        /** SystemInfo */
+        SystemInfo: {
+            /** Hostname */
+            hostname: string;
+            /** Serial */
+            serial: string;
+            /** Model */
+            model: string | null;
+            /** Os */
+            os: string | null;
+            /** Kernel */
+            kernel: string | null;
+            /** Uptime Seconds */
+            uptime_seconds: number | null;
+            memory: components["schemas"]["Memory"] | null;
+            /** Disks */
+            disks: components["schemas"]["Disk"][];
+            tm: components["schemas"]["TmInstall"];
+            /** Components */
+            components: {
+                [key: string]: string;
+            };
+            /** Soc Temperature C */
+            soc_temperature_c: number | null;
+            throttled: components["schemas"]["Throttled"] | null;
+        };
         /** SystemPassword */
         SystemPassword: {
             /** Password */
             password: string;
+        };
+        /** Throttled */
+        Throttled: {
+            /** Raw */
+            raw: string;
+            /** Now */
+            now: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
+            /** Since Boot */
+            since_boot: ("under-voltage" | "frequency-capped" | "throttled" | "soft-temperature-limit")[];
+        };
+        /** TimeChange */
+        TimeChange: {
+            /** Timezone */
+            timezone?: string | null;
+            /** Ntp */
+            ntp?: boolean | null;
+            /** Time */
+            time?: string | null;
+        };
+        /** TimeResult */
+        TimeResult: {
+            /** Device Time */
+            device_time: string;
+            /** Timezone */
+            timezone: string;
+            ntp: components["schemas"]["Ntp"];
+            /** Rtc Time */
+            rtc_time: string | null;
+            /** Time Kept From Ntp */
+            time_kept_from_ntp: boolean;
+            /** Restarting */
+            restarting: string[];
+            /**
+             * Timezone Unknown
+             * @default false
+             */
+            timezone_unknown: boolean;
+            /**
+             * Ntp Left Off
+             * @default false
+             */
+            ntp_left_off: boolean;
+            /**
+             * Ntp Took Over
+             * @default false
+             */
+            ntp_took_over: boolean;
+        };
+        /** TimeState */
+        TimeState: {
+            /** Device Time */
+            device_time: string;
+            /** Timezone */
+            timezone: string;
+            ntp: components["schemas"]["Ntp"];
+            /** Rtc Time */
+            rtc_time: string | null;
+        };
+        /** TmInstall */
+        TmInstall: {
+            /** Version */
+            version: string;
+            /** Commit */
+            commit: string;
+            /** Branch */
+            branch: string;
+            /** Installing User */
+            installing_user: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -871,6 +1252,97 @@ export interface operations {
             };
         };
     };
+    status_api_v1_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+        };
+    };
+    rescan_api_v1_status_rescan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+        };
+    };
+    services_api_v1_services_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"][];
+                };
+            };
+        };
+    };
+    restart_api_v1_services__unit__restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestartQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     device_api_v1_system_device_get: {
         parameters: {
             query?: never;
@@ -887,6 +1359,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    info_api_v1_system_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
+    diagnostics_text_api_v1_system_diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    reboot_api_v1_system_reboot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PowerQueued"];
+                };
+            };
+        };
+    };
+    power_off_api_v1_system_power_off_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PowerQueued"];
                 };
             };
         };
@@ -920,6 +1472,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    time_state_api_v1_time_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeState"];
+                };
+            };
+        };
+    };
+    change_api_v1_time_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    timezones_api_v1_time_timezones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };

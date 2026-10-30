@@ -1,0 +1,27 @@
+thingsboard:
+    enabled: false
+    host: tb.example.invalid
+    protocol: http
+    # port: 8080
+    access_token:
+
+deployment:
+    lat: 45.0
+    lon: -122.0
+    bearing: 'n'
+
+sensors:
+    cameras:
+        picam_h265:
+            enabled: true
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+
+    radars:
+        TM_RADAR_SERIAL_PORT_00:
+            enabled: true
+            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
+
+    airquality_monitors:
+        sensorname01:
+            enabled: false
+            mqtt_topic_incoming: readings

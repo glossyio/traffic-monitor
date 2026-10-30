@@ -5,15 +5,29 @@ dump-openapi` prints the API's OpenAPI document, from which the UI's client is t
 Neither needs a device's secrets, manifest, or state.
 """
 
+import json
 import tempfile
+import time
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from tm_control.adapters.command import CommandResult
+from tm_control.adapters.timedate import Ntp, TimeState
 from tm_control.core.auth import Device, SetupCode
+from tm_control.core.checks import CheckGroup, Group
 from tm_control.core.claim_cli import CommandError
-from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, Settings
+from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, FAKE_STATUS, Settings
 from tm_control.core.state import State
 
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
+
+# Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
+# a failed, and a starting unit, as the fake status report does.
+FAKE_UNIT_STATES = {
+    "frigate.service": {"ActiveState": "failed", "SubState": "failed", "NRestarts": "3"},
+    "go2rtc_server.service": {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "4"},
+}
 
 
 def reset(settings: Settings) -> int:
@@ -30,6 +44,122 @@ def reset(settings: Settings) -> int:
     print(f"Fake device reset in {settings.state_dir}. Setup code: {code}")
     print("Restart `tm-control serve` if it's running, then open the UI's /setup page.")
     return 0
+
+
+def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
+    """Fake mode's stand-in for systemd.show_units: FAKE_UNIT_STATES, and every other unit running for two hours."""
+    running = {
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "running",
+        "NRestarts": "0",
+        "ActiveEnterTimestamp": f"@{int(time.time()) - 2 * 3600}",
+        "InvocationID": "00000000000000000000000000000000",
+    }
+    states = {name: running | FAKE_UNIT_STATES.get(name, {}) for name in names}
+    return {name: {key: values.get(key, "") for key in properties} for name, values in states.items()}
+
+
+def system_info(disk_paths: list[str]) -> dict:
+    """Fake mode's host readings, as the sysinfo adapter returns them: a Pi 5 up for two days, its storage 87% used
+    (as the fake status report says), each disk path on the same card."""
+    total, free = 58 * 2**30, int(7.5 * 2**30)
+    return {
+        "model": "Raspberry Pi 5 Model B Rev 1.0",
+        "os": "Debian GNU/Linux 13 (trixie)",
+        "kernel": "6.12.47+rpt-rpi-2712",
+        "uptime_seconds": 2 * 86400 + 3 * 3600,
+        "memory": {"total": 8 * 2**30, "available": int(5.5 * 2**30)},
+        "disks": [{"path": path, "total": total, "used": total - free, "free": free} for path in disk_paths],
+        "soc_temperature_c": 52.7,
+        "throttled": {"raw": "0x0", "now": [], "since_boot": []},
+    }
+
+
+def time_state() -> list[str]:
+    """Fake mode's stand-in for timedatectl show, in FakeClock's starting time zone."""
+    now = time.strftime("%a %Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    return [
+        "Timezone=Etc/UTC",
+        "LocalRTC=no",
+        "CanNTP=yes",
+        "NTP=yes",
+        "NTPSynchronized=yes",
+        f"TimeUSec={now}",
+        f"RTCTimeUSec={now}",
+    ]
+
+
+class FakeClock:
+    """Fake mode's stand-in for the timedate adapter, kept in memory so the Date and time page sees its own changes.
+    NTP starts on and synchronized; the time is the laptop's, shown in the fake time zone; nothing is set."""
+
+    TIMEZONES = [
+        "America/Los_Angeles",
+        "America/New_York",
+        "Asia/Tokyo",
+        "Australia/Sydney",
+        "Etc/UTC",
+        "Europe/Berlin",
+        "Europe/London",
+        "Pacific/Auckland",
+    ]
+
+    def __init__(self):
+        self.timezone = "Etc/UTC"
+        self.ntp = True
+
+    def show(self) -> TimeState:
+        try:
+            now = datetime.now(ZoneInfo(self.timezone))
+        except ZoneInfoNotFoundError:  # a laptop without the tz database
+            now = datetime.now().astimezone()
+        return TimeState(
+            device_time=now.isoformat(timespec="seconds"),
+            timezone=self.timezone,
+            ntp=Ntp(enabled=self.ntp, synchronized=self.ntp, available=True),
+            rtc_time=None,
+        )
+
+    def now(self) -> datetime:
+        return datetime.now().astimezone()
+
+    def list_timezones(self) -> list[str]:
+        return list(self.TIMEZONES)
+
+    def set_timezone(self, name: str) -> CommandResult:
+        self.timezone = name
+        return CommandResult(0, "", "", False)
+
+    def set_ntp(self, enabled: bool) -> CommandResult:
+        self.ntp = enabled
+        return CommandResult(0, "", "", False)
+
+    def set_time(self, when: datetime) -> CommandResult:
+        return CommandResult(0, "", "", False)
+
+
+def journal_tail(unit: str, lines: int) -> list[str]:
+    """Fake mode's stand-in for systemd.journal_tail: a few ordinary lines."""
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(time.time() - 2 * 3600))
+    return [
+        f"{stamp} tm-fake systemd[1]: Starting {unit}...",
+        f"{stamp} tm-fake systemd[1]: Started {unit}.",
+    ][-lines:]
+
+
+def status_groups(path: Path = FAKE_STATUS) -> list[CheckGroup]:
+    """Fake mode's check groups: the fixture's groups, which between them show every status and kind of fix."""
+    groups = [Group.model_validate(group) for group in json.loads(path.read_text())["groups"]]
+    return [CheckGroup(group.id, group.title, [_fixed_checks(group)]) for group in groups]
+
+
+def _fixed_checks(group: Group):
+    def checks(context):
+        return [check.model_copy(deep=True) for check in group.checks]
+
+    checks.__name__ = group.id
+    return checks
 
 
 def openapi_document() -> dict:

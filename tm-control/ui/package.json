@@ -2,7 +2,7 @@
   "name": "tm-control-ui",
   "version": "0.0.0",
   "private": true,
-  "description": "Traffic Monitor control app: setup, login, home, account, and users pages",
+  "description": "Traffic Monitor control app: setup, login, home, status, device, date and time, account, and users pages",
   "type": "module",
   "scripts": {
     "dev": "vite",

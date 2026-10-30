@@ -1,0 +1,63 @@
+{
+    "cameras": {
+        "picam_h265": {
+            "camera_fps": 10.1,
+            "process_fps": 10.1,
+            "skipped_fps": 0.0,
+            "detection_fps": 0.4,
+            "detection_enabled": true,
+            "pid": 412,
+            "capture_pid": 431,
+            "ffmpeg_pid": 425,
+            "audio_rms": 0.0,
+            "audio_dBFS": 0.0
+        }
+    },
+    "detectors": {
+        "coral": {
+            "inference_speed": 8.42,
+            "detection_start": 0.0,
+            "pid": 389
+        }
+    },
+    "camera_fps": 10.1,
+    "process_fps": 10.1,
+    "skipped_fps": 0.0,
+    "detection_fps": 0.4,
+    "service": {
+        "uptime": 7214,
+        "version": "0.18.1-cf67f08",
+        "latest_version": "disabled",
+        "storage": {
+            "/media/frigate/recordings": {
+                "total": 117964.2,
+                "used": 4210.7,
+                "free": 113753.5,
+                "mount_type": "ext4"
+            },
+            "/tmp/cache": {
+                "total": 1000.0,
+                "used": 12.4,
+                "free": 987.6,
+                "mount_type": "tmpfs"
+            }
+        },
+        "temperatures": {},
+        "last_updated": 1793227200
+    },
+    "cpu_usages": {
+        "frigate.full_system": {
+            "cpu": "38.2",
+            "mem": "41.0"
+        }
+    },
+    "gpu_usages": {},
+    "processes": {
+        "go2rtc": {
+            "pid": 95
+        },
+        "recording": {
+            "pid": 310
+        }
+    }
+}

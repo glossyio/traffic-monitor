@@ -4,6 +4,7 @@ import os
 import signal
 import subprocess
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 TRUNCATED = "\n[output truncated]"
@@ -45,10 +46,18 @@ def _feed(stream, data):
         pass  # the command exited without reading all of it
 
 
-def run(argv: list[str], *, timeout: float = 30, max_output: int = 65536, input: bytes | None = None) -> CommandResult:
+def run(
+    argv: list[str],
+    *,
+    timeout: float = 30,
+    max_output: int = 65536,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+) -> CommandResult:
     """Run argv and wait at most timeout seconds; on timeout, kill it and everything it started.
 
-    Output is decoded as UTF-8 (bad bytes replaced). A missing program raises FileNotFoundError.
+    env adds to (or replaces) tm-control's own environment variables for this command. Output is decoded as UTF-8
+    (bad bytes replaced). A missing program raises FileNotFoundError.
     """
     if isinstance(argv, (str, bytes)) or not argv:
         raise TypeError("run() takes a non-empty argv list, not a command string")
@@ -58,6 +67,7 @@ def run(argv: list[str], *, timeout: float = 30, max_output: int = 65536, input:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         start_new_session=True,  # its own process group, so a timeout kills its children too
+        env=None if env is None else {**os.environ, **env},
     )
     stdout, stderr = _Capture(process.stdout, max_output), _Capture(process.stderr, max_output)
     threads = [threading.Thread(target=capture.drain, daemon=True) for capture in (stdout, stderr)]

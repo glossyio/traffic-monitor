@@ -1,0 +1,65 @@
+{
+    "picam_h265_detect": {
+        "producers": [
+            {
+                "id": 2,
+                "format_name": "hevc",
+                "protocol": "pipe",
+                "source": "exec:rpicam-vid --camera 0 --mode 1536:864 --codec libav -o -",
+                "medias": [
+                    "video, recvonly, H265"
+                ],
+                "receivers": [
+                    {
+                        "id": 3,
+                        "codec": {
+                            "codec_name": "h265",
+                            "codec_type": "video",
+                            "sample_rate": 90000
+                        },
+                        "childs": [
+                            4
+                        ],
+                        "bytes": 48213907,
+                        "packets": 36011
+                    }
+                ],
+                "bytes_recv": 48213907
+            }
+        ],
+        "consumers": [
+            {
+                "id": 4,
+                "format_name": "rtsp",
+                "protocol": "rtsp+tcp",
+                "remote_addr": "10.88.0.2:51734",
+                "user_agent": "Lavf61.7.100",
+                "medias": [
+                    "video, sendonly, H265"
+                ],
+                "senders": [
+                    {
+                        "id": 4,
+                        "codec": {
+                            "codec_name": "h265",
+                            "codec_type": "video",
+                            "sample_rate": 90000
+                        },
+                        "parent": 3,
+                        "bytes": 48201022,
+                        "packets": 35990
+                    }
+                ],
+                "bytes_send": 48201022
+            }
+        ]
+    },
+    "picam_h265_detect_hr": {
+        "producers": [
+            {
+                "url": "exec:rpicam-vid --camera 0 --mode 2304:1296 --codec libav -o -"
+            }
+        ],
+        "consumers": null
+    }
+}

@@ -37,5 +37,5 @@ Three files on the device control the behavior described above. You edit them ov
 | File | What it controls |
 |---|---|
 | Frigate's `config.yml` | Camera, detection, zones, object filters, and recording. Most changes are made in Frigate's own web UI. See [Tune object detection](../configuration/frigate-config.md). |
-| Node-RED's `config.yml` | Deployment location, which sensors are on, which radar pairs with which camera, and the ThingsBoard connection. Times shown on the dashboards use the device's time zone, which the installer sets. See [config.yml settings](../configuration/node-red-config.md). |
+| Node-RED's `config.yml` | Deployment location, which sensors are on, which radar pairs with which camera, and the ThingsBoard connection. Times shown on the dashboards use the device's time zone, which the installer sets and the control app's [Date and time](../use/device-health.md#the-date-and-time-page) page changes. See [config.yml settings](../configuration/node-red-config.md). |
 | `node-red-tm.env` | Radar serial ports, the database path, and the MQTT broker. See [node-red-tm.env settings](../configuration/environment.md). |

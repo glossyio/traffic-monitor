@@ -5,7 +5,8 @@ import re
 import shlex
 
 import pytest
-from devpi_checks import RESTARTING_UNITS, require_pii_free, role_vars
+from devpi_checks import (API, RESTARTING_UNITS, request_from_this_machine, require_pii_free, role_vars, session,
+                          tm_login_or_none)
 
 CORE_UNITS = [
     "go2rtc_server.service",
@@ -82,6 +83,47 @@ def test_polkit_keeps_tm_control_to_its_units(host, codeowner, command):
     result = host.run(f"sudo -n -u {shlex.quote(codeowner)} {command}")
     refused = result.rc != 0 and REFUSED.search(result.stderr) is not None
     assert refused, f"as {codeowner}, `{command}` exited {result.rc}: {result.stderr.strip()[:200]}"
+
+
+# The polkit actions tm-control uses (tmsetup_tm_control_polkit's actions), asked as the code owner. None of these
+# changes anything: logind's Can* methods only answer what polkit would say, and set-ntp gets the current value.
+# CanHalt is the control: halting isn't on the list, so polkit would ask for a password ("challenge").
+LOGIND_CAN = "busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager {}"
+LOGIND_EXPECTED = {"CanReboot": 's "yes"', "CanPowerOff": 's "yes"', "CanHalt": 's "challenge"'}
+
+
+def as_code_owner(host, codeowner, command):
+    return host.run(f"sudo -n runuser -u {shlex.quote(codeowner)} -- {command}")
+
+
+def test_polkit_allows_only_the_listed_actions(host, codeowner):
+    """The code owner may reboot, power off, and set NTP, and nothing more of logind's: halting still needs a password.
+    test_polkit_keeps_tm_control_to_its_units checks the units."""
+    if codeowner == "root":
+        pytest.skip("the code owner is root, which polkit doesn't limit")
+    assert "org.freedesktop.login1.halt" not in role_vars()["tmsetup_tm_control_polkit"]["actions"]
+    found = {method: as_code_owner(host, codeowner, LOGIND_CAN.format(method)).stdout.strip()
+             for method in LOGIND_EXPECTED}
+    assert found == LOGIND_EXPECTED, f"logind's answers to {codeowner}"
+    ntp = "true" if host.check_output("timedatectl show -p NTP --value") == "yes" else "false"
+    result = as_code_owner(host, codeowner, f"timedatectl --no-ask-password set-ntp {ntp}")
+    assert result.rc == 0, (
+        f"as {codeowner}, timedatectl set-ntp {ntp} exited {result.rc}: {result.stderr.strip()[:200]}")
+
+
+def test_tm_control_has_the_video_group(request, host, address):
+    """tm-control runs with the video group, which vcgencmd needs to read the firmware's power and throttling flags,
+    so the Device page shows them."""
+    groups = host.check_output("systemctl show -p SupplementaryGroups --value tm-control.service").split()
+    assert "video" in groups, f"tm-control.service's SupplementaryGroups are {groups}"
+    login = tm_login_or_none(request)
+    if login is None:
+        pytest.skip("tm-control.service has the video group; reading GET /system/info's throttled needs "
+                    "tm_control_login in the inventory")
+    answer = request_from_this_machine(address, f"{API}/system/info", cookie=session(address, *login))
+    info = answer.json() if answer.status == 200 else None
+    assert isinstance(info, dict), f"GET {API}/system/info answered {answer.status}"
+    assert info.get("throttled") is not None, f"GET {API}/system/info has no throttled flags: vcgencmd failed"
 
 
 def test_pid1_logs_how_each_start_job_ended(host):

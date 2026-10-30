@@ -1,9 +1,10 @@
 """The reverse proxy, the login in front of the apps, and the apps behind it, on the Pi and from this machine.
 
-The checks that log in (tm-control M2) skip until the inventory has the unit's admin login as tm_control_login.
+The checks that log in (tm-control M2 and M3) skip until the inventory has the unit's admin login as tm_control_login.
 They make their own viewer account, tmdev-viewer-<random>, and delete it afterwards.
 """
 
+import json
 import re
 import secrets
 import shlex
@@ -13,7 +14,7 @@ import urllib.parse
 
 import pytest
 from devpi_checks import (API, UNCLAIMED, Redacted, is_claimed, request_from_this_machine, retry_after, role_vars,
-                          session, tm_login_or_none)
+                          session, status_checks, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -28,8 +29,8 @@ PROBE_INSTEAD = {"/api/": f"{API}/health"}
 # Locations that must answer exactly this. The rest pass with anything but a 404, a 5xx, or no answer, which
 # includes the app paths' 302 to the login page.
 MUST_ANSWER = {"/": "200", "/api/": "200", "/assets/": "200"}
-# 404 on purpose; test_verify_and_auth_locations_are_hidden checks it
-HIDDEN_LOCATIONS = {f"{API}/auth/verify"}
+# 404 on purpose; test_verify_and_auth_locations_are_hidden and test_tm_internal_is_hidden_behind_the_proxy check them
+HIDDEN_LOCATIONS = {f"{API}/auth/verify", "/nr/tm-internal/"}
 ASSET = re.compile(r"/assets/[\w.-]+\.(?:js|css)")
 
 
@@ -587,10 +588,12 @@ def test_frigate_config_hides_the_proxy_secret(host, address, expect, admin_sess
     assert counts[1] == "0", "Frigate's /api/config shows the proxy secret"
 
 
-# The three secrets M2 added. Prints each one's name and how many of the SSH user's install logs hold its value, so
-# the values never leave the Pi. tmsetup.sh writes ~/tmsetup-*.log for the user who ran it, so on-Pi deploys leave
-# it here and remote ones (-H) on the dev machine. `test -s` first: an empty pattern file would match nothing.
-M2_SECRETS = ["tm_control_session_key", "frigate_proxy_secret", "node_red_token_key"]
+# The secrets the control app added (M2 and M3). Prints each one's name and how many of the SSH user's install logs
+# hold its value, so the values never leave the Pi. tmsetup.sh writes ~/tmsetup-*.log for the user who ran it, so on-Pi
+# deploys leave it here and remote ones (-H) on the dev machine. `test -s` first: an empty pattern file would match
+# nothing.
+CONTROL_APP_SECRETS = ["tm_control_session_key", "frigate_proxy_secret", "node_red_token_key",
+                       "node_red_internal_token"]
 INSTALL_LOG_COUNTS = """\
 ls ~/tmsetup-*.log >/dev/null 2>&1 || exit 3
 for name in {names}; do
@@ -604,19 +607,211 @@ done"""
 
 
 def test_no_secret_in_the_install_log(host, expect):
-    """tmsetup.sh copies all of its output into its log; none of M2's secrets may be in it. The setup code may be:
-    the installer prints it on purpose."""
+    """tmsetup.sh copies all of its output into its log; none of the control app's secrets may be in it. The setup
+    code may be: the installer prints it on purpose."""
     if not expect["pii_free"]:
         pytest.skip("compares device secrets with the install logs; set tm_expect.pii_free: true (bench units only)")
-    result = host.run(INSTALL_LOG_COUNTS.format(names=" ".join(M2_SECRETS), secrets_dir=SECRETS_DIR))
+    result = host.run(INSTALL_LOG_COUNTS.format(names=" ".join(CONTROL_APP_SECRETS), secrets_dir=SECRETS_DIR))
     rc, output = result.rc, result.stdout
     if rc == 3:
         pytest.skip("no ~/tmsetup-*.log for the SSH user on the Pi; a remote deploy (-H) keeps the log on the "
                     "dev machine, so deploy with --on-pi to check it")
     counts = dict(line.split(" ", 1) for line in output.splitlines() if " " in line)
-    assert sorted(counts) == sorted(M2_SECRETS), f"couldn't check every secret: {counts}"
+    assert sorted(counts) == sorted(CONTROL_APP_SECRETS), f"couldn't check every secret: {counts}"
     leaked = {name: count for name, count in counts.items() if count != "0"}
     assert not leaked, f"install logs holding a secret (number of logs, or missing): {leaked}"
+
+
+# --- The status page, the control app's actions, and Node-RED's internal endpoint (tm-control M3) ---------------------
+
+# The inventory's hailo8 is set up as hailo8l, as in test_ai_coprocessor.py
+DETECTOR_KIND = {"hailo8": "hailo8l"}
+# The status page's runtime assumptions, which only a device shows: Frigate and Node-RED answer tm-control, and the
+# sandboxed tm-control sees the pod's published 1883 with ss
+APPS_OK = ["apps.frigate.reachable", "apps.nodered.reachable", "apps.nodered.schema", "apps.broker.login"]
+CONFIG_CHECKS = ["config.cameras", "config.zones", "config.radars", "config.deployment"]
+
+
+def test_status_report_agrees_with_the_inventory(address, expect, admin_session):
+    """The status report matches the inventory: the expected accelerator, each radar, and the apps are ok, every
+    service runs, and no name contract is broken. On a bench unit this also checks what the status page assumes about
+    the device: tm-control reads USB ids from sysfs (lsusb can't start in its sandbox), sees port 1883 with ss, and
+    go2rtc shows its producing stream with more than its url."""
+    checks = status_checks(address, admin_session)
+    kind = DETECTOR_KIND.get(expect["ai_coprocessor"], expect["ai_coprocessor"])
+    expected = {"hardware.detector.none": {"warn"}} if kind == "none" else {f"hardware.detector.{kind}": {"ok"}}
+    expected |= {f"hardware.radar.{radar['port'].rsplit('/', 1)[1]}": {"ok"} for radar in expect["radars"]}
+    expected |= {check_id: {"ok"} for check_id in checks if check_id.startswith("services.")}
+    expected |= {check_id: {"ok"} for check_id in APPS_OK}
+    if expect["cameras"]:
+        expected["apps.go2rtc.streams"] = {"ok"}
+    expected |= {check_id: {"ok", "warn"} for check_id in CONFIG_CHECKS}
+    expected["time.plausible"] = {"ok", "warn"}  # a bench unit may have no time source
+    assert any(check_id.startswith("services.") for check_id in checks), "the status report has no services checks"
+    problems = []
+    for check_id, wanted in sorted(expected.items()):
+        status, detail = checks.get(check_id, ("missing", None))
+        if status not in wanted:
+            problems.append(f"{check_id}: {status}" + (f" ({detail})" if detail else ""))
+    problems += [f"{check_id}: {status} ({detail}), which the inventory doesn't expect"
+                 for check_id, (status, detail) in sorted(checks.items())
+                 if check_id.startswith(("hardware.detector.", "hardware.radar.")) and check_id not in expected]
+    assert not problems, "status checks that don't match the inventory: " + "; ".join(problems)
+
+
+# require_admin's refusal (tm_control/modules/auth/deps.py), which the cross-site check's 403 doesn't say
+ADMIN_ONLY = "Only an admin can do this."
+VIEWER_ACTIONS = [
+    ("POST", f"{API}/services/frigate.service/restart", 403),
+    ("POST", f"{API}/status/rescan", 403),
+    ("POST", f"{API}/system/reboot", 403),
+    ("POST", f"{API}/system/power-off", 403),
+    ("POST", f"{API}/time", 403),
+    ("GET", f"{API}/system/diagnostics", 403),
+    ("GET", f"{API}/status", 200),
+    ("GET", f"{API}/services", 200),
+    ("GET", f"{API}/system/info", 200),
+    ("GET", f"{API}/time", 200),
+]
+POWER_ACTIONS = {f"{API}/system/reboot", f"{API}/system/power-off"}
+
+
+def admin_refusal(answer):
+    """(HTTP status, the error's message or None) of an answer, to compare with (403, ADMIN_ONLY)."""
+    found = answer.json()
+    error = found.get("error") if isinstance(found, dict) else None
+    return answer.status, error.get("message") if isinstance(error, dict) else None
+
+
+@pytest.mark.parametrize("method, path, expected", VIEWER_ACTIONS,
+                         ids=[f"{method} {path.removeprefix(API)}" for method, path, _ in VIEWER_ACTIONS])
+def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, expected):
+    """A viewer reads the status, the services, the device's facts, and the time, and every action is refused before
+    anything runs. Each write sends an empty change, so POST /time would change nothing even if it were let through.
+
+    A viewer's reboot or power-off is sent only after a harmless action, a re-scan, was refused as admin-only: if
+    require_admin ever let viewers through, the Pi would reboot, or power off until someone power-cycles it.
+    """
+    if path in POWER_ACTIONS:
+        guard = admin_refusal(request_from_this_machine(address, f"{API}/status/rescan", "POST", viewer_session, {}))
+        if guard != (403, ADMIN_ONLY):
+            pytest.fail(f"a viewer's POST {API}/status/rescan answered {guard}, not require_admin's 403, so {path} "
+                        "wasn't sent: it would reboot or power off the Pi", pytrace=False)
+    answer = request_from_this_machine(address, path, method, viewer_session, {} if method == "POST" else None)
+    if expected == 200:
+        assert answer.status == 200, f"{method} {path} with a viewer session answered {answer.status}"
+        return
+    refusal = admin_refusal(answer)
+    assert refusal == (403, ADMIN_ONLY), f"{method} {path} with a viewer session (status, message)"
+
+
+@pytest.mark.parametrize("path", ["/nr/tm-internal/status", "/nr/tm-internal", "/nr/TM-Internal/status"])
+def test_tm_internal_is_hidden_behind_the_proxy(address, admin_session, path):
+    """Node-RED's internal status endpoint is for tm-control on the Pi only: nginx itself answers 404 for it, even to
+    the admin, whose requests to /nr/ carry the editor token."""
+    answer = request_from_this_machine(address, path, cookie=admin_session)
+    from_nginx = (answer.headers.get("Content-Type", "").startswith("text/html") and answer.json() is None
+                  and b"<center>nginx" in answer.body)
+    assert (answer.status, from_nginx) == (404, True), f"{path} with the admin session: (status, nginx's own 404 page)"
+
+
+TM_INTERNAL_STATUS = "http://127.0.0.1:1880/tm-internal/status"
+TM_INTERNAL_HEADER = "X-TM-Internal-Token"  # tm_control/adapters/nodered.py
+
+
+def tm_internal_answer(host, token=None):
+    """(HTTP status, JSON body or None) of Node-RED's internal status, asked on the Pi with this token or none.
+
+    The token is on curl's command line, never under sudo, whose log would keep it; the CommandResult holds it, so it
+    stays in here, where neither an assertion nor pytest -l in the test can print it.
+    """
+    header = "" if token is None else "-H " + shlex.quote(f"{TM_INTERNAL_HEADER}: {token}") + " "
+    result = host.run(f"curl -s --max-time 10 -w '\\n%{{http_code}}' {header}{TM_INTERNAL_STATUS}")
+    body, _, status = result.stdout.rpartition("\n")
+    del result
+    try:
+        return status, json.loads(body)
+    except ValueError:
+        return status, None
+
+
+def test_tm_internal_needs_the_token_on_the_pi(host, expect):
+    """On the Pi, Node-RED's internal status answers 401 without the token or with a wrong one, and with the token,
+    its status with the database's schema version."""
+    if not expect["pii_free"]:
+        pytest.skip("reads a device secret; set tm_expect.pii_free: true (bench units only)")
+    token = tm_internal_token(host)
+    refused = (tm_internal_answer(host)[0], tm_internal_answer(host, "tmdev-wrong-token")[0])
+    assert refused == ("401", "401"), f"without a token and with a wrong one, {TM_INTERNAL_STATUS} answered {refused}"
+    status, body = tm_internal_answer(host, token)
+    # Only the version is kept: the body also holds the deployment's location
+    version = body.get("schema_version") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
+    assert isinstance(version, int) and not isinstance(version, bool), (
+        f"Node-RED's status gives schema_version as {type(version).__name__}, not an integer")
+
+
+# The diagnostics through the proxy with the admin session, then: how many lines are the status section's header, and
+# for each device secret, and the broker password when node-red-tm.env sets one, how many lines of the text hold its
+# value. The values stay on the Pi: each is piped to grep as its pattern, never put on a command line. The cookie is on
+# curl's command line, never under sudo, whose log would keep it. `test -s` first: an empty pattern matches every line.
+DIAGNOSTICS_COUNTS = """\
+diag=$(mktemp) || exit 3
+trap 'rm -f "$diag"' EXIT
+curl -sf --max-time 90 -H {host_header} -H {cookie_header} -o "$diag" http://localhost{path} || exit 3
+grep -c -x -F '== Status ==' "$diag"
+for name in {names}; do
+  file={secrets_dir}/$name
+  if sudo test -s "$file"; then
+    echo "$name $(sudo cat "$file" | grep -c -F -f - "$diag")"
+  else
+    echo "$name missing"
+  fi
+done
+password=$(sudo sed -n 's/^TM_MQTT_BROKER_PASSWORD=//p' {env_file} | head -n 1)
+if [ -n "$password" ]; then
+  echo "TM_MQTT_BROKER_PASSWORD $(printf '%s\\n' "$password" | grep -c -F -f - "$diag")"
+fi"""
+
+
+def diagnostics_counts(host, address, cookie, codedir):
+    """DIAGNOSTICS_COUNTS's exit code and output lines. The command holds the cookie, so its CommandResult stays in
+    here, where neither an assertion nor pytest -l in the test can print it."""
+    result = host.run(DIAGNOSTICS_COUNTS.format(host_header=shlex.quote(f"Host: {address}"),
+                                                cookie_header=shlex.quote(f"Cookie: {cookie}"),
+                                                path=f"{API}/system/diagnostics",
+                                                names=" ".join(role_vars()["tmsetup_secret_names"]),
+                                                secrets_dir=SECRETS_DIR,
+                                                env_file=shlex.quote(f"{codedir}/node-red-tm/node-red-tm.env")))
+    return result.rc, result.stdout.splitlines()
+
+
+def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_session):
+    """The diagnostics text an admin downloads holds none of the device's secrets, nor the broker password, which
+    Node-RED's journal can print on a connection error. Compared on the Pi, so no value leaves it."""
+    if not expect["pii_free"]:
+        pytest.skip("compares device secrets and node-red-tm.env with the diagnostics; set tm_expect.pii_free: true "
+                    "(bench units only)")
+    rc, lines = diagnostics_counts(host, address, admin_session, codedir)
+    assert rc != 3, f"couldn't download {API}/system/diagnostics through the proxy with the admin session"
+    assert lines and lines[0] != "0", "the diagnostics text has no == Status == section"
+    counts = dict(line.split(" ", 1) for line in lines[1:] if " " in line)
+    missing = sorted(set(role_vars()["tmsetup_secret_names"]) - set(counts))
+    assert not missing, f"couldn't check {missing}"
+    leaked = {name: count for name, count in counts.items() if count != "0"}
+    assert not leaked, f"secrets in the diagnostics text (lines holding the value, or missing): {leaked}"
+
+
+def test_time_state_matches_timedatectl(host, address, admin_session):
+    """The Date and time page's time zone and NTP switch are the device's, as timedatectl reports them."""
+    answer = request_from_this_machine(address, f"{API}/time", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/time answered {answer.status}"
+    found = (state.get("timezone"), (state.get("ntp") or {}).get("enabled"))
+    device = (host.check_output("timedatectl show -p Timezone --value"),
+              host.check_output("timedatectl show -p NTP --value") == "yes")
+    assert found == device, "(time zone, NTP on) from GET /time and from timedatectl differ"
 
 
 # Last in the module: it leaves this machine's address backing off for a few seconds.

@@ -481,6 +481,115 @@
         }
       }
     },
+    "/api/v1/status": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Status",
+        "operationId": "status_api_v1_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status/rescan": {
+      "post": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Rescan",
+        "operationId": "rescan_api_v1_status_rescan_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Services",
+        "operationId": "services_api_v1_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Service"
+                  },
+                  "type": "array",
+                  "title": "Response Services Api V1 Services Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services/{unit}/restart": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Restart",
+        "operationId": "restart_api_v1_services__unit__restart_post",
+        "parameters": [
+          {
+            "name": "unit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Unit"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestartQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -494,6 +603,91 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/info": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Info",
+        "operationId": "info_api_v1_system_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/diagnostics": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Diagnostics Text",
+        "description": "The diagnostics text as a download, with every secret redacted.",
+        "operationId": "diagnostics_text_api_v1_system_diagnostics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/reboot": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Reboot",
+        "operationId": "reboot_api_v1_system_reboot_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerQueued"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/power-off": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Power Off",
+        "operationId": "power_off_api_v1_system_power_off_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerQueued"
+                }
               }
             }
           }
@@ -539,10 +733,140 @@
           }
         }
       }
+    },
+    "/api/v1/time": {
+      "get": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Time State",
+        "operationId": "time_state_api_v1_time_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Change",
+        "description": "The time (with what NTP needs for it), then an NTP toggle, then the time zone, whose change restarts the\ncontainers.",
+        "operationId": "change_api_v1_time_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time/timezones": {
+      "get": {
+        "tags": [
+          "time"
+        ],
+        "summary": "Timezones",
+        "operationId": "timezones_api_v1_time_timezones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Timezones Api V1 Time Timezones Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Check": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warn",
+              "error",
+              "unknown"
+            ],
+            "title": "Status"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "fix": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Fix"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "detail"
+        ],
+        "title": "Check"
+      },
       "Claim": {
         "properties": {
           "setup_code": {
@@ -595,6 +919,34 @@
         ],
         "title": "Credentials"
       },
+      "Disk": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "used": {
+            "type": "integer",
+            "title": "Used"
+          },
+          "free": {
+            "type": "integer",
+            "title": "Free"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "total",
+          "used",
+          "free"
+        ],
+        "title": "Disk"
+      },
       "EulaAcceptance": {
         "properties": {
           "version": {
@@ -608,6 +960,79 @@
           "version"
         ],
         "title": "EulaAcceptance"
+      },
+      "Fix": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "restart",
+              "rescan",
+              "link",
+              "hint"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "Fix",
+        "description": "What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read."
+      },
+      "Group": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "checks"
+        ],
+        "title": "Group"
       },
       "HTTPValidationError": {
         "properties": {
@@ -676,6 +1101,24 @@
         ],
         "title": "Job"
       },
+      "Memory": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "available": {
+            "type": "integer",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "available"
+        ],
+        "title": "Memory"
+      },
       "NewPassword": {
         "properties": {
           "new_password": {
@@ -710,6 +1153,29 @@
         ],
         "title": "NewUser"
       },
+      "Ntp": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "synchronized": {
+            "type": "boolean",
+            "title": "Synchronized"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "synchronized",
+          "available"
+        ],
+        "title": "Ntp"
+      },
       "PasswordChange": {
         "properties": {
           "current_password": {
@@ -730,6 +1196,243 @@
         ],
         "title": "PasswordChange"
       },
+      "PowerQueued": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "reboot",
+              "power_off"
+            ],
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "PowerQueued"
+      },
+      "Report": {
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "ok",
+                "warn",
+                "error",
+                "unknown"
+              ]
+            },
+            "type": "object",
+            "title": "Summary"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "summary",
+          "groups"
+        ],
+        "title": "Report"
+      },
+      "RestartQueued": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit"
+        ],
+        "title": "RestartQueued"
+      },
+      "Service": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "active_state": {
+            "type": "string",
+            "title": "Active State"
+          },
+          "sub_state": {
+            "type": "string",
+            "title": "Sub State"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "restarts": {
+            "type": "integer",
+            "title": "Restarts"
+          },
+          "restartable": {
+            "type": "boolean",
+            "title": "Restartable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit",
+          "title",
+          "active_state",
+          "sub_state",
+          "since",
+          "restarts",
+          "restartable"
+        ],
+        "title": "Service"
+      },
+      "SystemInfo": {
+        "properties": {
+          "hostname": {
+            "type": "string",
+            "title": "Hostname"
+          },
+          "serial": {
+            "type": "string",
+            "title": "Serial"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "os": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os"
+          },
+          "kernel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kernel"
+          },
+          "uptime_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime Seconds"
+          },
+          "memory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Memory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disks": {
+            "items": {
+              "$ref": "#/components/schemas/Disk"
+            },
+            "type": "array",
+            "title": "Disks"
+          },
+          "tm": {
+            "$ref": "#/components/schemas/TmInstall"
+          },
+          "components": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Components"
+          },
+          "soc_temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Soc Temperature C"
+          },
+          "throttled": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Throttled"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "hostname",
+          "serial",
+          "model",
+          "os",
+          "kernel",
+          "uptime_seconds",
+          "memory",
+          "disks",
+          "tm",
+          "components",
+          "soc_temperature_c",
+          "throttled"
+        ],
+        "title": "SystemInfo"
+      },
       "SystemPassword": {
         "properties": {
           "password": {
@@ -743,6 +1446,212 @@
           "password"
         ],
         "title": "SystemPassword"
+      },
+      "Throttled": {
+        "properties": {
+          "raw": {
+            "type": "string",
+            "title": "Raw"
+          },
+          "now": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "under-voltage",
+                "frequency-capped",
+                "throttled",
+                "soft-temperature-limit"
+              ]
+            },
+            "type": "array",
+            "title": "Now"
+          },
+          "since_boot": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "under-voltage",
+                "frequency-capped",
+                "throttled",
+                "soft-temperature-limit"
+              ]
+            },
+            "type": "array",
+            "title": "Since Boot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw",
+          "now",
+          "since_boot"
+        ],
+        "title": "Throttled"
+      },
+      "TimeChange": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "ntp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ntp"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          }
+        },
+        "type": "object",
+        "title": "TimeChange"
+      },
+      "TimeResult": {
+        "properties": {
+          "device_time": {
+            "type": "string",
+            "title": "Device Time"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "ntp": {
+            "$ref": "#/components/schemas/Ntp"
+          },
+          "rtc_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtc Time"
+          },
+          "time_kept_from_ntp": {
+            "type": "boolean",
+            "title": "Time Kept From Ntp"
+          },
+          "restarting": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarting"
+          },
+          "timezone_unknown": {
+            "type": "boolean",
+            "title": "Timezone Unknown",
+            "default": false
+          },
+          "ntp_left_off": {
+            "type": "boolean",
+            "title": "Ntp Left Off",
+            "default": false
+          },
+          "ntp_took_over": {
+            "type": "boolean",
+            "title": "Ntp Took Over",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_time",
+          "timezone",
+          "ntp",
+          "rtc_time",
+          "time_kept_from_ntp",
+          "restarting"
+        ],
+        "title": "TimeResult"
+      },
+      "TimeState": {
+        "properties": {
+          "device_time": {
+            "type": "string",
+            "title": "Device Time"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "ntp": {
+            "$ref": "#/components/schemas/Ntp"
+          },
+          "rtc_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtc Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_time",
+          "timezone",
+          "ntp",
+          "rtc_time"
+        ],
+        "title": "TimeState"
+      },
+      "TmInstall": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "commit": {
+            "type": "string",
+            "title": "Commit"
+          },
+          "branch": {
+            "type": "string",
+            "title": "Branch"
+          },
+          "installing_user": {
+            "type": "string",
+            "title": "Installing User"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "commit",
+          "branch",
+          "installing_user"
+        ],
+        "title": "TmInstall"
       },
       "ValidationError": {
         "properties": {
