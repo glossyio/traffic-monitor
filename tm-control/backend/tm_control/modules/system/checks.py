@@ -3,6 +3,7 @@ throttling flags."""
 
 from tm_control.adapters import sysinfo
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
+from tm_control.modules.apps.checks import listed
 
 GIB = 2**30
 MIB = 2**20
@@ -72,12 +73,6 @@ def temperature(context: Context) -> list[Check]:
     return check("ok", f"{celsius:.1f} °C.")
 
 
-def _named(flags: list[str]) -> str:
-    if len(flags) <= 2:
-        return " and ".join(flags)
-    return f"{', '.join(flags[:-1])}, and {flags[-1]}"
-
-
 def _next_step(flags: list[str]) -> str:
     if "under-voltage" in flags:
         return "check the power supply and its cable"
@@ -99,9 +94,9 @@ def power_supply(context: Context) -> list[Check]:
     if flags is None:
         return check("unknown", "The firmware's power and throttling flags couldn't be read.")
     if flags["now"]:
-        return check("error", f"{_named(flags['now']).capitalize()} now; {_next_step(flags['now'])}.")
+        return check("error", f"{listed(flags['now']).capitalize()} now; {_next_step(flags['now'])}.")
     if flags["since_boot"]:
-        since = _named(flags["since_boot"]).capitalize()
+        since = listed(flags["since_boot"]).capitalize()
         return check("warn", f"{since} since the last boot, but not now; if it happens again, "
                              f"{_next_step(flags['since_boot'])}.")
     return check("ok", "No under-voltage or throttling since the last boot.")
