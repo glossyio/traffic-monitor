@@ -68,8 +68,9 @@ def can(method: str) -> bool:
     return result.stdout.strip() == 's "yes"'
 
 
-def _properties(stdout: str, properties: list[str]) -> dict[str, str]:
-    """systemctl show's Key=Value lines as the named properties; one it doesn't print is ""."""
+def parse_properties(stdout: str, properties: list[str]) -> dict[str, str]:
+    """`systemctl show`'s (or `timedatectl show`'s) Key=Value lines as the named properties; one it doesn't print
+    is ""."""
     values = dict.fromkeys(properties, "")
     for line in stdout.splitlines():
         key, sep, value = line.partition("=")
@@ -87,7 +88,7 @@ def show_unit(name: str, properties: list[str]) -> dict[str, str]:
     result = run(["systemctl", "show", f"--property={','.join(properties)}", name], timeout=10)
     if result.returncode != 0 or result.timed_out:
         raise RuntimeError(f"systemctl show {name} failed with exit status {result.returncode}")
-    return _properties(result.stdout, properties)
+    return parse_properties(result.stdout, properties)
 
 
 def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
@@ -104,7 +105,7 @@ def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, s
         if result.returncode != 0 or result.timed_out:
             log.warning("systemctl show %s failed with exit status %s", name, result.returncode)
             return None
-        return _properties(result.stdout, properties)
+        return parse_properties(result.stdout, properties)
 
     if not names:
         return {}

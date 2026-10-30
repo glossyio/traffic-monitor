@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from tm_control.adapters.command import TRUNCATED, CommandResult, run
+from tm_control.adapters.systemd import parse_properties
 
 log = logging.getLogger(__name__)
 
@@ -44,15 +45,6 @@ def device_time() -> str:
     return now().isoformat(timespec="seconds")
 
 
-def _properties(stdout: str) -> dict[str, str]:
-    values = dict.fromkeys(PROPERTIES, "")
-    for line in stdout.splitlines():
-        key, sep, value = line.partition("=")
-        if sep and key in values:
-            values[key] = value
-    return values
-
-
 def show() -> TimeState | None:
     """The time state from `timedatectl show`; None if it can't be read."""
     argv = ["timedatectl", "show", *(f"--property={name}" for name in PROPERTIES)]
@@ -64,7 +56,7 @@ def show() -> TimeState | None:
     if result.returncode != 0 or result.timed_out:
         log.warning("timedatectl show failed with exit status %s", result.returncode)
         return None
-    values = _properties(result.stdout)
+    values = parse_properties(result.stdout, PROPERTIES)
     rtc = values["RTCTimeUSec"]
     return TimeState(
         device_time=device_time(),
