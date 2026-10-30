@@ -471,6 +471,7 @@ def test_timezone_change_restarts_the_containers(host, address, tm_login):
 
 TIME_AHEAD_SECONDS = 120
 TIME_SLACK_SECONDS = 5
+FEED_BACK_SECONDS = 90  # Frigate's restart, then its first frames from go2rtc
 
 
 NTP_READ_SECONDS = 10
@@ -495,7 +496,8 @@ def ntp_enabled(address, cookie):
 
 def test_set_time_from_the_api(host, address, expect, tm_login):
     """With NTP off, the time an admin sets from the browser becomes the device's. The test sets it 2 minutes ahead,
-    then back, and turns NTP on again; a unit with a time source then resyncs."""
+    which restarts Frigate, waits for the feed to be back, then sets it back, which restarts nothing, and turns NTP on
+    again; a unit with a time source then resyncs."""
     if not expect["pii_free"]:
         pytest.skip("changes the device's clock; set tm_expect.pii_free: true (bench units only)")
     cookie = session(address, *tm_login)
@@ -505,9 +507,11 @@ def test_set_time_from_the_api(host, address, expect, tm_login):
     if (state.get("ntp") or {}).get("enabled") is not True:
         pytest.skip("NTP is off on this unit; the test turns it off and back on")
     moved = fell_back = False
+    back = None  # the step back's restarting, when it answered 200
     try:
         status, _ = post_time(address, cookie, {"ntp": False})
         assert status == 200, f"POST {API}/time turning NTP off answered {status}"
+        before = {"frigate.service": invocation(host, "frigate.service")}
         target = int(pi_now(host)) + TIME_AHEAD_SECONDS
         status, result = post_time(address, cookie, {"time": iso(target)})
         moved = status == 200
@@ -515,11 +519,19 @@ def test_set_time_from_the_api(host, address, expect, tm_login):
         assert result.get("time_kept_from_ntp") is False, "with NTP off, the device kept its own time"
         off = pi_now(host) - target
         assert abs(off) <= TIME_SLACK_SECONDS, f"the Pi's clock is {off:.0f} s from the time that was set"
+        assert result.get("restarting") == ["frigate.service"], "a 2-minute step ahead should restart Frigate"
+        waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
+        assert not waiting, f"{UNIT_RESTART_SECONDS} s after the clock moved ahead, frigate.service hadn't restarted"
+        for check_id in ("apps.go2rtc.streams", "apps.frigate.cameras"):
+            found = wait_for_check(address, cookie, check_id, "ok", FEED_BACK_SECONDS)
+            assert found[0] == "ok", f"{check_id} {FEED_BACK_SECONDS} s after Frigate restarted: {found}"
     finally:
         # Each step runs even when the one before it fails. Whether NTP is back on is the Pi's word, not the API's.
         try:
             if moved:  # back to about the right time, for a unit without a time source
-                post_time(address, cookie, {"time": iso(int(pi_now(host)) - TIME_AHEAD_SECONDS)})
+                status, result = post_time(address, cookie, {"time": iso(int(pi_now(host)) - TIME_AHEAD_SECONDS)})
+                if status == 200:
+                    back = result.get("restarting")
         finally:
             try:
                 post_time(address, cookie, {"ntp": True})
@@ -530,6 +542,7 @@ def test_set_time_from_the_api(host, address, expect, tm_login):
                     fell_back = True
     assert not fell_back, f"POST {API}/time didn't turn NTP back on; it was turned on with timedatectl"
     assert ntp_enabled(address, cookie), f"GET {API}/time doesn't show NTP on {NTP_READ_SECONDS} s after it was"
+    assert back in (None, []), f"setting the clock back restarted {back}"
 
 
 # Clears node-red-tm.service's ExecStartPre, which is only tmdb_migrate.py, for the next start, so Node-RED runs on a
