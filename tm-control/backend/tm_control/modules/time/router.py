@@ -6,8 +6,11 @@ turned off for set-time and back on after it, so the device resyncs once it's on
 off. If starting systemd-timesyncd again puts back the later time it saved (the device's clock was ahead), here or when
 a time sent with NTP off comes with `ntp: true`, the time is set again and NTP is left off, unless NTP syncs within a
 moment of the put-back (the device is online) and so has the time (`ntp_took_over`). A new time zone restarts the pod
-and nginx after the response, so the containers see it. A time sent with a zone the device doesn't know (a phone's
-tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps a fake clock in memory."""
+and nginx after the response, so the containers see it; a clock that moved ahead by more than 20 seconds during the
+request, by set-time or by NTP, restarts Frigate, whose camera feed stops on such a step and from a few minutes may not
+come back on its own: after the response, or at once when the request ends in an error. A time sent with a zone the
+device doesn't know (a phone's tzdata can be newer) is still set, and the zone is skipped and reported. Fake mode keeps
+a fake clock in memory."""
 
 import logging
 import time
@@ -33,15 +36,21 @@ CEILING = datetime.fromisoformat("2046-01-01T00:00:00Z")
 # Frigate, Node-RED, and nginx bind-mount /etc/localtime, which a container keeps seeing as the old zone's file until
 # it restarts; restarting the pod restarts its containers.
 CONTAINERS = ["traffic-monitor.service", "revproxy.service"]
-# After NTP is turned on following set-time, how long the clock is watched for systemd-timesyncd putting back the time
-# it saved, how often it's read, and how far the clock may be from the browser's time. On a Pi the put-back lands 70 to
-# 200 ms after set-ntp returns, so the watch's first read can miss it; a timesyncd that failed and restarted takes
-# longer. After a put-back, how long NTP gets to sync: a reachable time source answers within a moment of the put-back,
-# and NTP then has the time, which a browser's clock may not.
+# After NTP is turned on, following set-time or alone, how long the clock is watched for systemd-timesyncd putting back
+# the time it saved, how often it's read, and how far the clock may be from the browser's time. On a Pi the put-back
+# lands 70 to 200 ms after set-ntp returns, so the watch's first read can miss it; a timesyncd that failed and restarted
+# takes longer. After a put-back, how long NTP gets to sync: a reachable time source answers within a moment of the
+# put-back, and NTP then has the time, which a browser's clock may not.
 SETTLE_SECONDS = 1
 SETTLE_INTERVAL = 0.25
 SETTLE_TOLERANCE = 10
 SYNC_SECONDS = 1
+# A clock that steps ahead by more than Frigate's 20-second no-frames watchdog stops its camera feed. On a bench unit
+# the feed came back by itself after about two minutes from a 2-minute step, and not at all from a 5-minute one, until
+# Frigate was restarted; so a forward step this large restarts Frigate. Moving the clock back doesn't restart it: the
+# watchdog compares the last frame's time with now, and a 5-minute step back was harmless.
+FRIGATE = "frigate.service"
+FRIGATE_JUMP_SECONDS = 20
 
 
 class TimeChange(BaseModel):
@@ -52,7 +61,7 @@ class TimeChange(BaseModel):
 
 class TimeResult(TimeState):
     time_kept_from_ntp: bool  # a time was sent, but NTP has the time, so the device kept its own
-    restarting: list[str]  # units restarting after a time zone change
+    restarting: list[str]  # units restarting after the response: the pod and nginx (new zone) or Frigate (clock ahead)
     timezone_unknown: bool = False  # a time was sent with a zone the device doesn't know, so the zone was skipped
     ntp_left_off: bool = False  # turning NTP on after set-time put back the time service's saved time, so it's off
     ntp_took_over: bool = False  # NTP reached a time source while the time was being set, so its time replaced it
@@ -102,15 +111,48 @@ def _done(result: CommandResult, what: str, message: str) -> None:
         raise ApiError(500, "internal", message)
 
 
-def _put_back(clock, when: datetime, set_at: float) -> bool:
+class ClockSteps:
+    """The largest step forward the clock made between reads, in seconds (0.0 when none): each read records the
+    clock's offset from the monotonic one, so the time the request takes doesn't count, and a step that is undone
+    later still does."""
+
+    def __init__(self, clock):
+        self.clock = clock
+        self.forward = 0.0
+        self.last = self._offset(clock.now())
+
+    @staticmethod
+    def _offset(now: datetime) -> float:
+        return now.timestamp() - time.monotonic()
+
+    def read(self) -> datetime:
+        now = self.clock.now()
+        offset = self._offset(now)
+        self.forward = max(self.forward, offset - self.last)
+        self.last = offset
+        return now
+
+
+def _put_back(clock, when: datetime, set_at: float, steps: ClockSteps) -> bool:
     """Whether, within SETTLE_SECONDS, the clock moved away from `when`, which set-time set at monotonic `set_at`."""
     deadline = time.monotonic() + SETTLE_SECONDS
     while True:
         expected = when + timedelta(seconds=time.monotonic() - set_at)
-        if abs((clock.now() - expected).total_seconds()) > SETTLE_TOLERANCE:
+        if abs((steps.read() - expected).total_seconds()) > SETTLE_TOLERANCE:
             return True
         if time.monotonic() >= deadline:
             return False
+        time.sleep(SETTLE_INTERVAL)
+
+
+def _watch(steps: ClockSteps) -> None:
+    """After NTP alone has been turned on: read the clock for SETTLE_SECONDS, so that timesyncd putting back the time
+    it saved, a step ahead, counts. Nothing is set back."""
+    deadline = time.monotonic() + SETTLE_SECONDS
+    while True:
+        steps.read()
+        if time.monotonic() >= deadline:
+            return
         time.sleep(SETTLE_INTERVAL)
 
 
@@ -127,12 +169,13 @@ def _synced(clock) -> bool:
         time.sleep(SETTLE_INTERVAL)
 
 
-def _hold_time(clock, when: datetime, set_at: float, changed: set[str]) -> tuple[bool, bool]:
+def _hold_time(clock, when: datetime, set_at: float, changed: set[str], steps: ClockSteps) -> tuple[bool, bool]:
     """After set-ntp true has followed set-time: whether NTP took over, and whether NTP was left off. If timesyncd
     moved the clock forward to the time it saved and doesn't sync right after, the time is set again with NTP off."""
-    if not _put_back(clock, when, set_at):
+    if not _put_back(clock, when, set_at, steps):
         return False, False
     if _synced(clock):
+        steps.read()  # the sync can step the clock again
         return True, False  # timesyncd reached a time source right after, so NTP has the time
     _done(clock.set_ntp(False), "set-ntp", "The device put its own time back, and NTP couldn't be turned off to set "
                                            "the time again.")
@@ -143,9 +186,10 @@ def _hold_time(clock, when: datetime, set_at: float, changed: set[str]) -> tuple
     return False, True
 
 
-def _restart_containers() -> None:
-    """Restart the pod and nginx, run after the response has been sent: nginx carries it."""
-    for unit in CONTAINERS:
+def _restart_units(units: list[str]) -> None:
+    """Restart the units, run after the response has been sent: nginx carries it, and a Frigate restart after a clock
+    step should be reported before it begins."""
+    for unit in units:
         restart_or_log(unit)
 
 
@@ -174,6 +218,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
     before = _show(clock)
     if body.ntp and not before.ntp.enabled and not before.ntp.available:
         raise ApiError(422, "validation", "The device has no time synchronization service to turn on.")
+    steps = ClockSteps(clock)
 
     ntp = before.ntp.enabled
     kept = False
@@ -191,6 +236,7 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
                 ntp = False
                 changed.add("ntp")
             _done(clock.set_time(when), "set-time", "The time couldn't be set.")
+            steps.read()
             changed.add("time")
         elif when is not None and ntp and before.ntp.synchronized:
             kept = True  # NTP has the time; the browser's clock could be the wrong one
@@ -199,6 +245,8 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             _done(clock.set_ntp(False), "set-ntp", "NTP couldn't be turned off, so the time wasn't set.")
             set_at = time.monotonic()
             time_set = not _failed(clock.set_time(when), "set-time")
+            if time_set:
+                steps.read()
             ntp_back = not _failed(clock.set_ntp(True), "set-ntp")
             if time_set:
                 changed.add("time")
@@ -213,11 +261,12 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             if not ntp_back:
                 raise ApiError(500, "internal", "The time was set, but NTP couldn't be turned back on, so it's now "
                                                 "off.")
-            took_over, left_off = _hold_time(clock, when, set_at, changed)
+            took_over, left_off = _hold_time(clock, when, set_at, changed, steps)
             ntp = not left_off
         elif when is not None:
             set_at = time.monotonic()
             _done(clock.set_time(when), "set-time", "The time couldn't be set.")
+            steps.read()
             changed.add("time")
         # 2. An NTP toggle that step 1 didn't already make. Not after a put-back: turning NTP on would undo the time.
         if body.ntp is not None and body.ntp != ntp and not left_off:
@@ -225,8 +274,10 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             ntp = body.ntp
             changed.add("ntp")
             if ntp and set_at is not None:  # after set-time, as offline: timesyncd may put its saved time back
-                took_over, left_off = _hold_time(clock, when, set_at, changed)
+                took_over, left_off = _hold_time(clock, when, set_at, changed, steps)
                 ntp = not left_off
+            elif ntp:  # no time sent: a put-back only moves the clock, so it's watched for Frigate's sake
+                _watch(steps)
         # 3. The time zone last: once it has changed, nothing can fail before the restart is queued.
         if body.timezone is not None and not zone_unknown and body.timezone != before.timezone:
             _done(clock.set_timezone(body.timezone), "set-timezone", "The time zone couldn't be changed.")
@@ -234,9 +285,24 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
             changed.add("timezone")
             if not app_state.settings.fake:
                 time.tzset()  # tm-control's own clock (the home page's device card, reports) follows
-                background.add_task(_restart_containers)
+        steps.read()
+        if zone_changed:
+            units = list(CONTAINERS)  # the pod restart covers Frigate
+        elif steps.forward > FRIGATE_JUMP_SECONDS:
+            units = [FRIGATE]
+        else:
+            units = []
+        if units and not app_state.settings.fake:
+            background.add_task(_restart_units, units)
         finished = True
     finally:
+        # An error answers without background tasks, and a step ahead before it can still stop Frigate's feed, so
+        # Frigate is restarted here; systemctl restart --no-block returns at once.
+        if not finished and not app_state.settings.fake:
+            steps.read()
+            if steps.forward > FRIGATE_JUMP_SECONDS:
+                log.warning("Restarting Frigate after a failed time change: the clock moved ahead")
+                restart_or_log(FRIGATE)
         if finished or changed:
             fields = [field for field in ("ntp", "time", "timezone") if field in changed]
             Audit(app_state.state).record(admin.id, "time.set", ", ".join(fields) or None)
@@ -250,6 +316,5 @@ def change(body: TimeChange, request: Request, background: BackgroundTasks, admi
                 "ntp": before.ntp.model_copy(update={"enabled": ntp, "synchronized": ntp and before.ntp.synchronized}),
             }
         )
-    restarting = list(CONTAINERS) if zone_changed else []
-    return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=restarting,
+    return TimeResult(**after.model_dump(), time_kept_from_ntp=kept, restarting=units,
                       timezone_unknown=zone_unknown, ntp_left_off=left_off, ntp_took_over=took_over)
