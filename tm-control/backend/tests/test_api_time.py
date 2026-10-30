@@ -298,9 +298,9 @@ def test_offline_a_time_put_back_a_moment_later_is_caught(device_client, login, 
 
     def now():
         reads.append(True)
-        # The first read is the state before the change, the second the watch's first: the clock moves on the
-        # watch's second read, after a SETTLE_INTERVAL.
-        if len(reads) == 3 and timedatectl.props["NTP"] == "yes":
+        # The reads are the state before the change, the step tracker's first, the one after set-time, then the
+        # watch's first and second: the clock moves on the watch's second read, after a SETTLE_INTERVAL.
+        if len(reads) == 5 and timedatectl.props["NTP"] == "yes":
             timedatectl.offset = timedelta(minutes=5)
         return timedatectl.now()
 
@@ -362,6 +362,7 @@ def test_online_a_sync_just_after_the_put_back_keeps_ntp_on(device_client, login
     body = r.json()
     assert body["ntp_left_off"] is False and body["ntp_took_over"] is True
     assert body["ntp"]["enabled"] is True and body["ntp"]["synchronized"] is True
+    assert r.json()["restarting"] == ["frigate.service"]
 
 
 def test_online_a_sync_that_doesnt_come_after_the_put_back_leaves_ntp_off(device_client, login, timedatectl,
@@ -530,6 +531,135 @@ def test_set_time_with_ntp_off_leaves_ntp_alone(device_client, login, timedatect
     assert r.status_code == 200, r.text
     assert timedatectl.changes() == [["set-time", "2026-10-28 21:41:35"]]
     assert r.json()["restarting"] == [] and systemctl == [] and tzset == []
+
+
+# Frigate after a forward step (FRIGATE_JUMP_SECONDS): a clock that moves ahead by more than Frigate's 20-second
+# no-frames watchdog stops its camera feed, and from a few minutes it may not come back without a restart.
+
+FRIGATE = ["frigate.service"]
+
+
+def test_a_forward_step_of_five_minutes_restarts_frigate(device_client, login, timedatectl, systemctl):
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["restarting"] == FRIGATE
+    assert systemctl == [["systemctl", "restart", "--no-block", "frigate.service"]]
+
+
+def test_a_backward_step_of_five_minutes_restarts_nothing(device_client, login, timedatectl, systemctl):
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["restarting"] == [] and systemctl == []
+
+
+def test_a_forward_step_of_ten_seconds_restarts_nothing(device_client, login, timedatectl, systemctl):
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) + timedelta(seconds=10)).isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["restarting"] == [] and systemctl == []
+
+
+def test_a_forward_step_with_a_new_zone_restarts_the_pod_once(device_client, login, timedatectl, systemctl, tzset):
+    """The pod restart covers Frigate: it isn't restarted twice, and restarting lists the pod and nginx only."""
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+                               "timezone": "Europe/Berlin"})
+    assert r.status_code == 200, r.text
+    assert r.json()["restarting"] == CONTAINERS
+    assert systemctl == [["systemctl", "restart", "--no-block", unit] for unit in CONTAINERS]
+
+
+def test_a_put_back_that_is_undone_still_restarts_frigate(device_client, login, timedatectl, systemctl):
+    """Offline, clock ahead: timesyncd steps the clock forward to its saved time for a moment before the time is set
+    back. The net move is nothing; the forward step may still have stopped Frigate's feed, so Frigate restarts."""
+    timedatectl.props["NTPSynchronized"] = "no"
+    sent = datetime.now(timezone.utc).replace(microsecond=0)
+    timedatectl.saved = sent + timedelta(minutes=5)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": sent.isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["ntp_left_off"] is True and r.json()["restarting"] == FRIGATE
+    assert systemctl == [["systemctl", "restart", "--no-block", "frigate.service"]]
+
+
+def test_a_take_over_that_corrects_the_clock_forward_restarts_frigate(device_client, login, timedatectl, systemctl):
+    """The browser was 5 minutes behind and NTP corrected the clock forward while the time was being set: the step
+    is NTP's, and it's the one that stops the feed."""
+    timedatectl.props["NTPSynchronized"] = "no"
+    timedatectl.online = True
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()})
+    assert r.status_code == 200, r.text
+    assert r.json()["ntp_took_over"] is True and r.json()["restarting"] == FRIGATE
+
+
+@pytest.mark.parametrize(
+    "props, failing",
+    [
+        ({"NTPSynchronized": "no"}, "set-ntp true"),  # offline: the time is set, then NTP can't be turned back on
+        ({"NTP": "no", "NTPSynchronized": "no"}, "set-timezone"),  # NTP off: the time is set, then the zone fails
+    ],
+)
+def test_a_forward_step_before_a_failure_still_restarts_frigate(
+    device_client, login, timedatectl, systemctl, props, failing
+):
+    """The answer is an error, which runs no background task, and the clock still moved ahead: Frigate is restarted
+    at once rather than after the response."""
+    timedatectl.props |= props
+    timedatectl.failing[failing] = 1
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+                               "timezone": "Europe/Berlin"})
+    assert r.status_code == 500, r.text
+    assert abs(timedatectl.offset - timedelta(minutes=5)) < timedelta(seconds=5)
+    assert systemctl == [["systemctl", "restart", "--no-block", "frigate.service"]]
+
+
+def test_turning_ntp_on_alone_counts_the_put_back(device_client, login, timedatectl, systemctl, monkeypatch):
+    """After ntp_left_off the docs say to turn NTP on once the device is online. timesyncd then steps the clock ahead
+    to the time it saved, a moment after set-ntp has returned, before a sync corrects it."""
+    timedatectl.props |= {"NTP": "no", "NTPSynchronized": "no"}
+    reads = []
+
+    def now():
+        if timedatectl.props["NTP"] == "yes":
+            reads.append(True)
+            if len(reads) == 2:  # the second read after set-ntp, as on a Pi the first can miss it
+                timedatectl.offset = timedelta(minutes=5)
+        return timedatectl.now()
+
+    monkeypatch.setattr(timedate, "now", now)
+    login(device_client, *ADMIN)
+    r = change(device_client, {"ntp": True})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["restarting"] == FRIGATE and body["ntp"]["enabled"] is True and body["ntp_left_off"] is False
+    assert timedatectl.changes() == [["set-ntp", "true"]]
+    assert systemctl == [["systemctl", "restart", "--no-block", "frigate.service"]]
+
+
+def test_a_backward_step_before_a_failure_restarts_nothing(device_client, login, timedatectl, systemctl):
+    timedatectl.props["NTPSynchronized"] = "no"
+    timedatectl.failing["set-ntp true"] = 1
+    login(device_client, *ADMIN)
+    r = change(device_client, {"time": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()})
+    assert r.status_code == 500, r.text
+    assert systemctl == []
+
+
+def test_clock_steps_keep_the_largest_forward_step():
+    offsets = iter([0.0, 300.0, 0.0, 120.0])  # the clock's offset from a steady one at each read, in seconds
+    clock = SimpleNamespace(now=lambda: datetime.now(timezone.utc) + timedelta(seconds=next(offsets)))
+    steps = time_router.ClockSteps(clock)  # the first read
+    for _ in range(3):
+        steps.read()
+    assert 299 < steps.forward < 301  # +300, -300, +120: the largest, not the sum or the net
 
 
 def test_set_time_then_turn_ntp_back_on(device_client, login, timedatectl, systemctl):
@@ -757,6 +887,10 @@ def test_fake_mode_keeps_its_own_clock(claimed_client, login, monkeypatch):
     r = change(claimed_client, {"time": "2026-10-28T21:41:35Z"})
     assert r.json()["time_kept_from_ntp"] is False
     assert ("time.set", "ntp") in audit_rows(claimed_client)
+    # The fake's set-time doesn't move its clock, so a time far ahead never lists Frigate (and runs no systemctl).
+    r = change(claimed_client, {"time": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(), "ntp": False})
+    assert r.status_code == 200, r.text
+    assert r.json()["restarting"] == []
 
 
 def test_openapi_declares_the_time_models(client):
