@@ -1,5 +1,6 @@
 """The Traffic Monitor units that the Services list and the services checks show, and their state from systemd."""
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,6 +9,8 @@ from pydantic import BaseModel
 from tm_control import fake
 from tm_control.adapters import systemd
 from tm_control.core.checks import Fix
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,19 @@ class Service(BaseModel):
     since: str | None  # while running: when it became active, ISO 8601 with the device's offset
     restarts: int  # NRestarts: restarts after failures since it was last started by hand
     restartable: bool
+
+
+def restart_or_log(unit: str) -> None:
+    """Restart the unit, as a background task after the response has been sent: restarting revproxy stops the nginx
+    that carries it. A failure can only be logged, by its exit status (systemctl's stderr is no business of the log);
+    the Status page shows the unit's state on its next refresh."""
+    try:
+        result = systemd.restart_unit(unit)
+    except Exception as exc:
+        log.error("systemctl restart %s failed (%s)", unit, type(exc).__name__)
+        return
+    if result.returncode != 0 or result.timed_out:
+        log.error("systemctl restart %s failed with exit status %s", unit, result.returncode)
 
 
 def read_units(settings, units: list[Unit]) -> dict[str, dict[str, str]]:

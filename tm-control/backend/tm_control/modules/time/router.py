@@ -16,12 +16,13 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, Field
 
-from tm_control.adapters import systemd, timedate
+from tm_control.adapters import timedate
 from tm_control.adapters.command import CommandResult
 from tm_control.adapters.timedate import TimeState
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import current_user, require_admin
+from tm_control.modules.services.units import restart_or_log
 from tm_control.modules.time.checks import FLOOR
 
 log = logging.getLogger(__name__)
@@ -145,13 +146,7 @@ def _hold_time(clock, when: datetime, set_at: float, changed: set[str]) -> tuple
 def _restart_containers() -> None:
     """Restart the pod and nginx, run after the response has been sent: nginx carries it."""
     for unit in CONTAINERS:
-        try:
-            result = systemd.restart_unit(unit)
-        except Exception as exc:
-            log.error("systemctl restart %s failed (%s)", unit, type(exc).__name__)
-            continue
-        if result.returncode != 0 or result.timed_out:
-            log.error("systemctl restart %s failed with exit status %s", unit, result.returncode)
+        restart_or_log(unit)
 
 
 @router.get("", response_model=TimeState)
