@@ -29,7 +29,7 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 
 ## deployment
 
-Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device. All of them are optional.
+Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and when you move the device, set a new `survey_id` (and `lat` and `lon`, if you record a location). Changing only `lat` or `lon` doesn't start a new deployment. All of them are optional.
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|

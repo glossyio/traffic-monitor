@@ -22,13 +22,14 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows the setting.
 
-The database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
+With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
 
 The database stops being de-identified if you:
 
 * Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
 * Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.
 * Write identifying details into operator comments.
+* Keep the copy of the database that an upgrade leaves in `db/backup/`. It can hold the exact coordinates from before they were rounded (see [deployment](#deployment)), so don't share it.
 
 For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A [motion mask](../configuration/frigate-config.md#masks) only stops motion there from starting a detection; the area still shows in the live view and in recordings.
 
@@ -71,7 +72,7 @@ A row for each combination of sensor, survey, and bearing the device has had, ta
 | `sensorName` | TEXT | The sensor's name in `config.yml` |
 | `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written while the service starts, such as the first rows after an install, hold `undefined` instead. |
 
-The database holds shareable data only, so the exact location is never written to it. Upgrading from a release that stored exact coordinates gave each distinct place its own survey id and rounded the stored coordinates to one decimal place. The installer first copied the database to `db/backup/tmdb-v1-<time>.sqlite` (in the `node-red-tm` directory), and that copy still holds the exact rows. It isn't de-identified, and deleting it is up to you once you no longer need it. If the disk was too full, the copy was skipped and the exact coordinates are gone.
+The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to `db/backup/tmdb-v<N>-<time>.sqlite` in the `node-red-tm` directory, where N is the schema version the device was on before (1 on most devices), and that copy holds the exact rows. It is kept until the next schema change succeeds, and you can delete it sooner. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.
 
 ### comments
 
