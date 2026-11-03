@@ -41,7 +41,7 @@ Where the device is. Every event and reading is stored with a deployment id that
 
 A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing `lat` or `lon` on its own doesn't change the coordinates already stored.
 
-On a device upgraded from a release that recorded coordinates, the upgrade already gave the current deployments a survey id, and a later release will fill it into this file for you. Setting a different id by hand starts a new deployment for every sensor, so until then leave `survey_id` blank unless the device is moving.
+On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor.
 
 Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.
 
