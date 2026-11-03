@@ -129,6 +129,8 @@ Details name cameras, zones, radars, units, and config keys, never a URL, a pass
 
 Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, the errors from its last `config.yml` load, the database's schema version, and each radar's port and last reading. A flow on the `init-config` tab serves it. It checks the `X-TM-Internal-Token` header against `TM_INTERNAL_TOKEN` in `node-red-tm.env`, which the installer fills from the `node_red_internal_token` secret on every run, and refuses every request when that variable is unset or empty. `adapters/nodered.py` reads it. nginx answers 404 for `/nr/tm-internal/` in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: `script/tests/test_node_red_flows.py` and `tests/fixtures/nodered_status.json` pin them.
 
+The status reports the deployment as its survey id and `database_precision`, never coordinates. Node-RED also answers `GET /tm-internal/deployments?survey_id=`, `GET /tm-internal/surveys/usage`, `GET /tm-internal/surveys/<id>/events`, and `POST /tm-internal/deployments/precision` with the same token check; they list a survey's deployments, count events per survey, list a survey's events, and lower the stored precision. nginx doesn't proxy them.
+
 ### What the sandbox allows
 
 `tm-control.service` runs with `ProtectSystem=strict`, no `ReadWritePaths=`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. That shaped the probes:

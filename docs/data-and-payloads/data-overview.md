@@ -22,6 +22,8 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows the setting.
 
+The database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
+
 The database stops being de-identified if you:
 
 * Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
@@ -45,7 +47,7 @@ Tables for sensors the device doesn't have stay empty.
 | `radar_raw_speed_magnitude_single` | The strongest reading of each sample | No |
 | `radar_oc_payload` | Per-object summaries from the radar, including estimated length | No |
 | `airquality` | Air quality and weather readings. See [Air quality](air-quality-aq-payload.md). | No |
-| `deployment` | Where each sensor was, and when | Possibly: it holds the exact location, which is a home address if the device is mounted at a home |
+| `deployment` | Where each sensor was, and when | No: the location is rounded to about 10 km (one decimal place) by default, and never finer than about 1 km |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 
@@ -53,19 +55,23 @@ The [radar](radar-payload.md) tables are described on their own page. The two ta
 
 ### deployment
 
-A row for each combination of sensor, location, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+A row for each combination of sensor, survey, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
 
 | Column | Type | Meaning |
 |---|---|---|
 | `id` | TEXT, primary key | The deployment id |
 | `entryStartDateTime` | REAL | Unix time, in milliseconds, when this deployment began |
 | `entryEndDateTime` | REAL | Unix time, in milliseconds, when it ended; empty for the current one |
-| `lat` | REAL | Latitude in decimal degrees |
-| `lon` | REAL | Longitude in decimal degrees |
+| `survey_id` | TEXT | The place: one id for each place the device has been used at, such as `3f9a1c2e-si`. It has no coordinates in it, so rows at the same place share it. Empty when no survey id was set. |
+| `location_precision` | INTEGER | The number of decimal places kept in `lat` and `lon`: `1` (about 10 km) or `2` (about 1 km). Empty when the row has no coordinates. |
+| `lat` | REAL | Latitude in decimal degrees, rounded to `location_precision` decimal places; empty when no location was given or the precision is `none` |
+| `lon` | REAL | Longitude in decimal degrees, rounded the same way |
 | `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` |
 | `sensorType` | TEXT | `cameras`, `radars`, or `airquality_monitors` |
 | `sensorName` | TEXT | The sensor's name in `config.yml` |
 | `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written while the service starts, such as the first rows after an install, hold `undefined` instead. |
+
+The database holds shareable data only, so the exact location is never written to it. Upgrading from a release that stored exact coordinates gave each distinct place its own survey id and rounded the stored coordinates to one decimal place. The installer first copied the database to `db/backup/tmdb-v1-<time>.sqlite` (in the `node-red-tm` directory), and that copy still holds the exact rows. It isn't de-identified, and deleting it is up to you once you no longer need it. If the disk was too full, the copy was skipped and the exact coordinates are gone.
 
 ### comments
 

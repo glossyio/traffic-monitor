@@ -76,7 +76,7 @@ Once connected, the device sends over ThingsBoard's HTTP API:
 * Each [event](events-payload.md) as telemetry, with `ts` set to the event's `frame_time` in milliseconds and `values` holding every column of the event.
 * Each [radar](radar-payload.md) and [air quality](air-quality-aq-payload.md) reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.
 * The device's system metrics as telemetry, every five minutes.
-* The deployment location, radar information, and the Traffic Monitor settings as device attributes.
+* The deployment (its survey id and each sensor's rounded coordinates and bearing), radar information, and the Traffic Monitor settings as device attributes.
 
 ### Config backup
 
