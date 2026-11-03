@@ -534,7 +534,7 @@ def test_radars_report_config_port_and_last_reading():
     def port(serial_id, text):
         return (port_status, {"status": {"text": text, "source": {"id": serial_id, "type": "serial in"}}})
 
-    config = {"deployment": {"lat": 0.0, "lon": 0.0, "bearing": "n"},
+    config = {"deployment": {"survey_id": None, "database_precision": "1", "lat": 0.0, "lon": 0.0, "bearing": "n"},
               "sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True},
                                      "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
     out = run_functions([
@@ -547,7 +547,7 @@ def test_radars_report_config_port_and_last_reading():
         status_step(),
     ], context={"config": config})
     body = out["results"][-1]["result"]["payload"]
-    assert body["deployment"] == {"lat": 0.0, "lon": 0.0, "bearing": "n"}
+    assert body["deployment"] == {"survey_id": None, "database_precision": "1"}
     radars = body["radars"]
     assert sorted(radars) == RADAR_NAMES
     assert radars["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
@@ -618,13 +618,49 @@ def test_a_radar_removed_from_the_config_is_no_longer_enabled():
     flows = json.loads(FLOWS.read_text())
     loaded = named(flows, "tm-internal: config loaded")
     before = {"sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True}}}}
-    after = {"deployment": {"lat": None, "lon": None, "bearing": ""}, "sensors": {"radars": {}}}
+    after = {"deployment": {"survey_id": None, "database_precision": "none", "lat": None, "lon": None, "bearing": ""},
+             "sensors": {"radars": {}}}
     out = run_functions([(loaded, {}), status_step()], context={"config": before})
     assert out["results"][1]["result"]["payload"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
     out = run_functions([(loaded, {}), status_step()], context={**out["global"], "config": after})
     body = out["results"][1]["result"]["payload"]
     assert body["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is False
-    assert body["deployment"] == {"lat": None, "lon": None, "bearing": None}
+    assert body["deployment"] == {"survey_id": None, "database_precision": "none"}
+
+
+@needs_node
+def test_config_loaded_records_the_survey_not_the_coordinates():
+    """tm-control's status page shows which survey the device records and how finely, never the exact location."""
+    flows = json.loads(FLOWS.read_text())
+    loaded = named(flows, "tm-internal: config loaded")
+    config = {"deployment": {"survey_id": "3f9a1c2e-si", "database_precision": "1", "lat": 45.52252,
+                             "lon": -122.69120, "bearing": "n"},
+              "sensors": {"radars": {}}}
+    out = run_functions([(loaded, {}), status_step()], context={"config": config})
+    assert out["global"]["tm_status"]["deployment"] == {"survey_id": "3f9a1c2e-si", "database_precision": "1"}
+    assert out["results"][1]["result"]["payload"]["deployment"] == {"survey_id": "3f9a1c2e-si",
+                                                                    "database_precision": "1"}
+
+
+def test_no_init_config_node_puts_coordinates_in_tm_status():
+    """tm_status.deployment holds the survey only. The engine's tm_status.deployments (the rounded tmdb rows) may
+    hold coordinates."""
+    flows = json.loads(FLOWS.read_text())
+    tab = tab_id(flows, "init-config")
+    offenders = [node["name"] for node in flows if node["type"] == "function" and node["z"] == tab
+                 and re.search(r"tm_status\.deployment\b", node["func"]) and "lat" in node["func"]]
+    assert offenders == []
+
+
+def test_deployment_attribute_has_no_top_level_coordinates():
+    """The deployments client attribute names the survey at the top level; only the per-sensor rows, which tmdb
+    stores rounded, carry coordinates."""
+    template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
+    for key in ("lat", "lon", "bearing"):
+        assert f"global.config.deployment.{key}" not in template
+    top = template[template.index('"deploymentTopLevel"'):]
+    assert '"survey_id": "{{global.config.deployment.survey_id}}"' in top
+    assert '"database_precision": "{{global.config.deployment.database_precision}}"' in top
 
 
 # The deployment engine on init-config: after each config load it compares every enabled sensor's open deployment
