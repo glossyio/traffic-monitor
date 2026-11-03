@@ -1,6 +1,7 @@
 """Check Node-RED's flows.json off-device."""
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -624,3 +625,290 @@ def test_a_radar_removed_from_the_config_is_no_longer_enabled():
     body = out["results"][1]["result"]["payload"]
     assert body["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is False
     assert body["deployment"] == {"lat": None, "lon": None, "bearing": None}
+
+
+# The deployment engine on init-config: after each config load it compares every enabled sensor's open deployment
+# row with config.yml's survey id and that sensor's bearing, and writes the rows that start, end, or change.
+
+ENGINE_SURVEY = "3f9a1c2e-si"
+ENGINE_PLACE = {"survey_id": ENGINE_SURVEY, "database_precision": "1", "lat": 45.52252, "lon": -122.69120}
+ENGINE_SQL = {
+    "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
+    "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, "
+                         "deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, $bearing, "
+                         "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
+    "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
+                          "location_precision = $location_precision WHERE id = $id",
+}
+OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, "
+                 "location_precision FROM deployment WHERE entryEndDateTime IS NULL "
+                 "ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "bearing", "sensorType", "sensorName",
+            "deviceName", "survey_id", "location_precision"}
+
+
+def engine_sensors(camera_deployment=None):
+    camera_deployment = {"bearing": "n"} if camera_deployment is None else camera_deployment
+    return {"cameras": {"picam_h265": {"enabled": True, "deployment": camera_deployment}},
+            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"bearing": "s"}},
+                       "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}
+
+
+def open_row(sensor_type, sensor_name, bearing, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
+             started=10, row_id=None):
+    """An open deployment row as the open-rows SELECT returns it."""
+    return {"id": row_id or f"{started}-{sensor_name}-d",
+            "entryStartDateTime": started, "lat": lat, "lon": lon, "bearing": bearing, "sensorType": sensor_type,
+            "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
+            "location_precision": precision}
+
+
+def camera_row(**kwargs):
+    return open_row("cameras", "picam_h265", kwargs.pop("bearing", "n"), **kwargs)
+
+
+def radar_row(**kwargs):
+    return open_row("radars", "TM_RADAR_SERIAL_PORT_00", kwargs.pop("bearing", "s"), **kwargs)
+
+
+class EngineRun:
+    """One run of the engine: its four outputs as lists of messages, and the global context and log after it."""
+
+    def __init__(self, out):
+        [step] = out["results"]
+        self.close, self.insert, self.rewrite, self.result = (
+            [] if output is None else output if isinstance(output, list) else [output] for output in step["result"])
+        self.global_context = out["global"]
+        self.logged = step["logged"]
+
+    @property
+    def payload(self):
+        [message] = self.result
+        return message["payload"]
+
+    def written(self):
+        return self.close + self.insert + self.rewrite
+
+
+def engine(sensors, open_rows, deployment, env=None):
+    flows = json.loads(FLOWS.read_text())
+    out = run_functions([(named(flows, "deployment engine"), {"sensors": sensors, "sqlActiveDeployments": open_rows})],
+                        env={"TM_RPI_SN": "serial-1", **(env or {})},
+                        context={"config": {"deployment": deployment, "sensors": sensors}})
+    return EngineRun(out)
+
+
+def deployment_ids(run):
+    sensors = run.global_context["config"]["sensors"]
+    return {name: sensor.get("deployment", {}).get("id") for kind in sensors.values() for name, sensor in kind.items()}
+
+
+@needs_node
+def test_engine_inserts_a_row_per_enabled_sensor_on_a_fresh_database():
+    run = engine(engine_sensors(), [], ENGINE_PLACE)
+    assert run.close == [] and run.rewrite == []
+    params = {message["params"]["$sensorName"]: message["params"] for message in run.insert}
+    assert set(params) == {"picam_h265", "TM_RADAR_SERIAL_PORT_00"}
+    for name, bearing, sensor_type in [("picam_h265", "n", "cameras"), ("TM_RADAR_SERIAL_PORT_00", "s", "radars")]:
+        row = params[name]
+        assert {key: row[key] for key in ("$survey_id", "$lat", "$lon", "$location_precision", "$deviceName",
+                                          "$bearing", "$sensorType")} == {
+            "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+            "$deviceName": "serial-1", "$bearing": bearing, "$sensorType": sensor_type}
+        assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-d", row["$id"])
+        assert isinstance(row["$started"], int)
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(set(row) == ROW_KEYS for row in current)
+    assert run.payload["updatedDeployment"] == []
+    assert deployment_ids(run) == {"picam_h265": params["picam_h265"]["$id"],
+                                   "TM_RADAR_SERIAL_PORT_00": params["TM_RADAR_SERIAL_PORT_00"]["$id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+    assert run.global_context["tm_status"]["deployments"] == current
+
+
+@needs_node
+def test_engine_leaves_matching_open_rows_alone():
+    rows = [camera_row(), radar_row()]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+    assert run.payload["currentDeployment"] == [{**row, "entryEndDateTime": None} for row in rows]
+    assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+
+
+@needs_node
+def test_engine_adopts_an_open_row_without_a_survey():
+    camera = camera_row(survey_id=None, lat=None, lon=None, precision=None)
+    run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [message["params"] for message in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
+    assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
+        ENGINE_SURVEY, 45.5, -122.7, 1)
+
+
+@needs_node
+def test_engine_starts_a_deployment_on_a_new_survey_or_bearing():
+    rows = [camera_row(survey_id="aaaaaaaa-si"), radar_row(bearing="e")]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert {message["params"]["$id"] for message in run.close} == {row["id"] for row in rows}
+    assert all(isinstance(message["params"]["$ended"], int) for message in run.close)
+    assert {(m["params"]["$sensorName"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.insert} == {
+        ("picam_h265", ENGINE_SURVEY, "n"), ("TM_RADAR_SERIAL_PORT_00", ENGINE_SURVEY, "s")}
+    assert run.rewrite == []
+    updated = run.payload["updatedDeployment"]
+    assert {row["id"] for row in updated} == {row["id"] for row in rows}
+    ended = {message["params"]["$id"]: message["params"]["$ended"] for message in run.close}
+    assert all(row["entryEndDateTime"] == ended[row["id"]] for row in updated)
+    assert {row["id"] for row in run.payload["currentDeployment"]} == {m["params"]["$id"] for m in run.insert}
+
+
+@needs_node
+def test_engine_adopts_only_when_the_bearing_matches():
+    camera = camera_row(survey_id=None, bearing="w")
+    run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    assert [message["params"]["$sensorName"] for message in run.insert] == ["picam_h265"]
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_never_compares_coordinates():
+    run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "lat": 45.6})
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_ignores_coordinates_under_a_sensor():
+    sensors = engine_sensors({"bearing": "n", "lat": 40.0, "lon": -100.0})
+    run = engine(sensors, [], ENGINE_PLACE)
+    [camera] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "picam_h265"]
+    assert (camera["$lat"], camera["$lon"]) == (45.5, -122.7)
+
+
+@needs_node
+def test_engine_lowers_precision_in_place_and_ignores_a_raise():
+    rows = [camera_row(lat=45.52, lon=-122.69, precision=2), radar_row(lat=45.52, lon=-122.69, precision=2)]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
+        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}
+         for row in rows), key=lambda params: params["$id"])
+    run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
+    """A lower precision re-rounds the row's own lat and lon and keeps its survey id, whatever config.yml says now."""
+    camera = camera_row(lat=45.52, lon=-122.69, precision=2)
+    place = {**ENGINE_PLACE, "survey_id": survey_id, "lat": 47.0, "lon": -120.0}
+    run = engine(engine_sensors(), [camera, radar_row()], place)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}]
+    run = engine(engine_sensors(), [camera_row(), radar_row()], {**place, "database_precision": "none"})
+    assert run.close == [] and run.insert == []
+    assert sorted(m["params"]["$id"] for m in run.rewrite) == sorted([camera["id"], radar_row()["id"]])
+    assert all(m["params"] == {"$id": m["params"]["$id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None,
+                               "$location_precision": None} for m in run.rewrite)
+
+
+@needs_node
+@pytest.mark.parametrize("place", [
+    {**ENGINE_PLACE, "database_precision": "none"},
+    {**ENGINE_PLACE, "lat": ""},
+    {**ENGINE_PLACE, "lon": ""},
+    {**ENGINE_PLACE, "lat": None, "lon": None},
+], ids=["precision-none", "lat-blank", "lon-blank", "both-null"])
+def test_engine_stores_null_for_none_or_missing_coordinates(place):
+    """Review Focus 4: a half-blank location stores no coordinates at all, and no precision."""
+    run = engine(engine_sensors(), [], place)
+    assert len(run.insert) == 2
+    assert all((m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) == (None, None, None)
+               for m in run.insert)
+    assert [text for level, text, _ in run.logged if level == "error"] == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_creates_missing_rows_and_closes_nothing():
+    camera = camera_row(survey_id="aaaaaaaa-si", bearing="w")
+    run = engine(engine_sensors(), [camera], {**ENGINE_PLACE, "survey_id": None})
+    assert run.close == [] and run.rewrite == []
+    assert [(m["params"]["$sensorName"], m["params"]["$survey_id"]) for m in run.insert] == [
+        ("TM_RADAR_SERIAL_PORT_00", None)]
+    assert camera["id"] in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+def test_engine_rounds_string_coordinates():
+    """Review Focus 1: a coordinate quoted in YAML arrives as a string and is stored as the rounded number."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": "45.52252", "lon": "-122.69120"})
+    assert {(m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) for m in run.insert} == {
+        (45.5, -122.7, 1)}
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": "north"})
+    assert {(m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) for m in run.insert} == {
+        (None, None, None)}
+    errors = [text for level, text, _ in run.logged if level == "error"]
+    assert len(errors) == 1 and "deployment.lat" in errors[0]
+
+
+@needs_node
+def test_engine_rounds_halves_away_from_zero():
+    """As SQLite's ROUND does in the migration; JavaScript's Math.round would give -122.2."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": 45.25, "lon": -122.25})
+    assert {(m["params"]["$lat"], m["params"]["$lon"]) for m in run.insert} == {(45.3, -122.3)}
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+def test_engine_closes_duplicate_open_rows(survey_id):
+    """Review Focus 2: two open rows for one sensor (left by the old engine) leave one, the newest, open."""
+    older, newer = camera_row(started=10, row_id="10-00000001-d"), camera_row(started=20, row_id="20-00000002-d")
+    run = engine(engine_sensors(), [older, newer, radar_row()], {**ENGINE_PLACE, "survey_id": survey_id})
+    assert [message["params"]["$id"] for message in run.close] == [older["id"]]
+    assert run.insert == [] and run.rewrite == []
+    assert newer["id"] in {row["id"] for row in run.payload["currentDeployment"]}
+    assert older["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+    assert [row["id"] for row in run.payload["updatedDeployment"]] == [older["id"]]
+
+
+@needs_node
+def test_engine_skips_disabled_sensors():
+    disabled = open_row("radars", "TM_RADAR_SERIAL_PORT_01", "e", survey_id="aaaaaaaa-si")
+    run = engine(engine_sensors(), [camera_row(), radar_row(), disabled], ENGINE_PLACE)
+    assert run.written() == []
+    assert disabled["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+@pytest.mark.parametrize("row_bearing, sensor_bearing", [(None, ""), ("", ""), ("N", "n"), ("n", "N")],
+                         ids=["null-row", "blank", "upper-case-row", "upper-case-config"])
+def test_engine_treats_blank_and_upper_case_bearings_as_equal(row_bearing, sensor_bearing):
+    rows = [camera_row(bearing=row_bearing), radar_row()]
+    run = engine(engine_sensors({"bearing": sensor_bearing}), rows, ENGINE_PLACE)
+    assert run.written() == []
+
+
+def test_engine_wiring():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    engine_node = named(flows, "deployment engine")
+    assert engine_node["z"] == tab_id(flows, "init-config")
+    assert engine_node["outputs"] == 4
+    assert "node.send" not in engine_node["func"] and "node.done" not in engine_node["func"]
+    for output, name in zip(engine_node["wires"][:3], ENGINE_SQL):
+        [target] = [by_id[node_id] for node_id in output]
+        assert (target["type"], target["name"], target["sqlquery"], target["mydb"]) == ("sqlite", name, "prepared",
+                                                                                         TMDB)
+        assert target["z"] == engine_node["z"]
+        assert " ".join(target["sql"].split()).rstrip(";") == ENGINE_SQL[name]
+    assert engine_node["wires"][3] == ["05c37560dd57ea90"]
+    assert "24efdc7f1231f7f0" not in by_id and "bc398ad5de3bd112" not in by_id
+    assert " ".join(by_id["696c3a7b0b83f7b5"]["template"].split()) == OPEN_ROWS_SQL
+    assert by_id["6d2f607b324415b4"]["wires"] == [[engine_node["id"]]]
+    group = by_id[engine_node["g"]]
+    assert set(group["nodes"]) >= {target_id for output in engine_node["wires"] for target_id in output}
+    assert not {"24efdc7f1231f7f0", "bc398ad5de3bd112"} & set(group["nodes"])

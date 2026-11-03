@@ -1291,15 +1291,16 @@
         "nodes": [
             "f6ecdd18d8e03f91",
             "689b64c16a889e0a",
-            "bc398ad5de3bd112",
             "6d2f607b324415b4",
-            "24efdc7f1231f7f0",
             "1ba33a74f2d3a680",
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
             "a2b2e69319628779",
-            "17455485af2d8cfc"
+            "17455485af2d8cfc",
+            "3c63afe206e5d65e",
+            "f5e4484aeb11facf",
+            "94dad283c8f696f4"
         ],
         "x": 88,
         "y": 439,
@@ -2690,9 +2691,9 @@
         "type": "function",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "capture deployment info, send diff sql queries",
-        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorType = sensorType;\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\");\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorType}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id);\n                }\n                //deployment already exists, no change\n                else {\n                    newMsg.payload = sqlMatchObj;\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, sqlMatchObj.id);\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
-        "outputs": 1,
+        "name": "deployment engine",
+        "func": "// msg.sensors: config.yml's sensors (sensorType.sensorName.properties)\n// msg.sqlActiveDeployments: every open deployment row, newest first per sensor\n// A deployment is one sensor at one survey facing one way. It starts when the survey id or the bearing changes,\n// never when the coordinates do. The place (survey_id, lat, lon, database_precision) is per unit: the engine reads\n// it from the top-level deployment block and takes only the bearing from each sensor.\n// Outputs: 1 close deployment, 2 insert deployment, 3 rewrite deployment, 4 the deployment rows for ThingsBoard\n\nconst place = global.get(\"config.deployment\") || {};\nconst precisionPlaces = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst precision = place.database_precision in precisionPlaces ? precisionPlaces[place.database_precision] : 1;\nconst deviceName = env.get(\"TM_RPI_SN\") || null;\nconst now = Date.now();\n\n// half away from zero, as SQLite's ROUND (toFixed rounds the magnitude; Math.round would round -0.5 up)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\nfunction coordinate(value, key) {\n    if (typeof value === \"number\" && Number.isFinite(value)) {\n        return value;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    if (value !== undefined && value !== null && value !== '') {\n        node.error(`Node-RED config.yml top-level deployment.${key} is not a number; storing no location`);\n    }\n    return null;\n}\n\n// lat, lon and location_precision as tmdb stores them: all three, or all NULL when either coordinate is missing\nfunction location(lat, lon, places) {\n    if (lat === null || lon === null || places === null) {\n        return { lat: null, lon: null, location_precision: null };\n    }\n    return { lat: round(lat, places), lon: round(lon, places), location_precision: places };\n}\n\n// a blank bearing ('', null, missing) is '', and bearings compare without case\nfunction bearingOf(value) {\n    return (typeof value === \"string\") ? value.toLowerCase() : '';\n}\n\n// rank of a precision: NULL (nothing stored) is the coarsest\nfunction fineness(places) {\n    return places === null || places === undefined ? 0 : places;\n}\n\nconst stored = location(coordinate(place.lat, \"lat\"), coordinate(place.lon, \"lon\"), precision);\n\nconst openRows = {};\nfor (const row of msg.sqlActiveDeployments || []) {\n    const key = `${row.sensorType}.${row.sensorName}`;\n    (openRows[key] = openRows[key] || []).push({ ...row, entryEndDateTime: null });\n}\n\nconst close = [];\nconst insert = [];\nconst rewrite = [];\nconst updatedDeployment = [];\nconst currentDeployment = [];\n\nfunction closeRow(row) {\n    close.push({ params: { $ended: now, $id: row.id } });\n    updatedDeployment.push({ ...row, entryEndDateTime: now });\n}\n\nfunction insertRow(sensorType, sensorName, want) {\n    const id = now + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n    const row = {\n        id, entryStartDateTime: now, entryEndDateTime: null, ...stored, bearing: want.bearing,\n        sensorType, sensorName, deviceName, survey_id: want.survey_id,\n    };\n    insert.push({\n        params: {\n            $id: row.id, $started: row.entryStartDateTime, $lat: row.lat, $lon: row.lon, $bearing: row.bearing,\n            $sensorType: sensorType, $sensorName: sensorName, $deviceName: deviceName, $survey_id: row.survey_id,\n            $location_precision: row.location_precision,\n        }\n    });\n    return row;\n}\n\nfunction rewriteRow(row, survey_id, rowLocation) {\n    const rewritten = { ...row, survey_id, ...rowLocation };\n    rewrite.push({\n        params: {\n            $id: row.id, $survey_id: survey_id, $lat: rewritten.lat, $lon: rewritten.lon,\n            $location_precision: rewritten.location_precision,\n        }\n    });\n    return rewritten;\n}\n\n// a precision coarser than the row's re-rounds the row's own coordinates; a finer one waits for the next deployment\nfunction lowerPrecision(row) {\n    if (fineness(row.location_precision) <= fineness(precision)) {\n        return row;\n    }\n    return rewriteRow(row, row.survey_id, location(row.lat, row.lon, precision));\n}\n\nfunction decide(sensorType, sensorName, want, open) {\n    const [row, ...older] = open;\n    // 1. one open row per sensor: close every row after the newest\n    older.forEach(closeRow);\n    // 2. no open row: start a deployment\n    if (!row) {\n        return insertRow(sensorType, sensorName, want);\n    }\n    const sameBearing = bearingOf(row.bearing) === want.bearing;\n    // 3. no survey in config.yml: keep the open row\n    if (want.survey_id === null) {\n        return lowerPrecision(row);\n    }\n    // 4. a row from before any survey, facing the same way, belongs to this survey\n    if (row.survey_id === null && sameBearing) {\n        return rewriteRow(row, want.survey_id, stored);\n    }\n    // 5. a new survey or a new bearing: end the deployment and start another\n    if (row.survey_id !== want.survey_id || !sameBearing) {\n        closeRow(row);\n        return insertRow(sensorType, sensorName, want);\n    }\n    // 6. the same deployment\n    return lowerPrecision(row);\n}\n\nfor (const [sensorType, sensors] of Object.entries(msg.sensors || {})) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.enabled !== true) {\n            continue;\n        }\n        const want = {\n            survey_id: place.survey_id || null,\n            bearing: bearingOf((sensor.deployment || {}).bearing),\n        };\n        const open = (openRows[`${sensorType}.${sensorName}`] || [])\n            .sort((a, b) => b.entryStartDateTime - a.entryStartDateTime);\n        const current = decide(sensorType, sensorName, want, open);\n        currentDeployment.push(current);\n        global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, current.id);\n    }\n}\n\nglobal.set(\"tm_status.deployments\", currentDeployment);\n\nreturn [close, insert, rewrite, [{ payload: { updatedDeployment, currentDeployment } }]];\n",
+        "outputs": 4,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -2702,19 +2703,58 @@
         "y": 640,
         "wires": [
             [
-                "24efdc7f1231f7f0"
+                "3c63afe206e5d65e"
+            ],
+            [
+                "f5e4484aeb11facf"
+            ],
+            [
+                "94dad283c8f696f4"
+            ],
+            [
+                "05c37560dd57ea90"
             ]
         ]
     },
     {
-        "id": "bc398ad5de3bd112",
+        "id": "3c63afe206e5d65e",
         "type": "sqlite",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id;\n",
+        "name": "close deployment",
+        "x": 880,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f5e4484aeb11facf",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, location_precision)\nVALUES ($id, $started, $lat, $lon, $bearing, $sensorType, $sensorName, $deviceName, $survey_id, $location_precision);\n",
+        "name": "insert deployment",
+        "x": 880,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "94dad283c8f696f4",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, location_precision = $location_precision\nWHERE id = $id;\n",
+        "name": "rewrite deployment",
         "x": 880,
         "y": 680,
         "wires": [
@@ -2746,36 +2786,6 @@
         "wires": [
             [
                 "689b64c16a889e0a"
-            ]
-        ]
-    },
-    {
-        "id": "24efdc7f1231f7f0",
-        "type": "switch",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "submit sql or final payload?",
-        "property": "sqlSend",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "true"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 580,
-        "y": 680,
-        "wires": [
-            [
-                "bc398ad5de3bd112"
-            ],
-            [
-                "05c37560dd57ea90"
             ]
         ]
     },
@@ -2827,12 +2837,12 @@
         "type": "template",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "query latest active deployments",
+        "name": "query open deployments",
         "field": "topic",
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
+        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, location_precision\nFROM deployment\nWHERE entryEndDateTime IS NULL\nORDER BY sensorType, sensorName, entryStartDateTime DESC;\n",
         "output": "str",
         "x": 290,
         "y": 520,
