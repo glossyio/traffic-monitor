@@ -546,8 +546,9 @@ def test_set_time_from_the_api(host, address, expect, tm_login):
 
 
 # Clears node-red-tm.service's ExecStartPre, which is only tmdb_migrate.py, for the next start, so Node-RED runs on a
-# database that the migration hasn't brought up to date, as after a failed one. Without it, the migration would re-apply
-# 0001_baseline.sql, which is CREATE ... IF NOT EXISTS only, and bring user_version back.
+# database that the migration hasn't brought up to date, as after a failed one. Without it, the migration would run again
+# from version 0, fail on a migration that isn't idempotent (0002's ADD COLUMN), and Node-RED wouldn't start. So the test
+# sets user_version back itself, and if it's cut off, that has to be done by hand.
 SKIP_MIGRATION = "/run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf"
 SKIP_MIGRATION_CONF = "[Service]\nExecStartPre=\n"
 NODE_RED_DB = "node-red-tm/db/tmdb.sqlite"
@@ -600,7 +601,7 @@ def test_schema_behind_shows_an_error(host, address, expect, codedir, codeowner,
         behind = wait_for_check(address, cookie, "apps.nodered.schema", "error", SCHEMA_TIMEOUT_SECONDS)
     finally:
         # Each step runs even when the one before it fails, and each is safe to run twice, so a setup that failed
-        # partway is still undone. Without the drop-in, the migration at the start brings user_version back anyway.
+        # partway is still undone. The migration can't bring user_version back: from 0 it would fail on 0002.
         try:
             with host.sudo():
                 host.check_output("systemctl stop node-red-tm.service")
