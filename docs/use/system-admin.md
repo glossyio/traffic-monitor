@@ -44,7 +44,7 @@ sudo podman ps                                  # running containers
 | Plug in a radar | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
 | Add or change an AI accelerator | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). |
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](control-app.md#if-the-control-app-is-down). |
-| Move the device to a new site | Follow [First-time setup](../setup-guide.md) again: adjust the zones and update the location. |
+| Move the device to a new site | Follow [First-time setup](../setup-guide.md) again: adjust the zones, update the location, and set a new `survey_id`. |
 
 ## Where things are
 
