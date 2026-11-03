@@ -315,7 +315,7 @@ def test_thingsboard_without_a_host_is_a_config_error():
               "tmsetup_bearing": "n"}
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
     config["thingsboard"] = {"enabled": True, "access_token": "tb-token-1"}
-    config["deployment"] = {"lat": "north", "lon": "west", "bearing": ""}
+    config["deployment"] = {"lat": "north", "lon": "west", "bearing": "up"}
     [step] = run_functions([(defaults, {"payload": config})])["results"]
     # The key each message names ("Node-RED config.yml key thingsboard.host needs ..."), and whether msg came with it
     errors = {text.split()[3]: with_msg for level, text, with_msg in step["logged"] if level == "error"}
@@ -365,13 +365,52 @@ def test_init_config_defaults_survey_keys(given, expected, errors):
 def test_init_config_defaults_allows_blank_coordinates(coordinates):
     """Blank coordinates mean no location yet, and a number quoted in YAML is still a number; neither is an error."""
     config = new_device_config()
-    config["deployment"] = {"bearing": "n", **coordinates}
+    config["deployment"] = {"bearing": "", **coordinates}
     defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
     [step] = run_functions([(defaults, {"payload": config})])["results"]
     assert [text for level, text, _ in step["logged"] if level == "error"] == []
     deployment = step["result"]["payload"]["deployment"]
     expected = {key: coordinates.get(key) or "" for key in ("lat", "lon")}
     assert {key: deployment[key] for key in ("lat", "lon")} == expected
+
+
+MISSING = object()
+
+
+@needs_node
+@pytest.mark.parametrize("top, sensor, expected_top, expected_sensor, errors", [
+    ("", None, "", "", []),
+    (None, None, "", "", []),
+    (MISSING, None, "", "", []),
+    ("NE", None, "ne", "ne", []),
+    ("up", None, "up", "up", ["top-level"]),
+    ("n", {"bearing": ""}, "n", "", []),
+    ("n", {"bearing": None}, "n", "", []),
+    ("n", {}, "n", "n", []),
+    (None, {}, "", "", []),
+    (None, {"lat": 0.0}, "", "", []),
+    (None, {"bearing": None}, "", "", []),
+    ("n", {"bearing": "up"}, "n", "", ["sensor"]),
+], ids=["top-empty", "top-null", "top-missing", "top-upper-case", "top-invalid", "sensor-empty", "sensor-null",
+        "sensor-block-empty", "top-null-sensor-block-empty", "top-null-sensor-block", "both-null", "sensor-invalid"])
+def test_init_config_defaults_allows_a_blank_bearing(top, sensor, expected_top, expected_sensor, errors):
+    """A blank bearing means none yet, at the top level and per sensor; only a bearing that isn't one is an error."""
+    config = new_device_config()
+    if top is MISSING:
+        del config["deployment"]["bearing"]
+    else:
+        config["deployment"]["bearing"] = top
+    camera = config["sensors"]["cameras"]["picam_h265"]
+    if sensor is not None:
+        camera["deployment"] = sensor
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    logged = [text for level, text, _ in step["logged"] if level == "error"]
+    assert ["top-level" if "top-level deployment.bearing" in text else "sensor" if text.startswith("Invalid bearing")
+            else text for text in logged] == errors
+    payload = step["result"]["payload"]
+    assert payload["deployment"]["bearing"] == expected_top
+    assert payload["sensors"]["cameras"]["picam_h265"]["deployment"]["bearing"] == expected_sensor
 
 
 def test_config_template_has_the_survey_keys():
