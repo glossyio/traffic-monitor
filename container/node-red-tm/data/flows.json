@@ -1553,12 +1553,13 @@
             "b586e0ff85dbff1b",
             "11d84b6cc7755d49",
             "e813005490ef2e46",
-            "2b50b0bfb900ff09"
+            "2b50b0bfb900ff09",
+            "3da2c0e89c06736d"
         ],
         "x": 74,
         "y": 1099,
-        "w": 952,
-        "h": 302
+        "w": 1836,
+        "h": 842
     },
     {
         "id": "484071aff09e5ec2",
@@ -3127,6 +3128,705 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "3da2c0e89c06736d",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-control surveys: /tm-internal/deployments and /tm-internal/surveys",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "13e034c27f12073e",
+            "d6d77916aa623b3e",
+            "46ec4a96876a6180",
+            "801ef0c11661b4d5",
+            "706879bceaee998e",
+            "5d5d7f4aabe982c2",
+            "d58198f387c8ad77",
+            "00d0fe52e5a436b8",
+            "722ff1870a9592d7",
+            "194d46afe06965b1",
+            "df0216c0cd929103",
+            "c335adbde4d2e983",
+            "dce8e3e7d11d02ac",
+            "dbaded55d9fab95d",
+            "bb1d4e25561c8185",
+            "989c5c3f902cca14",
+            "df33e934c03ead41",
+            "aeb616f924b157ef",
+            "eee4243f7e032aa3",
+            "557fa351bb022d12",
+            "cf34fb121154e23f",
+            "99214c31b9ada13d",
+            "ab3b5270b8e3f915",
+            "4f6a97b580e88ab5",
+            "90ea3834beb653d7",
+            "0e87d3a648825460",
+            "09eeb422484c0b40",
+            "0949284d931b774b",
+            "68e62b15570b6394",
+            "db7c70a85f045770",
+            "e1ed1757d394e260",
+            "d64eec52af1bd3c4",
+            "da8284b87f912452",
+            "e27f61c06fec6515",
+            "88360cc173468725",
+            "628da87e6b4869dc"
+        ],
+        "x": 94,
+        "y": 1419,
+        "w": 1786,
+        "h": 502
+    },
+    {
+        "id": "13e034c27f12073e",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1460,
+        "wires": [
+            [
+                "d6d77916aa623b3e"
+            ]
+        ]
+    },
+    {
+        "id": "d6d77916aa623b3e",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1460,
+        "wires": [
+            [
+                "801ef0c11661b4d5"
+            ],
+            [
+                "46ec4a96876a6180"
+            ]
+        ]
+    },
+    {
+        "id": "46ec4a96876a6180",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "801ef0c11661b4d5",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate survey query",
+        "func": "// Only a survey id reaches the query, so a malformed survey_id answers 400 without touching tmdb.\nconst surveyId = (msg.req.query || {}).survey_id;\nif (typeof surveyId === \"string\" && /^[0-9a-f]{8}-si$/.test(surveyId)) {\n    msg.params = { $survey_id: surveyId };\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"survey_id\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1460,
+        "wires": [
+            [
+                "5d5d7f4aabe982c2"
+            ],
+            [
+                "706879bceaee998e"
+            ]
+        ]
+    },
+    {
+        "id": "706879bceaee998e",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "5d5d7f4aabe982c2",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, sensorName, survey_id,\n    location_precision\nFROM deployment\nWHERE survey_id = $survey_id\nORDER BY entryStartDateTime;\n",
+        "name": "read survey deployments",
+        "x": 1080,
+        "y": 1460,
+        "wires": [
+            [
+                "d58198f387c8ad77"
+            ]
+        ]
+    },
+    {
+        "id": "d58198f387c8ad77",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer deployments",
+        "func": "// One survey's deployment rows, oldest first\nmsg.payload = { deployments: msg.payload };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1460,
+        "wires": [
+            [
+                "00d0fe52e5a436b8"
+            ]
+        ]
+    },
+    {
+        "id": "00d0fe52e5a436b8",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1460,
+        "wires": []
+    },
+    {
+        "id": "722ff1870a9592d7",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/usage",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1560,
+        "wires": [
+            [
+                "194d46afe06965b1"
+            ]
+        ]
+    },
+    {
+        "id": "194d46afe06965b1",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1560,
+        "wires": [
+            [
+                "c335adbde4d2e983"
+            ],
+            [
+                "df0216c0cd929103"
+            ]
+        ]
+    },
+    {
+        "id": "df0216c0cd929103",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "c335adbde4d2e983",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: usage params",
+        "func": "// The usage query has nothing to bind, but a prepared sqlite node refuses a message without msg.params\nmsg.params = {};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1560,
+        "wires": [
+            [
+                "dce8e3e7d11d02ac"
+            ]
+        ]
+    },
+    {
+        "id": "dce8e3e7d11d02ac",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) AS last_end,\n    SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS deployment_count\nFROM deployment\nWHERE survey_id IS NOT NULL\nGROUP BY survey_id;\n",
+        "name": "read survey usage",
+        "x": 1080,
+        "y": 1560,
+        "wires": [
+            [
+                "dbaded55d9fab95d"
+            ]
+        ]
+    },
+    {
+        "id": "dbaded55d9fab95d",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer survey usage",
+        "func": "// One row per survey id in tmdb: its first start, its latest end, how many of its deployments are still open, and\n// how many it has in all. last_end skips open deployments, so it is null only when none has ended.\nmsg.payload = { surveys: msg.payload };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1560,
+        "wires": [
+            [
+                "bb1d4e25561c8185"
+            ]
+        ]
+    },
+    {
+        "id": "bb1d4e25561c8185",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "989c5c3f902cca14",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/:id/events",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1660,
+        "wires": [
+            [
+                "df33e934c03ead41"
+            ]
+        ]
+    },
+    {
+        "id": "df33e934c03ead41",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1660,
+        "wires": [
+            [
+                "eee4243f7e032aa3"
+            ],
+            [
+                "aeb616f924b157ef"
+            ]
+        ]
+    },
+    {
+        "id": "aeb616f924b157ef",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "eee4243f7e032aa3",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate survey path",
+        "func": "// Only a survey id reaches the query, so a malformed path answers 400 without touching tmdb.\nconst surveyId = (msg.req.params || {}).id;\nif (typeof surveyId === \"string\" && /^[0-9a-f]{8}-si$/.test(surveyId)) {\n    msg.params = { $survey_id: surveyId };\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"survey_id\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1660,
+        "wires": [
+            [
+                "cf34fb121154e23f"
+            ],
+            [
+                "557fa351bb022d12"
+            ]
+        ]
+    },
+    {
+        "id": "557fa351bb022d12",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "cf34fb121154e23f",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, MAX(start_time) AS last_event\nFROM events\nWHERE deployment_id IN (SELECT id FROM deployment WHERE survey_id = $survey_id);\n",
+        "name": "read survey events",
+        "x": 1080,
+        "y": 1660,
+        "wires": [
+            [
+                "99214c31b9ada13d"
+            ]
+        ]
+    },
+    {
+        "id": "99214c31b9ada13d",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer survey events",
+        "func": "// How many events the survey's deployments recorded, and the first and last event start (Unix seconds, null\n// with no events)\nconst row = (Array.isArray(msg.payload) && msg.payload[0]) || {};\nmsg.payload = {\n    survey_id: msg.params.$survey_id,\n    event_count: row.event_count || 0,\n    first_event: row.first_event == null ? null : row.first_event,\n    last_event: row.last_event == null ? null : row.last_event,\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1660,
+        "wires": [
+            [
+                "ab3b5270b8e3f915"
+            ]
+        ]
+    },
+    {
+        "id": "ab3b5270b8e3f915",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "4f6a97b580e88ab5",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments/precision",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1760,
+        "wires": [
+            [
+                "90ea3834beb653d7"
+            ]
+        ]
+    },
+    {
+        "id": "90ea3834beb653d7",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1760,
+        "wires": [
+            [
+                "09eeb422484c0b40"
+            ],
+            [
+                "0e87d3a648825460"
+            ]
+        ]
+    },
+    {
+        "id": "0e87d3a648825460",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "09eeb422484c0b40",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate precision",
+        "func": "// tm-control lowers the precision of every stored deployment coordinate: \"2\" or \"1\" decimal places, or \"none\"\n// to remove them. Only those three strings reach the database. A row already at that precision or coarser\n// doesn't match the UPDATE, so a finer precision changes nothing.\nconst body = msg.payload;\nconst precision = body !== null && typeof body === \"object\" ? body.precision : undefined;\nif (precision === \"none\") {\n    msg.params = {};\n    msg.precision_none = true;\n    return [msg, null];\n}\nif (precision === \"1\" || precision === \"2\") {\n    msg.params = { $p: Number(precision) };\n    msg.precision_none = false;\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"precision\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1760,
+        "wires": [
+            [
+                "68e62b15570b6394"
+            ],
+            [
+                "0949284d931b774b"
+            ]
+        ]
+    },
+    {
+        "id": "0949284d931b774b",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "68e62b15570b6394",
+        "type": "switch",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "remove coordinates?",
+        "property": "precision_none",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "false"
+            },
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1060,
+        "y": 1760,
+        "wires": [
+            [
+                "db7c70a85f045770"
+            ],
+            [
+                "e1ed1757d394e260"
+            ]
+        ]
+    },
+    {
+        "id": "db7c70a85f045770",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p\nWHERE location_precision > $p;\n",
+        "name": "rewrite precision",
+        "x": 1340,
+        "y": 1740,
+        "wires": [
+            [
+                "d64eec52af1bd3c4"
+            ]
+        ]
+    },
+    {
+        "id": "e1ed1757d394e260",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET lat = NULL, lon = NULL, location_precision = NULL\nWHERE lat IS NOT NULL OR lon IS NOT NULL;\n",
+        "name": "rewrite precision to none",
+        "x": 1340,
+        "y": 1780,
+        "wires": [
+            [
+                "d64eec52af1bd3c4"
+            ]
+        ]
+    },
+    {
+        "id": "d64eec52af1bd3c4",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer precision rewrite",
+        "func": "// The rewrite answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1580,
+        "y": 1760,
+        "wires": [
+            [
+                "da8284b87f912452"
+            ]
+        ]
+    },
+    {
+        "id": "da8284b87f912452",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1800,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "e27f61c06fec6515",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "catch: tm-internal query errors",
+        "scope": [
+            "5d5d7f4aabe982c2",
+            "dce8e3e7d11d02ac",
+            "cf34fb121154e23f",
+            "db7c70a85f045770",
+            "e1ed1757d394e260"
+        ],
+        "uncaught": false,
+        "x": 310,
+        "y": 1880,
+        "wires": [
+            [
+                "88360cc173468725"
+            ]
+        ]
+    },
+    {
+        "id": "88360cc173468725",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: database error",
+        "func": "// The sqlite node has logged the error; tm-control gets a 500 rather than waiting for a reply that\n// never comes\nmsg.statusCode = 500;\nmsg.payload = { error: \"database_error\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 1880,
+        "wires": [
+            [
+                "628da87e6b4869dc"
+            ]
+        ]
+    },
+    {
+        "id": "628da87e6b4869dc",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "500",
+        "headers": {},
+        "x": 820,
+        "y": 1880,
+        "wires": []
     },
     {
         "id": "0612ca7936dee14a",
