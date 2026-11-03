@@ -88,6 +88,21 @@
         "env": []
     },
     {
+        "id": "c4f8a57bce0b8ee7",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "aqi_tab",
+        "type": "tab",
+        "label": "Enviro+ AQI",
+        "disabled": false,
+        "info": ""
+    },
+    {
         "id": "0a6e123f5e53c029",
         "type": "group",
         "z": "28627559bebdc324",
@@ -2321,6 +2336,119 @@
         "order": 3,
         "showTitle": true,
         "className": "section-title, section-body",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "aqi_broker",
+        "type": "mqtt-broker",
+        "name": "Local broker",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "aqi_theme",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "aqi_page",
+        "type": "ui-page",
+        "name": "Air Quality",
+        "ui": "2a8899583532edb4",
+        "path": "/air-quality",
+        "icon": "air",
+        "layout": "grid",
+        "theme": "aqi_theme",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "aqi_grp1",
+        "type": "ui-group",
+        "name": "Air Quality Index",
+        "page": "aqi_page",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "aqi_grp2",
+        "type": "ui-group",
+        "name": "Sensor readings",
+        "page": "aqi_page",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
@@ -14154,15 +14282,18 @@
         ]
     },
     {
+        "id": "3a226e9922929100",
         "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "database copy failed",
+        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\ntry {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n} catch (err) {\n    node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n}\n// Set when \"copy database first?\" counted this copy, not when it refused for lack of space\nif (msg.countsAsCopy) {\n    flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n    delete msg.countsAsCopy;\n}\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "id": "3a226e9922929100",
-        "name": "database copy failed",
         "x": 1090,
         "y": 2060,
         "wires": [
@@ -14171,38 +14302,38 @@
                 "9297900926075b54",
                 "8f8958d08aa3a85d"
             ]
-        ],
-        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\ntry {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n} catch (err) {\n    node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n}\n// Set when \"copy database first?\" counted this copy, not when it refused for lack of space\nif (msg.countsAsCopy) {\n    flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n    delete msg.countsAsCopy;\n}\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
-        "z": "7c7dba965ad4a266",
-        "g": "c3e71a6b79637b6f"
+        ]
     },
     {
         "id": "6b71ab080a582bd2",
         "type": "sqlite",
-        "name": "copy database for download",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "msg.topic",
         "sql": "",
+        "name": "copy database for download",
         "x": 860,
         "y": 2060,
         "wires": [
             [
                 "5ce2b1e89783a67e"
             ]
-        ],
-        "z": "7c7dba965ad4a266",
-        "g": "c3e71a6b79637b6f"
+        ]
     },
     {
+        "id": "a7ea83d9c70f2981",
         "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "copy database first?",
+        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// \"stop if cancelled\" compares this with the Cancel count when the copy finishes\nmsg.cancelCountAtCopy = flow.get(\"downloadCancelCount\") || 0;\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    try {\n        if (fs.statSync(dir).mtimeMs < stale) {\n            fs.rmSync(dir, { recursive: true, force: true });\n        }\n    } catch (err) {\n        // Another download removed it first\n    }\n}\n// VACUUM INTO writes a full copy. Leave room for every other flow's writes, or the copy could fill the disk.\n// Copies run one after another, so earlier downloads' copies may not be written yet: leave room for\n// them too, less what they've written so far (measured first, so the free space already reflects it).\nconst size = fs.statSync(\"/db/tmdb.sqlite\").size;\nconst copies = flow.get(\"databaseCopiesInProgress\") || 0;\nlet written = 0;\ntry {\n    for (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n        try {\n            written += fs.statSync(path.join(root, entry, \"tmdb.sqlite\")).size;\n        } catch (err) {\n            // Not written yet, or another download removed it\n        }\n    }\n} catch (err) {\n    // Couldn't read the folder: count every earlier copy in full\n}\nconst { bavail, bsize } = fs.statfsSync(\"/db\");\nconst needed = Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024;\nif (bavail * bsize < needed) {\n    // \"database copy failed\" answers with the \"not enough free space\" message\n    throw new Error(\"disk is full: not enough free space to copy the database\");\n}\n// Each way this copy ends releases the count: \"handle end of file or error\", \"database copy failed\",\n// or \"stop if cancelled\"\nflow.set(\"databaseCopiesInProgress\", copies + 1);\nmsg.countsAsCopy = true;\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "id": "a7ea83d9c70f2981",
-        "name": "copy database first?",
         "x": 860,
         "y": 1920,
         "wires": [
@@ -14212,14 +14343,13 @@
             [
                 "6b71ab080a582bd2"
             ]
-        ],
-        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// \"stop if cancelled\" compares this with the Cancel count when the copy finishes\nmsg.cancelCountAtCopy = flow.get(\"downloadCancelCount\") || 0;\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    try {\n        if (fs.statSync(dir).mtimeMs < stale) {\n            fs.rmSync(dir, { recursive: true, force: true });\n        }\n    } catch (err) {\n        // Another download removed it first\n    }\n}\n// VACUUM INTO writes a full copy. Leave room for every other flow's writes, or the copy could fill the disk.\n// Copies run one after another, so earlier downloads' copies may not be written yet: leave room for\n// them too, less what they've written so far (measured first, so the free space already reflects it).\nconst size = fs.statSync(\"/db/tmdb.sqlite\").size;\nconst copies = flow.get(\"databaseCopiesInProgress\") || 0;\nlet written = 0;\ntry {\n    for (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n        try {\n            written += fs.statSync(path.join(root, entry, \"tmdb.sqlite\")).size;\n        } catch (err) {\n            // Not written yet, or another download removed it\n        }\n    }\n} catch (err) {\n    // Couldn't read the folder: count every earlier copy in full\n}\nconst { bavail, bsize } = fs.statfsSync(\"/db\");\nconst needed = Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024;\nif (bavail * bsize < needed) {\n    // \"database copy failed\" answers with the \"not enough free space\" message\n    throw new Error(\"disk is full: not enough free space to copy the database\");\n}\n// Each way this copy ends releases the count: \"handle end of file or error\", \"database copy failed\",\n// or \"stop if cancelled\"\nflow.set(\"databaseCopiesInProgress\", copies + 1);\nmsg.countsAsCopy = true;\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
-        "z": "7c7dba965ad4a266",
-        "g": "c3e71a6b79637b6f"
+        ]
     },
     {
         "id": "d4485dfc776d50fc",
         "type": "catch",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
         "name": "catch database copy",
         "scope": [
             "a7ea83d9c70f2981",
@@ -14232,9 +14362,7 @@
             [
                 "3a226e9922929100"
             ]
-        ],
-        "z": "7c7dba965ad4a266",
-        "g": "c3e71a6b79637b6f"
+        ]
     },
     {
         "id": "5ce2b1e89783a67e",
@@ -14318,5 +14446,513 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "aqi_chart",
+        "type": "ui-chart",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp1",
+        "name": "AQI – last 6 h",
+        "label": "AQI – last 6 h",
+        "order": 3,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "msg",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "0",
+        "ymax": "500",
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "false",
+        "pointRadius": 4,
+        "showLegend": false,
+        "removeOlder": "6",
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": "6",
+        "height": 5,
+        "className": "",
+        "interpolation": "linear",
+        "x": 340,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aqi_pmchart",
+        "type": "ui-chart",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp2",
+        "name": "PM2.5 / PM10 (µg/m³)",
+        "label": "PM2.5 / PM10 (µg/m³)",
+        "order": 5,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "msg",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "0",
+        "ymax": "",
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "false",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": "6",
+        "removeOlderUnit": "3600",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": "6",
+        "height": 5,
+        "className": "",
+        "interpolation": "linear",
+        "x": 340,
+        "y": 250,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aqi_t_pm25",
+        "type": "ui-text",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp2",
+        "order": 1,
+        "width": "6",
+        "height": "1",
+        "name": "PM2.5 (µg/m³)",
+        "label": "PM2.5 (µg/m³)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 340,
+        "y": 150,
+        "wires": []
+    },
+    {
+        "id": "aqi_t_pm10",
+        "type": "ui-text",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp2",
+        "order": 2,
+        "width": "6",
+        "height": "1",
+        "name": "PM10 (µg/m³)",
+        "label": "PM10 (µg/m³)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 340,
+        "y": 190,
+        "wires": []
+    },
+    {
+        "id": "aqi_t_temp",
+        "type": "ui-text",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp2",
+        "order": 3,
+        "width": "6",
+        "height": "1",
+        "name": "Temperature (°C)",
+        "label": "Temperature (°C)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 340,
+        "y": 310,
+        "wires": []
+    },
+    {
+        "id": "aqi_t_hum",
+        "type": "ui-text",
+        "z": "c4f8a57bce0b8ee7",
+        "group": "aqi_grp2",
+        "order": 4,
+        "width": "6",
+        "height": "1",
+        "name": "Humidity (%)",
+        "label": "Humidity (%)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 340,
+        "y": 350,
+        "wires": []
+    },
+    {
+        "id": "aqi_comment",
+        "type": "comment",
+        "z": "aqi_tab",
+        "name": "Edit the broker + topic below to match your Enviro+ publisher",
+        "info": "Expects JSON like {\"pm25\":12.3,\"pm10\":20.1,\"temperature\":21.5,\"humidity\":45}.\nThe function node also accepts pm2_5 / pm2.5 / PM2.5 etc.",
+        "x": 320,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "aqi_mqtt",
+        "type": "mqtt in",
+        "z": "aqi_tab",
+        "name": "Enviro+ MQTT",
+        "topic": "enviroplus",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "aqi_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 340,
+        "wires": [
+            [
+                "aqi_func"
+            ]
+        ]
+    },
+    {
+        "id": "aqi_inject",
+        "type": "inject",
+        "z": "aqi_tab",
+        "name": "Test sample",
+        "props": [
+            {
+                "p": "payload",
+                "v": "{\"pm25\":42.7,\"pm10\":61,\"temperature\":22.4,\"humidity\":48.2}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 420,
+        "wires": [
+            [
+                "aqi_func"
+            ]
+        ]
+    },
+    {
+        "id": "aqi_func",
+        "type": "function",
+        "z": "aqi_tab",
+        "name": "Compute US EPA AQI",
+        "func": "// ---- settings ----------------------------------------------------------\nconst WINDOW_MIN = 5;   // rolling average window in minutes (0 = instantaneous)\n// ------------------------------------------------------------------------\n\nlet d = msg.payload;\nif (Buffer.isBuffer(d)) d = d.toString();\nif (typeof d === \"string\") {\n    try { d = JSON.parse(d); } catch (e) { node.warn(\"Payload is not valid JSON\"); return null; }\n}\nif (!d || typeof d !== \"object\") return null;\n\n// Accept a few common key spellings from different Enviro+ publishers\nconst pick = (...keys) => {\n    for (const k of keys) {\n        if (d[k] !== undefined && d[k] !== null && d[k] !== \"\" && !isNaN(Number(d[k]))) return Number(d[k]);\n    }\n    return null;\n};\nconst pm25 = pick(\"pm25\", \"pm2_5\", \"pm2.5\", \"PM2.5\", \"pm_2_5\", \"P2\");\nconst pm10 = pick(\"pm10\", \"PM10\", \"pm_10\", \"P1\");\nconst temp = pick(\"temperature\", \"temp\", \"compensated_temperature\");\nconst hum  = pick(\"humidity\", \"hum\", \"compensated_humidity\");\n\nif (pm25 === null && pm10 === null) {\n    node.warn(\"No pm25/pm10 value found in payload: \" + JSON.stringify(d));\n    return null;\n}\n\n// Rolling average\nconst now = Date.now();\nlet buf = context.get(\"buf\") || [];\nbuf.push({ t: now, pm25, pm10 });\nbuf = buf.filter(x => now - x.t <= WINDOW_MIN * 60000);\ncontext.set(\"buf\", buf);\nconst avg = k => {\n    const v = buf.map(x => x[k]).filter(x => x !== null);\n    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;\n};\nconst a25 = avg(\"pm25\"), a10 = avg(\"pm10\");\n\n// US EPA breakpoints: [concLow, concHigh, aqiLow, aqiHigh]\nconst BP25 = [[0,9.0,0,50],[9.1,35.4,51,100],[35.5,55.4,101,150],[55.5,125.4,151,200],[125.5,225.4,201,300],[225.5,325.4,301,500]];\nconst BP10 = [[0,54,0,50],[55,154,51,100],[155,254,101,150],[255,354,151,200],[355,424,201,300],[425,604,301,500]];\nconst sub = (c, bp) => {\n    if (c === null) return null;\n    for (const [cl, ch, il, ih] of bp) {\n        if (c <= ch) return Math.round((ih - il) / (ch - cl) * (c - cl) + il);\n    }\n    return 500;\n};\nconst i25 = sub(a25 === null ? null : Math.floor(a25 * 10) / 10, BP25);   // PM2.5 truncated to 0.1\nconst i10 = sub(a10 === null ? null : Math.floor(a10), BP10);              // PM10 truncated to 1\n\nlet aqi, dominant;\nif (i10 === null || (i25 !== null && i25 >= i10)) { aqi = i25; dominant = \"PM2.5\"; }\nelse { aqi = i10; dominant = \"PM10\"; }\n\nconst CATS = [\n    { max: 50,  name: \"Good\",                           color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\",                       color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\",                      color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\",                 color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\",                      color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => aqi <= c.max) || CATS[CATS.length - 1];\n\nconst r1 = v => v === null ? null : Math.round(v * 10) / 10;\nreturn [\n    { payload: { aqi, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n                 dominant, pm25: r1(a25), pm10: r1(a10) } },\n    { payload: aqi,       topic: \"AQI\" },\n    a25 === null ? null : { payload: r1(a25), topic: \"PM2.5\" },\n    a10 === null ? null : { payload: r1(a10), topic: \"PM10\" },\n    temp === null ? null : { payload: Math.round(temp * 10) / 10 },\n    hum  === null ? null : { payload: Math.round(hum * 10) / 10 }\n];\n",
+        "outputs": 6,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 380,
+        "wires": [
+            [
+                "aqi_banner"
+            ],
+            [
+                "aqi_gauge"
+            ],
+            [],
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "aqi_banner",
+        "type": "ui-template",
+        "z": "aqi_tab",
+        "group": "aqi_grp1",
+        "page": "",
+        "name": "AQI banner",
+        "order": 1,
+        "width": "6",
+        "height": "3",
+        "head": "",
+        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"aqi-banner\" :style=\"{ background: msg.payload.color, color: msg.payload.text }\">\n    <div class=\"aqi-num\">{{ msg.payload.aqi }}</div>\n    <div class=\"aqi-cat\">{{ msg.payload.category }}</div>\n    <div class=\"aqi-adv\">{{ msg.payload.advice }}</div>\n    <div class=\"aqi-dom\">Driven by {{ msg.payload.dominant }}\n      (PM2.5 {{ msg.payload.pm25 }} / PM10 {{ msg.payload.pm10 }} µg/m³)</div>\n  </div>\n  <div v-else class=\"aqi-banner\" style=\"background:#999;color:#fff\">Waiting for data…</div>\n</template>\n\n<style>\n.aqi-banner { border-radius: 8px; padding: 16px; text-align: center; transition: background .5s; }\n.aqi-num { font-size: 4rem; font-weight: 700; line-height: 1; }\n.aqi-cat { font-size: 1.4rem; font-weight: 600; margin-top: 4px; }\n.aqi-adv { font-size: .95rem; margin-top: 8px; }\n.aqi-dom { font-size: .8rem; margin-top: 8px; opacity: .8; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 660,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aqi_gauge",
+        "type": "ui-gauge",
+        "z": "aqi_tab",
+        "name": "AQI gauge",
+        "group": "aqi_grp1",
+        "order": 2,
+        "width": "6",
+        "height": "4",
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "AQI",
+        "units": "",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": 0,
+                "color": "#00e400"
+            },
+            {
+                "from": 51,
+                "color": "#ffff00"
+            },
+            {
+                "from": 101,
+                "color": "#ff7e00"
+            },
+            {
+                "from": 151,
+                "color": "#ff0000"
+            },
+            {
+                "from": 201,
+                "color": "#8f3f97"
+            },
+            {
+                "from": 301,
+                "color": "#7e0023"
+            }
+        ],
+        "min": 0,
+        "max": 500,
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 660,
+        "y": 330,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7fd515e14cf9c85c",
+        "type": "inject",
+        "z": "aqi_tab",
+        "name": "trigger Event query every 5-min",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "query",
+        "payload": "",
+        "payloadType": "date",
+        "x": 230,
+        "y": 560,
+        "wires": [
+            [
+                "9de149f390700cdc"
+            ]
+        ]
+    },
+    {
+        "id": "9de149f390700cdc",
+        "type": "function",
+        "z": "aqi_tab",
+        "name": "query airquality, for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = 'sensorname01'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 560,
+        "wires": [
+            [
+                "c1cb5c86b8d96d91"
+            ]
+        ]
+    },
+    {
+        "id": "c1cb5c86b8d96d91",
+        "type": "sqlite",
+        "z": "aqi_tab",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 590,
+        "y": 600,
+        "wires": [
+            [
+                "2f063b61e8c88387"
+            ]
+        ]
+    },
+    {
+        "id": "2f063b61e8c88387",
+        "type": "debug",
+        "z": "aqi_tab",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "124187c87da361b7",
+        "type": "inject",
+        "z": "aqi_tab",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 640,
+        "wires": [
+            [
+                "9de149f390700cdc"
+            ]
+        ]
+    },
+    {
+        "id": "60a2e0251bfdc833",
+        "type": "catch",
+        "z": "aqi_tab",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 160,
+        "y": 40,
+        "wires": [
+            [
+                "da8326c04aeab855"
+            ]
+        ]
+    },
+    {
+        "id": "da8326c04aeab855",
+        "type": "debug",
+        "z": "aqi_tab",
+        "name": "catch: all - dashboard",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 40,
+        "wires": []
     }
 ]
