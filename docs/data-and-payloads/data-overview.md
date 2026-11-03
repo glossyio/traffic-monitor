@@ -67,7 +67,7 @@ A row for each combination of sensor, survey, and bearing the device has had, ta
 | `location_precision` | INTEGER | The number of decimal places kept in `lat` and `lon`: `1` (about 10 km) or `2` (about 1 km). Empty when the row has no coordinates. |
 | `lat` | REAL | Latitude in decimal degrees, rounded to `location_precision` decimal places; empty when no location was given or the precision is `none` |
 | `lon` | REAL | Longitude in decimal degrees, rounded the same way |
-| `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` |
+| `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Empty when no bearing was set; closed rows written by earlier releases can hold `null` or `undefined` instead. |
 | `sensorType` | TEXT | `cameras`, `radars`, or `airquality_monitors` |
 | `sensorName` | TEXT | The sensor's name in `config.yml` |
 | `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written by earlier releases can hold `undefined` instead. |
