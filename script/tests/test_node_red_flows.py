@@ -674,7 +674,7 @@ ENGINE_SQL = {
                          "deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, $bearing, "
                          "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
-                          "location_precision = $location_precision WHERE id = $id",
+                          "location_precision = $location_precision, bearing = $bearing WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, "
                  "location_precision FROM deployment WHERE entryEndDateTime IS NULL "
@@ -778,7 +778,8 @@ def test_engine_adopts_an_open_row_without_a_survey():
     run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
-        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}]
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": "n"}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
@@ -829,8 +830,8 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     run = engine(engine_sensors(), rows, ENGINE_PLACE)
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
-        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}
-         for row in rows), key=lambda params: params["$id"])
+        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -844,12 +845,14 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     run = engine(engine_sensors(), [camera, radar_row()], place)
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
-        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1}]
-    run = engine(engine_sensors(), [camera_row(), radar_row()], {**place, "database_precision": "none"})
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": "n"}]
+    rows = [camera_row(), radar_row()]
+    run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
-    assert sorted(m["params"]["$id"] for m in run.rewrite) == sorted([camera["id"], radar_row()["id"]])
-    assert all(m["params"] == {"$id": m["params"]["$id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None,
-                               "$location_precision": None} for m in run.rewrite)
+    assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
+        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
+          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
 
 
 @needs_node
@@ -929,7 +932,27 @@ def test_engine_treats_blank_and_upper_case_bearings_as_equal(row_bearing, senso
     """Releases 0.6.0 to 0.7.1 stored a blank bearing as the string 'null' (or 'undefined')."""
     rows = [camera_row(bearing=row_bearing), radar_row()]
     run = engine(engine_sensors({"bearing": sensor_bearing}), rows, ENGINE_PLACE)
-    assert run.written() == []
+    assert run.close == [] and run.insert == []
+    legacy = (row_bearing or "").strip().lower() in ("null", "undefined")  # stored as '' once; see the next test
+    assert [m["params"]["$id"] for m in run.rewrite] == ([rows[0]["id"]] if legacy else [])
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+@pytest.mark.parametrize("row_bearing", ["null", "undefined", " NULL "])
+def test_engine_stores_a_legacy_blank_bearing_as_blank(survey_id, row_bearing):
+    """An open row keeps its deployment, and its 'null' or 'undefined' bearing is written back as ''."""
+    camera = camera_row(bearing=row_bearing)
+    run = engine(engine_sensors({"bearing": ""}), [camera, radar_row()], {**ENGINE_PLACE, "survey_id": survey_id})
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": ""}]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
+    assert current["bearing"] == ""
+    again = engine(engine_sensors({"bearing": ""}), [{**camera, "bearing": ""}, radar_row()],
+                   {**ENGINE_PLACE, "survey_id": survey_id})
+    assert again.written() == []
 
 
 @needs_node
@@ -938,7 +961,8 @@ def test_engine_adopts_a_row_with_a_legacy_blank_bearing(row_bearing):
     rows = [camera_row(bearing=row_bearing, survey_id=None), radar_row()]
     run = engine(engine_sensors({"bearing": ""}), rows, ENGINE_PLACE)
     assert run.close == [] and run.insert == []
-    assert [(m["params"]["$id"], m["params"]["$survey_id"]) for m in run.rewrite] == [(rows[0]["id"], ENGINE_SURVEY)]
+    assert [(m["params"]["$id"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.rewrite] == [
+        (rows[0]["id"], ENGINE_SURVEY, "")]
 
 
 def test_engine_wiring():
