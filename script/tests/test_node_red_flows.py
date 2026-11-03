@@ -948,3 +948,262 @@ def test_engine_wiring():
     group = by_id[engine_node["g"]]
     assert set(group["nodes"]) >= {target_id for output in engine_node["wires"] for target_id in output}
     assert not {"24efdc7f1231f7f0", "bc398ad5de3bd112"} & set(group["nodes"])
+
+
+# The per-survey endpoints tm-control calls on loopback, each behind its own copy of the status endpoint's token check.
+
+STATUS_TOKEN_CHECK = "cbc268130cc14c58"
+TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
+                     "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision"}
+TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
+                       "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
+                       "/tm-internal/deployments/precision": "post"}
+SURVEY_SQL = {
+    "/tm-internal/deployments": ("read survey deployments",
+                                 "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
+                                 "sensorName, survey_id, location_precision FROM deployment WHERE survey_id = "
+                                 "$survey_id ORDER BY entryStartDateTime"),
+    "/tm-internal/surveys/usage": ("read survey usage",
+                                   "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
+                                   "AS last_end, SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS "
+                                   "deployment_count FROM deployment WHERE survey_id IS NOT NULL GROUP BY survey_id"),
+    "/tm-internal/surveys/:id/events": ("read survey events",
+                                        "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, "
+                                        "MAX(start_time) AS last_event FROM events WHERE deployment_id IN (SELECT id "
+                                        "FROM deployment WHERE survey_id = $survey_id)"),
+}
+PRECISION_SQL = {
+    "rewrite precision": "UPDATE deployment SET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p "
+                         "WHERE location_precision > $p",
+    "rewrite precision to none": "UPDATE deployment SET lat = NULL, lon = NULL, location_precision = NULL "
+                                 "WHERE lat IS NOT NULL OR lon IS NOT NULL",
+}
+VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
+              "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
+              "/tm-internal/deployments/precision": "tm-internal: validate precision"}
+
+
+def tm_internal_endpoints():
+    flows = json.loads(FLOWS.read_text())
+    endpoints = {node["url"]: node for node in flows
+                 if node["type"] == "http in" and node.get("url", "").startswith("/tm-internal/")}
+    return flows, {node["id"]: node for node in flows}, endpoints
+
+
+def reachable(by_id, start_ids):
+    """Every node a message can reach from start_ids, following wires."""
+    seen, todo = set(), list(start_ids)
+    while todo:
+        node_id = todo.pop()
+        if node_id not in seen:
+            seen.add(node_id)
+            todo.extend(target for output in by_id[node_id].get("wires", []) for target in output)
+    return [by_id[node_id] for node_id in seen]
+
+
+def sql_text(node):
+    return " ".join(node["sql"].split()).rstrip(";")
+
+
+def test_every_tm_internal_endpoint_checks_the_token_first():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    assert set(endpoints) == TM_INTERNAL_PATHS
+    for url, endpoint in endpoints.items():
+        assert endpoint["method"] == TM_INTERNAL_METHODS[url], url
+        assert endpoint["z"] == tab_id(flows, "init-config"), url
+        [[check_id]] = endpoint["wires"]
+        check = by_id[check_id]
+        assert check["type"] == "function" and check["outputs"] == 2, url
+        assert check["name"] == "tm-internal: check token", url
+        assert check["func"] == by_id[STATUS_TOKEN_CHECK]["func"], url
+        refused = reachable(by_id, check["wires"][1])
+        assert [(node["type"], str(node["statusCode"])) for node in refused] == [("http response", "401")], url
+
+
+def test_refused_requests_reach_no_sql():
+    """Review Focus 5: a request without the token, or with a malformed value, answers before any sqlite node."""
+    _, by_id, endpoints = tm_internal_endpoints()
+    for url in TM_INTERNAL_PATHS - {"/tm-internal/status"}:
+        [[check_id]] = endpoints[url]["wires"]
+        refusals = list(by_id[check_id]["wires"][1])
+        if url in VALIDATORS:
+            [validate_id] = by_id[check_id]["wires"][0]
+            validator = by_id[validate_id]
+            assert (validator["type"], validator["name"], validator["outputs"]) == ("function", VALIDATORS[url], 2)
+            refusals += validator["wires"][1]
+            bad = reachable(by_id, validator["wires"][1])
+            assert [(node["type"], str(node["statusCode"])) for node in bad] == [("http response", "400")], url
+        assert [node["type"] for node in reachable(by_id, refusals) if node["type"] != "http response"] == [], url
+
+
+@pytest.mark.parametrize("url", sorted(SURVEY_SQL))
+def test_survey_reads_run_one_prepared_statement(url):
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints[url]["wires"]
+    [[before_id], _] = by_id[check_id]["wires"]
+    [[query_id]] = by_id[before_id]["wires"][:1]
+    query = by_id[query_id]
+    name, sql = SURVEY_SQL[url]
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
+    assert sql_text(query) == sql
+    [[shape_id]] = query["wires"]
+    [[answer_id]] = by_id[shape_id]["wires"]
+    assert by_id[shape_id]["type"] == "function"
+    assert (by_id[answer_id]["type"], by_id[answer_id]["statusCode"]) == ("http response", "")
+
+
+def test_precision_rewrite_uses_two_statements():
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints["/tm-internal/deployments/precision"]["wires"]
+    [[validate_id], _] = by_id[check_id]["wires"]
+    [[switch_id]] = by_id[validate_id]["wires"][:1]
+    switch = by_id[switch_id]
+    assert (switch["type"], switch["property"], switch["propertyType"]) == ("switch", "precision_none", "msg")
+    assert [rule["t"] for rule in switch["rules"]] == ["false", "true"]
+    queries = [by_id[target] for [target] in switch["wires"]]
+    assert [node["name"] for node in queries] == list(PRECISION_SQL)
+    shapes = set()
+    for query in queries:
+        assert (query["type"], query["sqlquery"], query["mydb"]) == ("sqlite", "prepared", TMDB)
+        assert sql_text(query) == PRECISION_SQL[query["name"]]
+        [[shape_id]] = query["wires"]
+        shapes.add(shape_id)
+    [shape_id] = shapes
+    [[answer_id]] = by_id[shape_id]["wires"]
+    assert (by_id[answer_id]["type"], by_id[answer_id]["statusCode"]) == ("http response", "")
+
+
+def test_survey_endpoints_sit_with_the_status_endpoint():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    status_group = by_id[endpoints["/tm-internal/status"]["g"]]
+    new = reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS - {"/tm-internal/status"}])
+    groups = {node["g"] for node in new}
+    assert len(groups) == 1
+    [group_id] = groups
+    assert by_id[group_id]["g"] == status_group["id"] and group_id in status_group["nodes"]
+    assert set(by_id[group_id]["nodes"]) >= {node["id"] for node in new}
+
+
+SURVEY_ID = "3f9a1c2e-si"
+
+
+def bad_request(detail):
+    return {"error": "bad_request", "detail": detail}
+
+
+@needs_node
+@pytest.mark.parametrize("name, msg, ok", [
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "x' OR 1=1"}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "3F9A1C2E-si"}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": ["3f9a1c2e-si", "3f9a1c2e-si"]}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {}}}, False),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "2"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "1"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "none"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "3"}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": 2}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "None"}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": "precision=2"}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {}}, False),
+])
+def test_tm_internal_validators(name, msg, ok):
+    validator = named(json.loads(FLOWS.read_text()), name)
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if not ok:
+        assert passed is None
+        detail = "precision" if name == "tm-internal: validate precision" else "survey_id"
+        assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+        return
+    assert refused is None
+    if name == "tm-internal: validate precision":
+        given = msg["payload"]["precision"]
+        if given == "none":
+            assert passed["params"] == {} and passed["precision_none"] is True
+        else:
+            assert passed["params"] == {"$p": int(given)} and passed["precision_none"] is False
+    else:
+        assert passed["params"] == {"$survey_id": SURVEY_ID}
+
+
+@needs_node
+def test_survey_usage_binds_no_parameters():
+    """A prepared sqlite node refuses a message without msg.params, and the usage request has nothing to bind."""
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints["/tm-internal/surveys/usage"]["wires"]
+    [[params_id], _] = by_id[check_id]["wires"]
+    [step] = run_functions([(by_id[params_id], {"req": {}, "payload": {}})])["results"]
+    assert step["result"]["params"] == {}
+
+
+def shape(url):
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints[url]["wires"]
+    for node in reachable(by_id, [check_id]):
+        if node["type"] == "function" and any(by_id[t]["type"] == "http response" and by_id[t]["statusCode"] == ""
+                                              for output in node["wires"] for t in output):
+            return node
+    raise AssertionError(url)
+
+
+DEPLOYMENT_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": "2026-10-30T12:00:00.000Z",
+                  "entryEndDateTime": None, "lat": 45.5, "lon": -122.7, "bearing": "n", "sensorType": "camera",
+                  "sensorName": "picam_h265", "survey_id": SURVEY_ID, "location_precision": 1}
+
+
+@needs_node
+@pytest.mark.parametrize("rows", [[DEPLOYMENT_ROW], []], ids=["rows", "none"])
+def test_deployments_answer(rows):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/deployments"), msg)])["results"]
+    assert step["result"]["payload"] == {"deployments": rows}
+    assert step["result"].get("statusCode") in (None, 200)
+
+
+@needs_node
+@pytest.mark.parametrize("rows", [
+    [{"survey_id": SURVEY_ID, "first_start": "2026-10-30T12:00:00.000Z", "last_end": None, "open_count": 2,
+      "deployment_count": 3}],
+    [],
+], ids=["rows", "none"])
+def test_survey_usage_answer(rows):
+    msg = {"params": {}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/surveys/usage"), msg)])["results"]
+    assert step["result"]["payload"] == {"surveys": rows}
+
+
+@needs_node
+@pytest.mark.parametrize("row, expected", [
+    ({"event_count": 12, "first_event": 1761800000.5, "last_event": 1761890000.25},
+     {"event_count": 12, "first_event": 1761800000.5, "last_event": 1761890000.25}),
+    ({"event_count": 0, "first_event": None, "last_event": None},
+     {"event_count": 0, "first_event": None, "last_event": None}),
+], ids=["events", "no-events"])
+def test_survey_events_answer(row, expected):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "req": {"params": {"id": SURVEY_ID}}, "payload": [row]}
+    [step] = run_functions([(shape("/tm-internal/surveys/:id/events"), msg)])["results"]
+    assert step["result"]["payload"] == {"survey_id": SURVEY_ID, **expected}
+
+
+@needs_node
+@pytest.mark.parametrize("params", [{"$p": 1}, {}], ids=["rounded", "none"])
+def test_precision_rewrite_answers_204(params):
+    msg = {"params": params, "precision_none": params == {}, "payload": []}
+    [step] = run_functions([(shape("/tm-internal/deployments/precision"), msg)])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_database_errors_answer_500():
+    """A failed query must still answer, or tm-control waits for a reply that never comes."""
+    flows, by_id, endpoints = tm_internal_endpoints()
+    queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
+               if node["type"] == "sqlite"}
+    assert len(queries) == 5
+    [catch] = [node for node in flows if node["type"] == "catch" and set(node.get("scope") or []) & queries]
+    assert set(catch["scope"]) == queries
+    answers = [node for node in reachable(by_id, [catch["id"]]) if node["type"] == "http response"]
+    assert [str(node["statusCode"]) for node in answers] == ["500"]
