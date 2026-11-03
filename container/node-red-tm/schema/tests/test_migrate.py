@@ -11,6 +11,7 @@ import pytest
 import helpers
 from helpers import (
     BASELINE_TABLES,
+    LATEST_VERSION,
     LEGACY_SCHEMA,
     RUNNER,
     columns,
@@ -38,6 +39,12 @@ def legacy_db(path):
     con.close()
 
 
+def baseline_only(make_migrations):
+    """Just the real baseline, for tests about what 0001 alone does."""
+    baseline = (helpers.SCHEMA_DIR / "migrations" / "0001_baseline.sql").read_text()
+    return make_migrations({"0001_baseline.sql": baseline})
+
+
 def with_a_second_migration(make_migrations):
     """The real baseline plus a 0002, so adopting a pre-migration database is more than the baseline."""
     baseline = (helpers.SCHEMA_DIR / "migrations" / "0001_baseline.sql").read_text()
@@ -56,7 +63,7 @@ def test_fresh_database_gets_baseline_tables_and_version(db_path):
     assert migrate("--db", db_path) == 0
 
     assert tables(db_path) == BASELINE_TABLES
-    assert user_version(db_path) == 1
+    assert user_version(db_path) == LATEST_VERSION
     assert files_in(db_path.parent / "backup") == []  # nothing to back up yet
 
 
@@ -65,17 +72,17 @@ def test_pre_migration_database_is_adopted_with_rows_intact(db_path, capsys):
 
     assert migrate("--db", db_path) == 0
 
-    assert user_version(db_path) == 1
+    assert user_version(db_path) == LATEST_VERSION
     assert query(db_path, "SELECT count(*) FROM events") == [(2,)]
     assert query(db_path, "SELECT count(*) FROM radar_dov") == [(1,)]
     assert "DRIFT" not in output(capsys)
 
 
-def test_baseline_creates_the_same_columns_as_the_old_flows(db_path, tmp_path):
+def test_baseline_creates_the_same_columns_as_the_old_flows(db_path, tmp_path, make_migrations):
     legacy_path = tmp_path / "legacy.sqlite"
     create_db(legacy_path, LEGACY_SCHEMA.read_text())
 
-    assert migrate("--db", db_path) == 0
+    assert migrate("--db", db_path, "--migrations", baseline_only(make_migrations)) == 0
 
     for table in BASELINE_TABLES:
         # cid, name, type, notnull, default, pk
@@ -94,7 +101,7 @@ def test_baseline_adds_or_keeps_the_radar_time_index(db_path, had_flow_index):
 
     assert migrate("--db", db_path) == 0
 
-    assert user_version(db_path) == 1
+    assert user_version(db_path) == LATEST_VERSION
     assert query(db_path, "SELECT name FROM sqlite_master WHERE type = 'index' "
                           "AND tbl_name = 'radar_raw_speed_magnitude_single'") == [("index_radar_singleton_time",)]
 
@@ -173,11 +180,11 @@ def test_database_newer_than_the_migrations_is_left_unchanged(db_path):
 # --- backups ----------------------------------------------------------------
 
 
-def test_adopting_a_pre_migration_database_needs_no_backup(db_path):
+def test_adopting_a_pre_migration_database_needs_no_backup(db_path, make_migrations):
     """The baseline only creates what's missing, and copying a multi-GB database would add minutes of downtime."""
     legacy_db(db_path)
 
-    assert migrate("--db", db_path) == 0
+    assert migrate("--db", db_path, "--migrations", baseline_only(make_migrations)) == 0
 
     assert files_in(db_path.parent / "backup") == []
 
@@ -338,7 +345,9 @@ def test_drift_is_reported_for_an_old_deployment_table_and_left_alone(db_path, c
         assert column in missing
     for column in ["entryDateTime", "orientation", "address", "description"]:
         assert column in unexpected
-    assert columns(db_path, "deployment") == ["id", "entryDateTime", "lat", "lon", "orientation", "address", "description"]
+    # 0002 adds its two columns; the runner changes nothing else about the old shape
+    assert columns(db_path, "deployment") == ["id", "entryDateTime", "lat", "lon", "orientation", "address", "description",
+                                              "survey_id", "location_precision"]
 
 
 def test_drift_is_reported_for_a_missing_index(db_path, make_migrations, capsys):
