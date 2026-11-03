@@ -41,7 +41,7 @@ Rules for migrations:
 - **Never edit, renumber, or delete a merged migration.** Devices may already have applied it. Fix mistakes with a new migration.
 - **Leave out `BEGIN`, `COMMIT`, and `PRAGMA user_version`.** The runner wraps each file in a transaction and sets the version, so a failing file leaves nothing behind. It refuses a file that has them, or `VACUUM`. That check also rejects a trigger's `END`, so a migration that needs a trigger must extend it.
 - **Prefer additive changes:** new tables, `ALTER TABLE ... ADD COLUMN`, `CREATE INDEX IF NOT EXISTS`. Renaming, retyping, or dropping a column needs SQLite's [table rebuild procedure](https://www.sqlite.org/lang_altertable.html#otheralter) and a note in the release notes.
-- **Check drift reports before relying on a column.** Some devices have older table shapes. A migration that assumes the current shape fails there, and those devices keep running at the previous version.
+- **Check drift reports before relying on a column.** Some devices have older table shapes. A migration that assumes the current shape fails there, and those devices keep running at the previous version. For example, a `deployment` table in the legacy shape (`entryDateTime`, `orientation`, `address`, no `bearing`) is reported as drift, and migration `0002` still applies to it.
 - **Keep migrations fast.** Node-RED is down while they run, and so is its MQTT broker, which Frigate publishes to. Events in that window are lost. Time anything that touches the large `radar_*` tables against a copy of a big database first.
 - **Use SQL that SQLite 3.40 supports.** That's the oldest SQLite the runner may meet on a device.
 
@@ -113,6 +113,7 @@ Use a test Pi, not a field device. It should run the current `dev` with a databa
    - In the Node-RED editor, click the `select latest 5 rows from <table>` inject on the table's tab and read the debug sidebar. New rows should fill the new column.
    - Also open the dashboards that read the table.
 8. Restart with `sudo systemctl restart node-red-tm.service`. The log should say `up to date at version <N>`, and `db/backup/` should still hold just the one backup.
+   - For `0002`, that backup is `tmdb-v1-<time>.sqlite`. It holds the exact coordinates from before the rounding, so it isn't de-identified. Deleting it is the operator's call.
 
 Before you switch the test Pi to a branch without your migration, clean up by hand. The deploy copies migration files but never deletes them, and the runner leaves a database alone when it's newer than its migrations.
 

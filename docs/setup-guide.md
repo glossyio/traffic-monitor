@@ -53,19 +53,21 @@ Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, c
 
 ## 4. Record the location and sensors
 
-The device records its location with every event, so set it before you collect data. Connect over SSH and open the Traffic Monitor settings file:
+The device can record where it is, so set this before you collect data. The location is optional. If the device stays in one place and you never share its data, set `survey_id` to a new id, keep the default `database_precision`, and enter the coordinates if you want them. Connect over SSH and open the Traffic Monitor settings file:
 
 ```bash
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
 ```
 
-1. Under `deployment`, enter the latitude and longitude from any map service, and the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`.
+1. Under `deployment`, enter the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Optionally enter the latitude and longitude from any map service. `survey_id` names the place without coordinates: use `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si`, and the same id for every device at that place. `database_precision` is how much of the coordinates the database keeps: `none`, `1` (about 10 km, the default), or `2` (about 1 km). The exact coordinates stay in this file only.
 2. Under `sensors`, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`.
 
 ```yaml
 deployment:
-    lat: 45.5225
-    lon: -122.6919
+    survey_id: 3f9a1c2e-si
+    database_precision: '1'
+    lat: 45.52252
+    lon: -122.69120
     bearing: n
 
 sensors:
