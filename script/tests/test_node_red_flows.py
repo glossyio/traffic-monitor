@@ -920,12 +920,25 @@ def test_engine_skips_disabled_sensors():
 
 
 @needs_node
-@pytest.mark.parametrize("row_bearing, sensor_bearing", [(None, ""), ("", ""), ("N", "n"), ("n", "N")],
-                         ids=["null-row", "blank", "upper-case-row", "upper-case-config"])
+@pytest.mark.parametrize("row_bearing, sensor_bearing",
+                         [(None, ""), ("", ""), ("N", "n"), ("n", "N"), ("null", ""), ("undefined", None),
+                          (" NULL ", ""), ("Undefined", "null")],
+                         ids=["null-row", "blank", "upper-case-row", "upper-case-config", "null-string-row",
+                              "undefined-string-row", "padded-upper-case-null-row", "null-string-config"])
 def test_engine_treats_blank_and_upper_case_bearings_as_equal(row_bearing, sensor_bearing):
+    """Releases 0.6.0 to 0.7.1 stored a blank bearing as the string 'null' (or 'undefined')."""
     rows = [camera_row(bearing=row_bearing), radar_row()]
     run = engine(engine_sensors({"bearing": sensor_bearing}), rows, ENGINE_PLACE)
     assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_bearing", ["null", "undefined"])
+def test_engine_adopts_a_row_with_a_legacy_blank_bearing(row_bearing):
+    rows = [camera_row(bearing=row_bearing, survey_id=None), radar_row()]
+    run = engine(engine_sensors({"bearing": ""}), rows, ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [(m["params"]["$id"], m["params"]["$survey_id"]) for m in run.rewrite] == [(rows[0]["id"], ENGINE_SURVEY)]
 
 
 def test_engine_wiring():
