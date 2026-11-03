@@ -41,7 +41,7 @@ Where the device is. Every event and reading is stored with a deployment id that
 
 A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing `lat` or `lon` on its own doesn't change the coordinates already stored.
 
-On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor.
+On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor. To keep the current deployments while you set it, for example before you turn a camera, use the id the upgrade chose. The Node-RED editor at `http://<device>/nr/` shows it: in the **Context Data** sidebar, refresh **Global** and open `tm_status`, where `deployments` lists each current deployment with its `survey_id`. The `deployment` table in a [database download](../ui/database.md#download-the-database) has it too.
 
 Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.
 
