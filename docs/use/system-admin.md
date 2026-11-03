@@ -54,7 +54,7 @@ The settings and data live under `/opt/traffic-monitor/`.
 |---|---|
 | `node-red-tm/config/config.yml` | Traffic Monitor settings. See [config.yml settings](../configuration/node-red-config.md). |
 | `node-red-tm/node-red-tm.env` | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](../configuration/environment.md). |
-| `node-red-tm/db/tmdb.sqlite` | The database. `db/backup/` holds the copy saved before the most recent schema change. |
+| `node-red-tm/db/tmdb.sqlite` | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it. |
 | `frigate/config/config.yml` | Frigate's settings, including zones and masks. |
 | `frigate/storage/` | Frigate's snapshots and recordings. |
 | `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed. |

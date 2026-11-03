@@ -113,7 +113,7 @@ Use a test Pi, not a field device. It should run the current `dev` with a databa
    - In the Node-RED editor, click the `select latest 5 rows from <table>` inject on the table's tab and read the debug sidebar. New rows should fill the new column.
    - Also open the dashboards that read the table.
 8. Restart with `sudo systemctl restart node-red-tm.service`. The log should say `up to date at version <N>`, and `db/backup/` should still hold just the one backup.
-   - For `0002`, that backup is `tmdb-v1-<time>.sqlite`. It holds the exact coordinates from before the rounding, so it isn't de-identified. Deleting it is the operator's call.
+   - For `0002`, that backup is `tmdb-v<N>-<time>.sqlite`, where N is the version the device was on before (`1` on most devices, `0` when the baseline is adopted on the same start). It is kept until the next schema change succeeds. It holds the exact coordinates from before the rounding, so it isn't de-identified. Deleting it is the operator's call.
 
 Before you switch the test Pi to a branch without your migration, clean up by hand. The deploy copies migration files but never deletes them, and the runner leaves a database alone when it's newer than its migrations.
 
