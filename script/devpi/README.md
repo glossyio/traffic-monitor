@@ -201,10 +201,15 @@ Pi back yourself:
 - **Time zone:** set it on the Date and time page, or run `sudo timedatectl set-timezone <zone>` and then
   `sudo systemctl restart traffic-monitor.service revproxy.service`, so the containers pick it up.
 - **NTP:** turn it on on the Date and time page, or run `sudo timedatectl set-ntp true`.
-- **The schema test's drop-in:** run `sudo rm -f /run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf`,
-  then `sudo systemctl daemon-reload` and `sudo systemctl restart node-red-tm.service`. Until you remove it, or the Pi
-  reboots, every start of Node-RED skips the database migration. The restart runs the migration. While
-  `0001_baseline.sql` is the only migration, that also puts back the schema version the test set to 0.
+- **The schema test's drop-in:** run `sudo rm -f /run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf`
+  and `sudo systemctl daemon-reload`. Until you remove it, or the Pi reboots, every start of Node-RED skips the database
+  migration. The test also sets the database's schema version to 0, and the migration can't bring it back, because
+  `0002_deployment_survey.sql` fails when it runs a second time. With `node-red-tm.service` still stopped
+  (`sudo systemctl stop node-red-tm.service`), set `user_version` back to the number of the newest file in
+  `container/node-red-tm/schema/migrations/` (2 at the moment) as the code owner, which is `tmadmin` unless you changed
+  it:
+  `sudo runuser -u <owner> -- python3 -c "import sqlite3; con = sqlite3.connect('/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite', isolation_level=None); con.execute('PRAGMA user_version = 2'); con.close()"`.
+  Then run `sudo systemctl restart node-red-tm.service`.
 
 The tests keep secrets, such as session cookies and setup codes, out of their normal output. Don't add `-vv` or `--log-level=DEBUG` to a run whose output you'll share: the more detail pytest prints, the likelier it is to show one.
 

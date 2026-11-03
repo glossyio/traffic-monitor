@@ -13,7 +13,6 @@ Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in th
 * A camera or radar without `enabled` is off.
 * A radar without `opt_api_commands_array` gets no extra commands.
 * ThingsBoard without `host` stays off.
-* A `deployment` without `lat` or `lon` isn't recorded, so leave the keys in place even when they're empty.
 * A camera whose `camera_radar` names a radar that isn't in the file records no events. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
 ## thingsboard
@@ -30,15 +29,23 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 
 ## deployment
 
-Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.
+Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data. When you move the device, set a new `survey_id`, and new `lat` and `lon` if you record a location, because changing only `lat` or `lon` doesn't start a new deployment. All of them are optional.
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
-| `lat` | decimal degrees, such as `45.5225` | empty | Latitude. Four decimal places give address-level accuracy. |
-| `lon` | decimal degrees, such as `-122.6919` | empty | Longitude. |
-| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty | The compass direction the camera and radar face. |
+| `survey_id` | `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si` | empty | Names the place the device is used at, with no coordinates in it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error. |
+| `database_precision` | `none`, `1`, or `2` | `'1'` | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too. |
+| `lat` | decimal degrees, such as `45.52252` | empty | Latitude, optional. Use five decimal places at most. The database stores it rounded to `database_precision`; this file keeps the exact value. |
+| `lon` | decimal degrees, such as `-122.69120` | empty | Longitude, optional, with the same rules as `lat`. Set both or neither: a row with only one gets neither. |
+| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty | The compass direction the camera and radar face. Optional; a value that isn't one of these is logged as an error. |
 
-A `deployment:` block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.
+A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing `lat` or `lon` on its own doesn't change the coordinates already stored.
+
+On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor. To keep the current deployments while you set it, for example before you turn a camera, use the id the upgrade chose. The Node-RED editor at `http://<device>/nr/` shows it: in the **Context Data** sidebar, refresh **Global** and open `tm_status`, where `deployments` lists each current deployment with its `survey_id`. The `deployment` table in a [database download](../ui/database.md#download-the-database) has it too.
+
+Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.
+
+A `deployment:` block under a camera or radar can hold `bearing`, for a device whose cameras face different ways. A `lat` or `lon` there is no longer read, because the location belongs to the whole device.
 
 ## sensors.cameras
 
@@ -51,7 +58,7 @@ To rename a camera, rename it in Frigate's config and choose **Save & Restart**.
 | `enabled` | `true` or `false` | `true` for `picam_h265` | Record this camera's events. Frigate keeps running either way. |
 | `camera_radar` | a radar name from `sensors.radars` | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar. |
 | `plate_recognizer` | `true` or `false` | `false` | Send this camera's events to the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. |
-| `deployment` | block | inherited | Per-camera `lat`, `lon`, and `bearing`. |
+| `deployment` | block | inherited | Per-camera `bearing`. |
 
 ## sensors.radars
 
@@ -61,7 +68,7 @@ One entry per radar. A radar's name is the name of the variable that holds its s
 |---|---|---|---|
 | `enabled` | `true` or `false` | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar. |
 | `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'` | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
-| `deployment` | block | inherited | Per-radar `lat`, `lon`, and `bearing`. |
+| `deployment` | block | inherited | Per-radar `bearing`. |
 
 ## sensors.airquality_monitors
 
