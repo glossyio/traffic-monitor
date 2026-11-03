@@ -306,7 +306,8 @@ def test_init_config_defaults_loads_the_new_config_template():
 @needs_node
 def test_thingsboard_without_a_host_is_a_config_error():
     """Only this init config defaults error passes msg, so the catch records it in tm_status.config.errors. The lat,
-    lon, and bearing checks stay log-only: they flag the shipped empty defaults, and tm-control checks those keys."""
+    lon, and bearing checks stay log-only: they flag values that aren't coordinates or bearings, and tm-control checks
+    those keys."""
     flows = json.loads(FLOWS.read_text())
     defaults = named(flows, "init config defaults")
     assert INIT_DEFAULTS in named(flows, "catch: config.yml load errors")["scope"]
@@ -321,6 +322,63 @@ def test_thingsboard_without_a_host_is_a_config_error():
     assert errors == {"thingsboard.host": True, "deployment.lat": False, "deployment.lon": False,
                       "deployment.bearing": False}
     assert step["result"]["payload"]["thingsboard"]["enabled"] is False
+
+
+def new_device_config():
+    """The config.yml a new device gets, with its coordinates set to 0.0 and its bearing to n."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
+              "tmsetup_bearing": "n"}
+    return yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({"survey_id": "3f9a1c2e-si", "database_precision": "2"},
+     {"survey_id": "3f9a1c2e-si", "database_precision": "2"}, set()),
+    ({"survey_id": "3F9A1C2E-si"}, {"survey_id": "3f9a1c2e-si", "database_precision": "1"}, set()),
+    ({"survey_id": "home"}, {"survey_id": None, "database_precision": "1"}, {"deployment.survey_id"}),
+    ({"database_precision": "3"}, {"survey_id": None, "database_precision": "1"}, {"deployment.database_precision"}),
+    ({"database_precision": 1}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({"database_precision": "none"}, {"survey_id": None, "database_precision": "none"}, set()),
+    ({"database_precision": None}, {"survey_id": None, "database_precision": "1"}, set()),
+], ids=["defaults", "both-set", "case-folded", "not-a-survey-id", "precision-3", "precision-yaml-number",
+        "precision-none", "precision-blank"])
+def test_init_config_defaults_survey_keys(given, expected, errors):
+    """survey_id is a valid id or null, and database_precision is none, 1, or 2; a bad value is logged and dropped."""
+    config = new_device_config()
+    config["deployment"].update(given)
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    deployment = step["result"]["payload"]["deployment"]
+    assert {key: deployment[key] for key in expected} == expected
+    assert {text.split()[3] for level, text, _ in step["logged"] if level == "error"} == errors
+
+
+@needs_node
+@pytest.mark.parametrize("coordinates", [
+    {"lat": "", "lon": ""},
+    {"lat": None, "lon": None},
+    {},
+    {"lat": "45.52252", "lon": "-122.69120"},
+], ids=["empty", "null", "missing", "quoted-number"])
+def test_init_config_defaults_allows_blank_coordinates(coordinates):
+    """Blank coordinates mean no location yet, and a number quoted in YAML is still a number; neither is an error."""
+    config = new_device_config()
+    config["deployment"] = {"bearing": "n", **coordinates}
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    assert [text for level, text, _ in step["logged"] if level == "error"] == []
+    deployment = step["result"]["payload"]["deployment"]
+    expected = {key: coordinates.get(key) or "" for key in ("lat", "lon")}
+    assert {key: deployment[key] for key in ("lat", "lon")} == expected
+
+
+def test_config_template_has_the_survey_keys():
+    """A new device starts with no survey and one decimal place stored; the Location page sets survey_id later."""
+    deployment = new_device_config()["deployment"]
+    assert deployment["database_precision"] == "1"
+    assert "survey_id" in deployment and deployment["survey_id"] is None
 
 
 def test_schema_version_is_recorded():
