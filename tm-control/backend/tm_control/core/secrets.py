@@ -5,6 +5,7 @@ not set.
 Errors name the secret, never its value or path.
 """
 
+import re
 from pathlib import Path
 
 SESSION_KEY = "tm_control_session_key"
@@ -23,6 +24,27 @@ GENERATED_SECRETS = (
 # The ones an operator enters (tmsetup_entered_secret_names); a file may be empty, which means not set.
 ENTERED_SECRETS = (THINGSBOARD_ACCESS_TOKEN, PLATE_RECOGNIZER_TOKEN, PLATE_RECOGNIZER_LICENSE_KEY)
 DEVICE_SECRETS = GENERATED_SECRETS + ENTERED_SECRETS
+
+# What each entered secret's value may be, and the rule in words for a message. The ThingsBoard token goes into the
+# upload URL's path, so it takes only URL-unreserved characters; the Plate Recognizer values go into a header and an
+# env line, so they take printable ASCII with no spaces.
+_URL_SAFE = r"[A-Za-z0-9._~-]{1,256}"
+_PRINTABLE = r"[\x21-\x7e]{1,256}"
+VALUE_PATTERNS = {
+    THINGSBOARD_ACCESS_TOKEN: _URL_SAFE,
+    PLATE_RECOGNIZER_TOKEN: _PRINTABLE,
+    PLATE_RECOGNIZER_LICENSE_KEY: _PRINTABLE,
+}
+VALUE_RULES = {
+    THINGSBOARD_ACCESS_TOKEN: "1 to 256 letters, digits, and . _ ~ -",
+    PLATE_RECOGNIZER_TOKEN: "1 to 256 printable ASCII characters with no spaces",
+    PLATE_RECOGNIZER_LICENSE_KEY: "1 to 256 printable ASCII characters with no spaces",
+}
+
+
+def is_valid_value(name: str, value: str) -> bool:
+    """Whether value meets the entered secret's pattern, as a whole."""
+    return re.fullmatch(VALUE_PATTERNS[name], value) is not None
 
 
 class MissingSecret(RuntimeError):

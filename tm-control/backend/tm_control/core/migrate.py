@@ -12,8 +12,9 @@ from ruamel.yaml.error import CommentMark
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from ruamel.yaml.tokens import CommentToken
 
-from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, write_atomic
+from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, read_text, write_atomic
 from tm_control.core.secrets import PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN, THINGSBOARD_ACCESS_TOKEN
+from tm_control.core.secrets import VALUE_RULES, is_valid_value
 
 PREFIX = "tm-control migrate:"
 
@@ -331,6 +332,8 @@ def run(frigate_config, dry_run=False):
 # Node-RED's config.yml, and a person typed the Plate Recognizer token and license key into plate-recognizer.env.
 # tmsetup runs these two steps as root, before it renders either file, so that -f can't throw away a value's only
 # copy. Each key path, the secret file it moves to, and whether mappings it leaves empty go too.
+# Only a value that meets its secret's pattern (core/secrets.py) moves, as through the Device page: a value the env
+# line or the upload URL can't carry never reaches an env file.
 CONFIG_SECRETS = (
     (("thingsboard", "access_token"), THINGSBOARD_ACCESS_TOKEN, False),
     (("addons", "plate_recognizer", "token"), PLATE_RECOGNIZER_TOKEN, True),
@@ -339,6 +342,7 @@ ENV_SECRETS = (("TOKEN", PLATE_RECOGNIZER_TOKEN), ("LICENSE_KEY", PLATE_RECOGNIZ
 # What plate-recognizer.env.j2 wrote before it rendered the secrets: none of them is a value.
 ENV_PLACEHOLDERS = {"", "YYYYY", "XXXXX"}
 SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
+CONFIG_REMEDY = "Enter it on the control app's Device page and delete the key."
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
 _PLAIN_SCALAR = re.compile(r"[^\s,\[\]{}#]+")
 
@@ -359,7 +363,12 @@ def _read_secret(secrets_dir, name):
     except OSError as error:
         raise _SecretsUnreadable(f"ERROR reading {path}: {error}") from None
     except UnicodeError as error:  # its message quotes a byte of the file
-        raise _SecretsUnreadable(f"ERROR reading {path}: {type(error).__name__}") from None
+        raise _SecretsUnreadable(f"ERROR reading {path}: {_not_utf8(error)}") from None
+
+
+def _not_utf8(error):
+    """A decoding error without its message, which quotes a byte of the file."""
+    return f"not UTF-8 ({type(error).__name__})"
 
 
 def _write_secret(secrets_dir, name, text):
@@ -387,8 +396,7 @@ def _find(config, path):
 
 
 def _token_text(mapping, key, loaded_text):
-    """The value as the text of a token, or None if it can't be one: a boolean, a date, a list or mapping, or text
-    with a space or line break in it.
+    """The value as text, or None if it isn't text or a number: a boolean, a date, a list or mapping.
 
     YAML reads a token of digits as a number, which would lose leading zeros, a long int's digits as a float, or an
     exponent's form, so a number's text is read from the file as it was written.
@@ -402,8 +410,6 @@ def _token_text(mapping, key, loaded_text):
         line, column = mapping.lc.value(key)
         written = _PLAIN_SCALAR.match(loaded_text.split("\n")[line], column)
         text = written.group(0) if written else str(value)
-    if any(character.isspace() or not character.isprintable() for character in text):
-        return None
     return text
 
 
@@ -545,6 +551,9 @@ def run_node_red(config_path, secrets_dir, dry_run=False):
     except YAMLError as error:
         print(f"{PREFIX} ERROR reading {config_path}: {_describe_yaml_error(error)}", file=sys.stderr)
         return 1
+    except UnicodeError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {_not_utf8(error)}", file=sys.stderr)
+        return 1
 
     steps = []  # (what a dry run would do, what was done)
     writes = []  # (secret file, text)
@@ -561,7 +570,10 @@ def run_node_red(config_path, secrets_dir, dry_run=False):
             continue
         text = _token_text(mapping, key, document.loaded_text)
         if text is None:
-            _warn_secret(config_path, f"{dotted} isn't one word of text, as a token is; left as it is")
+            _warn_secret(config_path, f"{dotted} isn't text; left as it is. {CONFIG_REMEDY}")
+            continue
+        if not is_valid_value(name, text):
+            _warn_secret(config_path, f"{dotted} isn't {VALUE_RULES[name]}; left as it is. {CONFIG_REMEDY}")
             continue
         try:
             current = _read_secret(secrets_dir, name)
@@ -627,7 +639,7 @@ def _same_backup(path, text):
     """An existing backup of path that holds text, or None."""
     for backup in sorted(path.parent.glob(f"{path.name}.*.bak")):
         try:
-            if backup.read_text(encoding="utf-8") == text:
+            if read_text(backup) == text:
                 return backup
         except (OSError, UnicodeError):
             continue
@@ -640,11 +652,12 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
 
     The env file isn't rewritten: tmsetup writes those two lines from the secret files on the same run. A secret file
     that already holds a value keeps it; when the env file's value differs, the env file is backed up first, because
-    tmsetup's rewrite would lose that value. A missing env file means the add-on isn't installed.
+    tmsetup's rewrite would lose that value, and so it is when a value doesn't meet its secret's pattern and stays
+    out. A missing env file means the add-on isn't installed.
     """
     env_path, secrets_dir = Path(env_path), Path(secrets_dir)
     try:
-        text = env_path.read_text(encoding="utf-8")
+        text = read_text(env_path)  # never through a link, as root
     except FileNotFoundError:
         print(f"{PREFIX} {env_path}: up to date")
         return 0
@@ -652,14 +665,17 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
         print(f"{PREFIX} ERROR reading {env_path}: {error}", file=sys.stderr)
         return 1
     except UnicodeError as error:
-        print(f"{PREFIX} ERROR reading {env_path}: {type(error).__name__}", file=sys.stderr)
+        print(f"{PREFIX} ERROR reading {env_path}: {_not_utf8(error)}", file=sys.stderr)
         return 1
 
     values = _env_values(text)
-    moves, differ = [], []
+    moves, differ, refused = [], [], []
     for key, name in ENV_SECRETS:
         value = values.get(key, "")
         if value in ENV_PLACEHOLDERS:
+            continue
+        if not is_valid_value(name, value):
+            refused.append((key, name))
             continue
         try:
             current = _read_secret(secrets_dir, name)
@@ -671,7 +687,7 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
         elif current != value:
             differ.append((key, name))
 
-    if differ:
+    if differ or refused:
         backup = None
         if not dry_run:
             try:
@@ -686,6 +702,16 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
                 env_path,
                 f"{key} differs from the secrets file {name}, which is kept; tmsetup writes the kept value into "
                 f"this file{where}.",
+            )
+        for key, name in refused:
+            if backup:
+                kept = f"the env file was backed up to {backup}"
+            else:
+                kept = "a run without --dry-run backs up the env file"
+            _warn_secret(
+                env_path,
+                f"{key} isn't {VALUE_RULES[name]}, so it wasn't moved, and tmsetup writes the secrets file's "
+                f"value into this file. Enter it on the control app's Device page; {kept}.",
             )
     if not moves:
         print(f"{PREFIX} {env_path}: up to date")
