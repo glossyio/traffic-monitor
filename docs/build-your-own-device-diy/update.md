@@ -30,7 +30,7 @@ Every app asks for the device's login, and the Node-RED editor has no login of i
 
 ??? warning "The installer printed `tm-control migrate: WARNING`"
 
-    The installer brings Frigate's configuration up to date, and warns about what it can't change safely. Each warning names the camera, stream, or setting. To find the warnings later:
+    The installer brings Frigate's configuration up to date, moves the ThingsBoard and Plate Recognizer tokens out of `config.yml` and the add-on's env file, and warns about what it can't change safely. Each warning names the camera, stream, setting, or file. To find the warnings later:
 
     ```bash
     grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
@@ -44,6 +44,10 @@ Every app asks for the device's login, and the Node-RED editor has no login of i
     * A `proxy` setting doesn't match, followed by `auth was not added` when the file had no `auth` section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
 
     Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
+
+    **A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env` to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env file are backed up with a timestamp, so the other value stays in the backup. Enter the token or key on the control app's [Device page](../use/device-health.md#tokens-and-keys), and delete a key the installer left in `config.yml`.
+
+    **A file that is a symbolic link, or a YAML error.** The installer refuses to change a `config.yml` or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's `config.yml` also stops the installer, as one in Frigate's does. Fix the error in `/opt/traffic-monitor/node-red-tm/config/config.yml`, then run the installer again.
 
 A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run `bash script/tmsetup.sh -t frigate` to add them.
 
