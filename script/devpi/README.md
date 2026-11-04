@@ -193,7 +193,7 @@ Two login checks leave something behind:
 The control app's actions in `test_disruptive.py` put back what they change, but you'll notice them while they run:
 - **The time zone test** sets the Pi to another zone and back, through the control app. Each change restarts the pod and nginx, so the apps are down for a minute or two, twice.
 - **The clock test** (`pii_free` units) turns NTP off, sets the clock 2 minutes ahead and then back, and turns NTP on again. A Pi without a time source can end up a second or two off.
-- **The token test** (`pii_free` units) sets the ThingsBoard token to a placeholder and then removes it, through the control app. Each step restarts Node-RED. It leaves the token empty, as a `pii_free` unit has it, even if it was set before.
+- **The token test** (`pii_free` units) sets the ThingsBoard token to a placeholder and then removes it, through the control app. Each step restarts Node-RED. It leaves the token empty, as a `pii_free` unit has it, and skips when a token is already set.
 - **The schema test** (`pii_free` units) stops Node-RED, sets the schema version of `tmdb.sqlite` to 0, and starts Node-RED once without its migration, through a drop-in in `/run`. Then it stops Node-RED, puts the version and the unit back, and starts it again.
 - **The reboot test** reboots the Pi from the control app, like `test_reboot_recovers` does with `reboot`.
 
