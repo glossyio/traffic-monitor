@@ -31,7 +31,7 @@ The checks come in groups:
 |---|---|
 | Services | Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure. |
 | Apps | Frigate answers and gets frames from each camera. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network. |
-| Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, each camera's radar is enabled, and the location values are valid. See [config.yml settings](../configuration/node-red-config.md) and [First-time setup](../setup-guide.md). |
+| Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, each camera's radar is enabled, and the location values are valid. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. See [config.yml settings](../configuration/node-red-config.md) and [First-time setup](../setup-guide.md). |
 | Hardware | Each AI accelerator, from plugged in to used by Frigate, or a warning when there's none and Frigate detects on the CPU. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED. |
 | Device | Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started. |
 | Date and time | Whether the clock was ever set, and whether it keeps time from the internet. |
@@ -57,6 +57,17 @@ When you ask for help, send the diagnostics with your question. It's a text file
 
 * **Download diagnostics** saves the file.
 * **Copy** puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.
+
+### Tokens and keys
+
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The page lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+
+* A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
+* **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable characters without spaces. Both are up to 256 characters long.
+* **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
+* Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
+
+An older device may have kept a token in `config.yml` or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
 
 ### Reboot or shut down
 
@@ -87,5 +98,5 @@ Moving the clock ahead by more than about 20 seconds stops Frigate's camera feed
 Viewers see all three pages, but can't change anything:
 
 * **Status**: the same checks, without the Restart and Re-scan buttons.
-* **Device**: the card and the software versions, without **Diagnostics** and **Power**.
+* **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
 * **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
