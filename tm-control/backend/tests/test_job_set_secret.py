@@ -199,9 +199,10 @@ def test_a_missing_env_line_is_appended(tmp_path, codedir, manifest, secrets_dir
     assert env.read_text() == "A=1\nTM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001\n"
 
 
-def test_only_the_first_env_line_changes_and_every_other_byte_is_kept(
+def test_every_env_line_of_the_key_changes_and_every_other_byte_is_kept(
     tmp_path, codedir, manifest, secrets_dir, systemctl
 ):
+    """podman's env file takes the last of duplicate keys, so every KEY= line gets the value, where it stands."""
     env = codedir / "node-red-tm" / "node-red-tm.env"
     text = (
         b"# TM_THINGSBOARD_ACCESS_TOKEN=x\r\nX_TM_THINGSBOARD_ACCESS_TOKEN=y\n"
@@ -210,7 +211,11 @@ def test_only_the_first_env_line_changes_and_every_other_byte_is_kept(
     env.write_bytes(text)
     request = write_request(tmp_path, {"name": "thingsboard_access_token", "value": VALUE})
     assert run_job(request, systemctl, manifest, secrets_dir).returncode == 0
-    assert env.read_bytes() == text.replace(b"TOKEN=old", f"TOKEN={VALUE}".encode())
+    expected = (
+        b"# TM_THINGSBOARD_ACCESS_TOKEN=x\r\nX_TM_THINGSBOARD_ACCESS_TOKEN=y\n"
+        b"TM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001\r\nTM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001\n\xff\n"
+    )
+    assert env.read_bytes() == expected
 
 
 @pytest.mark.parametrize(
@@ -232,6 +237,24 @@ def test_refuses_values_the_env_line_or_url_cannot_carry(
     assert not request.exists()
     if len(value) > 1:
         assert value not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("thingsboard_access_token", ("Az09._~-" * 32)),
+        ("plate_recognizer_token", ("!~\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}" * 8)[:256]),
+        ("plate_recognizer_license_key", (r"\1\n\g<0>" + "x" * 256)[:256]),  # what a re template would expand
+    ],
+)
+def test_accepts_a_value_of_256_characters(tmp_path, codedir, manifest, secrets_dir, systemctl, name, value):
+    assert len(value) == 256
+    request = write_request(tmp_path, {"name": name, "value": value})
+    result = run_job(request, systemctl, manifest, secrets_dir)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (secrets_dir / name).read_text() == value + "\n"
+    assert f"={value}\n" in node_red_env(codedir) + plate_recognizer_env(codedir)  # a backslash stays one
+    assert value not in result.stdout + result.stderr
 
 
 def test_plate_recognizer_values_may_hold_url_characters(tmp_path, codedir, manifest, secrets_dir, systemctl):
@@ -341,6 +364,34 @@ def test_refuses_an_env_file_reached_through_a_symlinked_directory(
     assert calls(tmp_path) == []
 
 
+def test_follows_a_code_directory_that_is_a_link_to_the_code_owners_directory(
+    tmp_path, codedir, secrets_dir, systemctl
+):
+    """A code directory moved to other storage and linked back: its parent is root's, so only root can swap the link."""
+    link = tmp_path / "linked-code"
+    link.symlink_to(codedir)
+    data = {**json.loads(FIXTURE_MANIFEST.read_text()), "codeowner": me(), "codedir": str(link)}
+    manifest = tmp_path / "linked-manifest.json"
+    manifest.write_text(json.dumps(data))
+    request = write_request(tmp_path, {"name": "thingsboard_access_token", "value": VALUE})
+    result = run_job(request, systemctl, manifest, secrets_dir)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert node_red_env(codedir) == f"A=1\nTM_THINGSBOARD_ACCESS_TOKEN={VALUE}\nB=2\n"
+
+
+def test_refuses_a_code_directory_the_code_owner_does_not_own(monkeypatch, codedir):
+    # The jobs directory must be the code owner's too, so a whole run can't name another owner: test the walk alone.
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    job = load_job_module()
+    other = os.getuid() + 1
+    with pytest.raises(job.Refused, match="the code directory isn't the code owner's"):
+        job.check_env_files(str(codedir), other, [("node-red-tm/node-red-tm.env", "TM_THINGSBOARD_ACCESS_TOKEN")])
+    with pytest.raises(job.Refused, match="the code directory isn't the code owner's"):
+        job.set_env_line(str(codedir), other, "node-red-tm/node-red-tm.env", "TM_THINGSBOARD_ACCESS_TOKEN", VALUE)
+    assert node_red_env(codedir) == NODE_RED_ENV
+    job.check_env_files(str(codedir), os.getuid(), [("node-red-tm/node-red-tm.env", "TM_THINGSBOARD_ACCESS_TOKEN")])
+
+
 def test_refuses_a_hardlinked_env_file(tmp_path, codedir, manifest, secrets_dir, systemctl):
     env = codedir / "node-red-tm" / "node-red-tm.env"
     other = tmp_path / "other.env"
@@ -389,6 +440,15 @@ def test_keeps_the_env_files_owner_and_mode(tmp_path, codedir, manifest, secrets
     after = env.stat()
     assert (stat.S_IMODE(after.st_mode), after.st_uid, after.st_gid) == (0o600, before.st_uid, before.st_gid)
     assert after.st_ino != before.st_ino  # replaced, not written in place
+
+
+def test_a_missing_manifest_leaves_the_request(tmp_path, codedir, secrets_dir, systemctl):
+    # Without the manifest the jobs directory's owner can't be checked, so the request is left for tm-control to clear.
+    request = write_request(tmp_path, {"name": "thingsboard_access_token", "value": VALUE})
+    result = run_job(request, systemctl, tmp_path / "no-manifest.json", secrets_dir)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert_untouched(tmp_path, codedir, secrets_dir)
+    assert request.exists()
 
 
 def test_refuses_a_symlink_and_leaves_its_target(tmp_path, codedir, manifest, secrets_dir, systemctl, jobs_dir):
