@@ -3,7 +3,7 @@
 import subprocess
 
 import pytest
-from tmsetup_render import evaluate, load_role_yaml
+from tmsetup_render import REPO, ROLE, evaluate, load_role_yaml
 
 # Every tag whose run renders the pod, revproxy, the broker login, tm-control, or Frigate's credentials. nginx's
 # auth snippets need tm-control, so a single-tag run of any of them must install and start all of these.
@@ -44,6 +44,81 @@ def test_secrets_are_readable_only_by_root_and_the_code_owner():
     generate = tasks["TMSetup - Secrets - Generate missing secrets"]["ansible.builtin.copy"]
     assert (directory["owner"], directory["group"], directory["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0750")
     assert (generate["owner"], generate["group"], generate["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0640")
+
+
+def test_entered_secrets_start_empty_and_are_never_regenerated():
+    """A person types these in on the Device page; tmsetup only makes sure each file exists, and an empty file
+    means "not set"."""
+    task = secrets_tasks()["TMSetup - Secrets - Create missing entered secrets as empty files"]
+    create = task["ansible.builtin.copy"]
+    assert create["content"] == ""
+    assert create["force"] is False
+    assert (create["owner"], create["group"], create["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0640")
+    assert create["dest"] == "{{ tmsetup_secrets_dir }}/{{ item }}"
+    assert task["loop"] == "{{ tmsetup_entered_secret_names }}"
+    assert task["no_log"] is True
+    assert task["become"] is True
+    names = list(secrets_tasks())
+    assert names.index("TMSetup - Secrets - Generate missing secrets") < names.index(task["name"])
+    assert names.index(task["name"]) < names.index("TMSetup - Secrets - Read secrets")
+
+
+def test_both_secret_lists_are_read_into_one_fact():
+    tasks = secrets_tasks()
+    combined = "tmsetup_secret_names + tmsetup_entered_secret_names"
+    assert tasks["TMSetup - Secrets - Read secrets"]["loop"] == "{{ " + combined + " }}"
+    fact = tasks["TMSetup - Secrets - Set secrets fact"]["ansible.builtin.set_fact"]["tmsetup_secrets"]
+    assert f"dict(({combined}) | zip(" in fact
+    slurped = {"results": [{"content": "c2VjcmV0LXZhbHVlCg=="}, {"content": ""}]}
+    assert evaluate(fact, tmsetup_secret_names=["generated"], tmsetup_entered_secret_names=["entered"],
+                    tmsetup_secrets_slurp_register=slurped) == {"generated": "secret-value", "entered": ""}
+
+
+def test_the_installer_takes_no_secret_value():
+    """Entered secrets come from the Device page or the root-owned file, never from an installer variable."""
+    defaults = load_role_yaml("defaults/main.yml")
+    role_vars = load_role_yaml("vars/main.yml")
+    assert "tmsetup_thingsboard_api_key" not in defaults
+    for key in [*defaults, *role_vars]:
+        assert not key.endswith(("_api_key", "_access_token")), key
+    templates = [*(REPO / "container").rglob("*.j2"), *(ROLE / "templates").rglob("*.j2")]
+    assert templates
+    for template in templates:
+        assert "tmsetup_thingsboard_api_key" not in template.read_text(), template
+
+
+@pytest.mark.parametrize("task_file, key, secret, handler", [
+    ("tasks/node-red-tm_setup.yml", "TM_THINGSBOARD_ACCESS_TOKEN", "thingsboard_access_token",
+     "Restart node-red-tm.service"),
+    ("tasks/node-red-tm_setup.yml", "TM_PLATE_RECOGNIZER_TOKEN", "plate_recognizer_token",
+     "Restart node-red-tm.service"),
+    ("tasks/plate-recognizer_setup.yml", "TOKEN", "plate_recognizer_token", "Restart plate-recognizer.service"),
+    ("tasks/plate-recognizer_setup.yml", "LICENSE_KEY", "plate_recognizer_license_key",
+     "Restart plate-recognizer.service"),
+])
+def test_entered_secret_env_lines_are_written_on_every_run(task_file, key, secret, handler):
+    """Like TM_INTERNAL_TOKEN: an existing env file isn't rewritten without -f, so each entered secret's line goes
+    in on every run, from the secrets directory."""
+    assert secret in load_role_yaml("vars/main.yml")["tmsetup_entered_secret_names"]
+    tasks = load_role_yaml(task_file)
+    names = [task["name"] for task in tasks]
+    (line,) = [task for task in tasks if task.get("ansible.builtin.lineinfile", {}).get("regexp") == f"^{key}="]
+    (template,) = [task for task in tasks
+                   if str(task.get("ansible.builtin.template", {}).get("dest", "")).endswith(".env")
+                   or "node-red-tm.env" in task.get("loop", [])]
+    (stat,) = [task for task in tasks
+               if str(task.get("ansible.builtin.stat", {}).get("path", "")).endswith(".env")]
+    env_path = stat["ansible.builtin.stat"]["path"]
+    assert line["when"] == f"{stat['register']}.stat.exists"
+    assert line["no_log"] is True
+    assert line["become"] is True
+    assert line["notify"] == handler
+    assert line["ansible.builtin.lineinfile"]["path"] == env_path
+    assert line["ansible.builtin.lineinfile"]["line"] == f"{key}={{{{ tmsetup_secrets['{secret}'] }}}}"
+    assert "loop" not in line and "tags" not in line
+    (quadlets,) = [i for i, task in enumerate(tasks)
+                   if str(task.get("ansible.builtin.template", {}).get("dest", "")).startswith("/etc/containers/systemd/")]
+    assert names.index(template["name"]) < names.index(stat["name"]) < names.index(line["name"]) < quadlets
 
 
 def test_secrets_are_read_on_every_run():
@@ -173,6 +248,103 @@ def test_frigate_config_update_warnings_are_shown():
     assert "'WARNING' in tmsetup_frigate_migrate_register.stderr | default('')" in show["when"]
 
 
+def entered_secrets_tasks():
+    return {task["name"]: task for task in load_role_yaml("tasks/entered_secrets.yml")}
+
+
+ENTERED_SECRETS_MOVE = "TMSetup - Entered Secrets - Move them to the secrets directory"
+NODE_RED_CONFIG = "{{ tmsetup_codedir }}/node-red-tm/config/config.yml"
+PLATE_RECOGNIZER_ENV = "{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env"
+
+
+def stat_results(*exists):
+    return {"results": [{"stat": {"exists": value}} for value in exists]}
+
+
+def test_entered_secrets_move_before_any_config_template_renders():
+    """-f replaces config.yml and plate-recognizer.env from templates, and -t plate-recognizer alone rewrites the env
+    file's TOKEN and LICENSE_KEY lines from the secrets, so each value's only copy moves first (Review Focus 4)."""
+    main = load_role_yaml("tasks/main.yml")
+    names = [task["name"] for task in main]
+    (entered,) = [task for task in main if task.get("ansible.builtin.import_tasks", {}).get("file") == "entered_secrets.yml"]
+    service = main[names.index("TMSetup - Main - Setup tm-control service")]
+    position = names.index(entered["name"])
+    assert position == names.index("TMSetup - Main - Setup tm-control service") + 1
+    for later in ("frigate_setup.yml", "node-red-tm_setup.yml", "plate-recognizer_setup.yml"):
+        (task,) = [task for task in main if task.get("ansible.builtin.import_tasks", {}).get("file") == later]
+        assert position < names.index(task["name"]), later
+    assert entered["tags"] == service["tags"] + ["plate-recognizer"]
+    assert "when" not in entered  # the add-on's env file may be there even after the add-on was turned off
+
+    tasks = entered_secrets_tasks()
+    order = list(tasks)
+    stat = tasks["TMSetup - Entered Secrets - Check for config files that may hold one"]
+    move = tasks[ENTERED_SECRETS_MOVE]
+    show = tasks["TMSetup - Entered Secrets - Show warnings from the move"]
+    reread = tasks["TMSetup - Entered Secrets - Re-read the entered secrets"]
+    update = tasks["TMSetup - Entered Secrets - Update the secrets fact"]
+    assert order == [stat["name"], move["name"], show["name"], reread["name"], update["name"]]
+
+    assert stat["loop"] == [NODE_RED_CONFIG, PLATE_RECOGNIZER_ENV]
+    assert stat["register"] == "tmsetup_entered_secrets_stat_register"
+    assert move["become"] is True and reread["become"] is True
+    assert reread["no_log"] is True and update["no_log"] is True
+    assert "no_log" not in move  # it prints no value, and its warnings must show
+    notify = move["notify"]  # Ansible takes one handler as a string or a list
+    assert (notify if isinstance(notify, list) else [notify]) == ["Restart node-red-tm.service"]
+    assert move["register"] == "tmsetup_entered_secrets_migrate_register"
+
+    argv = move["ansible.builtin.command"]["argv"]
+    base = ["/usr/local/bin/tm-control", "migrate", "--secrets-dir", "/etc/traffic-monitor/secrets"]
+    paths = {"tmsetup_codedir": "/opt/tm", "tmsetup_secrets_dir": "/etc/traffic-monitor/secrets"}
+    for exists, options in [
+        ((True, True), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
+                        "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((True, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml"]),
+        ((False, True), ["--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+    ]:
+        rendered = evaluate(argv, tmsetup_entered_secrets_stat_register=stat_results(*exists), **paths)
+        assert rendered == base + options, exists
+        assert "runuser" not in " ".join(rendered)  # root writes the secret files
+    for exists, runs in [((False, False), False), ((True, False), True), ((False, True), True), ((True, True), True)]:
+        assert evaluate("{{ %s }}" % move["when"],
+                        tmsetup_entered_secrets_stat_register=stat_results(*exists)) is runs, exists
+
+    reread_slurp = reread["ansible.builtin.slurp"]
+    assert reread["loop"] == "{{ tmsetup_entered_secret_names }}"
+    assert reread_slurp["src"] == "{{ tmsetup_secrets_dir }}/{{ item }}"
+    fact = update["ansible.builtin.set_fact"]["tmsetup_secrets"]
+    slurped = {"results": [{"content": "dGItcGxhY2Vob2xkZXItMzQ1Cg=="}, {"content": ""}]}  # tb-placeholder-345
+    assert evaluate(fact, tmsetup_secrets={"generated": "kept", "thingsboard_access_token": ""},
+                    tmsetup_entered_secret_names=["thingsboard_access_token", "plate_recognizer_token"],
+                    tmsetup_entered_secrets_slurp_register=slurped) == {
+        "generated": "kept", "thingsboard_access_token": "tb-placeholder-345", "plate_recognizer_token": ""}
+
+
+def test_entered_secrets_move_counts_any_moved_line_as_a_change():
+    """One run prints a line per file; a change in either counts, whichever line comes last."""
+    changed_when = entered_secrets_tasks()[ENTERED_SECRETS_MOVE]["changed_when"]
+    for lines, changed in [
+        (["tm-control migrate: /c.yml: up to date"], False),
+        (["tm-control migrate: /c.yml: up to date", "tm-control migrate: /p.env: up to date"], False),
+        (["tm-control migrate: /moved/c.yml: up to date"], False),
+        (["tm-control migrate: /c.yml: moved thingsboard.access_token to the secrets file (backup: /b)",
+          "tm-control migrate: /p.env: up to date"], True),
+        (["tm-control migrate: /c.yml: up to date", "tm-control migrate: /p.env: moved TOKEN to the secrets files"],
+         True),
+        (["tm-control migrate: /c.yml: removed the empty thingsboard.access_token (backup: /b)"], True),
+    ]:
+        register = {"stdout_lines": lines, "stdout": "\n".join(lines)}
+        assert evaluate("{{ %s }}" % changed_when, tmsetup_entered_secrets_migrate_register=register) is changed, lines
+
+
+def test_entered_secrets_warnings_are_shown():
+    """migrate warns on stderr and exits 0; Ansible hides a successful command's stderr without -v."""
+    show = entered_secrets_tasks()["TMSetup - Entered Secrets - Show warnings from the move"]
+    assert show["ansible.builtin.debug"]["msg"] == "{{ tmsetup_entered_secrets_migrate_register.stderr_lines }}"
+    assert "'WARNING' in tmsetup_entered_secrets_migrate_register.stderr | default('')" in show["when"]
+
+
 def test_frigate_setup_no_longer_handles_the_rtsp_login():
     assert not [name for name in frigate_tasks() if "RTSP credentials" in name or "older installs" in name]
 
@@ -236,6 +408,13 @@ def test_node_red_env_template_hides_its_diff():
     """node-red-tm.env.j2 renders the broker login, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
     task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs")
+    assert task["diff"] is False
+
+
+def test_plate_recognizer_env_template_hides_its_diff():
+    """plate-recognizer.env.j2 renders the token and license key; a -f run with -a diff would print them."""
+    task = next(t for t in load_role_yaml("tasks/plate-recognizer_setup.yml")
+                if t["name"] == "TMSetup - plate-recognizer Setup - Create plate-recognizer environment file")
     assert task["diff"] is False
 
 
@@ -371,15 +550,18 @@ def test_changes_to_what_tm_control_reads_at_startup_restart_it():
 
 def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():
     tasks = tm_control_service_tasks()
-    units = tasks["TMSetup - tm-control Service - Install the unit files"]
-    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service"]
-    template = units["ansible.builtin.template"]
+    template = tasks["TMSetup - tm-control Service - Install the unit files"]["ansible.builtin.template"]
     assert (template["src"], template["dest"]) == ("tm-control/{{ item }}.j2", "/etc/systemd/system/{{ item }}")
     assert (template["owner"], template["mode"]) == ("root", "0644")
     rules = tasks["TMSetup - tm-control Service - Install the polkit rules"]["ansible.builtin.template"]
     assert rules["dest"] == "/etc/polkit-1/rules.d/50-traffic-monitor.rules"
     assert (rules["owner"], rules["mode"]) == ("root", "0644")
     assert "polkitd" in load_role_yaml("vars/main.yml")["tmsetup_packages"]
+
+
+def test_both_job_units_are_installed():
+    units = tm_control_service_tasks()["TMSetup - tm-control Service - Install the unit files"]
+    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service", "tm-job-set-secret.service"]
 
 
 def test_configuration_directory_is_root_and_the_code_group_only():

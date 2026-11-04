@@ -57,7 +57,7 @@ The settings and data live under `/opt/traffic-monitor/`.
 | `node-red-tm/db/tmdb.sqlite` | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it. |
 | `frigate/config/config.yml` | Frigate's settings, including zones and masks. |
 | `frigate/storage/` | Frigate's snapshots and recordings. |
-| `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed. |
+| `plate-recognizer/plate-recognizer.env` | Plate Recognizer settings, if the add-on is installed. Its token and license key come from the device's secrets, which you set on the [Device page](device-health.md#tokens-and-keys). |
 
 The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
 
@@ -65,5 +65,5 @@ The control app and the installer keep a few files elsewhere. Read them, but don
 |---|---|
 | `/var/lib/tm-control/state.sqlite` | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
 | `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads |
-| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device |
+| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) |
 | `/etc/traffic-monitor/setup-code` | The setup code, until the device is claimed |

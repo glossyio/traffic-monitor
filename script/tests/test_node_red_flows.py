@@ -304,6 +304,9 @@ def test_init_config_defaults_loads_the_new_config_template():
     assert step["result"]["payload"]["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
 
 
+TB_ENV = {"TM_THINGSBOARD_ACCESS_TOKEN": "tb-placeholder-0001"}
+
+
 @needs_node
 def test_thingsboard_without_a_host_is_a_config_error():
     """Only this init config defaults error passes msg, so the catch records it in tm_status.config.errors. The lat,
@@ -315,9 +318,9 @@ def test_thingsboard_without_a_host_is_a_config_error():
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
               "tmsetup_bearing": "n"}
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
-    config["thingsboard"] = {"enabled": True, "access_token": "tb-token-1"}
+    config["thingsboard"] = {"enabled": True}
     config["deployment"] = {"lat": "north", "lon": "west", "bearing": "up"}
-    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    [step] = run_functions([(defaults, {"payload": config})], env=TB_ENV)["results"]
     # The key each message names ("Node-RED config.yml key thingsboard.host needs ..."), and whether msg came with it
     errors = {text.split()[3]: with_msg for level, text, with_msg in step["logged"] if level == "error"}
     assert errors == {"thingsboard.host": True, "deployment.lat": False, "deployment.lon": False,
@@ -330,6 +333,104 @@ def new_device_config():
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
               "tmsetup_bearing": "n"}
     return yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
+
+
+def init_defaults_thingsboard(thingsboard, env):
+    """Run init config defaults on a new device's config with this thingsboard section; returns it and the log."""
+    config = new_device_config()
+    config["thingsboard"] = thingsboard
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})], env=env)["results"]
+    return step["result"]["payload"]["thingsboard"], step["logged"]
+
+
+@needs_node
+@pytest.mark.parametrize("given, url", [
+    ({"host": "tb.example.invalid"}, "https://tb.example.invalid"),
+    ({"host": "tb.example.invalid", "protocol": ""}, "https://tb.example.invalid"),
+    ({"host": "tb.example.invalid", "protocol": "http"}, "http://tb.example.invalid"),
+    ({"host": "tb.example.invalid", "protocol": "https", "port": 8443}, "https://tb.example.invalid:8443"),
+    ({"host": "http://tb.example.invalid", "protocol": "https"}, "http://tb.example.invalid"),
+    ({"host": "HTTPS://tb.example.invalid"}, "HTTPS://tb.example.invalid"),
+], ids=["default-https", "empty-protocol", "http", "port", "scheme-in-host-wins", "scheme-in-host-any-case"])
+def test_thingsboard_url_honours_protocol(given, url):
+    """The upload URL gets protocol's scheme, https when it's missing; a host that already has a scheme keeps it."""
+    thingsboard, logged = init_defaults_thingsboard({"enabled": True, **given}, TB_ENV)
+    assert thingsboard["url"] == url
+    assert thingsboard["enabled"] is True
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("host", ["", None], ids=["empty", "null"])
+def test_thingsboard_with_an_empty_host_is_a_config_error(host):
+    thingsboard, logged = init_defaults_thingsboard({"enabled": True, "host": host}, TB_ENV)
+    assert [(level, text.split()[3], with_msg) for level, text, with_msg in logged] == [
+        ("error", "thingsboard.host", True)]
+    assert thingsboard["enabled"] is False
+
+
+@needs_node
+def test_thingsboard_is_off_without_a_token():
+    thingsboard, logged = init_defaults_thingsboard({"enabled": True, "host": "tb.example.invalid"}, {})
+    assert thingsboard["enabled"] is False
+    [(level, text, _)] = logged
+    assert level == "warn" and "TM_THINGSBOARD_ACCESS_TOKEN" in text
+    thingsboard, logged = init_defaults_thingsboard({"enabled": False, "host": "tb.example.invalid"}, {})
+    assert thingsboard["enabled"] is False
+    assert logged == []
+
+
+@needs_node
+def test_thingsboard_switch_still_sees_http_for_https():
+    """tb protocol? routes on http or mqtt, so the function still rewrites https after building the URL."""
+    thingsboard, _ = init_defaults_thingsboard({"enabled": True, "host": "tb.example.invalid", "protocol": "https"},
+                                               TB_ENV)
+    assert thingsboard["protocol"] == "http"
+    assert thingsboard["url"] == "https://tb.example.invalid"
+
+
+def test_thingsboard_url_nodes_take_the_token_from_the_environment():
+    """The token is rendered from Node-RED's environment by template nodes; an http request node's URL sees only
+    msg, so the restore request gets its URL from a template too."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    backup = named(flows, "backup read msg.url")
+    for node in (by_id["9c944328e288b2dc"], by_id["d739b10ce5fa8f40"], backup):
+        assert node["type"] == "template"
+        assert (node["field"], node["fieldType"], node["syntax"]) == ("url", "msg", "mustache")
+        assert "{{{env.TM_THINGSBOARD_ACCESS_TOKEN}}}" in node["template"]
+        assert "{{{global.config.thingsboard.url}}}" in node["template"]
+    assert backup["template"].endswith("/attributes?clientKeys=backup")
+    assert backup["z"] == tab_id(flows, "thingsboard")
+    assert by_id["0372cefb5e2ec968"]["wires"] == [[backup["id"]]]
+    assert backup["wires"] == [["56cafb11de5348b2"]]
+    assert by_id["56cafb11de5348b2"]["url"] == ""
+
+
+@needs_node
+def test_plate_recognizer_token_comes_from_the_environment():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    msg = {"frigate_event": {"frame_time": 1761800000.5}, "frigate_event_api_thumbnail": "thumbnail"}
+    context = {"config": {"addons": {"plate_recognizer": {"url": "http://plate-recognizer:8080"}}}}
+    [step] = run_functions([(by_id["ce5360091646c733"], msg)], env={"TM_PLATE_RECOGNIZER_TOKEN": "pr-placeholder-0002"},
+                           context=context)["results"]
+    assert step["result"]["headers"]["Authorization"] == "Token pr-placeholder-0002"
+    assert step["result"]["url"] == "http://plate-recognizer:8080/v1/plate-reader/"
+    switch = by_id["5e642eb684a874ef"]
+    assert (switch["propertyType"], switch["property"]) == ("env", "TM_PLATE_RECOGNIZER_TOKEN")
+    assert switch["rules"] == [{"t": "nempty"}]
+    assert switch["name"] == "is there a plate_recognizer token?"
+    assert switch["wires"] == [["53d832d8012b843b"]]
+
+
+def test_no_flow_reads_a_secret_from_config():
+    for node in json.loads(FLOWS.read_text()):
+        for key in ("func", "template", "url", "property"):
+            text = str(node.get(key, ""))
+            assert "access_token" not in text, (node["id"], key)
+            assert "addons.plate_recognizer.token" not in text, (node["id"], key)
 
 
 @needs_node

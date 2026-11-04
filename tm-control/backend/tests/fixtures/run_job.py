@@ -1,9 +1,9 @@
-"""Run the system-password job for its tests, with stand-in accounts and never as root.
+"""Run a root job for its tests, with stand-in accounts and never as root.
 
 Usage: python -I run_job.py JOB REQUEST. TEST_ACCOUNTS, a JSON object of name to uid, adds accounts that
 pwd.getpwnam finds before the machine's own, so a test can name an installing user this machine doesn't have, or one
-that maps to uid 0. os.geteuid reports a non-root uid, so the job runs the CHPASSWD stand-in even when the suite runs
-as root. The job itself is unchanged: this only patches the process it runs in.
+that maps to uid 0. os.geteuid reports a non-root uid, so the job runs its stand-in (CHPASSWD, SYSTEMCTL) even when
+the suite runs as root. The job itself is unchanged: this only patches the process it runs in.
 """
 
 import json

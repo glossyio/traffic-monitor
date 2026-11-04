@@ -35,11 +35,11 @@ def collected_manifest(**registers):
     task = next(task for task in load_role_yaml("tasks/tm-control_service.yml")
                 if task["name"] == "TMSetup - tm-control Service - Collect the install manifest")
     variables = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
-    variables.update(
-        ansible_facts={"user_id": "pi"},
-        tmsetup_tm_control_plate_recognizer_stat_register={"stat": {"exists": False}},
-        **{**GIT_OK, **registers},
-    )
+    variables.update({
+        "ansible_facts": {"user_id": "pi"},
+        "tmsetup_tm_control_plate_recognizer_stat_register": {"stat": {"exists": False}},
+        **GIT_OK, **registers,
+    })
     return evaluate(task["ansible.builtin.set_fact"]["tmsetup_tm_control_manifest"], **variables)
 
 
@@ -88,6 +88,17 @@ def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
 
 
+@pytest.mark.parametrize(("enabled", "unit_exists", "expected"), [
+    ("true", False, True),  # -C plate_recognizer on a first install: the stat runs before the add-on's setup
+    (False, True, True),  # a later run without -C leaves the installed add-on in place
+    (False, False, False),
+])
+def test_manifest_records_plate_recognizer_when_enabled_or_installed(enabled, unit_exists, expected):
+    manifest = collected_manifest(tmsetup_bool_plate_recognizer=enabled,
+                                  tmsetup_tm_control_plate_recognizer_stat_register={"stat": {"exists": unit_exists}})
+    assert manifest["options"]["plate_recognizer"] is expected
+
+
 @pytest.mark.parametrize("register", [
     {"rc": 128, "stdout": "", "stderr": "fatal: detected dubious ownership in repository"},
     {"rc": 2, "msg": "[Errno 2] No such file or directory: b'git'"},  # no git: the module fails without stdout
@@ -100,11 +111,14 @@ def test_manifest_says_unknown_when_git_fails(register):
 
 
 def install(tmp_path, secret_names):
-    """The files tmsetup writes, in a temp dir: one secret file per name, and the rendered manifest."""
+    """The files tmsetup writes, in a temp dir: one secret file per name, an empty one per entered secret, and the
+    rendered manifest."""
     secrets_dir = tmp_path / "secrets"
     secrets_dir.mkdir()
     for name in secret_names:
         (secrets_dir / name).write_text(f"placeholder-{name}-0123456789abcdef")  # as tmsetup: 32 random characters
+    for name in load_role_yaml("vars/main.yml")["tmsetup_entered_secret_names"]:
+        (secrets_dir / name).write_text("")  # as tmsetup: empty until a person enters one
     manifest = tmp_path / "manifest.json"
     manifest.write_text(rendered_manifest())
     return Settings(

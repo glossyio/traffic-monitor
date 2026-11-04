@@ -16,6 +16,26 @@ class ConcurrentEditError(RuntimeError):
     """The file changed on disk after it was loaded, so saving would overwrite someone else's edit."""
 
 
+class NotARegularFile(OSError):
+    """A path names a FIFO, a device, a directory, or a link where a regular file was expected."""
+
+    def __init__(self):
+        super().__init__("not a regular file")
+
+
+def _open_regular(path):
+    """A read-only descriptor for path, refusing a link and anything but a regular file.
+
+    O_NONBLOCK keeps the open from waiting for a writer when someone planted a FIFO at the name (Node-RED's container
+    can write its config directory); it changes nothing for a regular file.
+    """
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY)
+    if not stat.S_ISREG(os.fstat(fd).st_mode):
+        os.close(fd)
+        raise NotARegularFile()
+    return fd
+
+
 def _round_trip_yaml(mapping_indent):
     yaml = YAML()  # round-trip mode keeps comments, key order, and (with preserve_quotes) quoting
     yaml.preserve_quotes = True
@@ -30,21 +50,67 @@ def backup_path(path, now=None):
     return path.with_name(f"{path.name}.{now:%Y%m%dT%H%M%SZ}.bak")
 
 
+def read_text(path):
+    """A file's text, refusing a symbolic link (as root, following one would read a file the link's maker chose) and
+    anything but a regular file."""
+    fd = _open_regular(path)
+    with os.fdopen(fd, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def back_up(path, now=None):
+    """Copy path to backup_path(path), with its permission bits, times, and, when running as root, its owner. Return
+    the copy's path.
+
+    The copy is made as a new file and never through a symbolic link, and neither is the original read through one:
+    the name is easy to guess, and the directory may be writable by others (Node-RED's container mounts its config
+    directory). Both are set up through the open files, never by name.
+    """
+    backup = backup_path(path, now)
+    source = _open_regular(path)
+    try:
+        original = os.fstat(source)
+        mode = stat.S_IMODE(original.st_mode)
+        target = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode)
+        try:
+            with os.fdopen(os.dup(source), "rb") as reader, os.fdopen(os.dup(target), "wb") as writer:
+                shutil.copyfileobj(reader, writer)
+                writer.flush()
+                os.fsync(writer.fileno())
+            os.fchmod(target, mode)  # whatever the umask
+            if os.geteuid() == 0:
+                os.fchown(target, original.st_uid, original.st_gid)
+            os.utime(target, ns=(original.st_atime_ns, original.st_mtime_ns))
+        except BaseException:
+            os.close(target)
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(backup)
+            raise
+        os.close(target)
+    finally:
+        os.close(source)
+    return backup
+
+
 def write_atomic(path, text):
     """Replace path with text so readers see the old file or the new one, never a partial write.
 
-    Keeps the file's permission bits, and its owner when running as root.
+    Keeps the file's permission bits, and its owner when running as root. Both are set on the open temporary file, so
+    a name swapped in the directory meanwhile can't redirect them; os.replace swaps a link at path, never its target.
+    A path that is no longer a regular file is refused: a link's mode (0777) and owner would pass to the new file.
     """
-    original = path.stat()
+    original = os.stat(path, follow_symlinks=False)
+    if not stat.S_ISREG(original.st_mode):
+        raise NotARegularFile()
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w") as handle:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(text)
             handle.flush()
+            os.fchmod(handle.fileno(), stat.S_IMODE(original.st_mode))
+            if os.geteuid() == 0:
+                os.fchown(handle.fileno(), original.st_uid, original.st_gid)
             os.fsync(handle.fileno())
-        os.chmod(tmp, stat.S_IMODE(original.st_mode))
-        if os.geteuid() == 0:
-            os.chown(tmp, original.st_uid, original.st_gid)
         os.replace(tmp, path)
     except BaseException:
         with contextlib.suppress(FileNotFoundError):
@@ -58,8 +124,13 @@ class RoundTripFile:
     def __init__(self, path, mapping_indent=2):
         self.path = Path(path)
         self._yaml = _round_trip_yaml(mapping_indent)
-        self._loaded_text = self.path.read_text()
+        self._loaded_text = read_text(self.path)
         self.data = self._yaml.load(self._loaded_text)
+
+    @property
+    def loaded_text(self):
+        """The file's text as it was loaded (or last saved)."""
+        return self._loaded_text
 
     def render(self):
         out = io.StringIO()
@@ -74,10 +145,9 @@ class RoundTripFile:
         text = self.render()
         if text == self._loaded_text:
             return None
-        if self.path.read_text() != self._loaded_text:
+        if read_text(self.path) != self._loaded_text:
             raise ConcurrentEditError(f"{self.path} changed after it was loaded; not saving")
-        backup = backup_path(self.path, now)
-        shutil.copy2(self.path, backup)
+        backup = back_up(self.path, now)
         write_atomic(self.path, text)
         self._loaded_text = text
         return backup

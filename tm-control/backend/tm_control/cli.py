@@ -3,6 +3,7 @@
 import argparse
 import json
 import logging
+import os
 from pathlib import Path
 
 from tm_control.core import migrate
@@ -29,12 +30,44 @@ def serve():
     return 0
 
 
+# The same default as the web app's secrets_dir setting (core/settings.py)
+DEFAULT_SECRETS_DIR = "/etc/traffic-monitor/secrets"
+
+
+def run_migrate(args):
+    """Run each migration step whose file was given, in this order, and return the highest exit code."""
+    secrets_dir = args.secrets_dir or Path(os.environ.get("TM_CONTROL_SECRETS_DIR") or DEFAULT_SECRETS_DIR)
+    codes = []
+    if args.frigate_config:
+        codes.append(migrate.run(args.frigate_config, dry_run=args.dry_run))
+    if args.node_red_config:
+        codes.append(migrate.run_node_red(args.node_red_config, secrets_dir, dry_run=args.dry_run))
+    if args.plate_recognizer_env:
+        codes.append(migrate.run_plate_recognizer_env(args.plate_recognizer_env, secrets_dir, dry_run=args.dry_run))
+    return max(codes)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="tm-control", description="Traffic Monitor control app")
     commands = parser.add_subparsers(dest="command", required=True)
 
     migrate_parser = commands.add_parser("migrate", help="update config files from older installs")
-    migrate_parser.add_argument("--frigate-config", type=Path, required=True, help="path to Frigate's config.yml")
+    migrate_parser.add_argument("--frigate-config", type=Path, help="path to Frigate's config.yml")
+    migrate_parser.add_argument(
+        "--node-red-config",
+        type=Path,
+        help="path to Node-RED's config.yml: move its ThingsBoard and Plate Recognizer tokens to the secret files",
+    )
+    migrate_parser.add_argument(
+        "--plate-recognizer-env",
+        type=Path,
+        help="path to plate-recognizer.env: move a TOKEN and LICENSE_KEY typed into it to the secret files",
+    )
+    migrate_parser.add_argument(
+        "--secrets-dir",
+        type=Path,
+        help=f"the device's secrets directory (default: TM_CONTROL_SECRETS_DIR, or {DEFAULT_SECRETS_DIR})",
+    )
     migrate_parser.add_argument("--dry-run", action="store_true", help="report what would change without writing")
 
     commands.add_parser(
@@ -81,7 +114,9 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
     if args.command == "migrate":
-        return migrate.run(args.frigate_config, dry_run=args.dry_run)
+        if not (args.frigate_config or args.node_red_config or args.plate_recognizer_env):
+            migrate_parser.error("give at least one of --frigate-config, --node-red-config, --plate-recognizer-env")
+        return run_migrate(args)
     if args.command == "serve":
         return serve()
     if args.command == "dump-openapi":

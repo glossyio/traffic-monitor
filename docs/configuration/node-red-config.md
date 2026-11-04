@@ -22,10 +22,11 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `false` | Turn the upload on. |
-| `host` | text | `tb.server.com` (a placeholder) | The server's hostname, without protocol or port. Required when enabled. |
+| `host` | text | `tb.server.com` (a placeholder) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
 | `protocol` | `http` or `https` | `https` | How to reach the server. |
 | `port` | number | none | Set it only if the server isn't on the standard port for the protocol. |
-| `access_token` | text | empty | The device's access token from ThingsBoard. This is the one secret in the file. |
+
+The device's access token isn't in this file. Set it on the control app's [Device page](../use/device-health.md#tokens-and-keys); it's kept with the device's other secrets.
 
 ## deployment
 
@@ -85,5 +86,6 @@ Only needed with the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. 
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
-| `token` | text | none | Your Plate Recognizer API token. Plates aren't read until this is set. |
 | `url` | URL | none | The add-on's address inside the device, `http://plate-recognizer:8080`. |
+
+The API token and license key aren't in this file. Set them on the control app's [Device page](../use/device-health.md#tokens-and-keys); plates aren't read until they're set.

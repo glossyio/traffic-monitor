@@ -4,6 +4,7 @@ name contracts"), and the deployment values."""
 import pytest
 
 from tm_control.core.checks import run_group
+from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import contracts
 
 FRIGATE_CONFIG = "http://127.0.0.1:5000/api/config"  # what the `apps` fixture answers (conftest.FakeApps)
@@ -18,8 +19,12 @@ def config_group(apps):
 
 def test_cameras_match(apps):
     checks = config_group(apps)
-    assert list(checks) == ["config.cameras", "config.zones", "config.radars", "config.deployment"]
-    assert [c.title for c in checks.values()] == ["Cameras in config.yml", "Zones", "Radar names", "Location"]
+    assert list(checks) == [
+        "config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard",
+    ]
+    assert [c.title for c in checks.values()] == [
+        "Cameras in config.yml", "Zones", "Radar names", "Location", "ThingsBoard upload",
+    ]
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
 
@@ -56,6 +61,7 @@ def test_cameras_and_zones_are_unknown_when_frigate_is_down(apps):
     assert checks["config.zones"].status == "unknown"
     assert checks["config.radars"].status == "ok"
     assert checks["config.deployment"].status == "ok"
+    assert checks["config.thingsboard"].status == "ok"
 
 
 def test_every_check_is_unknown_when_config_yml_has_a_yaml_error(apps):
@@ -161,3 +167,111 @@ def test_deployment_values(apps, deployment, status, key):
 def test_deployment_missing_is_ok(apps):
     apps.edit_config_yml(lambda data: data.pop("deployment"))
     assert config_group(apps)["config.deployment"].status == "ok"
+
+
+# ThingsBoard upload. The fixture's thingsboard block is the template's: enabled false, a host, protocol http.
+
+HOST = "tb.example.invalid"  # the fixture's host, which no detail may show
+MISSING_TOKEN = "The upload is on in config.yml, but no access token is set, so Node-RED keeps it off."
+
+
+def thingsboard_check(apps):
+    check = config_group(apps)["config.thingsboard"]
+    assert HOST not in check.detail and "example.invalid" not in check.detail
+    return check
+
+
+def edit_thingsboard(apps, **values):
+    apps.edit_config_yml(lambda data: data["thingsboard"].update(values))
+
+
+def test_thingsboard_off_is_ok(apps):
+    check = thingsboard_check(apps)
+    assert check.status == "ok" and check.detail == "The upload is off." and check.fix is None
+
+
+def test_thingsboard_on_without_a_token_is_a_warning_with_a_link(apps):
+    edit_thingsboard(apps, enabled=True)
+    check = thingsboard_check(apps)
+    assert check.status == "warn" and check.detail == MISSING_TOKEN
+    assert check.fix is not None
+    assert (check.fix.kind, check.fix.text, check.fix.href) == ("link", "Set the token", "/device#tokens-and-keys")
+
+
+def test_thingsboard_on_with_a_token_is_ok(apps):
+    edit_thingsboard(apps, enabled=True)
+    apps.secrets.entered[THINGSBOARD_ACCESS_TOKEN] = "tb-placeholder-8"
+    check = thingsboard_check(apps)
+    assert check.status == "ok" and check.detail == "The upload is on, with a token set."
+    assert "placeholder" not in check.detail
+
+
+def _put(data, key, value):
+    parent, child = key.rsplit(".", 1)
+    section = data
+    for part in parent.split("."):
+        section = section.setdefault(part, {})
+    section[child] = value
+
+
+@pytest.mark.parametrize("key", ["thingsboard.access_token", "addons.plate_recognizer.token"])
+@pytest.mark.parametrize("value", ["tb-placeholder-9", None, ""])
+def test_a_secret_left_in_config_yml_is_a_warning(apps, key, value):
+    apps.edit_config_yml(lambda data: _put(data, key, value))
+    check = thingsboard_check(apps)
+    assert check.status == "warn"
+    assert check.detail == (
+        f"config.yml still holds {key}, which nothing reads. Remove it; the value is set on the Device page."
+    )
+    assert "placeholder" not in check.detail and check.fix is None
+
+
+def _drop_host(data):
+    del data["thingsboard"]["host"]
+
+
+@pytest.mark.parametrize(
+    "edit, status, key",
+    [
+        (lambda data: (data["thingsboard"].update(enabled=True), _drop_host(data)), "error", "thingsboard.host"),
+        (lambda data: data["thingsboard"].update(enabled=True, host="  "), "error", "thingsboard.host"),
+        (lambda data: data["thingsboard"].update(protocol="ftp"), "error", "thingsboard.protocol"),
+        (lambda data: data["thingsboard"].update(protocol="mqtt"), "error", "thingsboard.protocol"),
+        (lambda data: data["thingsboard"].update(protocol=None), "error", "thingsboard.protocol"),
+        (lambda data: data["thingsboard"].update(enabled="yes"), "error", "thingsboard.enabled"),
+        (lambda data: data["thingsboard"].update(host="https://x.example.invalid"), "warn", "thingsboard.host"),
+        (lambda data: data["thingsboard"].update(host="HTTP://x.example.invalid"), "warn", "thingsboard.host"),
+        (lambda data: data["thingsboard"].update(protocol="https"), "ok", None),
+        (lambda data: data["thingsboard"].pop("protocol"), "ok", None),  # Node-RED defaults to https
+        (lambda data: data["thingsboard"].pop("host"), "ok", None),  # off, so the host isn't needed
+        (lambda data: data.pop("thingsboard"), "ok", None),
+        (lambda data: data.update(thingsboard="not a mapping"), "ok", None),
+    ],
+)
+def test_thingsboard_block_values(apps, edit, status, key):
+    apps.edit_config_yml(edit)
+    check = thingsboard_check(apps)
+    assert check.status == status, check.detail
+    if key:
+        assert key in check.detail
+    assert "ftp" not in check.detail and "yes" not in check.detail and "x.example" not in check.detail
+
+
+def test_two_warnings_are_joined_in_one_detail(apps):
+    edit_thingsboard(apps, enabled=True, access_token="tb-placeholder-10")
+    check = thingsboard_check(apps)
+    assert check.status == "warn"
+    assert check.detail == (
+        "config.yml still holds thingsboard.access_token, which nothing reads. Remove it; the value is set on the "
+        f"Device page. {MISSING_TOKEN}"
+    )
+    assert check.fix is not None and check.fix.href == "/device#tokens-and-keys"  # kept, since the missing token is among them
+    assert "placeholder" not in check.detail
+
+
+def test_errors_outrank_warnings(apps):
+    edit_thingsboard(apps, enabled="yes", protocol="ftp", access_token="tb-placeholder-11")
+    check = thingsboard_check(apps)
+    assert check.status == "error"
+    assert "thingsboard.enabled" in check.detail and "thingsboard.protocol" in check.detail
+    assert check.fix is None

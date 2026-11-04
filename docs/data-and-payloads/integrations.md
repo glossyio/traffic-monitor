@@ -69,7 +69,7 @@ mosquitto_sub -h <device> -u <username> -P <password> -t tm/events
 
 ## ThingsBoard
 
-The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](../configuration/node-red-config.md#thingsboard) with the server's hostname and the device's access token. The device picks up the change when you save the file.
+The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](../configuration/node-red-config.md#thingsboard) with the server's hostname, and enter the device's access token on the control app's [Device page](../use/device-health.md#tokens-and-keys). Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.
 
 Once connected, the device sends over ThingsBoard's HTTP API:
 

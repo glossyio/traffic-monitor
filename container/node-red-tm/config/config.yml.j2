@@ -1,9 +1,9 @@
 thingsboard:
+    # The access token isn't kept in this file. Set it on the control app's Device page.
     enabled: false
     host: {{ tmsetup_thingsboard_server }}
     protocol: {{ tmsetup_thingsboard_protocol }}
     # port: {{ tmsetup_thingsboard_port }}
-    access_token: {{ tmsetup_thingsboard_api_key }}
 
 deployment:
     lat: {{ tmsetup_latitude }}

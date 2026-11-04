@@ -13,8 +13,9 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, find_hevc_decoder, frigate_host_devices, pi_now,
-                          request_from_this_machine, role_vars, session, status_checks, tm_login_or_none)
+from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, entered_secret_states, find_hevc_decoder,
+                          frigate_host_devices, pi_now, request_from_this_machine, role_vars, session, status_checks,
+                          tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
 
@@ -364,6 +365,94 @@ def test_frigate_restarting_itself_stays_ok(host, address, tm_login):
         request_from_this_machine(address, f"{API}/services/frigate.service/restart", "POST", cookie, {})
         not_restarted(host, before, UNIT_RESTART_SECONDS)
         wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
+TOKEN = "thingsboard_access_token"
+# A test value, never a real token: 22 characters, so GET /secrets shows its last four
+TOKEN_PLACEHOLDER = "tmdev-placeholder-0001"
+JOB_POLL_SECONDS = 2
+# The job restarts each unit with a 120-second timeout (RESTART_TIMEOUT in tm-job-set-secret), after its file steps, so
+# the wait has headroom and a slow restart shows as the job's own result
+JOB_WAIT_SECONDS = UNIT_RESTART_SECONDS + 60
+
+
+def wait_for_job(address, cookie, job_id, timeout):
+    """Read GET /jobs/{id} until the job has succeeded or failed, for at most timeout seconds: (its last status, its
+    last log lines). The set-secret job never logs a value."""
+    deadline = time.monotonic() + timeout
+    while True:
+        answer = request_from_this_machine(address, f"{API}/jobs/{job_id}", cookie=cookie)
+        job = answer.json() if answer.status == 200 else None
+        status = job.get("status") if isinstance(job, dict) else f"HTTP {answer.status}"
+        if status in ("succeeded", "failed") or time.monotonic() >= deadline:
+            return status, (job.get("log") or [])[-5:] if isinstance(job, dict) else []
+        time.sleep(JOB_POLL_SECONDS)
+
+
+def token_state(address, cookie):
+    """GET /secrets' (set, ends_with) for the ThingsBoard token, or the HTTP status when it can't be read."""
+    answer = request_from_this_machine(address, f"{API}/secrets", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    listed = found.get("secrets") if isinstance(found, dict) else None
+    for entry in listed if isinstance(listed, list) else []:
+        if entry.get("name") == TOKEN:
+            return entry.get("set"), entry.get("ends_with")
+    return f"HTTP {answer.status}"
+
+
+def set_token(host, address, cookie, value):
+    """Set (or, with "", remove) the ThingsBoard token through the control app, as the Device page does, and wait for
+    the job and Node-RED's restart. Fails with what went wrong."""
+    before = {"node-red-tm.service": invocation(host, "node-red-tm.service")}
+    action = f"POST {API}/secrets/{TOKEN}" if value else f"DELETE {API}/secrets/{TOKEN}"
+    if value:
+        answer = request_from_this_machine(address, f"{API}/secrets/{TOKEN}", "POST", cookie, {"value": value})
+    else:
+        answer = request_from_this_machine(address, f"{API}/secrets/{TOKEN}", "DELETE", cookie)
+    started = answer.json() if answer.status == 202 else None
+    job_id = started.get("id") if isinstance(started, dict) else None
+    assert job_id, f"{action} answered {answer.status}"
+    status, log = wait_for_job(address, cookie, job_id, JOB_WAIT_SECONDS)
+    assert status == "succeeded", f"{action}: the job is {status} after {JOB_WAIT_SECONDS} s; its log ends {log}"
+    waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
+    assert not waiting, f"after {action}, {waiting} hadn't restarted"
+    wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+
+
+def test_set_and_remove_the_thingsboard_token_from_the_control_app(host, address, expect, codedir, tm_login):
+    """An admin's Save on the Device page writes the ThingsBoard token's file and node-red-tm.env's line through the
+    set-secret job and restarts Node-RED, and Remove empties both. Uses a placeholder, and leaves the token empty, as a
+    pii_free unit has it; skips when a token is already set, since it couldn't put it back. The file and the line are
+    compared on the Pi."""
+    if not expect["pii_free"]:
+        pytest.skip("writes the ThingsBoard token's file and node-red-tm.env; set tm_expect.pii_free: true "
+                    "(bench units only)")
+    cookie = session(address, *tm_login)
+    before = token_state(address, cookie)
+    if isinstance(before, tuple) and before[0] is True:
+        pytest.skip("a ThingsBoard token is already set and can't be restored; remove it on the Device page first")
+    assert before == (False, None), f"GET {API}/secrets before the test: {before}"
+    del before
+    line = "node-red-tm/node-red-tm.env:TM_THINGSBOARD_ACCESS_TOKEN"
+    removed = False
+    try:
+        set_token(host, address, cookie, TOKEN_PLACEHOLDER)
+        states = entered_secret_states(host, codedir, [TOKEN], {TOKEN: TOKEN_PLACEHOLDER})
+        assert (states[f"secret {TOKEN}"], states[line]) == ("equal", "equal"), (
+            f"after Save, (the file against the placeholder, the env line against the file): {states}")
+        assert token_state(address, cookie) == (True, TOKEN_PLACEHOLDER[-4:]), f"GET {API}/secrets after Save"
+        set_token(host, address, cookie, "")
+        removed = True
+        states = entered_secret_states(host, codedir, [TOKEN], {TOKEN: ""})
+        assert (states[f"secret {TOKEN}"], states[line]) == ("equal", "equal"), (
+            f"after Remove, (the file against empty, the env line against the file): {states}")
+        assert token_state(address, cookie) == (False, None), f"GET {API}/secrets after Remove"
+    finally:
+        if not removed:  # put the token back to empty, even when Save failed partway; a failure here chains
+            try:
+                set_token(host, address, cookie, "")
+            except AssertionError as error:
+                raise AssertionError(f"the placeholder token may still be set; remove it on the Device page ({error})")
 
 
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)

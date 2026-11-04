@@ -147,6 +147,28 @@
     line: "TM_INTERNAL_TOKEN={{ tmsetup_secrets['node_red_internal_token'] }}"
   notify: Restart node-red-tm.service
 
+# And for the entered secrets the flows read, so a value set on the Device page reaches an older env file.
+# An empty secret file writes an empty value.
+- name: TMSetup - Node-RED-TM Setup - Add the ThingsBoard access token to node-red-tm.env
+  become: true
+  no_log: true
+  when: tmsetup_node_red_env_stat_register.stat.exists
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    regexp: '^TM_THINGSBOARD_ACCESS_TOKEN='
+    line: "TM_THINGSBOARD_ACCESS_TOKEN={{ tmsetup_secrets['thingsboard_access_token'] }}"
+  notify: Restart node-red-tm.service
+
+- name: TMSetup - Node-RED-TM Setup - Add the Plate Recognizer token to node-red-tm.env
+  become: true
+  no_log: true
+  when: tmsetup_node_red_env_stat_register.stat.exists
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+    regexp: '^TM_PLATE_RECOGNIZER_TOKEN='
+    line: "TM_PLATE_RECOGNIZER_TOKEN={{ tmsetup_secrets['plate_recognizer_token'] }}"
+  notify: Restart node-red-tm.service
+
 - name: TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red
   become: true
   loop:

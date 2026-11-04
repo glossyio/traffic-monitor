@@ -13,11 +13,14 @@ import time
 import urllib.parse
 
 import pytest
-from devpi_checks import (API, UNCLAIMED, Redacted, is_claimed, request_from_this_machine, retry_after, role_vars,
-                          session, status_checks, tm_internal_token, tm_login_or_none)
+from devpi_checks import (API, UNCLAIMED, Redacted, entered_secret_states, is_claimed, request_from_this_machine,
+                          retry_after, role_vars, session, set_secret_table, status_checks, tm_internal_token,
+                          tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
+# The secrets a person types in on the Device page; tmsetup creates each file empty, which means not set
+ENTERED_SECRETS = role_vars()["tmsetup_entered_secret_names"]
 
 # Prefix locations from `nginx -T`; exact (=), regex (~), and named (@) locations are skipped,
 # since those are error pages and internal routes rather than apps.
@@ -588,37 +591,42 @@ def test_frigate_config_hides_the_proxy_secret(host, address, expect, admin_sess
     assert counts[1] == "0", "Frigate's /api/config shows the proxy secret"
 
 
-# The secrets the control app added (M2 and M3). Prints each one's name and how many of the SSH user's install logs
-# hold its value, so the values never leave the Pi. tmsetup.sh writes ~/tmsetup-*.log for the user who ran it, so on-Pi
-# deploys leave it here and remote ones (-H) on the dev machine. `test -s` first: an empty pattern file would match
-# nothing.
+# The secrets the control app added (M2 and M3), and the entered secrets. Prints each one's name and how many of the SSH
+# user's install logs hold its value, so the values never leave the Pi. tmsetup.sh writes ~/tmsetup-*.log for the user
+# who ran it, so on-Pi deploys leave it here and remote ones (-H) on the dev machine. `test -s` first: an empty pattern
+# file would match nothing. An empty file is "missing" for a generated secret and "unset" for an entered one, which
+# has no value to look for.
 CONTROL_APP_SECRETS = ["tm_control_session_key", "frigate_proxy_secret", "node_red_token_key",
                        "node_red_internal_token"]
 INSTALL_LOG_COUNTS = """\
 ls ~/tmsetup-*.log >/dev/null 2>&1 || exit 3
-for name in {names}; do
-  file={secrets_dir}/$name
+count() {{
+  file={secrets_dir}/$1
   if sudo test -s "$file"; then
-    echo "$name $(sudo grep -l -F -f "$file" ~/tmsetup-*.log | wc -l)"
+    echo "$1 $(sudo grep -l -F -f "$file" ~/tmsetup-*.log | wc -l)"
   else
-    echo "$name missing"
+    echo "$1 $2"
   fi
-done"""
+}}
+for name in {names}; do count "$name" missing; done
+for name in {entered}; do count "$name" unset; done"""
 
 
 def test_no_secret_in_the_install_log(host, expect):
-    """tmsetup.sh copies all of its output into its log; none of the control app's secrets may be in it. The setup
-    code may be: the installer prints it on purpose."""
+    """tmsetup.sh copies all of its output into its log; none of the control app's secrets, nor an entered secret
+    that is set, may be in it. The setup code may be: the installer prints it on purpose."""
     if not expect["pii_free"]:
         pytest.skip("compares device secrets with the install logs; set tm_expect.pii_free: true (bench units only)")
-    result = host.run(INSTALL_LOG_COUNTS.format(names=" ".join(CONTROL_APP_SECRETS), secrets_dir=SECRETS_DIR))
+    result = host.run(INSTALL_LOG_COUNTS.format(names=" ".join(CONTROL_APP_SECRETS), entered=" ".join(ENTERED_SECRETS),
+                                                secrets_dir=SECRETS_DIR))
     rc, output = result.rc, result.stdout
     if rc == 3:
         pytest.skip("no ~/tmsetup-*.log for the SSH user on the Pi; a remote deploy (-H) keeps the log on the "
                     "dev machine, so deploy with --on-pi to check it")
     counts = dict(line.split(" ", 1) for line in output.splitlines() if " " in line)
-    assert sorted(counts) == sorted(CONTROL_APP_SECRETS), f"couldn't check every secret: {counts}"
-    leaked = {name: count for name, count in counts.items() if count != "0"}
+    assert sorted(counts) == sorted(CONTROL_APP_SECRETS + ENTERED_SECRETS), f"couldn't check every secret: {counts}"
+    leaked = {name: count for name, count in counts.items()
+              if count != "0" and not (name in ENTERED_SECRETS and count == "unset")}
     assert not leaked, f"install logs holding a secret (number of logs, or missing): {leaked}"
 
 
@@ -629,7 +637,7 @@ DETECTOR_KIND = {"hailo8": "hailo8l"}
 # The status page's runtime assumptions, which only a device shows: Frigate and Node-RED answer tm-control, and the
 # sandboxed tm-control sees the pod's published 1883 with ss
 APPS_OK = ["apps.frigate.reachable", "apps.nodered.reachable", "apps.nodered.schema", "apps.broker.login"]
-CONFIG_CHECKS = ["config.cameras", "config.zones", "config.radars", "config.deployment"]
+CONFIG_CHECKS = ["config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard"]
 
 
 def test_status_report_agrees_with_the_inventory(address, expect, admin_session):
@@ -753,22 +761,25 @@ def test_tm_internal_needs_the_token_on_the_pi(host, expect):
 
 
 # The diagnostics through the proxy with the admin session, then: how many lines are the status section's header, and
-# for each device secret, and the broker password when node-red-tm.env sets one, how many lines of the text hold its
-# value. The values stay on the Pi: each is piped to grep as its pattern, never put on a command line. The cookie is on
-# curl's command line, never under sudo, whose log would keep it. `test -s` first: an empty pattern matches every line.
+# for each device secret, each entered secret that is set, and the broker password when node-red-tm.env sets one, how
+# many lines of the text hold its value. The values stay on the Pi: each is piped to grep as its pattern, never put on
+# a command line. The cookie is on curl's command line, never under sudo, whose log would keep it. `test -s` first: an
+# empty pattern matches every line. An empty file is "missing" for a generated secret and "unset" for an entered one.
 DIAGNOSTICS_COUNTS = """\
 diag=$(mktemp) || exit 3
 trap 'rm -f "$diag"' EXIT
 curl -sf --max-time 90 -H {host_header} -H {cookie_header} -o "$diag" http://localhost{path} || exit 3
 grep -c -x -F '== Status ==' "$diag"
-for name in {names}; do
-  file={secrets_dir}/$name
+count() {{
+  file={secrets_dir}/$1
   if sudo test -s "$file"; then
-    echo "$name $(sudo cat "$file" | grep -c -F -f - "$diag")"
+    echo "$1 $(sudo cat "$file" | grep -c -F -f - "$diag")"
   else
-    echo "$name missing"
+    echo "$1 $2"
   fi
-done
+}}
+for name in {names}; do count "$name" missing; done
+for name in {entered}; do count "$name" unset; done
 password=$(sudo sed -n 's/^TM_MQTT_BROKER_PASSWORD=//p' {env_file} | head -n 1)
 if [ -n "$password" ]; then
   echo "TM_MQTT_BROKER_PASSWORD $(printf '%s\\n' "$password" | grep -c -F -f - "$diag")"
@@ -782,14 +793,15 @@ def diagnostics_counts(host, address, cookie, codedir):
                                                 cookie_header=shlex.quote(f"Cookie: {cookie}"),
                                                 path=f"{API}/system/diagnostics",
                                                 names=" ".join(role_vars()["tmsetup_secret_names"]),
-                                                secrets_dir=SECRETS_DIR,
+                                                entered=" ".join(ENTERED_SECRETS), secrets_dir=SECRETS_DIR,
                                                 env_file=shlex.quote(f"{codedir}/node-red-tm/node-red-tm.env")))
     return result.rc, result.stdout.splitlines()
 
 
 def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_session):
-    """The diagnostics text an admin downloads holds none of the device's secrets, nor the broker password, which
-    Node-RED's journal can print on a connection error. Compared on the Pi, so no value leaves it."""
+    """The diagnostics text an admin downloads holds none of the device's secrets, nor an entered secret that is set,
+    nor the broker password, which Node-RED's journal can print on a connection error. Compared on the Pi, so no value
+    leaves it."""
     if not expect["pii_free"]:
         pytest.skip("compares device secrets and node-red-tm.env with the diagnostics; set tm_expect.pii_free: true "
                     "(bench units only)")
@@ -797,10 +809,65 @@ def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_s
     assert rc != 3, f"couldn't download {API}/system/diagnostics through the proxy with the admin session"
     assert lines and lines[0] != "0", "the diagnostics text has no == Status == section"
     counts = dict(line.split(" ", 1) for line in lines[1:] if " " in line)
-    missing = sorted(set(role_vars()["tmsetup_secret_names"]) - set(counts))
+    missing = sorted(set(role_vars()["tmsetup_secret_names"] + ENTERED_SECRETS) - set(counts))
     assert not missing, f"couldn't check {missing}"
-    leaked = {name: count for name, count in counts.items() if count != "0"}
+    leaked = {name: count for name, count in counts.items()
+              if count != "0" and not (name in ENTERED_SECRETS and count == "unset")}
     assert not leaked, f"secrets in the diagnostics text (lines holding the value, or missing): {leaked}"
+
+
+# --- The entered secrets ---------------------------------------------------------------------------------------------
+
+# The keys that held a secret in config.yml before the entered secrets; tm-control migrate moves them out
+FORMER_SECRET_KEYS = [("thingsboard", "access_token"), ("addons", "plate_recognizer", "token")]
+# The install manifest tm-control reads its options from (tasks/tm-control_service.yml); it holds no secret
+MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
+
+
+def has_key(data, path):
+    for part in path[:-1]:
+        data = data.get(part) if isinstance(data, dict) else None
+    return isinstance(data, dict) and path[-1] in data
+
+
+def test_config_yml_holds_no_secret_key(node_red_config):
+    """config.yml holds no secret: the ThingsBoard token and the Plate Recognizer token live in the secrets directory,
+    and the installer moved any that config.yml held. Only the keys' names are reported, never a value."""
+    present = [".".join(path) for path in FORMER_SECRET_KEYS if has_key(node_red_config, path)]
+    assert not present, f"config.yml still holds {present}, which nothing reads"
+
+
+def test_env_secret_lines_match_the_secret_files(host, expect, codedir):
+    """Each env line that carries an entered secret (the set-secret job's table) equals the secret's file, whether set
+    or empty. Env files that aren't there, such as the add-on's on a unit without it, are skipped. Compared on the Pi,
+    so no value leaves it."""
+    if not expect["pii_free"]:
+        pytest.skip("compares device secrets with node-red-tm.env; set tm_expect.pii_free: true (bench units only)")
+    states = entered_secret_states(host, codedir, list(set_secret_table()))
+    assert states.get("node-red-tm/node-red-tm.env:TM_THINGSBOARD_ACCESS_TOKEN") != "absent", (
+        "node-red-tm.env is missing")
+    differ = {label: state for label, state in states.items() if state not in ("equal", "absent")}
+    assert not differ, f"env lines that don't match their secret's file: {differ}"
+
+
+def test_secrets_lists_only_the_installed_addons_values(host, address, admin_session):
+    """GET /secrets lists the ThingsBoard token, and the Plate Recognizer token and license key only where the add-on
+    is installed (never on a pii_free unit, test_plate_recognizer_absent_on_pii_free_unit). Only the names are kept.
+    Installed means what tm-control goes by, the manifest's options.plate_recognizer, not whether the unit file is
+    there."""
+    answer = request_from_this_machine(address, f"{API}/secrets", cookie=admin_session)
+    found = answer.json() if answer.status == 200 else None
+    listed = found.get("secrets") if isinstance(found, dict) else None
+    names = [entry.get("name") for entry in listed] if isinstance(listed, list) else None
+    del found, listed
+    assert names is not None, f"GET {API}/secrets answered {answer.status}, not a list of secrets"
+    read = host.run(f"sudo -n cat {MANIFEST}")
+    assert read.rc == 0, f"couldn't read {MANIFEST} (exit {read.rc})"
+    options = json.loads(read.stdout).get("options")
+    add_on = options.get("plate_recognizer") if isinstance(options, dict) else None
+    assert isinstance(add_on, bool), f"{MANIFEST} has no options.plate_recognizer true or false"
+    expected = ENTERED_SECRETS if add_on else ["thingsboard_access_token"]
+    assert names == expected, f"GET {API}/secrets with the add-on {'installed' if add_on else 'not installed'}"
 
 
 def test_time_state_matches_timedatectl(host, address, admin_session):
