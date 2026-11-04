@@ -35,11 +35,11 @@ def collected_manifest(**registers):
     task = next(task for task in load_role_yaml("tasks/tm-control_service.yml")
                 if task["name"] == "TMSetup - tm-control Service - Collect the install manifest")
     variables = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
-    variables.update(
-        ansible_facts={"user_id": "pi"},
-        tmsetup_tm_control_plate_recognizer_stat_register={"stat": {"exists": False}},
-        **{**GIT_OK, **registers},
-    )
+    variables.update({
+        "ansible_facts": {"user_id": "pi"},
+        "tmsetup_tm_control_plate_recognizer_stat_register": {"stat": {"exists": False}},
+        **GIT_OK, **registers,
+    })
     return evaluate(task["ansible.builtin.set_fact"]["tmsetup_tm_control_manifest"], **variables)
 
 
@@ -86,6 +86,17 @@ def test_manifest_records_only_the_static_detector_probes():
 
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
+
+
+@pytest.mark.parametrize(("enabled", "unit_exists", "expected"), [
+    ("true", False, True),  # -C plate_recognizer on a first install: the stat runs before the add-on's setup
+    (False, True, True),  # a later run without -C leaves the installed add-on in place
+    (False, False, False),
+])
+def test_manifest_records_plate_recognizer_when_enabled_or_installed(enabled, unit_exists, expected):
+    manifest = collected_manifest(tmsetup_bool_plate_recognizer=enabled,
+                                  tmsetup_tm_control_plate_recognizer_stat_register={"stat": {"exists": unit_exists}})
+    assert manifest["options"]["plate_recognizer"] is expected
 
 
 @pytest.mark.parametrize("register", [

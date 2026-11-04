@@ -96,7 +96,10 @@
         nginx: '{{ tmsetup_nginx_version }}'
         hailo: '{{ tmsetup_hailo_version }}'
       options:
-        plate_recognizer: '{{ tmsetup_tm_control_plate_recognizer_stat_register.stat.exists }}'
+        # This runs before the add-on's own setup, so -C plate_recognizer on a first install has no unit yet
+        plate_recognizer: >-
+          {{ tmsetup_bool_plate_recognizer | default('false') | bool
+             or tmsetup_tm_control_plate_recognizer_stat_register.stat.exists }}
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results
