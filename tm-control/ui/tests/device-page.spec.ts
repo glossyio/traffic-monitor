@@ -1,12 +1,17 @@
-// The Device page: the device card, software, and for admins the diagnostics and the power buttons.
+// The Device page: the device card, software, and for admins the tokens and keys, the diagnostics, and the power buttons.
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ADMIN, SYSTEM_INFO, VIEWER, apiError, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogText, field, mountApp } from './mount'
+import { button, click, clickInDialog, dialogText, field, mountApp } from './mount'
 
 const INFO = 'GET /api/v1/system/info'
 const SECRETS = 'GET /api/v1/secrets'
 const NO_SECRETS = { secrets: [] }
+const THREE_SECRETS = [
+  { name: 'thingsboard_access_token', title: 'ThingsBoard access token', set: true, ends_with: '0001', restarts: ['node-red-tm.service'] },
+  { name: 'plate_recognizer_token', title: 'Plate Recognizer API token', set: false, ends_with: null, restarts: ['plate-recognizer.service', 'node-red-tm.service'] },
+  { name: 'plate_recognizer_license_key', title: 'Plate Recognizer license key', set: true, ends_with: null, restarts: ['plate-recognizer.service'] },
+]
 const DIAGNOSTICS = 'tm-control diagnostics\nhostname: tm-fake\n'
 
 function headings(wrapper: VueWrapper) {
@@ -67,15 +72,24 @@ describe('the Device page', () => {
     expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false) // viewers get 403 there
   })
 
-  it('shows an admin one form per secret the API lists, before Diagnostics', async () => {
-    const secrets = [
-      { name: 'thingsboard_access_token', title: 'ThingsBoard access token', set: true, ends_with: '0001', restarts: ['node-red-tm.service'] },
-      { name: 'plate_recognizer_token', title: 'Plate Recognizer API token', set: false, ends_with: null, restarts: ['plate-recognizer.service', 'node-red-tm.service'] },
-      { name: 'plate_recognizer_license_key', title: 'Plate Recognizer license key', set: true, ends_with: null, restarts: ['plate-recognizer.service'] },
-    ]
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets } })
+  it('shows an admin Tokens and keys before Diagnostics, closed until its heading is tapped', async () => {
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
     const { wrapper } = await mountApp('/device')
     expect(headings(wrapper)).toEqual(['tm-fake', 'Software', 'Tokens and keys', 'Diagnostics', 'Power'])
+    const toggle = button(wrapper, 'Tokens and keys')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(wrapper.findAll('h3')).toEqual([])
+    expect(wrapper.text()).not.toContain('Credentials this device uses')
+
+    await click(wrapper, 'Tokens and keys')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    expect(wrapper.findAll('h3')).toHaveLength(3)
+  })
+
+  it('shows an admin one form per secret the API lists', async () => {
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
+    const { wrapper } = await mountApp('/device')
+    await click(wrapper, 'Tokens and keys')
     expect(wrapper.text()).toContain(
       'Credentials this device uses, kept with its other secrets. A value is never shown back; saving or removing one ' +
         'restarts the app that uses it, and counting pauses meanwhile.',
@@ -85,6 +99,14 @@ describe('the Device page', () => {
       'Plate Recognizer API token',
       'Plate Recognizer license key',
     ])
+  })
+
+  it("opens Tokens and keys when a link names it, as the Status page's Set the token does", async () => {
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
+    const { wrapper } = await mountApp('/device#tokens-and-keys')
+    expect(button(wrapper, 'Tokens and keys').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.findAll('h3')).toHaveLength(3)
+    expect(wrapper.find('#tokens-and-keys').exists()).toBe(true)
   })
 
   it('reloads the secrets after a save, and offers Try again when they do not load', async () => {
@@ -105,6 +127,7 @@ describe('the Device page', () => {
       }),
     })
     const { wrapper } = await mountApp('/device')
+    await click(wrapper, 'Tokens and keys')
     expect(wrapper.text()).toContain('The device answered with an error.')
     await click(wrapper, 'Try again')
     expect(wrapper.text()).toContain('Not set.')

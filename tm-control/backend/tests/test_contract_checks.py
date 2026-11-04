@@ -195,7 +195,7 @@ def test_thingsboard_on_without_a_token_is_a_warning_with_a_link(apps):
     check = thingsboard_check(apps)
     assert check.status == "warn" and check.detail == MISSING_TOKEN
     assert check.fix is not None
-    assert (check.fix.kind, check.fix.text, check.fix.href) == ("link", "Set the token", "/device")
+    assert (check.fix.kind, check.fix.text, check.fix.href) == ("link", "Set the token", "/device#tokens-and-keys")
 
 
 def test_thingsboard_on_with_a_token_is_ok(apps):
@@ -265,7 +265,7 @@ def test_two_warnings_are_joined_in_one_detail(apps):
         "config.yml still holds thingsboard.access_token, which nothing reads. Remove it; the value is set on the "
         f"Device page. {MISSING_TOKEN}"
     )
-    assert check.fix is not None and check.fix.href == "/device"  # kept, since the missing token is among them
+    assert check.fix is not None and check.fix.href == "/device#tokens-and-keys"  # kept, since the missing token is among them
     assert "placeholder" not in check.detail
 
 

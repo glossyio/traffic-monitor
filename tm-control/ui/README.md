@@ -288,12 +288,15 @@ Device:
 | Frigate 0.18.1    Node-RED 5.0.8 |
 | go2rtc 1.9.14     nginx 1.31.0   |
 | Commit 2da617a on dev   ...      |
-| Tokens and keys             (h6) |
-| Credentials this device uses ... |
-| ThingsBoard access token         |
-| Set, ending in 0001.             |
-| [ ThingsBoard access token  (o)] |
-| [Save] [Remove]                  |
+| +------------------------------+ |
+| | Tokens and keys     (h6)  v  | |
+| +------------------------------+ |
+|   opened:                        |
+|   Credentials this device ...    |
+|   ThingsBoard access token       |
+|   Set, ending in 0001.           |
+|   [ ThingsBoard access token (o)]|
+|   [Save] [Remove]                |
 | Diagnostics                 (h6) |
 | [Download diagnostics] [Copy]    |
 | Power                       (h6) |
@@ -310,7 +313,11 @@ Device:
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
 - Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists, so
-  the Plate Recognizer token and license key appear only on a device with the add-on. Each form is a small heading
+  the Plate Recognizer token and license key appear only on a device with the add-on. It's one expansion panel,
+  closed when the page opens. The Status page's "Set the token" links to `/device#tokens-and-keys`, which opens it and scrolls to
+  it. The page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns
+  about a missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
+  screen readers. Each form is a small heading
   with the secret's name, a line saying whether it's set ("Set, ending in 0001.", "Set." when the device shows no
   ending, "Not set."), a field that is always empty when the page loads, Save, and Remove when there's something to
   remove. The value is never shown back, so the field can't hold the current one; the ending is how an admin tells

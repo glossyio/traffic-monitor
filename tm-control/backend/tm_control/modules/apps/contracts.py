@@ -219,7 +219,7 @@ def thingsboard(context: Context) -> list[Check]:
         warnings.append("thingsboard.host starts with a scheme, so the protocol key is ignored for it. Put only the "
                         "hostname in host.")
     if warnings:
-        fix = Fix(kind="link", text="Set the token", href="/device") if missing_token else None
+        fix = Fix(kind="link", text="Set the token", href="/device#tokens-and-keys") if missing_token else None
         return check("warn", " ".join(warnings), fix)
     return check("ok", "The upload is on, with a token set." if on else "The upload is off.")
 
