@@ -1,16 +1,19 @@
 """Bring config files from older installs up to date. Each step is idempotent: running it again changes nothing."""
 
+import os
 import re
 import sys
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from ruamel.yaml import YAMLError
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from ruamel.yaml.tokens import CommentToken
 
-from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile
+from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, write_atomic
+from tm_control.core.secrets import PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN, THINGSBOARD_ACCESS_TOKEN
 
 PREFIX = "tm-control migrate:"
 
@@ -321,4 +324,381 @@ def run(frigate_config, dry_run=False):
         print(f"{PREFIX} ERROR writing {frigate_config}: {error}", file=sys.stderr)
         return 1
     print(f"{PREFIX} {frigate_config}: " + ", ".join(done for _, done in steps) + f" (backup: {backup})")
+    return 0
+
+
+# Entered secrets (core/secrets.py). Older installs kept the ThingsBoard token and the Plate Recognizer token in
+# Node-RED's config.yml, and a person typed the Plate Recognizer token and license key into plate-recognizer.env.
+# tmsetup runs these two steps as root, before it renders either file, so that -f can't throw away a value's only
+# copy. Each key path, the secret file it moves to, and whether mappings it leaves empty go too.
+CONFIG_SECRETS = (
+    (("thingsboard", "access_token"), THINGSBOARD_ACCESS_TOKEN, False),
+    (("addons", "plate_recognizer", "token"), PLATE_RECOGNIZER_TOKEN, True),
+)
+ENV_SECRETS = (("TOKEN", PLATE_RECOGNIZER_TOKEN), ("LICENSE_KEY", PLATE_RECOGNIZER_LICENSE_KEY))
+# What plate-recognizer.env.j2 wrote before it rendered the secrets: none of them is a value.
+ENV_PLACEHOLDERS = {"", "YYYYY", "XXXXX"}
+SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
+# A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
+_PLAIN_SCALAR = re.compile(r"[^\s,\[\]{}#]+")
+
+
+class _SecretsUnreadable(Exception):
+    """The secrets directory or a file in it can't be read. The message names the path, never a value."""
+
+
+def _read_secret(secrets_dir, name):
+    """A secret file's value, stripped; empty when the file is empty or missing."""
+    if not secrets_dir.is_dir():
+        raise _SecretsUnreadable(f"ERROR reading the secrets directory {secrets_dir}: not a directory")
+    path = secrets_dir / name
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""
+    except OSError as error:
+        raise _SecretsUnreadable(f"ERROR reading {path}: {error}") from None
+    except UnicodeError as error:  # its message quotes a byte of the file
+        raise _SecretsUnreadable(f"ERROR reading {path}: {type(error).__name__}") from None
+
+
+def _write_secret(secrets_dir, name, text):
+    """Write a secret file. A missing one is made first as tmsetup makes it: 0640, the directory's group, and as
+    root, owned by root."""
+    path = secrets_dir / name
+    if not path.exists():
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, SECRET_FILE_MODE)
+        try:
+            os.fchmod(fd, SECRET_FILE_MODE)  # whatever the umask
+            os.fchown(fd, 0 if os.geteuid() == 0 else -1, secrets_dir.stat().st_gid)
+        finally:
+            os.close(fd)
+    write_atomic(path, text + "\n")
+
+
+def _find(config, path):
+    """(mapping, key) for a key path whose mappings are all there and that holds the key, else None."""
+    node = config
+    for key in path[:-1]:
+        node = node.get(key) if isinstance(node, dict) else None
+    if isinstance(node, dict) and path[-1] in node:
+        return node, path[-1]
+    return None
+
+
+def _token_text(mapping, key, loaded_text):
+    """The value as the text of a token, or None if it can't be one: a boolean, a date, a list or mapping, or text
+    with a space or line break in it.
+
+    YAML reads a token of digits as a number, which would lose leading zeros, a long int's digits as a float, or an
+    exponent's form, so a number's text is read from the file as it was written.
+    """
+    value = mapping[key]
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+    else:
+        line, column = mapping.lc.value(key)
+        written = _PLAIN_SCALAR.match(loaded_text.split("\n")[line], column)
+        text = written.group(0) if written else str(value)
+    if any(character.isspace() or not character.isprintable() for character in text):
+        return None
+    return text
+
+
+def _is_empty(value):
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def _is_blank(line):
+    return not line.strip()
+
+
+def _last_entry(mapping, key):
+    """(mapping, key) of the entry on the last line of the one at key: itself, or the deepest last key of a block
+    mapping. None when that line ends a list or a flow-style mapping, after which ruamel keeps lines on the next key
+    instead."""
+    value = mapping[key]
+    while isinstance(value, CommentedMap) and value and not value.fa.flow_style():
+        mapping, key = value, list(value)[-1]
+        value = mapping[key]
+    if isinstance(value, (CommentedMap, CommentedSeq)):
+        return None
+    return mapping, key
+
+
+def _append_after(mapping, key, lines):
+    """Put comment and blank lines after the entry at key. ruamel keeps such lines on the key whose line they
+    follow, as the text after its value: the rest of that line, then whole lines. Blank lines that would follow
+    blank lines are dropped, so taking out a section between two others leaves one blank line, not two."""
+    found = _last_entry(mapping, key)
+    if found is None:
+        return False
+    tokens = found[0].ca.items.setdefault(found[1], [None, None, None, None])
+    existing = tokens[2].value if tokens[2] is not None else "\n"
+    after_line = existing.split("\n")
+    if len(after_line) >= 3 and _is_blank(after_line[-2]):
+        kept = lines.splitlines(keepends=True)
+        while kept and _is_blank(kept[0]):
+            kept.pop(0)
+        lines = "".join(kept)
+    if not lines:
+        return True
+    if tokens[2] is None:
+        tokens[2] = CommentToken(existing + lines, CommentMark(0), None)
+    else:
+        tokens[2].value += lines
+    return True
+
+
+def _put_before(mapping, key, lines):
+    """Put comment and blank lines before the entry at key, where ruamel keeps the lines that follow a list or a
+    flow-style mapping."""
+    tokens = mapping.ca.items.setdefault(key, [None, None, None, None])
+    before = [CommentToken(line, CommentMark(0), None) for line in lines.splitlines(keepends=True)]
+    tokens[1] = before + (tokens[1] or [])
+
+
+def _end_with(config, lines):
+    """End the document with these lines in place of the blank lines its last entry is followed by."""
+    found = _last_entry(config, list(config)[-1]) if config else None
+    if found is None:
+        return
+    tokens = found[0].ca.items.setdefault(found[1], [None, None, None, None])
+    line_end, _, after = (tokens[2].value if tokens[2] is not None else "\n").partition("\n")
+    kept = after.splitlines(keepends=True)
+    while kept and _is_blank(kept[-1]):
+        kept.pop()
+    text = line_end + "\n" + "".join(kept) + lines
+    if tokens[2] is None:
+        tokens[2] = CommentToken(text, CommentMark(0), None)
+    else:
+        tokens[2].value = text
+
+
+def _delete(config, path, prune):
+    """Delete the key at path and, with prune, every mapping on the path that leaves empty.
+
+    The comment and blank lines that followed the key's line move to the entry before it, so the sections around it
+    keep their spacing. The key's own end-of-line comment goes with it.
+    """
+    parents = [config]
+    for key in path[:-1]:
+        parents.append(parents[-1][key])
+    at_the_end = all(list(parent)[-1] == key for parent, key in zip(parents, path))
+    tokens = parents[-1].ca.items.get(path[-1])
+    following = tokens[2].value.partition("\n")[2] if tokens and tokens[2] is not None else ""
+    depth = len(path) - 1
+    while True:
+        mapping, key = parents[depth], path[depth]
+        keys = list(mapping)
+        index = keys.index(key)
+        del mapping[key]
+        mapping.ca.items.pop(key, None)
+        if mapping or depth == 0 or not prune:
+            break
+        depth -= 1
+    if at_the_end:
+        # The blank lines that came before the key would now end the file.
+        _end_with(config, following)
+    elif not following:
+        return
+    elif index > 0 and _append_after(mapping, keys[index - 1], following):
+        pass
+    else:
+        # After a list, a flow-style or empty mapping (such as thingsboard: {}), or nothing: before the next entry
+        next_entry = _next_entry(parents, path, depth, keys, index)
+        if next_entry:
+            _put_before(*next_entry, following)
+
+
+def _next_entry(parents, path, depth, keys, index):
+    """(mapping, key) of the entry after the deleted one at path[depth], whose keys were keys, or None."""
+    if index + 1 < len(keys):
+        return parents[depth], keys[index + 1]
+    for level in range(depth - 1, -1, -1):
+        siblings = list(parents[level])
+        position = siblings.index(path[level])
+        if position + 1 < len(siblings):
+            return parents[level], siblings[position + 1]
+    return None
+
+
+def _warn_secret(path, message):
+    print(f"{PREFIX} WARNING {path}: {message}", file=sys.stderr)
+
+
+def run_node_red(config_path, secrets_dir, dry_run=False):
+    """Move thingsboard.access_token and addons.plate_recognizer.token from Node-RED's config.yml to the secret files,
+    and delete keys left with no value. Return a process exit code.
+
+    A secret file that already holds a value keeps it, and the key is deleted all the same (with a warning when the
+    two differ; the backup keeps the other value). Nothing printed holds a value or the file's text.
+    """
+    config_path, secrets_dir = Path(config_path), Path(secrets_dir)
+    try:
+        document = RoundTripFile(config_path, mapping_indent=4)  # as config.yml.j2 indents
+    except OSError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {error}", file=sys.stderr)
+        return 1
+    except YAMLError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {_describe_yaml_error(error)}", file=sys.stderr)
+        return 1
+
+    steps = []  # (what a dry run would do, what was done)
+    writes = []  # (secret file, text)
+    deletions = []  # (key path, prune)
+    for path, name, prune in CONFIG_SECRETS:
+        found = _find(document.data, path)
+        if found is None:
+            continue
+        mapping, key = found
+        dotted = ".".join(path)
+        if _is_empty(mapping[key]):
+            steps.append((f"remove the empty {dotted}", f"removed the empty {dotted}"))
+            deletions.append((path, prune))
+            continue
+        text = _token_text(mapping, key, document.loaded_text)
+        if text is None:
+            _warn_secret(config_path, f"{dotted} isn't one word of text, as a token is; left as it is")
+            continue
+        try:
+            current = _read_secret(secrets_dir, name)
+        except _SecretsUnreadable as error:
+            print(f"{PREFIX} {error}", file=sys.stderr)
+            return 1
+        if current:
+            if current != text:
+                removal = "would be removed" if dry_run else "is removed"
+                _warn_secret(
+                    config_path,
+                    f"{dotted} differs from the secrets file {name}, which is kept; the key {removal} from "
+                    "config.yml, and the backup keeps its value.",
+                )
+            steps.append((
+                f"remove {dotted} from config.yml, which the secrets file already holds",
+                f"removed {dotted} from config.yml, which the secrets file already holds",
+            ))
+        else:
+            writes.append((name, text))
+            steps.append((f"move {dotted} to the secrets file", f"moved {dotted} to the secrets file"))
+        deletions.append((path, prune))
+
+    if not steps:
+        print(f"{PREFIX} {config_path}: up to date")
+        return 0
+    if dry_run:
+        print(f"{PREFIX} {config_path}: would " + ", ".join(would for would, _ in steps))
+        return 0
+    # The secret files first: if saving config.yml fails, the next run finds the same value in both and only
+    # deletes the key.
+    for name, text in writes:
+        try:
+            _write_secret(secrets_dir, name, text)
+        except OSError as error:
+            print(f"{PREFIX} ERROR writing {secrets_dir / name}: {error}", file=sys.stderr)
+            return 1
+    for path, prune in deletions:
+        _delete(document.data, path, prune)
+    try:
+        backup = document.save()
+    except (OSError, ConcurrentEditError) as error:
+        print(f"{PREFIX} ERROR writing {config_path}: {error}", file=sys.stderr)
+        return 1
+    print(f"{PREFIX} {config_path}: " + ", ".join(done for _, done in steps) + f" (backup: {backup})")
+    return 0
+
+
+def _env_values(text):
+    """KEY=value lines as a dict, the last of a repeated key winning; comment and blank lines skipped."""
+    values = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, separator, value = line.partition("=")
+        if separator:
+            values[key.strip()] = value.strip()
+    return values
+
+
+def _same_backup(path, text):
+    """An existing backup of path that holds text, or None."""
+    for backup in sorted(path.parent.glob(f"{path.name}.*.bak")):
+        try:
+            if backup.read_text(encoding="utf-8") == text:
+                return backup
+        except (OSError, UnicodeError):
+            continue
+    return None
+
+
+def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
+    """Move a hand-entered TOKEN and LICENSE_KEY from plate-recognizer.env to the secret files. Return a process
+    exit code.
+
+    The env file isn't rewritten: tmsetup writes those two lines from the secret files on the same run. A secret file
+    that already holds a value keeps it; when the env file's value differs, the env file is backed up first, because
+    tmsetup's rewrite would lose that value. A missing env file means the add-on isn't installed.
+    """
+    env_path, secrets_dir = Path(env_path), Path(secrets_dir)
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        print(f"{PREFIX} {env_path}: up to date")
+        return 0
+    except OSError as error:
+        print(f"{PREFIX} ERROR reading {env_path}: {error}", file=sys.stderr)
+        return 1
+    except UnicodeError as error:
+        print(f"{PREFIX} ERROR reading {env_path}: {type(error).__name__}", file=sys.stderr)
+        return 1
+
+    values = _env_values(text)
+    moves, differ = [], []
+    for key, name in ENV_SECRETS:
+        value = values.get(key, "")
+        if value in ENV_PLACEHOLDERS:
+            continue
+        try:
+            current = _read_secret(secrets_dir, name)
+        except _SecretsUnreadable as error:
+            print(f"{PREFIX} {error}", file=sys.stderr)
+            return 1
+        if not current:
+            moves.append((key, name, value))
+        elif current != value:
+            differ.append((key, name))
+
+    if differ:
+        backup = None
+        if not dry_run:
+            try:
+                # Once per content: the add-on's setup, which rewrites the lines, doesn't run while it's turned off.
+                backup = _same_backup(env_path, text) or back_up(env_path)
+            except OSError as error:
+                print(f"{PREFIX} ERROR writing a backup of {env_path}: {error}", file=sys.stderr)
+                return 1
+        for key, name in differ:
+            where = f" (backup: {backup})" if backup else ""
+            _warn_secret(
+                env_path,
+                f"{key} differs from the secrets file {name}, which is kept; tmsetup writes the kept value into "
+                f"this file{where}.",
+            )
+    if not moves:
+        print(f"{PREFIX} {env_path}: up to date")
+        return 0
+    keys = ", ".join(key for key, _, _ in moves)
+    if dry_run:
+        print(f"{PREFIX} {env_path}: would move {keys} to the secrets files")
+        return 0
+    for _, name, value in moves:
+        try:
+            _write_secret(secrets_dir, name, value)
+        except OSError as error:
+            print(f"{PREFIX} ERROR writing {secrets_dir / name}: {error}", file=sys.stderr)
+            return 1
+    print(f"{PREFIX} {env_path}: moved {keys} to the secrets files")
     return 0
