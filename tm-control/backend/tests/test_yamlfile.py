@@ -1,3 +1,4 @@
+import os
 import stat
 from datetime import datetime, timezone
 
@@ -137,3 +138,25 @@ def test_write_atomic_sets_mode_and_owner_through_the_open_file(frigate_config, 
     assert frigate_config.read_text() == "new: content\n"
     assert stat.S_IMODE(frigate_config.stat().st_mode) == 0o640
     assert owners == [(frigate_config.stat().st_uid, frigate_config.stat().st_gid)]
+
+
+def test_write_atomic_refuses_a_path_that_became_a_link(tmp_path):
+    """Its mode would come from the link (0777), and as root its owner from whoever made it."""
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    link = tmp_path / "swapped.yml"
+    link.symlink_to(target)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.write_atomic(link, "new: content\n")
+    assert link.is_symlink() and target.read_text() == "not yours\n"
+    assert not list(tmp_path.glob(".swapped.yml.*.tmp"))
+
+
+def test_a_fifo_is_neither_read_nor_backed_up(tmp_path, prompt):
+    fifo = tmp_path / "config.yml"
+    os.mkfifo(fifo)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.read_text(fifo)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.back_up(fifo, NOW)
+    assert not yamlfile.backup_path(fifo, NOW).exists()

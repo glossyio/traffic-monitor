@@ -535,6 +535,16 @@ def _warn_secret(path, message):
     print(f"{PREFIX} WARNING {path}: {message}", file=sys.stderr)
 
 
+def _unexpected(path, step, *args):
+    """Run a step and turn any error it didn't foresee into an ERROR line with the error's kind only: its message, or
+    a traceback in the install log, could quote a value."""
+    try:
+        return step(*args)
+    except Exception as error:
+        print(f"{PREFIX} ERROR {path}: {type(error).__name__}", file=sys.stderr)
+        return 1
+
+
 def run_node_red(config_path, secrets_dir, dry_run=False):
     """Move thingsboard.access_token and addons.plate_recognizer.token from Node-RED's config.yml to the secret files,
     and delete keys left with no value. Return a process exit code.
@@ -542,7 +552,10 @@ def run_node_red(config_path, secrets_dir, dry_run=False):
     A secret file that already holds a value keeps it, and the key is deleted all the same (with a warning when the
     two differ; the backup keeps the other value). Nothing printed holds a value or the file's text.
     """
-    config_path, secrets_dir = Path(config_path), Path(secrets_dir)
+    return _unexpected(config_path, _run_node_red, Path(config_path), Path(secrets_dir), dry_run)
+
+
+def _run_node_red(config_path, secrets_dir, dry_run):
     try:
         document = RoundTripFile(config_path, mapping_indent=4)  # as config.yml.j2 indents
     except OSError as error:
@@ -655,7 +668,10 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
     tmsetup's rewrite would lose that value, and so it is when a value doesn't meet its secret's pattern and stays
     out. A missing env file means the add-on isn't installed.
     """
-    env_path, secrets_dir = Path(env_path), Path(secrets_dir)
+    return _unexpected(env_path, _run_plate_recognizer_env, Path(env_path), Path(secrets_dir), dry_run)
+
+
+def _run_plate_recognizer_env(env_path, secrets_dir, dry_run):
     try:
         text = read_text(env_path)  # never through a link, as root
     except FileNotFoundError:

@@ -16,6 +16,26 @@ class ConcurrentEditError(RuntimeError):
     """The file changed on disk after it was loaded, so saving would overwrite someone else's edit."""
 
 
+class NotARegularFile(OSError):
+    """A path names a FIFO, a device, a directory, or a link where a regular file was expected."""
+
+    def __init__(self):
+        super().__init__("not a regular file")
+
+
+def _open_regular(path):
+    """A read-only descriptor for path, refusing a link and anything but a regular file.
+
+    O_NONBLOCK keeps the open from waiting for a writer when someone planted a FIFO at the name (Node-RED's container
+    can write its config directory); it changes nothing for a regular file.
+    """
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY)
+    if not stat.S_ISREG(os.fstat(fd).st_mode):
+        os.close(fd)
+        raise NotARegularFile()
+    return fd
+
+
 def _round_trip_yaml(mapping_indent):
     yaml = YAML()  # round-trip mode keeps comments, key order, and (with preserve_quotes) quoting
     yaml.preserve_quotes = True
@@ -31,8 +51,9 @@ def backup_path(path, now=None):
 
 
 def read_text(path):
-    """A file's text, refusing a symbolic link: as root, following one would read a file the link's maker chose."""
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    """A file's text, refusing a symbolic link (as root, following one would read a file the link's maker chose) and
+    anything but a regular file."""
+    fd = _open_regular(path)
     with os.fdopen(fd, encoding="utf-8") as handle:
         return handle.read()
 
@@ -46,7 +67,7 @@ def back_up(path, now=None):
     directory). Both are set up through the open files, never by name.
     """
     backup = backup_path(path, now)
-    source = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    source = _open_regular(path)
     try:
         original = os.fstat(source)
         mode = stat.S_IMODE(original.st_mode)
@@ -76,8 +97,11 @@ def write_atomic(path, text):
 
     Keeps the file's permission bits, and its owner when running as root. Both are set on the open temporary file, so
     a name swapped in the directory meanwhile can't redirect them; os.replace swaps a link at path, never its target.
+    A path that is no longer a regular file is refused: a link's mode (0777) and owner would pass to the new file.
     """
     original = os.stat(path, follow_symlinks=False)
+    if not stat.S_ISREG(original.st_mode):
+        raise NotARegularFile()
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:

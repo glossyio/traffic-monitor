@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import shutil
+import signal
 import sys
 from pathlib import Path
 
@@ -20,6 +21,20 @@ from tm_control.core.auth import Device, SetupCode, Users  # noqa: E402
 from tm_control.core.secrets import NAMES  # noqa: E402
 from tm_control.core.settings import Settings  # noqa: E402
 from tm_control.modules.setup.eula import load_eula  # noqa: E402
+
+
+@pytest.fixture
+def prompt():
+    """Fail a test that blocks for more than five seconds, as opening a FIFO without a writer would."""
+
+    def expired(signum, frame):
+        pytest.fail("blocked for five seconds")  # not an OSError, which the code under test may catch
+
+    previous = signal.signal(signal.SIGALRM, expired)
+    signal.alarm(5)
+    yield
+    signal.alarm(0)
+    signal.signal(signal.SIGALRM, previous)
 
 
 @pytest.fixture(params=["frigate_config_v0.17.yml", "frigate_config_v0.18.yml"])
