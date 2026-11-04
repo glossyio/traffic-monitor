@@ -8,6 +8,7 @@ Pod=traffic-monitor.pod
 Volume=/etc/localtime:/etc/localtime:ro
 Volume={{ tmsetup_codedir }}/node-red-tm/config:/config
 Volume={{ tmsetup_codedir }}/node-red-tm/data:/data
+Volume={{ tmsetup_codedir }}/node-red-tm/data:/.node-red
 Volume={{ tmsetup_codedir }}/node-red-tm/db:/db
 GroupAdd=dialout
 GroupAdd={{ tmsetup_codeowner_uid }}
