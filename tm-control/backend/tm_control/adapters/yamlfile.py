@@ -30,6 +30,17 @@ def backup_path(path, now=None):
     return path.with_name(f"{path.name}.{now:%Y%m%dT%H%M%SZ}.bak")
 
 
+def back_up(path, now=None):
+    """Copy path to backup_path(path), with its permission bits and, when running as root, its owner. Return the copy's
+    path."""
+    backup = backup_path(path, now)
+    shutil.copy2(path, backup)
+    if os.geteuid() == 0:
+        original = path.stat()
+        os.chown(backup, original.st_uid, original.st_gid)
+    return backup
+
+
 def write_atomic(path, text):
     """Replace path with text so readers see the old file or the new one, never a partial write.
 
@@ -61,6 +72,11 @@ class RoundTripFile:
         self._loaded_text = self.path.read_text()
         self.data = self._yaml.load(self._loaded_text)
 
+    @property
+    def loaded_text(self):
+        """The file's text as it was loaded (or last saved)."""
+        return self._loaded_text
+
     def render(self):
         out = io.StringIO()
         self._yaml.dump(self.data, out)
@@ -76,8 +92,7 @@ class RoundTripFile:
             return None
         if self.path.read_text() != self._loaded_text:
             raise ConcurrentEditError(f"{self.path} changed after it was loaded; not saving")
-        backup = backup_path(self.path, now)
-        shutil.copy2(self.path, backup)
+        backup = back_up(self.path, now)
         write_atomic(self.path, text)
         self._loaded_text = text
         return backup
