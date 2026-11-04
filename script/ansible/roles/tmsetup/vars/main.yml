@@ -116,6 +116,7 @@ tmsetup_tm_control_polkit:
     - revproxy.service
     - go2rtc_server.service
     - tm-job-system-password.service
+    - tm-job-set-secret.service
   unit_verbs:
     - start
     - stop

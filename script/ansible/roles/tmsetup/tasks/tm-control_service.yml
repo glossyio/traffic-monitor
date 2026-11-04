@@ -1,5 +1,5 @@
 ---
-# TMSetup - tm-control Service tasks: the unit, its polkit rules, the root job unit, the install manifest, and the
+# TMSetup - tm-control Service tasks: the unit, its polkit rules, the root job units, the install manifest, and the
 # setup code. main.yml imports this right after tm-control_setup.yml (the code), under every tag that renders the pod
 # or revproxy, because nginx's auth checks need tm-control running. start_services.yml starts it.
 - name: TMSetup - tm-control Service - Install the polkit rules
@@ -16,6 +16,7 @@
   loop:
     - tm-control.service
     - tm-job-system-password.service
+    - tm-job-set-secret.service
   ansible.builtin.template:
     src: tm-control/{{ item }}.j2
     dest: /etc/systemd/system/{{ item }}

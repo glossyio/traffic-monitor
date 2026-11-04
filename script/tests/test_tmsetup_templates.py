@@ -701,29 +701,39 @@ def test_tm_control_runtime_directory_is_removed_when_it_stops():
     assert not any(line.startswith("RuntimeDirectoryPreserve=") for line in tm_control_unit())
 
 
-def tm_job_unit():
+JOBS = ["system-password", "set-secret"]
+
+
+def tm_job_unit(job):
     return render(
-        f"{TM_CONTROL_TEMPLATES}/tm-job-system-password.service.j2",
+        f"{TM_CONTROL_TEMPLATES}/tm-job-{job}.service.j2",
         tmsetup_tm_control_dir=TM_CONTROL_DIR, tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor",
-        tmsetup_etc_dir="/etc/traffic-monitor",
+        tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_secrets_dir="/etc/traffic-monitor/secrets",
     )
 
 
-def test_job_unit_is_a_root_oneshot_without_install():
-    unit = tm_job_unit()
+@pytest.mark.parametrize("job", JOBS)
+def test_job_unit_is_a_root_oneshot_without_install(job):
+    unit = tm_job_unit(job)
     lines = unit.splitlines()
     assert "Type=oneshot" in lines
     assert "[Install]" not in unit
     assert not any(line.startswith(("User=", "DynamicUser=")) for line in lines)
-    assert (f"ExecStart={TM_CONTROL_DIR}/venv/bin/python -EP /usr/local/libexec/traffic-monitor/tm-job-system-password"
-            in lines)
+    assert f"ExecStart={TM_CONTROL_DIR}/venv/bin/python -EP /usr/local/libexec/traffic-monitor/tm-job-{job}" in lines
     assert "Environment=TM_CONTROL_MANIFEST=/etc/traffic-monitor/manifest.json" in lines
 
 
-def test_job_unit_never_hits_a_start_limit():
+@pytest.mark.parametrize("job", JOBS)
+def test_job_unit_never_hits_a_start_limit(job):
     """A start refused by the start limit would leave the job queued in tm-control."""
-    lines = tm_job_unit().splitlines()
+    lines = tm_job_unit(job).splitlines()
     assert "StartLimitIntervalSec=0" in lines[lines.index("[Unit]"):lines.index("[Service]")]
+
+
+def test_set_secret_unit_names_the_secrets_dir():
+    lines = tm_job_unit("set-secret").splitlines()
+    assert "Environment=TM_CONTROL_SECRETS_DIR=/etc/traffic-monitor/secrets" in lines
+    assert "Description=Traffic Monitor job: set an entered secret" in lines
 
 
 def polkit_rules():
@@ -750,6 +760,7 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert 'subject.user !== "tmadmin"' in rules
     assert 'action.id === "org.freedesktop.systemd1.manage-units"' in rules
     assert '"tm-job-system-password.service"' in rules
+    assert '"tm-job-set-secret.service"' in rules
     assert '["start", "stop", "restart"]' in rules
     assert rules.count("polkit.Result.YES") == 2
     # The code-owner test comes first, so neither YES is reached for anyone else
@@ -770,7 +781,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     polkit = load_role_yaml("vars/main.yml")["tmsetup_tm_control_polkit"]
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
-        "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service",
+        "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS

@@ -549,15 +549,18 @@ def test_changes_to_what_tm_control_reads_at_startup_restart_it():
 
 def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():
     tasks = tm_control_service_tasks()
-    units = tasks["TMSetup - tm-control Service - Install the unit files"]
-    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service"]
-    template = units["ansible.builtin.template"]
+    template = tasks["TMSetup - tm-control Service - Install the unit files"]["ansible.builtin.template"]
     assert (template["src"], template["dest"]) == ("tm-control/{{ item }}.j2", "/etc/systemd/system/{{ item }}")
     assert (template["owner"], template["mode"]) == ("root", "0644")
     rules = tasks["TMSetup - tm-control Service - Install the polkit rules"]["ansible.builtin.template"]
     assert rules["dest"] == "/etc/polkit-1/rules.d/50-traffic-monitor.rules"
     assert (rules["owner"], rules["mode"]) == ("root", "0644")
     assert "polkitd" in load_role_yaml("vars/main.yml")["tmsetup_packages"]
+
+
+def test_both_job_units_are_installed():
+    units = tm_control_service_tasks()["TMSetup - tm-control Service - Install the unit files"]
+    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service", "tm-job-set-secret.service"]
 
 
 def test_configuration_directory_is_root_and_the_code_group_only():
