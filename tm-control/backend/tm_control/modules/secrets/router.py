@@ -71,7 +71,7 @@ class SecretState(BaseModel):
     name: str
     title: str
     set: bool
-    ends_with: str | None  # the last four characters, for a secret that shows them and is set
+    ends_with: str | None  # the last four characters, for a secret that shows them, is set, and is 12 or more long
     restarts: list[str]
 
 
@@ -139,6 +139,7 @@ def set_secret(
 
 @router.delete("/{name}", status_code=202)
 def remove_secret(name: Annotated[str, Path(max_length=64)], request: Request, admin: User = Depends(require_admin)):
-    """Start the job that empties the secret's file and restarts what reads it; for one not set, it changes nothing."""
+    """Start the job that empties the secret's file and restarts what reads it. For one not set, the job still writes
+    the empty value and its env lines and restarts the units."""
     _entered(request.app.state, name)
     return _start(request, admin, name, "", "secrets.removed")

@@ -122,6 +122,14 @@ def test_set_secret_starts_the_job_and_the_state_follows(claimed_client, login):
     assert state["set"] is True and state["ends_with"] == "0001"
 
 
+def test_a_short_token_shows_no_ending(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    assert set_secret(claimed_client, TB, "tb6789").status_code == 202
+    r = claimed_client.get("/api/v1/secrets")
+    assert r.json()["secrets"][0] == {**r.json()["secrets"][0], "set": True, "ends_with": None}
+    assert "tb6789" not in r.text and "6789" not in r.text
+
+
 @pytest.mark.parametrize("value", ["", "   "])
 def test_set_secret_refuses_an_empty_value(claimed_client, login, value):
     login(claimed_client, *ADMIN)
