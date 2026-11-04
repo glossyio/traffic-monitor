@@ -371,6 +371,9 @@ TOKEN = "thingsboard_access_token"
 # A test value, never a real token: 22 characters, so GET /secrets shows its last four
 TOKEN_PLACEHOLDER = "tmdev-placeholder-0001"
 JOB_POLL_SECONDS = 2
+# The job restarts each unit with a 120-second timeout (RESTART_TIMEOUT in tm-job-set-secret), after its file steps, so
+# the wait has headroom and a slow restart shows as the job's own result
+JOB_WAIT_SECONDS = UNIT_RESTART_SECONDS + 60
 
 
 def wait_for_job(address, cookie, job_id, timeout):
@@ -409,8 +412,8 @@ def set_token(host, address, cookie, value):
     started = answer.json() if answer.status == 202 else None
     job_id = started.get("id") if isinstance(started, dict) else None
     assert job_id, f"{action} answered {answer.status}"
-    status, log = wait_for_job(address, cookie, job_id, UNIT_RESTART_SECONDS)
-    assert status == "succeeded", f"{action}: the job is {status} after {UNIT_RESTART_SECONDS} s; its log ends {log}"
+    status, log = wait_for_job(address, cookie, job_id, JOB_WAIT_SECONDS)
+    assert status == "succeeded", f"{action}: the job is {status} after {JOB_WAIT_SECONDS} s; its log ends {log}"
     waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
     assert not waiting, f"after {action}, {waiting} hadn't restarted"
     wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
@@ -419,11 +422,17 @@ def set_token(host, address, cookie, value):
 def test_set_and_remove_the_thingsboard_token_from_the_control_app(host, address, expect, codedir, tm_login):
     """An admin's Save on the Device page writes the ThingsBoard token's file and node-red-tm.env's line through the
     set-secret job and restarts Node-RED, and Remove empties both. Uses a placeholder, and leaves the token empty, as a
-    pii_free unit has it. The file and the line are compared on the Pi."""
+    pii_free unit has it; skips when a token is already set, since it couldn't put it back. The file and the line are
+    compared on the Pi."""
     if not expect["pii_free"]:
         pytest.skip("writes the ThingsBoard token's file and node-red-tm.env; set tm_expect.pii_free: true "
                     "(bench units only)")
     cookie = session(address, *tm_login)
+    before = token_state(address, cookie)
+    if isinstance(before, tuple) and before[0] is True:
+        pytest.skip("a ThingsBoard token is already set and can't be restored; remove it on the Device page first")
+    assert before == (False, None), f"GET {API}/secrets before the test: {before}"
+    del before
     line = "node-red-tm/node-red-tm.env:TM_THINGSBOARD_ACCESS_TOKEN"
     removed = False
     try:
