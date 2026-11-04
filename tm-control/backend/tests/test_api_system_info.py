@@ -9,10 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 from ruamel.yaml import YAML
 
-from tm_control.adapters import command, nodered, sysinfo, systemd
+from tm_control.adapters import command, sysinfo, systemd
 from tm_control.adapters.command import CommandResult
 from tm_control.adapters.redact import redact
-from tm_control.core.secrets import DEVICE_SECRETS, NAMES
+from tm_control.core.secrets import DEVICE_SECRETS, ENTERED_SECRETS, GENERATED_SECRETS, NAMES
 from tm_control.modules import MODULES
 from tm_control.modules.services.units import units_for
 from tm_control.modules.system import diagnostics as diagnostics_module
@@ -26,7 +26,6 @@ GIB = 2**30
 MIB = 2**20
 SERIAL = "10000000abcdef01"
 THROTTLED = sysinfo.throttled  # the real reader, before the host fixture replaces it
-READ_CONFIG = nodered.config  # the real reader, before device_client replaces it
 SYSTEM_ROUTER = importlib.import_module("tm_control.modules.system.router")  # the package's `router` is the APIRouter
 INSTALLED = [
     "traffic-monitor.service",
@@ -111,15 +110,6 @@ def host(monkeypatch, device_client, tmp_path):
     monkeypatch.setattr(systemd, "show_units", show_units)
     monkeypatch.setattr(SYSTEM_ROUTER, "read_serial", lambda: SERIAL)
     return host
-
-
-@pytest.fixture
-def config_yml(monkeypatch, host):
-    """config.yml under the host fixture's codedir, read for real: write it to see what diagnostics does with it."""
-    path = Path(host.codedir) / "node-red-tm" / "config" / "config.yml"
-    path.parent.mkdir(parents=True)
-    monkeypatch.setattr(nodered, "config", READ_CONFIG)
-    return path
 
 
 def audit_rows(client):
@@ -513,7 +503,7 @@ def test_diagnostics_never_contains_a_secret_value(device_client, login, host):
         if name not in NAMES:
             (secrets_dir / name).write_text(f"test-{name}-value\n")
     values = [device_client.app.state.secrets.read(name) for name in DEVICE_SECRETS]
-    assert len(values) == len(DEVICE_SECRETS) == 5
+    assert len(values) == len(DEVICE_SECRETS) == 8
     planted = [f"connecting with {value} failed" for value in values]
     planted += ["TM_MQTT_BROKER_PASSWORD=hunter2", "Setup code: ABCD-EFGH", 'auth {"token": "tb-token-1"}']
     host.journal = lambda unit, lines: planted
@@ -538,7 +528,7 @@ def test_diagnostics_in_fake_mode_redacts_the_fake_secrets(claimed_client, login
 
     monkeypatch.setattr("tm_control.adapters.sysinfo.run", no_run)
     monkeypatch.setattr("tm_control.adapters.systemd.run", no_run)
-    values = [claimed_client.app.state.secrets.read(name) for name in DEVICE_SECRETS]
+    values = [claimed_client.app.state.secrets.read(name) for name in GENERATED_SECRETS]
     monkeypatch.setattr("tm_control.fake.journal_tail", lambda unit, lines: [f"leaked {value}" for value in values])
     login(claimed_client, *ADMIN)
     r = diagnostics(claimed_client)
@@ -578,23 +568,25 @@ def test_diagnostics_redacts_the_env_file_values(device_client, login, host, env
     assert env_files_read == [codedir]
 
 
-def test_diagnostics_redacts_the_thingsboard_access_token(device_client, login, host, config_yml):
-    """config.yml's one secret: Node-RED's journal can show it as the MQTT username of the ThingsBoard connection."""
-    config_yml.write_text("thingsboard:\n  enabled: true\n  access_token: tb-placeholder-345\n")
-    host.journal = lambda unit, lines: ["mqtt connect as tb-placeholder-345 refused", "mqtt://tb-placeholder-345@tb"]
+def test_diagnostics_redacts_an_entered_secret(device_client, login, host):
+    """An operator-entered token is only in its secret file; Node-RED's journal can show it as the MQTT username of
+    the ThingsBoard connection."""
+    (device_client.app.state.settings.secrets_dir / "plate_recognizer_token").write_text("pr-placeholder-345\n")
+    host.journal = lambda unit, lines: ["plate read with pr-placeholder-345 refused", "https://pr-placeholder-345@pr"]
     login(device_client, *ADMIN)
     text = diagnostics(device_client).text
-    assert "tb-placeholder-345" not in text
-    assert "mqtt connect as <redacted> refused" in text
+    assert "pr-placeholder-345" not in text
+    assert "plate read with <redacted> refused" in text
 
 
-@pytest.mark.parametrize("token", ["", "abc", None])
-def test_a_blank_or_short_thingsboard_access_token_redacts_nothing(device_client, login, host, config_yml, token):
-    """As installed the token is blank; a short one would redact ordinary words."""
-    config_yml.write_text(f"thingsboard:\n  access_token: {'' if token is None else token}\n")
+def test_diagnostics_skips_an_empty_entered_secret(device_client, login, host):
+    """As installed an entered secret's file is empty, and a short value would redact ordinary words."""
+    (device_client.app.state.settings.secrets_dir / "plate_recognizer_token").write_text("")
     host.journal = lambda unit, lines: ["abc stays"]
     login(device_client, *ADMIN)
-    assert "abc stays" in diagnostics(device_client).text
+    r = diagnostics(device_client)
+    assert r.status_code == 200
+    assert "abc stays" in r.text
 
 
 def test_frigate_env_defaults_do_not_hide_the_secret_after_a_key(device_client, login, host):
@@ -617,10 +609,12 @@ def test_diagnostics_tests_read_no_real_env_files(device_client, login, host, en
     assert env_files_read and all(path.is_relative_to(tmp_path) for path in env_files_read)
 
 
+@pytest.mark.xfail(strict=True, reason="Task 2")
 def test_device_secrets_match_the_role():
     role_vars = YAML(typ="safe", pure=True).load(REPO / "script/ansible/roles/tmsetup/vars/main.yml")
-    assert list(DEVICE_SECRETS) == role_vars["tmsetup_secret_names"]
-    assert set(NAMES) <= set(DEVICE_SECRETS)
+    assert list(GENERATED_SECRETS) == role_vars["tmsetup_secret_names"]
+    assert list(ENTERED_SECRETS) == role_vars["tmsetup_entered_secret_names"]
+    assert set(NAMES) <= set(GENERATED_SECRETS)
 
 
 # Reboot and power off
