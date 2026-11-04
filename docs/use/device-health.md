@@ -53,7 +53,7 @@ The card at the top shows the device's name, its Raspberry Pi model and memory, 
 
 ### Tokens and keys
 
-Administrators set the credentials the device uses for outside services in **Tokens and keys**. The page lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
 
 * A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
 * **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.

@@ -1,10 +1,12 @@
 <!--
   The Device page (GET /system/info): the device card, the software versions, and for admins the tokens and keys
-  (GET /secrets, one EnteredSecret form each), the diagnostics file (GET /system/diagnostics), and the power buttons
+  (GET /secrets, one EnteredSecret form each, in a section that opens when tapped or when the link names it), the
+  diagnostics file (GET /system/diagnostics), and the power buttons
   (POST /system/reboot and /system/power-off, each after a confirmation). Viewers see the card and the versions only.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
@@ -20,6 +22,7 @@ type SecretState = components['schemas']['SecretState']
 const GIB = 2 ** 30
 
 const session = useSession()
+const route = useRoute()
 const info = ref<SystemInfo | null>(null)
 const loadError = ref('')
 
@@ -33,7 +36,12 @@ async function load() {
   }
 }
 
-// The tokens and keys (admins only: the API refuses viewers), loaded again after each save or remove
+// The tokens and keys (admins only: the API refuses viewers), loaded again after each save or remove. The section
+// starts closed, unless the link that opened the page names it (the Status page's "Set the token"); then it starts
+// open, and the page scrolls to it once the device has answered.
+const SECRETS_ID = 'tokens-and-keys'
+const linkedToSecrets = route.hash === `#${SECRETS_ID}`
+const secretsOpen = ref<string | null>(linkedToSecrets ? SECRETS_ID : null)
 const secrets = ref<SecretState[] | null>(null)
 const secretsError = ref('')
 
@@ -47,9 +55,13 @@ async function loadSecrets() {
   }
 }
 
-onMounted(() => {
-  void load()
+onMounted(async () => {
   if (session.isAdmin) void loadSecrets()
+  await load()
+  if (linkedToSecrets && info.value) {
+    await nextTick() // the section is on the page now
+    document.getElementById(SECRETS_ID)?.scrollIntoView?.() // jsdom, in the tests, has no scrollIntoView
+  }
 })
 
 // Bytes as GB, counted in powers of 1024 as the status checks count them: "7.5 GB" under 10, "58 GB" from 10 up
@@ -302,26 +314,36 @@ async function powerAction() {
       </section>
 
       <template v-if="session.isAdmin">
-        <section class="mt-10">
-          <h2 class="text-h6 mb-2">Tokens and keys</h2>
-          <p class="text-body-1 mb-6">
-            Credentials this device uses, kept with its other secrets. A value is never shown back; saving or removing
-            one restarts the app that uses it, and counting pauses meanwhile.
-          </p>
-          <v-alert v-if="secretsError" type="error">
-            {{ secretsError }}
-            <template #append>
-              <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
-            </template>
-          </v-alert>
-          <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
-          <EnteredSecret
-            v-for="(secret, index) in secrets"
-            :key="secret.name"
-            :secret="secret"
-            :class="{ 'mt-8': index > 0 }"
-            @changed="loadSecrets"
-          />
+        <!-- One expansion panel. Its title, a button, goes inside the h2, so the heading stays a heading for screen
+             readers, as the accessible accordion pattern has it. -->
+        <section :id="SECRETS_ID" class="mt-10 secrets">
+          <v-expansion-panels v-model="secretsOpen" flat>
+            <v-expansion-panel :value="SECRETS_ID" class="border">
+              <h2 class="text-h6">
+                <v-expansion-panel-title class="text-h6">Tokens and keys</v-expansion-panel-title>
+              </h2>
+              <v-expansion-panel-text>
+                <p class="text-body-1 mb-6">
+                  Credentials this device uses, kept with its other secrets. A value is never shown back; saving or
+                  removing one restarts the app that uses it, and counting pauses meanwhile.
+                </p>
+                <v-alert v-if="secretsError" type="error">
+                  {{ secretsError }}
+                  <template #append>
+                    <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+                  </template>
+                </v-alert>
+                <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+                <EnteredSecret
+                  v-for="(secret, index) in secrets"
+                  :key="secret.name"
+                  :secret="secret"
+                  :class="{ 'mt-8': index > 0 }"
+                  @changed="loadSecrets"
+                />
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </section>
 
         <section class="mt-10">
@@ -407,3 +429,10 @@ async function powerAction() {
     />
   </div>
 </template>
+
+<style scoped>
+/* Clear the app bar when the page scrolls to the section */
+.secrets {
+  scroll-margin-top: 80px;
+}
+</style>
