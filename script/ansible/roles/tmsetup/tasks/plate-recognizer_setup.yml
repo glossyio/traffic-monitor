@@ -17,6 +17,7 @@
 
 - name: TMSetup - plate-recognizer Setup - Create plate-recognizer environment file
   become: true
+  diff: false
   ansible.builtin.template:
     backup: true
     dest: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
@@ -25,6 +26,35 @@
     mode: '0640'
     owner: '{{ tmsetup_codeowner }}'
     src: container/plate-recognizer/plate-recognizer.env.j2
+  notify: Restart plate-recognizer.service
+
+# The template above doesn't rewrite an existing plate-recognizer.env without -f, so the token and license key
+# go in from the secrets directory on every run. An empty secret file writes an empty value.
+- name: TMSetup - plate-recognizer Setup - Check for plate-recognizer.env
+  become: true
+  ansible.builtin.stat:
+    path: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
+    get_checksum: false
+  register: tmsetup_plate_recognizer_env_stat_register
+
+- name: TMSetup - plate-recognizer Setup - Add the Plate Recognizer token to plate-recognizer.env
+  become: true
+  no_log: true
+  when: tmsetup_plate_recognizer_env_stat_register.stat.exists
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
+    regexp: '^TOKEN='
+    line: "TOKEN={{ tmsetup_secrets['plate_recognizer_token'] }}"
+  notify: Restart plate-recognizer.service
+
+- name: TMSetup - plate-recognizer Setup - Add the Plate Recognizer license key to plate-recognizer.env
+  become: true
+  no_log: true
+  when: tmsetup_plate_recognizer_env_stat_register.stat.exists
+  ansible.builtin.lineinfile:
+    path: '{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env'
+    regexp: '^LICENSE_KEY='
+    line: "LICENSE_KEY={{ tmsetup_secrets['plate_recognizer_license_key'] }}"
   notify: Restart plate-recognizer.service
 
 - name: TMSetup - plate-recognizer Setup - Create Plate-Recognizer-TM Container file
