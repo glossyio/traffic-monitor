@@ -178,6 +178,58 @@ describe('an entered secret', () => {
     expect(wrapper.text()).not.toContain('Removed.')
   })
 
+  it('says the value was saved when only a restart failed after the write', async () => {
+    const line = 'failed: restart of node-red-tm.service exited 1; the secret is written'
+    fakeApi({
+      [`POST ${PATH}`]: json(202, { id: 'job11' }),
+      'GET /api/v1/jobs/job11': json(200, job('job11', 'failed', [line])),
+    })
+    const wrapper = await mountSecret(TOKEN)
+    await type(wrapper, 'ThingsBoard access token', PLACEHOLDER)
+    await click(wrapper, 'Save')
+    expect(wrapper.text()).toContain('The value was saved, but a restart failed.')
+    expect(wrapper.text()).toContain(line)
+    expect(wrapper.text()).not.toContain("wasn't saved")
+    expect(wrapper.emitted('changed')).toHaveLength(1)
+  })
+
+  it('says the value was removed when only a restart failed after the write', async () => {
+    const line = 'failed: restart of node-red-tm.service timed out after 120 s; the secret is written'
+    fakeApi({
+      [`DELETE ${PATH}`]: json(202, { id: 'job12' }),
+      'GET /api/v1/jobs/job12': json(200, job('job12', 'failed', [line])),
+    })
+    const wrapper = await mountSecret(TOKEN)
+    await click(wrapper, 'Remove')
+    await clickInDialog('Remove')
+    expect(wrapper.text()).toContain('The value was removed, but a restart failed.')
+    expect(wrapper.text()).toContain(line)
+    expect(wrapper.text()).not.toContain("wasn't removed")
+    expect(wrapper.emitted('changed')).toHaveLength(1)
+  })
+
+  it('does not follow the job when the page is left while the field empties', async () => {
+    const api = fakeApi({
+      [`POST ${PATH}`]: json(202, { id: 'job13' }),
+      'GET /api/v1/jobs/job13': json(200, job('job13', 'running')),
+    })
+    const wrapper = await mountSecret(TOKEN)
+    await type(wrapper, 'ThingsBoard access token', PLACEHOLDER)
+    await wrapper.find('button[aria-label="Show"]').trigger('click')
+    // Once the POST is accepted, the field hides again; that render runs before the component's nextTick resolves,
+    // so leaving the page from its mutation lands between the two
+    const input = field(wrapper, 'ThingsBoard access token').element
+    const observer = new MutationObserver(() => {
+      observer.disconnect()
+      wrapper.unmount()
+    })
+    observer.observe(input, { attributes: true, attributeFilter: ['type'] })
+    await click(wrapper, 'Save')
+    await flushPromises()
+    expect(api.sent.some((r) => r.method === 'POST')).toBe(true)
+    expect(api.sent.filter((r) => r.path === '/api/v1/jobs/job13')).toEqual([])
+  })
+
   // A job that stays running, so the form is caught mid-job
   function jobThatKeepsRunning(id: string) {
     return () => json(200, job(id, 'running'))
