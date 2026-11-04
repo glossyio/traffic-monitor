@@ -290,7 +290,8 @@ def test_entered_secrets_move_before_any_config_template_renders():
     assert move["become"] is True and reread["become"] is True
     assert reread["no_log"] is True and update["no_log"] is True
     assert "no_log" not in move  # it prints no value, and its warnings must show
-    assert move["notify"] == "Restart node-red-tm.service"
+    notify = move["notify"]  # Ansible takes one handler as a string or a list
+    assert (notify if isinstance(notify, list) else [notify]) == ["Restart node-red-tm.service"]
     assert move["register"] == "tmsetup_entered_secrets_migrate_register"
 
     argv = move["ansible.builtin.command"]["argv"]

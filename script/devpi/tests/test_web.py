@@ -820,7 +820,8 @@ def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_s
 
 # The keys that held a secret in config.yml before the entered secrets; tm-control migrate moves them out
 FORMER_SECRET_KEYS = [("thingsboard", "access_token"), ("addons", "plate_recognizer", "token")]
-PLATE_RECOGNIZER_UNIT = "/etc/containers/systemd/plate-recognizer.container"
+# The install manifest tm-control reads its options from (tasks/tm-control_service.yml); it holds no secret
+MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
 
 
 def has_key(data, path):
@@ -851,14 +852,20 @@ def test_env_secret_lines_match_the_secret_files(host, expect, codedir):
 
 def test_secrets_lists_only_the_installed_addons_values(host, address, admin_session):
     """GET /secrets lists the ThingsBoard token, and the Plate Recognizer token and license key only where the add-on
-    is installed (never on a pii_free unit, test_plate_recognizer_absent_on_pii_free_unit). Only the names are kept."""
+    is installed (never on a pii_free unit, test_plate_recognizer_absent_on_pii_free_unit). Only the names are kept.
+    Installed means what tm-control goes by, the manifest's options.plate_recognizer, not whether the unit file is
+    there."""
     answer = request_from_this_machine(address, f"{API}/secrets", cookie=admin_session)
     found = answer.json() if answer.status == 200 else None
     listed = found.get("secrets") if isinstance(found, dict) else None
     names = [entry.get("name") for entry in listed] if isinstance(listed, list) else None
     del found, listed
     assert names is not None, f"GET {API}/secrets answered {answer.status}, not a list of secrets"
-    add_on = host.file(PLATE_RECOGNIZER_UNIT).exists
+    read = host.run(f"sudo -n cat {MANIFEST}")
+    assert read.rc == 0, f"couldn't read {MANIFEST} (exit {read.rc})"
+    options = json.loads(read.stdout).get("options")
+    add_on = options.get("plate_recognizer") if isinstance(options, dict) else None
+    assert isinstance(add_on, bool), f"{MANIFEST} has no options.plate_recognizer true or false"
     expected = ENTERED_SECRETS if add_on else ["thingsboard_access_token"]
     assert names == expected, f"GET {API}/secrets with the add-on {'installed' if add_on else 'not installed'}"
 
