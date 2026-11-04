@@ -42,7 +42,7 @@ A check that isn't passing offers one of these:
 
 * **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 * **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-* **A link** to the page that fixes it, such as **Set the date and time**, or **Diagnostics** on the Device page.
+* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys).
 * **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](../reference/tmsetup.md)).
 
 The control app can't restart itself. If it stops, see [If the control app is down](control-app.md#if-the-control-app-is-down).
@@ -51,23 +51,23 @@ The control app can't restart itself. If it stops, see [If the control app is do
 
 The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
 
+### Tokens and keys
+
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The page lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+
+* A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
+* **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.
+* **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
+* Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
+
+An older device may have kept a token in `config.yml` or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
+
 ### Download diagnostics
 
 When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with `<redacted>`. The file names the device and holds its serial number.
 
 * **Download diagnostics** saves the file.
 * **Copy** puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.
-
-### Tokens and keys
-
-Administrators set the credentials the device uses for outside services in **Tokens and keys**. The page lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
-
-* A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
-* **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable characters without spaces. Both are up to 256 characters long.
-* **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
-* Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
-
-An older device may have kept a token in `config.yml` or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
 
 ### Reboot or shut down
 

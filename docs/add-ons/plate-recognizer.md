@@ -40,11 +40,11 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
 
     Node-RED picks up `config.yml` as soon as you save it, so it needs no restart.
 
+4. Optionally, set `WORKERS` in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env` to the number of plates to read in parallel. `2` suits a Raspberry Pi 5. After you change it, restart the add-on with `sudo systemctl restart plate-recognizer.service`.
+
 !!! info "Upgrading a device that already reads plates"
 
     The installer moves a token and license key you typed into the add-on's env file, and a token in `config.yml`, to the device's secrets. Plate reads carry on without you entering them again. The Device page shows them as set.
-
-`WORKERS` in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env` sets how many plates are read in parallel. `2` suits a Raspberry Pi 5. After you change it, restart the add-on with `sudo systemctl restart plate-recognizer.service`.
 
 Frigate's snapshots must stay on, which they are by default; the reader works from them.
 
