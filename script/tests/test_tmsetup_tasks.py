@@ -3,7 +3,7 @@
 import subprocess
 
 import pytest
-from tmsetup_render import evaluate, load_role_yaml
+from tmsetup_render import REPO, ROLE, evaluate, load_role_yaml
 
 # Every tag whose run renders the pod, revproxy, the broker login, tm-control, or Frigate's credentials. nginx's
 # auth snippets need tm-control, so a single-tag run of any of them must install and start all of these.
@@ -44,6 +44,81 @@ def test_secrets_are_readable_only_by_root_and_the_code_owner():
     generate = tasks["TMSetup - Secrets - Generate missing secrets"]["ansible.builtin.copy"]
     assert (directory["owner"], directory["group"], directory["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0750")
     assert (generate["owner"], generate["group"], generate["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0640")
+
+
+def test_entered_secrets_start_empty_and_are_never_regenerated():
+    """A person types these in on the Device page; tmsetup only makes sure each file exists, and an empty file
+    means "not set"."""
+    task = secrets_tasks()["TMSetup - Secrets - Create missing entered secrets as empty files"]
+    create = task["ansible.builtin.copy"]
+    assert create["content"] == ""
+    assert create["force"] is False
+    assert (create["owner"], create["group"], create["mode"]) == ("root", "{{ tmsetup_codegroup }}", "0640")
+    assert create["dest"] == "{{ tmsetup_secrets_dir }}/{{ item }}"
+    assert task["loop"] == "{{ tmsetup_entered_secret_names }}"
+    assert task["no_log"] is True
+    assert task["become"] is True
+    names = list(secrets_tasks())
+    assert names.index("TMSetup - Secrets - Generate missing secrets") < names.index(task["name"])
+    assert names.index(task["name"]) < names.index("TMSetup - Secrets - Read secrets")
+
+
+def test_both_secret_lists_are_read_into_one_fact():
+    tasks = secrets_tasks()
+    combined = "tmsetup_secret_names + tmsetup_entered_secret_names"
+    assert tasks["TMSetup - Secrets - Read secrets"]["loop"] == "{{ " + combined + " }}"
+    fact = tasks["TMSetup - Secrets - Set secrets fact"]["ansible.builtin.set_fact"]["tmsetup_secrets"]
+    assert f"dict(({combined}) | zip(" in fact
+    slurped = {"results": [{"content": "c2VjcmV0LXZhbHVlCg=="}, {"content": ""}]}
+    assert evaluate(fact, tmsetup_secret_names=["generated"], tmsetup_entered_secret_names=["entered"],
+                    tmsetup_secrets_slurp_register=slurped) == {"generated": "secret-value", "entered": ""}
+
+
+def test_the_installer_takes_no_secret_value():
+    """Entered secrets come from the Device page or the root-owned file, never from an installer variable."""
+    defaults = load_role_yaml("defaults/main.yml")
+    role_vars = load_role_yaml("vars/main.yml")
+    assert "tmsetup_thingsboard_api_key" not in defaults
+    for key in [*defaults, *role_vars]:
+        assert not key.endswith(("_api_key", "_access_token")), key
+    templates = [*(REPO / "container").rglob("*.j2"), *(ROLE / "templates").rglob("*.j2")]
+    assert templates
+    for template in templates:
+        assert "tmsetup_thingsboard_api_key" not in template.read_text(), template
+
+
+@pytest.mark.parametrize("task_file, key, secret, handler", [
+    ("tasks/node-red-tm_setup.yml", "TM_THINGSBOARD_ACCESS_TOKEN", "thingsboard_access_token",
+     "Restart node-red-tm.service"),
+    ("tasks/node-red-tm_setup.yml", "TM_PLATE_RECOGNIZER_TOKEN", "plate_recognizer_token",
+     "Restart node-red-tm.service"),
+    ("tasks/plate-recognizer_setup.yml", "TOKEN", "plate_recognizer_token", "Restart plate-recognizer.service"),
+    ("tasks/plate-recognizer_setup.yml", "LICENSE_KEY", "plate_recognizer_license_key",
+     "Restart plate-recognizer.service"),
+])
+def test_entered_secret_env_lines_are_written_on_every_run(task_file, key, secret, handler):
+    """Like TM_INTERNAL_TOKEN: an existing env file isn't rewritten without -f, so each entered secret's line goes
+    in on every run, from the secrets directory."""
+    assert secret in load_role_yaml("vars/main.yml")["tmsetup_entered_secret_names"]
+    tasks = load_role_yaml(task_file)
+    names = [task["name"] for task in tasks]
+    (line,) = [task for task in tasks if task.get("ansible.builtin.lineinfile", {}).get("regexp") == f"^{key}="]
+    (template,) = [task for task in tasks
+                   if str(task.get("ansible.builtin.template", {}).get("dest", "")).endswith(".env")
+                   or "node-red-tm.env" in task.get("loop", [])]
+    (stat,) = [task for task in tasks
+               if str(task.get("ansible.builtin.stat", {}).get("path", "")).endswith(".env")]
+    env_path = stat["ansible.builtin.stat"]["path"]
+    assert line["when"] == f"{stat['register']}.stat.exists"
+    assert line["no_log"] is True
+    assert line["become"] is True
+    assert line["notify"] == handler
+    assert line["ansible.builtin.lineinfile"]["path"] == env_path
+    assert line["ansible.builtin.lineinfile"]["line"] == f"{key}={{{{ tmsetup_secrets['{secret}'] }}}}"
+    assert "loop" not in line and "tags" not in line
+    (quadlets,) = [i for i, task in enumerate(tasks)
+                   if str(task.get("ansible.builtin.template", {}).get("dest", "")).startswith("/etc/containers/systemd/")]
+    assert names.index(template["name"]) < names.index(stat["name"]) < names.index(line["name"]) < quadlets
 
 
 def test_secrets_are_read_on_every_run():
@@ -236,6 +311,13 @@ def test_node_red_env_template_hides_its_diff():
     """node-red-tm.env.j2 renders the broker login, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
     task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs")
+    assert task["diff"] is False
+
+
+def test_plate_recognizer_env_template_hides_its_diff():
+    """plate-recognizer.env.j2 renders the token and license key; a -f run with -a diff would print them."""
+    task = next(t for t in load_role_yaml("tasks/plate-recognizer_setup.yml")
+                if t["name"] == "TMSetup - plate-recognizer Setup - Create plate-recognizer environment file")
     assert task["diff"] is False
 
 

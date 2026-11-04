@@ -609,7 +609,6 @@ def test_diagnostics_tests_read_no_real_env_files(device_client, login, host, en
     assert env_files_read and all(path.is_relative_to(tmp_path) for path in env_files_read)
 
 
-@pytest.mark.xfail(strict=True, reason="Task 2")
 def test_device_secrets_match_the_role():
     role_vars = YAML(typ="safe", pure=True).load(REPO / "script/ansible/roles/tmsetup/vars/main.yml")
     assert list(GENERATED_SECRETS) == role_vars["tmsetup_secret_names"]

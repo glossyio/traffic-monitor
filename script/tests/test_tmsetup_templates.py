@@ -553,6 +553,8 @@ def test_pod_starts_even_if_its_network_unit_fails_once():
 
 
 LOGIN = {"username": "tm", "password": "s3cret"}
+ENTERED_SECRETS = {"thingsboard_access_token": "tb-placeholder-0001", "plate_recognizer_token": "pr-placeholder-0002",
+                   "plate_recognizer_license_key": "pr-placeholder-0003"}
 NO_LOGIN = {"username": "", "password": ""}
 
 
@@ -567,7 +569,7 @@ def render_node_red_env(login):
         ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
         tmsetup_mqtt_broker_login=login,
         tmsetup_secrets={"node_red_token_key": "placeholder-token-key",
-                         "node_red_internal_token": "placeholder-internal-token"},
+                         "node_red_internal_token": "placeholder-internal-token", **ENTERED_SECRETS},
     )
 
 
@@ -611,6 +613,33 @@ def test_node_red_env_template_has_the_internal_token():
     lines = render_node_red_env(NO_LOGIN).splitlines()
     token = lines.index("TM_INTERNAL_TOKEN=placeholder-internal-token")
     assert lines[token - 1].startswith("# ")
+
+
+def test_node_red_env_template_carries_the_entered_tokens():
+    """The flows read both tokens from the environment; their values come from the secrets directory."""
+    lines = render_node_red_env(NO_LOGIN).splitlines()
+    for line in ("TM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001", "TM_PLATE_RECOGNIZER_TOKEN=pr-placeholder-0002"):
+        index = lines.index(line)
+        assert lines[index - 1].startswith("# ") and "Device page" in lines[index - 1]
+
+
+def test_plate_recognizer_env_template_renders_from_the_secrets():
+    text = render("container/plate-recognizer/plate-recognizer.env.j2", tmsetup_secrets=ENTERED_SECRETS)
+    lines = text.splitlines()
+    assert [line for line in lines if line and not line.startswith("#")] == [
+        "TOKEN=pr-placeholder-0002", "LICENSE_KEY=pr-placeholder-0003", "WORKERS=2"]
+    assert any(line.startswith("# ") for line in lines)
+    assert "YYYYY" not in text and "XXXXX" not in text
+
+
+def test_node_red_config_template_has_no_secret_key():
+    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Device page."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
+              "tmsetup_bearing": "n"}
+    text = render("container/node-red-tm/config/config.yml.j2", **values)
+    assert "access_token" not in text
+    assert "addons" not in text
+    assert set(yaml.safe_load(text)["thingsboard"]) == {"enabled", "host", "protocol"}
 
 
 def test_node_red_config_template_has_no_time_section():

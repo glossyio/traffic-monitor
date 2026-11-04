@@ -19,7 +19,6 @@ from tm_control.core.secrets import (
 REPO = Path(__file__).resolve().parents[3]
 
 
-@pytest.mark.xfail(strict=True, reason="Task 2")
 def test_generated_and_entered_names_match_the_role():
     role_vars = YAML(typ="safe", pure=True).load(REPO / "script/ansible/roles/tmsetup/vars/main.yml")
     assert list(GENERATED_SECRETS) == role_vars["tmsetup_secret_names"]

@@ -100,11 +100,14 @@ def test_manifest_says_unknown_when_git_fails(register):
 
 
 def install(tmp_path, secret_names):
-    """The files tmsetup writes, in a temp dir: one secret file per name, and the rendered manifest."""
+    """The files tmsetup writes, in a temp dir: one secret file per name, an empty one per entered secret, and the
+    rendered manifest."""
     secrets_dir = tmp_path / "secrets"
     secrets_dir.mkdir()
     for name in secret_names:
         (secrets_dir / name).write_text(f"placeholder-{name}-0123456789abcdef")  # as tmsetup: 32 random characters
+    for name in load_role_yaml("vars/main.yml")["tmsetup_entered_secret_names"]:
+        (secrets_dir / name).write_text("")  # as tmsetup: empty until a person enters one
     manifest = tmp_path / "manifest.json"
     manifest.write_text(rendered_manifest())
     return Settings(
