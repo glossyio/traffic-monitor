@@ -6,17 +6,21 @@ import stat
 from pathlib import Path
 
 import pytest
+from ruamel.yaml import YAML
 
 from tm_control.core import migrate
 from tm_control.core.secrets import ENTERED_SECRETS, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
 from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+# Node-RED's config.yml as the template before this change rendered it with the role's defaults, byte for byte:
+# "access_token: ", "lat: ", and "lon: " end in a space.
+OLD_TEMPLATE = FIXTURES / "node_red_config_old_template.yml"
 
 TOKEN, PR_TOKEN, PR_KEY = "tb-placeholder-345", "pr-placeholder-346", "pr-placeholder-347"
 PR_URL = "        url: http://plate-recognizer:8080"
 ADDONS = f"addons:\n    plate_recognizer:\n        token: {PR_TOKEN}\n{PR_URL}\n"
-EMPTY_TOKEN_LINE = "    access_token:"
+OLD_TOKEN_LINE = "    access_token: \n"
 
 
 def output(capsys):
@@ -25,10 +29,10 @@ def output(capsys):
 
 
 def write_config(path, access_token=TOKEN, addons=ADDONS):
-    """The fixture config.yml with the access token filled in and, unless addons is empty, an addons block
+    """The old template's config.yml with the access token filled in and, unless addons is empty, an addons block
     between thingsboard and deployment, where it shows whether the blank lines around it survive."""
-    text = (FIXTURES / "node_red_config_ok.yml").read_text()
-    text = text.replace(EMPTY_TOKEN_LINE, f"{EMPTY_TOKEN_LINE} {access_token}".rstrip(), 1)
+    text = OLD_TEMPLATE.read_text()
+    text = text.replace(OLD_TOKEN_LINE, f"    access_token: {access_token}\n", 1)
     if addons:
         text = text.replace("\ndeployment:", f"\n{addons}\ndeployment:", 1)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,12 +41,22 @@ def write_config(path, access_token=TOKEN, addons=ADDONS):
     return path
 
 
-def removed(original, new, *lines):
-    """Whether new is original with exactly these lines taken out, everything else byte for byte."""
-    kept = original.splitlines(keepends=True)
-    for line in lines:
-        kept.remove(line + "\n")
-    return "".join(kept) == new
+def lines(text):
+    """A file's lines without trailing whitespace, which ruamel drops after a key with no value (lat: )."""
+    return [line.rstrip() for line in text.splitlines()]
+
+
+def removed(original, new, *taken_out):
+    """Whether new is original with exactly these lines taken out, every other line the same apart from trailing
+    whitespace, and ending in a newline as the original does."""
+    kept = lines(original)
+    for line in taken_out:
+        kept.remove(line.rstrip())
+    return kept == lines(new) and new.endswith("\n") == original.endswith("\n")
+
+
+def data(text):
+    return YAML(typ="safe", pure=True).load(text)
 
 
 @pytest.fixture
@@ -96,6 +110,9 @@ def test_moves_both_tokens_into_the_empty_files_and_deletes_the_keys(config_yml,
     assert secret(secrets_dir, PLATE_RECOGNIZER_LICENSE_KEY) == ""
     new = config_yml.read_text()
     assert removed(original, new, f"    access_token: {TOKEN}", f"        token: {PR_TOKEN}")
+    expected = data(original)
+    del expected["thingsboard"]["access_token"], expected["addons"]["plate_recognizer"]["token"]
+    assert data(new) == expected
     assert PR_URL in new.splitlines()
     assert stat.S_IMODE(config_yml.stat().st_mode) == 0o640
     (backup,) = backups(config_yml)
@@ -120,11 +137,12 @@ def test_an_addons_block_left_empty_is_removed(tmp_path, secrets_dir, capsys):
 
 def test_addons_at_the_end_of_the_file_go_with_their_blank_line(tmp_path, secrets_dir):
     config = tmp_path / "config.yml"
-    original = (FIXTURES / "node_red_config_ok.yml").read_text() + f"\naddons:\n    plate_recognizer:\n        token: {PR_TOKEN}\n"
+    original = OLD_TEMPLATE.read_text() + f"\naddons:\n    plate_recognizer:\n        token: {PR_TOKEN}\n"
     config.write_text(original)
     assert migrate.run_node_red(config, secrets_dir) == 0
-    assert config.read_text() == (FIXTURES / "node_red_config_ok.yml").read_text().replace(
-        f"{EMPTY_TOKEN_LINE}\n", "")
+    new = config.read_text()
+    assert lines(new) == lines(OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, ""))
+    assert new.endswith("readings\n")
 
 
 @pytest.mark.parametrize(("before", "after"), [
@@ -219,6 +237,7 @@ def test_a_value_that_is_not_one_token_is_left_as_it_is(tmp_path, secrets_dir, v
     assert captured.out == f"tm-control migrate: {config}: up to date\n"
     assert f"WARNING {config}: thingsboard.access_token " in captured.err
     assert "left as it is" in captured.err
+    assert captured.err.endswith(" Enter it on the control app's Device page and delete the key.\n")
     assert "placeholder" not in captured.err
     assert config.read_text() == original
     assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == ""
@@ -235,17 +254,17 @@ def test_a_config_without_the_mappings_is_up_to_date(tmp_path, secrets_dir, bloc
     assert not backups(config)
 
 
-@pytest.mark.parametrize("value", ["", " ''", ' ""', " ~", " null"])
+@pytest.mark.parametrize("value", [" ", "", " ''", ' ""', " ~", " null"])
 def test_an_empty_key_is_removed(tmp_path, value, capsys):
-    """Every unit installed with the old template has access_token: with no value. The secrets directory isn't
-    needed for that, so this runs without one."""
+    """Every unit installed with the old template has "access_token: " with no value (the first case, the
+    fixture's own line). The secrets directory isn't needed for that, so this runs without one."""
     config = write_config(tmp_path / "config.yml", access_token="", addons="")
-    config.write_text(config.read_text().replace(f"{EMPTY_TOKEN_LINE}\n", f"{EMPTY_TOKEN_LINE}{value}\n"))
+    config.write_text(config.read_text().replace(OLD_TOKEN_LINE, f"    access_token:{value}\n"))
     original = config.read_text()
 
     assert migrate.run_node_red(config, tmp_path / "missing-secrets") == 0
     new = config.read_text()
-    assert removed(original, new, f"{EMPTY_TOKEN_LINE}{value}")
+    assert removed(original, new, f"    access_token:{value}")
     (backup,) = backups(config)
     assert output(capsys) == (
         f"tm-control migrate: {config}: removed the empty thingsboard.access_token (backup: {backup})\n")
@@ -254,7 +273,7 @@ def test_an_empty_key_is_removed(tmp_path, value, capsys):
 def test_an_empty_plate_recognizer_token_is_removed_with_its_empty_mappings(tmp_path, capsys):
     config = write_config(tmp_path / "config.yml", access_token="", addons="addons:\n    plate_recognizer:\n        token: ''\n")
     assert migrate.run_node_red(config, tmp_path / "missing-secrets") == 0
-    assert config.read_text() == (FIXTURES / "node_red_config_ok.yml").read_text().replace(f"{EMPTY_TOKEN_LINE}\n", "")
+    assert lines(config.read_text()) == lines(OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, ""))
     printed = output(capsys)
     assert "removed the empty thingsboard.access_token, removed the empty addons.plate_recognizer.token (backup: " in printed
 
@@ -288,7 +307,7 @@ def test_a_missing_secret_file_is_created_root_owned_as_root(config_yml, secrets
     monkeypatch.setattr(os, "chown", lambda *args: None)
 
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
-    assert owners == [(0, secrets_dir.stat().st_gid)]
+    assert owners[0] == (0, secrets_dir.stat().st_gid)  # then write_atomic keeps that owner
 
 
 def test_dry_run_changes_nothing(config_yml, secrets_dir, capsys):
@@ -430,12 +449,164 @@ def test_backups_keep_the_owner_as_root(config_yml, secrets_dir, monkeypatch):
     """migrate runs as root in tmsetup, and config.yml belongs to the code owner, so the backup must too."""
     chowned = []
     monkeypatch.setattr(os, "geteuid", lambda: 0)
-    monkeypatch.setattr(os, "chown", lambda path, uid, gid: chowned.append((Path(path), uid, gid)))
-    monkeypatch.setattr(os, "fchown", lambda *args: None)
+    monkeypatch.setattr(os, "fchown", lambda fd, uid, gid: chowned.append((os.readlink(f"/proc/self/fd/{fd}"), uid, gid)))
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
     (backup,) = backups(config_yml)
-    assert (backup, config_yml.stat().st_uid, config_yml.stat().st_gid) in chowned
+    assert (str(backup), config_yml.stat().st_uid, config_yml.stat().st_gid) in chowned
 
 
 def test_the_fixture_has_the_old_templates_empty_slot():
-    assert f"{EMPTY_TOKEN_LINE}\n" in (FIXTURES / "node_red_config_ok.yml").read_text()
+    text = OLD_TEMPLATE.read_text()
+    assert OLD_TOKEN_LINE in text.splitlines(keepends=True)
+    assert "    lat: \n" in text and "    lon: \n" in text
+    assert data(text)["thingsboard"]["access_token"] is None
+
+
+CONFIG_REMEDY = " Enter it on the control app's Device page and delete the key.\n"
+TB_RULE = "1 to 256 letters, digits, and . _ ~ -"
+PR_RULE = "1 to 256 printable ASCII characters with no spaces"
+
+
+@pytest.mark.parametrize("value", ["tb/placeholder-501", "tb-placeholder?502", "'tb-placeholder#503'",
+                                   "'tb-placeholdé-504'", "tb-placeholder-505" + "x" * 239, "'tb-placeholder 506'"])
+def test_a_thingsboard_token_the_upload_url_cannot_carry_is_left_with_a_warning(tmp_path, secrets_dir, value, capsys):
+    """The token goes into the upload URL's path, so it takes only URL-unreserved characters (Review Focus 2)."""
+    config = write_config(tmp_path / "config.yml", access_token=value, addons="")
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {config}: up to date\n"
+    (warning,) = captured.err.splitlines(keepends=True)
+    assert warning.startswith(f"tm-control migrate: WARNING {config}: thingsboard.access_token ")
+    assert TB_RULE in warning and "left as it is" in warning and warning.endswith(CONFIG_REMEDY)
+    assert "placeholder" not in warning
+    assert config.read_text() == original
+    assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == ""
+
+
+def test_the_longest_thingsboard_token_moves(tmp_path, secrets_dir):
+    value = "tb-placeholder-507" + "x" * 238
+    config = write_config(tmp_path / "config.yml", access_token=value, addons="")
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == value + "\n"
+
+
+def test_a_plate_recognizer_token_takes_any_printable_ascii(tmp_path, secrets_dir, capsys):
+    config = write_config(tmp_path / "config.yml", access_token="",
+                          addons="addons:\n    plate_recognizer:\n        token: pr/placeholder?508\n")
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert secret(secrets_dir, PLATE_RECOGNIZER_TOKEN) == "pr/placeholder?508\n"
+    assert "WARNING" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("value", ["'pr-placeholder 509'", "'pr-placeholdé-510'"])
+def test_a_plate_recognizer_token_with_a_space_or_non_ascii_is_left_with_a_warning(tmp_path, secrets_dir, value,
+                                                                                    capsys):
+    config = write_config(tmp_path / "config.yml", access_token="",
+                          addons=f"addons:\n    plate_recognizer:\n        token: {value}\n")
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert value in config.read_text()
+    (warning,) = captured.err.splitlines(keepends=True)
+    assert "addons.plate_recognizer.token " in warning and PR_RULE in warning and warning.endswith(CONFIG_REMEDY)
+    assert "placeholder" not in captured.out + captured.err
+    assert secret(secrets_dir, PLATE_RECOGNIZER_TOKEN) == ""
+
+
+@pytest.mark.parametrize(("token", "license_key", "refused"), [
+    ("pr-placeholder-511 pr-placeholder-512", "XXXXX", ["TOKEN"]),
+    ("YYYYY", "pr-placeholdé-513", ["LICENSE_KEY"]),
+    ("pr-placeholder 514", "pr-placeholder 515", ["TOKEN", "LICENSE_KEY"]),
+])
+def test_an_env_value_the_env_line_cannot_carry_is_backed_up_with_a_warning(env_file, secrets_dir, token,
+                                                                             license_key, refused, capsys):
+    """tmsetup rewrites the line from the (empty) secrets file next, so the env file's value would be lost."""
+    path = env_file(token=token, license_key=license_key)
+    original = path.read_text()
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    (backup,) = path.parent.glob("plate-recognizer.env.*.bak")
+    assert backup.read_text() == original
+    warnings = captured.err.splitlines()
+    assert [line.split(": ")[2].split()[0] for line in warnings] == refused
+    for warning in warnings:
+        assert PR_RULE in warning
+        assert warning.endswith(f"Enter it on the control app's Device page; the env file was backed up to {backup}.")
+    assert "placeholder" not in captured.out + captured.err
+    assert secret(secrets_dir, PLATE_RECOGNIZER_TOKEN) == ""
+    assert secret(secrets_dir, PLATE_RECOGNIZER_LICENSE_KEY) == ""
+    assert path.read_text() == original
+
+
+def test_an_env_value_that_cannot_move_is_not_backed_up_in_a_dry_run(env_file, secrets_dir, capsys):
+    path = env_file(token="pr-placeholder 516")
+    assert migrate.run_plate_recognizer_env(path, secrets_dir, dry_run=True) == 0
+    assert "WARNING" in capsys.readouterr().err
+    assert not list(path.parent.glob("plate-recognizer.env.*.bak"))
+
+
+def test_a_linked_config_is_refused(tmp_path, secrets_dir, capsys):
+    """As root, following a link would read, back up, and replace a file the link's maker chose."""
+    target = write_config(tmp_path / "target.yml")
+    original = target.read_text()
+    link = tmp_path / "config.yml"
+    link.symlink_to(target)
+    assert migrate.run_node_red(link, secrets_dir) == 1
+    printed = output(capsys)
+    assert f"tm-control migrate: ERROR reading {link}" in printed and TOKEN not in printed
+    assert target.read_text() == original and link.is_symlink()
+    assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == ""
+
+
+def test_a_linked_env_file_is_refused(env_file, tmp_path, secrets_dir, capsys):
+    target = env_file(token=PR_TOKEN)
+    link = tmp_path / "plate-recognizer.env"
+    link.symlink_to(target)
+    assert migrate.run_plate_recognizer_env(link, secrets_dir) == 1
+    printed = output(capsys)
+    assert f"tm-control migrate: ERROR reading {link}" in printed and PR_TOKEN not in printed
+    assert secret(secrets_dir, PLATE_RECOGNIZER_TOKEN) == ""
+
+
+def test_a_link_planted_at_the_backup_name_is_not_followed(config_yml, secrets_dir, tmp_path, monkeypatch, capsys):
+    """Node-RED's container can write its config directory, and the backup's name is easy to guess."""
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    planted = config_yml.with_name("config.yml.20261103T120000Z.bak")
+    planted.symlink_to(target)
+    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None: planted)
+    original = config_yml.read_text()
+
+    assert migrate.run_node_red(config_yml, secrets_dir) == 1
+    printed = output(capsys)
+    assert f"tm-control migrate: ERROR writing {config_yml}" in printed
+    assert TOKEN not in printed and PR_TOKEN not in printed
+    assert target.read_text() == "not yours\n"
+    assert config_yml.read_text() == original
+
+
+def test_a_link_planted_at_the_env_backup_name_is_not_followed(env_file, secrets_dir, tmp_path, monkeypatch, capsys):
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    path = env_file(token="pr-placeholder 517")
+    planted = path.with_name("plate-recognizer.env.20261103T120000Z.bak")
+    planted.symlink_to(target)
+    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None: planted)
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 1
+    assert "ERROR" in output(capsys)
+    assert target.read_text() == "not yours\n"
+
+
+def test_a_config_that_is_not_utf8_is_an_error(tmp_path, secrets_dir, capsys):
+    config = tmp_path / "config.yml"
+    config.write_bytes(b"\xff\xfethingsboard:\n")
+    assert migrate.run_node_red(config, secrets_dir) == 1
+    assert output(capsys) == f"tm-control migrate: ERROR reading {config}: not UTF-8 (UnicodeDecodeError)\n"
+
+
+def test_an_env_file_that_is_not_utf8_is_an_error(env_file, secrets_dir, capsys):
+    path = env_file()
+    path.write_bytes(b"TOKEN=\xff\n")
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 1
+    assert output(capsys) == f"tm-control migrate: ERROR reading {path}: not UTF-8 (UnicodeDecodeError)\n"

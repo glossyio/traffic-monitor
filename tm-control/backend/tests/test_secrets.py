@@ -11,9 +11,12 @@ from tm_control.core.secrets import (
     PLATE_RECOGNIZER_TOKEN,
     SESSION_KEY,
     THINGSBOARD_ACCESS_TOKEN,
+    VALUE_PATTERNS,
+    VALUE_RULES,
     FakeSecrets,
     MissingSecret,
     Secrets,
+    is_valid_value,
 )
 
 REPO = Path(__file__).resolve().parents[3]
@@ -92,3 +95,26 @@ def test_fake_secrets_entered_values():
     assert not fake.is_set(PLATE_RECOGNIZER_TOKEN)
     assert FakeSecrets().entered == dict.fromkeys(ENTERED_SECRETS, "")  # each instance has its own
     assert fake.is_set(SESSION_KEY) and fake.ends_with(SESSION_KEY) == "cret"
+
+
+def test_every_entered_secret_has_a_value_pattern_and_its_rule_in_words():
+    assert set(VALUE_PATTERNS) == set(VALUE_RULES) == set(ENTERED_SECRETS)
+
+
+@pytest.mark.parametrize(("name", "value", "valid"), [
+    (THINGSBOARD_ACCESS_TOKEN, "tb-placeholder-601.A_z~", True),
+    (THINGSBOARD_ACCESS_TOKEN, "x" * 256, True),
+    (THINGSBOARD_ACCESS_TOKEN, "x" * 257, False),
+    (THINGSBOARD_ACCESS_TOKEN, "", False),
+    (THINGSBOARD_ACCESS_TOKEN, "tb/placeholder", False),
+    (THINGSBOARD_ACCESS_TOKEN, "tb?placeholder", False),
+    (THINGSBOARD_ACCESS_TOKEN, "tb#placeholder", False),
+    (THINGSBOARD_ACCESS_TOKEN, "tb-placeholder\n", False),
+    (PLATE_RECOGNIZER_TOKEN, "pr/placeholder?#'\"", True),
+    (PLATE_RECOGNIZER_TOKEN, "pr placeholder", False),
+    (PLATE_RECOGNIZER_TOKEN, "pr-placeholdé", False),
+    (PLATE_RECOGNIZER_LICENSE_KEY, "pr-placeholder-602", True),
+    (PLATE_RECOGNIZER_LICENSE_KEY, "pr-placeholder-602\n", False),
+])
+def test_entered_secret_values_meet_their_pattern(name, value, valid):
+    assert is_valid_value(name, value) is valid
