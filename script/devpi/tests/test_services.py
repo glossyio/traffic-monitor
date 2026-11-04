@@ -47,6 +47,22 @@ def test_plate_recognizer_absent_on_pii_free_unit(host, expect):
         "plate-recognizer is installed on a unit marked pii_free; its database may hold plate reads")
 
 
+SET_SECRET_UNIT = "tm-job-set-secret.service"
+
+
+def test_set_secret_job_unit_is_static(host):
+    """The set-secret job's unit is static (never enabled, so it runs only when tm-control starts it through polkit),
+    and runs the job's root-owned copy, which only root can change."""
+    state = host.check_output(f"systemctl show -p UnitFileState --value {SET_SECRET_UNIT}")
+    assert state == "static", f"{SET_SECRET_UNIT}'s UnitFileState is {state!r}"
+    script = f"{role_vars()['tmsetup_libexec_dir']}/tm-job-set-secret"
+    assert script in host.check_output(f"systemctl show -p ExecStart --value {SET_SECRET_UNIT}"), (
+        f"{SET_SECRET_UNIT} doesn't run {script}")
+    job = host.file(script)
+    found = (job.is_file, job.user, job.group, oct(job.mode)) if job.exists else "missing"
+    assert found == (True, "root", "root", "0o755"), f"{script} (regular file, owner, group, mode): {found}"
+
+
 def test_ui_build_unit_finished(host):
     """The revproxy image, which builds tm-control's UI, was built by its Quadlet build unit. The unit doesn't remain
     active after it exits, so this checks its last run: it ran, exited 0, and systemd counted it a success."""

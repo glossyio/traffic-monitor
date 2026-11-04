@@ -4,6 +4,7 @@ Named devpi_checks, not helpers, so it can't collide with another test directory
 module when several run in one pytest session.
 """
 
+import ast
 import email.message
 import functools
 import json
@@ -19,6 +20,7 @@ import yaml
 
 ROLE_DEFAULTS = Path(__file__).resolve().parents[2] / "ansible" / "roles" / "tmsetup" / "defaults" / "main.yml"
 ROLE_VARS = ROLE_DEFAULTS.parents[1] / "vars" / "main.yml"
+SET_SECRET_JOB = Path(__file__).resolve().parents[3] / "tm-control" / "jobs" / "tm-job-set-secret"
 
 DEFAULT_CODEDIR = "/opt/traffic-monitor"
 DEFAULT_CODEOWNER = "tmadmin"
@@ -318,3 +320,73 @@ def tm_internal_token(host):
     if not token:
         pytest.fail(f"{path} is missing or empty on the Pi; re-run tmsetup.sh", pytrace=False)
     return token
+
+
+# --- The entered secrets (the ThingsBoard token, the Plate Recognizer token and license key) -----------------------
+
+@functools.cache
+def set_secret_table():
+    """The set-secret job's SECRETS table ({name: {"pattern", "env": [(env file relative to codedir, key)],
+    "restart"}}), the one list of which env lines carry each entered secret. Read from the job's source without
+    running it, so no __pycache__ lands beside the job, which tmsetup installs."""
+    tree = ast.parse(SET_SECRET_JOB.read_text(), filename=str(SET_SECRET_JOB))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(getattr(target, "id", None) == "SECRETS" for target in node.targets):
+            return ast.literal_eval(node.value)
+    raise LookupError(f"{SET_SECRET_JOB} has no SECRETS table")
+
+
+# Run as root on the Pi with one JSON argument: {"secrets_dir", "codedir", "expected": {name: value}, "entries":
+# [[name, env file relative to codedir, key]]}. Prints one line per item, "<label> <state>", and never a value:
+# - "secret <name>": the secret's file, stripped as tmsetup and tm-control read it, against the expected value (only
+#   ever a test's placeholder): equal, different, or missing (no file);
+# - "<env file>:<key>": the last KEY= line, the one podman uses, against the secret's file: equal, different, missing
+#   (no such line, or no secret file), or absent (no env file, as for an add-on that isn't installed).
+SECRET_STATES = """\
+import json, os, sys
+request = json.loads(sys.argv[1])
+def secret(name):
+    try:
+        with open(os.path.join(request["secrets_dir"], name), "rb") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return None
+def env_value(path, key):
+    value, prefix = None, key.encode() + b"="
+    with open(path, "rb") as file:
+        for line in file.read().splitlines():
+            if line.startswith(prefix):
+                value = line[len(prefix):]
+    return value
+for name, expected in request["expected"].items():
+    found = secret(name)
+    print("secret " + name, "missing" if found is None else "equal" if found == expected.encode() else "different")
+for name, relpath, key in request["entries"]:
+    path = os.path.join(request["codedir"], relpath)
+    if not os.path.isfile(path):
+        print(relpath + ":" + key, "absent")
+        continue
+    found, value = secret(name), env_value(path, key)
+    state = "missing" if found is None or value is None else "equal" if value == found else "different"
+    print(relpath + ":" + key, state)
+"""
+
+
+def entered_secret_states(host, codedir, names, expected=None):
+    """{label: state} from SECRET_STATES for these entered secrets' env lines, and for each name in expected
+    ({name: placeholder}), its file. Compared on the Pi as root, so no secret leaves it; only a placeholder is ever
+    sent to it."""
+    table = set_secret_table()
+    request = {
+        "secrets_dir": role_vars()["tmsetup_secrets_dir"],
+        "codedir": codedir,
+        "expected": expected or {},
+        "entries": [[name, relpath, key] for name in names for relpath, key in table[name]["env"]],
+    }
+    with host.sudo():
+        output = host.check_output(f"python3 -c {shlex.quote(SECRET_STATES)} {shlex.quote(json.dumps(request))}")
+    states = dict(line.rsplit(" ", 1) for line in output.splitlines() if " " in line)
+    labels = [f"secret {name}" for name in request["expected"]] + [f"{relpath}:{key}"
+                                                                   for _, relpath, key in request["entries"]]
+    assert sorted(states) == sorted(labels), f"the Pi's comparison didn't cover every item: {sorted(states)}"
+    return states
