@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
+from tm_control.cli import main
 from tm_control.core import migrate
 from tm_control.core.secrets import ENTERED_SECRETS, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
 from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
@@ -610,3 +611,46 @@ def test_an_env_file_that_is_not_utf8_is_an_error(env_file, secrets_dir, capsys)
     path.write_bytes(b"TOKEN=\xff\n")
     assert migrate.run_plate_recognizer_env(path, secrets_dir) == 1
     assert output(capsys) == f"tm-control migrate: ERROR reading {path}: not UTF-8 (UnicodeDecodeError)\n"
+
+
+def test_a_fifo_at_config_yml_is_an_error_and_returns_promptly(tmp_path, secrets_dir, prompt, capsys):
+    """Node-RED's container can write its config directory, so a FIFO there must not hang root's migrate."""
+    config = tmp_path / "config.yml"
+    os.mkfifo(config)
+    assert migrate.run_node_red(config, secrets_dir) == 1
+    assert output(capsys) == f"tm-control migrate: ERROR reading {config}: not a regular file\n"
+
+
+def test_a_fifo_at_the_env_file_is_an_error_and_returns_promptly(tmp_path, secrets_dir, prompt, capsys):
+    path = tmp_path / "plate-recognizer.env"
+    os.mkfifo(path)
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 1
+    assert output(capsys) == f"tm-control migrate: ERROR reading {path}: not a regular file\n"
+
+
+def test_a_fifo_among_the_env_backups_is_skipped(env_file, secrets_dir, prompt, capsys):
+    path = env_file(token="pr-placeholder 518")
+    os.mkfifo(path.with_name("plate-recognizer.env.20261103T120000Z.bak"))
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 0
+    made = [p for p in path.parent.glob("plate-recognizer.env.*.bak") if p.is_file()]
+    assert len(made) == 1 and made[0].read_text() == path.read_text()
+
+
+class PlantedError(Exception):
+    """An unexpected failure whose message holds a value."""
+
+
+@pytest.mark.parametrize("option, helper", [("--node-red-config", "_find"), ("--plate-recognizer-env", "_env_values")])
+def test_an_unexpected_error_prints_only_its_kind(config_yml, env_file, secrets_dir, monkeypatch, capsys, option,
+                                                  helper):
+    """No traceback, and so no message that could quote a value, reaches the install log."""
+
+    def fail(*args, **kwargs):
+        raise PlantedError("tb-placeholder-902")
+
+    monkeypatch.setattr(migrate, helper, fail)
+    path = config_yml if option == "--node-red-config" else env_file(token=PR_TOKEN)
+    assert main(["migrate", option, str(path), "--secrets-dir", str(secrets_dir)]) == 1
+    printed = output(capsys)
+    assert printed == f"tm-control migrate: ERROR {path}: PlantedError\n"
+    assert "tb-placeholder-902" not in printed
