@@ -1,12 +1,14 @@
 """The configuration check group: the names that Frigate's config and Node-RED's config.yml must agree on, which
-fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), and the deployment's location values.
+fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the deployment's location values, and
+the ThingsBoard upload's settings.
 
 Details name cameras, zones, radars, and config.yml keys, never another config value.
 """
 
 import math
 
-from tm_control.core.checks import Check, CheckGroup, Context
+from tm_control.core.checks import Check, CheckGroup, Context, Fix
+from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import listed
 
@@ -165,4 +167,61 @@ def location(context: Context) -> list[Check]:
     return check("ok", "The location's values are valid.")
 
 
-GROUP = CheckGroup("config", "Configuration", [cameras_in_config, zones, radar_names, location])
+# config.yml keys that held a secret before the secrets moved to their own files. Nothing reads them now.
+FORMER_SECRET_KEYS = (("thingsboard", "access_token"), ("addons", "plate_recognizer", "token"))
+THINGSBOARD_PROTOCOLS = ("http", "https")  # what the flows upload with; init-config turns https into http
+
+
+def _has_key(data: dict, path: tuple[str, ...]) -> bool:
+    section = data
+    for part in path[:-1]:
+        section = probes.mapping(section.get(part))
+    return path[-1] in section
+
+
+def thingsboard(context: Context) -> list[Check]:
+    """The thingsboard block holds values init-config uploads with, the access token is set when the upload is on, and
+    no secret is left in config.yml. Never shows the host or a secret."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="config.thingsboard", title="ThingsBoard upload", status=status, detail=detail, fix=fix)]
+
+    read = probes.config_yml(context)
+    if read.data is None:
+        return check("unknown", f"{CONFIG_YML_PROBLEM[read.problem]}, so its ThingsBoard settings can't be checked.")
+    block = probes.mapping(read.data.get("thingsboard"))
+    enabled = block.get("enabled")
+    on = enabled is True
+    host = block.get("host")
+
+    errors = []
+    if enabled is not None and not isinstance(enabled, bool):
+        errors.append("thingsboard.enabled isn't true or false, so Node-RED keeps the upload off. Set it to true or "
+                      "false.")
+    if on and (host is None or str(host).strip() == ""):
+        errors.append("The upload is on in config.yml, but thingsboard.host is empty, so Node-RED keeps it off. Put "
+                      "the server's hostname in host.")
+    if "protocol" in block and block["protocol"] not in THINGSBOARD_PROTOCOLS:
+        errors.append("thingsboard.protocol isn't http or https, so Node-RED doesn't upload. Set it to http or https.")
+    if errors:
+        return check("error", " ".join(errors))
+
+    warnings = [
+        f"config.yml still holds {'.'.join(path)}, which nothing reads. Remove it; the value is set on the Device "
+        "page."
+        for path in FORMER_SECRET_KEYS
+        if _has_key(read.data, path)
+    ]
+    missing_token = on and not context.secrets.is_set(THINGSBOARD_ACCESS_TOKEN)
+    if missing_token:
+        warnings.append("The upload is on in config.yml, but no access token is set, so Node-RED keeps it off.")
+    if isinstance(host, str) and host.lower().startswith(("http://", "https://")):
+        warnings.append("thingsboard.host starts with a scheme, so the protocol key is ignored for it. Put only the "
+                        "hostname in host.")
+    if warnings:
+        fix = Fix(kind="link", text="Set the token", href="/device") if missing_token else None
+        return check("warn", " ".join(warnings), fix)
+    return check("ok", "The upload is on, with a token set." if on else "The upload is off.")
+
+
+GROUP = CheckGroup("config", "Configuration", [cameras_in_config, zones, radar_names, location, thingsboard])

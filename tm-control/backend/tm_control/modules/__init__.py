@@ -16,13 +16,16 @@ class Module:
 
 
 # The modules import Module from here, so they come after it.
-from tm_control.modules import account, apps, auth, hardware, jobs, services, setup, status, system, time  # noqa: E402
+from tm_control.modules import (  # noqa: E402
+    account, apps, auth, hardware, jobs, secrets, services, setup, status, system, time,
+)
 
 MODULES: list[Module] = [
     auth.module,
     setup.module,
     account.module,
     jobs.module,
+    secrets.module,
     status.module,
     services.module,
     apps.module,

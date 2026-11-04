@@ -481,6 +481,119 @@
         }
       }
     },
+    "/api/v1/secrets": {
+      "get": {
+        "tags": [
+          "secrets"
+        ],
+        "summary": "Get Secrets",
+        "operationId": "get_secrets_api_v1_secrets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretsState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/secrets/{name}": {
+      "post": {
+        "tags": [
+          "secrets"
+        ],
+        "summary": "Set Secret",
+        "description": "Start the job that writes the secret and restarts what reads it.",
+        "operationId": "set_secret_api_v1_secrets__name__post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretValue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "secrets"
+        ],
+        "summary": "Remove Secret",
+        "description": "Start the job that empties the secret's file and restarts what reads it; for one not set, it changes nothing.",
+        "operationId": "remove_secret_api_v1_secrets__name__delete",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -1262,6 +1375,79 @@
           "unit"
         ],
         "title": "RestartQueued"
+      },
+      "SecretState": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "set": {
+            "type": "boolean",
+            "title": "Set"
+          },
+          "ends_with": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends With"
+          },
+          "restarts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "title",
+          "set",
+          "ends_with",
+          "restarts"
+        ],
+        "title": "SecretState"
+      },
+      "SecretValue": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "SecretValue"
+      },
+      "SecretsState": {
+        "properties": {
+          "secrets": {
+            "items": {
+              "$ref": "#/components/schemas/SecretState"
+            },
+            "type": "array",
+            "title": "Secrets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "secrets"
+        ],
+        "title": "SecretsState"
       },
       "Service": {
         "properties": {
