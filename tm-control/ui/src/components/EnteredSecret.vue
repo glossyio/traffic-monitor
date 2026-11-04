@@ -76,6 +76,7 @@ async function run(action: Action, start: () => Promise<{ data?: unknown }>) {
     value.value = ''
     shown.value = false
     await nextTick()
+    if (left) return // the page may be left during the tick, before anything would cancel the poll
     form.value?.resetValidation()
     following = followJob((data as { id: string }).id, SECRET_JOB_DEADLINE_MS)
     const job = await following.done
@@ -103,6 +104,12 @@ const restarted = computed(() => `${apps.value} restarted`)
 const working = { save: 'Saving.', remove: 'Removing.' }
 const done = { save: 'Saved', remove: 'Removed' }
 const notDone = { save: "The value wasn't saved.", remove: "The value wasn't removed." }
+// The job wrote the value, then an app's restart failed: its log line says so
+const writtenOnly = {
+  save: 'The value was saved, but a restart failed.',
+  remove: 'The value was removed, but a restart failed.',
+}
+const written = (job: Job) => job.log.some((line) => line.endsWith('the secret is written'))
 const unknown = {
   save: "The device hasn't reported whether the value was saved. Reload this page in a minute to check.",
   remove: "The device hasn't reported whether the value was removed. Reload this page in a minute to check.",
@@ -168,7 +175,7 @@ const unknown = {
         {{ done[result.action] }}. {{ restarted }}.
       </v-alert>
       <v-alert v-else-if="result.job" type="error" class="mt-4">
-        {{ notDone[result.action] }}
+        {{ (written(result.job) ? writtenOnly : notDone)[result.action] }}
         <pre v-if="result.job.log.length" class="text-body-2 mt-2 text-wrap">{{ result.job.log.join('\n') }}</pre>
       </v-alert>
       <v-alert v-else type="warning" class="mt-4">{{ unknown[result.action] }}</v-alert>

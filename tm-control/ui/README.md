@@ -322,7 +322,8 @@ Device:
   the restart and what stops ("The upload to ThingsBoard stops until a token is set again."). Save doesn't ask:
   the section's paragraph already says it restarts the app, and a second tap for every token would be noise.
 - The result stays under the form: "Saved. Node-RED restarted.", or "The value wasn't saved." with the job's log
-  lines, or, when the device never reports (the page waits five minutes, because the job can wait out two
+  lines. When the log says the secret is written (an app failed to restart after the write), the headline says "The
+  value was saved, but a restart failed." instead, so it doesn't contradict the log. Or, when the device never reports (the page waits five minutes, because the job can wait out two
   restarts), a warning to reload the page in a minute.
 - Reboot and Shut down each ask first. After the device accepts, the page says "Rebooting. This page will stop
   answering for about two minutes." in place of the buttons. When something such as an update holds the shutdown off,
