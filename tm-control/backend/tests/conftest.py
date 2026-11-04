@@ -139,12 +139,16 @@ class FakeApps:
     """The apps on a device as the apps adapters see them, from the synthetic fixtures: each URL's HTTP answer, ss's
     listening sockets, and a code directory with config.yml and the tmdb migrations.
 
-    Change `answers` (URL -> (status, body bytes), or (None, None) for no answer), `ss`, or the files, then call
-    `context()` for a new report's Context. `requests` lists every (url, headers) asked for.
+    Change `answers` (URL -> (status, body bytes), or (None, None) for no answer), `ss`, the files, or
+    `secrets.entered`, then call `context()` for a new report's Context. `requests` lists every (url, headers) asked
+    for.
     """
 
     def __init__(self, codedir: Path):
+        from tm_control.core.secrets import FakeSecrets
+
         self.codedir = codedir
+        self.secrets = FakeSecrets()
         self.answers = {
             f"{FRIGATE_API}/version": (200, b"0.18.1-cf67f08"),
             f"{FRIGATE_API}/config": (200, (FIXTURES / "frigate_api_config.json").read_bytes()),
@@ -190,10 +194,9 @@ class FakeApps:
     def context(self):
         from tm_control.core.checks import Context
         from tm_control.core.manifest import load_manifest
-        from tm_control.core.secrets import FakeSecrets
 
         manifest = load_manifest(FIXTURES / "manifest.json").model_copy(update={"codedir": str(self.codedir)})
-        return Context(settings=None, manifest=manifest, secrets=FakeSecrets())
+        return Context(settings=None, manifest=manifest, secrets=self.secrets)
 
 
 @pytest.fixture

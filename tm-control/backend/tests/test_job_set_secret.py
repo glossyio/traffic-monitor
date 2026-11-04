@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 
 from tm_control.core.secrets import ENTERED_SECRETS, VALUE_PATTERNS
+from tm_control.modules.secrets.router import ENTERED
 
 JOB = Path(__file__).resolve().parents[2] / "jobs" / "tm-job-set-secret"
 FIXTURE_MANIFEST = Path(__file__).resolve().parent / "fixtures" / "manifest.json"
@@ -508,11 +509,9 @@ def test_the_table_matches_the_api(monkeypatch):
         assert secret["pattern"] == VALUE_PATTERNS[name], name
 
 
-@pytest.mark.xfail(strict=True, reason="Task 6")
 def test_the_restart_lists_match_the_api(monkeypatch):
-    from tm_control.modules.secrets import router  # Task 6
-
     monkeypatch.setattr(sys, "dont_write_bytecode", True)
     job = load_job_module()
+    assert tuple(job.SECRETS) == tuple(ENTERED)
     for name, secret in job.SECRETS.items():
-        assert tuple(secret["restart"]) == router.ENTERED[name].restarts, name
+        assert tuple(secret["restart"]) == ENTERED[name].restarts, name
