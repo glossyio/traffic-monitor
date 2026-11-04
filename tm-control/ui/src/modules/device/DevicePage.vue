@@ -1,19 +1,21 @@
 <!--
-  The Device page (GET /system/info): the device card, the software versions, and for admins the diagnostics file
-  (GET /system/diagnostics) and the power buttons (POST /system/reboot and /system/power-off, each after a
-  confirmation). Viewers see the card and the versions only.
+  The Device page (GET /system/info): the device card, the software versions, and for admins the tokens and keys
+  (GET /secrets, one EnteredSecret form each), the diagnostics file (GET /system/diagnostics), and the power buttons
+  (POST /system/reboot and /system/power-off, each after a confirmation). Viewers see the card and the versions only.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import EnteredSecret from '../../components/EnteredSecret.vue'
 import { duration } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import { useSession } from '../../stores/session'
 
 type SystemInfo = components['schemas']['SystemInfo']
 type Throttled = components['schemas']['Throttled']
+type SecretState = components['schemas']['SecretState']
 
 const GIB = 2 ** 30
 
@@ -31,7 +33,24 @@ async function load() {
   }
 }
 
-onMounted(load)
+// The tokens and keys (admins only: the API refuses viewers), loaded again after each save or remove
+const secrets = ref<SecretState[] | null>(null)
+const secretsError = ref('')
+
+async function loadSecrets() {
+  secretsError.value = ''
+  try {
+    const { data } = await api.GET('/api/v1/secrets')
+    secrets.value = data?.secrets ?? []
+  } catch (error) {
+    secretsError.value = messageOf(error)
+  }
+}
+
+onMounted(() => {
+  void load()
+  if (session.isAdmin) void loadSecrets()
+})
 
 // Bytes as GB, counted in powers of 1024 as the status checks count them: "7.5 GB" under 10, "58 GB" from 10 up
 function gb(bytes: number) {
@@ -283,6 +302,28 @@ async function powerAction() {
       </section>
 
       <template v-if="session.isAdmin">
+        <section class="mt-10">
+          <h2 class="text-h6 mb-2">Tokens and keys</h2>
+          <p class="text-body-1 mb-6">
+            Credentials this device uses, kept with its other secrets. A value is never shown back; saving or removing
+            one restarts the app that uses it, and counting pauses meanwhile.
+          </p>
+          <v-alert v-if="secretsError" type="error">
+            {{ secretsError }}
+            <template #append>
+              <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+            </template>
+          </v-alert>
+          <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+          <EnteredSecret
+            v-for="(secret, index) in secrets"
+            :key="secret.name"
+            :secret="secret"
+            :class="{ 'mt-8': index > 0 }"
+            @changed="loadSecrets"
+          />
+        </section>
+
         <section class="mt-10">
           <h2 class="text-h6 mb-2">Diagnostics</h2>
           <p class="text-body-1 mb-4">
