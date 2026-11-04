@@ -48,8 +48,24 @@ def test_is_set_and_ends_with_follow_the_file(tmp_path):
     assert secrets.is_set(name) and secrets.ends_with(name) == "9876"
     assert secrets.read(name) == "tb-placeholder-9876"  # not cached while it was empty
     (tmp_path / name).write_text("ab")
-    assert secrets.is_set(name) and secrets.ends_with(name) == "ab"
-    assert secrets.ends_with(name, 2) == "ab" and secrets.ends_with(name, 1) == "b"
+    assert secrets.is_set(name) and secrets.ends_with(name) is None  # never a short secret whole
+    assert secrets.ends_with(name, 1) is None
+
+
+def test_ends_with_shows_at_most_a_third_of_the_value(tmp_path):
+    secrets = Secrets(tmp_path)
+    name = THINGSBOARD_ACCESS_TOKEN
+    (tmp_path / name).write_text("tb-placeh-1\n")  # 11 characters
+    assert secrets.is_set(name) and secrets.ends_with(name) is None
+    (tmp_path / name).write_text("tb-placeh-12\n")  # 12
+    assert secrets.ends_with(name) == "h-12"
+    assert secrets.ends_with(name, 0) is None and secrets.ends_with(name, -1) is None
+    assert secrets.ends_with(name, 5) is None and secrets.ends_with(name, 3) == "-12"
+    fake = FakeSecrets()
+    fake.entered[name] = "tb-placeh-1"
+    assert fake.is_set(name) and fake.ends_with(name) is None
+    fake.entered[name] = "tb-placeh-12"
+    assert fake.ends_with(name) == "h-12" and fake.ends_with(name, 0) is None
 
 
 def test_is_set_raises_only_for_a_bad_name(tmp_path):

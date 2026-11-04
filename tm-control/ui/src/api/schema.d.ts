@@ -341,7 +341,8 @@ export interface paths {
         post: operations["set_secret_api_v1_secrets__name__post"];
         /**
          * Remove Secret
-         * @description Start the job that empties the secret's file and restarts what reads it; for one not set, it changes nothing.
+         * @description Start the job that empties the secret's file and restarts what reads it. For one not set, the job still writes
+         *     the empty value and its env lines and restarts the units.
          */
         delete: operations["remove_secret_api_v1_secrets__name__delete"];
         options?: never;

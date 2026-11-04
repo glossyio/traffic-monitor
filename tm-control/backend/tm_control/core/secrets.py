@@ -91,10 +91,13 @@ class Secrets:
         return bool(self._value(name))
 
     def ends_with(self, name: str, count: int = 4) -> str | None:
-        """The last `count` characters of the value, or None when it isn't set."""
+        """The last `count` characters of the value. None when it isn't set, and when the ending would be more than a
+        third of it (fewer than 3 * count characters, or count below 1), so a short secret is never shown whole."""
         self._check_name(name)
         value = self._value(name)
-        return value[-count:] if value else None
+        if count < 1 or len(value) < 3 * count:
+            return None
+        return value[-count:]
 
     @property
     def session_key(self) -> str:
