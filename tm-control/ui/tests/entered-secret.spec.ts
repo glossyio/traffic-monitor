@@ -178,6 +178,44 @@ describe('an entered secret', () => {
     expect(wrapper.text()).not.toContain('Removed.')
   })
 
+  // A job that stays running, so the form is caught mid-job
+  function jobThatKeepsRunning(id: string) {
+    return () => json(200, job(id, 'running'))
+  }
+
+  it('keeps Remove disabled while a save job runs', async () => {
+    fakeApi({ [`POST ${PATH}`]: json(202, { id: 'job8' }), 'GET /api/v1/jobs/job8': jobThatKeepsRunning('job8') })
+    const wrapper = await mountSecret(TOKEN)
+    vi.useFakeTimers()
+    await type(wrapper, 'ThingsBoard access token', PLACEHOLDER)
+    await click(wrapper, 'Save')
+    expect(wrapper.text()).toContain('Saving.')
+    expect(button(wrapper, 'Remove').attributes('disabled')).toBeDefined()
+  })
+
+  it('keeps Save disabled while a remove job runs', async () => {
+    fakeApi({ [`DELETE ${PATH}`]: json(202, { id: 'job9' }), 'GET /api/v1/jobs/job9': jobThatKeepsRunning('job9') })
+    const wrapper = await mountSecret(TOKEN)
+    vi.useFakeTimers()
+    await click(wrapper, 'Remove')
+    await clickInDialog('Remove')
+    expect(wrapper.text()).toContain('Removing.')
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
+  })
+
+  it('empties the field once a remove is accepted', async () => {
+    fakeApi({
+      [`DELETE ${PATH}`]: json(202, { id: 'job10' }),
+      'GET /api/v1/jobs/job10': json(200, job('job10', 'succeeded')),
+    })
+    const wrapper = await mountSecret(TOKEN)
+    await type(wrapper, 'ThingsBoard access token', PLACEHOLDER)
+    await click(wrapper, 'Remove')
+    await clickInDialog('Remove')
+    expect(wrapper.text()).toContain('Removed. Node-RED restarted.')
+    expect(field(wrapper, 'ThingsBoard access token').element.value).toBe('')
+  })
+
   it("shows the API's message when the device refuses the value", async () => {
     const refused = 'A ThingsBoard access token is 1 to 256 letters, digits, dots, dashes, underscores, or tildes.'
     fakeApi({ [`POST ${PATH}`]: json(422, { error: { code: 'validation', message: refused, detail: null } }) })

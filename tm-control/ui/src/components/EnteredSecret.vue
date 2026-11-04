@@ -20,7 +20,7 @@ const props = defineProps<{ secret: SecretState }>()
 const emit = defineEmits<{ changed: [] }>()
 
 // The set-secret job can wait out two restarts of up to two minutes each, longer than setup's two minutes
-const JOB_DEADLINE_MS = 300_000
+const SECRET_JOB_DEADLINE_MS = 300_000
 
 const APPS: Record<string, string> = {
   'node-red-tm.service': 'Node-RED',
@@ -65,20 +65,19 @@ onBeforeUnmount(() => {
 })
 
 async function run(action: Action, start: () => Promise<{ data?: unknown }>) {
+  if (running.value) return // one job at a time per secret; the buttons are disabled meanwhile too
   error.value = ''
   result.value = null
   running.value = action
   try {
     const { data } = await start()
     if (left) return
-    if (action === 'save') {
-      // The device has the value now; it isn't kept on the page
-      value.value = ''
-      shown.value = false
-      await nextTick()
-      form.value?.resetValidation()
-    }
-    following = followJob((data as { id: string }).id, JOB_DEADLINE_MS)
+    // The device has the value, or is emptying it: either way, what was typed isn't kept on the page
+    value.value = ''
+    shown.value = false
+    await nextTick()
+    form.value?.resetValidation()
+    following = followJob((data as { id: string }).id, SECRET_JOB_DEADLINE_MS)
     const job = await following.done
     if (left) return
     result.value = { action, job }
@@ -137,13 +136,23 @@ const unknown = {
         </template>
       </v-text-field>
       <div class="d-flex flex-wrap ga-3">
-        <v-btn type="submit" color="primary" size="large" :loading="running === 'save'">Save</v-btn>
+        <!-- A disabled v-form doesn't disable its buttons, so each one is disabled while either job runs -->
+        <v-btn
+          type="submit"
+          color="primary"
+          size="large"
+          :loading="running === 'save'"
+          :disabled="running !== null"
+        >
+          Save
+        </v-btn>
         <v-btn
           v-if="secret.set"
           variant="outlined"
           color="primary"
           size="large"
           :loading="running === 'remove'"
+          :disabled="running !== null"
           @click="confirmOpen = true"
         >
           Remove
