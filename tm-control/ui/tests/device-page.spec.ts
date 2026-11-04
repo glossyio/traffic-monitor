@@ -2,9 +2,11 @@
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ADMIN, SYSTEM_INFO, VIEWER, apiError, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogText, mountApp } from './mount'
+import { click, clickInDialog, dialogText, field, mountApp } from './mount'
 
 const INFO = 'GET /api/v1/system/info'
+const SECRETS = 'GET /api/v1/secrets'
+const NO_SECRETS = { secrets: [] }
 const DIAGNOSTICS = 'tm-control diagnostics\nhostname: tm-fake\n'
 
 function headings(wrapper: VueWrapper) {
@@ -57,8 +59,65 @@ describe('the Device page', () => {
     expect(wrapper.findAll('button').map((b) => b.text().trim())).toEqual([])
   })
 
+  it('shows a viewer no Tokens and keys section', async () => {
+    const api = signedIn(VIEWER, { [INFO]: SYSTEM_INFO })
+    const { wrapper } = await mountApp('/device')
+    expect(headings(wrapper)).not.toContain('Tokens and keys')
+    expect(wrapper.findAll('h3')).toEqual([])
+    expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false) // viewers get 403 there
+  })
+
+  it('shows an admin one form per secret the API lists, before Diagnostics', async () => {
+    const secrets = [
+      { name: 'thingsboard_access_token', title: 'ThingsBoard access token', set: true, ends_with: '0001', restarts: ['node-red-tm.service'] },
+      { name: 'plate_recognizer_token', title: 'Plate Recognizer API token', set: false, ends_with: null, restarts: ['plate-recognizer.service', 'node-red-tm.service'] },
+      { name: 'plate_recognizer_license_key', title: 'Plate Recognizer license key', set: true, ends_with: null, restarts: ['plate-recognizer.service'] },
+    ]
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets } })
+    const { wrapper } = await mountApp('/device')
+    expect(headings(wrapper)).toEqual(['tm-fake', 'Software', 'Tokens and keys', 'Diagnostics', 'Power'])
+    expect(wrapper.text()).toContain(
+      'Credentials this device uses, kept with its other secrets. A value is never shown back; saving or removing one ' +
+        'restarts the app that uses it, and counting pauses meanwhile.',
+    )
+    expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
+      'ThingsBoard access token',
+      'Plate Recognizer API token',
+      'Plate Recognizer license key',
+    ])
+  })
+
+  it('reloads the secrets after a save, and offers Try again when they do not load', async () => {
+    let loads = 0
+    const entry = { name: 'thingsboard_access_token', title: 'ThingsBoard access token', restarts: ['node-red-tm.service'] }
+    signedIn(ADMIN, {
+      [INFO]: SYSTEM_INFO,
+      [SECRETS]: () => {
+        loads += 1
+        if (loads === 1) return apiError(500, 'error', 'The device answered with an error.')
+        const set = loads > 2
+        return json(200, { secrets: [{ ...entry, set, ends_with: set ? '0001' : null }] })
+      },
+      'POST /api/v1/secrets/thingsboard_access_token': json(202, { id: 'job1' }),
+      'GET /api/v1/jobs/job1': json(200, {
+        id: 'job1', name: 'set-secret', status: 'succeeded', requested_at: '2026-11-03T12:00:00+00:00',
+        finished_at: '2026-11-03T12:00:30+00:00', log: [],
+      }),
+    })
+    const { wrapper } = await mountApp('/device')
+    expect(wrapper.text()).toContain('The device answered with an error.')
+    await click(wrapper, 'Try again')
+    expect(wrapper.text()).toContain('Not set.')
+
+    await field(wrapper, 'ThingsBoard access token').setValue('tb-placeholder-0001')
+    await click(wrapper, 'Save')
+    expect(loads).toBe(3)
+    expect(wrapper.text()).toContain('Set, ending in 0001.')
+    expect(wrapper.text()).toContain('Saved. Node-RED restarted.')
+  })
+
   it('reboots only after the admin confirms, then says so in place', async () => {
-    const api = signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'POST /api/v1/system/reboot': json(202, { action: 'reboot' }) })
+    const api = signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'POST /api/v1/system/reboot': json(202, { action: 'reboot' }) })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Reboot the device')
     expect(dialogText()).toContain('Reboot the device?')
@@ -71,7 +130,7 @@ describe('the Device page', () => {
   })
 
   it('shuts down only after the admin confirms', async () => {
-    const api = signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'POST /api/v1/system/power-off': json(202, { action: 'power_off' }) })
+    const api = signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'POST /api/v1/system/power-off': json(202, { action: 'power_off' }) })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Shut down the device')
     expect(dialogText()).toContain('The device will turn off. To start it again, unplug it and plug it back in.')
@@ -83,7 +142,7 @@ describe('the Device page', () => {
     const refused =
       "The device can't reboot right now. Something, such as an update, is holding it off, or the control app isn't " +
       'allowed to; try again in a few minutes, and download the diagnostics if it keeps happening.'
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'POST /api/v1/system/reboot': apiError(409, 'conflict', refused) })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'POST /api/v1/system/reboot': apiError(409, 'conflict', refused) })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Reboot the device')
     await clickInDialog('Reboot')
@@ -92,7 +151,7 @@ describe('the Device page', () => {
   })
 
   it("downloads the diagnostics under the server's file name", async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'GET /api/v1/system/diagnostics': diagnosticsFile })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'GET /api/v1/system/diagnostics': diagnosticsFile })
     // jsdom's createObjectURL can't read jsdom's own Blob, so stand in for it and keep what it was given
     const blobs: Blob[] = []
     vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
@@ -130,7 +189,7 @@ describe('the Device page', () => {
   }
 
   it('copies the diagnostics where the clipboard API is missing (plain HTTP), and says so', async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'GET /api/v1/system/diagnostics': diagnosticsFile })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'GET /api/v1/system/diagnostics': diagnosticsFile })
     const copied = execCommandThat(true)
     selectDoesNothing()
     const { wrapper } = await mountApp('/device')
@@ -140,7 +199,7 @@ describe('the Device page', () => {
   })
 
   it("shows the text, selected, to copy by hand when the browser didn't let the page copy", async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'GET /api/v1/system/diagnostics': diagnosticsFile })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'GET /api/v1/system/diagnostics': diagnosticsFile })
     execCommandThat(false)
     selectDoesNothing()
     const { wrapper } = await mountApp('/device')
@@ -153,7 +212,7 @@ describe('the Device page', () => {
   })
 
   it('hides the box again once the diagnostics are downloaded', async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, 'GET /api/v1/system/diagnostics': diagnosticsFile })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: NO_SECRETS, 'GET /api/v1/system/diagnostics': diagnosticsFile })
     execCommandThat(false)
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:http://localhost/diagnostics')
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})

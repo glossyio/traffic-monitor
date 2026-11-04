@@ -9,12 +9,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { Eula, Job } from '../../api/types'
 import EulaText from '../../components/EulaText.vue'
+import { followJob } from '../../components/jobs'
 import { goNext } from '../../next'
 import { useSession } from '../../stores/session'
 
 const STEPS = ['Welcome', 'License agreement', 'Administrator account', 'System password']
-const JOB_POLL_MS = 1000
-const JOB_DEADLINE_MS = 120_000 // after this, stop waiting for the job and let setup go on
 
 const session = useSession()
 const router = useRouter()
@@ -116,7 +115,7 @@ const confirmSystemPassword = ref('')
 const systemError = ref('')
 const job = ref<Job | null>(null)
 const jobRunning = ref(false)
-const jobTimedOut = ref(false) // the job never reported a result within JOB_DEADLINE_MS
+const jobTimedOut = ref(false) // the job never reported a result within JOB_DEADLINE_MS (jobs.ts): setup goes on
 
 const systemPasswordsMatch = (value: string) => value === systemPassword.value || "The passwords don't match."
 
@@ -127,17 +126,11 @@ watch(samePassword, (same) => {
 
 // Leaving the page (Skip for now, or the browser's back button) stops the polling
 let left = false
-let pollTimer: ReturnType<typeof setTimeout> | undefined
+let following: ReturnType<typeof followJob> | null = null
 onBeforeUnmount(() => {
   left = true
-  clearTimeout(pollTimer)
+  following?.cancel()
 })
-
-function pause(ms: number) {
-  return new Promise((resolve) => {
-    pollTimer = setTimeout(resolve, ms)
-  })
-}
 
 async function setSystemPassword() {
   systemError.value = ''
@@ -147,23 +140,12 @@ async function setSystemPassword() {
   jobRunning.value = true
   try {
     const { data } = await api.POST('/api/v1/system/password', { body: { password: systemPassword.value } })
-    const id = (data as { id: string }).id
-    const deadline = Date.now() + JOB_DEADLINE_MS
-    for (;;) {
-      const answer = await api.GET('/api/v1/jobs/{job_id}', { params: { path: { job_id: id } } })
-      if (left) return
-      const current = answer.data as Job
-      if (current.status === 'succeeded' || current.status === 'failed') {
-        job.value = current
-        return
-      }
-      // queued or running: the device may never say more, for example when tm-control can't read the journal
-      if (Date.now() >= deadline) {
-        jobTimedOut.value = true
-        return
-      }
-      await pause(JOB_POLL_MS)
-    }
+    if (left) return
+    following = followJob((data as { id: string }).id)
+    const finished = await following.done
+    if (left) return
+    if (finished) job.value = finished
+    else jobTimedOut.value = true
   } catch (error) {
     systemError.value = messageOf(error)
   } finally {

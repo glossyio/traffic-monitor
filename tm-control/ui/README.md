@@ -50,7 +50,9 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
-  their status marks (`status.ts`), and "20 seconds ago" in words (`relative-time.ts`).
+  their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
+  (`jobs.ts`, used by setup's system password and the entered secrets), and one entered secret's form
+  (`EnteredSecret.vue`, the Device page's tokens and keys).
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -286,6 +288,12 @@ Device:
 | Frigate 0.18.1    Node-RED 5.0.8 |
 | go2rtc 1.9.14     nginx 1.31.0   |
 | Commit 2da617a on dev   ...      |
+| Tokens and keys             (h6) |
+| Credentials this device uses ... |
+| ThingsBoard access token         |
+| Set, ending in 0001.             |
+| [ ThingsBoard access token  (o)] |
+| [Save] [Remove]                  |
 | Diagnostics                 (h6) |
 | [Download diagnostics] [Copy]    |
 | Power                       (h6) |
@@ -301,6 +309,21 @@ Device:
   was a few seconds ago by the time the text arrives (iOS Safari is strict). Then the text appears in a read-only
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
+- Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists, so
+  the Plate Recognizer token and license key appear only on a device with the add-on. Each form is a small heading
+  with the secret's name, a line saying whether it's set ("Set, ending in 0001.", "Set." when the device shows no
+  ending, "Not set."), a field that is always empty when the page loads, Save, and Remove when there's something to
+  remove. The value is never shown back, so the field can't hold the current one; the ending is how an admin tells
+  which token the device has. The field hides what's typed, with an eye button ("Show"/"Hide") to check a long
+  token before saving it, and it's emptied once the device has the value.
+- Saving or removing restarts the apps that read the value, so it takes as long as they do. While the job runs, an
+  info line under the buttons says so ("Saving. Node-RED restarts, which takes about thirty seconds."), as setup's
+  system-password step does, rather than leaving only a spinner for half a minute. Remove asks first and names both
+  the restart and what stops ("The upload to ThingsBoard stops until a token is set again."). Save doesn't ask:
+  the section's paragraph already says it restarts the app, and a second tap for every token would be noise.
+- The result stays under the form: "Saved. Node-RED restarted.", or "The value wasn't saved." with the job's log
+  lines, or, when the device never reports (the page waits five minutes, because the job can wait out two
+  restarts), a warning to reload the page in a minute.
 - Reboot and Shut down each ask first. After the device accepts, the page says "Rebooting. This page will stop
   answering for about two minutes." in place of the buttons. When something such as an update holds the shutdown off,
   the API's message shows there instead.
@@ -360,6 +383,11 @@ The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and 
   "Set from this browser" and contradicted the switch below it. Each change now clears the earlier results.
 - A "Time zone" heading sat right above a picker whose own label reads "Time zone". The heading is gone; a viewer
   sees "Time zone" as a label above the zone's name, like the card's facts.
+- Tokens and keys (checked in fake mode at 375 px and 1366 px, with and without the Plate Recognizer add-on): the
+  first build showed only a spinner on Save while the job ran, which on a device lasts half a minute or more. The
+  info line under the buttons came from that.
+- Looked at and kept: each token's name shows twice, as the form's heading and as the field's label. The heading
+  carries the "Set, ending in 0001." line, and the label is what a screen reader announces in the field.
 - Looked at and kept: when Frigate is down, three checks offer "Restart Frigate", and a restart's result shows under
   all three, because each button does the same thing and the result tells the person not to press the others. On a
   wide screen the right-aligned buttons sit far from their row's text, but they line up in one column with Refresh,
