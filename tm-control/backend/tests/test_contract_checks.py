@@ -371,9 +371,17 @@ def test_a_key_without_a_plus_model_is_a_warning_naming_the_installers_model(app
     with_model(apps, CORAL_PATH)
     check = frigate_plus_check(apps)
     assert (check.status, check.detail, check.fix) == ("warn", warning_naming("the installer's model"), None)
-    frigate_config_file(apps, "cameras: {}\n")  # the CPU detector's config has no model section
-    assert frigate_plus_check(apps).detail == warning_naming("the installer's model")
     assert PLACEHOLDER_KEY not in check.detail
+
+
+@pytest.mark.parametrize("text", ["cameras: {}\n", "model:\n  width: 320\ncameras: {}\n", 'model:\n  path: ""\n'],
+                         ids=["no model section", "no path", "an empty path"])
+def test_a_key_without_a_model_path_is_a_warning_naming_frigates_default_model(apps, text):
+    """Hailo and CPU installs have no model section, so Frigate runs its built-in default."""
+    set_key(apps)
+    frigate_config_file(apps, text)
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == ("warn", warning_naming("Frigate's default model"))
 
 
 def test_a_key_with_a_local_model_is_a_warning_naming_a_local_model(apps):
@@ -465,10 +473,16 @@ def test_safe_mode_for_an_unrelated_reason_is_left_to_the_apps_check(apps):
     with_model(apps, f"plus://{MODEL_ID}")
     safe_mode(apps)
     lines = validation_block("Value error, Camera picam_h265 has no zone named zone_far")
-    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: lines})
-    assert (check.status, check.detail) == (
-        "ok", f"Frigate runs the Frigate+ model {MODEL_ID}. Snapshots can be submitted.",
+    unknown = (
+        "unknown",
+        f"Frigate's config names the Frigate+ model {MODEL_ID}, but Frigate is in safe mode for another reason; see "
+        "the Frigate check under Apps.",
     )
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: lines})
+    assert (check.status, check.detail) == unknown
+    # Nor does it claim the model runs when the journal holds no message at all
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: []})
+    assert (check.status, check.detail) == unknown
 
 
 def test_a_plus_model_and_frigate_stopped_with_a_traceback_is_an_error(apps):

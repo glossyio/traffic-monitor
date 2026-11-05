@@ -304,7 +304,12 @@ def frigate_plus(context: Context) -> list[Check]:
     if not (path or "").startswith(PLUS_SCHEME):
         if not key:
             return check("ok", "Frigate+ isn't in use.")
-        which = "the installer's model" if not path or path.endswith(CORAL_MODEL_FILE) else "a local model"
+        if not path:
+            which = "Frigate's default model"  # no model section, as on a Hailo or CPU install
+        elif path.endswith(CORAL_MODEL_FILE):
+            which = "the installer's model"
+        else:
+            which = "a local model"
         return check("warn", "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but "
                              f"Frigate runs {which} rather than a Frigate+ model. Once a model is trained, pick it "
                              "under Settings, System, Detectors and model in Frigate, or set model.path to "
@@ -335,7 +340,10 @@ def frigate_plus(context: Context) -> list[Check]:
         problem = _model_problem(validation_messages(probes.frigate_journal(context), limit=None), model_id)
         if problem is not None:
             return check("error", problem)
-        # Safe mode for another reason: the Apps group's Frigate check reports it.
+        # Safe mode for another reason: the Apps group's Frigate check reports it. Frigate has no cameras then, so
+        # whether the model loads can't be known.
+        return check("unknown", f"Frigate's config names the Frigate+ model {model_id}, but Frigate is in safe mode "
+                                "for another reason; see the Frigate check under Apps.")
     if key:
         return check("ok", f"Frigate runs the Frigate+ model {model_id}. Snapshots can be submitted.")
     return check("ok", f"Frigate runs the Frigate+ model {model_id}. It was loaded from the files on the device; set a "
