@@ -536,6 +536,36 @@ def test_a_kept_model_section_is_written_on_a_device_without_a_coral():
     assert frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep=KEPT)["model"] == KEPT
 
 
+def kept_model_text(keep):
+    """The rendered model section's text, from model: up to the blank line(s) and ffmpeg: that follow it."""
+    text = render("container/frigate/config/config.yml.j2", tmsetup_detectors={}, tmsetup_frigate_model_keep=keep)
+    return text[text.index("\nmodel:\n") + 1:text.index("ffmpeg:\n")]
+
+
+def test_a_kept_model_section_keeps_its_key_order():
+    keep = {"path": "plus://0123456789abcdef0123456789abcdef", "model_type": "yolo-generic", "width": 320,
+            "height": 320}
+    text = kept_model_text(keep)
+    assert text.splitlines()[1:5] == ["  path: plus://0123456789abcdef0123456789abcdef", "  model_type: yolo-generic",
+                                      "  width: 320", "  height: 320"]
+
+
+def test_a_kept_model_section_with_mixed_labelmap_keys_renders():
+    """from_yaml reads `0: car` as an int key and `bike: x` as a str one; sorting them would raise outside the
+    rescue that guards reading the section."""
+    keep = {"path": "/config/model_cache/my_yolo.onnx", "labelmap": {2: "vehicle", "bike": "bicycle", 0: "person"}}
+    assert frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep=keep)["model"] == keep
+    assert kept_model_text(keep).splitlines()[2:6] == ["  labelmap:", "    2: vehicle", "    bike: bicycle",
+                                                       "    0: person"]
+
+
+def test_a_kept_model_section_is_followed_by_one_blank_line_as_the_coral_default_is():
+    assert kept_model_text(KEPT).endswith("\n  labelmap:\n    2: vehicle\n\n")  # KEPT's last key, then one blank
+    coral = render("container/frigate/config/config.yml.j2", tmsetup_detectors=CORAL_PCI,
+                   tmsetup_frigate_coral_model_file=CORAL_FILE)
+    assert "\n  labelmap_path: /config/labels-coco17.txt\n\nffmpeg:\n" in coral
+
+
 def test_without_a_kept_section_the_coral_default_names_the_installers_model():
     for keep in ({"tmsetup_frigate_model_keep": {}}, {}):
         config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE, **keep)
