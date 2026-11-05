@@ -96,7 +96,8 @@
   ansible.builtin.import_tasks:
     file: tm-control_service.yml
 
-# Before any task renders config.yml or plate-recognizer.env, so -f and -t plate-recognizer can't lose a value
+# Before any task renders config.yml, plate-recognizer.env, or frigate.env, so -f and -t plate-recognizer can't lose a
+# value
 - name: TMSetup - Main - Move entered secrets out of config files
   tags:
     - podman
