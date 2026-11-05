@@ -54,6 +54,9 @@ def cameras_in_config(context: Context) -> list[Check]:
     frigate = probes.frigate_config(context)
     if frigate is None:
         return check("unknown", "Frigate isn't answering, so its cameras can't be compared with config.yml.")
+    if probes.frigate_safe_mode(frigate):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be compared with "
+                                "config.yml; see the Frigate check under Apps.")
     in_frigate = probes.frigate_cameras(frigate)
     configured = _sensors(read.data, "cameras")
     problems = []
@@ -87,6 +90,9 @@ def zones(context: Context) -> list[Check]:
     frigate = probes.frigate_config(context)
     if frigate is None:
         return check("unknown", "Frigate isn't answering, so the cameras' zones can't be checked.")
+    if probes.frigate_safe_mode(frigate):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see "
+                                "the Frigate check under Apps.")
     configured = _sensors(read.data, "cameras")
     problems = []
     for name, camera in probes.frigate_cameras(frigate).items():
