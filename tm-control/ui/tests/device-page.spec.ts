@@ -7,8 +7,9 @@ import { button, click, clickInDialog, dialogText, field, mountApp } from './mou
 const INFO = 'GET /api/v1/system/info'
 const SECRETS = 'GET /api/v1/secrets'
 const NO_SECRETS = { secrets: [] }
-const THREE_SECRETS = [
+const FOUR_SECRETS = [
   { name: 'thingsboard_access_token', title: 'ThingsBoard access token', set: true, ends_with: '0001', restarts: ['node-red-tm.service'] },
+  { name: 'frigate_plus_api_key', title: 'Frigate+ API key', set: false, ends_with: null, restarts: ['frigate.service'] },
   { name: 'plate_recognizer_token', title: 'Plate Recognizer API token', set: false, ends_with: null, restarts: ['plate-recognizer.service', 'node-red-tm.service'] },
   { name: 'plate_recognizer_license_key', title: 'Plate Recognizer license key', set: true, ends_with: null, restarts: ['plate-recognizer.service'] },
 ]
@@ -73,7 +74,7 @@ describe('the Device page', () => {
   })
 
   it('shows an admin Tokens and keys before Diagnostics, closed until its heading is tapped', async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device')
     expect(headings(wrapper)).toEqual(['tm-fake', 'Software', 'Tokens and keys', 'Diagnostics', 'Power'])
     const toggle = button(wrapper, 'Tokens and keys')
@@ -83,11 +84,11 @@ describe('the Device page', () => {
 
     await click(wrapper, 'Tokens and keys')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(3)
+    expect(wrapper.findAll('h3')).toHaveLength(4)
   })
 
   it('shows an admin one form per secret the API lists', async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Tokens and keys')
     expect(wrapper.text()).toContain(
@@ -96,16 +97,17 @@ describe('the Device page', () => {
     )
     expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
       'ThingsBoard access token',
+      'Frigate+ API key',
       'Plate Recognizer API token',
       'Plate Recognizer license key',
     ])
   })
 
   it("opens Tokens and keys when a link names it, as the Status page's Set the token does", async () => {
-    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: THREE_SECRETS } })
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device#tokens-and-keys')
     expect(button(wrapper, 'Tokens and keys').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(3)
+    expect(wrapper.findAll('h3')).toHaveLength(4)
     expect(wrapper.find('#tokens-and-keys').exists()).toBe(true)
   })
 
