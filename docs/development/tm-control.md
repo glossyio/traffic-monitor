@@ -20,7 +20,7 @@ It has three parts, all in the repository's [`tm-control/`](https://github.com/g
 
 It reads two things the installer writes, and keeps one database of its own:
 
-* `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Three are entered by an administrator on the Device page: the ThingsBoard access token and the Plate Recognizer token and license key. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
+* `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator on the Device page: the ThingsBoard access token, the Frigate+ API key, and the Plate Recognizer token and license key. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
 * `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.
 * `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
 
@@ -99,7 +99,7 @@ A time zone change restarts `traffic-monitor.service` and `revproxy.service` aft
 | Job | What it does |
 |---|---|
 | `system-password` | Sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts. |
-| `set-secret` | Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the three names in its own table, and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's `KEY=` lines in `node-red-tm.env` or `plate-recognizer.env`, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again. |
+| `set-secret` | Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the four names in its own table (`thingsboard_access_token`, `frigate_plus_api_key`, `plate_recognizer_token`, and `plate_recognizer_license_key`), and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's `KEY=` lines in `node-red-tm.env`, `frigate.env`, or `plate-recognizer.env`, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again. |
 
 `SECRETS` in `tm-control/jobs/tm-job-set-secret` repeats the secrets' patterns (`VALUE_PATTERNS` in `core/secrets.py`) and restart units (`ENTERED` in `modules/secrets/router.py`), because the script imports nothing from tm-control; tests keep them the same.
 
@@ -123,7 +123,12 @@ The runner in `core/checks.py` keeps the page up whatever a probe does:
 * `Context.probe(key, fn)` runs `fn` once per report for every check that asks for the same key. Frigate's config and stats, Node-RED's status, `config.yml`, the unit states, and the bus listings are each read once.
 * The report is cached for 5 seconds; `POST /status/rescan` (admins) runs it again at once.
 
-Details name cameras, zones, radars, units, and config keys, never a URL, a password, or a command's output.
+Details name cameras, zones, radars, units, and config keys, never a URL, a password, or a command's output. The one exception is Frigate's log, which two checks quote:
+
+* The Apps group's Frigate check is an error when `/api/config` says `safe_mode: true`, which is how Frigate answers a config that doesn't validate: it starts with no cameras, so the camera and zone checks have nothing to compare. The detail quotes Frigate's validation messages.
+* The Configuration group's Frigate+ check (`config.frigate_plus`) reads `model.path` from Frigate's `config.yml` on disk, whether the `frigate_plus_api_key` secret is set, and whether a `plus://` model's two files are in `model_cache`. It warns about a key without a `plus://` model, and is an error for a `plus://` model Frigate can't get or can't use, quoting the log line that says why.
+
+Both quote only the `Message :` lines of Frigate's validation block and the last line of a traceback, through `redact()` in `modules/apps/checks.py`, which replaces anything shaped like a Frigate+ key with `<key>` and cuts each line to `MESSAGE_MAX` characters.
 
 ### Add a check
 
