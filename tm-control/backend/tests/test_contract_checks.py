@@ -6,7 +6,17 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
-from frigate_log import DETECTOR_MESSAGE, MODEL_ID, SAFE_MODE_LINES, TRACEBACK_TAIL, validation_block
+from frigate_log import (
+    CRASH_LOOP_TAIL,
+    DETECTOR_MESSAGE,
+    MODEL_ID,
+    NO_KEY_LINE,
+    REFUSED_KEY_LINE,
+    SAFE_MODE_LINES,
+    TRACEBACK_TAIL,
+    crash_loop_tail,
+    validation_block,
+)
 from placeholders import PLACEHOLDER_KEY
 from tm_control.adapters import systemd
 from tm_control.core.checks import Fix, run_group
@@ -605,6 +615,23 @@ def test_the_log_helpers():
     )
     assert apps_checks.traceback_last_line(["Traceback (most recent call last):", "ErrorHandler: no"]) is None
     assert apps_checks.traceback_last_line(["Exception: bare"]) == "Exception: bare"
+    assert apps_checks.REFUSED_KEY in REFUSED_KEY_LINE
+
+
+def test_the_s6_timestamp_is_stripped_before_the_line_is_matched():
+    """On a Pi, Frigate's supervisor stamps each line after journalctl's own prefix (bench A3)."""
+    assert apps_checks.traceback_last_line(CRASH_LOOP_TAIL) == REFUSED_KEY_LINE
+    assert apps_checks.traceback_last_line(crash_loop_tail(NO_KEY_LINE)) == NO_KEY_LINE
+    # journal_lines gives MESSAGE fields: the s6 stamp alone
+    assert apps_checks.traceback_last_line([f"2026-11-04 18:07:36.850573607  {NO_KEY_LINE}"]) == NO_KEY_LINE
+    stamped_key = f"2026-11-04T18:07:36+0000 tm-test frigate[2201]: 2026-11-04 18:07:36.850573607  Exception: {PLACEHOLDER_KEY}"
+    assert apps_checks.traceback_last_line([stamped_key]) == "Exception: <key>"
+
+
+def test_a_date_inside_a_message_is_not_a_timestamp():
+    line = "Exception: expired on 2026-11-04 18:07:36.850573607  at the server"
+    # kept whole; redact only puts the line on one line, which closes up the double space
+    assert apps_checks.traceback_last_line([line]) == "Exception: expired on 2026-11-04 18:07:36.850573607 at the server"
 
 
 def test_a_podman_or_systemd_error_line_is_not_the_traceback():
