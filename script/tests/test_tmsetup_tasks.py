@@ -394,6 +394,19 @@ def stat_results(*exists):
     return {"results": [{"stat": {"exists": value}} for value in exists]}
 
 
+def test_every_tag_that_writes_plus_api_key_moves_a_typed_key_first():
+    """frigate_setup.yml (frigate.env under -f) and frigate_credentials.yml (the PLUS_API_KEY line on every run) write
+    the secret file's value over a key typed into frigate.env, so any tag that runs either must run the move too."""
+    main = load_role_yaml("tasks/main.yml")
+    imports = {task.get("ansible.builtin.import_tasks", {}).get("file"): (index, task)
+               for index, task in enumerate(main)}
+    position, entered = imports["entered_secrets.yml"]
+    for writer in ("frigate_setup.yml", "frigate_credentials.yml"):
+        index, task = imports[writer]
+        assert set(task["tags"]) <= set(entered["tags"]), f"{writer}: {set(task['tags']) - set(entered['tags'])}"
+        assert position < index, writer
+
+
 def test_entered_secrets_move_before_any_config_template_renders():
     """-f replaces config.yml and plate-recognizer.env from templates, and -t plate-recognizer alone rewrites the env
     file's TOKEN and LICENSE_KEY lines from the secrets, so each value's only copy moves first (Review Focus 4)."""
