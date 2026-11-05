@@ -11,7 +11,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import PLACEHOLDER_KEY
+from placeholders import PLACEHOLDER_KEY
 from tm_control.app import create_app
 from tm_control.core.auth import Device, Users
 from tm_control.modules import MODULES

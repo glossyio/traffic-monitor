@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PLACEHOLDER_KEY
+from placeholders import PLACEHOLDER_KEY
 from tm_control.core.secrets import ENTERED_SECRETS, VALUE_PATTERNS
 from tm_control.modules.secrets.router import ENTERED
 
