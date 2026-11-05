@@ -35,6 +35,62 @@
     state: directory
   notify: Restart frigate.service
 
+# -f replaces config.yml from the template, which would undo a model picked in Frigate (its picker, its
+# configuration editor, or a hand edit). So under -f, read the current model section first and have the template
+# write it back in place of the detector default, unless it's the installer's own Coral section: after a hardware
+# change that one must re-render for the new detector. A plain run reads nothing. Comments in the section are lost.
+- name: TMSetup - Frigate Setup - Start with no model section to keep
+  ansible.builtin.set_fact:
+    tmsetup_frigate_model_keep: {}
+
+- name: TMSetup - Frigate Setup - Check for an existing Frigate config
+  when: tmsetup_force_configs | bool
+  become: true
+  ansible.builtin.stat:
+    path: '{{ tmsetup_codedir }}/frigate/config/config.yml'
+    get_checksum: false
+  register: tmsetup_frigate_config_stat_register
+
+- name: TMSetup - Frigate Setup - Read the model section -f keeps
+  when:
+    - tmsetup_force_configs | bool
+    - tmsetup_frigate_config_stat_register.stat.exists
+  become: true
+  no_log: true
+  ansible.builtin.slurp:
+    src: '{{ tmsetup_codedir }}/frigate/config/config.yml'
+  register: tmsetup_frigate_config_slurp_register
+
+- name: TMSetup - Frigate Setup - Carry the model section over -f
+  when:
+    - tmsetup_force_configs | bool
+    - tmsetup_frigate_config_stat_register.stat.exists
+  block:
+    # Kept when it's a mapping whose path is a non-empty string other than the installer's Coral model; a file
+    # that is empty or isn't a mapping gives nothing to keep
+    - name: TMSetup - Frigate Setup - Keep the device's model section across -f
+      no_log: true
+      vars:
+        tmsetup_frigate_model_current: >-
+          {{ [tmsetup_frigate_config_slurp_register.content | b64decode | from_yaml] | select('mapping')
+             | map(attribute='model', default=none) | first | default(none) }}
+      ansible.builtin.set_fact:
+        tmsetup_frigate_model_keep: >-
+          {{ tmsetup_frigate_model_current if tmsetup_frigate_model_current is mapping
+             and tmsetup_frigate_model_current.path | default(none) is string
+             and tmsetup_frigate_model_current.path not in ['', '/config/model_cache/' ~ tmsetup_frigate_coral_model_file]
+             else {} }}
+  rescue:
+    - name: TMSetup - Frigate Setup - Use the template's model section
+      ansible.builtin.set_fact:
+        tmsetup_frigate_model_keep: {}
+
+    - name: TMSetup - Frigate Setup - Say the model section wasn't kept
+      ansible.builtin.debug:
+        msg: >-
+          The current Frigate config.yml couldn't be read as YAML, so -f writes the template's model section
+          rather than keeping the device's. The old file is kept beside the new one as a backup.
+
 - name: TMSetup - Frigate Setup - Create Frigate container configuration files
   become: true
   diff: false
@@ -89,8 +145,8 @@
         ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
   become: true
   ansible.builtin.get_url:
-    url: "https://github.com/dbro/frigate-detector-edgetpu-yolo9/releases/download/v1.5/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
-    dest: "{{ tmsetup_codedir }}/frigate/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    url: "https://github.com/dbro/frigate-detector-edgetpu-yolo9/releases/download/v1.5/{{ tmsetup_frigate_coral_model_file }}"
+    dest: "{{ tmsetup_codedir }}/frigate/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
     mode: '0644'
     force: false
 
