@@ -14,9 +14,10 @@ from tm_control.core.checks import Fix, run_group
 from tm_control.modules import MODULES
 from tm_control.modules.apps import checks as apps_checks
 from tm_control.modules.apps import probes
-from tm_control.modules.apps.checks import newest_migration
+from tm_control.modules.apps.checks import DIAGNOSTICS, newest_migration
+from tm_control.modules.services import units
 
-from frigate_log import DETECTOR_MESSAGE, SAFE_MODE_LINES, validation_block
+from frigate_log import CRASH_LOOP_TAIL, DETECTOR_MESSAGE, REFUSED_KEY_LINE, SAFE_MODE_LINES, validation_block
 
 # The URLs the `apps` fixture answers (conftest.FakeApps)
 VERSION = "http://127.0.0.1:5000/api/version"
@@ -84,19 +85,35 @@ def test_frigate_reachable_and_version_mismatch(apps):
 
 
 def test_frigate_down_has_a_restart_fix(apps):
+    """Without an exception line in Frigate's journal, nothing is quoted (review focus 4)."""
     apps.answers[VERSION] = (None, None)
-    checks = apps_group(apps)
+    checks = apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})
     check = checks["apps.frigate.reachable"]
     assert check.status == "error"
+    assert check.detail == (
+        "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
+    )
     assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
     assert checks["apps.frigate.cameras"].status == "unknown"
     # A Frigate that doesn't answer its version isn't asked for its config or stats: one timeout, not three.
     assert apps.asked(VERSION) == 1 and apps.asked(CONFIG) == 0 and apps.asked(STATS) == 0
 
 
+def test_frigate_not_answering_quotes_the_logs_last_error(apps):
+    apps.answers[VERSION] = (None, None)
+    states = {"frigate.service": {"ActiveState": "active", "SubState": "running", "NRestarts": "3",
+                                  "ActiveEnterTimestamp": "", "InvocationID": ""}}
+    preset = {units.SHOW_UNITS: states, probes.FRIGATE_JOURNAL: CRASH_LOOP_TAIL}
+    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. If it "
+                            "keeps stopping, download the diagnostics on the Device page.")
+    assert check.fix == DIAGNOSTICS
+
+
 def test_frigate_answering_an_error_page_is_not_a_version(apps):
     apps.answers[VERSION] = (502, b"<html><body>Bad Gateway</body></html>")
-    assert apps_group(apps)["apps.frigate.reachable"].status == "error"
+    assert apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})["apps.frigate.reachable"].status == "error"
 
 
 def test_camera_without_frames_is_an_error(apps):
