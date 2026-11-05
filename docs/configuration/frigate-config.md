@@ -98,7 +98,7 @@ To use a model on a device that's online, either:
 
     Remove every other key under `model:`; Frigate+ supplies them.
 
-Frigate checks the model when you save, whichever way you set it: it fetches the model with your key, and if the key is missing or wrong, the model id is wrong, or the device is offline, it refuses the change, shows why, and changes nothing. A model it accepts is on the device as two files in `/opt/traffic-monitor/frigate/config/model_cache/`, named after the model id: `<model id>` and `<model id>.json`. Frigate loads it when it restarts.
+Frigate checks a model before it saves the change: if the model isn't on the device yet, it fetches it with your key, and if the key is missing or wrong, the model id is wrong, or the device is offline, it refuses the change, shows why, and changes nothing. A model it accepts is on the device as two files in `/opt/traffic-monitor/frigate/config/model_cache/`, named after the model id: `<model id>` and `<model id>.json`. Frigate loads it when it restarts.
 
 ### A device without internet
 
@@ -133,7 +133,7 @@ The Status page's Configuration group has a **Frigate+** check. It compares the 
 |---|---|
 | Passed | Frigate+ isn't in use: no key and no Frigate+ model. Or Frigate runs the Frigate+ model the config names. Without a key, it runs from the files on the device, and you can't submit snapshots. |
 | Warning | A key is set, but Frigate runs the installer's model, its own default model (on a device with no `model:` section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in [Use a model](#use-a-model). |
-| Problem | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens Tokens and keys), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ didn't accept the key, the check says so, and **Set the key** opens Tokens and keys. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
+| Problem | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens Tokens and keys), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and **Set the key** opens Tokens and keys. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
 | Couldn't run | Frigate's config is missing or isn't valid YAML, or Frigate isn't answering and its log has no error to quote. Or Frigate is in safe mode for a reason other than the model, so whether it can use the model is unknown; the Apps group's **Frigate** check says why. |
 
 When Frigate can't use its config, for example because of a model built for another detector, it starts in safe mode: it answers and looks healthy, but has no cameras and counts nothing. The Apps group's **Frigate** check reports that as a problem, whatever the cause, and quotes Frigate's messages. Fix the config in Frigate's configuration editor, then choose **Save & Restart**.
@@ -152,7 +152,7 @@ To get Frigate running again, do one of these:
 
 1. Enter the right key on the Device page, under [Tokens and keys](../use/device-health.md#tokens-and-keys). Saving it restarts Frigate, which then fetches the model.
 2. Copy the model's two files into Frigate's model folder, as in steps 1 and 2 of [A device without internet](#a-device-without-internet), then restart Frigate with `sudo systemctl restart frigate.service`.
-3. Over SSH, open Frigate's config as root with `sudo nano /opt/traffic-monitor/frigate/config/config.yml` and replace its `model:` section with the installer's. Copy it from a backup the installer left beside the file before you changed the model, or from the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), where its `path` names the `.tflite` file in `model_cache`. Only a device with a Coral has that section; on another device, delete the `model:` section. Then restart Frigate with `sudo systemctl restart frigate.service`.
+3. Over SSH, open Frigate's config as root with `sudo nano /opt/traffic-monitor/frigate/config/config.yml` and replace its `model:` section with the installer's. Copy it from the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), where its `path` names the `.tflite` file in `model_cache`, or from a backup beside the file, if an earlier run of the installer with `-f` left one. Only a device with a Coral has that section; on another device, delete the `model:` section. Then restart Frigate with `sudo systemctl restart frigate.service`.
 
 Running the installer with `-f` doesn't help, because it keeps the `model:` section.
 

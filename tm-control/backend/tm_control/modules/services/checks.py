@@ -2,9 +2,16 @@
 
 from datetime import date
 
-from tm_control.adapters import systemd
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
-from tm_control.modules.services.units import Unit, active_since, restart_fix, restarts, unit_states, units_for
+from tm_control.modules.services.units import (
+    Unit,
+    active_since,
+    restart_fix,
+    restarted_itself,
+    restarts,
+    unit_states,
+    units_for,
+)
 
 
 def _running(values: dict[str, str], today: date) -> str:
@@ -14,17 +21,6 @@ def _running(values: dict[str, str], today: date) -> str:
     if since.date() == today:
         return f"Running since {since:%H:%M}"
     return f"Running since {since:%Y-%m-%d %H:%M}"
-
-
-def restarted_itself(context: Context, unit: Unit, count: int) -> bool:
-    """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
-    from PID 1's journal this boot (read once per report). False when the journal can't tell."""
-    if unit.restarts_itself_with is None or context.settings.fake:
-        return False
-    exits = context.probe(f"services.restart_exits.{unit.unit}", lambda: systemd.automatic_restart_exits(unit.unit))
-    if exits is None or len(exits) < count:
-        return False
-    return all(status == unit.restarts_itself_with for status in exits[-count:])
 
 
 def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: Context) -> Check:
