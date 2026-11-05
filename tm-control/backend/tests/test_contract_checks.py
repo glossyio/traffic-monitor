@@ -585,7 +585,10 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     monkeypatch.setattr(systemd, "journal_tail", lambda *args: calls.append(("tail", *args)) or None)
     running = {"ActiveState": "active", "SubState": "running", "ActiveEnterTimestamp": "@1700000000",
                "InvocationID": "abc", "NRestarts": "0"}
+    answering = apps.answers[FRIGATE_VERSION]
 
+    # Active, never restarted, and not answering yet (still starting): this run's own block
+    apps.answers[FRIGATE_VERSION] = (None, None)
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": running}
     assert probes.frigate_journal(context) == ["Message : from this run"]
@@ -603,6 +606,22 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, ActiveState="failed", SubState="failed")}
     assert probes.frigate_journal(context) == []  # the journal couldn't be read
     assert calls == [("tail", "frigate.service", 400)]
+
+    # Active with failure restarts and not answering: a crash loop, whose last failed run is in the tail
+    calls.clear()
+    apps.answers[FRIGATE_VERSION] = (None, None)
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="3")}
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Active with failure restarts but answering (safe mode after a Save & Restart): this run's own block
+    calls.clear()
+    apps.answers[FRIGATE_VERSION] = answering  # the fixture's original answer, saved before the first change
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    probes.frigate_journal(context)
+    assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
 
 
 def test_the_log_helpers():

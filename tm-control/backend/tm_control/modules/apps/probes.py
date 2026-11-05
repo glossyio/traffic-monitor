@@ -9,7 +9,7 @@ timeout, not three.
 from tm_control.adapters import frigate, go2rtc, nodered, systemd
 from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.checks import Context
-from tm_control.modules.services.units import RUNNING, active_since, unit_states
+from tm_control.modules.services.units import RUNNING, active_since, restarts, unit_states
 
 FRIGATE_VERSION = "frigate.version"
 FRIGATE_CONFIG = "frigate.config"
@@ -45,12 +45,18 @@ def frigate_journal(context: Context) -> list[str]:
     whole last hour when systemd gives no start time); otherwise the journal's last lines, where a run that stopped
     left its traceback. [] when the journal can't be read.
 
+    A unit that systemd restarted after failures counts as running only while Frigate answers: in a crash loop the
+    unit is active between crashes, and the run that failed is in the tail, not in the current invocation. Without
+    restarts the current run is read even before Frigate answers, as while it starts up.
+
     Checks quote only what checks.validation_messages and checks.traceback_last_line pick from it, redacted.
     """
 
     def read() -> list[str]:
         values = unit_states(context).get(FRIGATE_UNIT)
-        if values is not None and values.get("ActiveState") in RUNNING:
+        if values is not None and values.get("ActiveState") in RUNNING and (
+            restarts(values) == 0 or frigate_version(context) is not None
+        ):
             started = active_since(values)
             since = f"@{int(started.timestamp()) - 60}" if started else "-1h"
             return systemd.journal_lines(FRIGATE_UNIT, since, JOURNAL_LINES, values.get("InvocationID") or None)
