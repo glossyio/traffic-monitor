@@ -44,7 +44,7 @@ detectors:
 {% if tmsetup_frigate_model_keep | default({}) %}
 # The model this device had before tmsetup -f replaced the file (see "What -f replaces" in the installer docs)
 model:
-{{ tmsetup_frigate_model_keep | to_nice_yaml(indent=2) | indent(2, first=True) }}
+{{ tmsetup_frigate_model_keep | to_nice_yaml(indent=2, sort_keys=False) | indent(2, first=True) -}}
 {% elif pci_available or usb_available %}
 model:
   model_type: yolo-generic
