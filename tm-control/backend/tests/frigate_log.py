@@ -51,7 +51,7 @@ def crash_loop_tail(last_line: str) -> list[str]:
         '  File "/opt/frigate/frigate/plus.py", line 63, in _refresh_token_if_needed',
         "    raise Exception(",
         last_line,
-        "Service Frigate exited with code 1 (by signal 0)",
+        "[INFO] Service Frigate exited with code 1 (by signal 0)",
     ]
     stamp = "2026-11-04T18:07:36+0000 tm-test frigate[2201]: 2026-11-04 18:07:36.850573607  "
     return [stamp + text for text in frigate] + [
