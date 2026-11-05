@@ -114,6 +114,26 @@ def restarts(values: dict[str, str]) -> int:
         return 0
 
 
+RESTART_EXITS = "services.restart_exits"
+
+
+def restart_exits(context, unit_name: str) -> list[str | None] | None:
+    """systemd.automatic_restart_exits for the unit, once per status report; None in fake mode, which has no journal."""
+    return context.probe(f"{RESTART_EXITS}.{unit_name}",
+                         lambda: None if context.settings.fake else systemd.automatic_restart_exits(unit_name))
+
+
+def restarted_itself(context, unit: Unit, count: int) -> bool:
+    """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
+    from PID 1's journal this boot (read once per report). False when the journal can't tell."""
+    if unit.restarts_itself_with is None:
+        return False
+    exits = restart_exits(context, unit.unit)
+    if exits is None or len(exits) < count:
+        return False
+    return all(status == unit.restarts_itself_with for status in exits[-count:])
+
+
 def service(unit: Unit, values: dict[str, str] | None) -> Service:
     if values is None:
         return Service(

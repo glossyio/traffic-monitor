@@ -106,9 +106,10 @@ def test_frigate_not_answering_quotes_the_logs_last_error(apps):
     preset = {units.SHOW_UNITS: states, probes.FRIGATE_JOURNAL: CRASH_LOOP_TAIL}
     check = apps_group_with(apps, preset)["apps.frigate.reachable"]
     assert check.status == "error"
-    assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. If it "
-                            "keeps stopping, download the diagnostics on the Device page.")
-    assert check.fix == DIAGNOSTICS
+    assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. Restart "
+                            "it from its Services row; if it keeps stopping, download the diagnostics on the Device "
+                            "page.")
+    assert check.fix == DIAGNOSTICS  # the Services row keeps the restart; the quoted line may predate a hand stop
 
 
 def test_frigate_answering_an_error_page_is_not_a_version(apps):

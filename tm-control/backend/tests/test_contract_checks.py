@@ -527,8 +527,23 @@ def test_a_refused_key_is_named_with_the_link_while_frigate_crash_loops(apps):
     check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL, active))
     assert check.status == "error" and check.fix == SET_THE_KEY
     assert check.detail == (
-        f"Frigate isn't answering: Frigate+ didn't accept the key when Frigate fetched the model {MODEL_ID}. Its "
-        f"log's last error is: {REFUSED_KEY_LINE}. To get Frigate running, {contracts.WAYS_OUT}."
+        f"Frigate isn't answering: Frigate+ gave Frigate no token for the key when Frigate fetched the model "
+        f"{MODEL_ID}, as happens with a wrong key or when Frigate+ can't be reached. Its log's last error is: "
+        f"{REFUSED_KEY_LINE}. To get Frigate running, {contracts.WAYS_OUT}."
+    )
+
+
+def test_a_cached_model_is_not_blamed_for_the_stop(apps):
+    """With both files on the device, Frigate loads the model without asking Frigate+, so the fetch advice would
+    point at the wrong place, even for a stale refused-key line."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    cache_model(apps, MODEL_ID)
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL))
+    assert check.status == "error" and check.fix is None
+    assert check.detail == (
+        f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. The Frigate+ model "
+        f"{MODEL_ID} is on the device, so Frigate didn't stop fetching it; see the Frigate check under Apps."
     )
 
 
@@ -651,6 +666,32 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     apps.answers[FRIGATE_VERSION] = (None, None)
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="3")}
+    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["1", "1", "1"]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Active, not answering yet, and the one restart systemd counted is Frigate's own after a Save & Restart (exit
+    # 143): this run's own block, not the run before the save
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["143"]
+    assert probes.frigate_journal(context) == ["Message : from this run"]
+    assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
+
+    # A crash loop that began with a Save & Restart: the last restart followed a failure, so the tail
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="2")}
+    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["143", "1"]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Restarted, not answering, and PID 1's journal can't tell what the restart followed: the tail, as before
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = None
     probes.frigate_journal(context)
     assert calls == [("tail", "frigate.service", 400)]
 
@@ -690,6 +731,9 @@ def test_a_date_inside_a_message_is_not_a_timestamp():
     line = "Exception: expired on 2026-11-04 18:07:36.850573607  at the server"
     # kept whole; redact only puts the line on one line, which closes up the double space
     assert apps_checks.traceback_last_line([line]) == "Exception: expired on 2026-11-04 18:07:36.850573607 at the server"
+    # Nor is an ISO time followed by two words and a colon journalctl's prefix, unless it starts the line
+    text = "Exception: token expired at 2026-11-04T10:00:00Z see docs: retry later"
+    assert apps_checks.traceback_last_line([f"2026-11-04 18:07:36.850573607  {text}"]) == text
 
 
 def test_a_podman_or_systemd_error_line_is_not_the_traceback():

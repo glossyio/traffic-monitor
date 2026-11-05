@@ -96,7 +96,9 @@ def traceback_last_line(lines) -> str | None:
     """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's prefix and
     Frigate's s6 timestamp, redacted; None when there's none."""
     for line in reversed(list(lines)):
-        text = JOURNAL_PREFIX.sub("", str(line), count=1)
+        text = str(line)
+        if prefix := JOURNAL_PREFIX.match(text):  # a tail line; journal_lines gives the MESSAGE field alone
+            text = text[prefix.end():]
         if stamp := S6_TIMESTAMP.match(text):
             text = text[stamp.end():]
         text = text.rstrip()
@@ -119,11 +121,14 @@ def frigate(context: Context) -> list[Check]:
 
     version = probes.frigate_version(context)
     if version is None:
-        # The Frigate+ check quotes this line too, but only for a plus:// model; nothing else names a crash loop's cause
+        # The Frigate+ check quotes the same line with its model advice, but only for a plus:// model; without one,
+        # this check is the only one that names a crash loop's cause. The line may be older than the stop (a unit
+        # stopped by hand keeps its journal), so the restart stays available in the Services row.
         line = traceback_last_line(probes.frigate_journal(context))
         if line is not None:
-            return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. If it "
-                                  "keeps stopping, download the diagnostics on the Device page.", DIAGNOSTICS)
+            return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. Restart "
+                                  "it from its Services row; if it keeps stopping, download the diagnostics on the "
+                                  "Device page.", DIAGNOSTICS)
         return check("error", f"Frigate isn't answering. Restart it; {SEE_DIAGNOSTICS}.",
                      restart_fix("frigate.service"))
     config = probes.frigate_config(context)

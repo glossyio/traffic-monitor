@@ -9,7 +9,7 @@ timeout, not three.
 from tm_control.adapters import frigate, go2rtc, nodered, systemd
 from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.checks import Context
-from tm_control.modules.services.units import RUNNING, active_since, restarts, unit_states
+from tm_control.modules.services.units import RUNNING, UNITS, active_since, restarted_itself, restarts, unit_states
 
 FRIGATE_VERSION = "frigate.version"
 FRIGATE_CONFIG = "frigate.config"
@@ -17,6 +17,7 @@ FRIGATE_STATS = "frigate.stats"
 FRIGATE_CONFIG_FILE = "frigate.config_file"
 FRIGATE_JOURNAL = "frigate.journal"
 FRIGATE_UNIT = "frigate.service"
+FRIGATE = next(unit for unit in UNITS if unit.unit == FRIGATE_UNIT)
 JOURNAL_LINES = 400  # enough for Frigate's config validation block, and for the end of a traceback
 NODERED_STATUS = "nodered.status"
 CONFIG_YML = "nodered.config_yml"
@@ -45,9 +46,12 @@ def frigate_journal(context: Context) -> list[str]:
     whole last hour when systemd gives no start time); otherwise the journal's last lines, where a run that stopped
     left its traceback. [] when the journal can't be read.
 
-    A unit that systemd restarted after failures counts as running only while Frigate answers: in a crash loop the
+    A unit that systemd restarted after a failure counts as running only while Frigate answers: in a crash loop the
     unit is active between crashes, and the run that failed is in the tail, not in the current invocation. Without
-    restarts the current run is read even before Frigate answers, as while it starts up.
+    such a restart the current run is read even before Frigate answers, as while it starts up. systemd's restart
+    counter includes the restart Frigate makes when its config is saved (exit 143), so that one is told apart by the
+    exit status PID 1 logged before it, as the Services group does; otherwise a stale exception from the run before
+    the save would be quoted while Frigate starts.
 
     Checks quote only what checks.validation_messages and checks.traceback_last_line pick from it, redacted.
     """
@@ -55,7 +59,7 @@ def frigate_journal(context: Context) -> list[str]:
     def read() -> list[str]:
         values = unit_states(context).get(FRIGATE_UNIT)
         if values is not None and values.get("ActiveState") in RUNNING and (
-            restarts(values) == 0 or frigate_version(context) is not None
+            frigate_version(context) is not None or restarts(values) == 0 or restarted_itself(context, FRIGATE, 1)
         ):
             started = active_since(values)
             since = f"@{int(started.timestamp()) - 60}" if started else "-1h"
