@@ -344,8 +344,9 @@ ENV_SECRETS = (("TOKEN", PLATE_RECOGNIZER_TOKEN), ("LICENSE_KEY", PLATE_RECOGNIZ
 # What plate-recognizer.env.j2 wrote before it rendered the secrets: none of them is a value.
 ENV_PLACEHOLDERS = {"", "YYYYY", "XXXXX"}
 FRIGATE_ENV_SECRETS = (("PLUS_API_KEY", FRIGATE_PLUS_API_KEY),)
-# frigate.env.j2 has always written the line empty.
-FRIGATE_ENV_PLACEHOLDERS = {""}
+# What frigate.env.j2 wrote for no key: PLUS_API_KEY="" in v0.5.0, PLUS_API_KEY= from v0.6.0 on. frigate.env is
+# rendered only on a first install or with -f, so a device installed at v0.5.0 can still have the quoted line.
+FRIGATE_ENV_PLACEHOLDERS = {"", '""'}
 SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
 CONFIG_REMEDY = "Enter it on the control app's Device page and delete the key."
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.

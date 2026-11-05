@@ -710,10 +710,14 @@ def test_a_frigate_plus_key_typed_into_frigate_env_moves(tmp_path, secrets_dir, 
     assert output(capsys) == f"tm-control migrate: {path}: up to date\n"
 
 
-def test_an_empty_plus_api_key_line_is_up_to_date(tmp_path, secrets_dir, capsys):
-    path = frigate_env(tmp_path, key="")
+@pytest.mark.parametrize("key", ["", '""'], ids=["v0.6.0 and later", "v0.5.0"])
+def test_an_empty_plus_api_key_line_is_up_to_date(tmp_path, secrets_dir, key, capsys):
+    """frigate.env.j2 wrote PLUS_API_KEY="" in v0.5.0 and PLUS_API_KEY= since; neither is a key."""
+    path = frigate_env(tmp_path, key=key)
     assert migrate.run_frigate_env(path, secrets_dir) == 0
-    assert output(capsys) == f"tm-control migrate: {path}: up to date\n"
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    assert captured.err == ""
     assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == ""
     assert not frigate_backups(path)
 
