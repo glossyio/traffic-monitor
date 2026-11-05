@@ -117,7 +117,7 @@ def test_frigate_not_answering_quotes_the_logs_last_error(apps):
     assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. Restart "
                             "it from its Services row; if it keeps stopping, download the diagnostics on the Device "
                             "page.")
-    assert check.fix == DIAGNOSTICS  # the Services row keeps the restart; the quoted line may predate a hand stop
+    assert check.fix == DIAGNOSTICS  # the Services row keeps the restart; a restart alone repeats the crash
 
 
 def test_frigate_stopping_for_its_own_restart_quotes_nothing(apps):

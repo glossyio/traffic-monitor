@@ -29,8 +29,9 @@ TRACEBACK_END = re.compile(r"(\w+\.)*(\w+Error|\w*Exception)\b.*")
 JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
 # Frigate's s6 supervisor stamps each line it forwards, after journalctl's prefix; two spaces follow the stamp
 S6_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{1,9}\s+")
-# s6's finish line when Frigate's process exited 0 (a Save & Restart, its Restart button, a stop) or was killed by
-# SIGTERM; a crash has a nonzero code, and the other services' lines name them, not Frigate
+# s6's finish line when Frigate's process exited 0 (a Save & Restart, its Restart button, a stop, or the restart
+# Frigate's watchdog makes when a detector process dies) or was killed by SIGTERM; a crash of Frigate's own process
+# has a nonzero code, and the other services' lines name them, not Frigate
 ORDERLY_EXIT = re.compile(r"\[INFO\] Service Frigate exited with code (0 \(by signal 0\)|256 \(by signal 15\))")
 # What Frigate raises when its server refuses the Frigate+ key (PlusApi._refresh_token_if_needed); the server's
 # JSON after it isn't matched
@@ -128,8 +129,8 @@ def frigate(context: Context) -> list[Check]:
     version = probes.frigate_version(context)
     if version is None:
         # The Frigate+ check quotes the same line with its model advice, but only for a plus:// model; without one,
-        # this check is the only one that names a crash loop's cause. The line may be older than the stop (a unit
-        # stopped by hand keeps its journal), so the restart stays available in the Services row.
+        # this check is the only one that names a crash loop's cause. A quoted line is one Frigate's process crashed
+        # on, which a restart alone repeats, so the fix is Diagnostics and the restart stays in the Services row.
         line = traceback_last_line(probes.frigate_journal(context))
         if line is not None:
             return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. Restart "
