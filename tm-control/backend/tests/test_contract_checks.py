@@ -11,10 +11,14 @@ from frigate_log import (
     DETECTOR_MESSAGE,
     MODEL_ID,
     NO_KEY_LINE,
+    ORDERLY_EXIT_LINE,
     REFUSED_KEY_LINE,
     SAFE_MODE_LINES,
+    SHUTDOWN_LAST_LINE,
     TRACEBACK_TAIL,
     crash_loop_tail,
+    shutdown_lines,
+    shutdown_tail,
     validation_block,
 )
 from placeholders import PLACEHOLDER_KEY
@@ -745,3 +749,32 @@ def test_a_podman_or_systemd_error_line_is_not_the_traceback():
     assert contracts.plus_model_id(f"plus://{MODEL_ID}") == MODEL_ID
     assert contracts.plus_model_id("plus://../x") is None
     assert contracts.plus_model_id(CORAL_PATH) is None
+
+
+def test_an_orderly_exit_after_the_last_exception_quotes_nothing():
+    """Frigate logs two tracebacks of its own while it stops for a Save & Restart (bench 2026-11-05); s6's exit line
+    with code 0 follows them, so neither is why Frigate isn't answering. A crash's exit line has a nonzero code."""
+    assert apps_checks.traceback_last_line(shutdown_lines()) is None  # the stopping run, while the unit is active
+    assert apps_checks.traceback_last_line(shutdown_tail()) is None  # the tail, between the exit and the new run
+    killed = "[INFO] Service Frigate exited with code 256 (by signal 15)"
+    assert apps_checks.traceback_last_line(shutdown_lines(killed)) is None
+    crashed = "[INFO] Service Frigate exited with code 1 (by signal 0)"
+    assert apps_checks.traceback_last_line(shutdown_lines(crashed)) == SHUTDOWN_LAST_LINE
+    # A run that crashed after the orderly exit of the one before it is quoted
+    assert apps_checks.traceback_last_line(shutdown_tail() + CRASH_LOOP_TAIL) == REFUSED_KEY_LINE
+    # Another service's exit line, or more than the line itself, doesn't end the search
+    nginx = "[INFO] Service NGINX exited with code 0 (by signal 0)"
+    assert apps_checks.traceback_last_line(["Exception: bare", nginx]) == "Exception: bare"
+    assert apps_checks.traceback_last_line(["Exception: bare", f"{ORDERLY_EXIT_LINE} and more"]) == "Exception: bare"
+
+
+def test_frigate_stopping_for_its_own_restart_is_unknown(apps):
+    """Decision 11: the unit is active while Frigate stops, and in auto-restart just after; neither quotes."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    stopping = {"ActiveState": "active", "SubState": "running", "NRestarts": "0"}
+    unknown = ("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown.")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_lines(), stopping))
+    assert (check.status, check.detail) == unknown
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_tail()))
+    assert (check.status, check.detail) == unknown

@@ -29,6 +29,9 @@ TRACEBACK_END = re.compile(r"(\w+\.)*(\w+Error|\w*Exception)\b.*")
 JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
 # Frigate's s6 supervisor stamps each line it forwards, after journalctl's prefix; two spaces follow the stamp
 S6_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{1,9}\s+")
+# s6's finish line when Frigate's process exited 0 (a Save & Restart, its Restart button, a stop) or was killed by
+# SIGTERM; a crash has a nonzero code, and the other services' lines name them, not Frigate
+ORDERLY_EXIT = re.compile(r"\[INFO\] Service Frigate exited with code (0 \(by signal 0\)|256 \(by signal 15\))")
 # What Frigate raises when its server refuses the Frigate+ key (PlusApi._refresh_token_if_needed); the server's
 # JSON after it isn't matched
 REFUSED_KEY = "Unable to refresh API token"
@@ -94,7 +97,8 @@ def validation_messages(lines, limit: int | None = ERRORS_SHOWN) -> list[str]:
 
 def traceback_last_line(lines) -> str | None:
     """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's prefix and
-    Frigate's s6 timestamp, redacted; None when there's none."""
+    Frigate's s6 timestamp, redacted; None when there's none, or when Frigate's supervisor logged an orderly exit after
+    the last one, since Frigate logs tracebacks of its own while it stops."""
     for line in reversed(list(lines)):
         text = str(line)
         if prefix := JOURNAL_PREFIX.match(text):  # a tail line; journal_lines gives the MESSAGE field alone
@@ -102,6 +106,8 @@ def traceback_last_line(lines) -> str | None:
         if stamp := S6_TIMESTAMP.match(text):
             text = text[stamp.end():]
         text = text.rstrip()
+        if ORDERLY_EXIT.fullmatch(text):
+            return None
         if TRACEBACK_END.fullmatch(text):
             return redact(text)
     return None
