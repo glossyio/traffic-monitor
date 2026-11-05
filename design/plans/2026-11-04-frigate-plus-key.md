@@ -14,7 +14,7 @@
 
 **Spec:** [issue 279](https://github.com/glossyio/traffic-monitor/issues/279), the entered-secrets design (not yet published), section 7's Frigate+ row, and the maintainer's decisions of 2026-11-04 listed below. Read the issue with this plan. Where this plan goes beyond the issue, the "Decisions" list says why; say so in the PR rather than picking one silently.
 
-**Status:** written 2026-11-04 against `feature/entered-secrets/95` at `d7a4ab5` (PR 278, which contains PR 277, PR 269, PR 261, and `dev`). Branch: `feature/frigate-plus-key/279`, stacked on PR 278's branch; this file is added in the PR that implements it. The stacked-PR routine applies: retarget when 278 merges.
+**Status:** written 2026-11-04 against `feature/entered-secrets/95` at `d7a4ab5` (PR 278, which contains PR 277, PR 269, PR 261, and `dev`). Branch: `feature/frigate-plus-key/279`, stacked on PR 278's branch; this file is added in the PR that implements it. The stacked-PR routine applies: retarget when 278 merges. The bench run changed rules 6 to 8's surroundings and the safe-mode checks; see `2026-11-05-frigate-plus-key-bench-fixes.md`, which supersedes this plan's rule 7 and Task 9 step 3.
 
 **Decisions made while writing this plan** (the maintainer decided 1 to 4 on 2026-11-04; 5 to 10 are calls made here, open to change):
 1. **The key gets a form now, on the Device page**, with the other entered secrets, not a Frigate page later. Frigate is always installed, so the row shows on every device.
