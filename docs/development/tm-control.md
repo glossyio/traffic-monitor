@@ -126,7 +126,7 @@ The runner in `core/checks.py` keeps the page up whatever a probe does:
 Details name cameras, zones, radars, units, and config keys, never a URL, a password, or a command's output. The one exception is Frigate's log, which two checks quote:
 
 * The Apps group's Frigate check is an error when `/api/config` says `safe_mode: true`, which is how Frigate answers a config that doesn't validate: it starts with no cameras, so the camera and zone checks have nothing to compare. The detail quotes Frigate's validation messages.
-* The Configuration group's Frigate+ check (`config.frigate_plus`) reads `model.path` from Frigate's `config.yml` on disk, whether the `frigate_plus_api_key` secret is set, and whether a `plus://` model's two files are in `model_cache`. It warns about a key without a `plus://` model, and is an error for a `plus://` model Frigate can't get or can't use, quoting the log line that says why.
+* The Configuration group's Frigate+ check (`config.frigate_plus`) reads `model.path` from Frigate's `config.yml` on disk, whether the `frigate_plus_api_key` secret is set, and whether a `plus://` model's two files are in `model_cache`. It warns about a key without a `plus://` model, and is an error for a `plus://` model Frigate can't get or can't use, quoting the log line that says why. When Frigate isn't running, it quotes the traceback's last line without claiming the download caused it, because the journal's tail shows how Frigate stopped, not why.
 
 Both quote only the `Message :` lines of Frigate's validation block and the last line of a traceback, through `redact()` in `modules/apps/checks.py`, which replaces anything shaped like a Frigate+ key with `<key>` and cuts each line to `MESSAGE_MAX` characters.
 

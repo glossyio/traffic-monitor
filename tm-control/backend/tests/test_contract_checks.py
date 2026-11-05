@@ -477,8 +477,8 @@ def test_a_plus_model_and_frigate_stopped_with_a_traceback_is_an_error(apps):
     check = frigate_plus_check(apps, **frigate_stopped(apps, TRACEBACK_TAIL))
     assert check.status == "error"
     assert check.detail == (
-        f"Frigate stopped while fetching the Frigate+ model {MODEL_ID}, so it isn't running. Its log ends with: "
-        'Exception: {"message":"Unauthorized"}. Check the key on the Device page and the model id in Frigate\'s '
+        'Frigate isn\'t running, and its log ends with: Exception: {"message":"Unauthorized"}. If it stopped while '
+        f"fetching the Frigate+ model {MODEL_ID}, check the key on the Device page and the model id in Frigate's "
         "config, and that the device is online; a model's files copied into model_cache need no download."
     )
 
@@ -590,6 +590,15 @@ def test_the_log_helpers():
         "requests.exceptions.HTTPError: 401"
     )
     assert apps_checks.traceback_last_line(["Traceback (most recent call last):", "ErrorHandler: no"]) is None
+    assert apps_checks.traceback_last_line(["Exception: bare"]) == "Exception: bare"
+
+
+def test_a_podman_or_systemd_error_line_is_not_the_traceback():
+    """podman prints a bare "Error: ..." when the unit stops a container that's gone; that isn't Frigate's exception."""
+    podman = ('2026-11-04T10:00:02+0000 tm-test podman[901]: Error: no container with name or ID "frigate" found: no '
+              "such container")
+    assert apps_checks.traceback_last_line(TRACEBACK_TAIL + [podman]) == 'Exception: {"message":"Unauthorized"}'
+    assert apps_checks.traceback_last_line([podman]) is None
     assert contracts.plus_model_id(f"plus://{MODEL_ID}") == MODEL_ID
     assert contracts.plus_model_id("plus://../x") is None
     assert contracts.plus_model_id(CORAL_PATH) is None

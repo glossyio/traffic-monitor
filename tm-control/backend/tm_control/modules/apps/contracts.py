@@ -324,8 +324,9 @@ def frigate_plus(context: Context) -> list[Check]:
         if values is not None and values.get("ActiveState") not in RUNNING:
             line = traceback_last_line(probes.frigate_journal(context))
             if line is not None:
-                return check("error", f"Frigate stopped while fetching the Frigate+ model {model_id}, so it isn't "
-                                      f"running. Its log ends with: {quoted(line)}. Check the key on the Device "
+                # The tail shows how Frigate stopped, not why, so the detail doesn't claim the download failed
+                return check("error", f"Frigate isn't running, and its log ends with: {quoted(line)}. If it stopped "
+                                      f"while fetching the Frigate+ model {model_id}, check the key on the Device "
                                       "page and the model id in Frigate's config, and that the device is online; a "
                                       "model's files copied into model_cache need no download.")
         return check("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {model_id} is "

@@ -24,7 +24,8 @@ MIGRATE_JOURNAL = "sudo journalctl -u node-red-tm | grep tmdb-migrate"
 # Anything shaped like a Frigate+ key, in any case, is replaced before a log line is quoted
 KEY_SHAPED = re.compile(VALUE_PATTERNS[FRIGATE_PLUS_API_KEY], re.IGNORECASE)
 VALIDATION_MESSAGE = "Message : "  # how Frigate prints each error of a config that doesn't validate
-TRACEBACK_END = re.compile(r"(\w+\.)*\w*(Error|Exception)\b.*")  # Exception: ..., requests.exceptions.HTTPError: ...
+# ValueError: ..., requests.exceptions.HTTPError: ..., Exception: ...; not podman's or systemd's bare "Error: ..."
+TRACEBACK_END = re.compile(r"(\w+\.)*(\w+Error|\w*Exception)\b.*")
 JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
 FRIGATE_SAFE_MODE_FIX = (
     "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
