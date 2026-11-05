@@ -691,8 +691,10 @@ def holds_a_key(printed):
     return any(part in lowered for part in PLACEHOLDER_KEY.split(":") + [PLACEHOLDER_KEY[:8]])
 
 
-def test_a_frigate_plus_key_typed_into_frigate_env_moves(tmp_path, secrets_dir, capsys):
-    path = frigate_env(tmp_path)
+@pytest.mark.parametrize("quote", ["", '"'], ids=["bare", "between v0.5.0's quotes"])
+def test_a_frigate_plus_key_typed_into_frigate_env_moves(tmp_path, secrets_dir, quote, capsys):
+    """v0.5.0 rendered PLUS_API_KEY="", so a key typed between its quotes moves as the bare key."""
+    path = frigate_env(tmp_path, key=f"{quote}{PLACEHOLDER_KEY}{quote}")
     original = path.read_text()
 
     assert migrate.run_frigate_env(path, secrets_dir) == 0
@@ -733,7 +735,10 @@ def test_a_missing_frigate_env_is_up_to_date(tmp_path, secrets_dir, capsys):
     PLACEHOLDER_KEY.upper(),
     PLACEHOLDER_KEY.replace(":", ": "),
     PLACEHOLDER_KEY.replace(":", ""),
-], ids=["uppercase", "a space", "no colon"])
+    f'"{PLACEHOLDER_KEY.upper()}"',
+    f'"{PLACEHOLDER_KEY}',
+    f"'{PLACEHOLDER_KEY}'",
+], ids=["uppercase", "a space", "no colon", "uppercase between quotes", "one quote", "single quotes"])
 def test_a_frigate_plus_key_that_frigate_would_reject_is_left_with_a_warning(tmp_path, secrets_dir, key, capsys):
     """tmsetup writes the (empty) secret file over the PLUS_API_KEY line next, so the typed key's only copy is the
     backup."""
@@ -753,6 +758,15 @@ def test_a_frigate_plus_key_that_frigate_would_reject_is_left_with_a_warning(tmp
     assert warning.endswith(f"Enter it on the control app's Device page; the env file was backed up to {backup}.")
     assert key not in captured.out + captured.err
     assert not holds_a_key(captured.out + captured.err)
+
+
+def test_a_quoted_frigate_plus_key_the_secret_file_holds_is_up_to_date(tmp_path, secrets_dir, capsys):
+    (secrets_dir / FRIGATE_PLUS_API_KEY).write_text(PLACEHOLDER_KEY + "\n")
+    path = frigate_env(tmp_path, key=f'"{PLACEHOLDER_KEY}"')
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == (f"tm-control migrate: {path}: up to date\n", "")
+    assert not frigate_backups(path)
 
 
 def test_a_frigate_plus_key_that_differs_from_the_secret_file_is_kept_out_with_a_warning(tmp_path, secrets_dir,
