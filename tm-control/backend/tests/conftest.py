@@ -152,7 +152,7 @@ GO2RTC_STREAMS = "http://127.0.0.1:1984/api/streams"
 
 class FakeApps:
     """The apps on a device as the apps adapters see them, from the synthetic fixtures: each URL's HTTP answer, ss's
-    listening sockets, and a code directory with config.yml and the tmdb migrations.
+    listening sockets, and a code directory with Node-RED's and Frigate's config.yml and the tmdb migrations.
 
     Change `answers` (URL -> (status, body bytes), or (None, None) for no answer), `ss`, the files, or
     `secrets.entered`, then call `context()` for a new report's Context. `requests` lists every (url, headers) asked
@@ -176,6 +176,9 @@ class FakeApps:
         self.config_yml = codedir / "node-red-tm" / "config" / "config.yml"
         self.config_yml.parent.mkdir(parents=True)
         shutil.copy(FIXTURES / "node_red_config_ok.yml", self.config_yml)
+        self.frigate_config_yml = codedir / "frigate" / "config" / "config.yml"  # the CPU detector's: no model section
+        self.frigate_config_yml.parent.mkdir(parents=True)
+        shutil.copy(FIXTURES / "frigate_config_v0.18.yml", self.frigate_config_yml)
         self.migrations = codedir / "node-red-tm" / "schema" / "migrations"
         self.migrations.mkdir(parents=True)
         (self.migrations / "0001_baseline.sql").write_text("-- synthetic\n")

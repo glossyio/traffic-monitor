@@ -9,6 +9,7 @@ from pathlib import Path
 
 from tm_control.adapters import mqtt
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, VALUE_PATTERNS
 from tm_control.modules.apps import probes
 from tm_control.modules.services.units import restart_fix
 
@@ -20,6 +21,14 @@ DIAGNOSTICS = Fix(kind="link", href="/device", text="Diagnostics")
 SEE_DIAGNOSTICS = "if it keeps stopping, download the diagnostics on the Device page"
 RERUN_NODE_RED = "Re-run the installer with tmsetup.sh -t node-red-tm"
 MIGRATE_JOURNAL = "sudo journalctl -u node-red-tm | grep tmdb-migrate"
+# Anything shaped like a Frigate+ key, in any case, is replaced before a log line is quoted
+KEY_SHAPED = re.compile(VALUE_PATTERNS[FRIGATE_PLUS_API_KEY], re.IGNORECASE)
+VALIDATION_MESSAGE = "Message : "  # how Frigate prints each error of a config that doesn't validate
+TRACEBACK_END = re.compile(r"(\w+\.)*\w*(Error|Exception)\b.*")  # Exception: ..., requests.exceptions.HTTPError: ...
+JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
+FRIGATE_SAFE_MODE_FIX = (
+    "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
+)
 
 
 def listed(names, conjunction: str = "and") -> str:
@@ -54,6 +63,44 @@ def newest_migration(codedir) -> int | None:
     return max(numbers, default=None)
 
 
+# Lines quoted from Frigate's journal: only its config validation messages and a traceback's last line, each with
+# anything shaped like a Frigate+ key replaced, and cut to MESSAGE_MAX. Here rather than in contracts.py, which imports
+# this module, because the Frigate check below quotes them too.
+
+
+def redact(line: str) -> str:
+    """A log line fit to quote on the Status page: each key-shaped substring becomes <key>, then the line is put on
+    one line and cut to MESSAGE_MAX, so a cut can't leave part of a key."""
+    return _message(KEY_SHAPED.sub("<key>", str(line)))
+
+
+def validation_messages(lines, limit: int | None = ERRORS_SHOWN) -> list[str]:
+    """The text after "Message : " on each line of Frigate's config validation block, redacted; at most `limit`."""
+    messages = []
+    for line in lines:
+        _, found, text = str(line).partition(VALIDATION_MESSAGE)
+        if found and text.strip():
+            messages.append(redact(text))
+            if limit is not None and len(messages) >= limit:
+                break
+    return messages
+
+
+def traceback_last_line(lines) -> str | None:
+    """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's time and
+    process prefix, redacted; None when there's none."""
+    for line in reversed(list(lines)):
+        text = JOURNAL_PREFIX.sub("", str(line), count=1).rstrip()
+        if TRACEBACK_END.fullmatch(text):
+            return redact(text)
+    return None
+
+
+def quoted(message: str) -> str:
+    """A quoted message without its own final period, for a sentence that adds one."""
+    return message.rstrip(".") or message
+
+
 # Frigate
 
 
@@ -65,6 +112,13 @@ def frigate(context: Context) -> list[Check]:
     if version is None:
         return check("error", f"Frigate isn't answering. Restart it; {SEE_DIAGNOSTICS}.",
                      restart_fix("frigate.service"))
+    config = probes.frigate_config(context)
+    if isinstance(config, dict) and config.get("safe_mode") is True:
+        # Frigate 0.18 answers a config that doesn't validate by starting with no cameras, so it looks healthy.
+        messages = validation_messages(probes.frigate_journal(context))
+        said = f"Its log says: {'; '.join(quoted(m) for m in messages)}. " if messages else ""
+        return check("error", f"Frigate {version} started in safe mode, with no cameras, because its config has an "
+                              f"error, so nothing is counted. {said}{FRIGATE_SAFE_MODE_FIX}")
     expected = context.manifest.components.get("frigate")
     if expected and version.split("-", 1)[0] != expected:
         return check("warn", f"Frigate {version} is running, but this install expects {expected}. "
