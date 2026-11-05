@@ -846,15 +846,16 @@ def test_env_secret_lines_match_the_secret_files(host, expect, codedir):
     states = entered_secret_states(host, codedir, list(set_secret_table()))
     assert states.get("node-red-tm/node-red-tm.env:TM_THINGSBOARD_ACCESS_TOKEN") != "absent", (
         "node-red-tm.env is missing")
+    assert states.get("frigate/frigate.env:PLUS_API_KEY") != "absent", "frigate.env is missing"
     differ = {label: state for label, state in states.items() if state not in ("equal", "absent")}
     assert not differ, f"env lines that don't match their secret's file: {differ}"
 
 
 def test_secrets_lists_only_the_installed_addons_values(host, address, admin_session):
-    """GET /secrets lists the ThingsBoard token, and the Plate Recognizer token and license key only where the add-on
-    is installed (never on a pii_free unit, test_plate_recognizer_absent_on_pii_free_unit). Only the names are kept.
-    Installed means what tm-control goes by, the manifest's options.plate_recognizer, not whether the unit file is
-    there."""
+    """GET /secrets lists the ThingsBoard token and the Frigate+ API key, and the Plate Recognizer token and license
+    key only where the add-on is installed (never on a pii_free unit, test_plate_recognizer_absent_on_pii_free_unit).
+    Only the names are kept. Installed means what tm-control goes by, the manifest's options.plate_recognizer, not
+    whether the unit file is there."""
     answer = request_from_this_machine(address, f"{API}/secrets", cookie=admin_session)
     found = answer.json() if answer.status == 200 else None
     listed = found.get("secrets") if isinstance(found, dict) else None
@@ -866,8 +867,24 @@ def test_secrets_lists_only_the_installed_addons_values(host, address, admin_ses
     options = json.loads(read.stdout).get("options")
     add_on = options.get("plate_recognizer") if isinstance(options, dict) else None
     assert isinstance(add_on, bool), f"{MANIFEST} has no options.plate_recognizer true or false"
-    expected = ENTERED_SECRETS if add_on else ["thingsboard_access_token"]
+    expected = ENTERED_SECRETS if add_on else ["thingsboard_access_token", "frigate_plus_api_key"]
     assert names == expected, f"GET {API}/secrets with the add-on {'installed' if add_on else 'not installed'}"
+
+
+def test_frigate_plus_check_is_on_the_status_page(address, admin_session):
+    """The status report's Configuration group has the Frigate+ check, and on a unit the inventory lists, which the
+    status agreement test takes as healthy, it is ok (no key, or a key paired with a plus:// model) or a warning (a key
+    without one), never an error or unknown. Its detail quotes only redacted log lines, so a failure may show it."""
+    answer = request_from_this_machine(address, f"{API}/status", cookie=admin_session)
+    report = answer.json() if answer.status == 200 else None
+    groups = report.get("groups") if isinstance(report, dict) else None
+    assert isinstance(groups, list), f"GET {API}/status answered HTTP {answer.status}, not a status report"
+    config = next((group for group in groups if group.get("id") == "config"), None)
+    assert config is not None, f"the status report has no Configuration group: {[group.get('id') for group in groups]}"
+    found = {check.get("id"): (check.get("status"), check.get("detail")) for check in config.get("checks", [])}
+    assert "config.frigate_plus" in found, f"the Configuration group has no Frigate+ check: {sorted(found)}"
+    status, detail = found["config.frigate_plus"]
+    assert status in ("ok", "warn"), f"config.frigate_plus: {status}" + (f" ({detail})" if detail else "")
 
 
 def test_time_state_matches_timedatectl(host, address, admin_session):
