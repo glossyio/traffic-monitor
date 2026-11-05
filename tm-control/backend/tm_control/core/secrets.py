@@ -17,26 +17,30 @@ NAMES = (SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY, NODE_RED_INTERNA
 PLATE_RECOGNIZER_TOKEN = "plate_recognizer_token"
 PLATE_RECOGNIZER_LICENSE_KEY = "plate_recognizer_license_key"
 THINGSBOARD_ACCESS_TOKEN = "thingsboard_access_token"
+FRIGATE_PLUS_API_KEY = "frigate_plus_api_key"
 # Every secret tmsetup generates (tmsetup_secret_names), whether tm-control uses it or not: diagnostics strips them all.
 GENERATED_SECRETS = (
     "go2rtc_rtsp_password", SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY, NODE_RED_INTERNAL_TOKEN,
 )
 # The ones an operator enters (tmsetup_entered_secret_names); a file may be empty, which means not set.
-ENTERED_SECRETS = (THINGSBOARD_ACCESS_TOKEN, PLATE_RECOGNIZER_TOKEN, PLATE_RECOGNIZER_LICENSE_KEY)
+ENTERED_SECRETS = (THINGSBOARD_ACCESS_TOKEN, FRIGATE_PLUS_API_KEY, PLATE_RECOGNIZER_TOKEN, PLATE_RECOGNIZER_LICENSE_KEY)
 DEVICE_SECRETS = GENERATED_SECRETS + ENTERED_SECRETS
 
 # What each entered secret's value may be, and the rule in words for a message. The ThingsBoard token goes into the
-# upload URL's path, so it takes only URL-unreserved characters; the Plate Recognizer values go into a header and an
-# env line, so they take printable ASCII with no spaces.
+# upload URL's path, so it takes only URL-unreserved characters; the Frigate+ key takes only the format Frigate's own
+# PlusApi accepts; the Plate Recognizer values go into a header and an env line, so they take printable ASCII with no
+# spaces.
 _URL_SAFE = r"[A-Za-z0-9._~-]{1,256}"
 _PRINTABLE = r"[\x21-\x7e]{1,256}"
 VALUE_PATTERNS = {
     THINGSBOARD_ACCESS_TOKEN: _URL_SAFE,
+    FRIGATE_PLUS_API_KEY: r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}:[a-z0-9]{40}",
     PLATE_RECOGNIZER_TOKEN: _PRINTABLE,
     PLATE_RECOGNIZER_LICENSE_KEY: _PRINTABLE,
 }
 VALUE_RULES = {
     THINGSBOARD_ACCESS_TOKEN: "1 to 256 letters, digits, and . _ ~ -",
+    FRIGATE_PLUS_API_KEY: "36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it",
     PLATE_RECOGNIZER_TOKEN: "1 to 256 printable ASCII characters with no spaces",
     PLATE_RECOGNIZER_LICENSE_KEY: "1 to 256 printable ASCII characters with no spaces",
 }

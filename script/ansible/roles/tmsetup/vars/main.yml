@@ -93,6 +93,7 @@ tmsetup_secret_names:
 # An empty file means "not set".
 tmsetup_entered_secret_names:
   - thingsboard_access_token
+  - frigate_plus_api_key
   - plate_recognizer_token
   - plate_recognizer_license_key
 

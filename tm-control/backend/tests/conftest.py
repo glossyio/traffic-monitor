@@ -12,6 +12,9 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
+# A Frigate+ API key in Frigate's own format (77 characters), not a real one. Test modules import it from here.
+PLACEHOLDER_KEY = "tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567"
+
 # These need BACKEND_DIR on sys.path.
 from fastapi.testclient import TestClient  # noqa: E402
 
