@@ -173,6 +173,9 @@ def frigate_credentials_tasks():
     return {task["name"]: task for task in load_role_yaml("tasks/frigate_credentials.yml")}
 
 
+FRIGATE_ENV_LINES = "TMSetup - Frigate Credentials - Add the go2rtc RTSP login, the proxy secret, and the Frigate+ key to frigate.env"
+
+
 def test_frigate_credentials_skip_files_a_device_does_not_have_yet():
     """Under -t go2rtc alone, Frigate may not be installed yet."""
     tasks = frigate_credentials_tasks()
@@ -184,24 +187,34 @@ def test_frigate_credentials_skip_files_a_device_does_not_have_yet():
         "{{ tmsetup_codedir }}/frigate/frigate.env",
         "{{ tmsetup_codedir }}/frigate/config/config.yml",
     ]
-    env = tasks["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    env = tasks[FRIGATE_ENV_LINES]
     migrate = tasks["TMSetup - Frigate Credentials - Update Frigate config from older installs"]
     assert env["when"] == "tmsetup_frigate_settings_stat_register.results[0].stat.exists"
     assert migrate["when"] == "tmsetup_frigate_settings_stat_register.results[1].stat.exists"
 
 
 def test_existing_frigate_env_gets_both_credentials_without_printing_them():
-    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
     assert task["no_log"] is True
     assert [item["key"] for item in task["loop"]][:2] == ["FRIGATE_GO2RTC_RTSP_USER", "FRIGATE_GO2RTC_RTSP_PASSWORD"]
 
 
 def test_existing_frigate_env_gets_the_proxy_secret_without_printing_it():
     """-t frigate, -t revproxy, or any edge tag on a device whose frigate.env predates proxy auth (Review Focus 2)."""
-    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
     assert task["no_log"] is True
     item = next(item for item in task["loop"] if item["key"] == "FRIGATE_PROXY_AUTH_SECRET")
     assert item["value"] == "{{ tmsetup_secrets['frigate_proxy_secret'] }}"
+    assert task["notify"] == "Restart frigate.service"
+
+
+def test_existing_frigate_env_gets_the_frigate_plus_key_without_printing_it():
+    """frigate.env isn't overwritten without -f, so every run writes the key set on the Device page into its line,
+    and an empty secret blanks it. Entered Secrets has moved a typed key to the secrets file first."""
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
+    assert task["no_log"] is True
+    assert task["loop"][3] == {"key": "PLUS_API_KEY", "value": "{{ tmsetup_secrets['frigate_plus_api_key'] }}"}
+    assert len(task["loop"]) == 4
     assert task["notify"] == "Restart frigate.service"
 
 
@@ -255,6 +268,7 @@ def entered_secrets_tasks():
 ENTERED_SECRETS_MOVE = "TMSetup - Entered Secrets - Move them to the secrets directory"
 NODE_RED_CONFIG = "{{ tmsetup_codedir }}/node-red-tm/config/config.yml"
 PLATE_RECOGNIZER_ENV = "{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env"
+FRIGATE_ENV = "{{ tmsetup_codedir }}/frigate/frigate.env"
 
 
 def stat_results(*exists):
@@ -285,7 +299,7 @@ def test_entered_secrets_move_before_any_config_template_renders():
     update = tasks["TMSetup - Entered Secrets - Update the secrets fact"]
     assert order == [stat["name"], move["name"], show["name"], reread["name"], update["name"]]
 
-    assert stat["loop"] == [NODE_RED_CONFIG, PLATE_RECOGNIZER_ENV]
+    assert stat["loop"] == [NODE_RED_CONFIG, PLATE_RECOGNIZER_ENV, FRIGATE_ENV]
     assert stat["register"] == "tmsetup_entered_secrets_stat_register"
     assert move["become"] is True and reread["become"] is True
     assert reread["no_log"] is True and update["no_log"] is True
@@ -298,15 +312,20 @@ def test_entered_secrets_move_before_any_config_template_renders():
     base = ["/usr/local/bin/tm-control", "migrate", "--secrets-dir", "/etc/traffic-monitor/secrets"]
     paths = {"tmsetup_codedir": "/opt/tm", "tmsetup_secrets_dir": "/etc/traffic-monitor/secrets"}
     for exists, options in [
-        ((True, True), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
-                        "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
-        ((True, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml"]),
-        ((False, True), ["--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((True, True, True), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
+                              "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env",
+                              "--frigate-env", "/opt/tm/frigate/frigate.env"]),
+        ((True, True, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
+                               "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((True, False, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml"]),
+        ((False, True, False), ["--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((False, False, True), ["--frigate-env", "/opt/tm/frigate/frigate.env"]),
     ]:
         rendered = evaluate(argv, tmsetup_entered_secrets_stat_register=stat_results(*exists), **paths)
         assert rendered == base + options, exists
         assert "runuser" not in " ".join(rendered)  # root writes the secret files
-    for exists, runs in [((False, False), False), ((True, False), True), ((False, True), True), ((True, True), True)]:
+    for exists, runs in [((False, False, False), False), ((True, False, False), True), ((False, True, False), True),
+                         ((False, False, True), True), ((True, True, True), True)]:
         assert evaluate("{{ %s }}" % move["when"],
                         tmsetup_entered_secrets_stat_register=stat_results(*exists)) is runs, exists
 
@@ -319,6 +338,21 @@ def test_entered_secrets_move_before_any_config_template_renders():
                     tmsetup_entered_secret_names=["thingsboard_access_token", "plate_recognizer_token"],
                     tmsetup_entered_secrets_slurp_register=slurped) == {
         "generated": "kept", "thingsboard_access_token": "tb-placeholder-345", "plate_recognizer_token": ""}
+
+
+def test_a_typed_frigate_plus_key_moves_before_frigate_env_is_written():
+    """Under -t frigate, frigate_setup.yml renders frigate.env (with -f) and frigate_credentials.yml writes its
+    PLUS_API_KEY line from the secret, so a key typed into the file must be in the secret file by then."""
+    main = load_role_yaml("tasks/main.yml")
+
+    def position(file):
+        (index,) = [index for index, task in enumerate(main)
+                    if task.get("ansible.builtin.import_tasks", {}).get("file") == file]
+        return index
+
+    for file in ("entered_secrets.yml", "frigate_setup.yml", "frigate_credentials.yml"):
+        assert "frigate" in main[position(file)]["tags"], file
+    assert position("entered_secrets.yml") < position("frigate_setup.yml") < position("frigate_credentials.yml")
 
 
 def test_entered_secrets_move_counts_any_moved_line_as_a_change():
