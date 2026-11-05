@@ -389,7 +389,8 @@ def test_only_frigate_restarts_itself(device_client, login, systemctl):
     systemctl.journal = [EXITED, RESTARTED]
     login(device_client, *ADMIN)
     assert service_group(device_client)["services.node-red-tm.service"]["status"] == "warn"
-    assert not [call for call in systemctl.calls if call[0] == "journalctl"]
+    # PID 1's restart entries; Frigate doesn't answer here, so the Apps group reads Frigate's own log
+    assert not [call for call in systemctl.calls if call[0] == "journalctl" and "_PID=1" in call]
 
 
 def test_automatic_restart_exits_reads_pid_1s_entries_this_boot(monkeypatch):

@@ -348,12 +348,13 @@ def frigate_plus_check(apps, **preset):
     return config_group_with(apps, preset)["config.frigate_plus"]
 
 
-def frigate_stopped(apps, journal):
-    """Frigate doesn't answer, systemd is restarting it, and its journal is `journal`."""
+def frigate_stopped(apps, journal, state: dict | None = None):
+    """Frigate doesn't answer, its journal is `journal`, and its unit's values are `state` over those of a unit
+    systemd is restarting."""
     apps.answers[FRIGATE_VERSION] = (None, None)
-    states = {"frigate.service": {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "3",
-                                  "ActiveEnterTimestamp": "", "InvocationID": ""}}
-    return {units.SHOW_UNITS: states, probes.FRIGATE_JOURNAL: journal}
+    values = {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "3", "ActiveEnterTimestamp": "",
+              "InvocationID": ""}
+    return {units.SHOW_UNITS: {"frigate.service": values | (state or {})}, probes.FRIGATE_JOURNAL: journal}
 
 
 def test_the_installers_model_file_matches_the_role():
@@ -495,30 +496,45 @@ def test_safe_mode_for_an_unrelated_reason_is_left_to_the_apps_check(apps):
     assert (check.status, check.detail) == unknown
 
 
-def test_a_plus_model_and_frigate_stopped_with_a_traceback_is_an_error(apps):
+def test_a_refused_key_is_named_with_the_link_while_frigate_crash_loops(apps):
+    """Bench A3: the unit is active between crashes, so the check can't gate on ActiveState."""
     set_key(apps)
     with_model(apps, f"plus://{MODEL_ID}")
-    check = frigate_plus_check(apps, **frigate_stopped(apps, TRACEBACK_TAIL))
-    assert check.status == "error"
+    active = {"ActiveState": "active", "SubState": "running", "NRestarts": "3"}
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL, active))
+    assert check.status == "error" and check.fix == SET_THE_KEY
     assert check.detail == (
-        'Frigate isn\'t running, and its log ends with: Exception: {"message":"Unauthorized"}. If it stopped while '
-        f"fetching the Frigate+ model {MODEL_ID}, check the key on the Device page and the model id in Frigate's "
-        "config, and that the device is online; a model's files copied into model_cache need no download."
+        f"Frigate isn't answering: Frigate+ didn't accept the key when Frigate fetched the model {MODEL_ID}. Its "
+        f"log's last error is: {REFUSED_KEY_LINE}. To get Frigate running, {contracts.WAYS_OUT}."
     )
 
 
-def test_a_plus_model_and_frigate_silent_is_unknown(apps):
+def test_another_exception_is_quoted_without_a_claim(apps):
     set_key(apps)
     with_model(apps, f"plus://{MODEL_ID}")
-    unknown = f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown."
-    # Stopped, but without a traceback in its journal
-    check = frigate_plus_check(apps, **frigate_stopped(apps, TRACEBACK_TAIL[-2:]))
-    assert (check.status, check.detail) == ("unknown", unknown)
-    # Running as systemd sees it, but not answering: its journal isn't read
-    preset = frigate_stopped(apps, TRACEBACK_TAIL)
-    preset[units.SHOW_UNITS]["frigate.service"].update(ActiveState="active", SubState="running")
-    check = frigate_plus_check(apps, **preset)
-    assert (check.status, check.detail) == ("unknown", unknown)
+    check = frigate_plus_check(apps, **frigate_stopped(apps, crash_loop_tail(NO_KEY_LINE)))
+    assert check.status == "error" and check.fix is None
+    assert check.detail == (
+        f"Frigate isn't answering, and the last error in its log is: {NO_KEY_LINE}. If it stopped while fetching "
+        f"the Frigate+ model {MODEL_ID}, check that the device is online, then {contracts.WAYS_OUT}."
+    )
+
+
+def test_a_crash_loop_without_an_exception_line_is_unknown(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL[-3:]))  # systemd's lines only
+    assert (check.status, check.detail) == (
+        "unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown.")
+
+
+def test_frigate_starting_after_a_hand_restart_quotes_nothing(apps):
+    """Active, no failure restarts, not answering yet: the journal probe reads this run, which has no traceback."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    starting = {"ActiveState": "active", "SubState": "running", "NRestarts": "0"}
+    check = frigate_plus_check(apps, **frigate_stopped(apps, ["Starting Frigate (0.18.1-cf67f08)"], starting))
+    assert check.status == "unknown"
 
 
 @pytest.mark.parametrize("problem, text", [

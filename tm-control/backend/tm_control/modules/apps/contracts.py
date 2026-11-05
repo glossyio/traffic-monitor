@@ -3,7 +3,8 @@ fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the
 ThingsBoard upload's settings, and whether the Frigate+ key and model are paired.
 
 Details name cameras, zones, radars, config.yml keys, and a Frigate+ model's id, never another config value. Log lines
-are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted.
+are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted: Frigate's validation
+messages when it starts in safe mode, and the last exception in its journal whenever Frigate doesn't answer.
 """
 
 import math
@@ -15,8 +16,7 @@ from pathlib import Path
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import probes
-from tm_control.modules.apps.checks import listed, quoted, traceback_last_line, validation_messages
-from tm_control.modules.services.units import RUNNING, unit_states
+from tm_control.modules.apps.checks import REFUSED_KEY, listed, quoted, traceback_last_line, validation_messages
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
@@ -243,6 +243,11 @@ FRIGATE_CONFIG_PROBLEM = {
     "invalid": "Frigate's config.yml has a YAML error",
 }
 SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+# How to get out of a Frigate that stops while it fetches a Frigate+ model it can't have
+WAYS_OUT = (
+    "enter the right key on the Device page, copy the model's two files into Frigate's model_cache directory, or put "
+    "the installer's model section back in Frigate's config.yml over SSH, then restart Frigate"
+)
 
 
 def model_path(config_file) -> str | None:
@@ -290,7 +295,9 @@ def _model_problem(messages: list[str], model_id: str) -> str | None:
 
 def frigate_plus(context: Context) -> list[Check]:
     """The Frigate+ key and Frigate's model are paired: a key with a plus:// model, or no key and no Frigate+ model.
-    For a plus:// model, says whether Frigate could use it."""
+    For a plus:// model, says whether Frigate could use it. Whenever Frigate doesn't answer, whatever systemd says of
+    its unit (a unit restarted after each crash is active between them), quotes the last exception in its journal,
+    and names a key that Frigate+ refused."""
 
     def check(status, detail, fix=None):
         return [Check(id="config.frigate_plus", title="Frigate+", status=status, detail=detail, fix=fix)]
@@ -325,17 +332,18 @@ def frigate_plus(context: Context) -> list[Check]:
                               f"{model_id} and {model_id}.json into Frigate's model_cache directory.", SET_THE_KEY)
     running = probes.frigate_config(context)
     if running is None:
-        values = unit_states(context).get(probes.FRIGATE_UNIT)
-        if values is not None and values.get("ActiveState") not in RUNNING:
-            line = traceback_last_line(probes.frigate_journal(context))
-            if line is not None:
-                # The tail shows how Frigate stopped, not why, so the detail doesn't claim the download failed
-                return check("error", f"Frigate isn't running, and its log ends with: {quoted(line)}. If it stopped "
-                                      f"while fetching the Frigate+ model {model_id}, check the key on the Device "
-                                      "page and the model id in Frigate's config, and that the device is online; a "
-                                      "model's files copied into model_cache need no download.")
-        return check("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {model_id} is "
-                                "unknown.")
+        line = traceback_last_line(probes.frigate_journal(context))
+        if line is None:
+            return check("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {model_id} is "
+                                    "unknown.")
+        if REFUSED_KEY in line:
+            return check("error", "Frigate isn't answering: Frigate+ didn't accept the key when Frigate fetched the "
+                                  f"model {model_id}. Its log's last error is: {quoted(line)}. To get Frigate running, "
+                                  f"{WAYS_OUT}.", SET_THE_KEY)
+        # Another exception shows how Frigate stopped, not why, so the detail doesn't claim the download failed
+        return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. If it "
+                              f"stopped while fetching the Frigate+ model {model_id}, check that the device is "
+                              f"online, then {WAYS_OUT}.")
     if running.get("safe_mode") is True:
         problem = _model_problem(validation_messages(probes.frigate_journal(context), limit=None), model_id)
         if problem is not None:

@@ -119,6 +119,11 @@ def frigate(context: Context) -> list[Check]:
 
     version = probes.frigate_version(context)
     if version is None:
+        # The Frigate+ check quotes this line too, but only for a plus:// model; nothing else names a crash loop's cause
+        line = traceback_last_line(probes.frigate_journal(context))
+        if line is not None:
+            return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. If it "
+                                  "keeps stopping, download the diagnostics on the Device page.", DIAGNOSTICS)
         return check("error", f"Frigate isn't answering. Restart it; {SEE_DIAGNOSTICS}.",
                      restart_fix("frigate.service"))
     config = probes.frigate_config(context)
