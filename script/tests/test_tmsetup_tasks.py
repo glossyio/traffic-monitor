@@ -1,5 +1,6 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
+import base64
 import subprocess
 
 import pytest
@@ -239,6 +240,124 @@ def test_frigate_env_template_hides_its_diff():
     """frigate.env.j2 renders the go2rtc RTSP password, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
     task = frigate_tasks()["TMSetup - Frigate Setup - Create Frigate container configuration files"]
     assert task["diff"] is False
+
+
+FRIGATE_TEMPLATE = "TMSetup - Frigate Setup - Create Frigate container configuration files"
+MODEL_START = "TMSetup - Frigate Setup - Start with no model section to keep"
+MODEL_STAT = "TMSetup - Frigate Setup - Check for an existing Frigate config"
+MODEL_SLURP = "TMSetup - Frigate Setup - Read the model section -f keeps"
+MODEL_BLOCK = "TMSetup - Frigate Setup - Carry the model section over -f"
+MODEL_KEEP = "TMSetup - Frigate Setup - Keep the device's model section across -f"
+FORCE = "tmsetup_force_configs | bool"
+CORAL_FILE = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model_file"]
+
+
+def conditions(task):
+    when = task.get("when", [])
+    return when if isinstance(when, list) else [when]
+
+
+def model_keep_task():
+    return {task["name"]: task for task in frigate_tasks()[MODEL_BLOCK]["block"]}[MODEL_KEEP]
+
+
+def kept_model(config_text):
+    """Run the carry-over task's expression on a slurped config.yml, as Ansible would."""
+    task = model_keep_task()
+    slurped = {"content": base64.b64encode(config_text.encode()).decode()}
+    (name, value), = task["vars"].items()
+    current = evaluate(value, tmsetup_frigate_config_slurp_register=slurped)
+    return evaluate(task["ansible.builtin.set_fact"]["tmsetup_frigate_model_keep"],
+                    **{name: current, "tmsetup_frigate_coral_model_file": CORAL_FILE})
+
+
+def test_the_model_section_is_read_only_under_force():
+    """A plain run reads nothing: an operator's edit through Frigate's editor stays as it is (review focus 5)."""
+    tasks = frigate_tasks()
+    names = list(tasks)
+    order = [MODEL_START, MODEL_STAT, MODEL_SLURP, MODEL_BLOCK]
+    assert [names.index(name) for name in order] == sorted(names.index(name) for name in order)
+    assert names.index(MODEL_BLOCK) < names.index(FRIGATE_TEMPLATE)
+
+    start = tasks[MODEL_START]
+    assert "when" not in start
+    assert start["ansible.builtin.set_fact"] == {"tmsetup_frigate_model_keep": {}}
+
+    stat = tasks[MODEL_STAT]
+    assert conditions(stat) == [FORCE]
+    assert stat["become"] is True
+    assert stat["ansible.builtin.stat"] == {"path": "{{ tmsetup_codedir }}/frigate/config/config.yml", "get_checksum": False}
+    assert stat["register"] == "tmsetup_frigate_config_stat_register"
+
+    slurp = tasks[MODEL_SLURP]
+    exists = "tmsetup_frigate_config_stat_register.stat.exists"
+    assert conditions(slurp) == [FORCE, exists]  # in this order: the stat is skipped without -f
+    assert slurp["become"] is True
+    assert slurp["no_log"] is True
+    assert slurp["ansible.builtin.slurp"] == {"src": "{{ tmsetup_codedir }}/frigate/config/config.yml"}
+    assert slurp["register"] == "tmsetup_frigate_config_slurp_register"
+
+    block = tasks[MODEL_BLOCK]
+    assert conditions(block) == [FORCE, exists]
+    assert model_keep_task()["no_log"] is True
+
+
+@pytest.mark.parametrize("path", ["plus://abc", "/config/model_cache/mine.tflite"])
+def test_a_chosen_model_section_is_kept(path):
+    text = f"detectors:\n  coral:\n    type: edgetpu\nmodel:\n  path: {path}\n  width: 320\ncameras: {{}}\n"
+    assert kept_model(text) == {"path": path, "width": 320}
+
+
+def test_the_installers_own_model_section_is_not_carried():
+    """After a hardware change, -t detectors -t frigate -f must re-render the detector default (review focus 2)."""
+    text = f"model:\n  model_type: yolo-generic\n  path: /config/model_cache/{CORAL_FILE}\n"
+    assert kept_model(text) == {}
+
+
+@pytest.mark.parametrize("text", [
+    "model:\n  width: 320\n",
+    "model: plus://abc\n",
+    "cameras: {}\n",
+    "model:\n  path: ''\n",
+    "model:\n  path:\n",
+    "model:\n  path: 7\n",
+    "model:\n",
+    "",
+    "- model\n",
+    "just text\n",
+])
+def test_a_model_section_without_a_path_or_not_a_mapping_is_not_carried(text):
+    assert kept_model(text) == {}
+
+
+def test_an_unparseable_frigate_config_keeps_the_templates_section():
+    """The run that replaces a broken config.yml mustn't stop on it, and the message quotes nothing from it."""
+    block = frigate_tasks()[MODEL_BLOCK]
+    (keep, debug) = block["rescue"]
+    assert keep["ansible.builtin.set_fact"] == {"tmsetup_frigate_model_keep": {}}
+    msg = debug["ansible.builtin.debug"]["msg"]
+    assert "{{" not in msg
+    assert "YAML" in msg
+    with pytest.raises(Exception):
+        kept_model("model: [unclosed\n")
+
+
+def test_the_coral_model_file_is_one_variable():
+    downloads = frigate_tasks()["TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model"]
+    get_url = downloads["ansible.builtin.get_url"]
+    assert get_url["dest"] == "{{ tmsetup_codedir }}/frigate/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
+    assert get_url["url"].endswith("/{{ tmsetup_frigate_coral_model_file }}")
+    template = (REPO / "container/frigate/config/config.yml.j2").read_text()
+    assert "path: /config/model_cache/{{ tmsetup_frigate_coral_model_file }}" in template
+    # The role and the container templates name the file only through the variable; tm-control's own code and
+    # fixtures are pinned to it by their tests
+    holders = [
+        path.relative_to(REPO).as_posix()
+        for top in (ROLE, REPO / "container")
+        for path in top.rglob("*")
+        if path.is_file() and not path.is_symlink() and CORAL_FILE in path.read_text(errors="ignore")
+    ]
+    assert holders == ["script/ansible/roles/tmsetup/vars/main.yml"]
 
 
 def test_existing_frigate_config_is_migrated_as_the_code_owner():

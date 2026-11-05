@@ -514,6 +514,45 @@ def test_new_frigate_configs_use_proxy_auth():
     assert config["tls"] == {"enabled": False}
 
 
+CORAL_FILE = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model_file"]
+CORAL_PCI = {"edgetpu_pci": {"dev_path_available": True, "exists": True, "frigate_type": "edgetpu",
+                             "frigate_device": "pci", "dev_path": "/dev/apex_0"}}
+# A Frigate+ model id is 32 hex characters; this one is made up
+KEPT = {"path": "plus://0123456789abcdef0123456789abcdef", "labelmap": {2: "vehicle"}}
+
+
+def frigate_config(**variables):
+    return yaml.safe_load(render("container/frigate/config/config.yml.j2", **variables))
+
+
+def test_a_kept_model_section_replaces_the_detector_default():
+    config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE,
+                            tmsetup_frigate_model_keep=KEPT)
+    assert config["model"] == KEPT  # a plus:// path, a nested labelmap, an int key: all round-trip
+    assert config["detectors"] == {"edgetpu_pci": {"type": "edgetpu", "device": "pci"}}
+
+
+def test_a_kept_model_section_is_written_on_a_device_without_a_coral():
+    assert frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep=KEPT)["model"] == KEPT
+
+
+def test_without_a_kept_section_the_coral_default_names_the_installers_model():
+    for keep in ({"tmsetup_frigate_model_keep": {}}, {}):
+        config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE, **keep)
+        assert config["model"] == {
+            "model_type": "yolo-generic",
+            "width": 512,
+            "height": 512,
+            "path": f"/config/model_cache/{CORAL_FILE}",
+            "labelmap_path": "/config/labels-coco17.txt",
+        }
+
+
+def test_without_a_kept_section_and_without_a_coral_there_is_no_model_section():
+    assert "model" not in frigate_config(tmsetup_detectors={})
+    assert "model" not in frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep={})
+
+
 def test_frigate_env_carries_the_proxy_secret():
     lines = render(
         "container/frigate/frigate.env.j2",
