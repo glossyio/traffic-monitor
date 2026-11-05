@@ -14,6 +14,8 @@ from tm_control.core.auth import Device, SetupCode
 from tm_control.core.secrets import ENTERED_SECRETS
 from tm_control.core.state import State
 
+from placeholders import PLACEHOLDER_KEY
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -26,7 +28,9 @@ def test_migrate_requires_a_config_option(capsys):
     with pytest.raises(SystemExit) as exit_info:
         main(["migrate"])
     assert exit_info.value.code == 2
-    assert "--frigate-config" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    for option in ("--frigate-config", "--node-red-config", "--plate-recognizer-env", "--frigate-env"):
+        assert option in err
 
 
 def node_red_config(tmp_path, token="tb-placeholder-401"):
@@ -62,6 +66,17 @@ def test_migrate_plate_recognizer_env_moves_the_values(tmp_path, monkeypatch):
     assert (secrets / "plate_recognizer_license_key").read_text() == "pr-placeholder-403\n"
 
 
+def test_migrate_frigate_env_moves_the_key(tmp_path, capsys):
+    secrets = entered_secrets_dir(tmp_path)
+    env = tmp_path / "frigate.env"
+    env.write_text(f"FRIGATE_RTSP_PASSWORD=rtsp-placeholder-405\nPLUS_API_KEY={PLACEHOLDER_KEY}\n")
+    assert main(["migrate", "--frigate-env", str(env), "--secrets-dir", str(secrets)]) == 0
+    assert (secrets / "frigate_plus_api_key").read_text() == PLACEHOLDER_KEY + "\n"
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {env}: moved PLUS_API_KEY to the secrets files\n"
+    assert PLACEHOLDER_KEY.split(":")[1] not in captured.out + captured.err
+
+
 def test_migrate_secrets_dir_defaults_to_the_devices(monkeypatch):
     monkeypatch.delenv("TM_CONTROL_SECRETS_DIR", raising=False)
     seen = {}
@@ -72,20 +87,23 @@ def test_migrate_secrets_dir_defaults_to_the_devices(monkeypatch):
 
 
 def test_migrate_runs_every_config_given(frigate_config, tmp_path, capsys):
-    """In the order Frigate, Node-RED, Plate Recognizer; each runs even when one before it fails, and the exit code
-    is the highest."""
+    """In the order Frigate config, Node-RED, Plate Recognizer, Frigate env; each runs even when one before it fails,
+    and the exit code is the highest."""
     secrets = entered_secrets_dir(tmp_path)
     env = tmp_path / "plate-recognizer.env"
     env.write_text("TOKEN=pr-placeholder-404\nLICENSE_KEY=\n")
+    frigate_env = tmp_path / "frigate.env"
+    frigate_env.write_text(f"PLUS_API_KEY={PLACEHOLDER_KEY}\n")
     code = main(["migrate", "--frigate-config", str(frigate_config), "--node-red-config", str(tmp_path / "missing.yml"),
-                 "--plate-recognizer-env", str(env), "--secrets-dir", str(secrets)])
+                 "--plate-recognizer-env", str(env), "--frigate-env", str(frigate_env), "--secrets-dir", str(secrets)])
     assert code == 1
     captured = capsys.readouterr()
     assert f"ERROR reading {tmp_path / 'missing.yml'}" in captured.err
     lines = captured.out.splitlines()
-    assert [line.split(": ")[1] for line in lines] == [str(frigate_config), str(env)]
+    assert [line.split(": ")[1] for line in lines] == [str(frigate_config), str(env), str(frigate_env)]
     assert "{FRIGATE_GO2RTC_RTSP_USER}" in frigate_config.read_text()
     assert (secrets / "plate_recognizer_token").read_text() == "pr-placeholder-404\n"
+    assert (secrets / "frigate_plus_api_key").read_text() == PLACEHOLDER_KEY + "\n"
 
 
 def test_runs_as_a_module(frigate_config):
