@@ -448,7 +448,9 @@ def test_tm_control_wrapper_runs_only_the_root_owned_copy():
     ast.parse(script)
 
 
-SECRETS = {"go2rtc_rtsp_password": "s3cret", "frigate_proxy_secret": "placeholder-secret"}
+SECRETS = {"go2rtc_rtsp_password": "s3cret", "frigate_proxy_secret": "placeholder-secret", "frigate_plus_api_key": ""}
+# Shaped like a Frigate+ key (Frigate's own pattern); the same value as tm-control's tests, kept here on its own
+PLACEHOLDER_KEY = "tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567"
 CREDENTIALED_INPUT = "rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect"
 
 
@@ -518,9 +520,31 @@ def test_frigate_env_carries_the_proxy_secret():
         tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
         tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
         tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate",
-        tmsetup_secrets={"go2rtc_rtsp_password": "p", "frigate_proxy_secret": "s"}, tmsetup_mqtt_broker_login=NO_LOGIN,
+        tmsetup_secrets={"go2rtc_rtsp_password": "p", "frigate_proxy_secret": "s", "frigate_plus_api_key": ""},
+        tmsetup_mqtt_broker_login=NO_LOGIN,
     ).splitlines()
     assert "FRIGATE_PROXY_AUTH_SECRET=s" in lines
+
+
+def frigate_plus_lines(key):
+    # Only the PLUS_API_KEY line and the comment above it, so a failing assert can't print the other values
+    lines = render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate",
+        tmsetup_secrets={**SECRETS, "frigate_plus_api_key": key}, tmsetup_mqtt_broker_login=NO_LOGIN,
+    ).splitlines()
+    (index,) = [index for index, line in enumerate(lines) if line.startswith("PLUS_API_KEY")]
+    return lines[index - 1 : index + 1]
+
+
+def test_frigate_env_renders_the_frigate_plus_key_from_the_secrets():
+    """The key is set on the Device page and kept in the secrets, so -f writes it back rather than blanking it."""
+    comment, line = frigate_plus_lines(PLACEHOLDER_KEY)
+    assert line == f"PLUS_API_KEY={PLACEHOLDER_KEY}"
+    assert comment.startswith("#") and "Device page" in comment
+    assert frigate_plus_lines("")[1] == "PLUS_API_KEY="
 
 
 def test_frigate_location_uses_the_authenticated_port_and_fixed_identity_headers():
