@@ -10,7 +10,7 @@
 
 **Spec:** `design/plans/2026-11-04-frigate-plus-key.md` (the plan this amends; its Task 5 rules and its Task 9 step 3, which says to adjust rules 6 and 7 to the real journal and say so in the PR), [issue 279](https://github.com/glossyio/traffic-monitor/issues/279), and the bench findings recorded in the SDD ledger's "Task 9" section (`.superpowers/sdd/2026-11-04-frigate-plus-key/progress.md`, untracked). The maintainer's answers of 2026-11-05 are in "Decisions" below.
 
-**Status:** written 2026-11-05 against `feature/frigate-plus-key/279` at `52b1ebe` (unpushed; stacked on `feature/entered-secrets/95`, PR 278). This file is added in the same PR as the plan it amends.
+**Status:** written 2026-11-05 against `feature/frigate-plus-key/279` at `52b1ebe` (unpushed; stacked on `feature/entered-secrets/95`, PR 278). This file is added in the same PR as the plan it amends. Tasks 1 to 6 were done at `bf0155f`; Task 7, bench item 6, decision 11, and review focus 6 were added on 2026-11-05 after the re-bench, for Frigate's own restart quoting its shutdown tracebacks.
 
 **Why a separate file:** the original plan stays the record of what was planned and why; Task 9 step 3 anticipated that the bench would change rules 6 and 7, and this file is that change in one place a reviewer reads top to bottom. The implementer gets one short file instead of a 490-line plan with a patch at the end. Task 5 adds a pointer from the original plan's Status paragraph to this one.
 
@@ -23,6 +23,7 @@ Bench A (Pi 5, Coral, Frigate 0.18.1), items A3 and A5, at `52b1ebe`:
 3. **Journal lines carry two timestamps.** After journalctl's `short-iso` prefix comes Frigate's own s6 timestamp, so the real lines are `frigate[N]: 2026-11-04 18:07:36.850573607  Exception: Unable to refresh API token: {"message":"User not found"}` (wrong key) and `… Exception: Plus API key not set. See https://docs.frigate.video/integrations/plus#set-your-api-key` (no key). `traceback_last_line` strips only journalctl's prefix, so `TRACEBACK_END.fullmatch` fails and it returns None (reproduced off-device). Validation-block lines carry the same timestamp; `validation_messages` partitions on `Message : `, so it copes.
 4. **Safe mode blames the config.** With `detectors: coral: type: nope` on disk, Frigate started in safe mode with an empty camera list. `apps.frigate.reachable` errored and quoted the message, and `config.frigate_plus` said "isn't in use" (both right). But `config.cameras` warned "config.yml enables picam_h265, which Frigate doesn't have… Rename it", `apps.frigate.cameras` warned "Frigate has no enabled camera… Enable one", `config.zones` passed with nothing to check, and so did `apps.go2rtc.streams` ("No camera in Frigate reads a go2rtc stream"). The plan expected "nothing to compare".
 5. **Restart time:** 15.6 s and 16.6 s from the secret's POST/DELETE to the Coral detector's new pid. `RESTART_SECONDS['frigate.service']` stays 60 and the docs keep "about a minute"; the PR gives the measured figure.
+6. **Frigate's own restart quotes its shutdown tracebacks** (re-bench at `bf0155f`, check item 2, the one failure of 11). A Save & Restart of an unchanged config, and `POST /api/restart`, each stop Frigate's container with SIGTERM. Frigate's nginx exits at once, so Frigate stops answering; 4 s later Frigate logs two tracebacks of its own (`AttributeError: 'ForkAwareLocal' object has no attribute 'connection'`, then `FileNotFoundError: [Errno 2] No such file or directory`); s6 logs `[INFO] Service Frigate exited with code 0 (by signal 0)` 0.6 s after them; systemd sees the unit's exit 143 about 3 s after that, schedules the restart, and the new run is started within 2 s. For about 5 s, `apps.frigate.reachable` quoted the `FileNotFoundError` line with the Diagnostics fix, while the Services row said "Running" with the old start time and no restart, then "restarted itself 1 time". The Frigate+ check, with the installer's model, quoted nothing. Settled from the code and the poll log (2026-11-05): the unit stays `active` until the container has halted, so decision 6's first branch read the run that was stopping, whose own journal holds the tracebacks; both quoting reports had Services rows that only an `active` unit gets, and a report reads the unit states once. The tail, read between the exit and "Started", holds them as well. The Services row's lag is `StatusCache`'s 5 s reuse of a report, not systemd: the poll ran every 2 s and each report was served two or three times. Frigate 0.18.1's s6 finish script (`docker/main/rootfs/etc/s6-overlay/s6-rc.d/frigate/finish`) prints `[INFO] Service Frigate exited with code <code> (by signal <signal>)`; it writes a nonzero code as the container's exit code, 128 + the signal for a kill (143 for SIGTERM), and nothing for code 0. So a stop or restart of any kind ends with code 0 or signal 15, and a crash with a nonzero code (1 on the bench).
 
 Also confirmed from Frigate 0.18.1's source (`frigate/plus.py`, `frigate/detectors/detector_config.py`): Frigate contacts Frigate+ only when a `plus://` model's file or JSON is missing from `model_cache`, or on explicit use (the picker's model list, a snapshot submission). A bad key on its own never stops Frigate; A1 and the device test ran Frigate with the placeholder key. So the crash loop needs an uncached `plus://` model, and removing the key from a crash-looping unit only changes the error to "Plus API key not set".
 
@@ -40,6 +41,7 @@ The maintainer decided 1 to 5 on 2026-11-05; 6 to 9 are calls made here, open to
 8. **`apps.go2rtc.streams` joins the safe-mode set**, though the bench didn't record it: it reads the same empty camera list and passes with "No camera in Frigate reads a go2rtc stream", which is the same vacuous pass as the zones check.
 9. **The Remove dialog's text stays** ("A Frigate+ model already on the device keeps running"). It's true; the docs' Tokens and keys bullet adds that a model not yet downloaded stops Frigate until a key is set again, and the Frigate+ check says so.
 10. **Earlier rulings checked.** R7's regex (`(\w+\.)*(\w+Error|\w*Exception)\b.*`) stands: both real lines are bare `Exception:` lines, which it matches once the s6 stamp is gone. The parked note (module-qualified bare `Error` classes such as `binascii.Error` don't match) stays parked; the bench showed none, and such a crash falls back to "isn't answering". R13 (safe mode with no model message is `unknown`) stands and now has company: decision 3 gives the camera checks the same shape. `FRIGATE_SAFE_MODE_FIX` ("Fix it in Frigate's configuration editor… Save & Restart") stays: in safe mode Frigate answers, so the editor works, and its validation means a still-broken config isn't saved.
+11. **Frigate's own shutdown tracebacks are told apart by s6's exit line, in the helper both checks share.** `traceback_last_line` quotes nothing when the last exception line is followed by `[INFO] Service Frigate exited with code 0 (by signal 0)` or `… code 256 (by signal 15)` (`ORDERLY_EXIT`): Frigate stopped on purpose, so no exception before that line is why it isn't answering. A crash's exit line has a nonzero code, so a crash loop still quotes its exception (bench item 2), and so does a crash whose run hasn't logged s6's line yet. This covers both of the probe's sources, which decision 6 leaves as they are: the stopping run (the unit is `active`, so the current invocation is read) and the tail (the auto-restart gap). The alternatives weighed on 2026-11-05: treating a pending 143 as a completed restart covers only the tail half, and both observed quotes came from the current invocation; ignoring exceptions after a restart request needs a request line Frigate doesn't log; accepting the gap leaves a wrong cause with a Diagnostics link after every save. What's left is the 0.6 s between the tracebacks and s6's line, and the report cache, which stretches whatever report falls in that window by up to 5 s and stays as it is. The rule also closes Task 3's deferred minor (a Frigate stopped by hand quoted an older exception from the tail): a hand stop ends with the same line. `journal_lines` reads a run's first 400 lines, so a run older than that never showed its shutdown from the current invocation anyway; only the tail half did.
 
 ## Global Constraints
 
@@ -56,6 +58,7 @@ The maintainer decided 1 to 5 on 2026-11-05; 6 to 9 are calls made here, open to
 3. **Safe mode after a Save & Restart** (`NRestarts` 1, Frigate answering): the validation block quoted must be this run's. Task 2's probe test pins "answering and running reads the current run" whatever the counter says.
 4. **A crash loop whose tail has no exception line** (the 400-line tail scrolled past it, or a different failure): rule 7 and the Apps check fall back to "isn't answering" wording, never an empty quote. Task 3's `test_a_crash_loop_without_an_exception_line_is_unknown`.
 5. **Safe mode with `config.yml` itself broken**: the camera checks' YAML-error "unknown" must win, as the existing `test_every_check_is_unknown_when_config_yml_has_a_yaml_error` pins; Task 4 extends it with `safe_mode` true.
+6. **A crash loop must still quote after Task 7, and a stop of any kind must not**: `test_an_orderly_exit_after_the_last_exception_quotes_nothing` has both, with the exit line's code the only difference. The marker is the whole line after both prefixes are stripped (`fullmatch`), so nginx's or go2rtc's exit lines, which name another service, don't end the search.
 
 ---
 
@@ -375,3 +378,99 @@ Through `tmdev.py check start|item|status|end` on the Coral unit from the invent
 - [ ] **Device tests:** `tmdev.py test <host> -- -k "status or frigate_plus"`, then the full non-disruptive suite.
 - [ ] **Off-device:** the backend suite, `mkdocs build --strict`, and `python -m pytest script/tests -q` (unchanged, as a regression check).
 - [ ] **PR text additions** (Task 10 of the original plan): the measured restart (15.6 s and 16.6 s; `RESTART_SECONDS` kept at 60); what the bench changed and why (this file's "What the bench showed" and "Decisions", in two short paragraphs); that the original plan's rules 3, 7, and 8, its regex, and its safe-mode camera expectation differ from the code, with this file as the record; the "Limits" item that `-f` keeps a `model:` section Frigate can't load, and the docs' way out; and that a key check at save time is left to the planned Detection page.
+
+### Task 7: Frigate's own restart quotes nothing
+
+Bench item 6 and decision 11. Written 2026-11-05 after the re-bench at `bf0155f`.
+
+**Files:**
+- Modify: `tm-control/backend/tm_control/modules/apps/checks.py` (`traceback_last_line`, a new `ORDERLY_EXIT`)
+- Modify: `tm-control/backend/tests/frigate_log.py` (new fixtures)
+- Modify: `docs/development/tm-control.md` (one sentence)
+- Test: `tm-control/backend/tests/test_contract_checks.py`, `tests/test_app_checks.py`
+
+**Interfaces:**
+- Produces: `ORDERLY_EXIT = re.compile(r"\[INFO\] Service Frigate exited with code (0 \(by signal 0\)|256 \(by signal 15\))")`, with a comment: s6's finish line when Frigate's process exited 0 (a Save & Restart, its Restart button, a stop) or was killed by SIGTERM; a crash has a nonzero code, and the other services' lines name them, not Frigate. `traceback_last_line(lines)` scans backwards as now and strips both prefixes as now; it returns None as soon as `ORDERLY_EXIT.fullmatch(text)` matches, before any exception line has matched. Its docstring says so: "None when there's none, or when Frigate's supervisor logged an orderly exit after the last one, since Frigate logs tracebacks of its own while it stops". `validation_messages` is unchanged: it's quoted only while Frigate answers.
+- Produces, in `frigate_log.py`: `SHUTDOWN_LAST_LINE = "FileNotFoundError: [Errno 2] No such file or directory"`, `ORDERLY_EXIT_LINE = "[INFO] Service Frigate exited with code 0 (by signal 0)"`, and `shutdown_lines(exit_line: str = ORDERLY_EXIT_LINE) -> list[str]`: what Frigate logged while stopping for a Save & Restart on the bench (2026-11-05), as the current run's MESSAGE fields, each `2026-11-05 11:47:12.065588818  <text>` (the s6 stamp alone): `[INFO] Service NGINX exited with code 0 (by signal 0)`, a `Traceback (most recent call last):` line, one frame line, `AttributeError: 'ForkAwareLocal' object has no attribute 'connection'`, another `Traceback` line and frame line, `SHUTDOWN_LAST_LINE`, `exit_line`, then `[INFO] The go2rtc service exited with code 0 (by signal 0)`. `shutdown_tail(exit_line: str = ORDERLY_EXIT_LINE) -> list[str]`: the same lines with the journalctl prefix `2026-11-05T11:47:12-0800 tm-test frigate[2201]: ` in front, followed by systemd's `frigate.service: Main process exited, code=exited, status=143/n/a`, `frigate.service: Failed with result 'exit-code'.`, and `frigate.service: Scheduled restart job, restart counter is at 1.` lines (prefix `2026-11-05T11:47:15-0800 tm-test systemd[1]: `, the last one at 11:47:16) without the s6 stamp: the tail between the exit and the new run. The frame lines are synthetic, as in `crash_loop_tail`.
+
+- [ ] **Step 1: Write the failing tests**
+
+In `test_contract_checks.py`, next to the other helper tests:
+
+```python
+def test_an_orderly_exit_after_the_last_exception_quotes_nothing():
+    """Frigate logs two tracebacks of its own while it stops for a Save & Restart (bench 2026-11-05); s6's exit line
+    with code 0 follows them, so neither is why Frigate isn't answering. A crash's exit line has a nonzero code."""
+    assert apps_checks.traceback_last_line(shutdown_lines()) is None  # the stopping run, while the unit is active
+    assert apps_checks.traceback_last_line(shutdown_tail()) is None  # the tail, between the exit and the new run
+    killed = "[INFO] Service Frigate exited with code 256 (by signal 15)"
+    assert apps_checks.traceback_last_line(shutdown_lines(killed)) is None
+    crashed = "[INFO] Service Frigate exited with code 1 (by signal 0)"
+    assert apps_checks.traceback_last_line(shutdown_lines(crashed)) == SHUTDOWN_LAST_LINE
+    # A run that crashed after the orderly exit of the one before it is quoted
+    assert apps_checks.traceback_last_line(shutdown_tail() + CRASH_LOOP_TAIL) == REFUSED_KEY_LINE
+    # Another service's exit line, or more than the line itself, doesn't end the search
+    nginx = "[INFO] Service NGINX exited with code 0 (by signal 0)"
+    assert apps_checks.traceback_last_line(["Exception: bare", nginx]) == "Exception: bare"
+    assert apps_checks.traceback_last_line(["Exception: bare", f"{ORDERLY_EXIT_LINE} and more"]) == "Exception: bare"
+
+
+def test_frigate_stopping_for_its_own_restart_is_unknown(apps):
+    """Decision 11: the unit is active while Frigate stops, and in auto-restart just after; neither quotes."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    stopping = {"ActiveState": "active", "SubState": "running", "NRestarts": "0"}
+    unknown = ("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown.")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_lines(), stopping))
+    assert (check.status, check.detail) == unknown
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_tail()))
+    assert (check.status, check.detail) == unknown
+```
+
+In `test_app_checks.py`, after `test_frigate_not_answering_quotes_the_logs_last_error` (the check doesn't read the unit's state itself; the journal is preset as the probe would give it for each source):
+
+```python
+def test_frigate_stopping_for_its_own_restart_quotes_nothing(apps):
+    """A Save & Restart: Frigate's own shutdown tracebacks aren't the cause of a failure (decision 11)."""
+    apps.answers[VERSION] = (None, None)
+    for journal in (shutdown_lines(), shutdown_tail()):
+        check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: journal})["apps.frigate.reachable"]
+        assert check.status == "error"
+        assert check.detail == (
+            "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
+        )
+        assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+```
+
+- [ ] **Step 2: Run them to see them fail**
+
+Run: `python -m pytest tm-control/backend/tests/test_contract_checks.py tm-control/backend/tests/test_app_checks.py -k "orderly_exit or own_restart" -q`
+Expected: FAIL (ImportError on the fixtures, then `SHUTDOWN_LAST_LINE` quoted where None is expected).
+
+- [ ] **Step 3: Add the fixtures, `ORDERLY_EXIT`, and the early return in `traceback_last_line`**, as the Interfaces block says. Keep `TRACEBACK_END`, `JOURNAL_PREFIX`, and `S6_TIMESTAMP` as they are.
+
+- [ ] **Step 4: Run the file pair, then the backend suite**
+
+Run: `python -m pytest tm-control/backend/tests -q`
+Expected: PASS. `test_frigate_not_answering_quotes_the_logs_last_error` and the crash-loop tests still pass: `CRASH_LOOP_TAIL`'s exit line has code 1.
+
+- [ ] **Step 5: The docs sentence**
+
+In `docs/development/tm-control.md`, after the sentence that ends "before it matches an exception line", add: "It quotes nothing when s6's `[INFO] Service Frigate exited with code 0` line (`ORDERLY_EXIT`; a kill by SIGTERM counts too) comes after the last exception line. Frigate logs two tracebacks of its own while it stops for a Save & Restart, and the unit stays active until its container has halted, so the probe reads the run that is stopping; a crash's exit line has a nonzero code, so a crash loop still quotes." Then run `mkdocs build --strict`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add tm-control/backend/tm_control/modules/apps/checks.py tm-control/backend/tests/frigate_log.py tm-control/backend/tests/test_contract_checks.py tm-control/backend/tests/test_app_checks.py docs/development/tm-control.md
+git commit -m "Ignore the tracebacks Frigate logs while it stops on purpose"
+```
+
+- [ ] **Step 7: Bench item 2 again**
+
+Through `tmdev.py check start|item|status|end` on the Coral unit, as in Task 6: one host at a time, every value a placeholder, no file contents printed, and nothing after "token:" printed. Deploy with `tmdev.py deploy <host> -- -t tm-control`.
+
+- **Save & Restart:** a Save & Restart of the unchanged config, then `POST /api/restart`, each polled every 2 s for 30 s. `apps.frigate.reachable` says "isn't answering" with the Restart fix, never quotes a line, and is ok once Frigate answers (about 19 s after the request). The Services row is as at `bf0155f`: "restarted itself N times". `config.frigate_plus`, with the installer's model, keeps its status throughout. No key in any report.
+- **A3's crash loop, briefly:** with the `plus://` model on disk and the placeholder key, once `NRestarts` is above 0 both checks still quote `Unable to refresh API token` (its exit line has code 1). Restore the installer's `model:` section and restart.
+- **Device tests:** `tmdev.py test <host> -- -k "status or frigate_plus"`.
+- **Off-device:** the backend suite, `python -m pytest script/tests -q`, and `mkdocs build --strict`.
+- **PR text:** in `pr-text-additions.md`, drop the TODO on the Testing item's Save & Restart entry and fill in what the run showed.
