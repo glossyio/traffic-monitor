@@ -3,8 +3,10 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
+from conftest import PLACEHOLDER_KEY
 from tm_control.core.secrets import (
     ENTERED_SECRETS,
+    FRIGATE_PLUS_API_KEY,
     GENERATED_SECRETS,
     NAMES,
     PLATE_RECOGNIZER_LICENSE_KEY,
@@ -30,8 +32,12 @@ def test_generated_and_entered_names_match_the_role():
 
 
 def test_the_entered_names():
-    assert ENTERED_SECRETS == (THINGSBOARD_ACCESS_TOKEN, PLATE_RECOGNIZER_TOKEN, PLATE_RECOGNIZER_LICENSE_KEY)
-    assert ENTERED_SECRETS == ("thingsboard_access_token", "plate_recognizer_token", "plate_recognizer_license_key")
+    assert ENTERED_SECRETS == (
+        THINGSBOARD_ACCESS_TOKEN, FRIGATE_PLUS_API_KEY, PLATE_RECOGNIZER_TOKEN, PLATE_RECOGNIZER_LICENSE_KEY,
+    )
+    assert ENTERED_SECRETS == (
+        "thingsboard_access_token", "frigate_plus_api_key", "plate_recognizer_token", "plate_recognizer_license_key",
+    )
 
 
 def test_is_set_and_ends_with_follow_the_file(tmp_path):
@@ -111,6 +117,13 @@ def test_fake_secrets_entered_values():
     assert not fake.is_set(PLATE_RECOGNIZER_TOKEN)
     assert FakeSecrets().entered == dict.fromkeys(ENTERED_SECRETS, "")  # each instance has its own
     assert fake.is_set(SESSION_KEY) and fake.ends_with(SESSION_KEY) == "cret"
+
+
+def test_the_frigate_plus_key_takes_frigates_own_format():
+    assert is_valid_value(FRIGATE_PLUS_API_KEY, PLACEHOLDER_KEY)
+    for bad in (PLACEHOLDER_KEY.upper(), PLACEHOLDER_KEY.replace(":", ""), PLACEHOLDER_KEY[:-1],
+                PLACEHOLDER_KEY + "0", PLACEHOLDER_KEY.replace("-", "_", 1), " " + PLACEHOLDER_KEY):
+        assert not is_valid_value(FRIGATE_PLUS_API_KEY, bad), bad
 
 
 def test_every_entered_secret_has_a_value_pattern_and_its_rule_in_words():

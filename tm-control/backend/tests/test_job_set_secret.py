@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PLACEHOLDER_KEY
 from tm_control.core.secrets import ENTERED_SECRETS, VALUE_PATTERNS
 from tm_control.modules.secrets.router import ENTERED
 
@@ -189,6 +190,30 @@ def test_an_empty_value_removes_the_secret(tmp_path, codedir, manifest, secrets_
     assert env.read_text() == NODE_RED_ENV
     assert "removed secret thingsboard_access_token" in result.stdout
     assert calls(tmp_path) == [["restart", "node-red-tm.service"]]
+
+
+def test_the_frigate_plus_key_rewrites_frigate_env_and_restarts_frigate_only(
+    tmp_path, codedir, manifest, secrets_dir, systemctl
+):
+    (codedir / "frigate").mkdir()
+    env = codedir / "frigate" / "frigate.env"
+    text = "FRIGATE_GO2RTC_RTSP_USER=frigate\nPLUS_API_KEY=\nTZ=UTC\n"
+    env.write_text(text)
+    env.chmod(0o640)
+    request = write_request(tmp_path, {"name": "frigate_plus_api_key", "value": PLACEHOLDER_KEY})
+    result = run_job(request, systemctl, manifest, secrets_dir)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (secrets_dir / "frigate_plus_api_key").read_text() == PLACEHOLDER_KEY + "\n"
+    assert env.read_text() == text.replace("PLUS_API_KEY=\n", f"PLUS_API_KEY={PLACEHOLDER_KEY}\n")
+    assert stat.S_IMODE(env.stat().st_mode) == 0o640
+    assert node_red_env(codedir) == NODE_RED_ENV and plate_recognizer_env(codedir) == PLATE_RECOGNIZER_ENV
+    assert calls(tmp_path) == [["restart", "frigate.service"]]
+    assert result.stdout.splitlines() == [
+        "set secret frigate_plus_api_key",
+        "updated frigate.env",
+        "restarted frigate.service",
+    ]
+    assert PLACEHOLDER_KEY not in result.stdout + result.stderr
 
 
 def test_a_missing_env_line_is_appended(tmp_path, codedir, manifest, secrets_dir, systemctl):
