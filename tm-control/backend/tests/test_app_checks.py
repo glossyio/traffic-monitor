@@ -13,7 +13,10 @@ from tm_control.adapters.command import CommandResult
 from tm_control.core.checks import Fix, run_group
 from tm_control.modules import MODULES
 from tm_control.modules.apps import checks as apps_checks
+from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import newest_migration
+
+from frigate_log import DETECTOR_MESSAGE, SAFE_MODE_LINES, validation_block
 
 # The URLs the `apps` fixture answers (conftest.FakeApps)
 VERSION = "http://127.0.0.1:5000/api/version"
@@ -26,6 +29,15 @@ GO2RTC_STREAMS = "http://127.0.0.1:1984/api/streams"
 def apps_group(apps):
     group = run_group(apps_checks.GROUP, apps.context())
     assert group.title == "Apps"
+    return {check.id: check for check in group.checks}
+
+
+def apps_group_with(apps, preset: dict):
+    """The apps group, with some probes' results set beforehand (the fixture's Context has no settings, so a check
+    that reaches systemd or the journal would fail)."""
+    context = apps.context()
+    context.probes.update(preset)
+    group = run_group(apps_checks.GROUP, context)
     return {check.id: check for check in group.checks}
 
 
@@ -107,6 +119,49 @@ def test_a_camera_disabled_in_frigate_isnt_expected_to_have_frames(apps):
     check = apps_group(apps)["apps.frigate.cameras"]
     assert check.status == "warn"
     assert check.detail.startswith("Frigate has no enabled camera")
+
+
+SAFE_MODE_FIX = (
+    "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
+)
+
+
+def test_frigate_in_safe_mode_is_an_error_that_quotes_the_messages(apps):
+    """Frigate in safe mode answers its version and has no cameras, so nothing else looks wrong (review focus 3)."""
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (
+        "Frigate 0.18.1-cf67f08 started in safe mode, with no cameras, because its config has an error, so nothing "
+        f"is counted. Its log says: {DETECTOR_MESSAGE}. {SAFE_MODE_FIX}"
+    )
+    assert check.fix is None
+
+
+def test_frigate_in_safe_mode_quotes_at_most_three_messages(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    lines = validation_block("first", "second", "third", "fourth")
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: lines})["apps.frigate.reachable"]
+    assert "Its log says: first; second; third. " in check.detail
+    assert "fourth" not in check.detail
+
+
+def test_frigate_in_safe_mode_without_journal_lines_still_errors(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (
+        "Frigate 0.18.1-cf67f08 started in safe mode, with no cameras, because its config has an error, so nothing "
+        f"is counted. {SAFE_MODE_FIX}"
+    )
+    assert check.fix is None
+
+
+def test_frigate_not_in_safe_mode_is_ok_as_before(apps):
+    context = apps.context()
+    check = {c.id: c for c in run_group(apps_checks.GROUP, context).checks}["apps.frigate.reachable"]
+    assert check.status == "ok" and check.detail == "Frigate 0.18.1-cf67f08 is running."
+    assert probes.FRIGATE_JOURNAL not in context.probes  # the journal is read only for safe mode
 
 
 # Node-RED

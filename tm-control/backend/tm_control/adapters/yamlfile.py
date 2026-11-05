@@ -1,4 +1,5 @@
-"""Edit YAML config files in place: keep comments, key order, and quoting, and write atomically with a backup."""
+"""Read YAML config files for checking, and edit them in place: keep comments, key order, and quoting, and write
+atomically with a backup."""
 
 import contextlib
 import io
@@ -8,8 +9,10 @@ import stat
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal, NamedTuple
 
 from ruamel.yaml import YAML
+from ruamel.yaml.error import MarkedYAMLError
 
 
 class ConcurrentEditError(RuntimeError):
@@ -34,6 +37,41 @@ def _open_regular(path):
         os.close(fd)
         raise NotARegularFile()
     return fd
+
+
+class ConfigRead(NamedTuple):
+    """A config file parsed, or why it couldn't be: "missing", "unreadable", or "invalid" (not YAML, or not a mapping).
+
+    For a YAML error, line and column (from 1) say where; nothing of the file's content is kept, since a config can
+    hold a secret (Node-RED's thingsboard.access_token, before it moved to its own file).
+    """
+
+    data: dict | None
+    problem: Literal["missing", "unreadable", "invalid"] | None
+    line: int | None = None
+    column: int | None = None
+
+
+def read_config(path: Path) -> ConfigRead:
+    """A YAML config file's mapping, for reading only. Never raises."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ConfigRead(None, "missing")
+    except (OSError, UnicodeDecodeError):
+        return ConfigRead(None, "unreadable")
+    try:
+        data = YAML(typ="safe", pure=True).load(text)
+    except MarkedYAMLError as error:
+        mark = error.problem_mark or error.context_mark
+        if mark is None:
+            return ConfigRead(None, "invalid")
+        return ConfigRead(None, "invalid", mark.line + 1, mark.column + 1)
+    except Exception:
+        return ConfigRead(None, "invalid")
+    if not isinstance(data, dict):
+        return ConfigRead(None, "invalid")
+    return ConfigRead(data, None)
 
 
 def _round_trip_yaml(mapping_indent):

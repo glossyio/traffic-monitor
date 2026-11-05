@@ -143,6 +143,12 @@
                     "title": "ThingsBoard upload",
                     "status": "ok",
                     "detail": "The upload is off."
+                },
+                {
+                    "id": "config.frigate_plus",
+                    "title": "Frigate+",
+                    "status": "ok",
+                    "detail": "Frigate+ isn't in use."
                 }
             ]
         },
