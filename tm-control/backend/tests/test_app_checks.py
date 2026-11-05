@@ -17,7 +17,15 @@ from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import DIAGNOSTICS, newest_migration
 from tm_control.modules.services import units
 
-from frigate_log import CRASH_LOOP_TAIL, DETECTOR_MESSAGE, REFUSED_KEY_LINE, SAFE_MODE_LINES, validation_block
+from frigate_log import (
+    CRASH_LOOP_TAIL,
+    DETECTOR_MESSAGE,
+    REFUSED_KEY_LINE,
+    SAFE_MODE_LINES,
+    shutdown_lines,
+    shutdown_tail,
+    validation_block,
+)
 
 # The URLs the `apps` fixture answers (conftest.FakeApps)
 VERSION = "http://127.0.0.1:5000/api/version"
@@ -110,6 +118,18 @@ def test_frigate_not_answering_quotes_the_logs_last_error(apps):
                             "it from its Services row; if it keeps stopping, download the diagnostics on the Device "
                             "page.")
     assert check.fix == DIAGNOSTICS  # the Services row keeps the restart; the quoted line may predate a hand stop
+
+
+def test_frigate_stopping_for_its_own_restart_quotes_nothing(apps):
+    """A Save & Restart: Frigate's own shutdown tracebacks aren't the cause of a failure (decision 11)."""
+    apps.answers[VERSION] = (None, None)
+    for journal in (shutdown_lines(), shutdown_tail()):
+        check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: journal})["apps.frigate.reachable"]
+        assert check.status == "error"
+        assert check.detail == (
+            "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
+        )
+        assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
 
 
 def test_frigate_answering_an_error_page_is_not_a_version(apps):
