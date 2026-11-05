@@ -32,9 +32,17 @@ const PLATE_TOKEN: SecretState = {
   ends_with: '0002',
   restarts: ['plate-recognizer.service', 'node-red-tm.service'],
 }
+const FRIGATE_PLUS_KEY: SecretState = {
+  name: 'frigate_plus_api_key',
+  title: 'Frigate+ API key',
+  set: true,
+  ends_with: '4567',
+  restarts: ['frigate.service'],
+}
 
 const PATH = '/api/v1/secrets/thingsboard_access_token'
 const PLACEHOLDER = 'tb-placeholder-0001'
+const PLACEHOLDER_KEY = 'tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567'
 
 function job(id: string, status: Job['status'], log: string[] = []): Job {
   const done = status === 'succeeded' || status === 'failed'
@@ -149,6 +157,59 @@ describe('an entered secret', () => {
     )
     await clickInDialog('Remove')
     expect(wrapper.text()).toContain('Removed. Plate Recognizer and Node-RED restarted.')
+  })
+
+  it('says Frigate restarts in about a minute and that traffic is not counted', async () => {
+    let polls = 0
+    fakeApi({
+      'POST /api/v1/secrets/frigate_plus_api_key': json(202, { id: 'job14' }),
+      'GET /api/v1/jobs/job14': () => {
+        polls += 1
+        return json(200, job('job14', polls > 1 ? 'succeeded' : 'running'))
+      },
+    })
+    const wrapper = await mountSecret(FRIGATE_PLUS_KEY)
+    vi.useFakeTimers()
+    await type(wrapper, 'Frigate+ API key', PLACEHOLDER_KEY)
+    await click(wrapper, 'Save')
+    expect(wrapper.find('.v-alert').text()).toBe(
+      "Saving. Frigate restarts, which takes about a minute. Traffic isn't counted while it does.",
+    )
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    expect(wrapper.find('.v-alert').text()).toMatch(/ Frigate restarted\.$/)
+  })
+
+  it('names what stops when the Frigate+ key is removed', async () => {
+    fakeApi({})
+    const wrapper = await mountSecret(FRIGATE_PLUS_KEY)
+    await click(wrapper, 'Remove')
+    expect(dialogText()).toContain(
+      "Frigate restarts, which takes about a minute. Traffic isn't counted while it does. Snapshots can't be sent " +
+        'to Frigate+ until a key is set again. A Frigate+ model already on the device keeps running.',
+    )
+  })
+
+  it("keeps the other secrets' notes as they were", async () => {
+    const notes: [SecretState, string][] = [
+      [TOKEN, 'Node-RED restarts, which takes about thirty seconds.'],
+      [PLATE_TOKEN, 'Plate Recognizer and Node-RED restart, which takes about a minute.'],
+      [LICENSE_KEY, 'Plate Recognizer restarts, which takes about thirty seconds.'],
+    ]
+    for (const [secret, note] of notes) {
+      fakeApi({
+        [`POST /api/v1/secrets/${secret.name}`]: json(202, { id: 'job16' }),
+        'GET /api/v1/jobs/job16': json(200, job('job16', 'running')),
+      })
+      const wrapper = await mountSecret(secret)
+      vi.useFakeTimers()
+      await type(wrapper, secret.title, PLACEHOLDER)
+      await click(wrapper, 'Save')
+      expect(wrapper.find('.v-alert').text()).toBe(`Saving. ${note}`)
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
   })
 
   it('shows the job log when the job fails', async () => {

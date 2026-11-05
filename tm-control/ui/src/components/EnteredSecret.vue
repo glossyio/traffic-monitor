@@ -25,6 +25,14 @@ const SECRET_JOB_DEADLINE_MS = 300_000
 const APPS: Record<string, string> = {
   'node-red-tm.service': 'Node-RED',
   'plate-recognizer.service': 'Plate Recognizer',
+  'frigate.service': 'Frigate',
+}
+
+// About how long each app takes to restart, in seconds; a secret that restarts two apps waits for both
+const RESTART_SECONDS: Record<string, number> = {
+  'node-red-tm.service': 30,
+  'plate-recognizer.service': 30,
+  'frigate.service': 60,
 }
 
 // What stops working while the secret isn't set, by secret name
@@ -32,14 +40,27 @@ const CONSEQUENCES: Record<string, string> = {
   thingsboard_access_token: 'The upload to ThingsBoard stops until a token is set again.',
   plate_recognizer_token: "Plates aren't read until it's set again.",
   plate_recognizer_license_key: "Plates aren't read until it's set again.",
+  frigate_plus_api_key:
+    "Snapshots can't be sent to Frigate+ until a key is set again. " +
+    'A Frigate+ model already on the device keeps running.',
 }
 
 const apps = computed(() => props.secret.restarts.map((unit) => APPS[unit] ?? unit).join(' and '))
-const restartNote = computed(() =>
-  props.secret.restarts.length > 1
-    ? `${apps.value} restart, which takes about a minute.`
-    : `${apps.value} restarts, which takes about thirty seconds.`,
-)
+function describe(seconds: number) {
+  if (seconds <= 30) return 'about thirty seconds'
+  if (seconds <= 60) return 'about a minute'
+  if (seconds <= 90) return 'about a minute and a half'
+  return 'about two minutes'
+}
+
+const restartNote = computed(() => {
+  const units = props.secret.restarts
+  const seconds = units.reduce((sum, unit) => sum + (RESTART_SECONDS[unit] ?? 30), 0) // an unlisted app: thirty
+  const one = units.length === 1
+  const note = `${apps.value} restart${one ? 's' : ''}, which takes ${describe(seconds)}.`
+  // Frigate does the detecting, so nothing is counted until it's back
+  return units.includes('frigate.service') ? `${note} Traffic isn't counted while it does.` : note
+})
 
 const stateLine = computed(() => {
   if (!props.secret.set) return 'Not set.'
