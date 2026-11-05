@@ -345,8 +345,10 @@ ENV_SECRETS = (("TOKEN", PLATE_RECOGNIZER_TOKEN), ("LICENSE_KEY", PLATE_RECOGNIZ
 ENV_PLACEHOLDERS = {"", "YYYYY", "XXXXX"}
 FRIGATE_ENV_SECRETS = (("PLUS_API_KEY", FRIGATE_PLUS_API_KEY),)
 # What frigate.env.j2 wrote for no key: PLUS_API_KEY="" in v0.5.0, PLUS_API_KEY= from v0.6.0 on. frigate.env is
-# rendered only on a first install or with -f, so a device installed at v0.5.0 can still have the quoted line.
-FRIGATE_ENV_PLACEHOLDERS = {"", '""'}
+# rendered only on a first install or with -f, so a device installed at v0.5.0 can still have the quoted line, and a
+# key typed between its quotes. The Frigate step reads each value without one pair of surrounding double quotes
+# (_unquoted), so "" is no key and "<key>" moves as the bare key.
+FRIGATE_ENV_PLACEHOLDERS = {""}
 SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
 CONFIG_REMEDY = "Enter it on the control app's Device page and delete the key."
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
@@ -654,6 +656,11 @@ def _env_values(text):
     return values
 
 
+def _unquoted(value):
+    """value without one pair of surrounding double quotes."""
+    return value[1:-1] if len(value) >= 2 and value[0] == value[-1] == '"' else value
+
+
 def _same_backup(path, text):
     """An existing backup of path that holds text, or None."""
     for backup in sorted(path.parent.glob(f"{path.name}.*.bak")):
@@ -682,15 +689,18 @@ def run_frigate_env(env_path, secrets_dir, dry_run=False):
 
     As run_plate_recognizer_env does: the env file isn't rewritten, because tmsetup writes the line from the secret
     file on the same run, and it is backed up first when its key differs from a set secret file or isn't in Frigate's
-    own format, since that rewrite would lose it. A missing env file means a first install.
+    own format, since that rewrite would lose it. A key between one pair of double quotes, as typed into v0.5.0's
+    PLUS_API_KEY="", counts as the key without them. A missing env file means a first install.
     """
     return _unexpected(
-        env_path, _run_env, Path(env_path), Path(secrets_dir), dry_run, FRIGATE_ENV_SECRETS, FRIGATE_ENV_PLACEHOLDERS
+        env_path, _run_env, Path(env_path), Path(secrets_dir), dry_run, FRIGATE_ENV_SECRETS, FRIGATE_ENV_PLACEHOLDERS,
+        _unquoted,
     )
 
 
-def _run_env(env_path, secrets_dir, dry_run, entries, placeholders):
-    """Move each (KEY, secret name) in entries whose env file value isn't one of placeholders."""
+def _run_env(env_path, secrets_dir, dry_run, entries, placeholders, normalise=None):
+    """Move each (KEY, secret name) in entries whose env file value isn't one of placeholders. normalise, when given,
+    turns each value as the file has it into the value that is checked, compared, and moved."""
     try:
         text = read_text(env_path)  # never through a link, as root
     except FileNotFoundError:
@@ -707,6 +717,8 @@ def _run_env(env_path, secrets_dir, dry_run, entries, placeholders):
     moves, differ, refused = [], [], []
     for key, name in entries:
         value = values.get(key, "")
+        if normalise is not None:
+            value = normalise(value)
         if value in placeholders:
             continue
         if not is_valid_value(name, value):
