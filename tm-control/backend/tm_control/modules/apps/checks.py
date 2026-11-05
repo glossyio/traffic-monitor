@@ -27,6 +27,11 @@ VALIDATION_MESSAGE = "Message : "  # how Frigate prints each error of a config t
 # ValueError: ..., requests.exceptions.HTTPError: ..., Exception: ...; not podman's or systemd's bare "Error: ..."
 TRACEBACK_END = re.compile(r"(\w+\.)*(\w+Error|\w*Exception)\b.*")
 JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
+# Frigate's s6 supervisor stamps each line it forwards, after journalctl's prefix; two spaces follow the stamp
+S6_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{1,9}\s+")
+# What Frigate raises when its server refuses the Frigate+ key (PlusApi._refresh_token_if_needed); the server's
+# JSON after it isn't matched
+REFUSED_KEY = "Unable to refresh API token"
 FRIGATE_SAFE_MODE_FIX = (
     "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
 )
@@ -88,10 +93,13 @@ def validation_messages(lines, limit: int | None = ERRORS_SHOWN) -> list[str]:
 
 
 def traceback_last_line(lines) -> str | None:
-    """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's time and
-    process prefix, redacted; None when there's none."""
+    """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's prefix and
+    Frigate's s6 timestamp, redacted; None when there's none."""
     for line in reversed(list(lines)):
-        text = JOURNAL_PREFIX.sub("", str(line), count=1).rstrip()
+        text = JOURNAL_PREFIX.sub("", str(line), count=1)
+        if stamp := S6_TIMESTAMP.match(text):
+            text = text[stamp.end():]
+        text = text.rstrip()
         if TRACEBACK_END.fullmatch(text):
             return redact(text)
     return None
