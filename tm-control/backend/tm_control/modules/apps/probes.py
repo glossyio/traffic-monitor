@@ -90,6 +90,11 @@ def mapping(value) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def frigate_safe_mode(config) -> bool:
+    """Frigate's config says it started in safe mode: its config didn't validate, so it runs with no cameras."""
+    return mapping(config).get("safe_mode") is True
+
+
 def frigate_cameras(config: dict) -> dict[str, dict]:
     """The cameras in Frigate's config that are enabled there, by name."""
     cameras = {str(name): mapping(camera) for name, camera in mapping(config.get("cameras")).items()}

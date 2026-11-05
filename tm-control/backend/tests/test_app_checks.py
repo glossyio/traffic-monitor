@@ -181,6 +181,24 @@ def test_frigate_not_in_safe_mode_is_ok_as_before(apps):
     assert probes.FRIGATE_JOURNAL not in context.probes  # the journal is read only for safe mode
 
 
+def test_safe_mode_leaves_the_camera_and_stream_checks_unknown(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True, cameras={}))
+    checks = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})
+    assert checks["apps.frigate.reachable"].status == "error"
+    assert (checks["apps.frigate.cameras"].status, checks["apps.frigate.cameras"].detail) == (
+        "unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be checked; see the Frigate check.",
+    )
+    assert (checks["apps.go2rtc.streams"].status, checks["apps.go2rtc.streams"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so the streams its cameras read can't be listed; see the Frigate "
+        "check.",
+    )
+    # go2rtc not answering still wins: its streams are gone whatever Frigate's state
+    apps.answers[GO2RTC_STREAMS] = (None, None)
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})["apps.go2rtc.streams"]
+    assert check.status == "error" and check.fix.unit == "go2rtc_server.service"
+
+
 # Node-RED
 
 

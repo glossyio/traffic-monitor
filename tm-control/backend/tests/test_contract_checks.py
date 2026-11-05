@@ -94,13 +94,36 @@ def test_cameras_and_zones_are_unknown_when_frigate_is_down(apps):
     assert checks["config.thingsboard"].status == "ok"
 
 
+def test_cameras_and_zones_are_unknown_in_safe_mode(apps):
+    """Bench A5: an empty camera list isn't a renamed camera (the fixture's config.yml still enables picam_h265)."""
+    safe_mode(apps)
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config.update(cameras={}))
+    checks = config_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})
+    assert (checks["config.cameras"].status, checks["config.cameras"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so its cameras can't be compared with config.yml; see the Frigate "
+        "check under Apps.",
+    )
+    assert (checks["config.zones"].status, checks["config.zones"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see the Frigate check under "
+        "Apps.",
+    )
+    assert checks["config.frigate_plus"].detail == "Frigate+ isn't in use."
+
+
 def test_every_check_is_unknown_when_config_yml_has_a_yaml_error(apps):
     apps.config_yml.write_text("sensors:\n  cameras: [unclosed\n")
+    safe_mode(apps)  # config.yml's problem is still the one named (review focus 5)
     checks = config_group(apps)
     # The Frigate+ check reads Frigate's config.yml only, which has no plus:// model, and no key is set.
     frigate_plus = checks.pop("config.frigate_plus")
     assert (frigate_plus.status, frigate_plus.detail) == ("ok", "Frigate+ isn't in use.")
     assert {c.status for c in checks.values()} == {"unknown"}
+    assert checks["config.cameras"].detail == (
+        "config.yml has a YAML error, so its cameras can't be compared with Frigate's."
+    )
+    assert checks["config.zones"].detail == "config.yml has a YAML error, so the cameras' zones can't be checked."
     assert all("unclosed" not in c.detail for c in checks.values())
 
 

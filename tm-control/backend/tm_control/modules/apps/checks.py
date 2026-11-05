@@ -127,7 +127,7 @@ def frigate(context: Context) -> list[Check]:
         return check("error", f"Frigate isn't answering. Restart it; {SEE_DIAGNOSTICS}.",
                      restart_fix("frigate.service"))
     config = probes.frigate_config(context)
-    if isinstance(config, dict) and config.get("safe_mode") is True:
+    if probes.frigate_safe_mode(config):
         # Frigate 0.18 answers a config that doesn't validate by starting with no cameras, so it looks healthy.
         messages = validation_messages(probes.frigate_journal(context))
         said = f"Its log says: {'; '.join(quoted(m) for m in messages)}. " if messages else ""
@@ -149,6 +149,9 @@ def cameras(context: Context) -> list[Check]:
     stats, config = probes.frigate_stats(context), probes.frigate_config(context)
     if stats is None or config is None:
         return check("unknown", "Frigate isn't answering, so its cameras can't be checked.")
+    if probes.frigate_safe_mode(config):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be checked; see the "
+                                "Frigate check.")
     names = list(probes.frigate_cameras(config))
     if not names:
         return check("warn", "Frigate has no enabled camera, so nothing is counted. Enable one in Frigate's config.")
@@ -277,6 +280,9 @@ def camera_streams(context: Context) -> list[Check]:
     config = probes.frigate_config(context)
     if config is None:
         return check("unknown", "Frigate isn't answering, so the streams its cameras read can't be listed.")
+    if probes.frigate_safe_mode(config):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so the streams its cameras read can't be "
+                                "listed; see the Frigate check.")
     reads: dict[str, str] = {}  # stream -> the first camera that reads it
     for camera_name, camera in probes.frigate_cameras(config).items():
         for stream_input in probes.mapping(camera.get("ffmpeg")).get("inputs") or []:
