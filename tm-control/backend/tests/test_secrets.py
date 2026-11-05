@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
-from conftest import PLACEHOLDER_KEY
+from placeholders import PLACEHOLDER_KEY
 from tm_control.core.secrets import (
     ENTERED_SECRETS,
     FRIGATE_PLUS_API_KEY,
