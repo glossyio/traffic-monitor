@@ -13,7 +13,8 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from ruamel.yaml.tokens import CommentToken
 
 from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, read_text, write_atomic
-from tm_control.core.secrets import PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN, THINGSBOARD_ACCESS_TOKEN
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
+from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.core.secrets import VALUE_RULES, is_valid_value
 
 PREFIX = "tm-control migrate:"
@@ -329,9 +330,10 @@ def run(frigate_config, dry_run=False):
 
 
 # Entered secrets (core/secrets.py). Older installs kept the ThingsBoard token and the Plate Recognizer token in
-# Node-RED's config.yml, and a person typed the Plate Recognizer token and license key into plate-recognizer.env.
-# tmsetup runs these two steps as root, before it renders either file, so that -f can't throw away a value's only
-# copy. Each key path, the secret file it moves to, and whether mappings it leaves empty go too.
+# Node-RED's config.yml, and a person typed the Plate Recognizer token and license key into plate-recognizer.env and
+# the Frigate+ API key into frigate.env. tmsetup runs these steps as root, before it renders any of those files, so
+# that -f can't throw away a value's only copy. Each key path, the secret file it moves to, and whether mappings it
+# leaves empty go too.
 # Only a value that meets its secret's pattern (core/secrets.py) moves, as through the Device page: a value the env
 # line or the upload URL can't carry never reaches an env file.
 CONFIG_SECRETS = (
@@ -341,6 +343,9 @@ CONFIG_SECRETS = (
 ENV_SECRETS = (("TOKEN", PLATE_RECOGNIZER_TOKEN), ("LICENSE_KEY", PLATE_RECOGNIZER_LICENSE_KEY))
 # What plate-recognizer.env.j2 wrote before it rendered the secrets: none of them is a value.
 ENV_PLACEHOLDERS = {"", "YYYYY", "XXXXX"}
+FRIGATE_ENV_SECRETS = (("PLUS_API_KEY", FRIGATE_PLUS_API_KEY),)
+# frigate.env.j2 has always written the line empty.
+FRIGATE_ENV_PLACEHOLDERS = {""}
 SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
 CONFIG_REMEDY = "Enter it on the control app's Device page and delete the key."
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
@@ -668,10 +673,23 @@ def run_plate_recognizer_env(env_path, secrets_dir, dry_run=False):
     tmsetup's rewrite would lose that value, and so it is when a value doesn't meet its secret's pattern and stays
     out. A missing env file means the add-on isn't installed.
     """
-    return _unexpected(env_path, _run_plate_recognizer_env, Path(env_path), Path(secrets_dir), dry_run)
+    return _unexpected(env_path, _run_env, Path(env_path), Path(secrets_dir), dry_run, ENV_SECRETS, ENV_PLACEHOLDERS)
 
 
-def _run_plate_recognizer_env(env_path, secrets_dir, dry_run):
+def run_frigate_env(env_path, secrets_dir, dry_run=False):
+    """Move a hand-entered PLUS_API_KEY from frigate.env to its secret file. Return a process exit code.
+
+    As run_plate_recognizer_env does: the env file isn't rewritten, because tmsetup writes the line from the secret
+    file on the same run, and it is backed up first when its key differs from a set secret file or isn't in Frigate's
+    own format, since that rewrite would lose it. A missing env file means a first install.
+    """
+    return _unexpected(
+        env_path, _run_env, Path(env_path), Path(secrets_dir), dry_run, FRIGATE_ENV_SECRETS, FRIGATE_ENV_PLACEHOLDERS
+    )
+
+
+def _run_env(env_path, secrets_dir, dry_run, entries, placeholders):
+    """Move each (KEY, secret name) in entries whose env file value isn't one of placeholders."""
     try:
         text = read_text(env_path)  # never through a link, as root
     except FileNotFoundError:
@@ -686,9 +704,9 @@ def _run_plate_recognizer_env(env_path, secrets_dir, dry_run):
 
     values = _env_values(text)
     moves, differ, refused = [], [], []
-    for key, name in ENV_SECRETS:
+    for key, name in entries:
         value = values.get(key, "")
-        if value in ENV_PLACEHOLDERS:
+        if value in placeholders:
             continue
         if not is_valid_value(name, value):
             refused.append((key, name))
@@ -707,7 +725,7 @@ def _run_plate_recognizer_env(env_path, secrets_dir, dry_run):
         backup = None
         if not dry_run:
             try:
-                # Once per content: the add-on's setup, which rewrites the lines, doesn't run while it's turned off.
+                # Once per content: an add-on's setup, which rewrites the lines, doesn't run while it's turned off.
                 backup = _same_backup(env_path, text) or back_up(env_path)
             except OSError as error:
                 print(f"{PREFIX} ERROR writing a backup of {env_path}: {error}", file=sys.stderr)
