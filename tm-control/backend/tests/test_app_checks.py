@@ -10,6 +10,7 @@ import pytest
 
 from tm_control.adapters import frigate, go2rtc, httpjson, mqtt, nodered
 from tm_control.adapters.command import CommandResult
+from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.core.checks import Fix, run_group
 from tm_control.modules import MODULES
 from tm_control.modules.apps import checks as apps_checks
@@ -43,8 +44,9 @@ def apps_group(apps):
 
 def apps_group_with(apps, preset: dict):
     """The apps group, with some probes' results set beforehand (the fixture's Context has no settings, so a check
-    that reaches systemd or the journal would fail)."""
+    that reaches systemd or the journal would fail). No unit states unless the preset gives them."""
     context = apps.context()
+    context.probes[units.SHOW_UNITS] = {}
     context.probes.update(preset)
     group = run_group(apps_checks.GROUP, context)
     return {check.id: check for check in group.checks}
@@ -111,7 +113,9 @@ def test_frigate_not_answering_quotes_the_logs_last_error(apps):
     apps.answers[VERSION] = (None, None)
     states = {"frigate.service": {"ActiveState": "active", "SubState": "running", "NRestarts": "3",
                                   "ActiveEnterTimestamp": "", "InvocationID": ""}}
-    preset = {units.SHOW_UNITS: states, probes.FRIGATE_JOURNAL: CRASH_LOOP_TAIL}
+    crashes = [AutomaticRestart("1", at) for at in (100.1, 110.1, 120.1)]  # nonzero exits are no loop of its own
+    preset = {units.SHOW_UNITS: states, f"{units.AUTOMATIC_RESTARTS}.frigate.service": crashes,
+              probes.FRIGATE_JOURNAL: CRASH_LOOP_TAIL}
     check = apps_group_with(apps, preset)["apps.frigate.reachable"]
     assert check.status == "error"
     assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. Restart "
@@ -130,6 +134,27 @@ def test_frigate_stopping_for_its_own_restart_quotes_nothing(apps):
             "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
         )
         assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+
+
+def test_frigate_in_a_restart_loop_says_it_keeps_stopping_itself(apps):
+    """Decision 12: Frigate's own restarts less than 2 minutes apart are a loop; named from the second restart on."""
+    apps.answers[VERSION] = (None, None)
+    loop = [AutomaticRestart("143", at) for at in (100.1, 140.1, 180.1, 220.1)]
+    states = {"frigate.service": {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "4",
+                                  "ActiveEnterTimestamp": "", "InvocationID": ""}}
+    preset = {units.SHOW_UNITS: states, f"{units.AUTOMATIC_RESTARTS}.frigate.service": loop,
+              probes.FRIGATE_JOURNAL: shutdown_tail()}
+    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+    assert check.status == "error" and check.fix == DIAGNOSTICS
+    assert check.detail == ("Frigate isn't answering: it keeps stopping itself (4 restarts so far, the last two less "
+                            "than 2 minutes apart), and systemd starts it again. Check the Hardware group; if it's ok, "
+                            "download the diagnostics on the Device page.")
+    # After one restart of its own, nothing says loop yet
+    states["frigate.service"]["NRestarts"] = "1"
+    preset[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = loop[:1]
+    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+    assert check.detail.startswith("Frigate isn't answering. Restart it;")
+    assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
 
 
 def test_frigate_answering_an_error_page_is_not_a_version(apps):

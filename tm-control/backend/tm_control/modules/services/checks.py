@@ -4,10 +4,11 @@ from datetime import date
 
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.modules.services.units import (
+    RESTART_LOOP_SPACING,
     Unit,
     active_since,
+    restart_causes,
     restart_fix,
-    restarted_itself,
     restarts,
     unit_states,
     units_for,
@@ -37,9 +38,17 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: 
         count = restarts(values)
         if count:
             times = "1 time" if count == 1 else f"{count} times"
-            if restarted_itself(context, unit, count):
+            causes = restart_causes(context, unit, count)
+            if causes is not None and all(cause == "itself" for cause in causes):
                 return check("ok", f"{_running(values, today)}. It restarted itself {times}, as {unit.title} does "
                                    f"when {unit.restarts_itself_when}.")
+            if causes is not None and "loop" in causes:
+                loops = causes.count("loop")
+                of_them = "" if count == 1 else ("all of them " if loops == count else f"{loops} of them ")
+                minutes = RESTART_LOOP_SPACING // 60
+                return check("warn", f"{_running(values, today)}, but it restarted {times}, {of_them}by stopping "
+                                     f"itself within {minutes} minutes of the restart before, which happens when "
+                                     f"something inside it keeps failing. {unit.restart_loop_hint}", restart)
             return check("warn", f"{_running(values, today)}, but it restarted {times} after failures.", restart)
         return check("ok", f"{_running(values, today)}.")
     if state == "activating":

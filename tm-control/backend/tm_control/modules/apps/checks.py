@@ -11,7 +11,7 @@ from tm_control.adapters import mqtt
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, VALUE_PATTERNS
 from tm_control.modules.apps import probes
-from tm_control.modules.services.units import restart_fix
+from tm_control.modules.services.units import RESTART_LOOP_SPACING, restart_fix, restart_loop
 
 MIGRATION = re.compile(r"(\d{4})_.*\.sql")
 STREAM = re.compile(r":8554/([^?#]+)")  # a go2rtc stream in a Frigate input path: rtsp://*:*@host...:8554/<name>
@@ -128,6 +128,14 @@ def frigate(context: Context) -> list[Check]:
 
     version = probes.frigate_version(context)
     if version is None:
+        # Frigate's own restarts close together (decision 12): named from the loop's second restart on, since one
+        # restart can't be told from a save. systemd is starting it again, so a restart here is pointless; the
+        # Services row keeps the one that clears the count once the cause is gone.
+        count = restart_loop(context, probes.FRIGATE)
+        if count is not None:
+            return check("error", f"Frigate isn't answering: it keeps stopping itself ({plural(count, 'restart')} so "
+                                  f"far, the last two less than {RESTART_LOOP_SPACING // 60} minutes apart), and "
+                                  f"systemd starts it again. {probes.FRIGATE.restart_loop_hint}", DIAGNOSTICS)
         # The Frigate+ check quotes the same line with its model advice, but only for a plus:// model; without one,
         # this check is the only one that names a crash loop's cause. A quoted line is one Frigate's process crashed
         # on, which a restart alone repeats, so the fix is Diagnostics and the restart stays in the Services row.

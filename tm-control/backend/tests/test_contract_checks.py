@@ -23,6 +23,7 @@ from frigate_log import (
 )
 from placeholders import PLACEHOLDER_KEY
 from tm_control.adapters import systemd
+from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.core.checks import Fix, run_group
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import checks as apps_checks
@@ -670,7 +671,8 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     apps.answers[FRIGATE_VERSION] = (None, None)
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="3")}
-    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["1", "1", "1"]
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("1", t) for t in (100.1, 110.1, 120.1)]
     probes.frigate_journal(context)
     assert calls == [("tail", "frigate.service", 400)]
 
@@ -679,7 +681,7 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     calls.clear()
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
-    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["143"]
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [AutomaticRestart("143", 100.1)]
     assert probes.frigate_journal(context) == ["Message : from this run"]
     assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
 
@@ -687,7 +689,18 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     calls.clear()
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="2")}
-    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = ["143", "1"]
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("143", 100.1), AutomaticRestart("1", 200.1)]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Frigate's own restart within RESTART_LOOP_SPACING of the one before it is a loop, not a save, so the run that
+    # stopped is in the tail
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="2")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("143", 100.1), AutomaticRestart("143", 140.1)]
     probes.frigate_journal(context)
     assert calls == [("tail", "frigate.service", 400)]
 
@@ -695,7 +708,7 @@ def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_
     calls.clear()
     context = apps.context()
     context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
-    context.probes[f"{units.RESTART_EXITS}.frigate.service"] = None
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = None
     probes.frigate_journal(context)
     assert calls == [("tail", "frigate.service", 400)]
 
