@@ -312,8 +312,9 @@ Device:
   was a few seconds ago by the time the text arrives (iOS Safari is strict). Then the text appears in a read-only
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
-- Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists, so
-  the Plate Recognizer token and license key appear only on a device with the add-on. It's one expansion panel,
+- Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists.
+  The ThingsBoard access token and the Frigate+ API key appear on every device; the Plate Recognizer token and
+  license key appear only on a device with the add-on. It's one expansion panel,
   closed when the page opens. The Status page's "Set the token" links to `/device#tokens-and-keys`, which opens it and scrolls to
   it. The page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns
   about a missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
@@ -325,7 +326,10 @@ Device:
   token before saving it, and it's emptied once the device has the value.
 - Saving or removing restarts the apps that read the value, so it takes as long as they do. While the job runs, an
   info line under the buttons says so ("Saving. Node-RED restarts, which takes about thirty seconds."), as setup's
-  system-password step does, rather than leaving only a spinner for half a minute. Remove asks first and names both
+  system-password step does, rather than leaving only a spinner for half a minute. The time is the sum of each app's
+  (Node-RED and Plate Recognizer about thirty seconds, Frigate about a minute). Frigate's note adds "Traffic isn't
+  counted while it does.", because the page says "Frigate restarted." when its container is up, before detection
+  has started again. Remove asks first and names both
   the restart and what stops ("The upload to ThingsBoard stops until a token is set again."). Save doesn't ask:
   the section's paragraph already says it restarts the app, and a second tap for every token would be noise.
 - The result stays under the form: "Saved. Node-RED restarted.", or "The value wasn't saved." with the job's log

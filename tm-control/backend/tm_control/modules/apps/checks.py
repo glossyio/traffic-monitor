@@ -9,8 +9,9 @@ from pathlib import Path
 
 from tm_control.adapters import mqtt
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, VALUE_PATTERNS
 from tm_control.modules.apps import probes
-from tm_control.modules.services.units import restart_fix
+from tm_control.modules.services.units import RESTART_LOOP_SPACING, restart_fix, restart_loop
 
 MIGRATION = re.compile(r"(\d{4})_.*\.sql")
 STREAM = re.compile(r":8554/([^?#]+)")  # a go2rtc stream in a Frigate input path: rtsp://*:*@host...:8554/<name>
@@ -20,6 +21,24 @@ DIAGNOSTICS = Fix(kind="link", href="/device", text="Diagnostics")
 SEE_DIAGNOSTICS = "if it keeps stopping, download the diagnostics on the Device page"
 RERUN_NODE_RED = "Re-run the installer with tmsetup.sh -t node-red-tm"
 MIGRATE_JOURNAL = "sudo journalctl -u node-red-tm | grep tmdb-migrate"
+# Anything shaped like a Frigate+ key, in any case, is replaced before a log line is quoted
+KEY_SHAPED = re.compile(VALUE_PATTERNS[FRIGATE_PLUS_API_KEY], re.IGNORECASE)
+VALIDATION_MESSAGE = "Message : "  # how Frigate prints each error of a config that doesn't validate
+# ValueError: ..., requests.exceptions.HTTPError: ..., Exception: ...; not podman's or systemd's bare "Error: ..."
+TRACEBACK_END = re.compile(r"(\w+\.)*(\w+Error|\w*Exception)\b.*")
+JOURNAL_PREFIX = re.compile(r"\d{4}-\d{2}-\d{2}T\S+ \S+ [^\s:]+(\[\d+\])?: ")  # journalctl -o short-iso
+# Frigate's s6 supervisor stamps each line it forwards, after journalctl's prefix; two spaces follow the stamp
+S6_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{1,9}\s+")
+# s6's finish line when Frigate's process exited 0 (a Save & Restart, its Restart button, a stop, or the restart
+# Frigate's watchdog makes when a detector process dies) or was killed by SIGTERM; a crash of Frigate's own process
+# has a nonzero code, and the other services' lines name them, not Frigate
+ORDERLY_EXIT = re.compile(r"\[INFO\] Service Frigate exited with code (0 \(by signal 0\)|256 \(by signal 15\))")
+# What Frigate raises when its server refuses the Frigate+ key (PlusApi._refresh_token_if_needed); the server's
+# JSON after it isn't matched
+REFUSED_KEY = "Unable to refresh API token"
+FRIGATE_SAFE_MODE_FIX = (
+    "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
+)
 
 
 def listed(names, conjunction: str = "and") -> str:
@@ -54,6 +73,52 @@ def newest_migration(codedir) -> int | None:
     return max(numbers, default=None)
 
 
+# Lines quoted from Frigate's journal: only its config validation messages and a traceback's last line, each with
+# anything shaped like a Frigate+ key replaced, and cut to MESSAGE_MAX. Here rather than in contracts.py, which imports
+# this module, because the Frigate check below quotes them too.
+
+
+def redact(line: str) -> str:
+    """A log line fit to quote on the Status page: each key-shaped substring becomes <key>, then the line is put on
+    one line and cut to MESSAGE_MAX, so a cut can't leave part of a key."""
+    return _message(KEY_SHAPED.sub("<key>", str(line)))
+
+
+def validation_messages(lines, limit: int | None = ERRORS_SHOWN) -> list[str]:
+    """The text after "Message : " on each line of Frigate's config validation block, redacted; at most `limit`."""
+    messages = []
+    for line in lines:
+        _, found, text = str(line).partition(VALIDATION_MESSAGE)
+        if found and text.strip():
+            messages.append(redact(text))
+            if limit is not None and len(messages) >= limit:
+                break
+    return messages
+
+
+def traceback_last_line(lines) -> str | None:
+    """The last line that names an exception (ValueError: ..., Exception: ...), without journalctl's prefix and
+    Frigate's s6 timestamp, redacted; None when there's none, or when Frigate's supervisor logged an orderly exit after
+    the last one, since Frigate logs tracebacks of its own while it stops."""
+    for line in reversed(list(lines)):
+        text = str(line)
+        if prefix := JOURNAL_PREFIX.match(text):  # a tail line; journal_lines gives the MESSAGE field alone
+            text = text[prefix.end():]
+        if stamp := S6_TIMESTAMP.match(text):
+            text = text[stamp.end():]
+        text = text.rstrip()
+        if ORDERLY_EXIT.fullmatch(text):
+            return None
+        if TRACEBACK_END.fullmatch(text):
+            return redact(text)
+    return None
+
+
+def quoted(message: str) -> str:
+    """A quoted message without its own final period, for a sentence that adds one."""
+    return message.rstrip(".") or message
+
+
 # Frigate
 
 
@@ -63,8 +128,31 @@ def frigate(context: Context) -> list[Check]:
 
     version = probes.frigate_version(context)
     if version is None:
+        # Frigate's own restarts close together (decision 12): named from the loop's second restart on, since one
+        # restart can't be told from a save. systemd is starting it again, so a restart here is pointless; the
+        # Services row keeps the one that clears the count once the cause is gone.
+        count = restart_loop(context, probes.FRIGATE)
+        if count is not None:
+            return check("error", f"Frigate isn't answering: it keeps stopping itself ({plural(count, 'restart')} so "
+                                  f"far, the last two less than {RESTART_LOOP_SPACING // 60} minutes apart), and "
+                                  f"systemd starts it again. {probes.FRIGATE.restart_loop_hint}", DIAGNOSTICS)
+        # The Frigate+ check quotes the same line with its model advice, but only for a plus:// model; without one,
+        # this check is the only one that names a crash loop's cause. A quoted line is one Frigate's process crashed
+        # on, which a restart alone repeats, so the fix is Diagnostics and the restart stays in the Services row.
+        line = traceback_last_line(probes.frigate_journal(context))
+        if line is not None:
+            return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. Restart "
+                                  "it from its Services row; if it keeps stopping, download the diagnostics on the "
+                                  "Device page.", DIAGNOSTICS)
         return check("error", f"Frigate isn't answering. Restart it; {SEE_DIAGNOSTICS}.",
                      restart_fix("frigate.service"))
+    config = probes.frigate_config(context)
+    if probes.frigate_safe_mode(config):
+        # Frigate 0.18 answers a config that doesn't validate by starting with no cameras, so it looks healthy.
+        messages = validation_messages(probes.frigate_journal(context))
+        said = f"Its log says: {'; '.join(quoted(m) for m in messages)}. " if messages else ""
+        return check("error", f"Frigate {version} started in safe mode, with no cameras, because its config has an "
+                              f"error, so nothing is counted. {said}{FRIGATE_SAFE_MODE_FIX}")
     expected = context.manifest.components.get("frigate")
     if expected and version.split("-", 1)[0] != expected:
         return check("warn", f"Frigate {version} is running, but this install expects {expected}. "
@@ -81,6 +169,9 @@ def cameras(context: Context) -> list[Check]:
     stats, config = probes.frigate_stats(context), probes.frigate_config(context)
     if stats is None or config is None:
         return check("unknown", "Frigate isn't answering, so its cameras can't be checked.")
+    if probes.frigate_safe_mode(config):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be checked; see the "
+                                "Frigate check.")
     names = list(probes.frigate_cameras(config))
     if not names:
         return check("warn", "Frigate has no enabled camera, so nothing is counted. Enable one in Frigate's config.")
@@ -209,6 +300,9 @@ def camera_streams(context: Context) -> list[Check]:
     config = probes.frigate_config(context)
     if config is None:
         return check("unknown", "Frigate isn't answering, so the streams its cameras read can't be listed.")
+    if probes.frigate_safe_mode(config):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so the streams its cameras read can't be "
+                                "listed; see the Frigate check.")
     reads: dict[str, str] = {}  # stream -> the first camera that reads it
     for camera_name, camera in probes.frigate_cameras(config).items():
         for stream_input in probes.mapping(camera.get("ffmpeg")).get("inputs") or []:

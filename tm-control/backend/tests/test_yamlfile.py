@@ -160,3 +160,24 @@ def test_a_fifo_is_neither_read_nor_backed_up(tmp_path, prompt):
     with pytest.raises(OSError, match="not a regular file"):
         yamlfile.back_up(fifo, NOW)
     assert not yamlfile.backup_path(fifo, NOW).exists()
+
+
+def test_read_config_reports_missing_unreadable_and_invalid_with_the_line(tmp_path):
+    path = tmp_path / "config" / "config.yml"
+    assert yamlfile.read_config(path) == yamlfile.ConfigRead(None, "missing")
+    path.parent.mkdir()
+    path.write_text("- a list\n- not a mapping\n")
+    assert yamlfile.read_config(path) == yamlfile.ConfigRead(None, "invalid")
+    path.write_text("a: 1\nb: [unclosed\n")
+    read = yamlfile.read_config(path)
+    assert read.data is None and read.problem == "invalid" and read.line is not None and read.column is not None
+    path.write_bytes(b"\xff\xfe\x00bad")
+    assert yamlfile.read_config(path) == yamlfile.ConfigRead(None, "unreadable")
+    path.write_text("model:\n  path: plus://abc\n")
+    assert yamlfile.read_config(path) == yamlfile.ConfigRead({"model": {"path": "plus://abc"}}, None)
+    path.chmod(0o000)
+    try:
+        read = yamlfile.read_config(path)
+        assert read == yamlfile.ConfigRead(None, "unreadable") or read.problem is None  # unless the tests run as root
+    finally:
+        path.chmod(0o600)

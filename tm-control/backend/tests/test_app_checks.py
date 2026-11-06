@@ -10,10 +10,23 @@ import pytest
 
 from tm_control.adapters import frigate, go2rtc, httpjson, mqtt, nodered
 from tm_control.adapters.command import CommandResult
+from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.core.checks import Fix, run_group
 from tm_control.modules import MODULES
 from tm_control.modules.apps import checks as apps_checks
-from tm_control.modules.apps.checks import newest_migration
+from tm_control.modules.apps import probes
+from tm_control.modules.apps.checks import DIAGNOSTICS, newest_migration
+from tm_control.modules.services import units
+
+from frigate_log import (
+    CRASH_LOOP_TAIL,
+    DETECTOR_MESSAGE,
+    REFUSED_KEY_LINE,
+    SAFE_MODE_LINES,
+    shutdown_lines,
+    shutdown_tail,
+    validation_block,
+)
 
 # The URLs the `apps` fixture answers (conftest.FakeApps)
 VERSION = "http://127.0.0.1:5000/api/version"
@@ -26,6 +39,16 @@ GO2RTC_STREAMS = "http://127.0.0.1:1984/api/streams"
 def apps_group(apps):
     group = run_group(apps_checks.GROUP, apps.context())
     assert group.title == "Apps"
+    return {check.id: check for check in group.checks}
+
+
+def apps_group_with(apps, preset: dict):
+    """The apps group, with some probes' results set beforehand (the fixture's Context has no settings, so a check
+    that reaches systemd or the journal would fail). No unit states unless the preset gives them."""
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {}
+    context.probes.update(preset)
+    group = run_group(apps_checks.GROUP, context)
     return {check.id: check for check in group.checks}
 
 
@@ -72,19 +95,73 @@ def test_frigate_reachable_and_version_mismatch(apps):
 
 
 def test_frigate_down_has_a_restart_fix(apps):
+    """Without an exception line in Frigate's journal, nothing is quoted (review focus 4)."""
     apps.answers[VERSION] = (None, None)
-    checks = apps_group(apps)
+    checks = apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})
     check = checks["apps.frigate.reachable"]
     assert check.status == "error"
+    assert check.detail == (
+        "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
+    )
     assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
     assert checks["apps.frigate.cameras"].status == "unknown"
     # A Frigate that doesn't answer its version isn't asked for its config or stats: one timeout, not three.
     assert apps.asked(VERSION) == 1 and apps.asked(CONFIG) == 0 and apps.asked(STATS) == 0
 
 
+def test_frigate_not_answering_quotes_the_logs_last_error(apps):
+    apps.answers[VERSION] = (None, None)
+    states = {"frigate.service": {"ActiveState": "active", "SubState": "running", "NRestarts": "3",
+                                  "ActiveEnterTimestamp": "", "InvocationID": ""}}
+    crashes = [AutomaticRestart("1", at) for at in (100.1, 110.1, 120.1)]  # nonzero exits are no loop of its own
+    preset = {units.SHOW_UNITS: states, f"{units.AUTOMATIC_RESTARTS}.frigate.service": crashes,
+              probes.FRIGATE_JOURNAL: CRASH_LOOP_TAIL}
+    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. Restart "
+                            "it from its Services row; if it keeps stopping, download the diagnostics on the Device "
+                            "page.")
+    assert check.fix == DIAGNOSTICS  # the Services row keeps the restart; a restart alone repeats the crash
+
+
+def test_frigate_stopping_for_its_own_restart_quotes_nothing(apps):
+    """A Save & Restart: Frigate's own shutdown tracebacks aren't the cause of a failure (decision 11)."""
+    apps.answers[VERSION] = (None, None)
+    for journal in (shutdown_lines(), shutdown_tail()):
+        check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: journal})["apps.frigate.reachable"]
+        assert check.status == "error"
+        assert check.detail == (
+            "Frigate isn't answering. Restart it; if it keeps stopping, download the diagnostics on the Device page."
+        )
+        assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+
+
+def test_frigate_in_a_restart_loop_says_it_keeps_stopping_itself(apps):
+    """Decision 12: Frigate's own restarts less than 2 minutes apart are a loop; named from the second restart on."""
+    apps.answers[VERSION] = (None, None)
+    loop = [AutomaticRestart("143", at) for at in (100.1, 140.1, 180.1, 220.1)]
+    states = {"frigate.service": {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "4",
+                                  "ActiveEnterTimestamp": "", "InvocationID": ""}}
+    preset = {units.SHOW_UNITS: states, f"{units.AUTOMATIC_RESTARTS}.frigate.service": loop,
+              probes.FRIGATE_JOURNAL: shutdown_tail()}
+    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+    assert check.status == "error" and check.fix == DIAGNOSTICS
+    assert check.detail == ("Frigate isn't answering: it keeps stopping itself (4 restarts so far, the last two less "
+                            "than 2 minutes apart), and systemd starts it again. Check the Hardware group; if it's ok, "
+                            "download the diagnostics on the Device page.")
+    # After one restart of its own, nothing says loop yet, even when an older automatic restart (from before a hand
+    # restart reset the count) is in the journal within the spacing
+    states["frigate.service"]["NRestarts"] = "1"
+    for restarts in (loop[:1], loop):
+        preset[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = restarts
+        check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+        assert check.detail.startswith("Frigate isn't answering. Restart it;")
+        assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+
+
 def test_frigate_answering_an_error_page_is_not_a_version(apps):
     apps.answers[VERSION] = (502, b"<html><body>Bad Gateway</body></html>")
-    assert apps_group(apps)["apps.frigate.reachable"].status == "error"
+    assert apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})["apps.frigate.reachable"].status == "error"
 
 
 def test_camera_without_frames_is_an_error(apps):
@@ -107,6 +184,67 @@ def test_a_camera_disabled_in_frigate_isnt_expected_to_have_frames(apps):
     check = apps_group(apps)["apps.frigate.cameras"]
     assert check.status == "warn"
     assert check.detail.startswith("Frigate has no enabled camera")
+
+
+SAFE_MODE_FIX = (
+    "Fix it in Frigate's configuration editor (Settings, Configuration editor), then choose Save & Restart."
+)
+
+
+def test_frigate_in_safe_mode_is_an_error_that_quotes_the_messages(apps):
+    """Frigate in safe mode answers its version and has no cameras, so nothing else looks wrong (review focus 3)."""
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (
+        "Frigate 0.18.1-cf67f08 started in safe mode, with no cameras, because its config has an error, so nothing "
+        f"is counted. Its log says: {DETECTOR_MESSAGE}. {SAFE_MODE_FIX}"
+    )
+    assert check.fix is None
+
+
+def test_frigate_in_safe_mode_quotes_at_most_three_messages(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    lines = validation_block("first", "second", "third", "fourth")
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: lines})["apps.frigate.reachable"]
+    assert "Its log says: first; second; third. " in check.detail
+    assert "fourth" not in check.detail
+
+
+def test_frigate_in_safe_mode_without_journal_lines_still_errors(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True))
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: []})["apps.frigate.reachable"]
+    assert check.status == "error"
+    assert check.detail == (
+        "Frigate 0.18.1-cf67f08 started in safe mode, with no cameras, because its config has an error, so nothing "
+        f"is counted. {SAFE_MODE_FIX}"
+    )
+    assert check.fix is None
+
+
+def test_frigate_not_in_safe_mode_is_ok_as_before(apps):
+    context = apps.context()
+    check = {c.id: c for c in run_group(apps_checks.GROUP, context).checks}["apps.frigate.reachable"]
+    assert check.status == "ok" and check.detail == "Frigate 0.18.1-cf67f08 is running."
+    assert probes.FRIGATE_JOURNAL not in context.probes  # the journal is read only for safe mode
+
+
+def test_safe_mode_leaves_the_camera_and_stream_checks_unknown(apps):
+    apps.edit_json(CONFIG, lambda config: config.update(safe_mode=True, cameras={}))
+    checks = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})
+    assert checks["apps.frigate.reachable"].status == "error"
+    assert (checks["apps.frigate.cameras"].status, checks["apps.frigate.cameras"].detail) == (
+        "unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be checked; see the Frigate check.",
+    )
+    assert (checks["apps.go2rtc.streams"].status, checks["apps.go2rtc.streams"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so the streams its cameras read can't be listed; see the Frigate "
+        "check.",
+    )
+    # go2rtc not answering still wins: its streams are gone whatever Frigate's state
+    apps.answers[GO2RTC_STREAMS] = (None, None)
+    check = apps_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})["apps.go2rtc.streams"]
+    assert check.status == "error" and check.fix.unit == "go2rtc_server.service"
 
 
 # Node-RED

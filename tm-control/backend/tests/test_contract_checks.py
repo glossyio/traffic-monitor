@@ -1,11 +1,36 @@
 """The configuration checks: the names that config.yml and Frigate's config must agree on (CLAUDE.md, "Cross-component
 name contracts"), and the deployment values."""
 
-import pytest
+from pathlib import Path
 
-from tm_control.core.checks import run_group
-from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
-from tm_control.modules.apps import contracts
+import pytest
+from ruamel.yaml import YAML
+
+from frigate_log import (
+    CRASH_LOOP_TAIL,
+    DETECTOR_MESSAGE,
+    MODEL_ID,
+    NO_KEY_LINE,
+    ORDERLY_EXIT_LINE,
+    REFUSED_KEY_LINE,
+    SAFE_MODE_LINES,
+    SHUTDOWN_LAST_LINE,
+    TRACEBACK_TAIL,
+    crash_loop_tail,
+    shutdown_lines,
+    shutdown_tail,
+    validation_block,
+)
+from placeholders import PLACEHOLDER_KEY
+from tm_control.adapters import systemd
+from tm_control.adapters.systemd import AutomaticRestart
+from tm_control.core.checks import Fix, run_group
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
+from tm_control.modules.apps import checks as apps_checks
+from tm_control.modules.apps import contracts, probes
+from tm_control.modules.services import units
+
+REPO = Path(__file__).resolve().parents[3]
 
 FRIGATE_CONFIG = "http://127.0.0.1:5000/api/config"  # what the `apps` fixture answers (conftest.FakeApps)
 FRIGATE_VERSION = "http://127.0.0.1:5000/api/version"
@@ -17,13 +42,23 @@ def config_group(apps):
     return {check.id: check for check in group.checks}
 
 
+def config_group_with(apps, preset: dict):
+    """The configuration group, with some probes' results set beforehand (the fixture's Context has no settings, so
+    a check that reaches systemd or the journal would fail)."""
+    context = apps.context()
+    context.probes.update(preset)
+    group = run_group(contracts.GROUP, context)
+    return {check.id: check for check in group.checks}
+
+
 def test_cameras_match(apps):
     checks = config_group(apps)
     assert list(checks) == [
         "config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard",
+        "config.frigate_plus",
     ]
     assert [c.title for c in checks.values()] == [
-        "Cameras in config.yml", "Zones", "Radar names", "Location", "ThingsBoard upload",
+        "Cameras in config.yml", "Zones", "Radar names", "Location", "ThingsBoard upload", "Frigate+",
     ]
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
@@ -64,10 +99,36 @@ def test_cameras_and_zones_are_unknown_when_frigate_is_down(apps):
     assert checks["config.thingsboard"].status == "ok"
 
 
+def test_cameras_and_zones_are_unknown_in_safe_mode(apps):
+    """Bench A5: an empty camera list isn't a renamed camera (the fixture's config.yml still enables picam_h265)."""
+    safe_mode(apps)
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config.update(cameras={}))
+    checks = config_group_with(apps, {probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})
+    assert (checks["config.cameras"].status, checks["config.cameras"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so its cameras can't be compared with config.yml; see the Frigate "
+        "check under Apps.",
+    )
+    assert (checks["config.zones"].status, checks["config.zones"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see the Frigate check under "
+        "Apps.",
+    )
+    assert checks["config.frigate_plus"].detail == "Frigate+ isn't in use."
+
+
 def test_every_check_is_unknown_when_config_yml_has_a_yaml_error(apps):
     apps.config_yml.write_text("sensors:\n  cameras: [unclosed\n")
+    safe_mode(apps)  # config.yml's problem is still the one named (review focus 5)
     checks = config_group(apps)
+    # The Frigate+ check reads Frigate's config.yml only, which has no plus:// model, and no key is set.
+    frigate_plus = checks.pop("config.frigate_plus")
+    assert (frigate_plus.status, frigate_plus.detail) == ("ok", "Frigate+ isn't in use.")
     assert {c.status for c in checks.values()} == {"unknown"}
+    assert checks["config.cameras"].detail == (
+        "config.yml has a YAML error, so its cameras can't be compared with Frigate's."
+    )
+    assert checks["config.zones"].detail == "config.yml has a YAML error, so the cameras' zones can't be checked."
     assert all("unclosed" not in c.detail for c in checks.values())
 
 
@@ -275,3 +336,458 @@ def test_errors_outrank_warnings(apps):
     assert check.status == "error"
     assert "thingsboard.enabled" in check.detail and "thingsboard.protocol" in check.detail
     assert check.fix is None
+
+
+# Frigate+
+
+
+CORAL_PATH = "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"  # the installer's, as rendered
+SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+
+
+def frigate_config_file(apps, text: str):
+    """Write Frigate's config.yml as the host has it."""
+    path = apps.codedir / "frigate" / "config" / "config.yml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def with_model(apps, path: str):
+    frigate_config_file(apps, f"mqtt:\n  enabled: true\nmodel:\n  path: {path}\ncameras: {{}}\n")
+
+
+def cache_model(apps, model_id: str):
+    """The two files Frigate downloads for a Frigate+ model, as copied to the device."""
+    cache = apps.codedir / "frigate" / "config" / "model_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / model_id).write_bytes(b"synthetic model")
+    (cache / f"{model_id}.json").write_text("{}")
+
+
+def set_key(apps):
+    apps.secrets.entered[FRIGATE_PLUS_API_KEY] = PLACEHOLDER_KEY
+
+
+def safe_mode(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config.update(safe_mode=True))
+
+
+def frigate_plus_check(apps, **preset):
+    return config_group_with(apps, preset)["config.frigate_plus"]
+
+
+def frigate_stopped(apps, journal, state: dict | None = None):
+    """Frigate doesn't answer, its journal is `journal`, and its unit's values are `state` over those of a unit
+    systemd is restarting."""
+    apps.answers[FRIGATE_VERSION] = (None, None)
+    values = {"ActiveState": "activating", "SubState": "auto-restart", "NRestarts": "3", "ActiveEnterTimestamp": "",
+              "InvocationID": ""}
+    return {units.SHOW_UNITS: {"frigate.service": values | (state or {})}, probes.FRIGATE_JOURNAL: journal}
+
+
+def test_the_installers_model_file_matches_the_role():
+    role_vars = YAML(typ="safe", pure=True).load(REPO / "script/ansible/roles/tmsetup/vars/main.yml")
+    assert contracts.CORAL_MODEL_FILE == role_vars["tmsetup_frigate_coral_model_file"]
+
+
+def test_frigate_plus_not_in_use_is_ok(apps):
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail, check.fix) == ("ok", "Frigate+ isn't in use.", None)
+    with_model(apps, CORAL_PATH)
+    assert frigate_plus_check(apps).detail == "Frigate+ isn't in use."
+
+
+def warning_naming(which):
+    return (
+        "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but Frigate runs "
+        f"{which} rather than a Frigate+ model. Once a model is trained, pick it under Settings, System, Detectors "
+        "and model in Frigate, or set model.path to plus://<model id> in its configuration editor."
+    )
+
+
+def test_a_key_without_a_plus_model_is_a_warning_naming_the_installers_model(apps):
+    set_key(apps)
+    with_model(apps, CORAL_PATH)
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail, check.fix) == ("warn", warning_naming("the installer's model"), None)
+    assert PLACEHOLDER_KEY not in check.detail
+
+
+@pytest.mark.parametrize("text", ["cameras: {}\n", "model:\n  width: 320\ncameras: {}\n", 'model:\n  path: ""\n'],
+                         ids=["no model section", "no path", "an empty path"])
+def test_a_key_without_a_model_path_is_a_warning_naming_frigates_default_model(apps, text):
+    """Hailo and CPU installs have no model section, so Frigate runs its built-in default."""
+    set_key(apps)
+    frigate_config_file(apps, text)
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == ("warn", warning_naming("Frigate's default model"))
+
+
+def test_a_key_with_a_local_model_is_a_warning_naming_a_local_model(apps):
+    set_key(apps)
+    with_model(apps, "/config/model_cache/my_yolo.onnx")
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == ("warn", warning_naming("a local model"))
+
+
+@pytest.mark.parametrize("path", ["plus://../x", "plus://", "plus://a b", f"plus://{'a' * 65}"])
+def test_a_plus_model_with_a_bad_id_is_an_error(apps, path):
+    set_key(apps)
+    with_model(apps, f'"{path}"')
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == (
+        "error",
+        "model.path in Frigate's config names a Frigate+ model id with characters a model id can't have. Check the "
+        "id in Frigate's configuration editor.",
+    )
+
+
+def test_a_plus_model_without_a_key_or_cached_files_is_an_error_with_a_link(apps):
+    with_model(apps, f"plus://{MODEL_ID}")
+    check = frigate_plus_check(apps)
+    assert check.status == "error"
+    assert check.detail == (
+        f"Frigate's config names the Frigate+ model {MODEL_ID}, but no key is set and the model's files aren't on the "
+        f"device, so Frigate can't download it. Set the key, or copy {MODEL_ID} and {MODEL_ID}.json into Frigate's "
+        "model_cache directory."
+    )
+    assert check.fix == SET_THE_KEY
+
+
+def test_one_cached_file_is_not_the_model(apps):
+    with_model(apps, f"plus://{MODEL_ID}")
+    cache_model(apps, MODEL_ID)
+    (apps.codedir / "frigate" / "config" / "model_cache" / f"{MODEL_ID}.json").unlink()
+    assert frigate_plus_check(apps).status == "error"
+    assert not contracts.model_cached(apps.codedir, MODEL_ID)
+
+
+def test_a_cached_plus_model_without_a_key_is_ok_and_says_so(apps):
+    with_model(apps, f"plus://{MODEL_ID}")
+    cache_model(apps, MODEL_ID)
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == (
+        "ok",
+        f"Frigate runs the Frigate+ model {MODEL_ID}. It was loaded from the files on the device; set a key to submit "
+        "snapshots.",
+    )
+
+
+def test_a_plus_model_with_a_key_is_ok(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    check = frigate_plus_check(apps)
+    assert (check.status, check.detail) == (
+        "ok", f"Frigate runs the Frigate+ model {MODEL_ID}. Snapshots can be submitted.",
+    )
+
+
+def test_a_plus_model_frigate_rejected_for_the_detector_names_the_type(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    safe_mode(apps)
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: SAFE_MODE_LINES})
+    assert (check.status, check.detail) == (
+        "error",
+        f"Frigate couldn't use the Frigate+ model {MODEL_ID} and started in safe mode, with no cameras: it isn't built "
+        "for the edgetpu detector. Pick a model made for edgetpu in Frigate+, then set it in Frigate.",
+    )
+
+
+def test_a_plus_model_frigate_rejected_for_another_reason_quotes_the_message(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    safe_mode(apps)
+    lines = validation_block("Value error, The model's labelmap couldn't be read")
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: lines})
+    assert (check.status, check.detail) == (
+        "error",
+        f"Frigate couldn't use the model {MODEL_ID} and started in safe mode, with no cameras. Its log says: Value "
+        "error, The model's labelmap couldn't be read.",
+    )
+
+
+def test_safe_mode_for_an_unrelated_reason_is_left_to_the_apps_check(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    safe_mode(apps)
+    lines = validation_block("Value error, Camera picam_h265 has no zone named zone_far")
+    unknown = (
+        "unknown",
+        f"Frigate's config names the Frigate+ model {MODEL_ID}, but Frigate is in safe mode for another reason; see "
+        "the Frigate check under Apps.",
+    )
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: lines})
+    assert (check.status, check.detail) == unknown
+    # Nor does it claim the model runs when the journal holds no message at all
+    check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: []})
+    assert (check.status, check.detail) == unknown
+
+
+def test_a_refused_key_is_named_with_the_link_while_frigate_crash_loops(apps):
+    """Bench A3: the unit is active between crashes, so the check can't gate on ActiveState."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    active = {"ActiveState": "active", "SubState": "running", "NRestarts": "3"}
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL, active))
+    assert check.status == "error" and check.fix == SET_THE_KEY
+    assert check.detail == (
+        f"Frigate isn't answering: Frigate+ gave Frigate no token for the key when Frigate fetched the model "
+        f"{MODEL_ID}, as happens with a wrong key or when Frigate+ can't be reached. Its log's last error is: "
+        f"{REFUSED_KEY_LINE}. To get Frigate running, {contracts.WAYS_OUT}."
+    )
+
+
+def test_a_cached_model_is_not_blamed_for_the_stop(apps):
+    """With both files on the device, Frigate loads the model without asking Frigate+, so the fetch advice would
+    point at the wrong place, even for a stale refused-key line."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    cache_model(apps, MODEL_ID)
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL))
+    assert check.status == "error" and check.fix is None
+    assert check.detail == (
+        f"Frigate isn't answering, and the last error in its log is: {REFUSED_KEY_LINE}. The Frigate+ model "
+        f"{MODEL_ID} is on the device, so Frigate didn't stop fetching it; see the Frigate check under Apps."
+    )
+
+
+def test_another_exception_is_quoted_without_a_claim(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, crash_loop_tail(NO_KEY_LINE)))
+    assert check.status == "error" and check.fix is None
+    assert check.detail == (
+        f"Frigate isn't answering, and the last error in its log is: {NO_KEY_LINE}. If it stopped while fetching "
+        f"the Frigate+ model {MODEL_ID}, check that the device is online, then {contracts.WAYS_OUT}."
+    )
+
+
+def test_a_crash_loop_without_an_exception_line_is_unknown(apps):
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, CRASH_LOOP_TAIL[-3:]))  # systemd's lines only
+    assert (check.status, check.detail) == (
+        "unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown.")
+
+
+def test_frigate_starting_after_a_hand_restart_quotes_nothing(apps):
+    """Active, no failure restarts, not answering yet: the journal probe reads this run, which has no traceback."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    starting = {"ActiveState": "active", "SubState": "running", "NRestarts": "0"}
+    check = frigate_plus_check(apps, **frigate_stopped(apps, ["Starting Frigate (0.18.1-cf67f08)"], starting))
+    assert check.status == "unknown"
+
+
+@pytest.mark.parametrize("problem, text", [
+    ("missing", None),
+    ("invalid", "model: [unclosed\n"),
+    ("invalid", "- a list\n"),
+    ("unreadable", b"\xff\xfe\x00bad"),
+])
+def test_a_missing_or_invalid_frigate_config_is_unknown(apps, problem, text):
+    set_key(apps)
+    if isinstance(text, bytes):
+        frigate_config_file(apps, "")
+        (apps.codedir / "frigate" / "config" / "config.yml").write_bytes(text)
+    elif text is None:
+        (apps.codedir / "frigate" / "config" / "config.yml").unlink()
+    else:
+        frigate_config_file(apps, text)
+    check = frigate_plus_check(apps)
+    wording = {
+        "missing": "Frigate's config.yml is missing",
+        "unreadable": "Frigate's config.yml can't be read",
+        "invalid": "Frigate's config.yml has a YAML error",
+    }[problem]
+    assert (check.status, check.detail) == (
+        "unknown", f"{wording}, so its model and the Frigate+ key can't be compared.",
+    )
+    assert "unclosed" not in check.detail
+
+
+def test_quoted_log_lines_never_hold_a_key(apps):
+    """Review focus 4: a key-shaped string in a quoted log line is replaced before the line reaches the page."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    safe_mode(apps)
+    lines = validation_block(f"Value error, model download refused for {PLACEHOLDER_KEY}")
+    message_check = frigate_plus_check(apps, **{probes.FRIGATE_JOURNAL: lines})
+    traceback = TRACEBACK_TAIL[:3] + [
+        f"2026-11-04T10:00:00+0000 tm-test frigate[812]: Exception: bad key {PLACEHOLDER_KEY.upper()} or "
+        f"{PLACEHOLDER_KEY}"
+    ]
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config.update(safe_mode=False))
+    traceback_check = frigate_plus_check(apps, **frigate_stopped(apps, traceback))
+    for check in (message_check, traceback_check):
+        assert check.status == "error"
+        assert PLACEHOLDER_KEY not in check.detail and PLACEHOLDER_KEY.upper() not in check.detail
+        assert "<key>" in check.detail
+        assert "0123456789abcdef" not in check.detail.lower()
+
+
+def test_a_long_quoted_line_is_cut_after_the_key_is_replaced(apps):
+    line = "Message : " + "x" * 190 + PLACEHOLDER_KEY
+    (message,) = apps_checks.validation_messages([line])
+    assert message == "x" * 190 + "<key>"
+    line = "Message : " + "y" * 150 + PLACEHOLDER_KEY + "z" * 100
+    (message,) = apps_checks.validation_messages([line])
+    assert len(message) == apps_checks.MESSAGE_MAX and message.endswith("…")
+    assert "tmdev" not in message and "<key>" in message
+
+
+def test_the_journal_probe_reads_the_current_run_when_frigate_runs_and_the_tail_when_it_doesnt(apps, monkeypatch):
+    calls = []
+    monkeypatch.setattr(systemd, "journal_lines",
+                        lambda *args: calls.append(("lines", *args)) or ["Message : from this run"])
+    monkeypatch.setattr(systemd, "journal_tail", lambda *args: calls.append(("tail", *args)) or None)
+    running = {"ActiveState": "active", "SubState": "running", "ActiveEnterTimestamp": "@1700000000",
+               "InvocationID": "abc", "NRestarts": "0"}
+    answering = apps.answers[FRIGATE_VERSION]
+
+    # Active, never restarted, and not answering yet (still starting): this run's own block
+    apps.answers[FRIGATE_VERSION] = (None, None)
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": running}
+    assert probes.frigate_journal(context) == ["Message : from this run"]
+    assert probes.frigate_journal(context) == ["Message : from this run"]  # read once per report
+    assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
+
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, ActiveEnterTimestamp="", InvocationID="")}
+    probes.frigate_journal(context)
+    assert calls == [("lines", "frigate.service", "-1h", 400, None)]
+
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, ActiveState="failed", SubState="failed")}
+    assert probes.frigate_journal(context) == []  # the journal couldn't be read
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Active with failure restarts and not answering: a crash loop, whose last failed run is in the tail
+    calls.clear()
+    apps.answers[FRIGATE_VERSION] = (None, None)
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="3")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("1", t) for t in (100.1, 110.1, 120.1)]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Active, not answering yet, and the one restart systemd counted is Frigate's own after a Save & Restart (exit
+    # 143): this run's own block, not the run before the save
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [AutomaticRestart("143", 100.1)]
+    assert probes.frigate_journal(context) == ["Message : from this run"]
+    assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
+
+    # A crash loop that began with a Save & Restart: the last restart followed a failure, so the tail
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="2")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("143", 100.1), AutomaticRestart("1", 200.1)]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Frigate's own restart within RESTART_LOOP_SPACING of the one before it is a loop, not a save, so the run that
+    # stopped is in the tail
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="2")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = [
+        AutomaticRestart("143", 100.1), AutomaticRestart("143", 140.1)]
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Restarted, not answering, and PID 1's journal can't tell what the restart followed: the tail, as before
+    calls.clear()
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    context.probes[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = None
+    probes.frigate_journal(context)
+    assert calls == [("tail", "frigate.service", 400)]
+
+    # Active with failure restarts but answering (safe mode after a Save & Restart): this run's own block
+    calls.clear()
+    apps.answers[FRIGATE_VERSION] = answering  # the fixture's original answer, saved before the first change
+    context = apps.context()
+    context.probes[units.SHOW_UNITS] = {"frigate.service": dict(running, NRestarts="1")}
+    probes.frigate_journal(context)
+    assert calls == [("lines", "frigate.service", "@1699999940", 400, "abc")]
+
+
+def test_the_log_helpers():
+    lines = SAFE_MODE_LINES + ["Message : second", "Message :   spaced   out  "]
+    assert apps_checks.validation_messages(lines) == [DETECTOR_MESSAGE, "second", "spaced out"]
+    assert apps_checks.validation_messages(["no messages here"]) == []
+    assert apps_checks.traceback_last_line(TRACEBACK_TAIL) == 'Exception: {"message":"Unauthorized"}'
+    assert apps_checks.traceback_last_line(["ValueError: first", "requests.exceptions.HTTPError: 401"]) == (
+        "requests.exceptions.HTTPError: 401"
+    )
+    assert apps_checks.traceback_last_line(["Traceback (most recent call last):", "ErrorHandler: no"]) is None
+    assert apps_checks.traceback_last_line(["Exception: bare"]) == "Exception: bare"
+    assert apps_checks.REFUSED_KEY in REFUSED_KEY_LINE
+
+
+def test_the_s6_timestamp_is_stripped_before_the_line_is_matched():
+    """On a Pi, Frigate's supervisor stamps each line after journalctl's own prefix (bench A3)."""
+    assert apps_checks.traceback_last_line(CRASH_LOOP_TAIL) == REFUSED_KEY_LINE
+    assert apps_checks.traceback_last_line(crash_loop_tail(NO_KEY_LINE)) == NO_KEY_LINE
+    # journal_lines gives MESSAGE fields: the s6 stamp alone
+    assert apps_checks.traceback_last_line([f"2026-11-04 18:07:36.850573607  {NO_KEY_LINE}"]) == NO_KEY_LINE
+    stamped_key = f"2026-11-04T18:07:36+0000 tm-test frigate[2201]: 2026-11-04 18:07:36.850573607  Exception: {PLACEHOLDER_KEY}"
+    assert apps_checks.traceback_last_line([stamped_key]) == "Exception: <key>"
+
+
+def test_a_date_inside_a_message_is_not_a_timestamp():
+    line = "Exception: expired on 2026-11-04 18:07:36.850573607  at the server"
+    # kept whole; redact only puts the line on one line, which closes up the double space
+    assert apps_checks.traceback_last_line([line]) == "Exception: expired on 2026-11-04 18:07:36.850573607 at the server"
+    # Nor is an ISO time followed by two words and a colon journalctl's prefix, unless it starts the line
+    text = "Exception: token expired at 2026-11-04T10:00:00Z see docs: retry later"
+    assert apps_checks.traceback_last_line([f"2026-11-04 18:07:36.850573607  {text}"]) == text
+
+
+def test_a_podman_or_systemd_error_line_is_not_the_traceback():
+    """podman prints a bare "Error: ..." when the unit stops a container that's gone; that isn't Frigate's exception."""
+    podman = ('2026-11-04T10:00:02+0000 tm-test podman[901]: Error: no container with name or ID "frigate" found: no '
+              "such container")
+    assert apps_checks.traceback_last_line(TRACEBACK_TAIL + [podman]) == 'Exception: {"message":"Unauthorized"}'
+    assert apps_checks.traceback_last_line([podman]) is None
+    assert contracts.plus_model_id(f"plus://{MODEL_ID}") == MODEL_ID
+    assert contracts.plus_model_id("plus://../x") is None
+    assert contracts.plus_model_id(CORAL_PATH) is None
+
+
+def test_an_orderly_exit_after_the_last_exception_quotes_nothing():
+    """Frigate logs two tracebacks of its own while it stops for a Save & Restart (bench 2026-11-05); s6's exit line
+    with code 0 follows them, so neither is why Frigate isn't answering. A crash's exit line has a nonzero code."""
+    assert apps_checks.traceback_last_line(shutdown_lines()) is None  # the stopping run, while the unit is active
+    assert apps_checks.traceback_last_line(shutdown_tail()) is None  # the tail, between the exit and the new run
+    killed = "[INFO] Service Frigate exited with code 256 (by signal 15)"
+    assert apps_checks.traceback_last_line(shutdown_lines(killed)) is None
+    crashed = "[INFO] Service Frigate exited with code 1 (by signal 0)"
+    assert apps_checks.traceback_last_line(shutdown_lines(crashed)) == SHUTDOWN_LAST_LINE
+    # A run that crashed after the orderly exit of the one before it is quoted
+    assert apps_checks.traceback_last_line(shutdown_tail() + CRASH_LOOP_TAIL) == REFUSED_KEY_LINE
+    # Another service's exit line, or more than the line itself, doesn't end the search
+    nginx = "[INFO] Service NGINX exited with code 0 (by signal 0)"
+    assert apps_checks.traceback_last_line(["Exception: bare", nginx]) == "Exception: bare"
+    assert apps_checks.traceback_last_line(["Exception: bare", f"{ORDERLY_EXIT_LINE} and more"]) == "Exception: bare"
+
+
+def test_frigate_stopping_for_its_own_restart_is_unknown(apps):
+    """Decision 11: the unit is active while Frigate stops, and in auto-restart just after; neither quotes."""
+    set_key(apps)
+    with_model(apps, f"plus://{MODEL_ID}")
+    stopping = {"ActiveState": "active", "SubState": "running", "NRestarts": "0"}
+    unknown = ("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {MODEL_ID} is unknown.")
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_lines(), stopping))
+    assert (check.status, check.detail) == unknown
+    check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_tail()))
+    assert (check.status, check.detail) == unknown

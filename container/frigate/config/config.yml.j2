@@ -41,12 +41,16 @@ detectors:
 {% set usb_detector = tmsetup_detectors.get('edgetpu_usb', {}) %}
 {% set pci_available = (pci_detector.dev_path_available | default(false) and  pci_detector.exists | default(false)) or pci_detector.fresh_install | default(false) %}
 {% set usb_available = (usb_detector.dev_path_available | default(false) and  usb_detector.exists | default(false)) or usb_detector.fresh_install | default(false) %}
-{% if pci_available or usb_available %}
+{% if tmsetup_frigate_model_keep | default({}) %}
+# The model this device had before tmsetup -f replaced the file (see "What -f replaces" in the installer docs)
+model:
+{{ tmsetup_frigate_model_keep | to_nice_yaml(indent=2, sort_keys=False) | indent(2, first=True) -}}
+{% elif pci_available or usb_available %}
 model:
   model_type: yolo-generic
   width: 512
   height: 512
-  path: /config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite
+  path: /config/model_cache/{{ tmsetup_frigate_coral_model_file }}
   labelmap_path: /config/labels-coco17.txt
 {% endif %}
 

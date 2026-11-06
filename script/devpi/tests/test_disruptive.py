@@ -370,6 +370,10 @@ def test_frigate_restarting_itself_stays_ok(host, address, tm_login):
 TOKEN = "thingsboard_access_token"
 # A test value, never a real token: 22 characters, so GET /secrets shows its last four
 TOKEN_PLACEHOLDER = "tmdev-placeholder-0001"
+KEY = "frigate_plus_api_key"
+# A test value, never a real key, in the format Frigate's PlusApi accepts (77 characters): the same placeholder as
+# tm-control's tests, which these can't import
+KEY_PLACEHOLDER = "tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567"
 JOB_POLL_SECONDS = 2
 # The job restarts each unit with a 120-second timeout (RESTART_TIMEOUT in tm-job-set-secret), after its file steps, so
 # the wait has headroom and a slow restart shows as the job's own result
@@ -389,26 +393,33 @@ def wait_for_job(address, cookie, job_id, timeout):
         time.sleep(JOB_POLL_SECONDS)
 
 
-def token_state(address, cookie):
-    """GET /secrets' (set, ends_with) for the ThingsBoard token, or the HTTP status when it can't be read."""
+def secret_state(address, cookie, name):
+    """GET /secrets' (set, ends_with) for one entered secret, or the HTTP status when it can't be read."""
     answer = request_from_this_machine(address, f"{API}/secrets", cookie=cookie)
     found = answer.json() if answer.status == 200 else None
     listed = found.get("secrets") if isinstance(found, dict) else None
     for entry in listed if isinstance(listed, list) else []:
-        if entry.get("name") == TOKEN:
+        if entry.get("name") == name:
             return entry.get("set"), entry.get("ends_with")
     return f"HTTP {answer.status}"
 
 
-def set_token(host, address, cookie, value):
-    """Set (or, with "", remove) the ThingsBoard token through the control app, as the Device page does, and wait for
-    the job and Node-RED's restart. Fails with what went wrong."""
-    before = {"node-red-tm.service": invocation(host, "node-red-tm.service")}
-    action = f"POST {API}/secrets/{TOKEN}" if value else f"DELETE {API}/secrets/{TOKEN}"
+def token_state(address, cookie):
+    """GET /secrets' (set, ends_with) for the ThingsBoard token, or the HTTP status when it can't be read."""
+    return secret_state(address, cookie, TOKEN)
+
+
+def set_secret(host, address, cookie, name, value, restarts, untouched):
+    """Set (or, with "", remove) an entered secret through the control app, as the Device page does, and wait for the
+    job and the restart of each unit in restarts; each unit in untouched must keep its InvocationID. Fails with what
+    went wrong, naming the secret, never its value."""
+    before = {unit: invocation(host, unit) for unit in restarts}
+    kept = {unit: invocation(host, unit) for unit in untouched}
+    action = f"POST {API}/secrets/{name}" if value else f"DELETE {API}/secrets/{name}"
     if value:
-        answer = request_from_this_machine(address, f"{API}/secrets/{TOKEN}", "POST", cookie, {"value": value})
+        answer = request_from_this_machine(address, f"{API}/secrets/{name}", "POST", cookie, {"value": value})
     else:
-        answer = request_from_this_machine(address, f"{API}/secrets/{TOKEN}", "DELETE", cookie)
+        answer = request_from_this_machine(address, f"{API}/secrets/{name}", "DELETE", cookie)
     started = answer.json() if answer.status == 202 else None
     job_id = started.get("id") if isinstance(started, dict) else None
     assert job_id, f"{action} answered {answer.status}"
@@ -417,6 +428,14 @@ def set_token(host, address, cookie, value):
     waiting = not_restarted(host, before, UNIT_RESTART_SECONDS)
     assert not waiting, f"after {action}, {waiting} hadn't restarted"
     wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
+    restarted = [unit for unit, old in kept.items() if invocation(host, unit) != old]
+    assert not restarted, f"after {action}, {restarted} restarted, which the job shouldn't touch"
+
+
+def set_token(host, address, cookie, value):
+    """Set (or, with "", remove) the ThingsBoard token through the control app, as the Device page does, and wait for
+    the job and Node-RED's restart. Fails with what went wrong."""
+    set_secret(host, address, cookie, TOKEN, value, ["node-red-tm.service"], [])
 
 
 def test_set_and_remove_the_thingsboard_token_from_the_control_app(host, address, expect, codedir, tm_login):
@@ -453,6 +472,45 @@ def test_set_and_remove_the_thingsboard_token_from_the_control_app(host, address
                 set_token(host, address, cookie, "")
             except AssertionError as error:
                 raise AssertionError(f"the placeholder token may still be set; remove it on the Device page ({error})")
+
+
+def test_set_and_remove_the_frigate_plus_key_from_the_control_app(host, address, expect, codedir, tm_login):
+    """An admin's Save on the Device page writes the Frigate+ API key's file and frigate.env's PLUS_API_KEY line
+    through the set-secret job and restarts Frigate while Node-RED keeps running, and Remove empties both and restarts
+    Frigate again. Uses a placeholder in Frigate's key format, so Frigate accepts it; with no plus:// model set and no
+    snapshot submitted, Frigate never contacts Frigate+ with it. Leaves the key empty, as a pii_free unit has it; skips
+    when a key is already set, since it couldn't put it back. The file and the line are compared on the Pi. Each step
+    restarts Frigate, so the unit doesn't count traffic for about a minute each time."""
+    if not expect["pii_free"]:
+        pytest.skip("writes the Frigate+ API key's file and frigate.env; set tm_expect.pii_free: true "
+                    "(bench units only)")
+    cookie = session(address, *tm_login)
+    before = secret_state(address, cookie, KEY)
+    if isinstance(before, tuple) and before[0] is True:
+        pytest.skip("a Frigate+ API key is already set and can't be restored; remove it on the Device page first")
+    assert before == (False, None), f"GET {API}/secrets before the test: {before}"
+    del before
+    line = "frigate/frigate.env:PLUS_API_KEY"
+    restarts, untouched = ["frigate.service"], ["node-red-tm.service"]
+    removed = False
+    try:
+        set_secret(host, address, cookie, KEY, KEY_PLACEHOLDER, restarts, untouched)
+        states = entered_secret_states(host, codedir, [KEY], {KEY: KEY_PLACEHOLDER})
+        assert (states[f"secret {KEY}"], states[line]) == ("equal", "equal"), (
+            f"after Save, (the file against the placeholder, the env line against the file): {states}")
+        assert secret_state(address, cookie, KEY) == (True, KEY_PLACEHOLDER[-4:]), f"GET {API}/secrets after Save"
+        set_secret(host, address, cookie, KEY, "", restarts, untouched)
+        removed = True
+        states = entered_secret_states(host, codedir, [KEY], {KEY: ""})
+        assert (states[f"secret {KEY}"], states[line]) == ("equal", "equal"), (
+            f"after Remove, (the file against empty, the env line against the file): {states}")
+        assert secret_state(address, cookie, KEY) == (False, None), f"GET {API}/secrets after Remove"
+    finally:
+        if not removed:  # put the key back to empty, even when Save failed partway; a failure here chains
+            try:
+                set_secret(host, address, cookie, KEY, "", restarts, [])
+            except AssertionError as error:
+                raise AssertionError(f"the placeholder key may still be set; remove it on the Device page ({error})")
 
 
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)

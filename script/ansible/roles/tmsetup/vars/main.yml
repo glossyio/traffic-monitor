@@ -7,6 +7,9 @@ tmsetup_go2rtc_sha256:
   amd64: '32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6'
   arm64: '359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50'
 tmsetup_frigate_version: '0.18.1'
+# The open source yolov9 model the installer downloads for a Coral, in Frigate's model_cache. The installer's own
+# model section names it, so tmsetup -f doesn't carry that section over (frigate_setup.yml).
+tmsetup_frigate_coral_model_file: yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite
 tmsetup_node_red_tm_version: '5.0.8'
 tmsetup_hailo_version: '4.21.0'
 tmsetup_nginx_version: '1.31.0'
@@ -93,6 +96,7 @@ tmsetup_secret_names:
 # An empty file means "not set".
 tmsetup_entered_secret_names:
   - thingsboard_access_token
+  - frigate_plus_api_key
   - plate_recognizer_token
   - plate_recognizer_license_key
 

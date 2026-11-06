@@ -9,6 +9,7 @@ systemd-journal (or adm) group.
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 
 from tm_control.adapters.command import TRUNCATED, CommandResult, run
 
@@ -179,10 +180,16 @@ def _boot_seconds(entry: dict) -> float | None:
         return None
 
 
-def automatic_restart_exits(unit: str) -> list[str | None] | None:
-    """For each restart systemd scheduled for the unit this boot, oldest first, the EXIT_STATUS of the main-process
-    exit logged in the RESTART_EXIT_WINDOW before it (None when there was none, or it had no status). None if the
-    journal can't be read, or was longer than the cap (which drops the newest entries)."""
+@dataclass(frozen=True)
+class AutomaticRestart:
+    status: str | None  # EXIT_STATUS of the main-process exit in the RESTART_EXIT_WINDOW before it; None for none
+    at: float | None  # seconds since boot; None when its entry had no time
+
+
+def automatic_restarts(unit: str) -> list[AutomaticRestart] | None:
+    """Each restart systemd scheduled for the unit this boot, oldest first: the EXIT_STATUS of the main-process exit
+    logged in the RESTART_EXIT_WINDOW before it (None when there was none, or it had no status), and when it was
+    scheduled. None if the journal can't be read, or was longer than the cap (which drops the newest entries)."""
     argv = [
         "journalctl",
         "--quiet",
@@ -206,7 +213,7 @@ def automatic_restart_exits(unit: str) -> list[str | None] | None:
     if result.stdout.endswith(TRUNCATED):
         log.warning("journalctl for %s's restarts was longer than tm-control keeps", unit)
         return None
-    exits, last_exit = [], (None, None)  # (seconds since boot, status)
+    restarts, last_exit = [], (None, None)  # (seconds since boot, status)
     for line in result.stdout.splitlines():
         try:
             entry = json.loads(line)
@@ -220,9 +227,9 @@ def automatic_restart_exits(unit: str) -> list[str | None] | None:
             exited_at, status = last_exit
             restarted_at = _boot_seconds(entry)
             soon_after = None not in (exited_at, restarted_at) and 0 <= restarted_at - exited_at <= RESTART_EXIT_WINDOW
-            exits.append(status if soon_after else None)
+            restarts.append(AutomaticRestart(status if soon_after else None, restarted_at))
             last_exit = (None, None)
-    return exits
+    return restarts
 
 
 def journal_lines(unit: str, since: str, limit: int = 200, invocation_id: str | None = None) -> list[str]:
