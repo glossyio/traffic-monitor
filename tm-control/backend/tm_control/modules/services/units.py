@@ -134,18 +134,20 @@ def automatic_restarts(context, unit_name: str) -> list[AutomaticRestart] | None
 
 def restart_causes(context, unit: Unit, count: int) -> list[str] | None:
     """For each of the unit's last `count` automatic restarts, oldest first: "failure" when it didn't follow the exit
-    the unit makes when it restarts itself; "loop" when it did, but came within RESTART_LOOP_SPACING of the automatic
-    restart before it (whatever that one followed); "itself" otherwise. From PID 1's journal this boot, read once per
-    report. None when the journal can't tell."""
+    the unit makes when it restarts itself; "loop" when it did, but came within RESTART_LOOP_SPACING of the counted
+    automatic restart before it (whatever that one followed); "itself" otherwise. A restart from before the last
+    hand restart isn't paired, so a single counted restart is never a loop. From PID 1's journal this boot, read once
+    per report. None when the journal can't tell."""
     if unit.restarts_itself_with is None:
         return ["failure"] * count  # nothing to tell apart, so the journal isn't read
     restarts = automatic_restarts(context, unit.unit)
     if restarts is None or len(restarts) < count:
         return None
     causes = []
-    for index in range(len(restarts) - count, len(restarts)):
+    first = len(restarts) - count
+    for index in range(first, len(restarts)):
         restart = restarts[index]
-        previous = restarts[index - 1] if index > 0 else None
+        previous = restarts[index - 1] if index > first else None
         if restart.status != unit.restarts_itself_with:
             causes.append("failure")
         elif (previous is not None and None not in (previous.at, restart.at)
@@ -156,21 +158,21 @@ def restart_causes(context, unit: Unit, count: int) -> list[str] | None:
     return causes
 
 
-def restarted_itself(context, unit: Unit, count: int) -> bool:
-    """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
-    from PID 1's journal this boot (read once per report). One of its own restarts within RESTART_LOOP_SPACING of
-    another is a loop, not its own. False when the journal can't tell."""
-    causes = restart_causes(context, unit, count)
-    return causes is not None and all(cause == "itself" for cause in causes)
-
-
-def restart_loop(context, unit: Unit) -> int | None:
-    """The unit's NRestarts when it's above 0 and the last of its counted restarts was a loop; None otherwise."""
+def last_restart_cause(context, unit: Unit) -> str | None:
+    """The restart_causes entry of the unit's last counted automatic restart; None when NRestarts is 0 or the journal
+    can't tell."""
     count = restarts(unit_states(context).get(unit.unit) or {})
     if count == 0:
         return None
     causes = restart_causes(context, unit, count)
-    return count if causes is not None and causes[-1] == "loop" else None
+    return causes[-1] if causes else None
+
+
+def restart_loop(context, unit: Unit) -> int | None:
+    """The unit's NRestarts when it's above 0 and the last of its counted restarts was a loop; None otherwise."""
+    if last_restart_cause(context, unit) != "loop":
+        return None
+    return restarts(unit_states(context).get(unit.unit) or {})
 
 
 def service(unit: Unit, values: dict[str, str] | None) -> Service:

@@ -389,8 +389,10 @@ def test_frigate_restarting_in_a_loop_warns(device_client, login, systemctl):
     (saves(100, 219), 2, "restarted 2 times, 1 of them by stopping itself"),  # 119 s apart: the one threshold
     # a crash, then 143 soon after
     ([CRASHED, RESTARTED] + saves(130), 2, "restarted 2 times, 1 of them by stopping itself"),
-    # the loop began before the counted restarts
-    (saves(100, 140, 180, 220), 3, "restarted 3 times, all of them by stopping itself"),
+    # the loop began before a hand restart: the restart before the counted ones isn't paired
+    (saves(100, 140, 180, 220), 3, "restarted 3 times, 2 of them by stopping itself"),
+    # a save after a hand restart, within 2 minutes of an older automatic restart: one restart is never a loop
+    (saves(100, 150), 1, "restarted itself 1 time"),
 ])
 def test_the_spacing_tells_a_loop_from_saves(device_client, login, systemctl, journal, count, wording):
     systemctl.units = {"frigate.service": {"NRestarts": str(count)}}
