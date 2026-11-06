@@ -43,8 +43,8 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: 
                 return check("ok", f"{_running(values, today)}. It restarted itself {times}, as {unit.title} does "
                                    f"when {unit.restarts_itself_when}.")
             if causes is not None and "loop" in causes:
-                loops = causes.count("loop")
-                of_them = "" if count == 1 else ("all of them " if loops == count else f"{loops} of them ")
+                loops = causes.count("loop")  # count is at least 2: the first counted restart has nothing to pair with
+                of_them = "all of them " if loops == count else f"{loops} of them "
                 minutes = RESTART_LOOP_SPACING // 60
                 return check("warn", f"{_running(values, today)}, but it restarted {times}, {of_them}by stopping "
                                      f"itself within {minutes} minutes of the restart before, which happens when "

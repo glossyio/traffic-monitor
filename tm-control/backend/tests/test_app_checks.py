@@ -149,12 +149,14 @@ def test_frigate_in_a_restart_loop_says_it_keeps_stopping_itself(apps):
     assert check.detail == ("Frigate isn't answering: it keeps stopping itself (4 restarts so far, the last two less "
                             "than 2 minutes apart), and systemd starts it again. Check the Hardware group; if it's ok, "
                             "download the diagnostics on the Device page.")
-    # After one restart of its own, nothing says loop yet
+    # After one restart of its own, nothing says loop yet, even when an older automatic restart (from before a hand
+    # restart reset the count) is in the journal within the spacing
     states["frigate.service"]["NRestarts"] = "1"
-    preset[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = loop[:1]
-    check = apps_group_with(apps, preset)["apps.frigate.reachable"]
-    assert check.detail.startswith("Frigate isn't answering. Restart it;")
-    assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
+    for restarts in (loop[:1], loop):
+        preset[f"{units.AUTOMATIC_RESTARTS}.frigate.service"] = restarts
+        check = apps_group_with(apps, preset)["apps.frigate.reachable"]
+        assert check.detail.startswith("Frigate isn't answering. Restart it;")
+        assert check.fix == Fix(kind="restart", text="Restart Frigate", unit="frigate.service")
 
 
 def test_frigate_answering_an_error_page_is_not_a_version(apps):

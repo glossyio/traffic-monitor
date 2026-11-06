@@ -9,7 +9,7 @@ timeout, not three.
 from tm_control.adapters import frigate, go2rtc, nodered, systemd
 from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.checks import Context
-from tm_control.modules.services.units import RUNNING, UNITS, active_since, restarted_itself, restarts, unit_states
+from tm_control.modules.services.units import RUNNING, UNITS, active_since, last_restart_cause, restarts, unit_states
 
 FRIGATE_VERSION = "frigate.version"
 FRIGATE_CONFIG = "frigate.config"
@@ -51,8 +51,8 @@ def frigate_journal(context: Context) -> list[str]:
     such a restart the current run is read even before Frigate answers, as while it starts up. systemd's restart
     counter includes the restart Frigate makes when its config is saved (exit 143), so that one is told apart by the
     exit status PID 1 logged before it, as the Services group does; otherwise a stale exception from the run before
-    the save would be quoted while Frigate starts. A restart that followed another within RESTART_LOOP_SPACING isn't
-    Frigate's own, but a loop, so the tail is read.
+    the save would be quoted while Frigate starts. A restart that followed another counted one within
+    RESTART_LOOP_SPACING isn't Frigate's own, but a loop, so the tail is read.
 
     Checks quote only what checks.validation_messages and checks.traceback_last_line pick from it, redacted.
     """
@@ -60,7 +60,8 @@ def frigate_journal(context: Context) -> list[str]:
     def read() -> list[str]:
         values = unit_states(context).get(FRIGATE_UNIT)
         if values is not None and values.get("ActiveState") in RUNNING and (
-            frigate_version(context) is not None or restarts(values) == 0 or restarted_itself(context, FRIGATE, 1)
+            frigate_version(context) is not None or restarts(values) == 0
+            or last_restart_cause(context, FRIGATE) == "itself"
         ):
             started = active_since(values)
             since = f"@{int(started.timestamp()) - 60}" if started else "-1h"
