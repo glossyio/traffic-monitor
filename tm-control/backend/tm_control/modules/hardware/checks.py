@@ -76,9 +76,8 @@ def _detector(context: Context, kind: str, probe: Probe, facts: dict) -> Check:
     stats = apps.frigate_stats(context)
     if stats is None:
         return check("unknown", "Frigate didn't give its stats, so it's unknown whether its detector is running.")
-    running = [apps.mapping(apps.mapping(stats.get("detectors")).get(name)) for name in names]
-    running = [detector for detector in running if detector.get("pid")]
-    if not running:
+    detectors = apps.mapping(stats.get("detectors"))
+    if not any(apps.mapping(detectors.get(name)).get("pid") for name in names):
         return check("error", "It's in Frigate's config, but Frigate's detector for it isn't running. Restart "
                               "Frigate; if that doesn't help, download the diagnostics on the Device page.",
                      restart_fix("frigate.service"))
