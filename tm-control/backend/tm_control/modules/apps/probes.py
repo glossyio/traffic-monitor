@@ -51,7 +51,8 @@ def frigate_journal(context: Context) -> list[str]:
     such a restart the current run is read even before Frigate answers, as while it starts up. systemd's restart
     counter includes the restart Frigate makes when its config is saved (exit 143), so that one is told apart by the
     exit status PID 1 logged before it, as the Services group does; otherwise a stale exception from the run before
-    the save would be quoted while Frigate starts.
+    the save would be quoted while Frigate starts. A restart that followed another within RESTART_LOOP_SPACING isn't
+    Frigate's own, but a loop, so the tail is read.
 
     Checks quote only what checks.validation_messages and checks.traceback_last_line pick from it, redacted.
     """

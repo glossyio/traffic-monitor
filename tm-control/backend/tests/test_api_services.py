@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tm_control.adapters import systemd
+from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.adapters.command import TRUNCATED, CommandResult
 from tm_control.core.checks import Fix
 from tm_control.core.settings import FAKE_STATUS
@@ -359,9 +360,49 @@ def test_frigate_restarting_itself_is_ok(device_client, login, systemctl):
         ". It restarted itself 1 time, as Frigate does when its config is saved or it's restarted from its own page.")
 
 
+def saves(*seconds):
+    """PID 1's entries for one of Frigate's own restarts (exit 143) at each time since boot."""
+    return [entry for at_seconds in seconds for entry in (at(EXITED, at_seconds), at(RESTARTED, at_seconds + 0.1))]
+
+
+LOOP_HINT = "Check the Hardware group; if it's ok, download the diagnostics on the Device page."
+
+
+def test_frigate_restarting_in_a_loop_warns(device_client, login, systemctl):
+    """Frigate's watchdog restarts it through the same exit 143 as a save when a detector process keeps dying (issue
+    281), every 35 to 45 s; a save is one restart with minutes between saves. Judged by cadence, not by Frigate's
+    log."""
+    systemctl.units = {"frigate.service": {"NRestarts": "3"}}
+    systemctl.journal = saves(100, 140, 180)
+    login(device_client, *ADMIN)
+    frigate = service_group(device_client)["services.frigate.service"]
+    assert frigate["status"] == "warn" and frigate["fix"]["kind"] == "restart"
+    assert frigate["detail"].endswith(
+        f", but it restarted 3 times, 2 of them by stopping itself within 2 minutes of the restart before, which "
+        f"happens when something inside it keeps failing. {LOOP_HINT}")
+    # PID 1's restart entries, read once for the report (the other journalctl call is the Apps group's tail)
+    assert len([call for call in systemctl.calls if call[0] == "journalctl" and "_PID=1" in call]) == 1
+
+
+@pytest.mark.parametrize("journal, count, wording", [
+    (saves(100, 221), 2, "restarted itself 2 times"),  # two saves, 121 s apart
+    (saves(100, 219), 2, "restarted 2 times, 1 of them by stopping itself"),  # 119 s apart: the one threshold
+    # a crash, then 143 soon after
+    ([CRASHED, RESTARTED] + saves(130), 2, "restarted 2 times, 1 of them by stopping itself"),
+    # the loop began before the counted restarts
+    (saves(100, 140, 180, 220), 3, "restarted 3 times, all of them by stopping itself"),
+])
+def test_the_spacing_tells_a_loop_from_saves(device_client, login, systemctl, journal, count, wording):
+    systemctl.units = {"frigate.service": {"NRestarts": str(count)}}
+    systemctl.journal = journal
+    login(device_client, *ADMIN)
+    assert wording in service_group(device_client)["services.frigate.service"]["detail"]
+
+
 @pytest.mark.parametrize("journal, count", [
     ([CRASHED, RESTARTED], 1),  # a crash
-    ([CRASHED, RESTARTED, EXITED, RESTARTED], 2),  # a crash, then a save: the crash still shows
+    # a crash, then a save minutes later: the crash still shows
+    ([CRASHED, RESTARTED, at(EXITED, 400), at(RESTARTED, 400.1)], 2),
     ([RESTARTED], 1),  # no exit before the restart in this boot's journal
     ([EXITED, RESTARTED], 2),  # fewer restarts in the journal than NRestarts
     ([EXITED, at(RESTARTED, 161)], 1),  # a stop that logged 143 a minute before a restart that logged no exit
@@ -393,7 +434,7 @@ def test_only_frigate_restarts_itself(device_client, login, systemctl):
     assert not [call for call in systemctl.calls if call[0] == "journalctl" and "_PID=1" in call]
 
 
-def test_automatic_restart_exits_reads_pid_1s_entries_this_boot(monkeypatch):
+def test_automatic_restarts_reads_pid_1s_entries_this_boot(monkeypatch):
     seen = []
 
     def fake_run(argv, **kwargs):
@@ -403,7 +444,8 @@ def test_automatic_restart_exits_reads_pid_1s_entries_this_boot(monkeypatch):
 
     monkeypatch.setattr("tm_control.adapters.systemd.run", fake_run)
     # The second restart follows an exit with no status (killed by a signal, for example).
-    assert systemd.automatic_restart_exits("frigate.service") == [None, "1"]
+    assert systemd.automatic_restarts("frigate.service") == [
+        AutomaticRestart(None, 100.1), AutomaticRestart("1", 100.1)]
     ((argv, kwargs),) = seen
     assert argv[0] == "journalctl" and "-b" in argv and "_PID=1" in argv and "UNIT=frigate.service" in argv
     assert f"MESSAGE_ID={systemd.UNIT_PROCESS_EXITED}" in argv
@@ -413,33 +455,34 @@ def test_automatic_restart_exits_reads_pid_1s_entries_this_boot(monkeypatch):
     assert 0 < kwargs["timeout"] <= 2
 
 
-def test_automatic_restart_exits_pairs_an_exit_only_with_a_restart_soon_after(monkeypatch):
+def test_automatic_restarts_pairs_an_exit_only_with_a_restart_soon_after(monkeypatch):
     entries = [EXITED, at(RESTARTED, 159), at(EXITED, 200), at(RESTARTED, 200.1), at(RESTARTED, 300)]
     stdout = "".join(json.dumps(entry) + "\n" for entry in entries)
     monkeypatch.setattr("tm_control.adapters.systemd.run", lambda argv, **kwargs: CommandResult(0, stdout, "", False))
-    assert systemd.automatic_restart_exits("frigate.service") == ["143", "143", None]
+    assert systemd.automatic_restarts("frigate.service") == [
+        AutomaticRestart("143", 159.0), AutomaticRestart("143", 200.1), AutomaticRestart(None, 300.0)]
 
     no_time = [{k: v for k, v in entry.items() if k != "__MONOTONIC_TIMESTAMP"} for entry in (EXITED, RESTARTED)]
     stdout = "".join(json.dumps(entry) + "\n" for entry in no_time)
-    assert systemd.automatic_restart_exits("frigate.service") == [None]
+    assert systemd.automatic_restarts("frigate.service") == [AutomaticRestart(None, None)]
 
 
-def test_automatic_restart_exits_is_none_when_the_output_was_cut(monkeypatch):
+def test_automatic_restarts_is_none_when_the_output_was_cut(monkeypatch):
     """The cap drops the newest entries, the ones NRestarts counts."""
     stdout = json.dumps(EXITED) + "\n" + json.dumps(RESTARTED) + "\n" + '{"cut' + TRUNCATED
     monkeypatch.setattr("tm_control.adapters.systemd.run", lambda argv, **kwargs: CommandResult(0, stdout, "", False))
-    assert systemd.automatic_restart_exits("frigate.service") is None
+    assert systemd.automatic_restarts("frigate.service") is None
 
 
-def test_automatic_restart_exits_is_none_when_journalctl_fails(monkeypatch):
+def test_automatic_restarts_is_none_when_journalctl_fails(monkeypatch):
     monkeypatch.setattr("tm_control.adapters.systemd.run", lambda argv, **kwargs: CommandResult(1, "", "", False))
-    assert systemd.automatic_restart_exits("frigate.service") is None
+    assert systemd.automatic_restarts("frigate.service") is None
 
     def missing(argv, **kwargs):
         raise FileNotFoundError(argv[0])
 
     monkeypatch.setattr("tm_control.adapters.systemd.run", missing)
-    assert systemd.automatic_restart_exits("frigate.service") is None
+    assert systemd.automatic_restarts("frigate.service") is None
 
 
 def test_the_report_reads_each_unit_once(device_client, login, systemctl):

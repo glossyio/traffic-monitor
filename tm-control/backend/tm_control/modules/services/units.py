@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from tm_control import fake
 from tm_control.adapters import systemd
+from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.core.checks import Fix
 
 log = logging.getLogger(__name__)
@@ -23,6 +24,8 @@ class Unit:
     # and when it does that ("as <title> does when ...")
     restarts_itself_with: str | None = None
     restarts_itself_when: str | None = None
+    # What to do when its own restarts come close together (RESTART_LOOP_SPACING); ends the Services row's loop wording
+    restart_loop_hint: str = "Download the diagnostics on the Device page to see why."
 
 
 # tm-control restarting itself is Cockpit's job, or the rescue console's; it isn't in the polkit list.
@@ -31,7 +34,8 @@ UNITS = [
     # Saving Frigate's config, or restarting it from its own page, stops the container with SIGTERM (143). So does
     # `podman restart` by hand.
     Unit("frigate.service", "Frigate", restarts_itself_with="143",
-         restarts_itself_when="its config is saved or it's restarted from its own page"),
+         restarts_itself_when="its config is saved or it's restarted from its own page",
+         restart_loop_hint="Check the Hardware group; if it's ok, download the diagnostics on the Device page."),
     Unit("node-red-tm.service", "Node-RED"),
     Unit("plate-recognizer.service", "Plate Recognizer", option="plate_recognizer"),
     Unit("go2rtc_server.service", "Camera streams (go2rtc)"),
@@ -114,24 +118,59 @@ def restarts(values: dict[str, str]) -> int:
         return 0
 
 
-RESTART_EXITS = "services.restart_exits"
+# Seconds between two of a unit's own restarts under which they're a loop, not two saves. Frigate's watchdog restarts
+# it every 35 to 45 s when a detector process keeps dying, and a person saving twice waits about 20 s for Frigate to
+# answer between saves.
+RESTART_LOOP_SPACING = 120
+
+AUTOMATIC_RESTARTS = "services.automatic_restarts"
 
 
-def restart_exits(context, unit_name: str) -> list[str | None] | None:
-    """systemd.automatic_restart_exits for the unit, once per status report; None in fake mode, which has no journal."""
-    return context.probe(f"{RESTART_EXITS}.{unit_name}",
-                         lambda: None if context.settings.fake else systemd.automatic_restart_exits(unit_name))
+def automatic_restarts(context, unit_name: str) -> list[AutomaticRestart] | None:
+    """systemd.automatic_restarts for the unit, once per status report; None in fake mode, which has no journal."""
+    return context.probe(f"{AUTOMATIC_RESTARTS}.{unit_name}",
+                         lambda: None if context.settings.fake else systemd.automatic_restarts(unit_name))
+
+
+def restart_causes(context, unit: Unit, count: int) -> list[str] | None:
+    """For each of the unit's last `count` automatic restarts, oldest first: "failure" when it didn't follow the exit
+    the unit makes when it restarts itself; "loop" when it did, but came within RESTART_LOOP_SPACING of the automatic
+    restart before it (whatever that one followed); "itself" otherwise. From PID 1's journal this boot, read once per
+    report. None when the journal can't tell."""
+    if unit.restarts_itself_with is None:
+        return ["failure"] * count  # nothing to tell apart, so the journal isn't read
+    restarts = automatic_restarts(context, unit.unit)
+    if restarts is None or len(restarts) < count:
+        return None
+    causes = []
+    for index in range(len(restarts) - count, len(restarts)):
+        restart = restarts[index]
+        previous = restarts[index - 1] if index > 0 else None
+        if restart.status != unit.restarts_itself_with:
+            causes.append("failure")
+        elif (previous is not None and None not in (previous.at, restart.at)
+              and 0 <= restart.at - previous.at <= RESTART_LOOP_SPACING):
+            causes.append("loop")
+        else:
+            causes.append("itself")
+    return causes
 
 
 def restarted_itself(context, unit: Unit, count: int) -> bool:
     """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
-    from PID 1's journal this boot (read once per report). False when the journal can't tell."""
-    if unit.restarts_itself_with is None:
-        return False
-    exits = restart_exits(context, unit.unit)
-    if exits is None or len(exits) < count:
-        return False
-    return all(status == unit.restarts_itself_with for status in exits[-count:])
+    from PID 1's journal this boot (read once per report). One of its own restarts within RESTART_LOOP_SPACING of
+    another is a loop, not its own. False when the journal can't tell."""
+    causes = restart_causes(context, unit, count)
+    return causes is not None and all(cause == "itself" for cause in causes)
+
+
+def restart_loop(context, unit: Unit) -> int | None:
+    """The unit's NRestarts when it's above 0 and the last of its counted restarts was a loop; None otherwise."""
+    count = restarts(unit_states(context).get(unit.unit) or {})
+    if count == 0:
+        return None
+    causes = restart_causes(context, unit, count)
+    return count if causes is not None and causes[-1] == "loop" else None
 
 
 def service(unit: Unit, values: dict[str, str] | None) -> Service:
