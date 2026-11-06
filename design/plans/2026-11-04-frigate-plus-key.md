@@ -44,7 +44,7 @@
 - No secret value in any output: not in a job's log, a check's detail, a migrate line, an audit row, the install log, or a test's output. Checks quote only the redacted log lines decision 9 allows. Tests use placeholders; the key placeholder is `PLACEHOLDER_KEY = "tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567"` (77 characters, matching Frigate's pattern).
 - The role: task names `TMSetup - <Component> - <Action>`, `tmsetup_` variables, registered results ending in `_register`, FQCN modules, `become: true` per task, two-space YAML. Tasks that handle a value set `no_log: true`.
 - Node-RED, Frigate, and tm-control versions stay as pinned in `vars/main.yml`; nothing here needs a rebuild of an image.
-- Docs follow "Writing docs" in `docs/development/contributing.md`; every changed page is already in `nav:`; `mkdocs build --strict` must pass. Don't name the later upload feature or any private planning item; say "planned" at most.
+- Docs follow "Writing docs" in `docs/development/contributing.md`; every changed page is already in `nav:`; `mkdocs build --strict` must pass. Don't name later features; say "planned" at most.
 - Commits end with the trailer block from CLAUDE.md ("AI use in this repository"), not `Co-Authored-By`. Never run `tmsetup.sh` on a dev machine. Say `PUBLIC push →` before any push.
 - Off-device checks before the PR: `python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests`, `cd tm-control/ui && npm test && npm run build`, the Ansible syntax check, the Jinja parse of every `.j2`, `json.tool` on `flows.json`, `bash -n script/tmsetup.sh`, `mkdocs build --strict`.
 
