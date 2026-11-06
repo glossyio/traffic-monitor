@@ -42,13 +42,6 @@ def _serves(detector, facts: dict) -> bool:
     return device in ("", bus) or device.startswith(f"{bus}:")
 
 
-def _speed(stats_detector: dict) -> str:
-    speed = stats_detector.get("inference_speed")
-    if isinstance(speed, (int, float)) and not isinstance(speed, bool):
-        return f"Frigate detects with it, {speed:.1f} ms per detection."
-    return "Frigate detects with it."
-
-
 def _detector(context: Context, kind: str, probe: Probe, facts: dict) -> Check:
     def check(status, detail, fix=None):
         return _check(f"hardware.detector.{kind}", probe.title, status, detail, fix)
@@ -89,7 +82,10 @@ def _detector(context: Context, kind: str, probe: Probe, facts: dict) -> Check:
         return check("error", "It's in Frigate's config, but Frigate's detector for it isn't running. Restart "
                               "Frigate; if that doesn't help, download the diagnostics on the Device page.",
                      restart_fix("frigate.service"))
-    return check("ok", _speed(running[0]))
+    # Whether detection works is Frigate's to report, not this check's: Frigate's stats keep a dead detector process's
+    # pid and its starting 10.0 ms, and Frigate restarts itself when one dies, which the Services row and the Apps
+    # group's Frigate check report. So ok claims only the host side.
+    return check("ok", "Ready on the host and passed to Frigate.")
 
 
 def _no_accelerator(context: Context) -> Check:
