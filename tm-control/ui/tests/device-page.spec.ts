@@ -84,10 +84,10 @@ describe('the Device page', () => {
 
     await click(wrapper, 'Tokens and keys')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(4)
+    expect(wrapper.findAll('h3')).toHaveLength(3)
   })
 
-  it('shows an admin one form per secret the API lists', async () => {
+  it('shows an admin one form per secret the API lists, but the Frigate+ key', async () => {
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Tokens and keys')
@@ -97,17 +97,27 @@ describe('the Device page', () => {
     )
     expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
       'ThingsBoard access token',
-      'Frigate+ API key',
       'Plate Recognizer API token',
       'Plate Recognizer license key',
     ])
+  })
+
+  it('no longer shows the Frigate+ key and points at the Detection page', async () => {
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
+    const { wrapper } = await mountApp('/device')
+    await click(wrapper, 'Tokens and keys')
+    expect(wrapper.findAll('form')).toHaveLength(3)
+    expect(wrapper.findAll('h3').map((h) => h.text().trim())).not.toContain('Frigate+ API key')
+    expect(wrapper.text()).toContain('The Frigate+ API key is on the Detection page.')
+    const link = wrapper.findAll('a').find((a) => a.text().trim() === 'Detection page')!
+    expect(link.attributes('href')).toBe('/detection#frigate-plus')
   })
 
   it("opens Tokens and keys when a link names it, as the Status page's Set the token does", async () => {
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device#tokens-and-keys')
     expect(button(wrapper, 'Tokens and keys').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(4)
+    expect(wrapper.findAll('h3')).toHaveLength(3)
     expect(wrapper.find('#tokens-and-keys').exists()).toBe(true)
   })
 

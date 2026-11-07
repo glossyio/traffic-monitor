@@ -8,7 +8,18 @@ type Answer = Response | object | ((request: Request) => Response | Promise<Resp
 export interface Sent {
   method: string
   path: string
-  body: unknown
+  body: unknown // the parsed JSON, an upload's length in bytes, or null
+}
+
+// What a request sent: JSON parsed, an upload (application/octet-stream) as its length, anything else as null
+async function bodyOf(request: Request): Promise<unknown> {
+  const type = request.headers.get('Content-Type')?.split(';')[0].trim()
+  if (type === 'application/json') {
+    const text = await request.clone().text()
+    return text ? JSON.parse(text) : null
+  }
+  if (type === 'application/octet-stream') return (await request.clone().arrayBuffer()).byteLength
+  return null
 }
 
 export function json(status: number, body: unknown): Response {
@@ -25,8 +36,7 @@ export function fakeApi(answers: Record<string, Answer>) {
   const sent: Sent[] = []
   const fetch = vi.fn(async (request: Request) => {
     const path = new URL(request.url).pathname
-    const text = request.method === 'GET' ? '' : await request.clone().text()
-    sent.push({ method: request.method, path, body: text ? JSON.parse(text) : null })
+    sent.push({ method: request.method, path, body: await bodyOf(request) })
     const answer = answers[`${request.method} ${path}`]
     if (answer === undefined) return apiError(404, 'not_found', `No fake answer for ${request.method} ${path}`)
     if (typeof answer === 'function') return answer(request)

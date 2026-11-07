@@ -1,7 +1,7 @@
 <!--
   The Device page (GET /system/info): the device card, the software versions, and for admins the tokens and keys
-  (GET /secrets, one EnteredSecret form each, in a section that opens when tapped or when the link names it), the
-  diagnostics file (GET /system/diagnostics), and the power buttons
+  (GET /secrets, one EnteredSecret form each but the Frigate+ key's, which is on the Detection page, in a section that
+  opens when tapped or when the link names it), the diagnostics file (GET /system/diagnostics), and the power buttons
   (POST /system/reboot and /system/power-off, each after a confirmation). Viewers see the card and the versions only.
 -->
 <script setup lang="ts">
@@ -9,6 +9,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
+import { copyText, selectAll } from '../../components/clipboard'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import EnteredSecret from '../../components/EnteredSecret.vue'
 import { duration } from '../../components/relative-time'
@@ -49,7 +50,8 @@ async function loadSecrets() {
   secretsError.value = ''
   try {
     const { data } = await api.GET('/api/v1/secrets')
-    secrets.value = data?.secrets ?? []
+    // The Frigate+ key's form is on the Detection page
+    secrets.value = (data?.secrets ?? []).filter((secret) => secret.name !== 'frigate_plus_api_key')
   } catch (error) {
     secretsError.value = messageOf(error)
   }
@@ -173,41 +175,6 @@ async function download() {
     diagnosticsResult.value = { text: messageOf(error), error: true }
   } finally {
     fetching.value = null
-  }
-}
-
-// Select all of a textarea's text. iOS Safari ignores select() on a read-only textarea, so set the range as well.
-function selectAll(area: HTMLTextAreaElement) {
-  area.focus()
-  area.select()
-  area.setSelectionRange(0, area.value.length)
-}
-
-// navigator.clipboard only exists on HTTPS, and the device is usually reached over plain HTTP. The older way works
-// on both: put the text in a textarea, select it, and ask the browser to copy the selection. The browser may still
-// refuse, because the tap that asked for it was a while ago once the diagnostics have arrived (iOS Safari is strict).
-async function copyText(text: string): Promise<boolean> {
-  if (navigator.clipboard && window.isSecureContext) {
-    try {
-      await navigator.clipboard.writeText(text)
-      return true
-    } catch {
-      // fall through to the older way
-    }
-  }
-  const area = document.createElement('textarea')
-  area.value = text
-  area.setAttribute('readonly', '')
-  area.style.position = 'fixed' // off the page, so the page doesn't scroll to it
-  area.style.opacity = '0'
-  document.body.append(area)
-  selectAll(area)
-  try {
-    return document.execCommand('copy')
-  } catch {
-    return false
-  } finally {
-    area.remove()
   }
 }
 
@@ -341,6 +308,10 @@ async function powerAction() {
                   :class="{ 'mt-8': index > 0 }"
                   @changed="loadSecrets"
                 />
+                <p class="text-body-1 mt-8">
+                  The Frigate+ API key is on the
+                  <router-link to="/detection#frigate-plus" class="text-primary">Detection page</router-link>.
+                </p>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
