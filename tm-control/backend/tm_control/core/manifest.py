@@ -25,6 +25,10 @@ class Homepage(BaseModel):
     colors: dict[str, str]
 
 
+class FrigateInfo(BaseModel):
+    coral_model: dict | None = None  # the model section the installer gives Frigate on a device with a Coral
+
+
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -34,6 +38,7 @@ class Manifest(BaseModel):
     codeowner: str
     components: dict[str, str]
     options: dict[str, bool]
+    frigate: FrigateInfo = FrigateInfo()
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage
