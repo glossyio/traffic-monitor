@@ -643,3 +643,290 @@ def test_a_package_that_cannot_be_built_leaves_no_file(seeded, settings, login, 
     monkeypatch.setattr("os.statvfs", lambda path: type("S", (), {"f_frsize": 4096, "f_bavail": 1000})())
     r = package_of(seeded, "mine.tflite")
     assert (r.status_code, message(r)) == (507, "The device would have less than 512 MB free.")
+
+
+# Use: make Frigate run a model, or the installer's default. Fake mode writes the running-model file; a device saves
+# through Frigate's config API, or edits config.yml when Frigate doesn't answer, then restarts frigate.service.
+
+FRIGATE_RESTART = ["systemctl", "restart", "--no-block", "frigate.service"]
+RESTARTING = "Frigate is restarting; try again in a minute."
+FRIGATE_HEADER_LINES = (
+    "Your configuration is invalid.\nSee the official documentation at docs.frigate.video.\n"
+)
+
+
+@pytest.fixture
+def systemctl(monkeypatch):
+    from test_api_services import FakeSystemctl
+
+    fake_systemctl = FakeSystemctl()
+    monkeypatch.setattr("tm_control.adapters.systemd.run", fake_systemctl)
+    return fake_systemctl
+
+
+def use(client, name):
+    return client.post(f"{URL}/{name}/use", json={}, headers=WRITE_HEADERS)
+
+
+def never_applied(*args, **kwargs):
+    raise AssertionError("picker.apply was called")
+
+
+def use_rows(settings):
+    import sqlite3
+
+    con = sqlite3.connect(settings.state_dir / "state.sqlite")
+    try:
+        return [row[0] for row in con.execute("SELECT detail FROM audit WHERE action = 'models.use' ORDER BY id")]
+    finally:
+        con.close()
+
+
+def test_use_a_model_answers_202_and_queues_a_restart(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import picker
+
+    login(seeded, *ADMIN)
+    monkeypatch.setattr(picker, "apply", never_applied)  # fake mode only rewrites the running-model file
+    r = use(seeded, "mine.tflite")
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": "mine.tflite", "applied": "frigate", "restarts": ["frigate.service"]}
+    assert fake.running_model_file(settings).read_text() == "mine.tflite"
+    state = models_of(seeded)
+    assert state["running"] == {"name": "mine.tflite", "kind": "local", "source": "frigate"}
+    assert use(seeded, "mine.tflite").status_code == 202  # the running model again: Frigate just restarts
+    assert use(seeded, PLUS_ID).json()["name"] == PLUS_ID
+    assert models_of(seeded)["running"]["kind"] == "frigate_plus"
+
+
+def write_pair(cache: Path, name: str, **changes):
+    (cache / name).write_bytes(b"\x01")
+    (cache / f"{name}.json").write_bytes(sidecar_bytes(**changes))
+
+
+def test_a_model_for_another_detector_is_refused_before_any_write(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import picker
+
+    login(seeded, *ADMIN)
+    monkeypatch.setattr(picker, "apply", never_applied)
+    write_pair(fake.model_cache(settings), "h.tflite", supportedDetectors=["hailo8l"])
+    r = use(seeded, "h.tflite")
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "wrong_detector")
+    assert message(r) == "This model is built for hailo8l; this device detects with edgetpu."
+    assert fake.running_model_file(settings).read_text() == PLUS_ID
+    (fake.model_cache(settings) / "bare.tflite").write_bytes(b"\x01")
+    r = use(seeded, "bare.tflite")
+    assert (r.status_code, message(r)) == (422, "This model is missing its sidecar.")
+    assert use_rows(settings) == []
+
+
+class DeviceFrigate:
+    """Frigate's API on a device as httpjson sees it: /api/config from the fixture, /api/config/raw with `raw`, and
+    /api/config/save answering `save`; `raw = None` is a Frigate that doesn't answer at all."""
+
+    def __init__(self, raw, save=(200, {"success": True, "message": "Config successfully saved."})):
+        self.raw = raw
+        self.save = save
+        self.posts = []
+
+    def get(self, url, headers=None, timeout=None):
+        if self.raw is None:
+            return None, None
+        if url == "http://127.0.0.1:5000/api/config":
+            return 200, (FIXTURES / "frigate_api_config.json").read_bytes()
+        if url == "http://127.0.0.1:5000/api/config/raw":
+            return 200, json.dumps(self.raw).encode()
+        return None, None
+
+    def post(self, url, body, content_type, headers=None, timeout=None):
+        self.posts.append((url, body.decode(), content_type))
+        if self.raw is None:
+            return None, None
+        status, answer = self.save
+        return status, json.dumps(answer).encode()
+
+
+@pytest.fixture
+def frigate_api(monkeypatch):
+    def answering(raw, **kwargs):
+        from tm_control.adapters import httpjson
+
+        api = DeviceFrigate(raw, **kwargs)
+        monkeypatch.setattr(httpjson, "get", api.get)
+        monkeypatch.setattr(httpjson, "post", api.post)
+        return api
+
+    return answering
+
+
+def yaml_of(text):
+    from ruamel.yaml import YAML
+
+    return YAML(typ="safe", pure=True).load(text)
+
+
+def backups_of(config: Path) -> list[str]:
+    return sorted(path.name for path in config.parent.glob("config.yml.*.bak"))
+
+
+@pytest.mark.parametrize("answers", [True, False])
+def test_a_model_for_another_detector_is_refused_on_a_device(
+        device_client, login, tmp_path, systemctl, frigate_api, answers):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    write_pair(config.parent / "model_cache", "h.tflite", supportedDetectors=["hailo8l", "rknn"])
+    api = frigate_api(PLUS_CONFIG if answers else None)
+    login(device_client, *ADMIN)
+    r = use(device_client, "h.tflite")
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "wrong_detector")
+    assert message(r) == "This model is built for hailo8l, rknn; this device detects with edgetpu."
+    assert api.posts == [] and config.read_text() == PLUS_CONFIG and backups_of(config) == []
+    assert systemctl.restarts() == []
+
+
+def test_use_on_a_device_saves_through_frigate_then_restarts_it(
+        device_client, settings, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    write_pair(config.parent / "model_cache", "mine.tflite")
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    r = use(device_client, "mine.tflite")
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": "mine.tflite", "applied": "frigate", "restarts": ["frigate.service"]}
+    ((url, body, content_type),) = api.posts
+    assert url == "http://127.0.0.1:5000/api/config/save?save_option=saveonly" and content_type == "text/plain"
+    saved = yaml_of(body)
+    assert saved["model"]["path"] == "/config/model_cache/mine.tflite"
+    assert saved["model"]["labelmap"] == {0: "person", 1: "bicycle", 2: "car"}
+    assert saved["detectors"] == yaml_of(PLUS_CONFIG)["detectors"]
+    assert config.read_text() == PLUS_CONFIG  # Frigate writes its own file
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+    assert use_rows(device_client.app.state.settings) == ["mine.tflite"]
+
+
+def test_use_on_a_device_edits_the_file_when_frigate_is_down(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    write_pair(config.parent / "model_cache", "mine.tflite")
+    api = frigate_api(None)
+    login(device_client, *ADMIN)
+    r = use(device_client, "mine.tflite")
+    assert r.status_code == 202, r.text
+    assert r.json()["applied"] == "file"
+    assert api.posts == []
+    assert yaml_of(config.read_text())["model"]["path"] == "/config/model_cache/mine.tflite"
+    assert len(backups_of(config)) == 1
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+
+
+def test_frigates_refusal_writes_nothing_and_restarts_nothing(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    from placeholders import PLACEHOLDER_KEY
+
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    write_pair(config.parent / "model_cache", "mine.tflite")
+    refusal = FRIGATE_HEADER_LINES + f"Line 3: model -> input_tensor - Input should be 'nchw' {PLACEHOLDER_KEY}\n"
+    frigate_api(PLUS_CONFIG, save=(400, {"success": False, "message": refusal}))
+    login(device_client, *ADMIN)
+    r = use(device_client, "mine.tflite")
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "frigate_refused")
+    assert message(r) == "Frigate refused the config: Line 3: model -> input_tensor - Input should be 'nchw' <key>"
+    assert PLACEHOLDER_KEY not in r.text and "docs.frigate.video" not in r.text
+    assert config.read_text() == PLUS_CONFIG and backups_of(config) == []
+    assert systemctl.restarts() == []
+    assert use_rows(device_client.app.state.settings) == []
+
+
+def test_use_default_puts_the_installers_section_back(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import picker
+
+    login(seeded, *ADMIN)
+    monkeypatch.setattr(picker, "apply", never_applied)
+    r = use(seeded, "default")
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": "default", "applied": "frigate", "restarts": ["frigate.service"]}
+    assert fake.running_model_file(settings).read_text() == INSTALLER_FILE
+    assert models_of(seeded)["running"]["kind"] == "installer_default"
+    fake.running_model_file(settings).write_text("mine.tflite")
+    r = use(seeded, INSTALLER_FILE)  # the installer's file is the default
+    assert r.status_code == 202 and r.json()["name"] == "default"
+    assert fake.running_model_file(settings).read_text() == INSTALLER_FILE
+
+    # a detector the installer's model isn't for: Frigate's own default, an empty file
+    answer = fake.frigate_answer
+
+    def cpu_answer(settings):
+        config, config_file = answer(settings)
+        config["detectors"] = {"cpu": {"type": "cpu"}}
+        return config, config_file
+
+    monkeypatch.setattr(fake, "frigate_answer", cpu_answer)
+    assert use(seeded, "default").status_code == 202
+    assert fake.running_model_file(settings).read_text() == ""
+
+
+def test_use_default_on_a_device_writes_the_installers_section_or_none(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    frigate_api(None)
+    login(device_client, *ADMIN)
+    r = use(device_client, "default")
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": "default", "applied": "file", "restarts": ["frigate.service"]}
+    model = yaml_of(config.read_text())["model"]
+    assert list(model) == ["model_type", "width", "height", "path", "labelmap_path"]
+    assert model["path"] == f"/config/model_cache/{INSTALLER_FILE}"
+    config.write_text("detectors:\n  cpu:\n    type: cpu\nmodel:\n  path: /config/model_cache/mine.tflite\n")
+    for backup in backups_of(config):  # a backup's name has the second it was made in
+        (config.parent / backup).unlink()
+    assert use(device_client, "default").status_code == 202
+    assert yaml_of(config.read_text()) == {"detectors": {"cpu": {"type": "cpu"}}}
+    assert systemctl.restarts() == [FRIGATE_RESTART, FRIGATE_RESTART]
+    config.unlink()  # neither Frigate nor the file says what detects
+    r = use(device_client, "default")
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "detector_unknown")
+    assert len(systemctl.restarts()) == 2
+
+
+@pytest.mark.parametrize("state", ["activating", "deactivating"])
+def test_use_is_409_while_frigate_restarts(device_client, login, tmp_path, systemctl, frigate_api, state):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    config = codedir / "frigate" / "config" / "config.yml"
+    api = frigate_api(PLUS_CONFIG)
+    systemctl.units = {"frigate.service": {"ActiveState": state}}
+    login(device_client, *ADMIN)
+    for name in (PLUS_ID, "default"):
+        r = use(device_client, name)
+        assert (r.status_code, r.json()["error"]["code"], message(r)) == (409, "restarting", RESTARTING)
+    assert api.posts == [] and config.read_text() == PLUS_CONFIG and systemctl.restarts() == []
+    systemctl.units = {}
+    assert use(device_client, PLUS_ID).status_code == 202
+    systemctl.timed_out = {"frigate.service"}  # systemd can't say: the use goes ahead, and its restart is queued
+    assert use(device_client, PLUS_ID).status_code == 202
+    assert len(systemctl.restarts()) == 2
+
+
+def test_use_is_admin_only_and_unknown_names_are_404(seeded, settings, login):
+    assert use(seeded, "mine.tflite").status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert use(seeded, "mine.tflite").status_code == 403
+    assert use(seeded, "default").status_code == 403
+    login(seeded, *ADMIN)
+    r = use(seeded, "nothing.tflite")
+    assert (r.status_code, message(r)) == (404, "There is no such model.")
+    assert use(seeded, "a.json").status_code == 422
+    assert use(seeded, ".hidden").status_code == 422
+    assert fake.running_model_file(settings).read_text() == PLUS_ID
+
+
+def test_use_audits_the_name_and_default(seeded, settings, login):
+    login(seeded, *ADMIN)
+    use(seeded, "mine.tflite")
+    use(seeded, "default")
+    use(seeded, INSTALLER_FILE)
+    use(seeded, "nothing.tflite")  # refused: no row
+    assert use_rows(settings) == ["mine.tflite", "default", "default"]

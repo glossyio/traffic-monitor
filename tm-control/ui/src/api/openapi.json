@@ -802,6 +802,71 @@
         }
       }
     },
+    "/api/v1/models/default/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Default",
+        "description": "Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no\n`model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model.",
+        "operationId": "use_default_api_v1_models_default_use_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseQueued"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Model",
+        "description": "Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.\nThe installer's file is the default, as POST /models/default/use puts it back. The running model may be used\nagain: Frigate just restarts.",
+        "operationId": "use_model_api_v1_models__name__use_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -2435,6 +2500,36 @@
           "installing_user"
         ],
         "title": "TmInstall"
+      },
+      "UseQueued": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "applied": {
+            "type": "string",
+            "enum": [
+              "frigate",
+              "file"
+            ],
+            "title": "Applied"
+          },
+          "restarts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "applied",
+          "restarts"
+        ],
+        "title": "UseQueued"
       },
       "ValidationError": {
         "properties": {

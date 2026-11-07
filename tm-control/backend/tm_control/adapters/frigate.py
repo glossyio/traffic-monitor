@@ -5,6 +5,7 @@ Each API function returns None when Frigate doesn't answer, times out, or answer
 /api/config masks the credentials in camera input paths (rtsp://*:*@...).
 """
 
+import json
 import re
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from tm_control.adapters.yamlfile import ConfigRead, read_config
 
 BASE = "http://127.0.0.1:5000/api"
 VERSION = re.compile(r"[0-9A-Za-z.+_-]{1,64}")  # such as 0.18.1-cf67f08
+SAVE_TIMEOUT = 30  # seconds: Frigate validates the whole config before it writes the file
 
 
 def version() -> str | None:
@@ -37,6 +39,26 @@ def config() -> dict | None:
 def stats() -> dict | None:
     """cameras.<name>.camera_fps and detectors.<name>.inference_speed and .pid, among others."""
     return _object("stats")
+
+
+def config_raw() -> str | None:
+    """config.yml's text as Frigate reads it from its own disk: /api/config/raw answers it as a JSON string."""
+    status, body = httpjson.get_json(f"{BASE}/config/raw")
+    return body if status == 200 and isinstance(body, str) else None
+
+
+def save_config(text: str) -> tuple[int | None, str | None]:
+    """Have Frigate validate text as its whole config and, when it's valid, write it to config.yml without
+    restarting. Returns the status and the answer's message (a refusal's says why); None for each that's missing."""
+    status, body = httpjson.post(
+        f"{BASE}/config/save?save_option=saveonly", text.encode("utf-8"), "text/plain", timeout=SAVE_TIMEOUT
+    )
+    try:
+        answer = json.loads(body) if body is not None else None
+    except (ValueError, RecursionError):
+        answer = None
+    message = answer.get("message") if isinstance(answer, dict) else None
+    return status, message if isinstance(message, str) else None
 
 
 def config_file(codedir) -> ConfigRead:
