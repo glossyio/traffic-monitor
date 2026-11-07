@@ -350,6 +350,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Models */
+        get: operations["get_models_api_v1_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -667,12 +684,77 @@ export interface components {
             /** Log */
             log: string[];
         };
+        /** LabelsOut */
+        LabelsOut: {
+            /** Recognised */
+            recognised: string[] | null;
+            /** Source */
+            source: ("frigate" | "sidecar" | "labels_file") | null;
+            /** Tracked */
+            tracked: string[];
+        };
         /** Memory */
         Memory: {
             /** Total */
             total: number;
             /** Available */
             available: number;
+        };
+        /** ModelFileOut */
+        ModelFileOut: {
+            /** Name */
+            name: string;
+            /** Size */
+            size: number;
+            /** Sha256 */
+            sha256: string | null;
+        };
+        /** ModelOut */
+        ModelOut: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "frigate_plus" | "local" | "installer_default";
+            /** Title */
+            title: string;
+            /** Trained At */
+            trained_at: string | null;
+            /** Type */
+            type: string | null;
+            /** Detectors */
+            detectors: string[];
+            /** Width */
+            width: number | null;
+            /** Height */
+            height: number | null;
+            /** Files */
+            files: components["schemas"]["ModelFileOut"][];
+            /** Complete */
+            complete: boolean;
+            /** Running */
+            running: boolean;
+            /** Usable */
+            usable: boolean | null;
+            /** Deletable */
+            deletable: boolean;
+            /** Problem */
+            problem: string | null;
+        };
+        /** ModelsState */
+        ModelsState: {
+            /** Detector */
+            detector: string | null;
+            /** Frigate Answers */
+            frigate_answers: boolean;
+            /** Default */
+            default: ("installer_default" | "frigate_default") | null;
+            running: components["schemas"]["RunningOut"];
+            /** Models */
+            models: components["schemas"]["ModelOut"][];
+            labels: components["schemas"]["LabelsOut"];
         };
         /** NewPassword */
         NewPassword: {
@@ -725,6 +807,15 @@ export interface components {
         RestartQueued: {
             /** Unit */
             unit: string;
+        };
+        /** RunningOut */
+        RunningOut: {
+            /** Name */
+            name: string | null;
+            /** Kind */
+            kind: ("frigate_plus" | "local" | "installer_default" | "frigate_default") | null;
+            /** Source */
+            source: ("frigate" | "config_file") | null;
         };
         /** SecretState */
         SecretState: {
@@ -1399,6 +1490,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsState"];
                 };
             };
         };

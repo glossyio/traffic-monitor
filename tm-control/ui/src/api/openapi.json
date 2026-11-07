@@ -594,6 +594,27 @@
         }
       }
     },
+    "/api/v1/models": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Get Models",
+        "operationId": "get_models_api_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -1214,6 +1235,54 @@
         ],
         "title": "Job"
       },
+      "LabelsOut": {
+        "properties": {
+          "recognised": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recognised"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate",
+                  "sidecar",
+                  "labels_file"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "tracked": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tracked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recognised",
+          "source",
+          "tracked"
+        ],
+        "title": "LabelsOut"
+      },
       "Memory": {
         "properties": {
           "total": {
@@ -1231,6 +1300,224 @@
           "available"
         ],
         "title": "Memory"
+      },
+      "ModelFileOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size",
+          "sha256"
+        ],
+        "title": "ModelFileOut"
+      },
+      "ModelOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "frigate_plus",
+              "local",
+              "installer_default"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "trained_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trained At"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "detectors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detectors"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/ModelFileOut"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "usable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable"
+          },
+          "deletable": {
+            "type": "boolean",
+            "title": "Deletable"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "title",
+          "trained_at",
+          "type",
+          "detectors",
+          "width",
+          "height",
+          "files",
+          "complete",
+          "running",
+          "usable",
+          "deletable",
+          "problem"
+        ],
+        "title": "ModelOut"
+      },
+      "ModelsState": {
+        "properties": {
+          "detector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detector"
+          },
+          "frigate_answers": {
+            "type": "boolean",
+            "title": "Frigate Answers"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "installer_default",
+                  "frigate_default"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "running": {
+            "$ref": "#/components/schemas/RunningOut"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOut"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "labels": {
+            "$ref": "#/components/schemas/LabelsOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detector",
+          "frigate_answers",
+          "default",
+          "running",
+          "models",
+          "labels"
+        ],
+        "title": "ModelsState"
       },
       "NewPassword": {
         "properties": {
@@ -1375,6 +1662,60 @@
           "unit"
         ],
         "title": "RestartQueued"
+      },
+      "RunningOut": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate_plus",
+                  "local",
+                  "installer_default",
+                  "frigate_default"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate",
+                  "config_file"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "source"
+        ],
+        "title": "RunningOut"
       },
       "SecretState": {
         "properties": {
