@@ -219,6 +219,14 @@ describe('the Detection page', () => {
     expect(wrapper.text()).toContain('Tracked by this device')
   })
 
+  it("says the running model's labels aren't known when Frigate answers without them", async () => {
+    const unknown: ModelsState = { ...MODELS, labels: { recognised: null, source: null, tracked: ['person', 'car'] } }
+    signedIn(VIEWER, { [MODELS_PATH]: unknown })
+    const { wrapper } = await mountApp('/detection')
+    expect(wrapper.text()).toContain("The running model's labels aren't known.")
+    expect(wrapper.text()).not.toContain("Frigate isn't answering")
+  })
+
   it('names the installer model and an unknown detector in words', async () => {
     const [installer] = MODELS.models
     const state: ModelsState = {
@@ -463,6 +471,25 @@ describe("the Detection page's actions", () => {
       .map((b) => b.text().trim())
       .filter((text) => text.startsWith('Use the') || text.startsWith("Use Frigate's"))
     expect(offers).toEqual(offered ? [offered] : [])
+  })
+
+  it('shows the results of models named "default" and "list" under those models', async () => {
+    const named = (name: string): ModelOut => ({ ...MINE, name, title: `Model ${name}`, files: [] })
+    const refused = (name: string) => apiError(409, 'conflict', `Refused ${name}.`)
+    signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: { ...MODELS, models: [...MODELS.models, named('default'), named('list')] },
+      'POST /api/v1/models/default/use': json(500, null), // the device's default; the page must not call it
+      'DELETE /api/v1/models/default': refused('default'),
+      'DELETE /api/v1/models/list': refused('list'),
+    })
+    const { wrapper } = await mountApp('/detection')
+    for (const name of ['default', 'list']) {
+      await clickIn(item(wrapper, `Model ${name}`), 'Delete')
+      await clickInDialog('Delete')
+      expect(item(wrapper, `Model ${name}`).find('.v-alert').text()).toContain(`Refused ${name}.`)
+      expect(wrapper.findAll('main .v-alert').map((a) => a.text())).toEqual([`Refused ${name}.`])
+    }
   })
 
   it('opens the upload dialog from the button above the list', async () => {

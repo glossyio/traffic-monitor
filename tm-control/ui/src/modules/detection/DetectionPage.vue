@@ -122,9 +122,9 @@ function fileLine(model: ModelOut, file: ModelFile) {
 
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
 // page waits for Frigate after a use. Each result shows where its action was: under the model, under the default's
-// button (DEFAULT), or above the list (LIST) for a model that's gone.
-const DEFAULT = 'default'
-const LIST = 'list'
+// button (DEFAULT), or above the list (LIST) for a model that's gone. A model's name can't start with "#".
+const DEFAULT = '#default'
+const LIST = '#list'
 const busy = ref<string | null>(null)
 const restarting = ref(false)
 const working = computed(() => busy.value !== null || restarting.value)
@@ -377,7 +377,11 @@ function openUpload() {
         <section v-else>
           <h3 class="text-subtitle-1 font-weight-medium mb-2">Recognises</h3>
           <p class="text-body-2 text-secondary">
-            Frigate isn't answering, and the running model has no sidecar on the device.
+            {{
+              state.frigate_answers
+                ? "The running model's labels aren't known."
+                : "Frigate isn't answering, and the running model has no sidecar on the device."
+            }}
           </p>
         </section>
         <LabelChips title="Tracked by this device" :labels="state.labels.tracked" class="mt-6" />
