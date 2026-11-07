@@ -129,13 +129,19 @@ def test_inventory_lists_pairs_halves_and_the_installers_default(cache):
     assert [(file.name, file.size) for file in default.files] == [(INSTALLER_FILE, 1024)]
     assert (found[PLUS_ID].kind, found[PLUS_ID].complete) == ("frigate_plus", True)
     assert found[PLUS_ID].sidecar.id == PLUS_ID
-    assert [(file.name, file.size) for file in found[PLUS_ID].files] == [(PLUS_ID, 4096)]
+    assert [(file.name, file.size) for file in found[PLUS_ID].files] == [
+        (PLUS_ID, 4096), (f"{PLUS_ID}.json", len(SIDECAR))]
     assert (found["mine.tflite"].kind, found["mine.tflite"].complete) == ("local", True)
     bare = found["bare.tflite"]
     assert (bare.complete, bare.sidecar, bare.problem) == (False, None, None)
     assert found["bare.tflite"].files[0].size == 10
-    assert (found["lonely.tflite"].complete, found["lonely.tflite"].files) == (False, ())
-    assert all(file.sha256 is None for model in models for file in model.files)  # none hashed yet
+    lonely = found["lonely.tflite"]
+    assert not lonely.complete and [file.name for file in lonely.files] == ["lonely.tflite.json"]
+    # every regular file listed carries its hash
+    assert default.files[0].sha256 == hashlib.sha256(bytes(1024)).hexdigest()
+    assert found[PLUS_ID].files[0].sha256 == hashlib.sha256(bytes(4096)).hexdigest()
+    assert found[PLUS_ID].files[1].sha256 == hashlib.sha256(SIDECAR).hexdigest()
+    assert lonely.files[0].sha256 == hashlib.sha256(SIDECAR).hexdigest()
 
 
 def test_the_installers_file_is_not_listed_twice(cache):
@@ -179,12 +185,14 @@ def test_one_bad_file_does_not_blank_the_inventory(cache, monkeypatch):
     assert not models["bad.tflite"].complete and models["bad.tflite"].sidecar is None
     assert models["bad.tflite"].problem == "The sidecar isn't a JSON object."
     assert not models["huge.tflite"].complete and "too large" in models["huge.tflite"].problem
+    assert [file.sha256 for file in models["huge.tflite"].files][1] is None  # an oversized sidecar isn't hashed
     for name in ("dangling.tflite", "fifo.tflite", "fifo2.tflite", "w" * 255, "c" * 300):
         assert name not in models, name
     assert set(models) <= {"good.tflite", "bad.tflite", "huge.tflite", "locked.tflite"}
     if os.geteuid() != 0:
         assert models["locked.tflite"].problem == "The file can't be read."
         assert models["locked.tflite"].files[0].sha256 is None
+    assert models["good.tflite"].files[0].sha256 == hashlib.sha256(bytes(4096)).hexdigest()
 
 
 def test_an_unreadable_sidecar_makes_the_entry_incomplete(cache):
@@ -210,27 +218,27 @@ def test_a_missing_cache_directory_lists_only_the_installers_default(tmp_path):
 def test_hashes_are_cached_by_name_size_and_mtime(cache, monkeypatch):
     inv.HASHES.clear()
     pair(cache, "a.tflite", size=3_000_000)
+    expected = hashlib.sha256(bytes(3_000_000)).hexdigest()
     opened = []
     real = inv.open_in
     monkeypatch.setattr(inv, "open_in", lambda *args, **kwargs: opened.append(args[1]) or real(*args, **kwargs))
-    fd = inv.open_cache(cache)
-    try:
-        first = inv.stat_in(fd, "a.tflite")
-        digest = sha256_in(fd, "a.tflite", first)
-        assert digest == hashlib.sha256(bytes(3_000_000)).hexdigest()
-        assert sha256_in(fd, "a.tflite", inv.stat_in(fd, "a.tflite")) == digest
-        assert opened == ["a.tflite"]
-        # a listing now carries the known hash, and doesn't hash anything itself
+
+    def listed():
         opened.clear()
-        assert by_name(inventory(cache, None))["a.tflite"].files[0].sha256 == digest
-        os.utime(cache / "a.tflite", ns=(1, first.st_mtime_ns + 1_000_000_000))
-        assert by_name(inventory(cache, None))["a.tflite"].files[0].sha256 is None
-        opened.clear()
-        assert sha256_in(fd, "a.tflite", inv.stat_in(fd, "a.tflite")) == digest
-        assert opened == ["a.tflite"]  # the touched file is read again
-        assert len([key for key in inv.HASHES if key[0] == "a.tflite"]) == 1  # the stale key is dropped
-    finally:
-        os.close(fd)
+        return by_name(inventory(cache, None))["a.tflite"].files[0]
+
+    assert listed().sha256 == expected
+    assert opened.count("a.tflite") == 1
+    assert listed().sha256 == expected  # same name, size, and mtime: not read again
+    assert opened.count("a.tflite") == 0
+    first = os.stat(cache / "a.tflite")
+    os.utime(cache / "a.tflite", ns=(1, first.st_mtime_ns + 1_000_000_000))
+    assert listed().sha256 == expected  # touched: read again
+    assert opened.count("a.tflite") == 1
+    assert len([key for key in inv.HASHES if key[0] == "a.tflite"]) == 1  # the stale key is dropped
+    (cache / "a.tflite").write_bytes(b"changed")
+    assert listed().sha256 == hashlib.sha256(b"changed").hexdigest()  # a new size: read again
+    assert opened.count("a.tflite") == 1
 
 
 def test_the_hash_is_of_the_file_that_was_read(cache):
