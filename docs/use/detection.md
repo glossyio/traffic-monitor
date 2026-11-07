@@ -10,6 +10,8 @@ The control app's **Detection** page shows what the device looks for and which A
 
 **Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then two facts: the **Detector**, such as `edgetpu` for a Coral, and the **Running model**. Below them is the model Frigate runs, marked **In use**. The device's other models are under **Other models on this device**, which stays closed until you select its title, and the title counts them. Then come [what the model recognises](#what-the-model-recognises) and the [Frigate+ API key](#frigate-plus).
 
+![The Detection page on a phone, as an administrator: the Detector and Running model facts, the model in use with a "Frigate runs My model." result under it, and the other models opened, each with its buttons](../assets/images/detection-page-models.png){ width="300" }
+
 Each model shows its name, when it was trained and what it's built for (when it says), and its files with their sizes and the start of each file's SHA-256 hash. A mark says when the model is:
 
 | Mark | Meaning |
@@ -77,6 +79,8 @@ Frigate tracks only the objects in both lists. To track more of what the model r
 
 * **Online:** when the device has internet and a Frigate+ API key, pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
 * **Offline:** upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See [A device without internet](../configuration/frigate-config.md#a-device-without-internet).
+
+![The Frigate+ API key section opened on a phone: the two ways to get a model onto the device, the key field, and Save](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
 
 Administrators enter the API key under **Frigate+ API key**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
 
