@@ -14,11 +14,12 @@ import EnteredSecret from '../../components/EnteredSecret.vue'
 import { useSession } from '../../stores/session'
 import ActionResult, { type Result } from './ActionResult.vue'
 import LabelChips from './LabelChips.vue'
+import ModelBlock, { type Block } from './ModelBlock.vue'
 import UploadModel from './UploadModel.vue'
 
 type ModelsState = components['schemas']['ModelsState']
 type ModelOut = components['schemas']['ModelOut']
-type ModelFile = components['schemas']['ModelFileOut']
+type DefaultKind = NonNullable<ModelsState['default']>
 type SecretState = components['schemas']['SecretState']
 
 const session = useSession()
@@ -63,37 +64,41 @@ onMounted(async () => {
   }
 })
 
-const detectorLine = computed(() => {
-  const detector = state.value?.detector
-  return detector ? `This device detects with ${detector}.` : "Frigate's detector is unknown."
-})
+// The two facts above the models, as the Device page's Software grid has them
+const detectorValue = computed(() => state.value?.detector ?? 'Unknown')
 
 const KINDS = {
   frigate_plus: 'a Frigate+ model',
   local: 'a local model',
 }
 
-const runningLine = computed(() => {
-  if (!state.value) return ''
-  const { running, models } = state.value
-  if (!running.kind) return "Frigate's model is unknown."
-  if (running.kind === 'frigate_default') return 'Frigate runs its built-in model.'
-  if (running.kind === 'installer_default') return "Frigate runs the installer's model."
-  const title = models.find((model) => model.running)?.title ?? running.name
-  return title ? `Frigate runs ${title}, ${KINDS[running.kind]}.` : `Frigate runs ${KINDS[running.kind]}.`
-})
-
 // The two defaults have no sidecar, so the API's title for each is its file name, which goes on the facts line
-const DEFAULT_TITLES: Record<string, string> = {
+const DEFAULT_TITLES: Record<DefaultKind, string> = {
   installer_default: "The installer's model",
   frigate_default: "Frigate's built-in model",
 }
-const isDefault = (model: ModelOut) => model.kind in DEFAULT_TITLES
-const titleOf = (model: ModelOut) => DEFAULT_TITLES[model.kind] ?? model.title
+// A default the API can't list (no file in model_cache) still gets a block, with this as its facts line
+const MADE_FACTS: Record<DefaultKind, string> = {
+  installer_default: 'Set up by the installer.',
+  frigate_default: 'Built into Frigate.',
+}
+const isDefaultKind = (kind: ModelOut['kind'] | null): kind is DefaultKind =>
+  kind === 'installer_default' || kind === 'frigate_default'
+const titleOf = (model: ModelOut) => (isDefaultKind(model.kind) ? DEFAULT_TITLES[model.kind] : model.title)
+
+const runningValue = computed(() => {
+  if (!state.value) return ''
+  const { running, models } = state.value
+  if (!running.kind) return 'Unknown'
+  if (isDefaultKind(running.kind)) return DEFAULT_TITLES[running.kind]
+  const kind = KINDS[running.kind]
+  const title = models.find((model) => model.running)?.title ?? running.name
+  return title ? `${title}, ${kind}` : kind.charAt(0).toUpperCase() + kind.slice(1)
+})
 
 // The sidecar's facts in one line, such as "trained 2026-10-01, yolo-generic, for edgetpu, 320×320"
 function facts(model: ModelOut) {
-  if (isDefault(model)) return model.name
+  if (isDefaultKind(model.kind)) return model.name
   return [
     model.trained_at ? `trained ${model.trained_at.slice(0, 10)}` : null,
     model.type,
@@ -104,25 +109,35 @@ function facts(model: ModelOut) {
     .join(', ')
 }
 
-function mark(model: ModelOut) {
-  if (model.running) return 'running'
-  if (model.usable === false) return "can't run on this detector"
-  if (!model.complete) return 'incomplete'
-  return null
+// One bordered block per model: the one Frigate runs above the fold, the rest in the "Other models" panel. A default
+// with no file on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be.
+function listed(model: ModelOut): Block {
+  return { key: model.name, title: titleOf(model), facts: facts(model), model, kind: model.kind, inUse: model.running }
+}
+function made(kind: DefaultKind, inUse: boolean): Block {
+  return { key: `#${kind}`, title: DEFAULT_TITLES[kind], facts: MADE_FACTS[kind], model: null, kind, inUse }
 }
 
-// Bytes in powers of 1024, as the Device page counts storage
-function size(bytes: number) {
-  if (bytes < 1024) return `${bytes} bytes`
-  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 ** 2).toFixed(1)} MB`
-}
+const inUse = computed<Block | null>(() => {
+  if (!state.value) return null
+  const { running, models } = state.value
+  const model = models.find((m) => m.running)
+  if (model) return listed(model)
+  return isDefaultKind(running.kind) ? made(running.kind, true) : null
+})
 
-// A file's name, unless it's the model's title already (a file with no sidecar), and its size. The template adds
-// the start of the hash, with the whole hash as the span's title.
-function fileLine(model: ModelOut, file: ModelFile) {
-  return file.name === model.title ? size(file.size) : `${file.name}, ${size(file.size)}`
-}
+const others = computed<Block[]>(() => {
+  if (!state.value) return []
+  const { default: fallback, running, models } = state.value
+  const blocks = models.filter((model) => model.name !== inUse.value?.key).map(listed)
+  if (fallback && running.kind !== fallback && !models.some((model) => model.kind === fallback)) {
+    blocks.push(made(fallback, false))
+  }
+  return blocks
+})
+
+// The panels that are open, by value
+const open = ref<string[]>([])
 
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
 // page waits for Frigate after a use. Each result shows where its action was: under the model, under the default's
@@ -134,24 +149,42 @@ const restarting = ref(false)
 const working = computed(() => busy.value !== null || restarting.value)
 const result = ref<(Result & { at: string }) | null>(null)
 
-// What POST /models/default/use would put back here, offered when Frigate runs something else
-const defaultOffer = computed(() => {
-  if (!state.value) return null
-  const { default: fallback, running } = state.value
-  if (fallback === 'installer_default' && running.kind !== 'installer_default') {
-    return { title: "the installer's model", label: "Use the installer's model" }
-  }
-  if (fallback === 'frigate_default' && running.kind !== 'frigate_default') {
-    return { title: "Frigate's built-in model", label: "Use Frigate's built-in model" }
-  }
-  return null
-})
+// A default's block offers what POST /models/default/use puts back, when Frigate runs something else
+function canUseDefault(block: Block) {
+  const { default: fallback, running } = state.value!
+  return block.kind === fallback && running.kind !== fallback && !block.inUse
+}
 
 function useBlocked(model: ModelOut) {
   if (!model.complete) return 'It can be used once it has both its model file and its .json.'
   if (model.usable !== false) return null
   const built = model.detectors.length ? `It's built for ${model.detectors.join(' or ')}` : 'Its .json names no detector'
   return `${built}, and this device detects with ${state.value?.detector}.`
+}
+
+// What ModelBlock needs of the page's state for one block. A default's use shows its result at DEFAULT, so the
+// result follows the block when it moves above the fold.
+function blockProps(block: Block) {
+  const at = isDefaultKind(block.kind) ? DEFAULT : block.key
+  const on = (action: string) => busy.value === `${action} ${action === 'use' ? at : block.key}`
+  return {
+    block,
+    admin: session.isAdmin,
+    busy: on('use') ? 'use' : on('download') ? 'download' : on('delete') ? 'delete' : null,
+    working: working.value,
+    result: result.value?.at === at ? result.value : null,
+    useBlocked: block.model && !isDefaultKind(block.kind) ? useBlocked(block.model) : null,
+    canUse: isDefaultKind(block.kind) ? canUseDefault(block) : !block.inUse,
+  } as const
+}
+
+function askToUse(block: Block) {
+  if (block.model && !isDefaultKind(block.kind)) {
+    confirming.value = { action: 'use', title: block.title, model: block.model }
+  } else {
+    const title = block.kind === 'installer_default' ? "the installer's model" : "Frigate's built-in model"
+    confirming.value = { action: 'use', title, model: null }
+  }
 }
 
 // The confirmation: a use or a delete of a model, or a use of the default (model null)
@@ -270,7 +303,11 @@ function openUpload() {
 
 <template>
   <div>
-    <h1 class="text-h5 text-primary mb-6">Detection</h1>
+    <h1 class="text-h5 text-primary mb-2">Detection</h1>
+    <p class="text-body-1 mb-6">
+      See which model Frigate detects objects with and what it recognises. Administrators can switch models and set
+      the Frigate+ API key.
+    </p>
 
     <v-alert v-if="loadError" type="error" class="mb-6">
       {{ loadError }}
@@ -286,92 +323,59 @@ function openUpload() {
         <v-alert v-if="!state.frigate_answers" type="warning" class="mb-4">
           Frigate isn't answering; this is what its config file says.
         </v-alert>
-        <p class="text-body-1">{{ detectorLine }}</p>
-        <p class="text-body-1 mb-2">{{ runningLine }}</p>
-        <v-btn
-          v-if="session.isAdmin"
-          variant="outlined"
-          color="primary"
-          size="large"
-          class="my-2"
-          :disabled="working"
-          @click="openUpload"
-        >
-          Upload a model
-        </v-btn>
-        <ActionResult v-if="result?.at === LIST" :result="result" />
-        <v-list bg-color="transparent" class="py-0">
-          <v-list-item v-for="model in state.models" :key="model.name" class="px-0 py-3">
-            <div class="d-flex flex-wrap align-center ga-2">
-              <span class="text-body-1 text-break">{{ titleOf(model) }}</span>
-              <v-chip v-if="mark(model)" size="small" variant="outlined" :color="model.running ? 'primary' : undefined">
-                {{ mark(model) }}
-              </v-chip>
-            </div>
-            <div v-if="facts(model)" class="text-body-2 text-secondary">{{ facts(model) }}</div>
-            <!-- On one line, so no space comes before the comma; the hash's start doesn't wrap away from "SHA-256" -->
-            <div v-for="file in model.files" :key="file.name" class="text-body-2 text-secondary text-break">
-              {{ fileLine(model, file) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
-            </div>
-            <div v-if="model.problem" class="text-body-2">{{ model.problem }}</div>
-            <!-- The defaults have none of these: the button under the list uses them, and they have no package -->
-            <template v-if="session.isAdmin && !isDefault(model)">
-              <div class="d-flex flex-wrap ga-2 mt-2">
-                <v-btn
-                  v-if="!model.running"
-                  variant="outlined"
-                  color="primary"
-                  min-height="44"
-                  :disabled="working || useBlocked(model) !== null"
-                  :loading="busy === `use ${model.name}`"
-                  @click="confirming = { action: 'use', title: titleOf(model), model }"
-                >
-                  Use
-                </v-btn>
-                <v-btn
-                  v-if="model.complete"
-                  variant="outlined"
-                  color="primary"
-                  min-height="44"
-                  :disabled="working"
-                  :loading="busy === `download ${model.name}`"
-                  @click="download(model)"
-                >
-                  Download
-                </v-btn>
-                <v-btn
-                  v-if="model.deletable"
-                  variant="outlined"
-                  color="primary"
-                  min-height="44"
-                  :disabled="working"
-                  :loading="busy === `delete ${model.name}`"
-                  @click="confirming = { action: 'delete', title: titleOf(model), model }"
-                >
-                  Delete
-                </v-btn>
+        <v-row dense class="facts mb-4">
+          <v-col cols="6" sm="4">
+            <div class="text-body-2 text-secondary">Detector</div>
+            <div class="text-body-1 text-break">{{ detectorValue }}</div>
+          </v-col>
+          <v-col cols="6" sm="4">
+            <div class="text-body-2 text-secondary">Running model</div>
+            <div class="text-body-1 text-break">{{ runningValue }}</div>
+          </v-col>
+        </v-row>
+        <ModelBlock
+          v-if="inUse"
+          v-bind="blockProps(inUse)"
+          class="mb-4"
+          @use="askToUse(inUse)"
+          @download="download(inUse.model!)"
+          @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
+        />
+        <!-- The other models in one panel, closed until tapped. Its title, a button, goes inside the h3, so the heading
+             stays a heading for screen readers, as on the Device page. Eager: its content is on the page while it's
+             closed, so the page's height is known when a link scrolls to the key panel. -->
+        <v-expansion-panels v-model="open" multiple flat>
+          <v-expansion-panel value="other-models" class="border" eager>
+            <h3 class="text-subtitle-1 font-weight-medium">
+              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
+                Other models on this device ({{ others.length }})
+              </v-expansion-panel-title>
+            </h3>
+            <v-expansion-panel-text>
+              <v-btn
+                v-if="session.isAdmin"
+                variant="outlined"
+                color="primary"
+                size="large"
+                :disabled="working"
+                @click="openUpload"
+              >
+                Upload a model
+              </v-btn>
+              <ActionResult v-if="result?.at === LIST" :result="result" />
+              <div class="d-flex flex-column ga-3 mt-4">
+                <ModelBlock
+                  v-for="block in others"
+                  :key="block.key"
+                  v-bind="blockProps(block)"
+                  @use="askToUse(block)"
+                  @download="download(block.model!)"
+                  @remove="confirming = { action: 'delete', title: block.title, model: block.model }"
+                />
               </div>
-              <div v-if="!model.running && useBlocked(model)" class="text-body-2 text-secondary mt-1">
-                {{ useBlocked(model) }}
-              </div>
-            </template>
-            <ActionResult v-if="result?.at === model.name" :result="result" />
-          </v-list-item>
-        </v-list>
-        <div v-if="session.isAdmin && (defaultOffer || result?.at === DEFAULT)" class="mt-2">
-          <v-btn
-            v-if="defaultOffer"
-            variant="outlined"
-            color="primary"
-            size="large"
-            :disabled="working"
-            :loading="busy === `use ${DEFAULT}`"
-            @click="confirming = { action: 'use', title: defaultOffer.title, model: null }"
-          >
-            {{ defaultOffer.label }}
-          </v-btn>
-          <ActionResult v-if="result?.at === DEFAULT" :result="result" />
-        </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </section>
 
       <section class="mt-10">
@@ -393,7 +397,7 @@ function openUpload() {
     </template>
 
     <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <h2 class="text-h6 mb-2">Frigate+</h2>
+      <h2 class="text-h6 mb-2">Frigate+ API key</h2>
       <p class="text-body-1 mb-2">
         When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
         System, Detectors and model, and Frigate downloads it.

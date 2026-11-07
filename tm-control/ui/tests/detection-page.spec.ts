@@ -104,11 +104,42 @@ function headings(wrapper: VueWrapper) {
   return wrapper.findAll('h2').map((h) => h.text().trim())
 }
 
-// The text of the list item for the model with this title
+// The block for the model with this title
 function item(wrapper: VueWrapper, title: string) {
-  const found = wrapper.findAll('.v-list-item').filter((i) => i.text().includes(title))
-  expect(found.length, `one list item for "${title}"`).toBe(1)
+  const found = wrapper.findAll('.model').filter((i) => i.text().includes(title))
+  expect(found.length, `one model block for "${title}"`).toBe(1)
   return found[0]
+}
+
+// The page's buttons other than the panels' titles
+function actions(wrapper: VueWrapper) {
+  return wrapper
+    .findAll('main button')
+    .filter((b) => !b.classes('v-expansion-panel-title'))
+    .map((b) => b.text().trim())
+}
+
+// The title (a button) of the panel whose title starts with `title`
+function panel(wrapper: VueWrapper, title: string) {
+  const found = wrapper.findAll('.v-expansion-panel-title').filter((t) => t.text().trim().startsWith(title))
+  expect(found.length, `one panel titled "${title}…"`).toBe(1)
+  return found[0]
+}
+
+// The value under `label` in the facts grid
+function fact(wrapper: VueWrapper, label: string) {
+  const found = wrapper.findAll('.facts > div').filter((c) => c.element.children[0]?.textContent?.trim() === label)
+  expect(found.length, `one fact labelled "${label}"`).toBe(1)
+  return found[0].element.children[1].textContent?.trim()
+}
+
+// GET /models with `name` running instead of the Frigate+ model
+function running(name: string, kind: ModelOut['kind']): ModelsState {
+  return {
+    ...MODELS,
+    running: { name, kind, source: 'frigate' },
+    models: MODELS.models.map((model) => ({ ...model, running: model.name === name })),
+  }
 }
 
 describe('the Detection page', () => {
@@ -120,30 +151,74 @@ describe('the Detection page', () => {
     Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
   })
 
-  it('lists the models with the running one marked and the detector named', async () => {
+  it('shows the facts, the model in use, and the others behind a closed panel', async () => {
     signedIn(VIEWER, { [MODELS_PATH]: MODELS })
     const { wrapper } = await mountApp('/detection')
-    expect(headings(wrapper)).toEqual(['Object detection', 'What the model recognises', 'Frigate+'])
-    expect(wrapper.text()).toContain('This device detects with edgetpu.')
-    expect(wrapper.text()).toContain('Frigate runs Test site yolov9, a Frigate+ model.')
+    expect(headings(wrapper)).toEqual(['Object detection', 'What the model recognises', 'Frigate+ API key'])
+    expect(wrapper.text()).toContain(
+      'See which model Frigate detects objects with and what it recognises. Administrators can switch models and ' +
+        'set the Frigate+ API key.',
+    )
+    expect(fact(wrapper, 'Detector')).toBe('edgetpu')
+    expect(fact(wrapper, 'Running model')).toBe('Test site yolov9, a Frigate+ model')
     expect(wrapper.text()).not.toContain("Frigate isn't answering")
 
-    const plus = item(wrapper, 'Test site yolov9')
-    expect(plus.text()).toContain('running')
+    const plus = wrapper.find('.model.in-use')
+    expect(plus.text()).toContain('Test site yolov9')
+    expect(plus.text()).toContain('In use')
     expect(plus.text()).toContain('0123456789abcdef0123456789abcdef') // the file name, which differs from the title
     expect(plus.text()).toContain('trained 2026-10-01, yolo-generic, for edgetpu, 320×320')
     expect(plus.text()).toContain('0123456789abcdef0123456789abcdef, 4.0 KB, SHA-256 ad7facb2586f')
     expect(plus.text()).toContain('0123456789abcdef0123456789abcdef.json, 433 bytes, SHA-256 0da6c00a63ab')
     const hash = plus.find('[title="ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7"]')
     expect(hash.text()).toBe('SHA-256 ad7facb2586f')
+    expect(plus.element.closest('.v-expansion-panel')).toBeNull() // above the fold
+    expect(wrapper.findAll('.model.in-use')).toHaveLength(1)
 
-    expect(item(wrapper, 'My model').text()).not.toContain('running')
-    // The installer's entry has no sidecar: its file name is its facts line, shown once
+    const toggle = panel(wrapper, 'Other models on this device (2)')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(toggle.element.parentElement?.tagName).toBe('H3')
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    const others = wrapper.findAll('.v-expansion-panel .model')
+    expect(others.map((m) => m.find('.text-body-1').text())).toEqual(["The installer's model", 'My model'])
+    expect(item(wrapper, 'My model').text()).not.toContain('In use')
+    // The installer's block has no sidecar: its file name is its facts line, shown once
     const installer = item(wrapper, "The installer's model")
     expect(installer.text().split('yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite')).toHaveLength(2)
     expect(installer.text()).not.toContain('trained')
     expect(installer.text()).toContain('1.0 KB, SHA-256 5f70bf18a086')
     expect(wrapper.text()).toContain('Frigate tracks only the objects that are in both lists.')
+  })
+
+  it("puts every model in the panel when Frigate's model is unknown", async () => {
+    const unknown: ModelsState = {
+      ...MODELS,
+      running: { name: null, kind: null, source: null },
+      models: MODELS.models.map((model) => ({ ...model, running: false })),
+    }
+    signedIn(VIEWER, { [MODELS_PATH]: unknown })
+    const { wrapper } = await mountApp('/detection')
+    expect(wrapper.find('.model.in-use').exists()).toBe(false)
+    expect(fact(wrapper, 'Running model')).toBe('Unknown')
+    expect(panel(wrapper, 'Other models on this device (3)').exists()).toBe(true)
+  })
+
+  it("makes a block for Frigate's built-in model when the device has no file for it", async () => {
+    const cpu: ModelsState = {
+      ...MODELS,
+      detector: 'cpu',
+      default: 'frigate_default',
+      running: { name: null, kind: 'frigate_default', source: 'frigate' },
+      models: [{ ...MODELS.models[2], running: false }],
+    }
+    signedIn(VIEWER, { [MODELS_PATH]: cpu })
+    const { wrapper } = await mountApp('/detection')
+    const builtIn = wrapper.find('.model.in-use')
+    expect(builtIn.text()).toContain("Frigate's built-in model")
+    expect(builtIn.text()).toContain('Built into Frigate.')
+    expect(fact(wrapper, 'Running model')).toBe("Frigate's built-in model")
+    expect(panel(wrapper, 'Other models on this device (1)').exists()).toBe(true)
   })
 
   it("marks a model that can't run on this detector, and one that is incomplete", async () => {
@@ -165,7 +240,7 @@ describe('the Detection page', () => {
   it('shows a viewer the page without the key form or any action', async () => {
     const api = signedIn(VIEWER, { [MODELS_PATH]: MODELS })
     const { wrapper } = await mountApp('/detection')
-    expect(headings(wrapper)).toContain('Frigate+')
+    expect(headings(wrapper)).toContain('Frigate+ API key')
     const plus = wrapper.find('#frigate-plus').text()
     expect(plus).toContain(
       'When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings, System, ' +
@@ -177,7 +252,7 @@ describe('the Detection page', () => {
     )
     expect(wrapper.findAll('form')).toEqual([])
     // The label lists' Copy buttons are the only buttons: nothing that changes the device
-    expect(wrapper.findAll('main button').map((b) => b.text().trim())).toEqual(['Copy', 'Copy'])
+    expect(actions(wrapper)).toEqual(['Copy', 'Copy'])
     expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false) // viewers get 403 there
   })
 
@@ -212,7 +287,10 @@ describe('the Detection page', () => {
     }
     signedIn(VIEWER, { [MODELS_PATH]: offline })
     const { wrapper } = await mountApp('/detection')
-    expect(wrapper.text()).toContain("Frigate isn't answering; this is what its config file says.")
+    const warning = "Frigate isn't answering; this is what its config file says."
+    expect(wrapper.text()).toContain(warning)
+    expect(wrapper.text().indexOf(warning)).toBeLessThan(wrapper.text().indexOf('Detector'))
+    expect(wrapper.find('.model.in-use').text()).toContain('Test site yolov9') // what the config file names
     expect(wrapper.text()).toContain(
       "Frigate isn't answering, and the running model has no sidecar on the device.",
     )
@@ -237,19 +315,22 @@ describe('the Detection page', () => {
     }
     signedIn(VIEWER, { [MODELS_PATH]: state })
     const { wrapper } = await mountApp('/detection')
-    expect(wrapper.text()).toContain("Frigate's detector is unknown.")
-    expect(wrapper.text()).toContain("Frigate runs the installer's model.")
+    expect(fact(wrapper, 'Detector')).toBe('Unknown')
+    expect(fact(wrapper, 'Running model')).toBe("The installer's model")
+    expect(wrapper.find('.model.in-use').text()).toContain("The installer's model")
   })
 
   it('never names a model it does not know', async () => {
-    signedIn(VIEWER, { [MODELS_PATH]: { ...MODELS, running: { name: null, kind: null, source: null } } })
+    const models = MODELS.models.map((model) => ({ ...model, running: false })) // as the API has it with no name
+    signedIn(VIEWER, { [MODELS_PATH]: { ...MODELS, running: { name: null, kind: null, source: null }, models } })
     const { wrapper } = await mountApp('/detection')
-    expect(wrapper.text()).toContain("Frigate's model is unknown.")
+    expect(fact(wrapper, 'Running model')).toBe('Unknown')
+    expect(wrapper.find('.model.in-use').exists()).toBe(false)
 
     const unnamed = { ...MODELS, running: { name: null, kind: 'frigate_plus', source: 'frigate' } as const }
     signedIn(VIEWER, { [MODELS_PATH]: { ...unnamed, models: [MODELS.models[0]] } })
     const again = await mountApp('/detection')
-    expect(again.wrapper.text()).toContain('Frigate runs a Frigate+ model.')
+    expect(fact(again.wrapper, 'Running model')).toBe('A Frigate+ model')
     expect(again.wrapper.text()).not.toContain('null')
   })
 
@@ -264,7 +345,7 @@ describe('the Detection page', () => {
     const { wrapper } = await mountApp('/detection')
     expect(wrapper.text()).toContain('The device answered with an error.')
     await click(wrapper, 'Try again')
-    expect(wrapper.text()).toContain('Frigate runs Test site yolov9, a Frigate+ model.')
+    expect(fact(wrapper, 'Running model')).toBe('Test site yolov9, a Frigate+ model')
   })
 
   it('is linked from the menu after Device', async () => {
@@ -295,15 +376,6 @@ describe("the Detection page's actions", () => {
   const USE_MINE = 'POST /api/v1/models/mine.tflite/use'
   const QUEUED = json(202, { name: 'mine.tflite', applied: 'frigate', restarts: ['frigate.service'] })
 
-  // GET /models with `name` running instead of the Frigate+ model
-  function running(name: string, kind: ModelOut['kind']): ModelsState {
-    return {
-      ...MODELS,
-      running: { name, kind, source: 'frigate' },
-      models: MODELS.models.map((model) => ({ ...model, running: model.name === name })),
-    }
-  }
-
   // GET /models answers `before` for the first `count` calls (the page's load included), then `after`
   function changesAfter(count: number, before: ModelsState, after: ModelsState) {
     let calls = 0
@@ -333,6 +405,7 @@ describe("the Detection page's actions", () => {
     })
     const { wrapper } = await mountApp('/detection')
     expect(item(wrapper, 'Test site yolov9').findAll('button').map((b) => b.text().trim())).not.toContain('Use')
+    await panel(wrapper, 'Other models').trigger('click')
     await clickIn(item(wrapper, 'My model'), 'Use')
     expect(dialogText()).toContain('Use My model?')
     expect(dialogText()).toContain("Frigate restarts, which takes about a minute. Traffic isn't counted while it does.")
@@ -346,6 +419,9 @@ describe("the Detection page's actions", () => {
     await vi.advanceTimersByTimeAsync(3000) // the third poll sees it running
     expect(wrapper.text()).toContain('Frigate runs My model.')
     expect(wrapper.text()).not.toContain('Frigate is restarting.')
+    expect(wrapper.find('.model.in-use').text()).toContain('My model') // moved above the fold, with its result
+    expect(wrapper.find('.model.in-use').text()).toContain('Frigate runs My model.')
+    expect(panel(wrapper, 'Other models on this device (2)').exists()).toBe(true)
     const calls = modelCalls(api)
     expect(calls).toBe(4)
     await vi.advanceTimersByTimeAsync(30_000)
@@ -400,8 +476,8 @@ describe("the Detection page's actions", () => {
       saved.push(this.download)
     })
     const { wrapper } = await mountApp('/detection')
-    // The installer's model has no sidecar to package
-    expect(item(wrapper, "The installer's model").findAll('button').map((b) => b.text().trim())).toEqual([])
+    // The installer's model has no sidecar to package: its block has only Use
+    expect(item(wrapper, "The installer's model").findAll('button').map((b) => b.text().trim())).toEqual(['Use'])
     await clickIn(item(wrapper, 'My model'), 'Download')
     expect(api.sent.at(-1)?.path).toBe('/api/v1/models/mine.tflite/package')
     expect(saved).toEqual(['mine.tflite.zip'])
@@ -418,14 +494,17 @@ describe("the Detection page's actions", () => {
     const { wrapper } = await mountApp('/detection')
     // Only a model that isn't running and isn't the installer's can be deleted
     expect(wrapper.findAll('main button').filter((b) => b.text().trim() === 'Delete')).toHaveLength(1)
+    await panel(wrapper, 'Other models').trigger('click')
     await clickIn(item(wrapper, 'My model'), 'Delete')
     expect(dialogText()).toContain('Delete My model?')
     expect(dialogText()).toContain("Both of its files are removed from the device. This can't be undone.")
     await clickInDialog('Delete')
     expect(api.sent.some((r) => r.method === 'DELETE' && r.path === '/api/v1/models/mine.tflite')).toBe(true)
     expect(modelCalls(api)).toBe(2)
-    expect(wrapper.findAll('.v-list-item').some((i) => i.text().includes('My model'))).toBe(false)
-    expect(wrapper.text()).toContain('Deleted My model.')
+    expect(wrapper.findAll('.model').some((i) => i.text().includes('My model'))).toBe(false)
+    // The panel stays open, its count goes down, and the result is inside it
+    expect(panel(wrapper, 'Other models on this device (1)').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('.v-expansion-panel').text()).toContain('Deleted My model.')
   })
 
   it("lists Frigate's own Hailo model as its built-in model, running and with no buttons", async () => {
@@ -450,10 +529,11 @@ describe("the Detection page's actions", () => {
       },
     })
     const { wrapper } = await mountApp('/detection')
-    expect(wrapper.text()).toContain('Frigate runs its built-in model.')
-    const entry = item(wrapper, "Frigate's built-in model")
+    expect(fact(wrapper, 'Running model')).toBe("Frigate's built-in model")
+    const entry = wrapper.find('.model.in-use')
+    expect(entry.text()).toContain("Frigate's built-in model")
     expect(entry.findAll('button')).toHaveLength(0)
-    expect(entry.text()).toContain('running')
+    expect(entry.text()).toContain('In use')
     expect(entry.text()).not.toContain('incomplete')
     // Like the installer's entry, it has no sidecar: its file name is its facts line, shown once
     expect(entry.text().split('yolov6n.hef')).toHaveLength(2)
@@ -471,7 +551,7 @@ describe("the Detection page's actions", () => {
     expect(mine.text()).toContain("It's built for hailo8l, and this device detects with edgetpu.")
   })
 
-  it("offers the installer's model when another one runs", async () => {
+  it("uses the installer's model from its own block", async () => {
     vi.useFakeTimers()
     const api = signedIn(ADMIN, {
       [SECRETS]: { secrets: TWO_SECRETS },
@@ -479,8 +559,7 @@ describe("the Detection page's actions", () => {
       'POST /api/v1/models/default/use': json(202, { name: 'default', applied: 'frigate', restarts: ['frigate.service'] }),
     })
     const { wrapper } = await mountApp('/detection')
-    expect(wrapper.text()).not.toContain("Use Frigate's built-in model")
-    await click(wrapper, "Use the installer's model")
+    await clickIn(item(wrapper, "The installer's model"), 'Use')
     expect(dialogText()).toContain("Use the installer's model?")
     await clickInDialog('Use')
     expect(api.sent.filter((r) => r.method === 'POST').map((r) => r.path)).toEqual(['/api/v1/models/default/use'])
@@ -488,23 +567,46 @@ describe("the Detection page's actions", () => {
     expect(wrapper.text()).toContain('Frigate is restarting.')
     await vi.advanceTimersByTimeAsync(3000)
     expect(wrapper.text()).toContain("Frigate runs the installer's model.")
-    expect(wrapper.findAll('button').some((b) => b.text().trim() === "Use the installer's model")).toBe(false)
+    const installer = wrapper.find('.model.in-use')
+    expect(installer.text()).toContain("The installer's model")
+    expect(installer.text()).toContain("Frigate runs the installer's model.") // the result moved with its block
+    expect(installer.findAll('button')).toHaveLength(0)
+    const plus = item(wrapper, 'Test site yolov9')
+    expect(plus.element.closest('.v-expansion-panel')).not.toBeNull()
+    expect(plus.findAll('button').map((b) => b.text().trim())).toEqual(['Use', 'Download'])
   })
 
+  const NOTHING_RUNS = MODELS.models.map((model) => ({ ...model, running: false }))
   it.each([
-    ['frigate_default', MODELS.running, "Use Frigate's built-in model"],
-    ['frigate_default', { name: null, kind: 'frigate_default', source: 'frigate' }, null],
-    ['installer_default', { name: MODELS.models[0].name, kind: 'installer_default', source: 'frigate' }, null],
-    [null, MODELS.running, null],
-  ] as const)('with the default %s and running %j, offers %s', async (fallback, runs, offered) => {
-    signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: { ...MODELS, default: fallback, running: runs } })
-    const { wrapper } = await mountApp('/detection')
-    const offers = wrapper
-      .findAll('main button')
-      .map((b) => b.text().trim())
-      .filter((text) => text.startsWith('Use the') || text.startsWith("Use Frigate's"))
-    expect(offers).toEqual(offered ? [offered] : [])
-  })
+    ["Frigate's built-in model", true, { ...MODELS, default: 'frigate_default' }, 3],
+    [
+      "Frigate's built-in model",
+      false,
+      {
+        ...MODELS,
+        default: 'frigate_default',
+        running: { name: null, kind: 'frigate_default', source: 'frigate' },
+        models: NOTHING_RUNS,
+      },
+      3,
+    ],
+    ["The installer's model", false, running(MODELS.models[0].name, 'installer_default'), 2],
+    ["The installer's model", false, { ...MODELS, default: null }, 2],
+  ] as [string, boolean, ModelsState, number][])(
+    'the block %s offers Use: %s (row %#)',
+    async (title, offersUse, state, others) => {
+      signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: state })
+      const { wrapper } = await mountApp('/detection')
+      const block = item(wrapper, title)
+      expect(block.findAll('button').map((b) => b.text().trim()).includes('Use')).toBe(offersUse)
+      expect(panel(wrapper, `Other models on this device (${others})`).exists()).toBe(true)
+      // The default Frigate runs is the block in use; one that doesn't run is in the panel
+      expect(block.classes('in-use')).toBe(state.running.kind === state.default)
+      if (state.default === null) {
+        expect(wrapper.findAll('.model').some((m) => m.text().includes("Frigate's built-in model"))).toBe(false)
+      }
+    },
+  )
 
   it('shows the results of models named "default" and "list" under those models', async () => {
     const named = (name: string): ModelOut => ({ ...MINE, name, title: `Model ${name}`, files: [] })
@@ -525,9 +627,14 @@ describe("the Detection page's actions", () => {
     }
   })
 
-  it('opens the upload dialog from the button above the list', async () => {
+  it('opens the upload dialog from inside the other-models panel', async () => {
     signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: MODELS })
     const { wrapper } = await mountApp('/detection')
+    const toggle = panel(wrapper, 'Other models')
+    expect(toggle.text()).not.toContain('Upload a model')
+    const upload = wrapper.findAll('button').find((b) => b.text().trim() === 'Upload a model')!
+    expect(upload.element.closest('.v-expansion-panel-text')).not.toBeNull()
+    await toggle.trigger('click')
     await click(wrapper, 'Upload a model')
     expect(dialogText()).toContain('A zip or tar.gz of the model file and its .json, not of a folder.')
   })
