@@ -89,6 +89,18 @@ def test_claim_calls_ensure_and_survives_its_failure(client, setup_code, monkeyp
     assert Device(client.app.state.state).is_claimed()
 
 
+def test_claim_creates_the_first_place_in_fake_mode(client, setup_code):
+    """Fake mode seeds config.yml (the fixture's, with coordinates) and a fake Node-RED, so the claim's reconcile puts
+    a place in use from the file and writes its id there."""
+    from tm_control.modules.location.places import Places
+
+    r = client.post(CLAIM, json=claim_body(setup_code), headers=ORIGIN)
+    assert r.status_code == 201, r.text
+    place = Places(client.app.state.state).in_use()
+    assert place is not None and place.source == "imported_config"
+    assert f"survey_id: {place.id}" in client.app.state.config_path.read_text()
+
+
 def test_claim_with_a_wrong_code_is_403_and_backs_off(client, setup_code):
     for _ in range(5):
         r = client.post(CLAIM, json=claim_body(wrong_code(setup_code)), headers=ORIGIN)

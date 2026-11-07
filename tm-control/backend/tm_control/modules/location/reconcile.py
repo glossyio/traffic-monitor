@@ -137,7 +137,8 @@ def _check_nodered(nodered) -> None:
 def _import_backup(app_state, places: Places, user_id) -> int:
     """Create a used place for each survey the backup's rows belong to, but not one already in the store (a run that
     failed part-way is finished by the next; the reconciled flag stops it after that); the number created."""
-    path = _newest_backup(backup_dir(app_state.manifest))
+    # create_app sets backup_dir (fake mode's is beside its state); else the manifest's codedir says where it is.
+    path = _newest_backup(getattr(app_state, "backup_dir", None) or backup_dir(app_state.manifest))
     rows = _read_backup(path) if path is not None else None
     if not rows:
         return 0
