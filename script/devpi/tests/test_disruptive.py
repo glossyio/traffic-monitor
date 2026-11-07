@@ -6,14 +6,20 @@ run only with tmdev.py test --disruptive. Ask the person first. Two of them rebo
 test_reboot_from_the_control_app.
 """
 
+import hashlib
+import io
+import json
 import re
 import shlex
 import time
+import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, entered_secret_states, find_hevc_decoder,
+from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, detector_name, entered_secret_states,
+                          find_hevc_decoder,
                           frigate_host_devices, pi_now, request_from_this_machine, role_vars, session, status_checks,
                           tm_login_or_none)
 
@@ -511,6 +517,91 @@ def test_set_and_remove_the_frigate_plus_key_from_the_control_app(host, address,
                 set_secret(host, address, cookie, KEY, "", restarts, [])
             except AssertionError as error:
                 raise AssertionError(f"the placeholder key may still be set; remove it on the Device page ({error})")
+
+
+# The Detection page's upload, package, and delete, with a placeholder model that no one uses: 16 bytes would break
+# Frigate. The sidecar is the repo's synthetic one, as a local model's: no id, and no per-camera counts, which
+# must never reach a device.
+FIXTURES = Path(__file__).resolve().parents[3] / "tm-control" / "backend" / "tests" / "fixtures"
+SIDECAR_FIXTURE = FIXTURES / "model_sidecar.json"
+PLACEHOLDER_MODEL = "tmdev-placeholder.tflite"
+PLACEHOLDER_SIDECAR = PLACEHOLDER_MODEL + ".json"
+PLACEHOLDER_BYTES = bytes(range(16))
+OCTET_STREAM = {"Content-Type": "application/octet-stream"}
+
+
+def placeholder_sidecar(detector):
+    """The fixture's sidecar as a local model's for this detector, serialized."""
+    record = json.loads(SIDECAR_FIXTURE.read_text())
+    record.pop("id", None)
+    record.pop("verifiedCounts", None)
+    record["name"] = "tmdev placeholder"
+    record["supportedDetectors"] = [detector]
+    return json.dumps(record, indent=2).encode()
+
+
+def listed_models(address, cookie):
+    """GET /models' models by name; fails when the list can't be read."""
+    answer = request_from_this_machine(address, f"{API}/models", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    models = found.get("models") if isinstance(found, dict) else None
+    assert isinstance(models, list), f"GET {API}/models answered {answer.status}, not a model list"
+    return {model.get("name"): model for model in models}
+
+
+def delete_placeholder(address, cookie):
+    """Delete the placeholder model if it's listed, whatever state it's in."""
+    if PLACEHOLDER_MODEL in listed_models(address, cookie):
+        deleted = request_from_this_machine(address, f"{API}/models/{PLACEHOLDER_MODEL}", "DELETE", cookie)
+        assert deleted.status == 204, (f"DELETE {API}/models/{PLACEHOLDER_MODEL} answered {deleted.status}; delete the "
+                                       "placeholder on the Detection page")
+
+
+def test_upload_package_and_delete_a_model_from_the_control_app(host, address, expect, tm_login):
+    """An admin uploads a placeholder model's sidecar and then its file, the pair is listed complete and usable for the
+    unit's detector, its package is a zip of both files and SHA256SUMS that match what was sent and the listed hashes,
+    and deleting it removes it. Frigate is never restarted: the placeholder isn't used. Leaves nothing behind, and
+    skips when a placeholder from an earlier run is still listed, which this test didn't make."""
+    if not expect["pii_free"]:
+        pytest.skip("writes to Frigate's model_cache; set tm_expect.pii_free: true (bench units only)")
+    cookie = session(address, *tm_login)
+    if PLACEHOLDER_MODEL in listed_models(address, cookie):
+        pytest.skip(f"{PLACEHOLDER_MODEL} is already listed; delete it on the Detection page first")
+    detector = detector_name(expect)
+    sidecar = placeholder_sidecar(detector)
+    frigate = invocation(host, "frigate.service")
+    sent = {PLACEHOLDER_MODEL: PLACEHOLDER_BYTES, PLACEHOLDER_SIDECAR: sidecar}
+    try:
+        for filename in (PLACEHOLDER_SIDECAR, PLACEHOLDER_MODEL):
+            uploaded = request_from_this_machine(address, f"{API}/models/upload/{filename}", "PUT", cookie,
+                                                 sent[filename], OCTET_STREAM)
+            assert uploaded.status == 201, f"PUT {API}/models/upload/{filename} answered {uploaded.status}"
+        entry = listed_models(address, cookie).get(PLACEHOLDER_MODEL)
+        assert entry is not None, f"{PLACEHOLDER_MODEL} isn't listed after both uploads"
+        assert (entry.get("complete"), entry.get("usable")) == (True, True), (
+            f"the uploaded pair (complete, usable) for detector {detector}: "
+            f"({entry.get('complete')}, {entry.get('usable')}); problem: {entry.get('problem')}")
+        digests = {name: hashlib.sha256(data).hexdigest() for name, data in sent.items()}
+        listed = {file.get("name"): (file.get("size"), file.get("sha256")) for file in entry.get("files", [])}
+        assert listed == {name: (len(data), digests[name]) for name, data in sent.items()}, (
+            f"the entry's files (name: size, sha256): {listed}")
+        package = request_from_this_machine(address, f"{API}/models/{PLACEHOLDER_MODEL}/package", cookie=cookie)
+        assert package.status == 200, f"GET {API}/models/{PLACEHOLDER_MODEL}/package answered {package.status}"
+        with zipfile.ZipFile(io.BytesIO(package.body)) as archive:
+            members = {name: archive.read(name) for name in archive.namelist()}
+        assert sorted(members) == sorted([*sent, "SHA256SUMS"]), f"the package's members: {sorted(members)}"
+        assert {name: members[name] for name in sent} == sent, "the package's files differ from what was uploaded"
+        sums = dict(reversed(line.split("  ", 1)) for line in members["SHA256SUMS"].decode().splitlines())
+        assert sums == digests, f"the package's SHA256SUMS (name: hash) differ from the files': {sums}"
+        deleted = request_from_this_machine(address, f"{API}/models/{PLACEHOLDER_MODEL}", "DELETE", cookie)
+        assert deleted.status == 204, f"DELETE {API}/models/{PLACEHOLDER_MODEL} answered {deleted.status}"
+        assert PLACEHOLDER_MODEL not in listed_models(address, cookie), f"{PLACEHOLDER_MODEL} is still listed"
+        assert invocation(host, "frigate.service") == frigate, "frigate.service restarted; nothing here should"
+    finally:
+        try:
+            delete_placeholder(address, cookie)
+        except AssertionError as error:
+            raise AssertionError(f"the placeholder model may still be there ({error})")
 
 
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)
