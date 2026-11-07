@@ -338,7 +338,7 @@ def test_errors_outrank_warnings(apps):
 
 
 CORAL_PATH = "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"  # the installer's, as rendered
-SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+SET_THE_KEY = Fix(kind="link", text="Set the key", href="/detection#frigate-plus")
 
 
 def frigate_config_file(apps, text: str):
@@ -402,7 +402,7 @@ def warning_naming(which):
     return (
         "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but Frigate runs "
         f"{which} rather than a Frigate+ model. Once a model is trained, pick it under Settings, System, Detectors "
-        "and model in Frigate, or set model.path to plus://<model id> in its configuration editor."
+        "and model in Frigate, or upload it on the Detection page and choose Use."
     )
 
 
@@ -449,8 +449,8 @@ def test_a_plus_model_without_a_key_or_cached_files_is_an_error_with_a_link(apps
     assert check.status == "error"
     assert check.detail == (
         f"Frigate's config names the Frigate+ model {MODEL_ID}, but no key is set and the model's files aren't on the "
-        f"device, so Frigate can't download it. Set the key, or copy {MODEL_ID} and {MODEL_ID}.json into Frigate's "
-        "model_cache directory."
+        f"device, so Frigate can't download it. Set the key, or upload {MODEL_ID} and {MODEL_ID}.json on the Detection "
+        "page."
     )
     assert check.fix == SET_THE_KEY
 
