@@ -133,6 +133,7 @@ def corrections(unit):
 
 def test_first_run_creates_the_default_place_and_writes_its_id(unit):
     edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    before = unit.config_path.read_text()
     outcome = reconcile.ensure(unit, user_id=unit.admin)
     assert outcome == reconcile.Outcome(state="done", imported=0, created_default=True, followed="none")
     places = Places(unit.state)
@@ -144,6 +145,9 @@ def test_first_run_creates_the_default_place_and_writes_its_id(unit):
     assert deployment["survey_id"] == place.id
     assert deployment["database_precision"] == "1"
     assert (deployment["lat"], deployment["lon"]) == (None, None)
+    assert unit.config_path.read_text() == before.replace(
+        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {place.id}\n    database_precision: '1'\n", 1
+    )
     assert places.reconciled_at() is not None
     assert unit.nodered.calls == []
     con = unit.state.connect()
@@ -191,9 +195,13 @@ def test_waits_for_nodered_when_the_file_has_coordinates(unit):
 def test_import_from_the_backup_groups_places_by_survey_id(unit):
     write_backup(unit, BACKUP_ROWS)
     answer_usage(unit.nodered)
-    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    edit(unit, FIXTURE_POINT, "lat: 45.522520\n    lon: -122.69120\n")  # the same point at five places
+    before = unit.config_path.read_text()
     outcome = reconcile.ensure(unit, user_id=unit.admin)
     assert outcome == reconcile.Outcome(state="done", imported=2, created_default=False, followed="none")
+    assert unit.config_path.read_text() == before.replace(
+        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {FIRST}\n", 1
+    )
     places = Places(unit.state)
     first, second = places.get(FIRST), places.get(SECOND)
     assert len(places.list()) == 2
@@ -345,16 +353,42 @@ def test_following_an_unknown_survey_id_in_the_file(unit):
 
 
 def test_following_a_known_survey_id_switches_the_place_in_use(unit):
-    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
-    reconcile.ensure(unit)
+    """A hand edit of survey_id alone is a deploy by hand: the file takes that place's point, and neither place's
+    point changes."""
+    reconcile.ensure(unit)  # the first place, from the file, at 45.0, -122.0
     places = Places(unit.state)
     first = places.in_use().id
-    edit(unit, f"survey_id: {first}", "survey_id: 3F9A1C2E-SI")  # case is folded, as Node-RED does
-    reconcile.ensure(unit)
-    edit(unit, "survey_id: 3F9A1C2E-SI", f"survey_id: {first}")
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    assert reconcile.ensure(unit).followed == "unknown_id"  # the second, at the file's point
+    unit.nodered.calls.clear()
+
+    edit(unit, "survey_id: 3f9a1c2e-si", f"survey_id: {first.upper()}")  # the id only; case is folded, as Node-RED does
     outcome = reconcile.ensure(unit)
-    assert (outcome.followed, places.in_use().id, places.get("3f9a1c2e-si").status) == ("none", first, "used")
+    assert (outcome.state, outcome.followed) == ("done", "none")
+    assert (places.in_use().id, places.get("3f9a1c2e-si").status) == (first, "used")
+    assert (places.get(first).lat, places.get(first).lon) == (45.0, -122.0)
+    assert (places.get("3f9a1c2e-si").lat, places.get("3f9a1c2e-si").lon) == (45.52252, -122.6912)
+    assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.calls == []
     assert len(places.list()) == 2
+    assert reconcile.ensure(unit).followed == "none" and corrections(unit) == []
+
+
+def test_switching_by_hand_to_a_place_with_no_point_blanks_the_files_coordinates(unit):
+    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    reconcile.ensure(unit)  # the default place, with no point
+    places = Places(unit.state)
+    first = places.in_use().id
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    edit(unit, "lat:\n    lon:\n", "lat: 45.52252\n    lon: -122.6912\n")
+    reconcile.ensure(unit)
+    edit(unit, "survey_id: 3f9a1c2e-si", f"survey_id: {first}")
+    reconcile.ensure(unit)
+    assert places.in_use().id == first
+    assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (None, None)
+    assert (places.get("3f9a1c2e-si").lat, places.get("3f9a1c2e-si").lon) == (45.52252, -122.6912)
+    assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
 
 
 def test_following_changed_coordinates_records_a_config_correction(unit):
@@ -399,3 +433,76 @@ def test_a_failed_correction_in_nodered_is_logged_and_ignored(unit, caplog):
     warnings = [r.getMessage() for r in caplog.records if r.name == reconcile.__name__]
     assert len(warnings) == 1 and warnings[0].endswith(": NodeRedError")
     assert "45" not in caplog.text and "-si" not in caplog.text
+
+
+INVALID_POINTS = ["lat: 45,0\n    lon: -122.0\n", "lat: 45.0\n    lon:\n"]  # a decimal comma; one of the two
+
+
+@pytest.mark.parametrize("block", INVALID_POINTS)
+def test_invalid_coordinates_take_the_import_path_and_survive(unit, block):
+    """An upgraded unit whose coordinates don't parse still imports, and the file's text is kept."""
+    write_backup(unit, BACKUP_ROWS)
+    answer_usage(unit.nodered)
+    edit(unit, FIXTURE_POINT, block)
+    before = unit.config_path.read_text()
+    unit.nodered.down = True
+    assert reconcile.ensure(unit).state == "waiting_nodered"  # not the fresh-unit default place
+    assert Places(unit.state).list() == []
+    unit.nodered.down = False
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.imported, outcome.created_default) == ("done", 2, False)
+    places = Places(unit.state)
+    current = places.in_use()
+    assert (current.source, current.lat, current.lon) == ("imported_config", None, None)
+    assert len(places.list()) == 3
+    assert unit.config_path.read_text() == before.replace(
+        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {current.id}\n", 1
+    )
+    assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
+
+
+@pytest.mark.parametrize("block", INVALID_POINTS)
+def test_invalid_coordinates_are_not_followed(unit, block):
+    reconcile.ensure(unit)  # the in-use place, at 45.0, -122.0
+    unit.nodered.calls.clear()
+    edit(unit, FIXTURE_POINT, block)
+    assert reconcile.ensure(unit).followed == "none"
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.calls == []
+
+
+@pytest.mark.parametrize("block", INVALID_POINTS)
+def test_an_unknown_survey_id_with_invalid_coordinates_gets_no_point(unit, block):
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id: 3f9a1c2e-si")
+    edit(unit, FIXTURE_POINT, block)
+    assert reconcile.ensure(unit).followed == "unknown_id"
+    current = Places(unit.state).in_use()
+    assert (current.id, current.lat, current.lon) == ("3f9a1c2e-si", None, None)
+    assert corrections(unit) == []
+
+
+def test_a_failed_import_is_finished_on_the_next_run(unit, monkeypatch):
+    write_backup(unit, BACKUP_ROWS)
+    answer_usage(unit.nodered)
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    create = Places.create
+
+    def failing(self, survey_id, *args, **kwargs):
+        if survey_id == SECOND:
+            raise sqlite3.OperationalError("synthetic")
+        return create(self, survey_id, *args, **kwargs)
+
+    monkeypatch.setattr(Places, "create", failing)
+    with pytest.raises(sqlite3.OperationalError):
+        reconcile.ensure(unit)
+    places = Places(unit.state)
+    assert [place.id for place in places.list()] == [FIRST] and places.reconciled_at() is None
+
+    monkeypatch.setattr(Places, "create", create)
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.imported) == ("done", 1)
+    assert sorted(place.id for place in places.list()) == [FIRST, SECOND]  # no duplicate from the file
+    assert (places.in_use().id, places.get(SECOND).status) == (FIRST, "used")
+    assert file_deployment(unit)["survey_id"] == FIRST

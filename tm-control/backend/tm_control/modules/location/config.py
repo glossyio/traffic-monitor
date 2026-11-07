@@ -50,10 +50,17 @@ class Deployment(BaseModel):
     survey_id_invalid: bool
     precision_invalid: bool
     precision_missing: bool  # database_precision absent or blank (precision is then the default)
+    # A lat or lon that is there but isn't a number in range, or only one of the two: lat and lon are then not a
+    # point to follow or match, though the file has something in them.
+    coordinates_invalid: bool
 
 
 def _blank(value) -> bool:
     return value is None or value == ""
+
+
+def _blank_coordinate(value) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
 
 
 def _coordinate(value, kind: str) -> float | None:
@@ -78,14 +85,20 @@ def _parse_deployment(data: Mapping) -> Deployment:
     survey_id = normalize_survey_id(raw_id)
     raw_precision = block.get("database_precision")
     precision = _precision(raw_precision)
+    raw_lat, raw_lon = block.get("lat"), block.get("lon")
+    lat, lon = _coordinate(raw_lat, "lat"), _coordinate(raw_lon, "lon")
+    lat_blank, lon_blank = _blank_coordinate(raw_lat), _blank_coordinate(raw_lon)
     return Deployment(
         survey_id=survey_id,
-        lat=_coordinate(block.get("lat"), "lat"),
-        lon=_coordinate(block.get("lon"), "lon"),
+        lat=lat,
+        lon=lon,
         precision=precision or DEFAULT_PRECISION,
         survey_id_invalid=not _blank(raw_id) and survey_id is None,
         precision_invalid=not _blank(raw_precision) and precision is None,
         precision_missing=_blank(raw_precision),
+        coordinates_invalid=(
+            (not lat_blank and lat is None) or (not lon_blank and lon is None) or lat_blank != lon_blank
+        ),
     )
 
 
@@ -181,11 +194,17 @@ class NodeRedConfig:
 
     @staticmethod
     def _put(block: CommentedMap, key: str, value, after: str | None = None) -> None:
-        """Set key, keeping its place and comment when it exists, else adding it after `after` (or at the end)."""
-        if key in block or after not in block:
+        """Set key, keeping its place and comment when it exists, else adding it after `after` (or at the end).
+
+        A key added at the end takes the blank line that ended the block, so it lands above that line, not below."""
+        if key in block:
             block[key] = value
-        else:
-            block.insert(list(block.keys()).index(after) + 1, key, value)
+            return
+        keys = list(block.keys())
+        position = keys.index(after) + 1 if after in block else len(keys)
+        block.insert(position, key, value)
+        if keys and position == len(keys):
+            NodeRedConfig._blank_line_after(block, keys[-1], block, key, move=True)
 
     def set_place(self, survey_id: str | None, lat: float | None, lon: float | None) -> None:
         """Write deployment.survey_id (lower case) and lat and lon; None leaves a key empty (`lat:`)."""
@@ -197,6 +216,12 @@ class NodeRedConfig:
         self._put(block, "lat", lat)
         self._put(block, "lon", lon, after="lat")
         self._put(block, "survey_id", None if survey_id is None else survey_id.lower(), after="bearing")
+
+    def set_survey_id(self, survey_id: str) -> None:
+        """Write deployment.survey_id (lower case) alone, leaving lat and lon as the file has them."""
+        if normalize_survey_id(survey_id) is None:
+            raise ValueError("survey_id must be a survey id")
+        self._put(self._deployment_block(), "survey_id", survey_id.lower(), after="bearing")
 
     def set_precision(self, precision: str) -> None:
         if precision not in PRECISIONS:

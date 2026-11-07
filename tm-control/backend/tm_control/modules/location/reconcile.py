@@ -70,6 +70,13 @@ def _point(lat, lon) -> tuple[float | None, float | None]:
     return lat, lon
 
 
+def _file_point(deployment: Deployment) -> tuple[float | None, float | None]:
+    """The file's point; (None, None) when it has none, or coordinates that aren't a point (coordinates_invalid)."""
+    if deployment.coordinates_invalid:
+        return None, None
+    return _point(deployment.lat, deployment.lon)
+
+
 def ensure(app_state, user_id: int | None = None) -> Outcome:
     """Reconcile the places store with config.yml (see the module's docstring).
 
@@ -98,9 +105,11 @@ def ensure(app_state, user_id: int | None = None) -> Outcome:
 def _first_run(app_state, places: Places, config: NodeRedConfig, user_id) -> tuple[int, bool]:
     """Returns (places imported, whether the default place was created). Raises _WaitForNodeRed."""
     deployment = config.deployment()
-    if not places.list() and deployment.survey_id is None and _point(deployment.lat, deployment.lon) == (None, None):
+    # Coordinates that don't parse still mean the file had a location: such a unit may be an upgraded one.
+    no_location = _file_point(deployment) == (None, None) and not deployment.coordinates_invalid
+    if not places.list() and deployment.survey_id is None and no_location:
         survey_id = new_survey_id()
-        config.set_place(survey_id, deployment.lat, deployment.lon)
+        config.set_survey_id(survey_id)  # only the id: the operator's lat and lon text stays as it is
         if deployment.precision_missing:
             config.set_precision(DEFAULT_PRECISION)
         config.save()
@@ -126,9 +135,8 @@ def _check_nodered(nodered) -> None:
 
 
 def _import_backup(app_state, places: Places, user_id) -> int:
-    """Create a used place for each survey the backup's rows belong to; the number created."""
-    if any(place.source == "imported_backup" for place in places.list()):
-        return 0
+    """Create a used place for each survey the backup's rows belong to, but not one already in the store (a run that
+    failed part-way is finished by the next; the reconciled flag stops it after that); the number created."""
     path = _newest_backup(backup_dir(app_state.manifest))
     rows = _read_backup(path) if path is not None else None
     if not rows:
@@ -228,11 +236,11 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
         else:
             _create_from_file(places, config, deployment, deployment.survey_id, user_id)
         return
-    point = _point(deployment.lat, deployment.lon)
+    point = _file_point(deployment)
     match = _at_point(places, point) if point != (None, None) else None
     survey_id = match.id if match is not None else new_survey_id()
-    # The file first: if saving fails, the store is unchanged and the next run starts over.
-    config.set_place(survey_id, deployment.lat, deployment.lon)
+    # The file first: if saving fails, the store is unchanged and the next run starts over. Only the id is written.
+    config.set_survey_id(survey_id)
     config.save()
     if match is not None:
         places.set_in_use(match.id)
@@ -248,7 +256,7 @@ def _at_point(places: Places, point) -> Survey | None:
 
 
 def _create_from_file(places: Places, config: NodeRedConfig, deployment: Deployment, survey_id: str, user_id) -> None:
-    point = _point(deployment.lat, deployment.lon)
+    point = _file_point(deployment)  # no point when the file's coordinates aren't one
     _create_in_use(places, survey_id, None, point, config.sensors(), "imported_config", user_id)
 
 
@@ -270,12 +278,17 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             _create_from_file(places, config, deployment, deployment.survey_id, user_id)
             followed = "unknown_id"
         elif named.status != "in_use":
+            # A deploy by hand, as the page's would be: the file takes that place's point (blank when it has none);
+            # neither place's point changes, and Node-RED re-rounds nothing. The file first, as in _put_in_use.
+            config.set_place(named.id, named.lat, named.lon)
+            config.save()
             places.set_in_use(named.id)
+            return followed
 
     current = places.in_use()
-    if current is None:
-        return followed
-    old, new = _point(current.lat, current.lon), _point(deployment.lat, deployment.lon)
+    if current is None or deployment.coordinates_invalid:
+        return followed  # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
+    old, new = _point(current.lat, current.lon), _file_point(deployment)
     if old == new:
         return followed
     places.set_point(current.id, new[0], new[1])

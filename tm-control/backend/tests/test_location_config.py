@@ -105,7 +105,7 @@ def test_set_place_writes_the_id_and_coordinates_and_keeps_comments(path):
     assert config.save() is True
     text = path.read_text()
     assert "    # port: 8080" in text
-    assert f"    survey_id: {SURVEY}" in text
+    assert f"    survey_id: {SURVEY}\n\nsensors:" in text  # above the blank line that ended the block
     assert "    lat: 45.52252" in text and "    lon: -122.6912" in text
     deployment = NodeRedConfig(path).deployment()
     assert (deployment.survey_id, deployment.lat, deployment.lon) == (SURVEY, 45.52252, -122.6912)
@@ -275,3 +275,43 @@ def test_two_saves_back_to_back_both_succeed(path):
     deployment = NodeRedConfig(path).deployment()
     assert (deployment.precision, deployment.survey_id, deployment.lat) == ("2", SURVEY, 45.52252)
     assert len(backups(path)) == 2
+
+
+def test_set_survey_id_writes_only_the_id(path):
+    """Reconcile names the place in the file and leaves the operator's coordinate text as it was, byte for byte."""
+    path.write_text(path.read_text().replace("lat: 45.0\n    lon: -122.0\n", "lat: 45.00000\n    lon: '-122,0'\n", 1))
+    before = path.read_text()
+    config = NodeRedConfig(path)
+    config.set_survey_id("3F9A1C2E-SI")
+    assert config.save() is True
+    after = path.read_text()
+    assert after == before.replace("    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {SURVEY}\n", 1)
+    with pytest.raises(ValueError):
+        config.set_survey_id("nope")
+
+
+def test_set_survey_id_creates_a_missing_deployment_block(path):
+    path.write_text("thingsboard:\n    enabled: false\n\nsensors: {}\n")
+    config = NodeRedConfig(path)
+    config.set_survey_id(SURVEY)
+    config.save()
+    assert read_config(path).data["deployment"] == {"survey_id": SURVEY}
+    assert NodeRedConfig(path).deployment().survey_id == SURVEY
+
+
+@pytest.mark.parametrize(
+    "block, invalid",
+    [
+        ("lat: 45.0\n    lon: -122.0\n", False),
+        ("lat: '45.52252'\n    lon: '-122.6912'\n", False),
+        ("lat:\n    lon:\n", False),
+        ("lat: ' '\n    lon: ''\n", False),  # blank either way
+        ("lat: 45,0\n    lon: -122.0\n", True),  # a decimal comma: text, not a number
+        ("lat: 123\n    lon: -122.0\n", True),  # out of range
+        ("lat: 45.0\n    lon:\n", True),  # only one of the two
+        ("lon: -122.0\n", True),
+    ],
+)
+def test_coordinates_invalid_flags_a_pair_that_isnt_one(path, block, invalid):
+    path.write_text(f"deployment:\n    {block}")
+    assert NodeRedConfig(path).deployment().coordinates_invalid is invalid
