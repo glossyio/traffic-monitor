@@ -367,6 +367,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/upload/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upload File
+         * @description Stream the body into model_cache as a model file, a sidecar (<model>.json), or an archive. `:path` lets a name
+         *     with a slash reach the name check, which refuses it.
+         */
+        put: operations["upload_file_api_v1_models_upload__filename__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/sidecar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Sidecar
+         * @description Write <name>.json for a model file that has none, for the device's detector.
+         */
+        post: operations["write_sidecar_api_v1_models__name__sidecar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Model
+         * @description Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's the installer's.
+         *     What runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is
+         *     removed.
+         */
+        delete: operations["delete_model_api_v1_models__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -856,6 +919,26 @@ export interface components {
             restarts: number;
             /** Restartable */
             restartable: boolean;
+        };
+        /**
+         * SidecarForm
+         * @description What Frigate needs to know about a model file: Frigate checks the values when the model is used.
+         */
+        SidecarForm: {
+            /** Model Type */
+            model_type: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Input Tensor */
+            input_tensor: string;
+            /** Input Pixel Format */
+            input_pixel_format: string;
+            /** Input Dtype */
+            input_dtype?: string | null;
+            /** Labels */
+            labels: string[];
         };
         /** SystemInfo */
         SystemInfo: {
@@ -1510,6 +1593,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelsState"];
+                };
+            };
+        };
+    };
+    upload_file_api_v1_models_upload__filename__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_sidecar_api_v1_models__name__sidecar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SidecarForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_api_v1_models__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
