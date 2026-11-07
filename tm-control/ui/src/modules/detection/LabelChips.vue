@@ -1,12 +1,12 @@
 <!--
-  One list of object labels, as chips under a small heading, with Copy, which puts them on the clipboard as
+  One list of object labels, as chips, under a small heading when it has a title, with Copy, which puts them on the clipboard as
   comma-separated text ("person, bicycle, car") and says "Copied." for two seconds.
 -->
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 import { copyText } from '../../components/clipboard'
 
-const props = defineProps<{ title: string; labels: string[] }>()
+const props = defineProps<{ title?: string; labels: string[] }>()
 
 const result = ref('')
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -26,7 +26,7 @@ async function copy() {
 <template>
   <section>
     <div class="d-flex flex-wrap align-center ga-3 mb-2">
-      <h3 class="text-subtitle-1 font-weight-medium">{{ title }}</h3>
+      <h3 v-if="title" class="text-subtitle-1 font-weight-medium">{{ title }}</h3>
       <v-btn v-if="labels.length" variant="outlined" color="primary" min-height="44" @click="copy">Copy</v-btn>
       <span role="status" class="text-body-2 text-secondary">{{ result }}</span>
     </div>
