@@ -14,8 +14,8 @@ import urllib.parse
 
 import pytest
 from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed,
-                          request_from_this_machine, retry_after, role_vars, session, set_secret_table, status_checks, tm_internal_token,
-                          tm_login_or_none)
+                          request_from_this_machine, retry_after, role_vars, session, set_secret_table,
+                          status_checks, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -929,7 +929,8 @@ def test_models_answers_no_verified_counts(address, admin_session, viewer_sessio
     """The per-camera counts a Frigate+ record keeps in its sidecar are never sent, to an admin or a viewer."""
     found = {role: "verifiedCounts" in models_answer(address, cookie)[2]
              for role, cookie in {"admin": admin_session, "viewer": viewer_session}.items()}
-    assert found == {"admin": False, "viewer": False}, f"GET {API}/models has verifiedCounts for (admin, viewer): {found}"
+    assert found == {"admin": False, "viewer": False}, (
+        f"GET {API}/models has verifiedCounts, by role: {found}")
 
 
 def test_time_state_matches_timedatectl(host, address, admin_session):
