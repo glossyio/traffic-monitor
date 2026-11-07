@@ -1732,6 +1732,10 @@
             "type": "boolean",
             "title": "Frigate Answers"
           },
+          "frigate_safe_mode": {
+            "type": "boolean",
+            "title": "Frigate Safe Mode"
+          },
           "default": {
             "anyOf": [
               {
@@ -1765,6 +1769,7 @@
         "required": [
           "detector",
           "frigate_answers",
+          "frigate_safe_mode",
           "default",
           "running",
           "models",

@@ -336,6 +336,12 @@ function openUpload() {
         <v-alert v-if="!state.frigate_answers" type="warning" class="mb-4">
           Frigate isn't answering; this is what its config file says.
         </v-alert>
+        <!-- In safe mode Frigate runs a stand-in config, so the API reads the file instead; a Use goes through
+             Frigate, which checks the whole config and restarts out of safe mode when it can run it -->
+        <v-alert v-else-if="state.frigate_safe_mode" type="warning" class="mb-4">
+          Frigate couldn't use its config and started in safe mode, so nothing is detected; this is what the config
+          file says. Use a model to give Frigate a config it can run.
+        </v-alert>
         <v-row dense class="facts mb-4">
           <v-col cols="6" sm="4">
             <div class="text-body-2 text-secondary">Detector</div>

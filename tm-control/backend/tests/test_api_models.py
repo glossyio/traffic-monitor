@@ -174,7 +174,8 @@ def test_a_cache_that_cannot_be_opened_lists_nothing(device_client, login, tmp_p
 def test_the_models_answer_is_json_with_no_sidecar_fields_beyond_the_listed(seeded, login):
     login(seeded, *ADMIN)
     document = json.loads(seeded.get(URL).text)
-    assert set(document) == {"detector", "frigate_answers", "default", "running", "models", "labels"}
+    assert set(document) == {"detector", "frigate_answers", "frigate_safe_mode", "default", "running", "models",
+                             "labels"}
     assert set(document["running"]) == {"name", "kind", "source"}
     assert set(document["labels"]) == {"recognised", "source", "tracked"}
 
@@ -825,15 +826,18 @@ class DeviceFrigate:
     """Frigate's API on a device as httpjson sees it: /api/config from the fixture, /api/config/raw with `raw`, and
     /api/config/save answering `save`; `raw = None` is a Frigate that doesn't answer at all."""
 
-    def __init__(self, raw, save=(200, {"success": True, "message": "Config successfully saved."})):
+    def __init__(self, raw, save=(200, {"success": True, "message": "Config successfully saved."}), config=None):
         self.raw = raw
         self.save = save
+        self.config = config  # /api/config's answer in place of the fixture's
         self.posts = []
 
     def get(self, url, headers=None, timeout=None):
         if self.raw is None:
             return None, None
         if url == "http://127.0.0.1:5000/api/config":
+            if self.config is not None:
+                return 200, json.dumps(self.config).encode()
             return 200, (FIXTURES / "frigate_api_config.json").read_bytes()
         if url == "http://127.0.0.1:5000/api/config/raw":
             return 200, json.dumps(self.raw).encode()
@@ -1167,3 +1171,40 @@ def test_a_file_with_frigates_hailo_name_is_a_local_model_on_a_coral(device_clie
     assert (model["kind"], model["complete"], model["deletable"]) == ("local", False, True)
     assert delete(device_client, HAILO_FILE).status_code == 204
     assert put(device_client, HAILO_FILE, b"\x05").status_code == 201
+
+
+SAFE_MODE_CONFIG = {  # what Frigate's /api/config answers after its config failed to validate
+    "safe_mode": True,
+    "detectors": {"cpu": {"type": "cpu", "model": {"path": "/cpu_model.tflite", "labelmap": {"0": "person"}}}},
+    "model": {"path": "/cpu_model.tflite"},
+    "cameras": {},
+    "objects": {"track": ["person"]},
+}
+
+
+def test_in_safe_mode_the_page_reads_the_config_file_and_says_so(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    """Frigate in safe mode runs a stand-in config (a cpu detector, no cameras), not config.yml's, so the detector
+    and the running model come from the file, and a Use still goes through Frigate's API, which validates the whole
+    config and gets Frigate out of safe mode."""
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    (codedir / "frigate" / "config" / "model_cache" / INSTALLER_FILE).write_bytes(bytes(1024))
+    api = frigate_api(PLUS_CONFIG, config=SAFE_MODE_CONFIG)
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    assert (state["frigate_answers"], state["frigate_safe_mode"]) == (True, True)
+    assert (state["detector"], state["default"]) == ("edgetpu", "installer_default")
+    assert state["running"] == {"name": PLUS_ID, "kind": "frigate_plus", "source": "config_file"}
+    assert state["labels"]["source"] == "sidecar"
+    by_name = {model["name"]: model for model in state["models"]}
+    assert by_name[PLUS_ID]["running"] is True and by_name[PLUS_ID]["usable"] is True
+    assert by_name[INSTALLER_FILE]["running"] is False
+    r = device_client.post(f"{URL}/default/use", headers=WRITE_HEADERS)
+    assert (r.status_code, r.json()["applied"]) == (202, "frigate"), r.text
+    assert len(api.posts) == 1 and systemctl.restarts() == [FRIGATE_RESTART]
+    assert models_of(device_client)["frigate_safe_mode"] is True  # until Frigate restarts
+
+
+def test_out_of_safe_mode_the_answer_says_so(seeded, login):
+    login(seeded, *ADMIN)
+    assert models_of(seeded)["frigate_safe_mode"] is False

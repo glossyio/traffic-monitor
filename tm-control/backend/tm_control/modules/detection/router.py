@@ -33,6 +33,7 @@ from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.core.manifest import Manifest
 from tm_control.core.settings import Settings
+from tm_control.modules.apps import probes
 from tm_control.modules.auth.deps import current_user, require_admin
 from tm_control.modules.detection import archives, package, picker, upload
 from tm_control.modules.detection.inventory import (
@@ -97,6 +98,7 @@ class LabelsOut(BaseModel):
 class ModelsState(BaseModel):
     detector: str | None
     frigate_answers: bool
+    frigate_safe_mode: bool  # Frigate couldn't use its config and runs a stand-in; the rest is read from config.yml
     default: Literal["installer_default", "frigate_default"] | None  # what using the default would apply here
     running: RunningOut
     models: list[ModelOut]
@@ -111,12 +113,21 @@ def _state(request: Request) -> tuple[Settings, Manifest, Path]:
     return settings, manifest, settings.state_dir.parent if settings.fake else Path(manifest.codedir)
 
 
-def _frigate(request: Request) -> tuple[dict | None, ConfigRead]:
+def _frigate_answer(request: Request) -> tuple[dict | None, ConfigRead]:
     """Frigate's running config (None when it doesn't answer) and its config.yml as the host has it."""
     settings, _, codedir = _state(request)
     if settings.fake:
         return fake.frigate_answer(settings)
     return frigate.config(), frigate.config_file(codedir)
+
+
+def _frigate(request: Request) -> tuple[dict | None, ConfigRead]:
+    """What the detector, the running model, and the labels are read from: Frigate's answer, unless Frigate started
+    in safe mode. Its config then is a stand-in (a cpu detector, no model, no cameras) rather than config.yml's, so
+    it's treated as no answer and the file is read instead, which is what Frigate will run once its config is
+    usable again."""
+    frigate_config, config_file = _frigate_answer(request)
+    return (None if probes.frigate_safe_mode(frigate_config) else frigate_config), config_file
 
 
 def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut:
@@ -144,7 +155,9 @@ def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut
 @router.get("", response_model=ModelsState)
 def get_models(request: Request, user: User = Depends(current_user)):
     settings, manifest, codedir = _state(request)
-    frigate_config, config_file = _frigate(request)
+    answer, config_file = _frigate_answer(request)
+    safe_mode = probes.frigate_safe_mode(answer)
+    frigate_config = None if safe_mode else answer
     installer = installer_default(manifest, codedir)
     detector = detector_type(frigate_config, config_file)
     models = inventory(model_cache_dir(settings, manifest), installer, detector)
@@ -156,7 +169,8 @@ def get_models(request: Request, user: User = Depends(current_user)):
         default = "installer_default" if detector == "edgetpu" and installer is not None else "frigate_default"
     return ModelsState(
         detector=detector,
-        frigate_answers=frigate_config is not None,
+        frigate_answers=answer is not None,
+        frigate_safe_mode=safe_mode,
         default=default,
         running=RunningOut(name=running.name, kind=running.kind, source=running.source),
         models=[_model_out(model, running, detector) for model in models],

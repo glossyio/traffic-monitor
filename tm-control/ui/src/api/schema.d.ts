@@ -876,6 +876,8 @@ export interface components {
             detector: string | null;
             /** Frigate Answers */
             frigate_answers: boolean;
+            /** Frigate Safe Mode */
+            frigate_safe_mode: boolean;
             /** Default */
             default: ("installer_default" | "frigate_default") | null;
             running: components["schemas"]["RunningOut"];
