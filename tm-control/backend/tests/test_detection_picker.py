@@ -1,13 +1,29 @@
 """The detection module's reading of Frigate: the detector, the model that runs, and the label lists."""
 
+import json
 from pathlib import Path
 
 import pytest
+from placeholders import PLACEHOLDER_KEY
 
-from tm_control.adapters.yamlfile import ConfigRead
+from tm_control.adapters import httpjson
+from tm_control.adapters.yamlfile import ConfigRead, _round_trip_yaml
+from tm_control.modules.detection import picker
 from tm_control.modules.detection.inventory import InstallerDefault, Model, ModelFile, parse_sidecar
 from tm_control.modules.detection.labels import recognised, tracked
-from tm_control.modules.detection.picker import Running, detector_type, running_model
+from tm_control.modules.detection.picker import (
+    FRIGATE_HEADER,
+    Running,
+    UseError,
+    apply,
+    check_usable,
+    default_section,
+    detector_type,
+    model_section,
+    refusal_lines,
+    replace_model_section,
+    running_model,
+)
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "model_sidecar.json"
 PLUS_ID = "0123456789abcdef0123456789abcdef"
@@ -28,6 +44,14 @@ def file_of(data):
 def plus_model(name=PLUS_ID):
     sidecar = parse_sidecar(FIXTURE.read_bytes())
     return Model(name, "frigate_plus", sidecar, (ModelFile(name, 1, "a" * 64),), True, None)
+
+
+def local_model(name="mine.tflite", complete=True, **changes):
+    record = json.loads(FIXTURE.read_text())
+    record.pop("id")
+    record.pop("verifiedCounts")
+    sidecar = parse_sidecar(json.dumps(record | changes).encode())
+    return Model(name, "local", sidecar, (ModelFile(name, 1, "c" * 64),), complete, None)
 
 
 def default_model():
@@ -129,3 +153,266 @@ def test_tracked_is_the_ordered_union_of_global_and_camera_lists():
     assert tracked({"cameras": {"a": {"objects": {"track": ["cat"]}}}}) == ["cat"]
     assert tracked({"objects": {"track": "person"}, "cameras": []}) == []
     assert tracked(None) == []
+
+
+# The write half: the model section, its place in config.yml, and how it reaches Frigate.
+
+CONFIG = """# see https://docs.frigate.video/configuration/reference
+mqtt:
+  enabled: true
+  user: "{FRIGATE_MQTT_USER}"  # quoted, as tmsetup writes it
+
+detectors:
+  # the Coral the installer found
+  coral:
+    type: edgetpu
+    device: usb
+
+model:
+  model_type: yolo-generic
+  path: /config/model_cache/old.tflite
+
+ffmpeg:
+  hwaccel_args: -hwaccel drm  # keep
+
+cameras:
+  picam_h265:
+    ffmpeg:
+      inputs:
+        - path: rtsp://host.containers.internal:8554/picam_h265_detect
+          roles:
+            - detect
+"""
+INSTALLER_SECTION = {  # sorted, as a device's manifest JSON has it
+    "height": 512,
+    "labelmap_path": "/config/labels-coco17.txt",
+    "model_type": "yolo-generic",
+    "path": f"{CACHE}/{INSTALLER_FILE}",
+    "width": 512,
+}
+
+
+def load(text):
+    return _round_trip_yaml(2).load(text)
+
+
+def dump(doc):
+    import io
+
+    out = io.StringIO()
+    _round_trip_yaml(2).dump(doc, out)
+    return out.getvalue()
+
+
+def outside_model(text):
+    """The text's lines that aren't the model section's."""
+    lines, inside = [], False
+    for line in text.splitlines():
+        if line.startswith("model:"):
+            inside = True
+            continue
+        if inside and (line.startswith(" ") or not line):
+            continue
+        inside = False
+        lines.append(line)
+    return lines
+
+
+def test_model_section_for_a_plus_pair_is_only_the_path():
+    assert model_section(plus_model()) == {"path": f"plus://{PLUS_ID}"}
+
+
+def test_model_section_for_a_local_pair_translates_the_sidecar():
+    section = model_section(local_model())
+    assert section == {
+        "path": f"{CACHE}/mine.tflite",
+        "width": 320,
+        "height": 320,
+        "input_tensor": "nhwc",
+        "input_pixel_format": "rgb",
+        "model_type": "yolo-generic",
+        "labelmap": {0: "person", 1: "bicycle", 2: "car"},
+    }
+    assert all(type(key) is int for key in section["labelmap"])
+    assert model_section(local_model(inputDataType="float"))["input_dtype"] == "float"
+    allowed = {"path", "labelmap_path", "width", "height", "labelmap", "attributes_map", "input_tensor",
+               "input_pixel_format", "input_dtype", "model_type"}  # Frigate's ModelConfig forbids any other key
+    assert set(model_section(local_model(inputDataType="int"))) <= allowed
+
+
+def test_default_section_is_the_installers_for_edgetpu_and_nothing_otherwise():
+    installer = InstallerDefault(section=INSTALLER_SECTION | {"extra": 1}, file=INSTALLER_FILE, labels_file=None)
+    section = default_section("edgetpu", installer)
+    assert section == INSTALLER_SECTION | {"extra": 1}
+    assert list(section) == ["model_type", "width", "height", "path", "labelmap_path", "extra"]  # the template's order
+    for detector in ("cpu", "hailo8l", "onnx"):
+        assert default_section(detector, installer) is None
+    assert default_section("edgetpu", None) is None
+
+
+def test_replace_model_section_keeps_comments_and_the_rest():
+    doc = load(CONFIG)
+    replace_model_section(doc, {"path": f"plus://{PLUS_ID}"})
+    text = dump(doc)
+    assert outside_model(text) == outside_model(CONFIG)
+    assert f"\nmodel:\n  path: plus://{PLUS_ID}\n\nffmpeg:\n" in text  # the blank line after the section stays
+    assert '"{FRIGATE_MQTT_USER}"  # quoted' in text and "# the Coral the installer found" in text
+    assert load(text)["model"] == {"path": f"plus://{PLUS_ID}"}
+
+    # deleted: Frigate's own default
+    doc = load(CONFIG)
+    replace_model_section(doc, None)
+    text = dump(doc)
+    assert "model" not in load(text) and outside_model(text) == outside_model(CONFIG)
+    assert "    device: usb\n\nffmpeg:\n" in text
+    doc = load(text)
+    replace_model_section(doc, None)  # nothing to delete
+    assert dump(doc) == text
+
+    # inserted after detectors, with int label keys
+    doc = load(text)
+    replace_model_section(doc, model_section(local_model()))
+    inserted = dump(doc)
+    assert list(load(inserted)) == ["mqtt", "detectors", "model", "ffmpeg", "cameras"]
+    assert outside_model(inserted) == outside_model(CONFIG)
+    assert "\nmodel:\n  path: /config/model_cache/mine.tflite\n" in inserted
+    assert "  labelmap:\n    0: person\n    1: bicycle\n    2: car\n\nffmpeg:\n" in inserted
+    assert load(inserted)["model"]["labelmap"] == {0: "person", 1: "bicycle", 2: "car"}
+
+    # no detectors key either: at the end
+    doc = load("mqtt:\n  enabled: false\n")
+    replace_model_section(doc, {"path": f"plus://{PLUS_ID}"})
+    assert dump(doc) == f"mqtt:\n  enabled: false\nmodel:\n  path: plus://{PLUS_ID}\n"
+
+
+FRIGATE_MESSAGE = (
+    f"{FRIGATE_HEADER}\nSee the official documentation at docs.frigate.video.\n\n"
+    "Line 18: model -> path - Value error, the model file is missing\n"
+    f"  Line 19: model -> width - Input should be a valid integer {PLACEHOLDER_KEY}  \n"
+)
+
+
+def test_refusal_lines_drop_the_header_and_redact():
+    lines = refusal_lines(FRIGATE_MESSAGE)
+    assert lines == ("Line 18: model -> path - Value error, the model file is missing; "
+                     "Line 19: model -> width - Input should be a valid integer <key>")
+    assert PLACEHOLDER_KEY not in lines and "docs.frigate.video" not in lines
+    long = f"{FRIGATE_HEADER}\nSee the official documentation at docs.frigate.video.\n" + "\n".join(
+        f"Line {n}: cameras -> x{n} - {PLACEHOLDER_KEY}" for n in range(40))
+    cut = refusal_lines(long)
+    assert len(cut) <= 500 and PLACEHOLDER_KEY[:20] not in cut
+    # Frigate's other refusals hold a traceback: its last line says what went wrong
+    traceback = f"Traceback (most recent call last):\n  File \"x.py\", line 1\nValueError: bad {PLACEHOLDER_KEY}\n"
+    assert refusal_lines(traceback) == "ValueError: bad <key>"
+
+
+class FakeFrigateApi:
+    """httpjson.get and httpjson.post as Frigate's /config/raw and /config/save answer them."""
+
+    def __init__(self, raw, save=(200, {"success": True, "message": "Config successfully saved."})):
+        self.raw = raw
+        self.save = save
+        self.posts = []
+
+    def get(self, url, headers=None, timeout=None):
+        if url == "http://127.0.0.1:5000/api/config/raw" and self.raw is not None:
+            return 200, json.dumps(self.raw).encode()
+        return None, None
+
+    def post(self, url, body, content_type, headers=None, timeout=None):
+        self.posts.append((url, body, content_type, timeout))
+        status, answer = self.save
+        return status, None if answer is None else json.dumps(answer).encode()
+
+
+def codedir_with(tmp_path, text):
+    config = tmp_path / "frigate" / "config" / "config.yml"
+    config.parent.mkdir(parents=True)
+    config.write_text(text)
+    return tmp_path, config
+
+
+def backups(config):
+    return sorted(path.name for path in config.parent.glob("config.yml.*.bak"))
+
+
+def test_apply_saves_through_frigate_when_it_answers(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, "on disk: unchanged\n")
+    api = FakeFrigateApi(CONFIG)
+    monkeypatch.setattr(httpjson, "get", api.get)
+    monkeypatch.setattr(httpjson, "post", api.post)
+    assert apply({"path": f"plus://{PLUS_ID}"}, codedir) == "frigate"
+    ((url, body, content_type, timeout),) = api.posts
+    assert url == "http://127.0.0.1:5000/api/config/save?save_option=saveonly"
+    assert content_type == "text/plain" and timeout == 30
+    saved = body.decode()
+    assert load(saved)["model"] == {"path": f"plus://{PLUS_ID}"}
+    assert outside_model(saved) == outside_model(CONFIG)
+    assert config.read_text() == "on disk: unchanged\n" and backups(config) == []
+
+
+def test_apply_edits_the_file_when_frigate_is_silent(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, CONFIG)
+    api = FakeFrigateApi(None)
+    monkeypatch.setattr(httpjson, "get", api.get)
+    monkeypatch.setattr(httpjson, "post", api.post)
+    assert apply(None, codedir) == "file"
+    assert api.posts == []
+    assert "model" not in load(config.read_text())
+    assert outside_model(config.read_text()) == outside_model(CONFIG)
+    (backup,) = backups(config)
+    assert (config.parent / backup).read_text() == CONFIG
+    with pytest.raises(UseError) as refused:
+        apply({"path": "x"}, tmp_path / "nowhere")
+    assert (refused.value.status, refused.value.code) == (500, "config_write")
+    assert refused.value.message == "Frigate's config.yml couldn't be written: FileNotFoundError"
+
+
+def test_frigates_refusal_is_shown_and_nothing_is_restarted(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, CONFIG)
+    api = FakeFrigateApi(CONFIG, save=(400, {"success": False, "message": FRIGATE_MESSAGE}))
+    monkeypatch.setattr(httpjson, "get", api.get)
+    monkeypatch.setattr(httpjson, "post", api.post)
+    with pytest.raises(UseError) as refused:
+        apply({"path": f"plus://{PLUS_ID}"}, codedir)
+    assert (refused.value.status, refused.value.code) == (422, "frigate_refused")
+    assert refused.value.message == "Frigate refused the config: " + refusal_lines(FRIGATE_MESSAGE)
+    assert PLACEHOLDER_KEY not in refused.value.message
+    assert config.read_text() == CONFIG and backups(config) == []
+    api.save = (400, None)  # no message to show
+    with pytest.raises(UseError) as bare:
+        apply({"path": f"plus://{PLUS_ID}"}, codedir)
+    assert (bare.value.status, bare.value.message) == (422, "Frigate refused the config.")
+    api.save = (500, None)
+    with pytest.raises(UseError) as failed:
+        apply({"path": f"plus://{PLUS_ID}"}, codedir)
+    assert (failed.value.status, failed.value.code, failed.value.message) == (
+        502, "frigate_error", "Frigate answered 500 to the save.")
+    api.save = (None, None)
+    with pytest.raises(UseError) as silent:
+        apply({"path": f"plus://{PLUS_ID}"}, codedir)
+    assert (silent.value.status, silent.value.code, silent.value.message) == (
+        502, "frigate_error", "Frigate didn't answer the save.")
+    assert config.read_text() == CONFIG and backups(config) == []
+
+
+def test_check_usable_refuses_the_wrong_detector_an_unknown_one_and_an_incomplete_pair():
+    check_usable(plus_model(), "edgetpu")
+    with pytest.raises(UseError) as unknown:
+        check_usable(plus_model(), None)
+    assert (unknown.value.status, unknown.value.code) == (409, "detector_unknown")
+    assert unknown.value.message == (
+        "Frigate's detector type can't be determined, so a model can't be checked against it.")
+    with pytest.raises(UseError) as wrong:
+        check_usable(local_model(supportedDetectors=["hailo8l", "rknn"]), "edgetpu")
+    assert (wrong.value.status, wrong.value.code) == (422, "wrong_detector")
+    assert wrong.value.message == "This model is built for hailo8l, rknn; this device detects with edgetpu."
+    bare = Model("bare.tflite", "local", None, (ModelFile("bare.tflite", 1, "d" * 64),), False, None)
+    with pytest.raises(UseError) as incomplete:
+        check_usable(bare, "edgetpu")
+    assert (incomplete.value.status, incomplete.value.code, incomplete.value.message) == (
+        422, "incomplete", "This model is missing its sidecar.")
+    with pytest.raises(UseError) as no_file:
+        check_usable(local_model(complete=False), "edgetpu")
+    assert (no_file.value.status, no_file.value.code) == (422, "incomplete")
+    assert no_file.value.message == "This model's file is missing or can't be read."

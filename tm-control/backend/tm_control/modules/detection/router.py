@@ -7,6 +7,10 @@ sidecar for a bare model file from a form (POST /models/{name}/sidecar), downloa
 SHA256SUMS (GET /models/{name}/package), and delete a model (DELETE /models/{name}). Each writes only inside
 model_cache, through the directory's descriptor, or tm-control's own state directory, and audits the name of what it
 wrote, sent, or removed, never a file's content.
+
+Using a model (POST /models/{name}/use) or the installer's default (POST /models/default/use) sets the `model:` section
+of Frigate's config.yml, through Frigate's config API or, when Frigate doesn't answer, in the file, then restarts
+frigate.service through systemd. Fake mode only changes which model the fake Frigate runs.
 """
 
 import json
@@ -15,7 +19,7 @@ import stat
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, StringConstraints
 from starlette.background import BackgroundTask
@@ -23,14 +27,14 @@ from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 
 from tm_control import fake
-from tm_control.adapters import frigate
+from tm_control.adapters import frigate, systemd
 from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.core.manifest import Manifest
 from tm_control.core.settings import Settings
 from tm_control.modules.auth.deps import current_user, require_admin
-from tm_control.modules.detection import archives, package, upload
+from tm_control.modules.detection import archives, package, picker, upload
 from tm_control.modules.detection.inventory import (
     MODEL_FILE_MAX,
     SIDECAR,
@@ -47,8 +51,9 @@ from tm_control.modules.detection.inventory import (
     valid_name,
 )
 from tm_control.modules.detection.labels import recognised, tracked
-from tm_control.modules.detection.picker import Running, detector_type, running_model
+from tm_control.modules.detection.picker import Running, UseError, detector_type, running_model
 from tm_control.modules.detection.upload import UploadError
+from tm_control.modules.services.units import restart_or_log
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -428,3 +433,92 @@ def delete_model(name: str, request: Request, admin: User = Depends(require_admi
     forget(halves)
     Audit(request.app.state.state).record(admin.id, "models.delete", detail=name)
     return Response(status_code=204)
+
+
+FRIGATE_UNIT = "frigate.service"
+DEFAULT = "default"  # the name the default route answers and audits
+RESTARTING = "Frigate is restarting; try again in a minute."
+DEFAULT_UNKNOWN = "Frigate's detector type can't be determined, so its default model can't be chosen."
+
+
+class UseQueued(BaseModel):
+    name: str  # the model's name, or "default"
+    applied: Literal["frigate", "file"]  # who wrote config.yml: Frigate's config API, or tm-control while it was down
+    restarts: list[str]  # the units restarted once this answer has been sent
+
+
+def _use_refusal(error: UseError) -> ApiError:
+    return ApiError(error.status, error.code, error.message)
+
+
+def _not_restarting(settings: Settings) -> None:
+    """Refuse while frigate.service is starting or stopping: a save then would race the restart. Fake mode has no
+    systemd to ask, and when systemd can't be asked the use goes ahead; its restart is queued all the same."""
+    if settings.fake:
+        return
+    try:
+        state = systemd.show_unit(FRIGATE_UNIT, ["ActiveState"]).get("ActiveState")
+    except Exception:
+        return
+    if state in ("activating", "deactivating"):
+        raise ApiError(409, "restarting", RESTARTING)
+
+
+def _use(request: Request, background: BackgroundTasks, admin: User, section: dict | None, fake_name: str,
+         name: str) -> UseQueued:
+    """Write section as Frigate's `model:` (None removes it), audit `name`, and queue Frigate's restart. Fake mode
+    makes the fake Frigate run fake_name instead."""
+    settings, _, codedir = _state(request)
+    if settings.fake:
+        fake.use_model(settings, fake_name)
+        applied = "frigate"
+    else:
+        try:
+            applied = picker.apply(section, codedir)
+        except UseError as error:
+            raise _use_refusal(error) from None
+    Audit(request.app.state.state).record(admin.id, "models.use", detail=name)
+    if not settings.fake:
+        background.add_task(restart_or_log, FRIGATE_UNIT)
+    return UseQueued(name=name, applied=applied, restarts=[FRIGATE_UNIT])
+
+
+def _use_default(request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
+    settings, manifest, codedir = _state(request)
+    _not_restarting(settings)
+    detector = detector_type(*_frigate(request))
+    if detector is None:
+        raise ApiError(409, "detector_unknown", DEFAULT_UNKNOWN)
+    installer = installer_default(manifest, codedir)
+    section = picker.default_section(detector, installer)
+    return _use(request, background, admin, section, installer.file if section is not None else "", DEFAULT)
+
+
+@router.post("/default/use", status_code=202, response_model=UseQueued)
+def use_default(request: Request, background: BackgroundTasks, admin: User = Depends(require_admin)):
+    """Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no
+    `model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model."""
+    return _use_default(request, background, admin)
+
+
+@router.post("/{name}/use", status_code=202, response_model=UseQueued)
+def use_model(name: str, request: Request, background: BackgroundTasks, admin: User = Depends(require_admin)):
+    """Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
+    The installer's file is the default, as POST /models/default/use puts it back. The running model may be used
+    again: Frigate just restarts."""
+    if not valid_name(name):
+        raise _refusal(UploadError(422, upload.BAD_NAME))
+    settings, manifest, codedir = _state(request)
+    installer = installer_default(manifest, codedir)
+    if installer is not None and name == installer.file:
+        return _use_default(request, background, admin)
+    _not_restarting(settings)
+    models = inventory(model_cache_dir(settings, manifest), installer)
+    model = next((model for model in models if model.name == name), None)
+    if model is None:
+        raise ApiError(404, "not_found", NO_SUCH_MODEL)
+    try:
+        picker.check_usable(model, detector_type(*_frigate(request)))
+    except UseError as error:
+        raise _use_refusal(error) from None
+    return _use(request, background, admin, picker.model_section(model), name, name)

@@ -86,6 +86,12 @@ def seed_model_cache(settings: Settings) -> None:
     running_model_file(settings).write_text(FAKE_PLUS_ID)
 
 
+def use_model(settings: Settings, name: str) -> None:
+    """Fake mode's stand-in for using a model, which a device does by saving Frigate's config and restarting it: the
+    fake Frigate runs `name` from now on (an empty name: Frigate's own default)."""
+    running_model_file(settings).write_text(name)
+
+
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
     """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, and
     a config.yml that is missing. Nothing outside the fake directory is read."""

@@ -451,6 +451,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/default/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Default
+         * @description Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no
+         *     `model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model.
+         */
+        post: operations["use_default_api_v1_models_default_use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Model
+         * @description Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
+         *     The installer's file is the default, as POST /models/default/use puts it back. The running model may be used
+         *     again: Frigate just restarts.
+         */
+        post: operations["use_model_api_v1_models__name__use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -1059,6 +1102,18 @@ export interface components {
             branch: string;
             /** Installing User */
             installing_user: string;
+        };
+        /** UseQueued */
+        UseQueued: {
+            /** Name */
+            name: string;
+            /**
+             * Applied
+             * @enum {string}
+             */
+            applied: "frigate" | "file";
+            /** Restarts */
+            restarts: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -1736,6 +1791,57 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    use_default_api_v1_models_default_use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseQueued"];
+                };
+            };
+        };
+    };
+    use_model_api_v1_models__name__use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseQueued"];
+                };
             };
             /** @description Validation Error */
             422: {

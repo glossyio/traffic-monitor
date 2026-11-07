@@ -1,6 +1,7 @@
 """The apps checks (Frigate, Node-RED with its config.yml and schema, go2rtc, the broker login) and their adapters."""
 
 import http.server
+import json
 import socket
 import struct
 import threading
@@ -645,11 +646,17 @@ def test_anonymous_connect_to_nothing_is_none():
 class Handler(http.server.BaseHTTPRequestHandler):
     status = 200
     body = b"not json"
+    posted: list = []  # (path, Content-Type, body) of each POST
 
     def do_GET(self):
         self.send_response(self.status)
         self.end_headers()
         self.wfile.write(self.body)
+
+    def do_POST(self):
+        received = self.rfile.read(int(self.headers["Content-Length"]))
+        Handler.posted.append((self.path, self.headers["Content-Type"], received))
+        self.do_GET()
 
     def log_message(self, *args):
         pass
@@ -725,6 +732,43 @@ def test_nodered_status_is_none_none_when_nothing_answers(monkeypatch):
 def test_http_reads_go_to_loopback_only():
     with pytest.raises(ValueError):
         httpjson.get("http://192.0.2.1:5000/api/version")
+
+
+def test_http_posts_go_to_loopback_only_and_answer_like_gets(http_app, monkeypatch):
+    with pytest.raises(ValueError):
+        httpjson.post("http://192.0.2.1:5000/api/config/save", b"x", "text/plain")
+    monkeypatch.setattr(Handler, "posted", [])
+    monkeypatch.setattr(Handler, "body", b'{"message": "saved"}')
+    assert httpjson.post(f"{http_app}/save?a=b", b"model: {}\n", "text/plain") == (200, b'{"message": "saved"}')
+    assert Handler.posted == [("/save?a=b", "text/plain", b"model: {}\n")]
+    monkeypatch.setattr(Handler, "status", 400)
+    assert httpjson.post(f"{http_app}/save", b"x", "text/plain") == (400, b'{"message": "saved"}')
+    monkeypatch.setattr(httpjson, "MAX_BODY", 4)
+    assert httpjson.post(f"{http_app}/save", b"x", "text/plain") == (400, None)
+
+    def broken(*args, **kwargs):
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(httpjson._OPENER, "open", broken)
+    assert httpjson.post(f"{http_app}/save", b"x", "text/plain") == (None, None)
+
+
+def test_frigate_config_raw_and_save(http_app, monkeypatch):
+    monkeypatch.setattr(frigate, "BASE", f"{http_app}/api")
+    monkeypatch.setattr(Handler, "posted", [])
+    monkeypatch.setattr(Handler, "body", json.dumps("mqtt:\n  enabled: false\n").encode())
+    assert frigate.config_raw() == "mqtt:\n  enabled: false\n"
+    for body in (b"{not json", b'{"a": 1}', b"null"):
+        monkeypatch.setattr(Handler, "body", body)
+        assert frigate.config_raw() is None
+    monkeypatch.setattr(Handler, "body", b'{"success": false, "message": "Your configuration is invalid."}')
+    assert frigate.save_config("model: {}\n") == (200, "Your configuration is invalid.")
+    assert Handler.posted == [("/api/config/save?save_option=saveonly", "text/plain", b"model: {}\n")]
+    monkeypatch.setattr(Handler, "status", 400)
+    assert frigate.config_raw() is None
+    for body in (b"{not json", b'{"message": 3}', b"[]"):
+        monkeypatch.setattr(Handler, "body", body)
+        assert frigate.save_config("x") == (400, None)
 
 
 def test_a_body_over_the_cap_is_no_answer(http_app, monkeypatch):
