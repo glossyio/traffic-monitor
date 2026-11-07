@@ -515,6 +515,9 @@ def test_new_frigate_configs_use_proxy_auth():
 
 
 CORAL_FILE = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model_file"]
+# The vars file's dict, with its path expanded as Ansible's lazy templating does when a template reads it
+CORAL_MODEL = {**load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model"],
+               "path": f"/config/model_cache/{CORAL_FILE}"}
 CORAL_PCI = {"edgetpu_pci": {"dev_path_available": True, "exists": True, "frigate_type": "edgetpu",
                              "frigate_device": "pci", "dev_path": "/dev/apex_0"}}
 # A Frigate+ model id is 32 hex characters; this one is made up
@@ -527,7 +530,7 @@ def frigate_config(**variables):
 
 def test_a_kept_model_section_replaces_the_detector_default():
     config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE,
-                            tmsetup_frigate_model_keep=KEPT)
+                            tmsetup_frigate_coral_model=CORAL_MODEL, tmsetup_frigate_model_keep=KEPT)
     assert config["model"] == KEPT  # a plus:// path, a nested labelmap, an int key: all round-trip
     assert config["detectors"] == {"edgetpu_pci": {"type": "edgetpu", "device": "pci"}}
 
@@ -562,13 +565,14 @@ def test_a_kept_model_section_with_mixed_labelmap_keys_renders():
 def test_a_kept_model_section_is_followed_by_one_blank_line_as_the_coral_default_is():
     assert kept_model_text(KEPT).endswith("\n  labelmap:\n    2: vehicle\n\n")  # KEPT's last key, then one blank
     coral = render("container/frigate/config/config.yml.j2", tmsetup_detectors=CORAL_PCI,
-                   tmsetup_frigate_coral_model_file=CORAL_FILE)
+                   tmsetup_frigate_coral_model_file=CORAL_FILE, tmsetup_frigate_coral_model=CORAL_MODEL)
     assert "\n  labelmap_path: /config/labels-coco17.txt\n\nffmpeg:\n" in coral
 
 
 def test_without_a_kept_section_the_coral_default_names_the_installers_model():
     for keep in ({"tmsetup_frigate_model_keep": {}}, {}):
-        config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE, **keep)
+        config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE,
+                                tmsetup_frigate_coral_model=CORAL_MODEL, **keep)
         assert config["model"] == {
             "model_type": "yolo-generic",
             "width": 512,
@@ -576,6 +580,16 @@ def test_without_a_kept_section_the_coral_default_names_the_installers_model():
             "path": f"/config/model_cache/{CORAL_FILE}",
             "labelmap_path": "/config/labels-coco17.txt",
         }
+
+
+def test_the_coral_default_section_renders_from_the_vars_dict():
+    raw = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model"]
+    assert list(raw) == ["model_type", "width", "height", "path", "labelmap_path"]
+    assert raw["path"] == "/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
+    config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE,
+                            tmsetup_frigate_coral_model=CORAL_MODEL)
+    assert config["model"] == CORAL_MODEL
+    assert list(config["model"]) == list(raw)
 
 
 def test_without_a_kept_section_and_without_a_coral_there_is_no_model_section():
