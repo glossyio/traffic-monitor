@@ -418,7 +418,7 @@ export interface paths {
         /**
          * Download Package
          * @description The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model
-         *     with both halves, which the installer's never has.
+         *     with both halves, which a default never has.
          */
         get: operations["download_package_api_v1_models__name__package_get"];
         put?: never;
@@ -441,7 +441,7 @@ export interface paths {
         post?: never;
         /**
          * Delete Model
-         * @description Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's the installer's.
+         * @description Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's a default.
          *     What runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is
          *     removed.
          */
@@ -484,8 +484,8 @@ export interface paths {
         /**
          * Use Model
          * @description Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
-         *     The installer's file is the default, as POST /models/default/use puts it back. The running model may be used
-         *     again: Frigate just restarts.
+         *     A default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The
+         *     running model may be used again: Frigate just restarts.
          */
         post: operations["use_model_api_v1_models__name__use_post"];
         delete?: never;
@@ -844,7 +844,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "frigate_plus" | "local" | "installer_default";
+            kind: "frigate_plus" | "local" | "installer_default" | "frigate_default";
             /** Title */
             title: string;
             /** Trained At */

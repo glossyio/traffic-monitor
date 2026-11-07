@@ -15,6 +15,7 @@ import os
 import re
 import stat
 import threading
+from collections.abc import Container
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -29,6 +30,10 @@ SIDECAR = ".json"
 CONFIG_PREFIX = "/config/"  # where Frigate's container sees the directory tmsetup mounts at <codedir>/frigate/config
 HASH_BLOCK = 1024 * 1024
 LABEL_KEY = re.compile(r"[0-9]{1,9}")
+# The file Frigate downloads into model_cache and runs when its detector of this type has no model path. From Frigate
+# 0.18.1's frigate/detectors/plugins/hailo8l.py (H8_DEFAULT_MODEL and H8L_DEFAULT_MODEL), whose detector type is
+# hailo8l for both Hailo-8 and Hailo-8L.
+FRIGATE_DEFAULT_FILES = {"hailo8l": "yolov6n.hef"}
 
 FILE_UNREADABLE = "The file can't be read."
 SIDECAR_UNREADABLE = "The sidecar can't be read."
@@ -125,7 +130,7 @@ class ModelFile:
 @dataclass(frozen=True)
 class Model:
     name: str
-    kind: Literal["frigate_plus", "local", "installer_default"]
+    kind: Literal["frigate_plus", "local", "installer_default", "frigate_default"]
     sidecar: Sidecar | None
     files: tuple[ModelFile, ...]
     complete: bool
@@ -156,6 +161,16 @@ def installer_default(manifest, codedir) -> InstallerDefault | None:
     if not section or file is None:
         return None
     return InstallerDefault(section=section, file=file, labels_file=host_path(codedir, section.get("labelmap_path")))
+
+
+def default_files(installer: InstallerDefault | None, detector: str | None) -> dict[str, str]:
+    """The files in model_cache that are a default rather than a model of their own, with their kind: the
+    installer's, and Frigate's own for the device's detector."""
+    files = {installer.file: "installer_default"} if installer is not None else {}
+    frigate_file = FRIGATE_DEFAULT_FILES.get(detector)
+    if frigate_file is not None:
+        files.setdefault(frigate_file, "frigate_default")
+    return files
 
 
 def model_cache_dir(settings, manifest) -> Path:
@@ -288,8 +303,9 @@ def _regular(dir_fd: int, name: str) -> os.stat_result | None:
     return found if found is not None and stat.S_ISREG(found.st_mode) else None
 
 
-def _entries(dir_fd: int, skip: str | None) -> dict[str, dict[str, os.stat_result]]:
-    """The regular files with valid names, grouped by model name, as {"model": stat, "sidecar": stat}."""
+def _entries(dir_fd: int, skip: Container[str]) -> dict[str, dict[str, os.stat_result]]:
+    """The regular files with valid names, grouped by model name, as {"model": stat, "sidecar": stat}; the names in
+    skip, and their sidecars, are left out."""
     try:
         names = os.listdir(dir_fd)
     except OSError:
@@ -297,7 +313,7 @@ def _entries(dir_fd: int, skip: str | None) -> dict[str, dict[str, os.stat_resul
     grouped: dict[str, dict[str, os.stat_result]] = {}
     for name in names:
         role, base = ("sidecar", name[:-len(SIDECAR)]) if name.endswith(SIDECAR) else ("model", name)
-        if not valid_name(base) or base == skip:
+        if not valid_name(base) or base in skip:
             continue
         found = _regular(dir_fd, name)
         if found is not None:
@@ -325,21 +341,22 @@ def _model(dir_fd: int, name: str, found: dict[str, os.stat_result]) -> Model:
     )
 
 
-def inventory(cache: Path, installer: InstallerDefault | None) -> list[Model]:
-    """What's in the cache: the installer's default first, when its file is there as a regular file, then the other
-    models by name. A directory that can't be opened lists nothing."""
+def inventory(cache: Path, installer: InstallerDefault | None, detector: str | None = None) -> list[Model]:
+    """What's in the cache: the defaults first (see default_files), each when its file is there as a regular file,
+    then the other models by name. A directory that can't be opened lists nothing."""
     try:
         dir_fd = open_cache(cache)
     except OSError:
         return []
     models: list[Model] = []
     try:
-        if installer is not None:
-            found = _regular(dir_fd, installer.file)
+        defaults = default_files(installer, detector)
+        for name, kind in defaults.items():
+            found = _regular(dir_fd, name)
             if found is not None:
-                file, problem = _model_file(dir_fd, installer.file, found)
-                models.append(Model(installer.file, "installer_default", None, (file,), problem is None, problem))
-        grouped = _entries(dir_fd, installer.file if installer else None)
+                file, problem = _model_file(dir_fd, name, found)
+                models.append(Model(name, kind, None, (file,), problem is None, problem))
+        grouped = _entries(dir_fd, defaults)
         for name in sorted(grouped):
             try:
                 models.append(_model(dir_fd, name, grouped[name]))

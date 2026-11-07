@@ -266,7 +266,7 @@ def test_a_member_whose_name_is_taken_is_refused_before_extraction(cache, monkey
         (path / taken).unlink()
     temp = stage(cache, make_zip(PAIR))
     with pytest.raises(UploadError) as raised:
-        archives.place_archive(fd, temp, "zip", reserved="m.tflite")  # the installer's file is the installer's
+        archives.place_archive(fd, temp, "zip", reserved={"m.tflite"})  # the installer's file is the installer's
     assert raised.value.message == "That name isn't allowed." and names(path) == []
 
 

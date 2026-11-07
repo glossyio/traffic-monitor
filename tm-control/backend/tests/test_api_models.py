@@ -1069,3 +1069,85 @@ def test_a_use_is_refused_on_a_device_whose_detector_sets_a_model(
                               "editor first.")
         assert api.posts == []
     assert config.read_text() == detector_model and backups_of(config) == [] and systemctl.restarts() == []
+
+
+# Frigate's own default model file: a Hailo detector with no model path makes Frigate download yolov6n.hef into
+# model_cache and run it, so the file is Frigate's built-in model, which nothing here may write or remove.
+
+HAILO_CONFIG = "detectors:\n  hailo8l:\n    type: hailo8l\n    device: PCIe\n"
+HAILO_FILE = "yolov6n.hef"
+FRIGATES = "That's Frigate's built-in model."
+
+
+def hailo_device(client, tmp_path, config=HAILO_CONFIG):
+    """A device without a Coral whose model_cache holds Frigate's Hailo file beside the fixture pair; returns the
+    cache."""
+    cache = device_with_codedir(client, tmp_path, config, coral=False) / "frigate" / "config" / "model_cache"
+    (cache / HAILO_FILE).write_bytes(bytes(2048))
+    return cache
+
+
+def test_frigates_hailo_file_is_listed_as_its_built_in_model_and_runs(device_client, login, tmp_path):
+    hailo_device(device_client, tmp_path)
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    assert (state["detector"], state["default"]) == ("hailo8l", "frigate_default")
+    assert state["running"] == {"name": None, "kind": "frigate_default", "source": "config_file"}
+    assert [model["name"] for model in state["models"]] == [HAILO_FILE, PLUS_ID]
+    model = state["models"][0]
+    assert (model["kind"], model["title"], model["complete"], model["problem"]) == (
+        "frigate_default", HAILO_FILE, True, None)
+    assert (model["running"], model["deletable"], model["usable"]) == (True, False, None)
+    assert [(file["name"], file["size"]) for file in model["files"]] == [(HAILO_FILE, 2048)]
+    assert state["models"][1]["running"] is False
+
+
+def test_frigates_hailo_file_is_not_running_while_another_model_runs(device_client, login, tmp_path):
+    hailo_device(device_client, tmp_path, f"{HAILO_CONFIG}model:\n  path: plus://{PLUS_ID}\n")
+    login(device_client, *ADMIN)
+    model = models_of(device_client)["models"][0]
+    assert (model["kind"], model["running"], model["deletable"]) == ("frigate_default", False, False)
+    (tmp_path / "codedir" / "frigate" / "config" / "config.yml").write_text(
+        f"{HAILO_CONFIG}model:\n  path: https://example.invalid/other.hef\n")  # Frigate downloads and runs that one
+    state = models_of(device_client)
+    assert state["running"]["kind"] == "frigate_default" and state["models"][0]["running"] is False
+
+
+def test_frigates_hailo_file_cannot_be_deleted_replaced_given_a_sidecar_or_downloaded(device_client, login, tmp_path):
+    cache = hailo_device(device_client, tmp_path)
+    login(device_client, *ADMIN)
+    r = delete(device_client, HAILO_FILE)
+    assert (r.status_code, message(r)) == (409, FRIGATES)
+    r = post_sidecar(device_client, HAILO_FILE)
+    assert (r.status_code, message(r)) == (409, FRIGATES)
+    r = put(device_client, f"{HAILO_FILE}.json", sidecar_bytes())
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    assert package_of(device_client, HAILO_FILE).status_code == 404
+    (cache / HAILO_FILE).unlink()  # gone, its name is still Frigate's to write
+    r = put(device_client, HAILO_FILE, b"\x05")
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    r = put(device_client, "m.tar.gz", tgz_of({HAILO_FILE: b"x", f"{HAILO_FILE}.json": sidecar_bytes()}))
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    assert sorted(path.name for path in cache.iterdir()) == [PLUS_ID, f"{PLUS_ID}.json"]
+
+
+def test_using_frigates_hailo_file_uses_frigates_default(device_client, login, tmp_path, systemctl, frigate_api):
+    cache = hailo_device(device_client, tmp_path, f"{HAILO_CONFIG}model:\n  path: plus://{PLUS_ID}\n")
+    config = cache.parent / "config.yml"
+    frigate_api(None)
+    login(device_client, *ADMIN)
+    r = use(device_client, HAILO_FILE)
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": "default", "applied": "file", "restarts": ["frigate.service"]}
+    assert yaml_of(config.read_text()) == yaml_of(HAILO_CONFIG)
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+
+
+def test_a_file_with_frigates_hailo_name_is_a_local_model_on_a_coral(device_client, login, tmp_path):
+    cache = device_with_codedir(device_client, tmp_path, PLUS_CONFIG) / "frigate" / "config" / "model_cache"
+    (cache / HAILO_FILE).write_bytes(bytes(2048))
+    login(device_client, *ADMIN)
+    model = next(model for model in models_of(device_client)["models"] if model["name"] == HAILO_FILE)
+    assert (model["kind"], model["complete"], model["deletable"]) == ("local", False, True)
+    assert delete(device_client, HAILO_FILE).status_code == 204
+    assert put(device_client, HAILO_FILE, b"\x05").status_code == 201
