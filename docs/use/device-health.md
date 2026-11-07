@@ -42,7 +42,7 @@ A check that isn't passing offers one of these:
 
 * **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 * **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ section of the [Detection page](detection.md#frigate-plus).
+* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](detection.md#frigate-plus).
 * **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](../reference/tmsetup.md)).
 
 The control app can't restart itself. If it stops, see [If the control app is down](control-app.md#if-the-control-app-is-down).

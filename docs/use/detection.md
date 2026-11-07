@@ -8,25 +8,25 @@ The control app's **Detection** page shows what the device looks for and which A
 
 ## The Detection page
 
-**Detection** is in the control app's menu, after **Device**. The page opens with the device's **detector**, such as `edgetpu` for a Coral, and the model Frigate runs. Below that is the list of models on the device, then [what the model recognises](#what-the-model-recognises), then [Frigate+](#frigate-plus).
+**Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then two facts: the **Detector**, such as `edgetpu` for a Coral, and the **Running model**. Below them is the model Frigate runs, marked **In use**. The device's other models are under **Other models on this device**, which stays closed until you select its title, and the title counts them. Then come [what the model recognises](#what-the-model-recognises) and the [Frigate+ API key](#frigate-plus).
 
-Each model in the list shows its name, when it was trained and what it's built for (when it says), and its files with their sizes and the start of each file's SHA-256 hash. A mark says when the model is:
+Each model shows its name, when it was trained and what it's built for (when it says), and its files with their sizes and the start of each file's SHA-256 hash. A mark says when the model is:
 
 | Mark | Meaning |
 |---|---|
-| running | Frigate runs this model. |
+| In use | Frigate runs this model. |
 | can't run on this detector | The model is built for another detector than the device's, so **Use** is off. |
 | incomplete | The model has its file but not its `.json`, or the other way round. |
 
-The model the installer set up is listed as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another. On a device with a Hailo accelerator, the list shows that model as **Frigate's built-in model**, which can't be downloaded or deleted either.
+The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be downloaded or deleted either.
 
-Everyone who can log in sees the list, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, **Use**, **Download**, and **Delete** on each model, the **Use the installer's model** button under the list, and the Frigate+ key. On a device without a Coral, that button is **Use Frigate's built-in model**.
+Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, the first thing under **Other models on this device**, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
 When Frigate isn't answering, the page says so and shows what Frigate's config file says.
 
 ## Upload a model
 
-A model is a model file and a small `.json` file beside it, its *sidecar*, which tells Frigate how to use it. Choose **Upload a model**, then pick one of these:
+A model is a model file and a small `.json` file beside it, its *sidecar*, which tells Frigate how to use it. Choose **Upload a model** under **Other models on this device**, then pick one of these:
 
 * **A package** from whoever trained the model: a zip or tar.gz with the model file and its `.json` at the top level, not inside a folder. A zip must be stored or deflate-compressed, which is what ordinary zip tools make. If the package has a `SHA256SUMS` file, the device checks the files against it.
 * **The two files**, the model file and its `.json`. The `.json` must be named for the model file: `mine.tflite` and `mine.tflite.json`. The page sends the `.json` first.
@@ -45,7 +45,7 @@ The limits are 100 MB for a model file, 2 MB for a `.json`, and at least 512 MB 
 
 Choose **Use** on a model and confirm. Frigate checks the whole configuration with the model in it and saves it, and then the device restarts Frigate. A restart takes about a minute, and the device counts nothing meanwhile. The page asks every few seconds and says when Frigate runs the model. If Frigate hasn't come back after 90 seconds, the page says so and links to the [Status page](device-health.md#the-status-page).
 
-If Frigate refuses the change, the page shows Frigate's reason, and nothing changes. When Frigate isn't answering at all, the device edits Frigate's `config.yml` itself, keeps a backup beside it, and restarts Frigate. That's how **Use the installer's model** gets a device out of a bad choice without SSH: it puts back the model the installer chose, or Frigate's built-in model on a device without a Coral.
+If Frigate refuses the change, the page shows Frigate's reason, and nothing changes. When Frigate isn't answering at all, the device edits Frigate's `config.yml` itself, keeps a backup beside it, and restarts Frigate. That's how **Use** on **The installer's model** gets a device out of a bad choice without SSH. On a device without a Coral, **Use** on **Frigate's built-in model** does the same.
 
 The page refuses a **Use** in these cases:
 
@@ -59,14 +59,14 @@ The page refuses a **Use** in these cases:
 
 ## Delete a model
 
-**Delete** asks first, then removes both of the model's files. It can't remove the model Frigate runs, the installer's model, or Frigate's built-in model. To delete the model that's running, use another model first.
+**Delete** asks first, then removes both of the model's files. It can't remove the model Frigate runs, the installer's model, or Frigate's built-in model. To delete the model that's running, use another model first, such as **The installer's model**.
 
 ## What the model recognises
 
-The page lists two sets of objects, each with a **Copy** button:
+The page lists two sets of objects. Each is closed until you select its title, which counts the objects, and each has a **Copy** button:
 
-* **Recognises** is what the running model can detect, read from Frigate when it answers.
-* **Tracked by this device** is the objects Frigate is set to track, from its `objects:` `track` lists.
+* **All objects the model recognises** is what the running model can detect, read from Frigate when it answers.
+* **Objects tracked on this device** is the objects Frigate is set to track, from its `objects:` `track` lists.
 
 Frigate tracks only the objects in both lists. To track more of what the model recognises, change the lists in Frigate's configuration editor; see [Tune object detection](../configuration/frigate-config.md).
 
@@ -77,11 +77,11 @@ Frigate tracks only the objects in both lists. To track more of what the model r
 * **Online:** when the device has internet and a Frigate+ API key, pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
 * **Offline:** upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See [A device without internet](../configuration/frigate-config.md#a-device-without-internet).
 
-Administrators enter the API key in the form at the end of the page, under **Frigate+**. The key is kept with the device's other secrets, not in `config.yml`.
+Administrators enter the API key under **Frigate+ API key**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
 
-* The page never shows the key back. It says whether the key is set and, for a key of 12 or more characters, its last four characters.
+* The page never shows the key back. The section's title says whether the key is set, its last four characters for a key of 12 or more characters, and "in use" while Frigate runs a Frigate+ model.
 * **Save** stores what you typed. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else. The eye icon shows the key while you type.
 * **Remove** asks first, then empties the key. Without a key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are on the device keeps running; one that isn't downloaded yet [stops Frigate](../configuration/frigate-config.md#if-frigate-stops-over-a-model) until the key is set again, and the Status page's Frigate+ check says so.
 * Saving or removing restarts Frigate, which takes about a minute. The device counts nothing meanwhile.
 
-The Status page's Frigate+ check links here. The ThingsBoard and Plate Recognizer keys are on the [Device page](device-health.md#tokens-and-keys).
+The ThingsBoard and Plate Recognizer keys are on the [Device page](device-health.md#tokens-and-keys).
