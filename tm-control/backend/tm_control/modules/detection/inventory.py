@@ -223,6 +223,13 @@ def _remember(key: tuple[str, int, int], digest: str) -> None:
         HASHES[key] = digest
 
 
+def forget(names) -> None:
+    """Drop the cached hashes of files that were removed."""
+    with _HASH_LOCK:
+        for stale in [key for key in HASHES if key[0] in names]:
+            del HASHES[stale]
+
+
 def _model_file(dir_fd: int, name: str, stat_result: os.stat_result | None) -> tuple[ModelFile, str | None]:
     """The file's entry with its hash, and a problem when it can't be read. The hash comes from HASHES when the
     name, size, and mtime are unchanged, so a repeat listing doesn't read the file again."""

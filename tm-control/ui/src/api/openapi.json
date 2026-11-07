@@ -615,6 +615,149 @@
         }
       }
     },
+    "/api/v1/models/upload/{filename}": {
+      "put": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Upload File",
+        "description": "Stream the body into model_cache as a model file, a sidecar (<model>.json), or an archive. `:path` lets a name\nwith a slash reach the name check, which refuses it.",
+        "operationId": "upload_file_api_v1_models_upload__filename__put",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/sidecar": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Write Sidecar",
+        "description": "Write <name>.json for a model file that has none, for the device's detector.",
+        "operationId": "write_sidecar_api_v1_models__name__sidecar_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SidecarForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}": {
+      "delete": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Delete Model",
+        "description": "Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's the installer's.\nWhat runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is\nremoved.",
+        "operationId": "delete_model_api_v1_models__name__delete",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -1839,6 +1982,75 @@
           "restartable"
         ],
         "title": "Service"
+      },
+      "SidecarForm": {
+        "properties": {
+          "model_type": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Model Type"
+          },
+          "width": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 1.0,
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 1.0,
+            "title": "Height"
+          },
+          "input_tensor": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Input Tensor"
+          },
+          "input_pixel_format": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Input Pixel Format"
+          },
+          "input_dtype": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Dtype"
+          },
+          "labels": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Labels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_type",
+          "width",
+          "height",
+          "input_tensor",
+          "input_pixel_format",
+          "labels"
+        ],
+        "title": "SidecarForm",
+        "description": "What Frigate needs to know about a model file: Frigate checks the values when the model is used."
       },
       "SystemInfo": {
         "properties": {

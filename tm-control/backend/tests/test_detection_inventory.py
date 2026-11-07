@@ -380,3 +380,13 @@ def test_hashing_from_two_threads_is_safe(cache):
         thread.join()
     os.close(fd)
     assert errors == []
+
+
+def test_forget_drops_the_hashes_of_removed_names():
+    from tm_control.modules.detection import inventory as module
+
+    module.HASHES[("gone.tflite", 1, 1)] = "a"
+    module.HASHES[("kept.tflite", 1, 1)] = "b"
+    module.forget(["gone.tflite", "never.tflite"])
+    assert ("gone.tflite", 1, 1) not in module.HASHES and module.HASHES[("kept.tflite", 1, 1)] == "b"
+    del module.HASHES[("kept.tflite", 1, 1)]
