@@ -38,12 +38,23 @@ async function load() {
 }
 
 // The Frigate+ key (admins only), loaded again after each save or remove. The Status page's "Set the key" links to
-// the section, and the page scrolls to it once the models have answered and the sections above it have their height.
+// the section, which opens, and the page scrolls to it once the models have answered and the sections above it have
+// their height.
 const FRIGATE_PLUS_ID = 'frigate-plus'
 const linkedToKey = route.hash === `#${FRIGATE_PLUS_ID}`
 const secrets = ref<SecretState[] | null>(null)
 const secretsError = ref('')
 const key = computed(() => secrets.value?.find((secret) => secret.name === 'frigate_plus_api_key'))
+const keyOpen = ref<string[]>(linkedToKey ? [FRIGATE_PLUS_ID] : [])
+
+// The key's state for the panel's title, which a closed panel still shows: nothing for a viewer or until the
+// secrets answer, and "in use" only while Frigate runs a Frigate+ model
+const keyState = computed(() => {
+  if (!key.value) return ''
+  if (!key.value.set) return 'Not set'
+  const set = key.value.ends_with ? `Set, ending in ${key.value.ends_with}` : 'Set'
+  return state.value?.running.kind === 'frigate_plus' ? `${set}, in use` : set
+})
 
 async function loadSecrets() {
   secretsError.value = ''
@@ -415,26 +426,40 @@ function openUpload() {
       </section>
     </template>
 
+    <!-- The last section is one panel, its title inside the h2, as the Device page's "Tokens and keys" is -->
     <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <h2 class="text-h6 mb-2">Frigate+ API key</h2>
-      <p class="text-body-1 mb-2">
-        When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
-        System, Detectors and model, and Frigate downloads it.
-      </p>
-      <p class="text-body-1 mb-6">
-        When it's offline, an administrator can upload the model's two files on this page, as a package from whoever
-        trained the model or copied from another device's Frigate.
-      </p>
-      <template v-if="session.isAdmin">
-        <v-alert v-if="secretsError" type="error">
-          {{ secretsError }}
-          <template #append>
-            <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
-          </template>
-        </v-alert>
-        <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
-        <EnteredSecret v-if="key" :secret="key" @changed="loadSecrets" />
-      </template>
+      <v-expansion-panels v-model="keyOpen" multiple flat>
+        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
+          <h2 class="text-h6">
+            <v-expansion-panel-title class="text-h6">
+              <span class="d-flex flex-wrap align-baseline column-gap-3">
+                <span>Frigate+ API key</span>
+                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
+              </span>
+            </v-expansion-panel-title>
+          </h2>
+          <v-expansion-panel-text>
+            <p class="text-body-1 mb-2">
+              When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
+              System, Detectors and model, and Frigate downloads it.
+            </p>
+            <p class="text-body-1" :class="{ 'mb-6': session.isAdmin }">
+              When it's offline, an administrator can upload the model's two files on this page, as a package from
+              whoever trained the model or copied from another device's Frigate.
+            </p>
+            <template v-if="session.isAdmin">
+              <v-alert v-if="secretsError" type="error">
+                {{ secretsError }}
+                <template #append>
+                  <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+                </template>
+              </v-alert>
+              <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+              <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
+            </template>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </section>
 
     <v-dialog v-model="uploadOpen" max-width="560">
