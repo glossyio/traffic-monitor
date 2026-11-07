@@ -353,6 +353,92 @@ def test_a_disconnect_mid_body_leaves_nothing(seeded, settings, login):
     assert cache_names(settings) == SEEDED
 
 
+MIB = 1024 * 1024
+
+
+def drive(app, path, headers, chunks):
+    """Run one PUT through the ASGI app with the body in chunks, as nginx streams an upload. Returns the response's
+    status and the events in order: ("receive", n) as chunk n is handed over, ("send", type) for each message sent."""
+    import asyncio
+
+    scope = {
+        "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": "PUT", "scheme": "http",
+        "path": path, "raw_path": path.encode(), "root_path": "", "query_string": b"",
+        "server": ("tm-test.local", 80), "client": ("127.0.0.1", 50000),
+        "headers": [(name.lower().encode(), value.encode()) for name, value in headers.items()],
+    }
+    events, sent, given = [], [], 0
+
+    async def receive():
+        nonlocal given
+        if given == len(chunks):
+            events.append(("receive", "disconnect"))
+            return {"type": "http.disconnect"}
+        given += 1
+        events.append(("receive", given))
+        return {"type": "http.request", "body": chunks[given - 1], "more_body": given < len(chunks)}
+
+    async def send(message):
+        events.append(("send", message["type"]))
+        sent.append(message)
+
+    asyncio.run(app(scope, receive, send))
+    return sent[0]["status"], events
+
+
+def upload_headers(cookie=None, origin=True, length=None):
+    headers = {"Host": "tm-test.local", "Content-Type": "application/octet-stream"}
+    if origin:
+        headers["Origin"] = ORIGIN
+    if cookie:
+        headers["Cookie"] = f"tm_session={cookie}"
+    if length is not None:
+        headers["Content-Length"] = str(length)
+    return headers
+
+
+@pytest.mark.parametrize(("who", "name", "chunks", "declare", "origin", "status"), [
+    (None, "x.tflite", [b"\x01" * 1024] * 5, True, True, 401),  # signed out
+    ("viewer", "x.tflite", [b"\x01" * 1024] * 5, True, True, 403),
+    ("admin", "x.tflite", [b"\x01" * 1024] * 5, True, False, 403),  # the cross-site check: no Origin
+    ("admin", "mine.tflite", [b"\x01" * 1024] * 5, True, True, 409),  # the name is in use
+    ("admin", "big.tflite.json", [b" " * MIB] * 3, True, True, 413),  # over the sidecar cap by Content-Length
+    ("admin", "big.tflite.json", [b" " * MIB] * 4, False, True, 413),  # over the cap partway through the body
+])
+def test_a_refused_upload_reads_the_whole_body_before_answering(
+        seeded, settings, login, who, name, chunks, declare, origin, status):
+    """nginx streams an upload to tm-control unbuffered; an answer sent before the body is read makes it a 502."""
+    cookie = None
+    if who == "viewer":
+        Users(seeded.app.state.state).create(*VIEWER, "viewer")
+        cookie = login(seeded, *VIEWER)
+    elif who == "admin":
+        cookie = login(seeded, *ADMIN)
+    length = sum(len(chunk) for chunk in chunks) if declare else None
+    answer, events = drive(seeded.app, f"{URL}/upload/{name}", upload_headers(cookie, origin, length), chunks)
+    assert answer == status
+    start = events.index(("send", "http.response.start"))
+    assert [event for event in events[:start] if event[0] == "receive"] == [
+        ("receive", n) for n in range(1, len(chunks) + 1)]
+    assert cache_names(settings) == SEEDED
+
+
+def test_an_accepted_upload_is_not_read_twice(seeded, settings, login):
+    cookie = login(seeded, *ADMIN)
+    chunks = [b"\x01" * 1024] * 3
+    answer, events = drive(seeded.app, f"{URL}/upload/new.tflite", upload_headers(cookie, length=3072), chunks)
+    assert answer == 201
+    assert ("receive", "disconnect") not in events
+    assert (fake.model_cache(settings) / "new.tflite").read_bytes() == b"\x01" * 3072
+
+
+def test_other_requests_are_not_read_by_the_drain(seeded, login):
+    """A refusal elsewhere is left as it was: nothing reads a body the app didn't."""
+    answer, events = drive(seeded.app, "/api/v1/secrets/x", upload_headers(), [b"{}"])
+    assert answer in (401, 403, 404, 405)
+    assert events[0] == ("send", "http.response.start")
+
+
 def test_a_sidecar_that_does_not_parse_is_refused_and_removed(seeded, settings, login):
     login(seeded, *ADMIN)
     r = put(seeded, "bad.tflite.json", b"not json")
