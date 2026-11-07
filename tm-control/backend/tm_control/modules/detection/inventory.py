@@ -140,11 +140,12 @@ class InstallerDefault:
 
 
 def host_path(codedir, container_path) -> Path | None:
-    """Where Frigate's /config/<rest> is on the host; None for any other path, or one that climbs out with '..'."""
+    """Where Frigate's /config/<rest> is on the host; None for any other path, or one with an empty, '.', or '..'
+    component."""
     if not isinstance(container_path, str) or not container_path.startswith(CONFIG_PREFIX) or "\0" in container_path:
         return None
     rest = container_path[len(CONFIG_PREFIX):]
-    if not rest or ".." in rest.split("/"):
+    if any(part in ("", ".", "..") for part in rest.split("/")):  # an empty part would make a later one absolute
         return None
     return Path(codedir) / "frigate" / "config" / rest
 
@@ -211,12 +212,15 @@ def sha256_in(dir_fd: int, name: str, stat_result: os.stat_result) -> str:
             digest.update(block)
     finally:
         os.close(fd)
-    key = (name, opened.st_size, opened.st_mtime_ns)
-    with _HASH_LOCK:
-        for stale in [other for other in HASHES if other[0] == name and other != key]:
-            del HASHES[stale]
-        HASHES[key] = digest.hexdigest()
+    _remember((name, opened.st_size, opened.st_mtime_ns), digest.hexdigest())
     return digest.hexdigest()
+
+
+def _remember(key: tuple[str, int, int], digest: str) -> None:
+    with _HASH_LOCK:
+        for stale in [other for other in HASHES if other[0] == key[0] and other != key]:
+            del HASHES[stale]
+        HASHES[key] = digest
 
 
 def _model_file(dir_fd: int, name: str, stat_result: os.stat_result | None) -> tuple[ModelFile, str | None]:
@@ -230,28 +234,43 @@ def _model_file(dir_fd: int, name: str, stat_result: os.stat_result | None) -> t
         return ModelFile(name, stat_result.st_size, None), FILE_UNREADABLE
 
 
-def _read_sidecar(dir_fd: int, name: str) -> tuple[Sidecar | None, str | None]:
-    """The parsed sidecar, or why there isn't one. At most SIDECAR_MAX + 1 bytes are read."""
+def _read_sidecar(dir_fd: int, name: str) -> tuple[bytes | None, os.stat_result | None]:
+    """The sidecar's bytes and the open file's stat, from one read of at most SIDECAR_MAX + 1 bytes; (None, None)
+    when it can't be read. More than SIDECAR_MAX bytes back means the sidecar is over the cap."""
     try:
         fd = open_in(dir_fd, name, os.O_RDONLY)
     except OSError:
-        return None, SIDECAR_UNREADABLE
+        return None, None
     try:
-        if not stat.S_ISREG(os.fstat(fd).st_mode):
-            return None, SIDECAR_UNREADABLE
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode):
+            return None, None
         data = b""
         while len(data) <= SIDECAR_MAX and (block := os.read(fd, SIDECAR_MAX + 1 - len(data))):
             data += block
     except OSError:
-        return None, SIDECAR_UNREADABLE
+        return None, None
     finally:
         os.close(fd)
+    return data, opened
+
+
+def _sidecar_half(dir_fd: int, name: str) -> tuple[Sidecar | None, ModelFile, str | None]:
+    """The parsed sidecar, its entry in the model's files, and why there's no sidecar when there isn't one. The hash
+    is of the bytes that were parsed, and is None for a sidecar over the cap."""
+    data, opened = _read_sidecar(dir_fd, name)
+    if data is None:
+        return None, ModelFile(name, 0, None), SIDECAR_UNREADABLE
     if len(data) > SIDECAR_MAX:
-        return None, SIDECAR_TOO_LARGE
+        return None, ModelFile(name, opened.st_size, None), SIDECAR_TOO_LARGE
+    digest = hashlib.sha256(data).hexdigest()
+    if len(data) == opened.st_size:  # not a file that changed under the read
+        _remember((name, opened.st_size, opened.st_mtime_ns), digest)
+    entry = ModelFile(name, len(data), digest)
     try:
-        return parse_sidecar(data), None
+        return parse_sidecar(data), entry, None
     except SidecarError as error:
-        return None, str(error)
+        return None, entry, str(error)
 
 
 def _regular(dir_fd: int, name: str) -> os.stat_result | None:
@@ -282,50 +301,43 @@ def _entries(dir_fd: int, skip: str | None) -> dict[str, dict[str, os.stat_resul
 def _model(dir_fd: int, name: str, found: dict[str, os.stat_result]) -> Model:
     problems = []
     files: tuple[ModelFile, ...] = ()
+    read = False  # the model file was read to hash it
     if "model" in found:
         file, problem = _model_file(dir_fd, name, found["model"])
         files = (file,)
+        read = file.sha256 is not None
         problems.append(problem)
     sidecar = None
     if "sidecar" in found:
-        sidecar, problem = _read_sidecar(dir_fd, name + SIDECAR)
+        sidecar, entry, problem = _sidecar_half(dir_fd, name + SIDECAR)
+        files += (entry,)
         problems.append(problem)
-        # The sidecar is a file of the model too, hashed unless it's over the cap, which is never read whole.
-        # Its own problem, if any, is the sidecar's.
-        half = found["sidecar"]
-        if half.st_size > SIDECAR_MAX:
-            files += (ModelFile(name + SIDECAR, half.st_size, None),)
-        else:
-            files += (_model_file(dir_fd, name + SIDECAR, half)[0],)
     return Model(
         name=name, kind=kind_of(name, sidecar), sidecar=sidecar, files=files,
-        complete="model" in found and sidecar is not None, problem=" ".join(p for p in problems if p) or None,
+        complete=read and sidecar is not None, problem=" ".join(p for p in problems if p) or None,
     )
 
 
 def inventory(cache: Path, installer: InstallerDefault | None) -> list[Model]:
-    """What's in the cache: the installer's default first, then the other models by name. A directory that can't be
-    opened lists nothing but the installer's default."""
-    models: list[Model] = []
+    """What's in the cache: the installer's default first, when its file is there as a regular file, then the other
+    models by name. A directory that can't be opened lists nothing."""
     try:
         dir_fd = open_cache(cache)
     except OSError:
-        dir_fd = None
+        return []
+    models: list[Model] = []
     try:
         if installer is not None:
-            if dir_fd is None:
-                file, problem = ModelFile(installer.file, 0, None), FILE_UNREADABLE
-            else:
-                file, problem = _model_file(dir_fd, installer.file, _regular(dir_fd, installer.file))
-            models.append(Model(installer.file, "installer_default", None, (file,), True, problem))
-        if dir_fd is not None:
-            grouped = _entries(dir_fd, installer.file if installer else None)
-            for name in sorted(grouped):
-                try:
-                    models.append(_model(dir_fd, name, grouped[name]))
-                except OSError:
-                    continue
+            found = _regular(dir_fd, installer.file)
+            if found is not None:
+                file, problem = _model_file(dir_fd, installer.file, found)
+                models.append(Model(installer.file, "installer_default", None, (file,), problem is None, problem))
+        grouped = _entries(dir_fd, installer.file if installer else None)
+        for name in sorted(grouped):
+            try:
+                models.append(_model(dir_fd, name, grouped[name]))
+            except OSError:
+                continue
     finally:
-        if dir_fd is not None:
-            os.close(dir_fd)
+        os.close(dir_fd)
     return models
