@@ -494,7 +494,9 @@ sit in this layout without moving anything.
   for hailo8l, and this device detects with edgetpu.").
 - "Upload a model" opens a dialog: one package, or a model file with or without its .json, sent the .json first. A
   model file sent alone opens a form for what Frigate needs to know about it, filled in with Frigate's documented
-  example for a Coral or a Hailo-8L; only the labels are always the person's to type.
+  example for a Coral or a Hailo-8L; only the labels are always the person's to type. A .json sent alone finishes a
+  model file already on the device. The picker shows every file, because a Frigate+ model file has no extension and
+  a phone's picker would hide it behind a filter; the device tells the kinds apart by name.
 - Use and Delete ask first. Use says Frigate restarts and that traffic isn't counted meanwhile; after the device
   accepts, "Frigate is restarting." shows under the model, and the page asks again every 3 seconds until Frigate
   answers with the model ("Frigate runs My model."), or, after 90 seconds, points to the Status page. Each result

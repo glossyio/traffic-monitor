@@ -1,7 +1,9 @@
 <!--
   The upload dialog's card: one package (a zip or tar.gz), or a model file with or without its .json, sent with
   PUT /models/upload/{filename}, the .json first. A model file sent alone opens ModelFields, for what Frigate needs to
-  know about it. Emits `uploaded` whenever a file reached the device, so the page lists it, and `close`.
+  know about it; a .json sent alone finishes a model file that's on the device already. Any file can be picked: a
+  Frigate+ model file has no extension, and the device tells the kinds apart by name. Emits `uploaded` whenever a
+  file reached the device, so the page lists it, and `close`.
 -->
 <script setup lang="ts">
 import { ref } from 'vue'
@@ -27,6 +29,7 @@ const isSidecar = (name: string) => name.endsWith('.json')
 function queue(chosen: File[]): File[] | string {
   const sidecar = chosen.find((file) => isSidecar(file.name))
   const others = chosen.filter((file) => file !== sidecar)
+  if (sidecar && chosen.length === 1) return [sidecar]
   if (others.length !== 1 || chosen.length > 2 || (sidecar && isArchive(others[0].name))) {
     return 'Choose one package, or one model file with or without its .json.'
   }
@@ -56,7 +59,8 @@ async function upload() {
       answer = data
     }
     files.value = []
-    if (!answer!.complete && sends.length === 1 && !isArchive(sends[0].name)) needsFields.value = answer!.name
+    const bare = sends.length === 1 && !isArchive(sends[0].name) && !isSidecar(sends[0].name)
+    if (bare && !answer!.complete) needsFields.value = answer!.name
     else done.value = `Uploaded ${answer!.title}.`
   } catch (caught) {
     error.value = messageOf(caught)
@@ -87,7 +91,6 @@ function saved(model: ModelOut) {
           v-model="files"
           label="Model files"
           multiple
-          accept=".zip,.tar.gz,.tgz,.json,.tflite,.hef,.onnx"
           hint="A zip or tar.gz of the model file and its .json, not of a folder."
           persistent-hint
           variant="outlined"

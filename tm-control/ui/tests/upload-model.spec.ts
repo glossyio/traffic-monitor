@@ -114,6 +114,23 @@ describe('uploading a model', () => {
     expect(wrapper.emitted('uploaded')).toBeUndefined()
   })
 
+  it('sends a .json alone as a sidecar, to finish a model file already on the device', async () => {
+    const api = fakeApi({ [`PUT ${UPLOAD}/bare.tflite.json`]: json(201, model('bare.tflite', { title: 'Bare' })) })
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    await choose(wrapper, [file('bare.tflite.json', 400)])
+    await click(wrapper, 'Upload')
+    expect(api.sent).toEqual([{ method: 'PUT', path: `${UPLOAD}/bare.tflite.json`, body: 400 }])
+    expect(wrapper.text()).toContain('Uploaded Bare.')
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.emitted('uploaded')).toHaveLength(1)
+  })
+
+  it('lets any file be picked: a Frigate+ model file has no extension', () => {
+    fakeApi({})
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    expect(wrapper.find('input[type="file"]').attributes('accept')).toBeUndefined()
+  })
+
   it('sends nothing for two models at once, and says what to choose', async () => {
     const api = fakeApi({})
     const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
