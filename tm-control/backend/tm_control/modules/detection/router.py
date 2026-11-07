@@ -183,6 +183,7 @@ ERROR_CODES = {
     507: "insufficient_storage",
 }
 NO_SUCH_MODEL = "There is no such model."
+DEFAULT = "default"  # the name the default route answers and audits; no model file may have it
 DEFAULTS = {"installer_default": "That's the installer's model.", "frigate_default": "That's Frigate's built-in model."}
 RUNNING = "That model is running; use another model first."
 RUNNING_UNKNOWN = "What Frigate runs can't be told now; try again when Frigate answers."
@@ -240,6 +241,12 @@ def _listed(request: Request, name: str, frigate_answer: tuple[dict | None, Conf
     return _model_out(model, running, detector)
 
 
+def _reserved(installer, detector: str | None) -> dict[str, str]:
+    """The names an upload or an archive may not write: the defaults' files, and DEFAULT, which names no model
+    because POST /models/default/use is the default's route."""
+    return default_files(installer, detector) | {DEFAULT: "reserved"}
+
+
 def _content_length(request: Request) -> int | None:
     value = request.headers.get("content-length")
     return int(value) if value is not None and value.isascii() and value.isdigit() else None
@@ -279,10 +286,10 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
     settings, manifest, codedir = _state(request)
     kind = upload.kind_of_upload(filename)
     model = filename.removesuffix(SIDECAR) if kind == "sidecar" else filename
-    if not valid_name(model):
+    if not valid_name(model) or model == DEFAULT:
         raise _refusal(UploadError(422, upload.BAD_NAME))
     frigate_answer = await run_in_threadpool(_frigate, request)
-    defaults = default_files(installer_default(manifest, codedir), detector_type(*frigate_answer))
+    defaults = _reserved(installer_default(manifest, codedir), detector_type(*frigate_answer))
     limit = SIDECAR_MAX if kind == "sidecar" else MODEL_FILE_MAX
     declared = _content_length(request)
     cache = model_cache_dir(settings, manifest)
@@ -335,7 +342,7 @@ def _form_sidecar(name: str, form: SidecarForm, detector: str) -> bytes:
 @router.post("/{name}/sidecar", status_code=201, response_model=ModelOut)
 def write_sidecar(name: str, form: SidecarForm, request: Request, admin: User = Depends(require_admin)):
     """Write <name>.json for a model file that has none, for the device's detector."""
-    if not valid_name(name):
+    if not valid_name(name) or name == DEFAULT:
         raise _refusal(UploadError(422, upload.BAD_NAME))
     settings, manifest, codedir = _state(request)
     frigate_answer = _frigate(request)
@@ -456,7 +463,6 @@ def delete_model(name: str, request: Request, admin: User = Depends(require_admi
 
 
 FRIGATE_UNIT = "frigate.service"
-DEFAULT = "default"  # the name the default route answers and audits
 RESTARTING = "Frigate is restarting; try again in a minute."
 DEFAULT_UNKNOWN = "Frigate's detector type can't be determined, so its default model can't be chosen."
 INSTALLER_MISSING = "The installer's model file isn't on the device."
