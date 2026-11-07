@@ -126,6 +126,11 @@ class Places:
         """Make this place the one in use; the previous one becomes used."""
         at = _timestamp(now)
         with _writing(self.state) as con:
+            row = con.execute("SELECT status FROM surveys WHERE id = ?", (survey_id,)).fetchone()
+            if row is None:
+                raise ValueError("no such place")
+            if row["status"] == "in_use":
+                return
             con.execute("UPDATE surveys SET status = 'used', updated_at = ? WHERE status = 'in_use' AND id != ?",
                         (at, survey_id))
             con.execute("UPDATE surveys SET status = 'in_use', updated_at = ? WHERE id = ?", (at, survey_id))

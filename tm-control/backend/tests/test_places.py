@@ -49,6 +49,16 @@ def test_only_one_place_is_in_use(places):
     assert [s.status for s in places.list()].count("in_use") == 1
 
 
+def test_set_in_use_refuses_an_unknown_place(places):
+    _create(places, "00000001-si", "in_use", now=100)
+    with pytest.raises(ValueError):
+        places.set_in_use("ffffffff-si", now=200)
+    assert places.in_use().id == "00000001-si"
+    assert places.get("00000001-si").updated_at == places.get("00000001-si").created_at
+    places.set_in_use("00000001-si", now=300)  # the place already in use: nothing changes
+    assert places.in_use().id == "00000001-si"
+
+
 def test_bearings_round_trip(places):
     created = _create(places, "00000001-si", bearings=BEARINGS)
     assert created.bearings == BEARINGS
