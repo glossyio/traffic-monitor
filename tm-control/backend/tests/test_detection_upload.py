@@ -99,6 +99,16 @@ def test_a_body_over_the_cap_is_cut_off_and_leaves_nothing(cache):
     assert raised.value.message == "The file is larger than 100 MB."
     assert os.listdir(path) == []
     assert run_receive(fd, chunks(b"x" * 10), limit=10) == 10  # exactly the cap is accepted
+    os.unlink(".upload-00000000-m.tflite", dir_fd=fd)
+    with pytest.raises(upload.UploadError) as raised:
+        run_receive(fd, chunks(b"xxx", b"xx"), limit=10, declared=4)  # past Content-Length, under the cap
+    assert (raised.value.status, raised.value.message) == (413, "The body is longer than Content-Length.")
+    assert os.listdir(path) == []
+    with pytest.raises(upload.UploadError) as raised:
+        run_receive(fd, chunks(b"x" * 11), limit=10, declared=20)  # the cap still wins over a larger declaration
+    assert raised.value.message == "The file is larger than 100 MB."
+    assert os.listdir(path) == []
+    assert run_receive(fd, chunks(b"x" * 4), limit=10, declared=4) == 4  # exactly Content-Length is accepted
 
 
 def test_a_body_shorter_than_content_length_leaves_nothing(cache):

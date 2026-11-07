@@ -26,6 +26,7 @@ TEMP_MAX = 200
 BAD_NAME = "That name isn't allowed."
 NO_SPACE = "The device would have less than 512 MB free."
 SHORT_BODY = "The body ended before Content-Length."
+LONG_BODY = "The body is longer than Content-Length."
 EMPTY = "The file is empty."
 FILE_TOO_LARGE = "The file is larger than 100 MB."
 SIDECAR_TOO_LARGE = "The sidecar is larger than 2 MB."
@@ -86,16 +87,18 @@ def _write_all(fd: int, data: bytes) -> None:
 
 
 async def receive(stream: AsyncIterator[bytes], dir_fd: int, temp_name: str, limit: int, declared: int | None) -> int:
-    """Write the stream to a new file named temp_name and return its size. More than `limit` bytes is a 413 (nothing
-    past the limit is written); a stream that ends short of `declared` is a 400. On any failure the file is removed."""
+    """Write the stream to a new file named temp_name and return its size. More than `limit` bytes, or more than
+    `declared`, is a 413 (nothing past either is written); a stream that ends short of `declared` is a 400. On any
+    failure the file is removed."""
+    cap = limit if declared is None else min(limit, declared)
     fd = open_in(dir_fd, temp_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     try:
         try:
             size = 0
             async for chunk in stream:
                 size += len(chunk)
-                if size > limit:
-                    raise too_large(limit)
+                if size > cap:
+                    raise too_large(limit) if size > limit else UploadError(413, LONG_BODY)
                 if chunk:
                     await run_in_threadpool(_write_all, fd, chunk)
             if declared is not None and size < declared:
