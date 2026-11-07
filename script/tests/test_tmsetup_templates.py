@@ -815,12 +815,14 @@ def test_tm_control_binds_to_loopback_only():
     assert "Environment=TM_CONTROL_BIND=127.0.0.1:8090" in tm_control_unit()
 
 
-def test_tm_control_writes_only_its_state_and_frigates_config():
-    """The Detection page manages Frigate's model_cache and config.yml, so Frigate's config directory is the one
-    path outside the unit's own state and runtime directories that it may write."""
+def test_tm_control_writes_only_its_state_and_the_two_config_directories():
+    """The Detection page manages Frigate's model_cache and config.yml, and the Location page writes Node-RED's
+    config.yml, so these two config directories are the only paths outside the unit's own state and runtime
+    directories that it may write."""
     unit = tm_control_unit()
     assert [line for line in unit if line.startswith("ReadWritePaths=")] == [
-        "ReadWritePaths=/opt/traffic-monitor/frigate/config"]
+        "ReadWritePaths=/opt/traffic-monitor/frigate/config",
+        "ReadWritePaths=/opt/traffic-monitor/node-red-tm/config"]
     assert unit.index("ReadWritePaths=/opt/traffic-monitor/frigate/config") > unit.index("ProtectSystem=strict")
 
 
