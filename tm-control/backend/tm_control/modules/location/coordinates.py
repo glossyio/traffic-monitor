@@ -1,8 +1,9 @@
 """Survey ids, config.yml normalising, and coordinate rounding and parsing for the Location page.
 
-Exact coordinates are kept to five decimal places, quantised half away from zero on input. What tmdb holds is those
-coordinates rounded, also half away from zero (as SQLite's ROUND and the engine's toFixed do), to the survey's stored
-precision. Nothing here logs a coordinate or puts one in an error message; messages name the field or the problem.
+Two roundings, on purpose. Typed input (exact, parse_pair) is quantised to five places half away from zero on its
+decimal text, because someone typing 45.522525 means that decimal. What tmdb holds (stored) is the exact coordinates
+rounded to the survey's precision the way SQLite's ROUND and the engine's Number(value.toFixed(places)) do it: half away
+from zero on the binary double, so 2.675 at two places is 2.67, not 2.68. Nothing here logs a coordinate or puts one in an error message; messages name the field or the problem.
 """
 
 import math
@@ -59,13 +60,23 @@ def normalize_bearing(value) -> str | None:
 
 
 def round_half_away(value, places: int) -> float:
-    """Round to `places` decimals, halves away from zero, on the decimal text of `value` (so 2.675 gives 2.68)."""
-    rounded = Decimal(str(value)).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
+    """Round the binary double `value` to `places` decimals, halves away from zero, as SQLite's ROUND does.
+
+    This is what `stored()` must match, so it works on the double's exact value, not its decimal text: 0.25 at one
+    place gives 0.3, but 2.675 (held a hair below 2.675) at two places gives 2.67.
+    """
+    rounded = Decimal(float(value)).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
     return float(rounded) + 0.0  # + 0.0 turns -0.0 into 0.0
 
 
+def _quantize_typed(value) -> float:
+    """Quantise typed input to five places, half away from zero, on its decimal text (45.522525 gives 45.52253)."""
+    quantized = Decimal(str(value)).quantize(Decimal(1).scaleb(-EXACT_PLACES), rounding=ROUND_HALF_UP)
+    return float(quantized) + 0.0
+
+
 def exact(value, kind: str | None = None) -> float | None:
-    """A number or numeric string quantised to five places; "" and None give None.
+    """A number or numeric string quantised to five places on its decimal text; "" and None give None.
 
     Raises ValueError for anything else (booleans, NaN, infinity, text), and, for kind "lat" or "lon", for a value out
     of range. The message names the field, never the value.
@@ -84,7 +95,7 @@ def exact(value, kind: str | None = None) -> float | None:
     elif isinstance(value, float) and not math.isfinite(value):
         raise ValueError(f"{field} must be a finite number")
     try:
-        result = round_half_away(value, EXACT_PLACES)
+        result = _quantize_typed(value)
     except InvalidOperation:
         raise ValueError(f"{field} is out of range") from None
     limit = _RANGES.get(kind) if kind else None
