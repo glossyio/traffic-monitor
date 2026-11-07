@@ -16,6 +16,7 @@ const SECRETS = 'GET /api/v1/secrets'
 const MODELS: ModelsState = {
   detector: 'edgetpu',
   frigate_answers: true,
+  frigate_safe_mode: false,
   default: 'installer_default',
   running: { name: '0123456789abcdef0123456789abcdef', kind: 'frigate_plus', source: 'frigate' },
   models: [
@@ -342,6 +343,23 @@ describe('the Detection page', () => {
     )
     expect(panel(wrapper, 'Objects tracked on this device (2)').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('Tracked by this device')
+  })
+
+  it('says when Frigate started in safe mode, and shows what the config file says', async () => {
+    const safe: ModelsState = {
+      ...MODELS,
+      frigate_safe_mode: true,
+      running: { ...MODELS.running, source: 'config_file' },
+    }
+    signedIn(VIEWER, { [MODELS_PATH]: safe })
+    const { wrapper } = await mountApp('/detection')
+    const warning =
+      "Frigate couldn't use its config and started in safe mode, so nothing is detected; this is what the config file says. Use a model to give Frigate a config it can run."
+    expect(wrapper.text()).toContain(warning)
+    expect(wrapper.text().indexOf(warning)).toBeLessThan(wrapper.text().indexOf('Detector'))
+    expect(wrapper.text()).not.toContain("Frigate isn't answering")
+    expect(fact(wrapper, 'Detector')).toBe('edgetpu')
+    expect(wrapper.find('.model.in-use').text()).toContain('Test site yolov9') // what the config file names
   })
 
   it("says the running model's labels aren't known when Frigate answers without them", async () => {
