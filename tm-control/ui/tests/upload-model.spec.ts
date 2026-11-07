@@ -141,6 +141,40 @@ describe('uploading a model', () => {
     expect(wrapper.emitted('uploaded')).toHaveLength(1)
   })
 
+  it('says how to finish a pair whose model file was refused after its .json', async () => {
+    const refused = 'The file is larger than 100 MB.'
+    const api = fakeApi({
+      [`PUT ${UPLOAD}/mine.tflite.json`]: json(201, model('mine.tflite', { complete: false })),
+      [`PUT ${UPLOAD}/mine.tflite`]: apiError(413, 'too_large', refused),
+    })
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    await choose(wrapper, [file('mine.tflite', 2048), file('mine.tflite.json', 400)])
+    await click(wrapper, 'Upload')
+    expect(api.sent).toHaveLength(2)
+    expect(wrapper.find('.v-alert').text()).toBe(
+      `${refused} Its .json is on the device: upload the model file on its own to finish it.`,
+    )
+    expect(wrapper.emitted('uploaded')).toHaveLength(1) // the .json reached the device
+  })
+
+  it('sends nothing for two .json files, and says what to choose', async () => {
+    const api = fakeApi({})
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    await choose(wrapper, [file('a.json', 10), file('b.json', 10)])
+    await click(wrapper, 'Upload')
+    expect(api.sent).toEqual([])
+    expect(wrapper.text()).toContain('Choose one package, or one model file with or without its .json.')
+    expect(wrapper.text()).not.toContain('b.json.json')
+  })
+
+  it('makes its buttons at least 44 px tall', () => {
+    fakeApi({})
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    const buttons = wrapper.findAll('.v-card-actions button')
+    expect(buttons.map((b) => b.text().trim())).toEqual(['Close', 'Upload'])
+    for (const button of buttons) expect(button.attributes('style')).toContain('min-height: 44px')
+  })
+
   it('lets any file be picked: a Frigate+ model file has no extension', () => {
     fakeApi({})
     const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
