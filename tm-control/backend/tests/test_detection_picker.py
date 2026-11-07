@@ -460,7 +460,7 @@ def test_frigates_refusal_is_shown_and_nothing_is_restarted(tmp_path, monkeypatc
     with pytest.raises(UseError) as silent:
         apply({"path": f"plus://{PLUS_ID}"}, codedir)
     assert (silent.value.status, silent.value.code, silent.value.message) == (
-        502, "frigate_error", "Frigate didn't answer the save.")
+        502, "frigate_error", "Frigate didn't answer the save; its config may or may not have changed. Try again.")
     assert config.read_text() == CONFIG and backups(config) == []
 
 
@@ -484,3 +484,38 @@ def test_check_usable_refuses_the_wrong_detector_an_unknown_one_and_an_incomplet
         check_usable(local_model(complete=False), "edgetpu")
     assert (no_file.value.status, no_file.value.code) == (422, "incomplete")
     assert no_file.value.message == "This model's file is missing or can't be read."
+
+
+class SilentSaveApi(FakeFrigateApi):
+    """A Frigate that writes the file but doesn't answer the save in time: /config/raw then shows the saved text."""
+
+    def __init__(self, raw, writes: bool):
+        super().__init__(raw)
+        self.writes = writes
+
+    def post(self, url, body, content_type, headers=None, timeout=None):
+        self.posts.append((url, body, content_type, timeout))
+        if self.writes:
+            self.raw = body.decode()
+        return None, None
+
+
+def test_a_save_frigate_wrote_but_did_not_answer_counts_as_saved(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, "on disk: unchanged\n")
+    api = SilentSaveApi(CONFIG, writes=True)
+    monkeypatch.setattr(httpjson, "get", api.get)
+    monkeypatch.setattr(httpjson, "post", api.post)
+    assert apply({"path": f"plus://{PLUS_ID}"}, codedir) == "frigate"
+    assert len(api.posts) == 1 and config.read_text() == "on disk: unchanged\n"
+
+
+def test_a_save_frigate_neither_wrote_nor_answered_is_a_502_that_says_so(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, "on disk: unchanged\n")
+    api = SilentSaveApi(CONFIG, writes=False)
+    monkeypatch.setattr(httpjson, "get", api.get)
+    monkeypatch.setattr(httpjson, "post", api.post)
+    with pytest.raises(UseError) as refused:
+        apply({"path": f"plus://{PLUS_ID}"}, codedir)
+    assert (refused.value.status, refused.value.code) == (502, "frigate_error")
+    assert refused.value.message == "Frigate didn't answer the save; its config may or may not have changed. Try again."
+    assert config.read_text() == "on disk: unchanged\n" and backups(config) == []

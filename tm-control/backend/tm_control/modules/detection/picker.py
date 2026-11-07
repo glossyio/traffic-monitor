@@ -263,7 +263,8 @@ def _edited(text: str, section: dict | None) -> str:
 
 
 def _save_through_frigate(text: str, section: dict | None) -> None:
-    status, message = frigate.save_config(_edited(text, section))
+    edited = _edited(text, section)
+    status, message = frigate.save_config(edited)
     if status == 200:
         return
     if status == 400:
@@ -271,7 +272,12 @@ def _save_through_frigate(text: str, section: dict | None) -> None:
         raise UseError(422, "frigate_refused", f"Frigate refused the config: {lines}" if lines else
                        "Frigate refused the config.")
     if status is None:
-        raise UseError(502, "frigate_error", "Frigate didn't answer the save.")
+        # Frigate validates, writes the file, then answers: a save that took too long may be on disk already. The file
+        # then holds exactly the text that was sent, which is what counts as saved; otherwise nothing changed.
+        if frigate.config_raw() == edited:
+            return
+        raise UseError(502, "frigate_error",
+                       "Frigate didn't answer the save; its config may or may not have changed. Try again.")
     raise UseError(502, "frigate_error", f"Frigate answered {status} to the save.")
 
 
