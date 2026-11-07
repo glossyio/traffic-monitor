@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version()
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 3
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -93,3 +93,16 @@ def test_jobs_refer_to_existing_users(tmp_path):
             "INSERT INTO jobs (id, name, requested_by, requested_at, status) VALUES ('j1', 'x', 42, ?, 'queued')",
             (NOW,),
         )
+
+
+def test_migration_3_creates_the_survey_tables(tmp_path):
+    con = _migrated(tmp_path).connect()
+    tables = {row["name"] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert {"surveys", "survey_bearings", "survey_corrections"} <= tables
+    with pytest.raises(sqlite3.IntegrityError):
+        with con:
+            con.execute(
+                "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+                "VALUES ('0123abcd-si', 'elsewhere', 'ui', ?, ?)",
+                (NOW, NOW),
+            )
