@@ -118,6 +118,12 @@ def _mapping(value) -> Mapping:
     return value if isinstance(value, Mapping) else {}
 
 
+def put_key(block: CommentedMap, key: str, value, after: str | None = None) -> None:
+    """Add key to a block with its comments and blank lines kept (see NodeRedConfig._put): after `after` when that is
+    there, else at the end. For tm-control migrate, which edits the file through its own RoundTripFile."""
+    NodeRedConfig._put(block, key, value, after)
+
+
 class NodeRedConfig:
     """config.yml loaded for reading and editing. Edit with the set_* methods, then save()."""
 

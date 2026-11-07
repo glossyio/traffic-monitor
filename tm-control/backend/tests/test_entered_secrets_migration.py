@@ -150,21 +150,21 @@ def test_addons_at_the_end_of_the_file_go_with_their_blank_line(tmp_path, secret
 
 @pytest.mark.parametrize(("before", "after"), [
     (  # the only key, so thingsboard stays as an empty mapping
-        f"thingsboard:\n    access_token: {TOKEN}  # mine\n\n# the deployment\ndeployment:\n    lat: 1\n",
-        "thingsboard: {}\n\n# the deployment\ndeployment:\n    lat: 1\n",
+        f"thingsboard:\n    access_token: {TOKEN}  # mine\n\n# the deployment\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
+        "thingsboard: {}\n\n# the deployment\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
     (  # the first key, with a comment before the next
         f"addons:\n    plate_recognizer:\n        token: {PR_TOKEN}\n        # the url\n        url: http://x\n"
-        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n",
+        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
         "addons:\n    plate_recognizer:\n        # the url\n        url: http://x\n"
-        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n",
+        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
     (  # after a block list and after a flow list, where ruamel keeps the lines on the next key
         f"thingsboard:\n    hosts:\n        - a\n    access_token: {TOKEN}\n\n    # nested\n"
         f"addons:\n    list: [1]\n    plate_recognizer:\n        token: {PR_TOKEN}\n\n# the deployment\ndeployment:\n"
-        "    lat: 1\n",
+        "    lat: 1\n    database_precision: '1'\n",
         "thingsboard:\n    hosts:\n        - a\n\n    # nested\naddons:\n    list: [1]\n\n# the deployment\n"
-        "deployment:\n    lat: 1\n",
+        "deployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
 ])
 def test_comments_and_blank_lines_around_a_deleted_key_stay(tmp_path, secrets_dir, before, after):

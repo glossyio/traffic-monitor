@@ -58,7 +58,7 @@ def main(argv=None):
     migrate_parser.add_argument(
         "--node-red-config",
         type=Path,
-        help="path to Node-RED's config.yml: move its ThingsBoard and Plate Recognizer tokens to the secret files",
+        help="path to Node-RED's config.yml: move its secrets out and update the deployment keys",
     )
     migrate_parser.add_argument(
         "--plate-recognizer-env",

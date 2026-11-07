@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 from ruamel.yaml import YAMLError
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 from ruamel.yaml.tokens import CommentToken
 
 from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, read_text, write_atomic
@@ -539,6 +539,28 @@ def _next_entry(parents, path, depth, keys, index):
     return None
 
 
+def _sensor_coordinates(config):
+    """(path, own deployment block) of every sensor under sensors.<type>.<name> whose deployment block still holds a lat
+    or lon: the location is per unit, so tmsetup removes them (a sensor's own bearing stays)."""
+    found = []
+    sensors = config.get("sensors") if isinstance(config, dict) else None
+    for sensor_type, named in (sensors.items() if isinstance(sensors, dict) else ()):
+        for name, sensor in (named.items() if isinstance(named, dict) else ()):
+            own = sensor.get("deployment") if isinstance(sensor, dict) else None
+            if isinstance(own, dict) and ("lat" in own or "lon" in own):
+                found.append((("sensors", sensor_type, name), own))
+    return found
+
+
+def _remove_sensor_coordinates(config, path, own):
+    """Delete lat and lon from the sensor's deployment block, and the block itself when that leaves it empty."""
+    for key in ("lat", "lon"):
+        if key in own:
+            _delete(config, (*path, "deployment", key), False)
+    if not own:
+        _delete(config, (*path, "deployment"), False)
+
+
 def _warn_secret(path, message):
     print(f"{PREFIX} WARNING {path}: {message}", file=sys.stderr)
 
@@ -618,6 +640,18 @@ def _run_node_red(config_path, secrets_dir, dry_run):
             steps.append((f"move {dotted} to the secrets file", f"moved {dotted} to the secrets file"))
         deletions.append((path, prune))
 
+    # The deployment keys (the Location page's): the stored precision, and the per-sensor coordinates. Nothing here
+    # opens state.sqlite: migrate runs as root, and a file it made in the service's state directory would break it.
+    deployment = document.data.get("deployment") if isinstance(document.data, dict) else None
+    add_precision = isinstance(deployment, dict) and bool(deployment) and "database_precision" not in deployment
+    if add_precision:
+        steps.append(("add deployment.database_precision", "added deployment.database_precision"))
+    sensor_coordinates = _sensor_coordinates(document.data)
+    for path, _ in sensor_coordinates:
+        dotted = ".".join(str(part) for part in path)
+        what = f"lat/lon under {dotted}.deployment; the location is per unit"
+        steps.append((f"remove {what}", f"removed {what}"))
+
     if not steps:
         print(f"{PREFIX} {config_path}: up to date")
         return 0
@@ -634,6 +668,15 @@ def _run_node_red(config_path, secrets_dir, dry_run):
             return 1
     for path, prune in deletions:
         _delete(document.data, path, prune)
+    if add_precision:
+        # Imported here: tm_control.modules pulls in FastAPI and every module, which the other runs needn't wait for.
+        from tm_control.modules.location.config import put_key
+
+        # After survey_id, as config.yml.j2 orders them; else after bearing.
+        after = "survey_id" if "survey_id" in deployment else "bearing"
+        put_key(deployment, "database_precision", SingleQuotedScalarString("1"), after)
+    for path, own in sensor_coordinates:
+        _remove_sensor_coordinates(document.data, path, own)
     try:
         backup = document.save()
     except (OSError, ConcurrentEditError) as error:

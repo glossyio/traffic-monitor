@@ -72,7 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.reconcile_lock = threading.Lock()
     check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
     app.state.status = StatusCache(
-        check_groups, lambda: Context(app.state.settings, app.state.manifest, app.state.secrets)
+        check_groups, lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state)
     )
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)

@@ -52,16 +52,18 @@ class Report(BaseModel):
 
 
 class Context:
-    """What the check functions of one report share: the app's settings, manifest, and secrets, and probe results.
+    """What the check functions of one report share: the app's settings, manifest, and secrets, the state database (None
+    where a check has no use for it), and probe results.
 
     `probe(key, fn)` runs fn once per report (a command's output, an app's status) for every check that asks for
     the same key; `probes` holds the results.
     """
 
-    def __init__(self, settings, manifest, secrets):
+    def __init__(self, settings, manifest, secrets, state=None):
         self.settings = settings
         self.manifest = manifest
         self.secrets = secrets
+        self.state = state
         self.probes: dict[str, Any] = {}
         self._errors: dict[str, Exception] = {}
         self._locks: dict[str, threading.Lock] = {}
