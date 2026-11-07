@@ -11,6 +11,7 @@ import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { copyText, selectAll } from '../../components/clipboard'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import { saveBlob } from '../../components/download'
 import EnteredSecret from '../../components/EnteredSecret.vue'
 import { duration } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
@@ -161,16 +162,7 @@ async function download() {
   copyByHand.value = null
   try {
     const { text, filename } = await diagnostics()
-    // Save the text as a file: a link to it in memory, with the server's file name, clicked once. Some browsers
-    // only follow a link that's in the page, and still read the file after click() returns, so it's freed later.
-    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.append(link)
-    link.click()
-    link.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    saveBlob(new Blob([text], { type: 'text/plain' }), filename)
   } catch (error) {
     diagnosticsResult.value = { text: messageOf(error), error: true }
   } finally {

@@ -1,0 +1,109 @@
+<!--
+  The upload dialog's card: one package (a zip or tar.gz), or a model file with or without its .json, sent with
+  PUT /models/upload/{filename}, the .json first. A model file sent alone opens ModelFields, for what Frigate needs to
+  know about it. Emits `uploaded` whenever a file reached the device, so the page lists it, and `close`.
+-->
+<script setup lang="ts">
+import { ref } from 'vue'
+import { api, messageOf } from '../../api/client'
+import type { components } from '../../api/schema'
+import ModelFields from './ModelFields.vue'
+
+type ModelOut = components['schemas']['ModelOut']
+
+defineProps<{ detector: string | null }>()
+const emit = defineEmits<{ uploaded: []; close: [] }>()
+
+const files = ref<File[]>([])
+const sending = ref(false)
+const error = ref('')
+const done = ref('')
+const needsFields = ref<string | null>(null) // the model file's name, once it's on the device without a .json
+
+const isArchive = (name: string) => ['.zip', '.tar.gz', '.tgz'].some((ending) => name.endsWith(ending))
+const isSidecar = (name: string) => name.endsWith('.json')
+
+// The files in the order they're sent, or why they can't be
+function queue(chosen: File[]): File[] | string {
+  const sidecar = chosen.find((file) => isSidecar(file.name))
+  const others = chosen.filter((file) => file !== sidecar)
+  if (others.length !== 1 || chosen.length > 2 || (sidecar && isArchive(others[0].name))) {
+    return 'Choose one package, or one model file with or without its .json.'
+  }
+  if (!sidecar) return others
+  if (sidecar.name !== `${others[0].name}.json`) return `The .json must be named for the model file: ${others[0].name}.json.`
+  return [sidecar, others[0]]
+}
+
+async function upload() {
+  error.value = ''
+  done.value = ''
+  const sends = queue(files.value)
+  if (typeof sends === 'string') {
+    error.value = sends
+    return
+  }
+  sending.value = true
+  let answer: ModelOut | undefined
+  try {
+    for (const file of sends) {
+      const { data } = await api.PUT('/api/v1/models/upload/{filename}', {
+        params: { path: { filename: file.name } },
+        body: file as never, // the schema calls the body a string; the browser sends the file's bytes
+        bodySerializer: (body: unknown) => body as BodyInit,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      })
+      answer = data
+    }
+    files.value = []
+    if (!answer!.complete && sends.length === 1 && !isArchive(sends[0].name)) needsFields.value = answer!.name
+    else done.value = `Uploaded ${answer!.title}.`
+  } catch (caught) {
+    error.value = messageOf(caught)
+  } finally {
+    sending.value = false
+    if (answer) emit('uploaded')
+  }
+}
+
+function saved(model: ModelOut) {
+  needsFields.value = null
+  done.value = `Uploaded ${model.title}.`
+  emit('uploaded')
+}
+</script>
+
+<template>
+  <v-card color="surface" rounded="lg">
+    <v-card-title class="text-h6 text-wrap pt-4">Upload a model</v-card-title>
+    <v-card-text>
+      <ModelFields v-if="needsFields" :name="needsFields" :detector="detector" @saved="saved" />
+      <template v-else>
+        <p class="text-body-1 mb-4">
+          Choose the model's package, or its model file and .json. A model file on its own works too: you then fill
+          in what Frigate needs to know about it.
+        </p>
+        <v-file-input
+          v-model="files"
+          label="Model files"
+          multiple
+          accept=".zip,.tar.gz,.tgz,.json,.tflite,.hef,.onnx"
+          hint="A zip or tar.gz of the model file and its .json, not of a folder."
+          persistent-hint
+          variant="outlined"
+          :disabled="sending"
+        />
+        <v-progress-linear v-if="sending" indeterminate color="primary" class="mt-4" />
+      </template>
+      <v-alert v-if="error" type="error" class="mt-4">{{ error }}</v-alert>
+      <v-alert v-if="done" type="success" class="mt-4">{{ done }}</v-alert>
+    </v-card-text>
+    <v-card-actions class="px-4 pb-4">
+      <v-spacer />
+      <v-btn variant="text" @click="emit('close')">Close</v-btn>
+      <v-btn v-if="!needsFields" color="primary" variant="flat" :loading="sending" :disabled="!files.length" @click="upload">
+        Upload
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</template>

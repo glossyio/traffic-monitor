@@ -52,8 +52,9 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
-  (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), and copying text
-  (`clipboard.ts`, the diagnostics and the label lists).
+  (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
+  (`clipboard.ts`, the diagnostics and the label lists), and saving a file (`download.ts`, the diagnostics and the
+  model packages).
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -425,8 +426,8 @@ The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and 
 
 The same people, the same rules. The page answers "what does this device look for, and with which model", and is
 where the Frigate+ API key lives, because the key is how Frigate gets a Frigate+ model. Everyone who can log in sees
-it all; admins also get the key's form. The actions that change the model (upload, use, download, delete) are
-planned for the admin and will sit in this layout without moving anything.
+it all; admins also get the key's form and the actions that change the model (upload, use, download, delete), which
+sit in this layout without moving anything.
 
 ```text
 +----------------------------------+
@@ -436,6 +437,7 @@ planned for the admin and will sit in this layout without moving anything.
 | edgetpu.                         |
 | Frigate runs Test site yolov9,   |
 | a Frigate+ model.                |
+| [Upload a model]  (admins only)  |
 |                                  |
 | Test site yolov9  (running)      |
 | trained 2026-10-01, yolo-generic,|
@@ -444,6 +446,11 @@ planned for the admin and will sit in this layout without moving anything.
 | SHA-256 ad7facb2586f             |
 | 0123...cdef.json, 433 bytes,     |
 | SHA-256 0da6c00a63ab             |
+| [Download]                       |
+| My model                         |
+| ...                              |
+| [Use] [Download] [Delete]        |
+| [Use the installer's model]      |
 |                                  |
 | What the model recognises   (h6) |
 | Recognises           [Copy]      |
@@ -468,17 +475,31 @@ planned for the admin and will sit in this layout without moving anything.
 - The models are a plain list, like the Status page's checks: the sidecar's name, then its facts on one line, then
   one line per file with its size and the first 12 characters of its SHA-256. The full hash is the hash's tooltip,
   for comparing with a download's SHA256SUMS on a computer; on a phone the 12 characters are enough to tell two
-  files apart. A file's name shows only when it isn't the title already (the installer's model has no sidecar, so
-  its title is its file name). At 375 px each of those lines wraps to two, "SHA-256" and its hash staying together.
+  files apart. A file's name shows only when it isn't the title already. The installer's model has no sidecar, so
+  it's titled "The installer's model", with its file name as its facts line. At 375 px each of those lines wraps to
+  two, "SHA-256" and its hash staying together.
 - One chip per model at most, in words: "running" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
   line under the files.
 - The label lists are chips because they are many short words that wrap well on a phone. A sentence above them says
-  how they relate: Frigate tracks the objects in the second list that the model recognises, so "dog" in the second
-  list and not the first is never tracked. Each list's Copy puts it on the clipboard comma-separated, ready to paste
+  how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second list and not the
+  first is never tracked. Each list's Copy puts it on the clipboard comma-separated, ready to paste
   elsewhere, and says "Copied." beside the button for two seconds; a refused copy says so and stays.
 - The Status page's "Set the key" links to `/detection#frigate-plus`, which scrolls to the section once the models
   have loaded. The key's form is the Device page's (`EnteredSecret.vue`), unchanged.
+- The admin's actions are outlined buttons under each model, 44 px tall: Use (not on the running model), Download (a
+  model with both files), and Delete (when the API says it can be). The installer's model has none: the button under
+  the list, "Use the installer's model" (or "Use Frigate's built-in model" on a device without a Coral), puts it
+  back, and the device has no package of it. A Use that can't work is disabled, with the reason under it ("It's built
+  for hailo8l, and this device detects with edgetpu.").
+- "Upload a model" opens a dialog: one package, or a model file with or without its .json, sent the .json first. A
+  model file sent alone opens a form for what Frigate needs to know about it, filled in with Frigate's documented
+  example for a Coral or a Hailo-8L; only the labels are always the person's to type.
+- Use and Delete ask first. Use says Frigate restarts and that traffic isn't counted meanwhile; after the device
+  accepts, "Frigate is restarting." shows under the model, and the page asks again every 3 seconds until Frigate
+  answers with the model ("Frigate runs My model."), or, after 90 seconds, points to the Status page. Each result
+  shows where its action was: under the model, under the button below the list, or, for a deleted model, above the
+  list. An API refusal shows its message there, Frigate's own words included.
 
 #### What the screenshot review changed
 
