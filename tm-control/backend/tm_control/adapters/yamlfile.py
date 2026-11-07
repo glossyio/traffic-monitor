@@ -82,8 +82,12 @@ def _round_trip_yaml(mapping_indent):
     return yaml
 
 
+MAX_BACKUPS_PER_SECOND = 100
+
+
 def backup_path(path, now=None):
-    """Where save() copies the current file before replacing it, e.g. config.yml.20261002T153000Z.bak."""
+    """Where save() copies the current file before replacing it, e.g. config.yml.20261002T153000Z.bak. When that name
+    is taken (a second save in the same second), back_up() uses config.yml.20261002T153000Z.1.bak, .2.bak, and so on."""
     now = now or datetime.now(timezone.utc)
     return path.with_name(f"{path.name}.{now:%Y%m%dT%H%M%SZ}.bak")
 
@@ -96,6 +100,22 @@ def read_text(path):
         return handle.read()
 
 
+def _create_backup(first, mode):
+    """Create the backup file exclusively and return (path, descriptor). `first` is tried, then, if a regular file is
+    already there (another save within the same second), `.1.bak`, `.2.bak`, and so on, up to MAX_BACKUPS_PER_SECOND.
+
+    A link at a name is never skipped past: it is refused, as a planted name.
+    """
+    for attempt in range(MAX_BACKUPS_PER_SECOND):
+        backup = first if attempt == 0 else first.with_name(f"{first.name.removesuffix('.bak')}.{attempt}.bak")
+        try:
+            return backup, os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode)
+        except FileExistsError:
+            if os.path.islink(backup) or attempt == MAX_BACKUPS_PER_SECOND - 1:
+                raise
+    raise AssertionError("unreachable")
+
+
 def back_up(path, now=None):
     """Copy path to backup_path(path), with its permission bits, times, and, when running as root, its owner. Return
     the copy's path.
@@ -104,12 +124,11 @@ def back_up(path, now=None):
     the name is easy to guess, and the directory may be writable by others (Node-RED's container mounts its config
     directory). Both are set up through the open files, never by name.
     """
-    backup = backup_path(path, now)
     source = _open_regular(path)
     try:
         original = os.fstat(source)
         mode = stat.S_IMODE(original.st_mode)
-        target = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode)
+        backup, target = _create_backup(backup_path(path, now), mode)
         try:
             with os.fdopen(os.dup(source), "rb") as reader, os.fdopen(os.dup(target), "wb") as writer:
                 shutil.copyfileobj(reader, writer)

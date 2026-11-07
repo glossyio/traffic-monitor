@@ -260,3 +260,15 @@ def test_new_blocks_keep_the_blank_lines_between_sections(path):
     assert "database_precision" not in text
     assert "survey_id: 3f9a1c2e-si\n\nsensors:\n" in text
     assert "                bearing: 'n'\n\n    radars:\n" in text
+
+
+def test_two_saves_back_to_back_both_succeed(path):
+    first = NodeRedConfig(path)
+    first.set_precision("2")
+    assert first.save() is True
+    second = NodeRedConfig(path)
+    second.set_place(SURVEY, 45.52252, -122.6912)
+    assert second.save() is True
+    deployment = NodeRedConfig(path).deployment()
+    assert (deployment.precision, deployment.survey_id, deployment.lat) == ("2", SURVEY, 45.52252)
+    assert len(backups(path)) == 2

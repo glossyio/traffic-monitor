@@ -53,6 +53,36 @@ def test_save_backs_up_the_previous_file(frigate_config):
     assert backup.read_text() == original
 
 
+def test_back_up_twice_in_the_same_second_makes_two_backups(frigate_config):
+    original = frigate_config.read_bytes()
+    first = yamlfile.back_up(frigate_config, NOW)
+    second = yamlfile.back_up(frigate_config, NOW)
+    third = yamlfile.back_up(frigate_config, NOW)
+    assert first == frigate_config.with_name("config.yml.20261002T153000Z.bak")
+    assert second == frigate_config.with_name("config.yml.20261002T153000Z.1.bak")
+    assert third == frigate_config.with_name("config.yml.20261002T153000Z.2.bak")
+    assert all(backup.read_bytes() == original for backup in (first, second, third))
+
+
+def test_back_up_gives_up_after_the_bounded_number_of_names(frigate_config, monkeypatch):
+    monkeypatch.setattr(yamlfile, "MAX_BACKUPS_PER_SECOND", 3)
+    for _ in range(3):
+        yamlfile.back_up(frigate_config, NOW)
+    with pytest.raises(FileExistsError):
+        yamlfile.back_up(frigate_config, NOW)
+    assert len(list(frigate_config.parent.glob("config.yml.*.bak"))) == 3
+
+
+def test_back_up_refuses_a_link_at_a_later_name_too(frigate_config, tmp_path):
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    yamlfile.back_up(frigate_config, NOW)
+    frigate_config.with_name("config.yml.20261002T153000Z.1.bak").symlink_to(target)
+    with pytest.raises(FileExistsError):
+        yamlfile.back_up(frigate_config, NOW)
+    assert target.read_text() == "not yours\n"
+
+
 def test_save_keeps_the_file_mode(frigate_config):
     document = RoundTripFile(frigate_config)
     document.data["mqtt"]["port"] = 1884
