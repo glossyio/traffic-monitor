@@ -7,12 +7,14 @@ from tm_control.adapters import systemd
 from tm_control.core.auth import Backoff, NodeRedToken, Sessions
 from tm_control.core.checks import Context, StatusCache
 from tm_control.core.csrf import CsrfMiddleware
+from tm_control.core.drain import DrainMiddleware
 from tm_control.core.errors import install_error_handlers
 from tm_control.core.jobs import FakeJobRunner, JobRunner
 from tm_control.core.manifest import load_manifest
 from tm_control.core.secrets import NAMES, FakeSecrets, Secrets
 from tm_control.core.settings import Settings
 from tm_control.core.state import State
+from tm_control.modules.detection.inventory import MODEL_FILE_MAX
 from tm_control.modules.setup.eula import load_eula
 
 API_PREFIX = "/api/v1"
@@ -58,6 +60,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)
+    # Added last, so it is outside the cross-site check and its 403 on an upload is drained as well.
+    app.add_middleware(DrainMiddleware, prefix=f"{API_PREFIX}/models/upload/", bound=MODEL_FILE_MAX + 1024 * 1024)
 
     @app.get(f"{API_PREFIX}/health")
     def health(request: Request):
