@@ -6,12 +6,13 @@ answers, after it has validated the whole config; when Frigate doesn't answer, t
 the rest of the file, its comments included, stays as it was, and the caller restarts frigate.service.
 """
 
+import copy
 import io
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark, YAMLError
 from ruamel.yaml.tokens import CommentToken
 
@@ -132,55 +133,93 @@ def default_section(detector: str, installer: InstallerDefault | None) -> dict |
 
 
 def _commented(value):
+    """A section as ruamel's round-trip types, which can carry the comment that follows it."""
     if isinstance(value, dict):
         return CommentedMap((key, _commented(item)) for key, item in value.items())
+    if isinstance(value, list):
+        return CommentedSeq(_commented(item) for item in value)
     return value
 
 
-def _last_entry(mapping) -> tuple[CommentedMap, object] | None:
-    """The innermost last key of a mapping's block, and the mapping that holds it: ruamel keeps what follows a
-    section (the blank line or comment before the next key) on that key's line."""
-    while isinstance(mapping, CommentedMap) and mapping:
-        key = next(reversed(mapping))
-        if not (isinstance(mapping[key], CommentedMap) and mapping[key]):
-            return mapping, key
-        mapping = mapping[key]
-    return None
+def _end_of(holder, key) -> tuple:
+    """Where ruamel keeps what follows holder[key]'s block (the blank lines and comments before the next key): on the
+    innermost last entry of its last mapping or sequence. Returns that container, its key or index, and the slot of
+    its comment entry that holds the token."""
+    while True:
+        value = holder[key]
+        if isinstance(value, CommentedMap) and value:
+            holder, key = value, next(reversed(value))
+        elif isinstance(value, CommentedSeq) and value:
+            holder, key = value, len(value) - 1
+        else:
+            return holder, key, 0 if isinstance(holder, CommentedSeq) else 2
 
 
-def _trailing(mapping):
-    found = _last_entry(mapping)
-    if found is None:
-        return None
-    holder, key = found
+def _token_at(end) -> CommentToken | None:
+    holder, key, slot = end
     entry = holder.ca.items.get(key)
-    return entry[2] if entry and len(entry) > 2 else None
+    return entry[slot] if entry and len(entry) > slot else None
 
 
-def _set_trailing(mapping, token) -> None:
-    found = _last_entry(mapping)
-    if found is not None and token is not None:
-        holder, key = found
-        holder.ca.items[key] = [None, None, token, None]
+def _split(token: CommentToken | None) -> tuple[str, str]:
+    """A trailing token as the end of its own line (with the comment on it, if any) and what follows that line."""
+    line, newline, after = (token.value if token is not None else "").partition("\n")
+    return line + newline, after
+
+
+def _put(end, line: str, after: str) -> None:
+    """Make the entry at `end` end its line with `line` (a comment, or nothing) and then `after`. An existing token is
+    copied, so an end-of-line comment keeps its column."""
+    holder, key, slot = end
+    old = _token_at(end)
+    value = (line or "\n") + after
+    entry = holder.ca.items.setdefault(key, [None, None, None, None])
+    entry.extend([None] * (slot + 1 - len(entry)))
+    if value == "\n":
+        entry[slot] = None
+    elif old is not None:
+        entry[slot] = copy.copy(old)
+        entry[slot].value = value
+    else:
+        entry[slot] = CommentToken(value, CommentMark(0), None)
 
 
 def replace_model_section(doc, section: dict | None) -> None:
-    """Set the top-level `model:` of a round-trip loaded config to section, in place: replacing the one there (the
-    blank line or comment after it stays after the new one), or inserting one after `detectors` (at the end without
-    one) with a blank line after it, or deleting it when section is None. Nothing else changes."""
+    """Set the top-level `model:` of a round-trip loaded config to section, in place, keeping the blank lines and
+    comments that came after the old section before the next key:
+
+    - replacing the one there;
+    - inserting one after `detectors` (at the end without one), with what followed `detectors` moved after it and a
+      blank line before it;
+    - or deleting it when section is None, with what followed it moved to the end of the key before it.
+
+    Nothing else changes."""
+    keys = list(doc)
     if section is None:
-        doc.pop("model", None)
+        if "model" not in doc:
+            return
+        _, after = _split(_token_at(_end_of(doc, "model")))
+        index = keys.index("model")
+        del doc["model"]
+        if index > 0:
+            previous = _end_of(doc, keys[index - 1])
+            line, before = _split(_token_at(previous))
+            _put(previous, line, after if after and not before.strip() else before + after)
         return
     new = _commented(section)
     if "model" in doc:
-        _set_trailing(new, _trailing(doc["model"]))
+        _, after = _split(_token_at(_end_of(doc, "model")))
         doc["model"] = new
+        _put(_end_of(doc, "model"), "", after)
         return
-    keys = list(doc)
     position = keys.index("detectors") + 1 if "detectors" in keys else len(keys)
-    if position < len(keys):  # a key follows: keep a blank line before it
-        _set_trailing(new, CommentToken("\n\n", CommentMark(0), None))
+    previous = _end_of(doc, keys[position - 1]) if position > 0 else None
+    line, after = _split(_token_at(previous)) if previous is not None else ("", "")
     doc.insert(position, "model", new)
+    if position < len(keys):  # a key follows: what came before it now follows model, with a blank line at least
+        if previous is not None and after:
+            _put(previous, line, "\n")
+        _put(_end_of(doc, "model"), "", after or "\n")
 
 
 def refusal_lines(message: str) -> str:
@@ -199,15 +238,25 @@ def _not_a_mapping() -> UseError:
     return UseError(409, "config_invalid", "Frigate's config.yml isn't a YAML mapping, so its model can't be set.")
 
 
+def _set_model(doc, section: dict | None) -> None:
+    """replace_model_section on a parsed config, unless a detector sets its own model: Frigate runs that one over the
+    top-level section, so the edit would change nothing."""
+    if not isinstance(doc, CommentedMap):
+        raise _not_a_mapping()
+    for name, detector in probes.mapping(doc.get("detectors")).items():
+        if probes.mapping(probes.mapping(detector).get("model")).get("path"):
+            raise UseError(409, "detector_model", f"Frigate's config sets a model inside detectors.{name}; remove it "
+                                                  "in Frigate's config editor first.")
+    replace_model_section(doc, section)
+
+
 def _edited(text: str, section: dict | None) -> str:
     yaml = _round_trip_yaml(2)
     try:
         doc = yaml.load(text)
     except YAMLError:
         raise _not_a_mapping() from None
-    if not isinstance(doc, CommentedMap):
-        raise _not_a_mapping()
-    replace_model_section(doc, section)
+    _set_model(doc, section)
     out = io.StringIO()
     yaml.dump(doc, out)
     return out.getvalue()
@@ -229,9 +278,7 @@ def _save_through_frigate(text: str, section: dict | None) -> None:
 def _edit_file(path: Path, section: dict | None) -> None:
     try:
         file = RoundTripFile(path)
-        if not isinstance(file.data, CommentedMap):
-            raise _not_a_mapping()
-        replace_model_section(file.data, section)
+        _set_model(file.data, section)
         file.save()
     except YAMLError:
         raise _not_a_mapping() from None
