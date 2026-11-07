@@ -1,7 +1,7 @@
 # tm-control UI
 
 The control app's web pages: first-run setup, login, the home page with the device card and app tiles, the Status,
-Device, and Date and time pages, the account page, and the admin's user list. It's a Vue 3 + Vuetify 3 + TypeScript
+Device, Detection, and Date and time pages, the account page, and the admin's user list. It's a Vue 3 + Vuetify 3 + TypeScript
 app built with Vite. The UI only
 shows what the API returns and posts what the operator types; the rules live in the Python backend
 (`tm-control/backend`).
@@ -51,8 +51,9 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
-  (`jobs.ts`, used by setup's system password and the entered secrets), and one entered secret's form
-  (`EnteredSecret.vue`, the Device page's tokens and keys).
+  (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
+  (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), and copying text
+  (`clipboard.ts`, the diagnostics and the label lists).
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -312,9 +313,11 @@ Device:
   was a few seconds ago by the time the text arrives (iOS Safari is strict). Then the text appears in a read-only
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
-- Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists.
-  The ThingsBoard access token and the Frigate+ API key appear on every device; the Plate Recognizer token and
-  license key appear only on a device with the add-on. It's one expansion panel,
+- Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists,
+  but the Frigate+ API key, whose form is on the Detection page. The ThingsBoard access token appears on every
+  device; the Plate Recognizer token and license key appear only on a device with the add-on. The section ends with
+  "The Frigate+ API key is on the Detection page.", the last words a link to `/detection#frigate-plus`, so an admin
+  who looks for the key here finds it. It's one expansion panel,
   closed when the page opens. The Status page's "Set the token" links to `/device#tokens-and-keys`, which opens it and scrolls to
   it. The page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns
   about a missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
@@ -417,3 +420,77 @@ The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and 
 - Animating list changes when the checks refresh.
 - A gauge for the temperature.
 - "Checked ... ago" from the report's own time: wrong whenever the device's clock is.
+
+### Detection
+
+The same people, the same rules. The page answers "what does this device look for, and with which model", and is
+where the Frigate+ API key lives, because the key is how Frigate gets a Frigate+ model. Everyone who can log in sees
+it all; admins also get the key's form. The actions that change the model (upload, use, download, delete) are
+planned for the admin and will sit in this layout without moving anything.
+
+```text
++----------------------------------+
+| Detection                   (h5) |
+| Object detection            (h6) |
+| This device detects with         |
+| edgetpu.                         |
+| Frigate runs Test site yolov9,   |
+| a Frigate+ model.                |
+|                                  |
+| Test site yolov9  (running)      |
+| trained 2026-10-01, yolo-generic,|
+| for edgetpu, 320×320             |
+| 0123...cdef, 4.0 KB,             |
+| SHA-256 ad7facb2586f             |
+| 0123...cdef.json, 433 bytes,     |
+| SHA-256 0da6c00a63ab             |
+|                                  |
+| What the model recognises   (h6) |
+| Recognises           [Copy]      |
+| (person) (bicycle) (car)         |
+| Tracked by this device  [Copy]   |
+| (bicycle) (person) (car) (bus)   |
+|                                  |
+| Frigate+                    (h6) |
+| Two sentences: online, pick the  |
+| model in Frigate; offline,       |
+| upload its two files here.       |
+| Frigate+ API key  (admins only)  |
+| Not set.                         |
+| [ Frigate+ API key          (o)] |
+| [Save]                           |
++----------------------------------+
+```
+
+- The detector and the running model are sentences, as the Status page's verdict is: "This device detects with
+  edgetpu." names the detector as Frigate and a model's sidecar do, so it can be matched against the "for edgetpu"
+  under each model. When Frigate doesn't answer, a warning says the page shows what Frigate's config file says.
+- The models are a plain list, like the Status page's checks: the sidecar's name, then its facts on one line, then
+  one line per file with its size and the first 12 characters of its SHA-256. The full hash is the hash's tooltip,
+  for comparing with a download's SHA256SUMS on a computer; on a phone the 12 characters are enough to tell two
+  files apart. A file's name shows only when it isn't the title already (the installer's model has no sidecar, so
+  its title is its file name). At 375 px each of those lines wraps to two, "SHA-256" and its hash staying together.
+- One chip per model at most, in words: "running" (in the heading blue), "can't run on this detector", or
+  "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
+  line under the files.
+- The label lists are chips because they are many short words that wrap well on a phone. A sentence above them says
+  how they relate: Frigate tracks the objects in the second list that the model recognises, so "dog" in the second
+  list and not the first is never tracked. Each list's Copy puts it on the clipboard comma-separated, ready to paste
+  elsewhere, and says "Copied." beside the button for two seconds; a refused copy says so and stays.
+- The Status page's "Set the key" links to `/detection#frigate-plus`, which scrolls to the section once the models
+  have loaded. The key's form is the Device page's (`EnteredSecret.vue`), unchanged.
+
+#### What the screenshot review changed
+
+The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer, and through the
+`#frigate-plus` link.
+
+- At 375 px a file line broke between "SHA-256" and its hash. The two now stay together.
+
+#### Defaults rejected
+
+- A data table of the models: its columns don't fit 375 px, and most cells are empty for the installer's model.
+- A card per model: a model is a file on the device, not something to open, and cards would make three look like
+  apps.
+- The full hash on the page: 64 characters wrap into a block that hides the rest of the line.
+- Colored chips for the labels, or icons per object: the labels are Frigate's words, and copying them is the job.
