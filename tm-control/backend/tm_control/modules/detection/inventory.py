@@ -1,4 +1,4 @@
-"""Frigate's model_cache directory as a list of models.
+"""Frigate's model_cache directory as a list of models, each file with its SHA-256.
 
 A model is a file plus a sidecar named <file>.json, in the shape of a Frigate+ model record. Everything here opens
 names relative to a descriptor for the directory (opened without following a link at the end), never follows a link
@@ -219,30 +219,15 @@ def sha256_in(dir_fd: int, name: str, stat_result: os.stat_result) -> str:
     return digest.hexdigest()
 
 
-def _readable(dir_fd: int, name: str) -> bool:
-    """Whether the file opens and is still a regular file. Nothing is read."""
-    try:
-        fd = open_in(dir_fd, name, os.O_RDONLY)
-    except OSError:
-        return False
-    try:
-        return stat.S_ISREG(os.fstat(fd).st_mode)
-    except OSError:
-        return False
-    finally:
-        os.close(fd)
-
-
 def _model_file(dir_fd: int, name: str, stat_result: os.stat_result | None) -> tuple[ModelFile, str | None]:
-    """The file's entry, and a problem when it can't be read. The hash is the one already known, never computed
-    here, because reading a model off the SD card takes seconds."""
+    """The file's entry with its hash, and a problem when it can't be read. The hash comes from HASHES when the
+    name, size, and mtime are unchanged, so a repeat listing doesn't read the file again."""
     if stat_result is None:
         return ModelFile(name, 0, None), FILE_UNREADABLE
-    with _HASH_LOCK:
-        known = HASHES.get((name, stat_result.st_size, stat_result.st_mtime_ns))
-    if not _readable(dir_fd, name):
+    try:
+        return ModelFile(name, stat_result.st_size, sha256_in(dir_fd, name, stat_result)), None
+    except OSError:
         return ModelFile(name, stat_result.st_size, None), FILE_UNREADABLE
-    return ModelFile(name, stat_result.st_size, known), None
 
 
 def _read_sidecar(dir_fd: int, name: str) -> tuple[Sidecar | None, str | None]:
@@ -305,9 +290,16 @@ def _model(dir_fd: int, name: str, found: dict[str, os.stat_result]) -> Model:
     if "sidecar" in found:
         sidecar, problem = _read_sidecar(dir_fd, name + SIDECAR)
         problems.append(problem)
+        # The sidecar is a file of the model too, hashed unless it's over the cap, which is never read whole.
+        # Its own problem, if any, is the sidecar's.
+        half = found["sidecar"]
+        if half.st_size > SIDECAR_MAX:
+            files += (ModelFile(name + SIDECAR, half.st_size, None),)
+        else:
+            files += (_model_file(dir_fd, name + SIDECAR, half)[0],)
     return Model(
         name=name, kind=kind_of(name, sidecar), sidecar=sidecar, files=files,
-        complete=bool(files) and sidecar is not None, problem=" ".join(p for p in problems if p) or None,
+        complete="model" in found and sidecar is not None, problem=" ".join(p for p in problems if p) or None,
     )
 
 
