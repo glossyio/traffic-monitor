@@ -273,6 +273,7 @@ describe('the Detection page', () => {
       "When it's offline, an administrator can upload the model's two files on this page, as a package from whoever " +
         "trained the model or copied from another device's Frigate.",
     )
+    expect(panel(wrapper, 'Frigate+ API key').text().trim()).toBe('Frigate+ API key') // no state for a viewer
     expect(wrapper.findAll('form')).toEqual([])
     // The label lists' Copy buttons are the only buttons: nothing that changes the device
     expect(actions(wrapper)).toEqual(['Copy', 'Copy'])
@@ -282,10 +283,30 @@ describe('the Detection page', () => {
   it('shows an admin the Frigate+ key form from GET /secrets', async () => {
     signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
     const { wrapper } = await mountApp('/detection')
-    const section = wrapper.find('#frigate-plus')
-    expect(section.findAll('h3').map((h) => h.text().trim())).toEqual(['Frigate+ API key'])
-    expect(section.text()).toContain('Not set.')
+    const toggle = panel(wrapper, 'Frigate+ API key')
+    expect(toggle.text()).toContain('Not set')
+    expect(toggle.element.parentElement?.tagName).toBe('H2')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(wrapper.find('#frigate-plus form').exists()).toBe(true)
+    expect(wrapper.find('#frigate-plus h3').exists()).toBe(false) // the title says it already
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
     expect(wrapper.text()).not.toContain('ThingsBoard access token')
+  })
+
+  it('says the key is in use only while Frigate runs a Frigate+ model', async () => {
+    const set = TWO_SECRETS.map((secret) =>
+      secret.name === 'frigate_plus_api_key' ? { ...secret, set: true, ends_with: 'ab12' } : secret,
+    )
+    signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: set } })
+    const plus = await mountApp('/detection')
+    expect(panel(plus.wrapper, 'Frigate+ API key').text()).toContain('Set, ending in ab12, in use')
+
+    signedIn(ADMIN, { [MODELS_PATH]: running('mine.tflite', 'local'), [SECRETS]: { secrets: set } })
+    const local = await mountApp('/detection')
+    const title = panel(local.wrapper, 'Frigate+ API key').text()
+    expect(title).toContain('Set, ending in ab12')
+    expect(title).not.toContain('in use')
   })
 
   it('copies the recognised labels as comma-separated text', async () => {
@@ -382,13 +403,25 @@ describe('the Detection page', () => {
     expect(menu.indexOf('/detection')).toBe(menu.indexOf('/device') + 1)
   })
 
-  it('has the Frigate+ section a link can name', async () => {
+  it("opens the key panel when a link names it, as the Status page's Set the key does", async () => {
     signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
     const scrolled = vi.fn()
     Element.prototype.scrollIntoView = scrolled
     const { wrapper } = await mountApp('/detection#frigate-plus')
-    expect(wrapper.find('#frigate-plus').exists()).toBe(true)
+    expect(panel(wrapper, 'Frigate+ API key').attributes('aria-expanded')).toBe('true')
     expect(scrolled).toHaveBeenCalled()
+    const others = ['Other models on this device', 'All objects the model recognises', 'Objects tracked on this device']
+    expect(others.map((title) => panel(wrapper, title).attributes('aria-expanded'))).toEqual(['false', 'false', 'false'])
+  })
+
+  it('opens the key panel for a viewer without asking for the secrets', async () => {
+    const api = signedIn(VIEWER, { [MODELS_PATH]: MODELS })
+    Element.prototype.scrollIntoView = vi.fn()
+    const { wrapper } = await mountApp('/detection#frigate-plus')
+    expect(panel(wrapper, 'Frigate+ API key').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('#frigate-plus').text()).toContain('When the device is online and has a Frigate+ API key')
+    expect(wrapper.findAll('form')).toEqual([])
+    expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false)
   })
 })
 
