@@ -83,13 +83,17 @@ const runningLine = computed(() => {
   return title ? `Frigate runs ${title}, ${KINDS[running.kind]}.` : `Frigate runs ${KINDS[running.kind]}.`
 })
 
-// The installer's model has no sidecar, so the API's title for it is its file name, which goes on the facts line
-const INSTALLERS = "The installer's model"
-const titleOf = (model: ModelOut) => (model.kind === 'installer_default' ? INSTALLERS : model.title)
+// The two defaults have no sidecar, so the API's title for each is its file name, which goes on the facts line
+const DEFAULT_TITLES: Record<string, string> = {
+  installer_default: "The installer's model",
+  frigate_default: "Frigate's built-in model",
+}
+const isDefault = (model: ModelOut) => model.kind in DEFAULT_TITLES
+const titleOf = (model: ModelOut) => DEFAULT_TITLES[model.kind] ?? model.title
 
 // The sidecar's facts in one line, such as "trained 2026-10-01, yolo-generic, for edgetpu, 320×320"
 function facts(model: ModelOut) {
-  if (model.kind === 'installer_default') return model.name
+  if (isDefault(model)) return model.name
   return [
     model.trained_at ? `trained ${model.trained_at.slice(0, 10)}` : null,
     model.type,
@@ -310,8 +314,8 @@ function openUpload() {
               {{ fileLine(model, file) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
             </div>
             <div v-if="model.problem" class="text-body-2">{{ model.problem }}</div>
-            <!-- The installer's model has none of these: the button under the list uses it, and it has no package -->
-            <template v-if="session.isAdmin && model.kind !== 'installer_default'">
+            <!-- The defaults have none of these: the button under the list uses them, and they have no package -->
+            <template v-if="session.isAdmin && !isDefault(model)">
               <div class="d-flex flex-wrap ga-2 mt-2">
                 <v-btn
                   v-if="!model.running"

@@ -151,6 +151,23 @@ def test_the_installers_file_is_not_listed_twice(cache):
     assert [model.kind for model in inventory(cache, None)] == ["local"]
 
 
+def test_frigates_own_default_file_is_listed_for_its_detector_only(cache):
+    (cache / "yolov6n.hef").write_bytes(bytes(2048))
+    (cache / "yolov6n.hef.json").write_bytes(SIDECAR)  # never read: the file is Frigate's, not a model of its own
+    pair(cache, "mine.hef")
+    models = inventory(cache, None, "hailo8l")
+    assert [model.name for model in models] == ["yolov6n.hef", "mine.hef"]
+    default = models[0]
+    assert (default.kind, default.sidecar, default.complete, default.problem) == ("frigate_default", None, True, None)
+    assert [(file.name, file.size, file.sha256) for file in default.files] == [
+        ("yolov6n.hef", 2048, hashlib.sha256(bytes(2048)).hexdigest())]
+    for detector in ("edgetpu", "cpu", None):  # another detector's Frigate has no such file: it's a local model
+        found = by_name(inventory(cache, None, detector))
+        assert (found["yolov6n.hef"].kind, found["yolov6n.hef"].complete) == ("local", True), detector
+    (cache / "yolov6n.hef").unlink()
+    assert [model.name for model in inventory(cache, None, "hailo8l")] == ["mine.hef"]  # no file, no entry
+
+
 def test_subdirectories_symlinks_and_bad_names_are_skipped(cache):
     pair(cache, "good.tflite")
     (cache / "hailo").mkdir()

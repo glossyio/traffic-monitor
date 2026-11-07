@@ -17,6 +17,7 @@ import re
 import stat
 import tarfile
 import zipfile
+from collections.abc import Container
 from dataclasses import dataclass
 from typing import BinaryIO, Callable, Literal
 
@@ -267,10 +268,10 @@ def _place_both(dir_fd: int, halves: list[tuple[str, str]]) -> None:
         raise
 
 
-def extract(file: BinaryIO, kind: Literal["zip", "gzip"], dir_fd: int, reserved: str | None = None
+def extract(file: BinaryIO, kind: Literal["zip", "gzip"], dir_fd: int, reserved: Container[str] = ()
             ) -> tuple[str, str, bool]:
     """Unpack the archive's model and sidecar into the directory and return (model, sidecar, sums_checked).
-    `reserved` is a model name that may not be written (the installer's). Raises ArchiveError, SidecarError, or
+    `reserved` holds the model names that may not be written (the defaults'). Raises ArchiveError, SidecarError, or
     UploadError (a bad or taken name, an empty model file, too little free space)."""
     found = members(file, kind)
     model, sidecar, sums = _pair(found)
@@ -278,8 +279,8 @@ def extract(file: BinaryIO, kind: Literal["zip", "gzip"], dir_fd: int, reserved:
         raise UploadError(422, upload.BAD_NAME)
     if stat_in(dir_fd, model.name) is not None or stat_in(dir_fd, sidecar.name) is not None:
         raise upload.exists(model.name)
-    if model.name == reserved:
-        raise UploadError(422, upload.BAD_NAME)  # the installer's file is the installer's to write
+    if model.name in reserved:
+        raise UploadError(422, upload.BAD_NAME)  # a default's file is the installer's or Frigate's to write
     if model.size == 0:
         raise UploadError(422, upload.EMPTY)
     if not upload.free_space_ok(dir_fd, model.size + sidecar.size):
@@ -310,7 +311,7 @@ def extract(file: BinaryIO, kind: Literal["zip", "gzip"], dir_fd: int, reserved:
     return model.name, sidecar.name, sums is not None
 
 
-def place_archive(dir_fd: int, temp: str, kind: Literal["zip", "gzip"], reserved: str | None = None) -> str:
+def place_archive(dir_fd: int, temp: str, kind: Literal["zip", "gzip"], reserved: Container[str] = ()) -> str:
     """Unpack the archive staged under the temporary name `temp` in the directory and return the model's name. The
     staged file is opened through the directory's descriptor, without following a link, and removed on the way out.
     Every refusal is an UploadError."""

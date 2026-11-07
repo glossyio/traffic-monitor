@@ -428,6 +428,39 @@ describe("the Detection page's actions", () => {
     expect(wrapper.text()).toContain('Deleted My model.')
   })
 
+  it("lists Frigate's own Hailo model as its built-in model, running and with no buttons", async () => {
+    const builtIn: ModelOut = {
+      ...MODELS.models[0],
+      name: 'yolov6n.hef',
+      kind: 'frigate_default',
+      title: 'yolov6n.hef',
+      files: [
+        { name: 'yolov6n.hef', size: 2048, sha256: 'e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad' },
+      ],
+      running: true,
+    }
+    signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: {
+        ...MODELS,
+        detector: 'hailo8l',
+        default: 'frigate_default',
+        running: { name: null, kind: 'frigate_default', source: 'frigate' },
+        models: [builtIn, MINE],
+      },
+    })
+    const { wrapper } = await mountApp('/detection')
+    expect(wrapper.text()).toContain('Frigate runs its built-in model.')
+    const entry = item(wrapper, "Frigate's built-in model")
+    expect(entry.findAll('button')).toHaveLength(0)
+    expect(entry.text()).toContain('running')
+    expect(entry.text()).not.toContain('incomplete')
+    // Like the installer's entry, it has no sidecar: its file name is its facts line, shown once
+    expect(entry.text().split('yolov6n.hef')).toHaveLength(2)
+    expect(entry.text()).toContain('2.0 KB, SHA-256 e5a00aa9991a')
+    expect(wrapper.findAll('main button').filter((b) => b.text().trim() === 'Delete')).toHaveLength(1)
+  })
+
   it('disables Use for a model built for another detector, with the reason', async () => {
     const models = [MODELS.models[0], MODELS.models[1], { ...MINE, detectors: ['hailo8l'], usable: false }]
     signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: { ...MODELS, models } })

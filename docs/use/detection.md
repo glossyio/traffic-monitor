@@ -18,7 +18,7 @@ Each model in the list shows its name, when it was trained and what it's built f
 | can't run on this detector | The model is built for another detector than the device's, so **Use** is off. |
 | incomplete | The model has its file but not its `.json`, or the other way round. |
 
-The model the installer set up is listed as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another.
+The model the installer set up is listed as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another. On a device with a Hailo accelerator, the list shows that model as **Frigate's built-in model**, which can't be downloaded or deleted either.
 
 Everyone who can log in sees the list, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, **Use**, **Download**, and **Delete** on each model, the **Use the installer's model** button under the list, and the Frigate+ key. On a device without a Coral, that button is **Use Frigate's built-in model**.
 
@@ -59,7 +59,7 @@ The page refuses a **Use** in these cases:
 
 ## Delete a model
 
-**Delete** asks first, then removes both of the model's files. It can't remove the model Frigate runs, nor the installer's model. To delete the model that's running, use another model first.
+**Delete** asks first, then removes both of the model's files. It can't remove the model Frigate runs, the installer's model, or Frigate's built-in model. To delete the model that's running, use another model first.
 
 ## What the model recognises
 

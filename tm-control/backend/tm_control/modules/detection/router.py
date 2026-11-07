@@ -41,6 +41,7 @@ from tm_control.modules.detection.inventory import (
     SIDECAR_MAX,
     Model,
     SidecarError,
+    default_files,
     forget,
     installer_default,
     inventory,
@@ -66,7 +67,7 @@ class ModelFileOut(BaseModel):
 
 class ModelOut(BaseModel):
     name: str
-    kind: Literal["frigate_plus", "local", "installer_default"]
+    kind: Literal["frigate_plus", "local", "installer_default", "frigate_default"]
     title: str  # the sidecar's name, or the file's name
     trained_at: str | None
     type: str | None
@@ -120,7 +121,8 @@ def _frigate(request: Request) -> tuple[dict | None, ConfigRead]:
 
 def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut:
     sidecar = model.sidecar
-    is_running = model.name == running.name
+    frigates_own = model.kind == running.kind == "frigate_default" and running.path is None  # Frigate runs it unasked
+    is_running = model.name == running.name or frigates_own
     return ModelOut(
         name=model.name,
         kind=model.kind,
@@ -134,7 +136,7 @@ def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut
         complete=model.complete,
         running=is_running,
         usable=None if sidecar is None or detector is None else detector in sidecar.detectors,
-        deletable=not is_running and model.kind != "installer_default",
+        deletable=not is_running and model.kind in ("frigate_plus", "local"),
         problem=model.problem,
     )
 
@@ -144,8 +146,8 @@ def get_models(request: Request, user: User = Depends(current_user)):
     settings, manifest, codedir = _state(request)
     frigate_config, config_file = _frigate(request)
     installer = installer_default(manifest, codedir)
-    models = inventory(model_cache_dir(settings, manifest), installer)
     detector = detector_type(frigate_config, config_file)
+    models = inventory(model_cache_dir(settings, manifest), installer, detector)
     running = running_model(frigate_config, config_file, installer, models)
     labels, source = recognised(frigate_config, running, models, installer)
     if detector is None:
@@ -167,7 +169,7 @@ ERROR_CODES = {
     507: "insufficient_storage",
 }
 NO_SUCH_MODEL = "There is no such model."
-INSTALLERS = "That's the installer's model."
+DEFAULTS = {"installer_default": "That's the installer's model.", "frigate_default": "That's Frigate's built-in model."}
 RUNNING = "That model is running; use another model first."
 RUNNING_UNKNOWN = "What Frigate runs can't be told now; try again when Frigate answers."
 DETECTOR_UNKNOWN = "The device's detector can't be told now; try again when Frigate answers."
@@ -213,12 +215,13 @@ def _listed(request: Request, name: str, frigate_answer: tuple[dict | None, Conf
     settings, manifest, codedir = _state(request)
     frigate_config, config_file = frigate_answer or _frigate(request)
     installer = installer_default(manifest, codedir)
-    models = inventory(model_cache_dir(settings, manifest), installer)
+    detector = detector_type(frigate_config, config_file)
+    models = inventory(model_cache_dir(settings, manifest), installer, detector)
     model = next((model for model in models if model.name == name), None)
     if model is None:
         raise ApiError(500, "internal", "The model was written but isn't listed.")
     running = running_model(frigate_config, config_file, installer, models)
-    return _model_out(model, running, detector_type(frigate_config, config_file))
+    return _model_out(model, running, detector)
 
 
 def _content_length(request: Request) -> int | None:
@@ -226,9 +229,9 @@ def _content_length(request: Request) -> int | None:
     return int(value) if value is not None and value.isascii() and value.isdigit() else None
 
 
-def _finish(dir_fd: int, temp: str, filename: str, kind: str, size: int, reserved: str | None) -> tuple[str, str]:
+def _finish(dir_fd: int, temp: str, filename: str, kind: str, size: int, reserved: dict[str, str]) -> tuple[str, str]:
     """Check what was received and place it; returns the name placed and the model's name. An archive's model may
-    not be named `reserved`, the installer's file."""
+    not have a name in `reserved`, the defaults' files."""
     if kind == "archive":
         archive = upload.archive_kind(filename)
         upload.check_archive(dir_fd, temp, archive)
@@ -262,7 +265,8 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
     model = filename.removesuffix(SIDECAR) if kind == "sidecar" else filename
     if not valid_name(model):
         raise _refusal(UploadError(422, upload.BAD_NAME))
-    installer = installer_default(manifest, codedir)
+    frigate_answer = await run_in_threadpool(_frigate, request)
+    defaults = default_files(installer_default(manifest, codedir), detector_type(*frigate_answer))
     limit = SIDECAR_MAX if kind == "sidecar" else MODEL_FILE_MAX
     declared = _content_length(request)
     cache = model_cache_dir(settings, manifest)
@@ -272,8 +276,8 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
     try:
         if kind != "archive" and stat_in(dir_fd, filename) is not None:
             raise upload.exists(model)
-        if installer is not None and model == installer.file:
-            raise UploadError(422, upload.BAD_NAME)  # the installer's file is the installer's to write
+        if model in defaults:
+            raise UploadError(422, upload.BAD_NAME)  # a default's file is the installer's or Frigate's to write
         if declared is not None and declared > limit:
             raise upload.too_large(limit)
         if not upload.free_space_ok(cache, limit if declared is None else declared):
@@ -283,8 +287,7 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
         except ClientDisconnect:
             raise UploadError(400, upload.SHORT_BODY) from None
         received = True
-        reserved = installer.file if installer is not None else None
-        placed, model = await run_in_threadpool(_finish, dir_fd, temp, filename, kind, size, reserved)
+        placed, model = await run_in_threadpool(_finish, dir_fd, temp, filename, kind, size, defaults)
     except UploadError as error:
         raise _refusal(error) from None
     finally:
@@ -292,7 +295,7 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
             upload.unlink_quietly(dir_fd, temp)
         os.close(dir_fd)
     Audit(request.app.state.state).record(admin.id, "models.upload", detail=placed)
-    return await run_in_threadpool(_listed, request, model)
+    return await run_in_threadpool(_listed, request, model, frigate_answer)
 
 
 def _form_sidecar(name: str, form: SidecarForm, detector: str) -> bytes:
@@ -319,16 +322,16 @@ def write_sidecar(name: str, form: SidecarForm, request: Request, admin: User = 
     if not valid_name(name):
         raise _refusal(UploadError(422, upload.BAD_NAME))
     settings, manifest, codedir = _state(request)
-    installer = installer_default(manifest, codedir)
     frigate_answer = _frigate(request)
     detector = detector_type(*frigate_answer)
+    defaults = default_files(installer_default(manifest, codedir), detector)
     cache = model_cache_dir(settings, manifest)
     dir_fd = _open_cache(cache)
     try:
         if not _regular(dir_fd, name):
             raise ApiError(404, "not_found", NO_SUCH_MODEL)
-        if installer is not None and name == installer.file:
-            raise ApiError(409, "conflict", INSTALLERS)
+        if name in defaults:
+            raise ApiError(409, "conflict", DEFAULTS[defaults[name]])
         if stat_in(dir_fd, name + SIDECAR) is not None:
             raise ApiError(409, "conflict", HAS_SIDECAR)
         if detector is None:
@@ -367,19 +370,18 @@ ZIP_BODY = {200: {"description": "The package", "content": {"application/zip": {
 @router.get("/{name}/package", response_class=FileResponse, responses=ZIP_BODY)
 def download_package(name: str, request: Request, admin: User = Depends(require_admin)):
     """The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model
-    with both halves, which the installer's never has."""
+    with both halves, which a default never has."""
     if not valid_name(name):
         raise _refusal(UploadError(422, upload.BAD_NAME))
     settings, manifest, codedir = _state(request)
-    installer = installer_default(manifest, codedir)
+    defaults = default_files(installer_default(manifest, codedir), detector_type(*_frigate(request)))
     dir_fd = _open_cache(model_cache_dir(settings, manifest))
     try:
         model = stat_in(dir_fd, name)
         if model is None:
             raise ApiError(404, "not_found", NO_SUCH_MODEL)
         sidecar = _sidecar_size(dir_fd, name)
-        installers = installer is not None and name == installer.file
-        if installers or not stat.S_ISREG(model.st_mode) or sidecar is None:
+        if name in defaults or not stat.S_ISREG(model.st_mode) or sidecar is None:
             raise ApiError(404, "not_found", INCOMPLETE)
         if not upload.free_space_ok(settings.state_dir, model.st_size + sidecar):
             raise _refusal(UploadError(507, upload.NO_SPACE))
@@ -403,7 +405,7 @@ def download_package(name: str, request: Request, admin: User = Depends(require_
 
 @router.delete("/{name}", status_code=204)
 def delete_model(name: str, request: Request, admin: User = Depends(require_admin)):
-    """Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's the installer's.
+    """Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's a default.
     What runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is
     removed."""
     if not valid_name(name):
@@ -415,13 +417,15 @@ def delete_model(name: str, request: Request, admin: User = Depends(require_admi
         halves = [file for file in (name, name + SIDECAR) if _regular(dir_fd, file)]
         if not halves:
             raise ApiError(404, "not_found", NO_SUCH_MODEL)
-        running = running_model(*_frigate(request), installer, [])
+        frigate_answer = _frigate(request)
+        running = running_model(*frigate_answer, installer, [])
         if running.source is None:
             raise ApiError(409, "conflict", RUNNING_UNKNOWN)
         if running.name == name:
             raise ApiError(409, "conflict", RUNNING)
-        if installer is not None and name == installer.file:
-            raise ApiError(409, "conflict", INSTALLERS)
+        defaults = default_files(installer, detector_type(*frigate_answer))
+        if name in defaults:
+            raise ApiError(409, "conflict", DEFAULTS[defaults[name]])
         for file in halves:
             try:
                 os.unlink(file, dir_fd=dir_fd)
@@ -518,21 +522,22 @@ def use_default(request: Request, background: BackgroundTasks, admin: User = Dep
 @router.post("/{name}/use", status_code=202, response_model=UseQueued)
 def use_model(name: str, request: Request, background: BackgroundTasks, admin: User = Depends(require_admin)):
     """Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
-    The installer's file is the default, as POST /models/default/use puts it back. The running model may be used
-    again: Frigate just restarts."""
+    A default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The
+    running model may be used again: Frigate just restarts."""
     if not valid_name(name):
         raise _refusal(UploadError(422, upload.BAD_NAME))
     settings, manifest, codedir = _state(request)
     installer = installer_default(manifest, codedir)
-    if installer is not None and name == installer.file:
+    detector = detector_type(*_frigate(request))
+    if name in default_files(installer, detector):
         return _use_default(request, background, admin)
     _not_restarting(settings)
-    models = inventory(model_cache_dir(settings, manifest), installer)
+    models = inventory(model_cache_dir(settings, manifest), installer, detector)
     model = next((model for model in models if model.name == name), None)
     if model is None:
         raise ApiError(404, "not_found", NO_SUCH_MODEL)
     try:
-        picker.check_usable(model, detector_type(*_frigate(request)))
+        picker.check_usable(model, detector)
     except UseError as error:
         raise _use_refusal(error) from None
     return _use(request, background, admin, picker.model_section(model), name, name)
