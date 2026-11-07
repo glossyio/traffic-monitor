@@ -722,6 +722,50 @@
         }
       }
     },
+    "/api/v1/models/{name}/package": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Download Package",
+        "description": "The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model\nwith both halves, which the installer's never has.",
+        "operationId": "download_package_api_v1_models__name__package_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The package",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/models/{name}": {
       "delete": {
         "tags": [

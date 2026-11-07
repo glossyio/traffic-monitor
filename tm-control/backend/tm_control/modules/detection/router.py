@@ -2,10 +2,11 @@
 user. A model's listing carries the fields below and nothing else from its sidecar; the per-camera counts a Frigate+
 record keeps are never read.
 
-An admin can also upload a model file or its sidecar (PUT /models/upload/{filename}), write a sidecar for a bare model
-file from a form (POST /models/{name}/sidecar), and delete a model (DELETE /models/{name}). Each writes only inside
-model_cache, through the directory's descriptor, and audits the name of what it wrote or removed, never a file's
-content.
+An admin can also upload a model file, its sidecar, or a zip or tar.gz of both (PUT /models/upload/{filename}), write a
+sidecar for a bare model file from a form (POST /models/{name}/sidecar), download a model as a zip of both files and
+SHA256SUMS (GET /models/{name}/package), and delete a model (DELETE /models/{name}). Each writes only inside
+model_cache, through the directory's descriptor, or tm-control's own state directory, and audits the name of what it
+wrote, sent, or removed, never a file's content.
 """
 
 import json
@@ -15,7 +16,9 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, StringConstraints
+from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 
@@ -27,7 +30,7 @@ from tm_control.core.errors import ApiError
 from tm_control.core.manifest import Manifest
 from tm_control.core.settings import Settings
 from tm_control.modules.auth.deps import current_user, require_admin
-from tm_control.modules.detection import upload
+from tm_control.modules.detection import archives, package, upload
 from tm_control.modules.detection.inventory import (
     MODEL_FILE_MAX,
     SIDECAR,
@@ -164,6 +167,8 @@ RUNNING = "That model is running; use another model first."
 RUNNING_UNKNOWN = "What Frigate runs can't be told now; try again when Frigate answers."
 DETECTOR_UNKNOWN = "The device's detector can't be told now; try again when Frigate answers."
 HAS_SIDECAR = "The model already has a sidecar."
+INCOMPLETE = "Only a model with its file and its sidecar can be downloaded."
+UNREADABLE_PAIR = "The model's files can't be read."
 
 Short = Annotated[str, StringConstraints(min_length=1, max_length=32)]
 Label = Annotated[str, StringConstraints(min_length=1, max_length=64)]
@@ -216,12 +221,13 @@ def _content_length(request: Request) -> int | None:
     return int(value) if value is not None and value.isascii() and value.isdigit() else None
 
 
-def _finish(dir_fd: int, cache: Path, temp: str, filename: str, kind: str, size: int) -> tuple[str, str]:
-    """Check what was received and place it; returns the name placed and the model's name."""
+def _finish(dir_fd: int, temp: str, filename: str, kind: str, size: int, reserved: str | None) -> tuple[str, str]:
+    """Check what was received and place it; returns the name placed and the model's name. An archive's model may
+    not be named `reserved`, the installer's file."""
     if kind == "archive":
         archive = upload.archive_kind(filename)
         upload.check_archive(dir_fd, temp, archive)
-        model = upload.place_archive(cache / temp, archive, dir_fd)
+        model = archives.place_archive(dir_fd, temp, archive, reserved)
         return model, model
     if kind == "sidecar":
         try:
@@ -272,7 +278,8 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
         except ClientDisconnect:
             raise UploadError(400, upload.SHORT_BODY) from None
         received = True
-        placed, model = await run_in_threadpool(_finish, dir_fd, cache, temp, filename, kind, size)
+        reserved = installer.file if installer is not None else None
+        placed, model = await run_in_threadpool(_finish, dir_fd, temp, filename, kind, size, reserved)
     except UploadError as error:
         raise _refusal(error) from None
     finally:
@@ -336,6 +343,57 @@ def write_sidecar(name: str, form: SidecarForm, request: Request, admin: User = 
         os.close(dir_fd)
     Audit(request.app.state.state).record(admin.id, "models.sidecar", detail=name)
     return _listed(request, name, frigate_answer)
+
+
+def _sidecar_size(dir_fd: int, name: str) -> int | None:
+    """The size of the model's sidecar when it parses; None when it doesn't, or isn't there."""
+    try:
+        data = upload.read_small(dir_fd, name + SIDECAR, SIDECAR_MAX + 1)
+        parse_sidecar(data)
+    except (OSError, SidecarError):
+        return None
+    return len(data) if len(data) <= SIDECAR_MAX else None
+
+
+ZIP_BODY = {200: {"description": "The package", "content": {"application/zip": {"schema": {"type": "string",
+                                                                                       "format": "binary"}}}}}
+
+
+@router.get("/{name}/package", response_class=FileResponse, responses=ZIP_BODY)
+def download_package(name: str, request: Request, admin: User = Depends(require_admin)):
+    """The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model
+    with both halves, which the installer's never has."""
+    if not valid_name(name):
+        raise _refusal(UploadError(422, upload.BAD_NAME))
+    settings, manifest, codedir = _state(request)
+    installer = installer_default(manifest, codedir)
+    dir_fd = _open_cache(model_cache_dir(settings, manifest))
+    try:
+        model = stat_in(dir_fd, name)
+        if model is None:
+            raise ApiError(404, "not_found", NO_SUCH_MODEL)
+        sidecar = _sidecar_size(dir_fd, name)
+        installers = installer is not None and name == installer.file
+        if installers or not stat.S_ISREG(model.st_mode) or sidecar is None:
+            raise ApiError(404, "not_found", INCOMPLETE)
+        if not upload.free_space_ok(settings.state_dir, model.st_size + sidecar):
+            raise _refusal(UploadError(507, upload.NO_SPACE))
+        path, out = package.create(settings.state_dir, name)
+        try:
+            with out:
+                package.write_package(dir_fd, name, out)
+        except BaseException:
+            path.unlink(missing_ok=True)
+            raise
+    except OSError:
+        raise ApiError(500, "internal", UNREADABLE_PAIR) from None
+    finally:
+        os.close(dir_fd)
+    Audit(request.app.state.state).record(admin.id, "models.download", detail=name)
+    return FileResponse(
+        path, media_type="application/zip", filename=f"{name}.zip",
+        background=BackgroundTask(path.unlink, missing_ok=True),
+    )
 
 
 @router.delete("/{name}", status_code=204)
