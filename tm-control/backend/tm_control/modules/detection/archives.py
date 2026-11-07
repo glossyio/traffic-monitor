@@ -162,6 +162,8 @@ def _zip_members(file: BinaryIO) -> list[Member]:
     for info in infos:
         if info.is_dir() or not _kept(info.filename, info.file_size):
             continue
+        if info.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            raise ArchiveError(UNREADABLE)  # zipfile inflates the others a whole chunk at a time, whatever the cap
         kind = stat.S_IFMT(info.external_attr >> 16)
         if kind and kind != stat.S_IFREG:  # the type bits are set only by Unix tools; set, they must say a file
             raise ArchiveError(NOT_PLAIN)

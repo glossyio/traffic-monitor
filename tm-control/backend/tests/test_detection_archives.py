@@ -345,6 +345,17 @@ def test_a_zip_whose_data_is_longer_than_its_header_says_is_refused(cache):
     assert refused(cache, data, "zip") == UNREADABLE  # zipfile stops at the stated size; the CRC then fails
 
 
+@pytest.mark.parametrize("method", [zipfile.ZIP_LZMA, zipfile.ZIP_BZIP2])
+def test_a_zip_member_compressed_other_than_stored_or_deflated_is_refused_before_it_is_read(cache, monkeypatch, method):
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as zf:
+        zf.writestr("m.tflite.json", SIDECAR)
+        zf.writestr("m.tflite", bytes(1024 * 1024), compress_type=method)
+    data = patch_central_size(out.getvalue(), b"m.tflite", 1000)  # the header understates what it inflates to
+    monkeypatch.setattr(archives, "copy_member", lambda *args, **kwargs: pytest.fail("read"))
+    assert refused(cache, data, "zip") == UNREADABLE
+
+
 def test_an_empty_model_or_a_bad_sidecar_is_refused(cache):
     assert refused(cache, make_zip({"m.tflite": b"", "m.tflite.json": SIDECAR}), "zip") == "The file is empty."
     assert refused(cache, make_zip({"m.tflite": MODEL, "m.tflite.json": b"[]"}), "zip") == (
