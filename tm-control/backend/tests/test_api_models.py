@@ -1173,6 +1173,22 @@ def test_a_file_with_frigates_hailo_name_is_a_local_model_on_a_coral(device_clie
     assert put(device_client, HAILO_FILE, b"\x05").status_code == 201
 
 
+def test_the_name_default_is_reserved_for_the_default_route(seeded, settings, login):
+    """POST /models/default/use is the default's route, so a model file can't be named for it: the name would be
+    listed but never usable as itself."""
+    login(seeded, *ADMIN)
+    for name in ("default", "default.json"):
+        r = put(seeded, name, sidecar_bytes() if name.endswith(".json") else b"abc")
+        assert (r.status_code, message(r)) == (422, "That name isn't allowed."), name
+    r = put(seeded, "d.zip", zip_of({"default": b"abc", "default.json": sidecar_bytes()}))
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    (fake.model_cache(settings) / "default").write_bytes(b"abc")  # placed by hand, before this rule
+    r = post_sidecar(seeded, "default")
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    assert delete(seeded, "default").status_code == 204  # still removable
+    assert cache_names(settings) == SEEDED
+
+
 SAFE_MODE_CONFIG = {  # what Frigate's /api/config answers after its config failed to validate
     "safe_mode": True,
     "detectors": {"cpu": {"type": "cpu", "model": {"path": "/cpu_model.tflite", "labelmap": {"0": "person"}}}},

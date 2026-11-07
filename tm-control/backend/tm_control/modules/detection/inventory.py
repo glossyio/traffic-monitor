@@ -30,6 +30,8 @@ SIDECAR = ".json"
 CONFIG_PREFIX = "/config/"  # where Frigate's container sees the directory tmsetup mounts at <codedir>/frigate/config
 HASH_BLOCK = 1024 * 1024
 LABEL_KEY = re.compile(r"[0-9]{1,9}")
+DETECTOR_NAME_MAX = 32  # a Frigate detector type is a short word, such as edgetpu or hailo8l
+DETECTORS_MAX = 16  # bounds what a refusal quotes (the names a model is built for) and what reaches config.yml
 # The file Frigate downloads into model_cache and runs when its detector of this type has no model path. From Frigate
 # 0.18.1's frigate/detectors/plugins/hailo8l.py (H8_DEFAULT_MODEL and H8L_DEFAULT_MODEL), whose detector type is
 # hailo8l for both Hailo-8 and Hailo-8L.
@@ -110,6 +112,8 @@ def parse_sidecar(data: bytes) -> Sidecar:
     input_dtype = _field(document, "inputDataType", _text, optional=True)
     if not detectors:
         raise SidecarError("The sidecar's supportedDetectors is empty.")
+    if len(detectors) > DETECTORS_MAX or not all(0 < len(entry) <= DETECTOR_NAME_MAX for entry in detectors):
+        raise SidecarError("The sidecar's supportedDetectors entries must be short names.")
     if not all(LABEL_KEY.fullmatch(key) for key in label_map) or len({int(key) for key in label_map}) != len(label_map):
         raise SidecarError("The sidecar's labelMap keys must be decimal strings.")
     labels = tuple(label_map[key] for key in sorted(label_map, key=int))
