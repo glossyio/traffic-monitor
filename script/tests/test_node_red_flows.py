@@ -1092,10 +1092,12 @@ def test_engine_wiring():
 
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
-                     "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision"}
+                     "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
+                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
-                       "/tm-internal/deployments/precision": "post"}
+                       "/tm-internal/deployments/precision": "post",
+                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
@@ -1104,7 +1106,7 @@ SURVEY_SQL = {
     "/tm-internal/surveys/usage": ("read survey usage",
                                    "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
                                    "AS last_end, SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS "
-                                   "deployment_count FROM deployment WHERE survey_id IS NOT NULL GROUP BY survey_id"),
+                                   "deployment_count FROM deployment GROUP BY survey_id"),
     "/tm-internal/surveys/:id/events": ("read survey events",
                                         "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, "
                                         "MAX(start_time) AS last_event FROM events WHERE deployment_id IN (SELECT id "
@@ -1117,6 +1119,8 @@ PRECISION_SQL = {
                                  "WHERE lat IS NOT NULL OR lon IS NOT NULL",
 }
 VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
+              "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
+              "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision"}
 
@@ -1340,8 +1344,135 @@ def test_database_errors_answer_500():
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 5
+    assert len(queries) == 7
     [catch] = [node for node in flows if node["type"] == "catch" and set(node.get("scope") or []) & queries]
     assert set(catch["scope"]) == queries
     answers = [node for node in reachable(by_id, [catch["id"]]) if node["type"] == "http response"]
     assert [str(node["statusCode"]) for node in answers] == ["500"]
+
+
+def test_flows_json_round_trips_through_json_dumps():
+    """Pins the serialisation every flows.json edit relies on: Node-RED's own, 4 spaces, no trailing newline."""
+    text = FLOWS.read_text()
+    assert text == json.dumps(json.loads(text), indent=4, ensure_ascii=False)
+
+
+def test_tm_internal_correction_endpoints_exist():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    for url in ("/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"):
+        assert endpoints[url]["method"] == "post", url
+        [[check_id]] = endpoints[url]["wires"]
+        assert by_id[check_id]["name"] == "tm-internal: check token", url
+
+
+LOCATION_SQL = ("UPDATE deployment SET lat = ROUND($lat, location_precision), "
+                "lon = ROUND($lon, location_precision) WHERE survey_id = $survey_id "
+                "AND location_precision IS NOT NULL")
+
+
+def correction_chain(url):
+    """The validator, the prepared statement, and the answer of a correction endpoint."""
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints[url]["wires"]
+    [[validate_id], _] = by_id[check_id]["wires"]
+    [[query_id], _] = by_id[validate_id]["wires"]
+    [[answer_id]] = by_id[query_id]["wires"]
+    return by_id[validate_id], by_id[query_id], by_id[answer_id], by_id[answer_id]["wires"][0][0], by_id
+
+
+def test_correction_chains_run_one_prepared_statement_and_answer_204():
+    for url, name, sql in (("/tm-internal/surveys/:id/location", "re-round survey coordinates", LOCATION_SQL),
+                           ("/tm-internal/deployments/:id/bearing", "rewrite deployment bearing",
+                            "UPDATE deployment SET bearing = $bearing WHERE id = $id")):
+        validator, query, answer, response_id, by_id = correction_chain(url)
+        assert validator["outputs"] == 2
+        assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
+        assert sql_text(query) == sql
+        assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+
+
+@needs_node
+@pytest.mark.parametrize("answer_url", ["/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"])
+def test_correction_answers_204(answer_url):
+    _, _, answer, *_ = correction_chain(answer_url)
+    [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def location_msg(survey_id, body):
+    return {"req": {"params": {"id": survey_id}}, "payload": body}
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id, body, detail", [
+    (SURVEY_ID, {"lat": 45.52252, "lon": -122.6912}, None),
+    (SURVEY_ID, {"lat": 90, "lon": -180}, None),
+    (SURVEY_ID, {"lat": -90, "lon": 180}, None),
+    (SURVEY_ID, {"lat": "45", "lon": -122}, "lat"),
+    (SURVEY_ID, {"lat": 45, "lon": "-122"}, "lon"),
+    (SURVEY_ID, {"lat": 91, "lon": 0}, "lat"),
+    (SURVEY_ID, {"lat": 0, "lon": -180.5}, "lon"),
+    (SURVEY_ID, {"lat": None, "lon": 0}, "lat"),
+    (SURVEY_ID, {"lat": 0}, "lon"),
+    (SURVEY_ID, {}, "lat"),
+    (SURVEY_ID, "lat=1&lon=2", "lat"),
+    (SURVEY_ID.upper(), {"lat": 45.0, "lon": -122.0}, "survey_id"),
+    ("3f9a1c2e", {"lat": 45.0, "lon": -122.0}, "survey_id"),
+    ("3f9a1c2e-si ", {"lat": 45.0, "lon": -122.0}, "survey_id"),
+    (SURVEY_ID.upper(), {"lat": "x", "lon": "y"}, "survey_id"),
+])
+def test_location_correction_validates_the_id_and_the_pair(survey_id, body, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate location correction")
+    [step] = run_functions([(validator, location_msg(survey_id, body))])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["params"] == {"$survey_id": survey_id, "$lat": body["lat"], "$lon": body["lon"]}
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+
+
+DEPLOYMENT_ID = "1761800000000-0a1b2c3d-d"
+
+
+@needs_node
+@pytest.mark.parametrize("deployment_id, body, detail, stored", [
+    (DEPLOYMENT_ID, {"bearing": "ne"}, None, "ne"),
+    (DEPLOYMENT_ID, {"bearing": "NE"}, None, "ne"),
+    (DEPLOYMENT_ID, {"bearing": ""}, None, ""),
+    (DEPLOYMENT_ID, {"bearing": "s"}, None, "s"),
+    (DEPLOYMENT_ID, {"bearing": "north"}, "bearing", None),
+    (DEPLOYMENT_ID, {"bearing": "nn"}, "bearing", None),
+    (DEPLOYMENT_ID, {"bearing": " n"}, "bearing", None),
+    (DEPLOYMENT_ID, {"bearing": None}, "bearing", None),
+    (DEPLOYMENT_ID, {"bearing": 1}, "bearing", None),
+    (DEPLOYMENT_ID, {}, "bearing", None),
+    (DEPLOYMENT_ID, "bearing=n", "bearing", None),
+    ("1761800000000-0A1B2C3D-d", {"bearing": "n"}, "deployment_id", None),
+    ("0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
+    ("x-1761800000000-0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d ", {"bearing": "n"}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d", {"bearing": "north"}, "bearing", None),
+    ("nope", {"bearing": "north"}, "deployment_id", None),
+])
+def test_bearing_correction_validates_the_id_and_the_bearing(deployment_id, body, detail, stored):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate bearing correction")
+    msg = {"req": {"params": {"id": deployment_id}}, "payload": body}
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["params"] == {"$id": deployment_id, "$bearing": stored}
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+
+
+def test_survey_usage_counts_rows_without_a_survey():
+    query = named(json.loads(FLOWS.read_text()), "read survey usage")
+    sql = sql_text(query)
+    assert "WHERE" not in sql.upper()
+    assert sql.endswith("GROUP BY survey_id")
+    answer = named(json.loads(FLOWS.read_text()), "tm-internal: answer survey usage")
+    assert "no survey" in answer["func"]

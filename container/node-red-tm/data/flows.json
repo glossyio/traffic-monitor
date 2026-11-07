@@ -1560,7 +1560,7 @@
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 842
+        "h": 1082
     },
     {
         "id": "484071aff09e5ec2",
@@ -3175,12 +3175,28 @@
             "da8284b87f912452",
             "e27f61c06fec6515",
             "88360cc173468725",
-            "628da87e6b4869dc"
+            "628da87e6b4869dc",
+            "787e6f820c6aa230",
+            "98b4e6c9623acbff",
+            "c1cd5d9120fe0d76",
+            "5815e04433eba419",
+            "88c79d72935f5ab9",
+            "8fc4f98d19a14b33",
+            "695b9a20817303a6",
+            "51e35f746594a905",
+            "869932985ebcad5c",
+            "1fd1353fd3394217",
+            "0f1b996794be419a",
+            "ac9c1f431f070f3a",
+            "0aae1d3d3e4c7d3e",
+            "beadba835546c0ae",
+            "0acc95218c0c0a0c",
+            "477aff9a19ae76ba"
         ],
         "x": 94,
         "y": 1419,
         "w": 1786,
-        "h": 502
+        "h": 742
     },
     {
         "id": "13e034c27f12073e",
@@ -3404,7 +3420,7 @@
         "g": "3da2c0e89c06736d",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) AS last_end,\n    SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS deployment_count\nFROM deployment\nWHERE survey_id IS NOT NULL\nGROUP BY survey_id;\n",
+        "sql": "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) AS last_end,\n    SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS deployment_count\nFROM deployment\nGROUP BY survey_id;\n",
         "name": "read survey usage",
         "x": 1080,
         "y": 1560,
@@ -3420,7 +3436,7 @@
         "z": "3dae026ab340962a",
         "g": "3da2c0e89c06736d",
         "name": "tm-internal: answer survey usage",
-        "func": "// One row per survey id in tmdb: its first start, its latest end, how many of its deployments are still open, and\n// how many it has in all. last_end skips open deployments, so it is null only when none has ended.\nmsg.payload = { surveys: msg.payload };\nreturn msg;",
+        "func": "// One row per survey id in tmdb: its first start, its latest end, how many of its deployments are still open, and\n// how many it has in all. last_end skips open deployments, so it is null only when none has ended. The rows with\n// no survey id come back as one more group with survey_id null.\nmsg.payload = { surveys: msg.payload };\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3785,7 +3801,9 @@
             "dce8e3e7d11d02ac",
             "cf34fb121154e23f",
             "db7c70a85f045770",
-            "e1ed1757d394e260"
+            "e1ed1757d394e260",
+            "5815e04433eba419",
+            "ac9c1f431f070f3a"
         ],
         "uncaught": false,
         "x": 310,
@@ -3827,6 +3845,286 @@
         "headers": {},
         "x": 820,
         "y": 1880,
+        "wires": []
+    },
+    {
+        "id": "787e6f820c6aa230",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/:id/location",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1980,
+        "wires": [
+            [
+                "98b4e6c9623acbff"
+            ]
+        ]
+    },
+    {
+        "id": "98b4e6c9623acbff",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1980,
+        "wires": [
+            [
+                "c1cd5d9120fe0d76"
+            ],
+            [
+                "695b9a20817303a6"
+            ]
+        ]
+    },
+    {
+        "id": "c1cd5d9120fe0d76",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate location correction",
+        "func": "// tm-control corrects the location of one place: every deployment row of the survey takes the new pair, rounded to\n// the precision that row was stored at. The pair is two finite JSON numbers in range; a string, null, or NaN is refused.\n// Nothing is logged or echoed back, so no coordinate leaves the request.\nconst id = msg.req.params.id;\nif (typeof id !== \"string\" || !/^[0-9a-f]{8}-si$/.test(id)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"survey_id\" };\n    return [null, msg];\n}\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nconst number = (v, limit) => typeof v === \"number\" && Number.isFinite(v) && v >= -limit && v <= limit;\nif (!number(body.lat, 90)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"lat\" };\n    return [null, msg];\n}\nif (!number(body.lon, 180)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"lon\" };\n    return [null, msg];\n}\nmsg.params = { $survey_id: id, $lat: body.lat, $lon: body.lon };\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1980,
+        "wires": [
+            [
+                "5815e04433eba419"
+            ],
+            [
+                "51e35f746594a905"
+            ]
+        ]
+    },
+    {
+        "id": "5815e04433eba419",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET lat = ROUND($lat, location_precision), lon = ROUND($lon, location_precision)\nWHERE survey_id = $survey_id AND location_precision IS NOT NULL;\n",
+        "name": "re-round survey coordinates",
+        "x": 1080,
+        "y": 1980,
+        "wires": [
+            [
+                "88c79d72935f5ab9"
+            ]
+        ]
+    },
+    {
+        "id": "88c79d72935f5ab9",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer location correction",
+        "func": "// The correction answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1980,
+        "wires": [
+            [
+                "8fc4f98d19a14b33"
+            ]
+        ]
+    },
+    {
+        "id": "8fc4f98d19a14b33",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1980,
+        "wires": []
+    },
+    {
+        "id": "695b9a20817303a6",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2020,
+        "wires": []
+    },
+    {
+        "id": "51e35f746594a905",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2020,
+        "wires": []
+    },
+    {
+        "id": "869932985ebcad5c",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments/:id/bearing",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2080,
+        "wires": [
+            [
+                "1fd1353fd3394217"
+            ]
+        ]
+    },
+    {
+        "id": "1fd1353fd3394217",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2080,
+        "wires": [
+            [
+                "0f1b996794be419a"
+            ],
+            [
+                "0acc95218c0c0a0c"
+            ]
+        ]
+    },
+    {
+        "id": "0f1b996794be419a",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate bearing correction",
+        "func": "// tm-control corrects the bearing of one deployment row. The bearing is one of the eight compass points, or empty\n// for none, and is stored lower case.\nconst id = msg.req.params.id;\nif (typeof id !== \"string\" || !/^\\d+-[0-9a-f]{8}-d$/.test(id)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"deployment_id\" };\n    return [null, msg];\n}\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nconst bearing = typeof body.bearing === \"string\" ? body.bearing.toLowerCase() : undefined;\nif (bearing === undefined || ![\"\", \"n\", \"s\", \"e\", \"w\", \"ne\", \"nw\", \"se\", \"sw\"].includes(bearing)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"bearing\" };\n    return [null, msg];\n}\nmsg.params = { $id: id, $bearing: bearing };\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2080,
+        "wires": [
+            [
+                "ac9c1f431f070f3a"
+            ],
+            [
+                "477aff9a19ae76ba"
+            ]
+        ]
+    },
+    {
+        "id": "ac9c1f431f070f3a",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET bearing = $bearing WHERE id = $id;\n",
+        "name": "rewrite deployment bearing",
+        "x": 1080,
+        "y": 2080,
+        "wires": [
+            [
+                "0aae1d3d3e4c7d3e"
+            ]
+        ]
+    },
+    {
+        "id": "0aae1d3d3e4c7d3e",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer bearing correction",
+        "func": "// The correction answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 2080,
+        "wires": [
+            [
+                "beadba835546c0ae"
+            ]
+        ]
+    },
+    {
+        "id": "beadba835546c0ae",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 2080,
+        "wires": []
+    },
+    {
+        "id": "0acc95218c0c0a0c",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2120,
+        "wires": []
+    },
+    {
+        "id": "477aff9a19ae76ba",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2120,
         "wires": []
     },
     {
