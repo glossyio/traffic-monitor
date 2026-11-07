@@ -180,6 +180,7 @@ UNREADABLE_PAIR = "The model's files can't be read."
 Short = Annotated[str, StringConstraints(min_length=1, max_length=32)]
 Label = Annotated[str, StringConstraints(min_length=1, max_length=64)]
 Side = Annotated[int, Field(ge=1, le=8192)]
+Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
 
 
 class SidecarForm(BaseModel):
@@ -192,6 +193,7 @@ class SidecarForm(BaseModel):
     input_pixel_format: Short
     input_dtype: Short | None = None
     labels: Annotated[list[Label], Field(min_length=1, max_length=1000)]  # in label-map index order
+    name: Title | None = None  # the model's name in the list; the file name when left out
 
 
 def _refusal(error: UploadError) -> ApiError:
@@ -299,10 +301,10 @@ async def upload_file(filename: str, request: Request, admin: User = Depends(req
 
 
 def _form_sidecar(name: str, form: SidecarForm, detector: str) -> bytes:
-    """A sidecar in the Frigate+ record's shape, with the fields Frigate reads, named for the file, and without an id
-    or a training date, so it's never taken for a Frigate+ model."""
+    """A sidecar in the Frigate+ record's shape, with the fields Frigate reads, named as the form says or for the file,
+    and without an id or a training date, so it's never taken for a Frigate+ model."""
     record = {
-        "name": name,
+        "name": form.name or name,
         "type": form.model_type,
         "supportedDetectors": [detector],
         "width": form.width,

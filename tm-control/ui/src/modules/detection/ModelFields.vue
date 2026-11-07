@@ -1,6 +1,6 @@
 <!--
   What Frigate needs to know about a model file that came without its .json (POST /models/{name}/sidecar): its type,
-  input size, input layout, and labels. For a Coral or a Hailo-8L the fields start with Frigate's documented example
+  input size, input layout, and labels, and optionally a name for the model list (the file name when left empty). For a Coral or a Hailo-8L the fields start with Frigate's documented example
   for that detector. Emits `saved` with the model's entry once the device has written the sidecar.
 -->
 <script setup lang="ts">
@@ -32,6 +32,7 @@ const tensor = ref<string | null>(example?.tensor ?? null)
 const pixels = ref<string | null>(example?.pixels ?? null)
 const dtype = ref<string | null>(null)
 const labels = ref('')
+const modelName = ref('')
 
 const required = (value: unknown) => (value !== null && value !== '') || 'Fill this in.'
 const side = (value: string) =>
@@ -64,6 +65,7 @@ async function save() {
         input_pixel_format: pixels.value!,
         input_dtype: dtype.value,
         labels: lines(labels.value),
+        name: modelName.value.trim() || null,
       },
     })
     emit('saved', data!)
@@ -81,6 +83,14 @@ async function save() {
       {{ name }} came without its .json, so Frigate doesn't know how to use it yet. Fill in what whoever trained the
       model gives.<template v-if="example"> The fields start with Frigate's example for {{ detector }}.</template>
     </p>
+    <v-text-field
+      v-model="modelName"
+      label="Name"
+      hint="Shown in the model list. Left empty, the file name is used."
+      persistent-hint
+      variant="outlined"
+      class="mb-2"
+    />
     <v-select v-model="modelType" :items="MODEL_TYPES" label="Model type" variant="outlined" :rules="[required]" />
     <div class="d-flex ga-4">
       <v-text-field v-model="width" label="Width" type="number" variant="outlined" :rules="[side]" />
