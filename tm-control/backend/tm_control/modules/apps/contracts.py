@@ -17,7 +17,7 @@ from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOK
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import REFUSED_KEY, listed, quoted, traceback_last_line, validation_messages
 from tm_control.modules.location.config import read_deployment
-from tm_control.modules.location.coordinates import exact, normalize_bearing
+from tm_control.modules.location.coordinates import exact
 from tm_control.modules.location.places import Places
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
@@ -166,6 +166,12 @@ def _coordinate_problems(deployment: dict) -> list[str]:
     return problems
 
 
+def _bearing_ok(value) -> bool:
+    """Node-RED's init config defaults lower-cases a bearing and looks it up as it is, with no trim: empty is fine,
+    ' n' and a run of spaces are not."""
+    return value is None or value == "" or (isinstance(value, str) and value.lower() in BEARINGS)
+
+
 def _sensor_deployments(data: dict) -> list[tuple[str, dict, bool]]:
     """(path, the sensor's own deployment block, whether the sensor is enabled) for every sensor that has one."""
     found = []
@@ -192,7 +198,7 @@ def location(context: Context) -> list[Check]:
     settings = read_deployment(read)
     problems = _coordinate_problems(deployment)
     bearing_message = "isn't one of " + ", ".join(BEARINGS) + ", or empty"
-    if normalize_bearing(deployment.get("bearing")) is None:
+    if not _bearing_ok(deployment.get("bearing")):
         problems.append(f"deployment.bearing {bearing_message}")
     if settings.survey_id_invalid:
         problems.append("deployment.survey_id isn't a survey id (8 hex characters and -si)")
@@ -200,7 +206,7 @@ def location(context: Context) -> list[Check]:
         problems.append("deployment.database_precision isn't none, 1, or 2")
     ignored = []
     for path, own, enabled in _sensor_deployments(read.data):
-        if enabled and normalize_bearing(own.get("bearing")) is None:
+        if enabled and not _bearing_ok(own.get("bearing")):
             problems.append(f"{path}.bearing {bearing_message}")
         ignored += [f"{path}.{key}" for key in ("lat", "lon") if key in own]
     if problems:

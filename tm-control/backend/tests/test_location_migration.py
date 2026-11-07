@@ -2,7 +2,10 @@
 per-sensor lat/lon that the location being per unit made meaningless. Migrate runs as root and never opens
 state.sqlite; the printed lines name keys and sensors, never a value."""
 
+import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -159,3 +162,15 @@ def test_migrate_never_opens_the_state_database(config_yml, secrets_dir, monkeyp
     monkeypatch.setattr(state.State, "connect", refuse)
     monkeypatch.setattr(state.State, "migrate", refuse)
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
+
+
+def test_importing_migrate_does_not_import_the_modules_package():
+    """Migrate runs as root after the secret files are written; an import failure in any module must not reach it."""
+    code = "\n".join([
+        "import sys, tm_control.core.migrate",
+        "sys.exit(any(name.startswith('tm_control.modules') for name in sys.modules))",
+    ])
+    package_root = Path(migrate.__file__).resolve().parents[2]
+    env = {**os.environ, "PYTHONPATH": str(package_root)}
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env)
+    assert done.returncode == 0, done.stderr

@@ -205,6 +205,8 @@ def test_a_camera_without_a_radar_is_fine(apps):
         ({"lat": True, "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
         ({"lat": 45, "lon": 10, "bearing": "north"}, "error", "deployment.bearing"),
         ({"lat": 45, "lon": 10, "bearing": 90}, "error", "deployment.bearing"),
+        ({"lat": 45, "lon": 10, "bearing": " n"}, "error", "deployment.bearing"),  # Node-RED doesn't trim
+        ({"lat": 45, "lon": 10, "bearing": "  "}, "error", "deployment.bearing"),
         ({"lat": 45, "lon": 10, "bearing": ""}, "ok", None),
         ({"lat": 45, "lon": 10, "bearing": "SW"}, "ok", None),  # Node-RED lowercases it
         ({"lat": None, "lon": None, "bearing": ""}, "ok", None),  # as installed, before a location is set
@@ -218,7 +220,7 @@ def test_deployment_values(apps, deployment, status, key):
     if key:
         assert key in check.detail
         value = deployment[key.removeprefix("deployment.")]
-        if isinstance(value, str):
+        if isinstance(value, str) and len(value.strip()) > 2:  # shorter ones are inside the message
             assert value not in check.detail  # names the key, not its value
         assert "91" not in check.detail and "180.5" not in check.detail
 
@@ -281,6 +283,13 @@ def test_location_checks_each_enabled_sensors_own_bearing(apps):
         in check.detail
     )
     assert "north" not in check.detail
+
+
+@pytest.mark.parametrize("bearing", [" n", "  "])
+def test_location_does_not_trim_a_sensors_own_bearing(apps, bearing):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": bearing}))
+    check = location_check(apps)
+    assert check.status == "error" and "sensors.cameras.picam_h265.deployment.bearing" in check.detail
 
 
 def test_location_ignores_a_disabled_sensors_bearing(apps):

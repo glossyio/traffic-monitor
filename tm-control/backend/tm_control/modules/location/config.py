@@ -14,10 +14,9 @@ from pydantic import BaseModel
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import MarkedYAMLError, YAMLError
 from ruamel.yaml.scalarstring import SingleQuotedScalarString
-from ruamel.yaml.tokens import CommentToken
 
 from tm_control.adapters import nodered
-from tm_control.adapters.yamlfile import ConcurrentEditError, ConfigRead
+from tm_control.adapters.yamlfile import ConcurrentEditError, ConfigRead, blank_line_after, put_after
 from tm_control.modules.location.coordinates import (
     PRECISIONS,
     exact,
@@ -118,12 +117,6 @@ def _mapping(value) -> Mapping:
     return value if isinstance(value, Mapping) else {}
 
 
-def put_key(block: CommentedMap, key: str, value, after: str | None = None) -> None:
-    """Add key to a block with its comments and blank lines kept (see NodeRedConfig._put): after `after` when that is
-    there, else at the end. For tm-control migrate, which edits the file through its own RoundTripFile."""
-    NodeRedConfig._put(block, key, value, after)
-
-
 class NodeRedConfig:
     """config.yml loaded for reading and editing. Edit with the set_* methods, then save()."""
 
@@ -198,20 +191,6 @@ class NodeRedConfig:
             data["deployment"] = block
         return block
 
-    @staticmethod
-    def _put(block: CommentedMap, key: str, value, after: str | None = None) -> None:
-        """Set key, keeping its place and comment when it exists, else adding it after `after` (or at the end).
-
-        A key added at the end takes the blank line that ended the block, so it lands above that line, not below."""
-        if key in block:
-            block[key] = value
-            return
-        keys = list(block.keys())
-        position = keys.index(after) + 1 if after in block else len(keys)
-        block.insert(position, key, value)
-        if keys and position == len(keys):
-            NodeRedConfig._blank_line_after(block, keys[-1], block, key, move=True)
-
     def set_place(self, survey_id: str | None, lat: float | None, lon: float | None) -> None:
         """Write deployment.survey_id (lower case) and lat and lon; None leaves a key empty (`lat:`)."""
         if survey_id is not None and normalize_survey_id(survey_id) is None:
@@ -219,21 +198,21 @@ class NodeRedConfig:
         lat = exact(lat, "lat")
         lon = exact(lon, "lon")
         block = self._deployment_block()
-        self._put(block, "lat", lat)
-        self._put(block, "lon", lon, after="lat")
-        self._put(block, "survey_id", None if survey_id is None else survey_id.lower(), after="bearing")
+        put_after(block, "lat", lat)
+        put_after(block, "lon", lon, after="lat")
+        put_after(block, "survey_id", None if survey_id is None else survey_id.lower(), after="bearing")
 
     def set_survey_id(self, survey_id: str) -> None:
         """Write deployment.survey_id (lower case) alone, leaving lat and lon as the file has them."""
         if normalize_survey_id(survey_id) is None:
             raise ValueError("survey_id must be a survey id")
-        self._put(self._deployment_block(), "survey_id", survey_id.lower(), after="bearing")
+        put_after(self._deployment_block(), "survey_id", survey_id.lower(), after="bearing")
 
     def set_precision(self, precision: str) -> None:
         if precision not in PRECISIONS:
             raise ValueError("precision must be none, 1 or 2")
         block = self._deployment_block()
-        self._put(block, "database_precision", SingleQuotedScalarString(precision), after="survey_id")
+        put_after(block, "database_precision", SingleQuotedScalarString(precision), after="survey_id")
 
     def set_sensor_bearing(self, sensor_type: str, sensor_name: str, bearing: str) -> None:
         """Write sensors.<type>.<name>.deployment.bearing, creating the sensor's deployment block when it has none.
@@ -255,25 +234,10 @@ class NodeRedConfig:
             last = list(sensor.keys())[-1] if sensor else None
             sensor["deployment"] = block
             block["bearing"] = None
-            self._blank_line_after(sensor, last, block, "bearing", move=True)
+            blank_line_after(sensor, last, block, "bearing", move=True)
         elif not isinstance(block, CommentedMap):
             raise ConfigError("invalid")
         block["bearing"] = SingleQuotedScalarString(bearing)
-
-    @staticmethod
-    def _blank_line_after(
-        owner: CommentedMap, key: str | None, block: CommentedMap, new_key: str, move: bool
-    ) -> None:
-        """ruamel keeps the blank line after a mapping's last scalar in that key's trailing comment. A block added
-        after it would end up before the blank line, so give the block's last key a blank line of its own: moved from
-        the old key (a block inside the same parent), or copied (a block between two others, which keeps both gaps)."""
-        token = owner.ca.items.get(key)
-        if token is None or len(token) < 3 or token[2] is None or not token[2].value.endswith("\n\n"):
-            return
-        old = token[2]
-        block.ca.items[new_key] = [None, None, CommentToken("\n\n", old.start_mark, old.end_mark), None]
-        if move:
-            old.value = old.value[:-1]
 
     def save(self) -> bool:
         """Write the file when the edits changed it. True when it did (a backup is beside it); False, and nothing
@@ -282,7 +246,7 @@ class NodeRedConfig:
             owner, key, block = self._blank_to_move
             self._blank_to_move = None
             if block:
-                self._blank_line_after(owner, key, block, list(block.keys())[-1], move=False)
+                blank_line_after(owner, key, block, list(block.keys())[-1], move=False)
         try:
             return self._file.save() is not None
         except ConcurrentEditError:

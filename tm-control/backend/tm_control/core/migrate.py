@@ -12,7 +12,7 @@ from ruamel.yaml.error import CommentMark
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 from ruamel.yaml.tokens import CommentToken
 
-from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, read_text, write_atomic
+from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, put_after, read_text, write_atomic
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
 from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.core.secrets import VALUE_RULES, is_valid_value
@@ -669,12 +669,9 @@ def _run_node_red(config_path, secrets_dir, dry_run):
     for path, prune in deletions:
         _delete(document.data, path, prune)
     if add_precision:
-        # Imported here: tm_control.modules pulls in FastAPI and every module, which the other runs needn't wait for.
-        from tm_control.modules.location.config import put_key
-
         # After survey_id, as config.yml.j2 orders them; else after bearing.
         after = "survey_id" if "survey_id" in deployment else "bearing"
-        put_key(deployment, "database_precision", SingleQuotedScalarString("1"), after)
+        put_after(deployment, "database_precision", SingleQuotedScalarString("1"), after)
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
     try:

@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Literal, NamedTuple
 
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
+from ruamel.yaml.tokens import CommentToken
 
 
 class ConcurrentEditError(RuntimeError):
@@ -173,6 +175,33 @@ def write_atomic(path, text):
         with contextlib.suppress(FileNotFoundError):
             os.unlink(tmp)
         raise
+
+
+def blank_line_after(owner: CommentedMap, key: str | None, block: CommentedMap, new_key: str, move: bool) -> None:
+    """ruamel keeps the blank line after a mapping's last scalar in that key's trailing comment. A block added after it
+    would end up before the blank line, so give the block's last key a blank line of its own: moved from the old key (a
+    block inside the same parent), or copied (a block between two others, which keeps both gaps)."""
+    token = owner.ca.items.get(key)
+    if token is None or len(token) < 3 or token[2] is None or not token[2].value.endswith("\n\n"):
+        return
+    old = token[2]
+    block.ca.items[new_key] = [None, None, CommentToken("\n\n", old.start_mark, old.end_mark), None]
+    if move:
+        old.value = old.value[:-1]
+
+
+def put_after(block: CommentedMap, key: str, value, after: str | None = None) -> None:
+    """Set key, keeping its place and comment when it exists, else adding it after `after` (or at the end).
+
+    A key added at the end takes the blank line that ended the block, so it lands above that line, not below."""
+    if key in block:
+        block[key] = value
+        return
+    keys = list(block.keys())
+    position = keys.index(after) + 1 if after in block else len(keys)
+    block.insert(position, key, value)
+    if keys and position == len(keys):
+        blank_line_after(block, keys[-1], block, key, move=True)
 
 
 class RoundTripFile:
