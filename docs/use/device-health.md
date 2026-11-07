@@ -4,7 +4,7 @@ description: Use the control app's Status, Device, and Date and time pages to se
 
 # Check and fix the device
 
-Three pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH:
+Three pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, [Detection](detection.md), shows the object detection model and changes it:
 
 * **Status** checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.
 * **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
@@ -42,7 +42,7 @@ A check that isn't passing offers one of these:
 
 * **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 * **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload and **Set the key** for Frigate+, which open [Tokens and keys](#tokens-and-keys).
+* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ section of the [Detection page](detection.md#frigate-plus).
 * **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](../reference/tmsetup.md)).
 
 The control app can't restart itself. If it stops, see [If the control app is down](control-app.md#if-the-control-app-is-down).
@@ -53,14 +53,14 @@ The card at the top shows the device's name, its Raspberry Pi model and memory, 
 
 ### Tokens and keys
 
-Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** and **Set the key** links open it for you. It lists the ThingsBoard access token and the [Frigate+](../configuration/frigate-config.md#better-models) API key, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`. The [Frigate+](../configuration/frigate-config.md#better-models) API key is on the [Detection page](detection.md#frigate-plus), next to the models it fetches.
 
 * A value is never shown back. The page says whether it's set and, for a token or key of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
-* **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long. A Frigate+ key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it.
-* **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read. Without a Frigate+ key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are already on the device keeps running; one that isn't downloaded yet [stops Frigate](../configuration/frigate-config.md#if-frigate-stops-over-a-model) until the key is set again, and the Frigate+ check says so.
-* Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, and the Frigate+ key restarts Frigate; each takes about a minute. Traffic isn't counted while Node-RED or Frigate restarts.
+* **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.
+* **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
+* Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
 
-An older device may have kept a token in `config.yml` or in the add-on's env file, or a Frigate+ key in `frigate.env`. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
+An older device may have kept a token in `config.yml` or in the add-on's env file, or a Frigate+ key in `frigate.env`. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the Device page and the Detection page show it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
 
 ### Download diagnostics
 
@@ -95,8 +95,9 @@ Moving the clock ahead by more than about 20 seconds stops Frigate's camera feed
 
 ## What viewers see
 
-Viewers see all three pages, but can't change anything:
+Viewers see all four pages, but can't change anything:
 
 * **Status**: the same checks, without the Restart and Re-scan buttons.
 * **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
+* **Detection**: the models and the label lists, without the buttons and the Frigate+ key; see [Choose the detection model](detection.md#the-detection-page).
 * **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
