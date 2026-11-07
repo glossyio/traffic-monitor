@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from tm_control.core.auth import Audit, Device, SetupCode, User, check_password_rules, check_username_rules
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import client_ip, rate_limited, require_admin, set_session_cookie
+from tm_control.modules.location import reconcile
 
 log = logging.getLogger(__name__)
 
@@ -79,6 +80,11 @@ def claim(body: Claim, request: Request, response: Response):
 
     user = device.claim(body.username, body.password, body.eula_version)
     Audit(app_state.state).record(user.id, "claim", user.username)
+    # The first place (or the upgrade import): a failure here must not undo the claim; GET /surveys tries again.
+    try:
+        reconcile.ensure(app_state, user.id)
+    except Exception as error:
+        log.warning("reconcile after claim failed: %s", type(error).__name__)
     set_session_cookie(request, response, user)
     log.info("device claimed from %s by %r", ip, user.username)
     return {"user": user}

@@ -94,15 +94,18 @@ class Places:
         status: str,
         user_id: int | None,
         now: float | None = None,
+        updated_now: float | None = None,
     ) -> Survey:
+        """updated_now, when given, sets updated_at apart from created_at (an imported place's last use)."""
         at = _timestamp(now)
+        updated_at = at if updated_now is None else _timestamp(updated_now)
         with _writing(self.state) as con:
             if status == "in_use" and con.execute("SELECT 1 FROM surveys WHERE status = 'in_use'").fetchone():
                 raise ValueError("a place is already in use")
             con.execute(
                 "INSERT INTO surveys (id, description, lat, lon, status, source, created_at, updated_at, created_by) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (survey_id, description, lat, lon, status, source, at, at, user_id),
+                (survey_id, description, lat, lon, status, source, at, updated_at, user_id),
             )
             _insert_bearings(con, survey_id, bearings)
             return _surveys(con, "WHERE id = ?", (survey_id,))[0]

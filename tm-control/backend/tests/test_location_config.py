@@ -30,6 +30,7 @@ def test_deployment_reads_the_fixture(path):
     assert deployment.precision == "1"
     assert not deployment.survey_id_invalid
     assert not deployment.precision_invalid
+    assert deployment.precision_missing
 
 
 def test_deployment_normalises_quoted_and_upper_case_values(path):
@@ -41,6 +42,7 @@ def test_deployment_normalises_quoted_and_upper_case_values(path):
     assert deployment.lon == -122.6912
     assert deployment.survey_id == SURVEY
     assert deployment.precision == "2"
+    assert not deployment.precision_missing
 
 
 def test_deployment_flags_invalid_values(path):
@@ -48,6 +50,7 @@ def test_deployment_flags_invalid_values(path):
     deployment = NodeRedConfig(path).deployment()
     assert deployment.survey_id is None and deployment.survey_id_invalid
     assert deployment.precision == "1" and deployment.precision_invalid
+    assert not deployment.precision_missing  # there, but not a precision: the Status check reports it
 
 
 def test_deployment_is_lenient_about_bad_coordinates(path):

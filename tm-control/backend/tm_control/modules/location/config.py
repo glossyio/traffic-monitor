@@ -49,6 +49,7 @@ class Deployment(BaseModel):
     precision: str
     survey_id_invalid: bool
     precision_invalid: bool
+    precision_missing: bool  # database_precision absent or blank (precision is then the default)
 
 
 def _blank(value) -> bool:
@@ -84,6 +85,7 @@ def _parse_deployment(data: Mapping) -> Deployment:
         precision=precision or DEFAULT_PRECISION,
         survey_id_invalid=not _blank(raw_id) and survey_id is None,
         precision_invalid=not _blank(raw_precision) and precision is None,
+        precision_missing=_blank(raw_precision),
     )
 
 

@@ -140,3 +140,11 @@ def test_reconciled_flag_starts_unset(places, state):
     assert Device(state)  # the flag lives in the device table, beside the claim state
     row = state.connect().execute("SELECT value FROM device WHERE key = 'surveys_reconciled_at'").fetchone()
     assert row["value"] == "1970-01-01T00:16:40+00:00"
+
+
+def test_create_can_set_updated_at_apart_from_created_at(places):
+    """An imported place keeps its survey's first and last use as created_at and updated_at."""
+    created = places.create("00000001-si", None, None, None, [], "imported_backup", "used", None,
+                            now=1000, updated_now=2000)
+    assert (created.created_at, created.updated_at) == ("1970-01-01T00:16:40+00:00", "1970-01-01T00:33:20+00:00")
+    assert _create(places, "00000002-si", now=1000).updated_at == "1970-01-01T00:16:40+00:00"
