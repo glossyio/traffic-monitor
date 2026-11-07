@@ -432,66 +432,104 @@ sit in this layout without moving anything.
 ```text
 +----------------------------------+
 | Detection                   (h5) |
-| Object detection            (h6) |
-| This device detects with         |
-| edgetpu.                         |
-| Frigate runs Test site yolov9,   |
-| a Frigate+ model.                |
-| [Upload a model]  (admins only)  |
+| See which model Frigate detects  |
+| objects with and what it         |
+| recognises. Administrators can   |
+| switch models and set the        |
+| Frigate+ API key.                |
 |                                  |
-| Test site yolov9  (running)      |
-| trained 2026-10-01, yolo-generic,|
-| for edgetpu, 320×320             |
-| 0123...cdef, 4.0 KB,             |
-| SHA-256 ad7facb2586f             |
-| 0123...cdef.json, 433 bytes,     |
-| SHA-256 0da6c00a63ab             |
-| [Download]                       |
-| My model                         |
-| ...                              |
-| [Use] [Download] [Delete]        |
-| [Use the installer's model]      |
+| Object detection            (h6) |
+| Detector        Running model    |
+| edgetpu         Test site yolov9,|
+|                 a Frigate+ model |
+| +------------------------------+ |
+| | Test site yolov9  (In use)   | |  tinted
+| | trained 2026-10-01, ...      | |
+| | 0123...cdef, 4.0 KB, SHA-256 | |
+| | 0123...cdef.json, 433 bytes  | |
+| | [Download]                   | |
+| +------------------------------+ |
+| > Other models on this device (2)|  closed
+|   [Upload a model]               |
+|   +----------------------------+ |
+|   | The installer's model      | |
+|   | yolov9-s-...tflite         | |
+|   | 1.0 KB, SHA-256 5f70bf18...| |
+|   | [Use]                      | |
+|   +----------------------------+ |
+|   +----------------------------+ |
+|   | My model                   | |
+|   | trained ..., for edgetpu   | |
+|   | mine.tflite, 2.0 KB, ...   | |
+|   | [Use] [Download] [Delete]  | |
+|   +----------------------------+ |
 |                                  |
 | What the model recognises   (h6) |
-| Recognises           [Copy]      |
-| (person) (bicycle) (car)         |
-| Tracked by this device  [Copy]   |
-| (bicycle) (person) (car) (bus)   |
+| Frigate tracks only the objects  |
+| that are in both lists.          |
+| > All objects the model          |  closed
+|   recognises (3)                 |
+|   [Copy]  (person) (bicycle) ... |
+| > Objects tracked on this        |  closed
+|   device (6)                     |
+|   [Copy]  (bicycle) (person) ... |
 |                                  |
-| Frigate+                    (h6) |
-| Two sentences: online, pick the  |
-| model in Frigate; offline,       |
-| upload its two files here.       |
-| Frigate+ API key  (admins only)  |
-| Not set.                         |
-| [ Frigate+ API key          (o)] |
-| [Save]                           |
+| > Frigate+ API key      Not set  |  closed; the h6
+|   Two sentences: online, pick    |
+|   the model in Frigate; offline, |
+|   upload its two files here.     |
+|   [ Frigate+ API key        (o)] |
+|   [Save]                         |
 +----------------------------------+
 ```
 
-- The detector and the running model are sentences, as the Status page's verdict is: "This device detects with
-  edgetpu." names the detector as Frigate and a model's sidecar do, so it can be matched against the "for edgetpu"
-  under each model. When Frigate doesn't answer, a warning says the page shows what Frigate's config file says.
-- The models are a plain list, like the Status page's checks: the sidecar's name, then its facts on one line, then
-  one line per file with its size and the first 12 characters of its SHA-256. The full hash is the hash's tooltip,
-  for comparing with a download's SHA256SUMS on a computer; on a phone the 12 characters are enough to tell two
-  files apart. A file's name shows only when it isn't the title already. The installer's model has no sidecar, so
-  it's titled "The installer's model", with its file name as its facts line. At 375 px each of those lines wraps to
-  two, "SHA-256" and its hash staying together.
-- One chip per model at most, in words: "running" (in the heading blue), "can't run on this detector", or
+A viewer sees the same page with no buttons but the two Copy buttons, no state in the key's title, and no form.
+
+- A line under the title says what the page is for, in two sentences so a viewer isn't told the page lets them
+  switch models.
+- The detector and the running model are two facts, label above value, in the Device page's Software grid.
+  "Detector", not "Hardware detector", because the value is `cpu` on a device without an accelerator; "Running
+  model", because the page's verb for the state is "runs". The detector is named as Frigate and a model's sidecar
+  name it, so it can be matched against the "for edgetpu" under each model. When Frigate doesn't answer, a warning
+  above the facts says the page shows what Frigate's config file says.
+- Each model is a bordered block (`border rounded-lg`): its title, then its facts on one line, then one line per
+  file with its size and the first 12 characters of its SHA-256. The border says each block is one choice. Only the
+  block Frigate runs is tinted, with the theme's `surface` (no elevation, no new color), and it's the only block
+  above the fold; the rest are in the "Other models" panel. The full hash is the hash's tooltip, for comparing with
+  a download's SHA256SUMS on a computer; on a phone the 12 characters are enough to tell two files apart. A file's
+  name shows only when it isn't the title already. The installer's model has no sidecar, so it's titled "The
+  installer's model", with its file name as its facts line. At 375 px each of those lines wraps to two, "SHA-256" and
+  its hash staying together.
+- A default with no file on the device (Frigate's built-in model on a device without a Coral, which the API can't
+  list) still gets a block, made by the page, with "Built into Frigate." as its facts line and no files. Without
+  it, a CPU device's one choice would be a button with no block.
+- One chip per model at most, in words: "In use" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
   line under the files.
-- The label lists are chips because they are many short words that wrap well on a phone. A sentence above them says
-  how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second list and not the
-  first is never tracked. Each list's Copy puts it on the clipboard comma-separated, ready to paste
-  elsewhere, and says "Copied." beside the button for two seconds; a refused copy says so and stays.
-- The Status page's "Set the key" links to `/detection#frigate-plus`, which scrolls to the section once the models
-  have loaded. The key's form is the Device page's (`EnteredSecret.vue`), unchanged.
-- The admin's actions are outlined buttons under each model, 44 px tall: Use (not on the running model), Download (a
-  model with both files), and Delete (when the API says it can be). The installer's model has none: the button under
-  the list, "Use the installer's model" (or "Use Frigate's built-in model" on a device without a Coral), puts it
-  back, and the device has no package of it. A Use that can't work is disabled, with the reason under it ("It's built
-  for hailo8l, and this device detects with edgetpu.").
+- Four panels: "Other models on this device", the two label lists, and the Frigate+ API key. They're closed when
+  the page opens, so the page reads as the facts and the model in use. Each title says what's inside and counts it
+  ("Other models on this device (2)"), or for the key says its state, so a closed row still says something. They
+  open independently (both label lists can be open at once, to compare them), and their content is rendered while
+  closed (`eager`), so the page's height is known when a link scrolls to the key. Each title, a button, sits inside
+  its h3 (the key's inside its h2), as the Device page's "Tokens and keys" does, so the outline stays the same for
+  screen readers.
+- The label lists are chips because they are many short words that wrap well on a phone. A sentence above the two
+  panels says how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second
+  list and not the first is never tracked. The second is "Objects tracked on this device", not "by this model",
+  because it's Frigate's `objects: track` config, not the model's; the wording sends someone to the right place to
+  change it. Each list's Copy puts it on the clipboard comma-separated, ready to paste elsewhere, and says "Copied."
+  beside the button for two seconds; a refused copy says so and stays.
+- The key's title says "Not set", "Set", or "Set, ending in ab12", with ", in use" while Frigate runs a Frigate+
+  model, and nothing for a viewer or until the secrets answer. The Status page's "Set the key" links to
+  `/detection#frigate-plus`, which opens the panel and scrolls to it once the models have loaded. The key's form is
+  the Device page's (`EnteredSecret.vue`) without its own heading and state line, which the title has.
+- The admin's actions are outlined buttons in each block, 44 px tall: Use (not on the model in use), Download (a
+  model with both files), and Delete (when the API says it can be). "Upload a model" is the first thing in the
+  "Other models" panel, where the models it adds appear. The device's default (the installer's model, or Frigate's
+  built-in model on a device without a Coral) has its own Use when Frigate runs something else, which puts it back
+  through `POST /models/default/use`; the defaults have no Download or Delete, and the device has no package of
+  them. A Use that can't work is disabled, with the reason under it ("It's built for hailo8l, and this device
+  detects with edgetpu.").
 - "Upload a model" opens a dialog: one package, or a model file with or without its .json, sent the .json first. A
   model file sent alone opens a form for what Frigate needs to know about it, filled in with Frigate's documented
   example for a Coral or a Hailo-8L; only the labels are always the person's to type. A .json sent alone finishes a
@@ -500,8 +538,9 @@ sit in this layout without moving anything.
 - Use and Delete ask first. Use says Frigate restarts and that traffic isn't counted meanwhile; after the device
   accepts, "Frigate is restarting." shows under the model, and the page asks again every 3 seconds until Frigate
   answers with the model ("Frigate runs My model."), or, after 90 seconds, points to the Status page. Each result
-  shows where its action was: under the model, under the button below the list, or, for a deleted model, above the
-  list. An API refusal shows its message there, Frigate's own words included.
+  shows where its action was: in the model's block (it moves above the fold with the block when Frigate runs it),
+  or, for a deleted model, at the top of the "Other models" panel. An API refusal shows its message there, Frigate's
+  own words included.
 
 #### What the screenshot review changed
 
@@ -513,7 +552,9 @@ The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as
 #### Defaults rejected
 
 - A data table of the models: its columns don't fit 375 px, and most cells are empty for the installer's model.
-- A card per model: a model is a file on the device, not something to open, and cards would make three look like
-  apps.
+- `v-card` per model: a card reads as something to open. The blocks are a border and, for the one in use, the
+  surface tint; the maintainer asked for the border after the first build, so that each model reads as one choice.
+- A strict accordion (one panel open at a time): comparing the two label lists needs both open.
+- "Expand for …" as a panel title: the chevron says that; the title names and counts what's inside.
 - The full hash on the page: 64 characters wrap into a block that hides the rest of the line.
 - Colored chips for the labels, or icons per object: the labels are Frigate's words, and copying them is the job.

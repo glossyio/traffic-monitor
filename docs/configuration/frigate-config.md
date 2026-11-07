@@ -145,8 +145,8 @@ Frigate then fails each time it starts, restarts every few seconds, and counts n
 
 To get Frigate running again, do one of these:
 
-1. On the Detection page, choose [**Use the installer's model**](../use/detection.md#use-a-model) (on a device without a Coral, **Use Frigate's built-in model**). While Frigate isn't answering, the device edits Frigate's config itself and restarts Frigate.
-2. Enter the right key on the Detection page, under [Frigate+](../use/detection.md#frigate-plus). Saving it restarts Frigate, which then fetches the model.
+1. On the Detection page, open **Other models on this device** and choose [**Use**](../use/detection.md#use-a-model) on **The installer's model** (on a device without a Coral, on **Frigate's built-in model**). While Frigate isn't answering, the device edits Frigate's config itself and restarts Frigate.
+2. Enter the right key on the Detection page, under [Frigate+ API key](../use/detection.md#frigate-plus). Saving it restarts Frigate, which then fetches the model.
 3. Upload the model's two files on the Detection page, as in [A device without internet](#a-device-without-internet), and choose **Use**.
 4. As a last resort, over SSH, open Frigate's config as root with `sudo nano /opt/traffic-monitor/frigate/config/config.yml` and replace its `model:` section with the installer's. Copy it from the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), where its `path` names the `.tflite` file in `model_cache`, or from a backup beside the file, if an earlier run of the installer with `-f` left one. Only a device with a Coral has that section; on another device, delete the `model:` section. Then restart Frigate with `sudo systemctl restart frigate.service`.
 
