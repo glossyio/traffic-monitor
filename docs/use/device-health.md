@@ -99,5 +99,5 @@ Viewers see all four pages, but can't change anything:
 
 * **Status**: the same checks, without the Restart and Re-scan buttons.
 * **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
-* **Detection**: the models and the label lists, without the buttons and the Frigate+ key; see [Choose the detection model](detection.md#the-detection-page).
+* **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](detection.md#the-detection-page).
 * **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.

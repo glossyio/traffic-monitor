@@ -22,7 +22,7 @@ The model the installer set up is shown as **The installer's model**. It has no 
 
 Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, the first thing under **Other models on this device**, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
-When Frigate isn't answering, the page says so and shows what Frigate's config file says.
+When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and **Use** on a model, or on the installer's model, gives Frigate a config it can run.
 
 ## Upload a model
 
@@ -35,7 +35,7 @@ A model is a model file and a small `.json` file beside it, its *sidecar*, which
 
 The page shows every file when you pick, because a Frigate+ model's file has no extension.
 
-The limits are 100 MB for a model file, 2 MB for a `.json`, and at least 512 MB of free storage left afterwards. A model whose name is already on the device is refused; delete the old one first. A model has to be built for the device's detector. The page marks one that isn't, and won't use it.
+The limits are 100 MB for a model file, 2 MB for a `.json`, and at least 512 MB of free storage left afterwards. A model whose name is already on the device is refused; delete the old one first. A model file can't be named `default`, which the page keeps for the device's default. A model has to be built for the device's detector. The page marks one that isn't, and won't use it.
 
 !!! warning "Take models only from a source you trust"
 
@@ -50,6 +50,7 @@ If Frigate refuses the change, the page shows Frigate's reason, and nothing chan
 The page refuses a **Use** in these cases:
 
 * Frigate is restarting. Try again in a minute.
+* The device's detector can't be told, because Frigate isn't answering and its config file can't be read, so the model can't be checked against it.
 * Frigate's config sets a model inside a detector, which would override this one. Remove that model in Frigate's config editor first.
 * The installer's model file is gone from the device.
 
