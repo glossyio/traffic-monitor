@@ -172,8 +172,8 @@ def test_one_bad_file_does_not_blank_the_inventory(cache, monkeypatch):
     os.mkfifo(cache / "fifo.tflite")
     os.mkfifo(cache / "fifo2.tflite.json")
     pair(cache, "huge.tflite", sidecar=b" " * (SIDECAR_MAX + 1))
+    pair(cache, "locked.tflite")  # a full pair, but the model file can't be opened
     unreadable = cache / "locked.tflite"
-    unreadable.write_bytes(b"x")
     unreadable.chmod(0)
     real_listdir = os.listdir
     monkeypatch.setattr(os, "listdir", lambda fd: [*real_listdir(fd), "c" * 300, "c" * 300 + ".json"])
@@ -192,6 +192,8 @@ def test_one_bad_file_does_not_blank_the_inventory(cache, monkeypatch):
     if os.geteuid() != 0:
         assert models["locked.tflite"].problem == "The file can't be read."
         assert models["locked.tflite"].files[0].sha256 is None
+        assert not models["locked.tflite"].complete
+        assert models["locked.tflite"].sidecar is not None  # its sidecar still parsed
     assert models["good.tflite"].files[0].sha256 == hashlib.sha256(bytes(4096)).hexdigest()
 
 
@@ -204,15 +206,62 @@ def test_an_unreadable_sidecar_makes_the_entry_incomplete(cache):
     assert not model.complete and model.problem == "The sidecar can't be read."
 
 
-def test_a_missing_cache_directory_lists_only_the_installers_default(tmp_path):
-    assert inventory(tmp_path / "nope", None) == []
+def test_a_missing_or_linked_cache_directory_lists_nothing(tmp_path):
     (tmp_path / "file").write_bytes(b"x")
     (tmp_path / "link").symlink_to(tmp_path)
-    for path in (tmp_path / "file", tmp_path / "link"):
+    for path in (tmp_path / "nope", tmp_path / "file", tmp_path / "link"):
         assert inventory(path, None) == []
-    models = inventory(tmp_path / "nope", installer(tmp_path))
-    assert [model.name for model in models] == [INSTALLER_FILE]
-    assert models[0].problem == "The file can't be read."
+        assert inventory(path, installer(tmp_path)) == []
+
+
+def test_the_installers_default_is_listed_only_when_its_file_is_a_regular_file(cache):
+    assert inventory(cache, installer(cache)) == []  # no file
+    (cache / "elsewhere").write_bytes(b"x")
+    (cache / INSTALLER_FILE).symlink_to(cache / "elsewhere")
+    assert [model.name for model in inventory(cache, installer(cache))] == ["elsewhere"]  # a link isn't the file
+    (cache / INSTALLER_FILE).unlink()
+    (cache / INSTALLER_FILE).mkdir()
+    assert [model.name for model in inventory(cache, installer(cache))] == ["elsewhere"]
+
+
+def test_an_unreadable_installer_file_is_listed_incomplete(cache):
+    if os.geteuid() == 0:
+        pytest.skip("root reads a mode 000 file")
+    (cache / INSTALLER_FILE).write_bytes(bytes(8))
+    (cache / INSTALLER_FILE).chmod(0)
+    model = inventory(cache, installer(cache))[0]
+    assert (model.kind, model.complete, model.problem) == ("installer_default", False, "The file can't be read.")
+    assert model.files[0].sha256 is None
+
+
+def test_an_oversized_sidecar_is_never_read_past_the_cap(cache, monkeypatch):
+    (cache / "huge.tflite.json").write_bytes(b" " * (4 * SIDECAR_MAX))
+    asked, got = [], []
+    real = os.read
+
+    def counting(fd, count):
+        asked.append(count)
+        block = real(fd, count)
+        got.append(len(block))
+        return block
+
+    monkeypatch.setattr(inv.os, "read", counting)
+    model = by_name(inventory(cache, None))["huge.tflite"]
+    assert model.problem == "The sidecar is too large." and not model.complete
+    assert model.files[0].sha256 is None
+    assert max(asked) <= SIDECAR_MAX + 1 and sum(got) == SIDECAR_MAX + 1
+
+
+def test_the_sidecar_is_read_once_and_hashed_from_the_bytes_that_were_parsed(cache, monkeypatch):
+    inv.HASHES.clear()
+    pair(cache, "a.tflite")
+    reads = []
+    real = inv.open_in
+    monkeypatch.setattr(inv, "open_in", lambda *args, **kwargs: reads.append(args[1]) or real(*args, **kwargs))
+    model = by_name(inventory(cache, None))["a.tflite"]
+    assert reads.count("a.tflite.json") == 1
+    assert model.files[1].sha256 == hashlib.sha256(SIDECAR).hexdigest()
+    assert model.files[1].size == len(SIDECAR)
 
 
 def test_hashes_are_cached_by_name_size_and_mtime(cache, monkeypatch):
@@ -282,7 +331,8 @@ def test_host_path_stays_under_frigates_config():
     assert host_path(codedir, "/config/labels-coco17.txt") == codedir / "frigate/config/labels-coco17.txt"
     assert host_path(codedir, "/config/model_cache/x.txt") == codedir / "frigate/config/model_cache/x.txt"
     assert host_path("/opt/traffic-monitor", "/config/a") == codedir / "frigate/config/a"
-    for bad in ("/config/../x", "/config/a/../../x", "/etc/x", "/configs/x", "config/x", "/config/", "/config", "",
+    for bad in ("/config//etc/passwd", "/config/a//b", "/config/./x", "/config/a/", "/config/../x",
+                "/config/a/../../x", "/etc/x", "/configs/x", "config/x", "/config/", "/config", "",
                 "/config/a\0b", None, 3):
         assert host_path(codedir, bad) is None, bad
     assert host_path(codedir, "/config/a..b") is not None
