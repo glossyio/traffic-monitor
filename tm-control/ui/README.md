@@ -499,14 +499,17 @@ A viewer sees the same page with no buttons but the two Copy buttons, no state i
   a download's SHA256SUMS on a computer; on a phone the 12 characters are enough to tell two files apart. A file's
   name shows only when it isn't the title already. The installer's model has no sidecar, so it's titled "The
   installer's model", with its file name as its facts line. At 375 px each of those lines wraps to two, "SHA-256" and
-  its hash staying together.
+  its hash staying together. A file name may break anywhere (`word-break: break-all`, scoped in `ModelBlock.vue`):
+  the names that are long are IDs, and otherwise a 32-character Frigate+ name that fills a block's line leaves its
+  comma to start the next one.
 - A default with no file on the device (Frigate's built-in model on a device without a Coral, which the API can't
   list) still gets a block, made by the page, with "Built into Frigate." as its facts line and no files. Without
   it, a CPU device's one choice would be a button with no block.
 - One chip per model at most, in words: "In use" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
   line under the files.
-- Four panels: "Other models on this device", the two label lists, and the Frigate+ API key. They're closed when
+- Four panels: "Other models on this device", the two label lists, and the Frigate+ API key, on the page's
+  background rather than Vuetify's `surface`, so the block in use stays the only tinted thing. They're closed when
   the page opens, so the page reads as the facts and the model in use. Each title says what's inside and counts it
   ("Other models on this device (2)"), or for the key says its state, so a closed row still says something. They
   open independently (both label lists can be open at once, to compare them), and their content is rendered while
@@ -548,6 +551,16 @@ The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as
 `#frigate-plus` link.
 
 - At 375 px a file line broke between "SHA-256" and its hash. The two now stay together.
+
+After the page was reshaped into blocks and panels, it was checked again the same way, and at 360 px for the
+narrowest phones:
+
+- Vuetify gives panels the `surface` color, so the closed panels were as tinted as the block in use, which then
+  didn't stand out. The panels take the page's background now.
+- The key's state sat against its name ("Frigate+ API keyNot set"). Vuetify 3.13 has no column-gap class, so a
+  scoped rule sets the gap.
+- Inside the panel, a Frigate+ model's 32-character file name filled a block's line at 360 and 375 px, and its comma
+  started the next line. Narrower panel padding only moved the break, so the file name may now break anywhere.
 
 #### Defaults rejected
 
