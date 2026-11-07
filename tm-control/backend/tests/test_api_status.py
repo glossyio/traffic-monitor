@@ -28,9 +28,9 @@ def audit_actions(settings):
         con.close()
 
 
-def test_status_module_comes_right_after_jobs_and_secrets():
+def test_status_module_comes_right_after_jobs_secrets_and_detection():
     ids = [m.id for m in MODULES]
-    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 3] == ["secrets", "status"]
+    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 4] == ["secrets", "detection", "status"]
 
 
 def test_status_needs_a_session(claimed_client):
