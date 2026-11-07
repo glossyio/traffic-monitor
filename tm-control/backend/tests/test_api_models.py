@@ -871,6 +871,7 @@ def test_use_default_on_a_device_writes_the_installers_section_or_none(
         device_client, login, tmp_path, systemctl, frigate_api):
     codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
     config = codedir / "frigate" / "config" / "config.yml"
+    (config.parent / "model_cache" / INSTALLER_FILE).write_bytes(bytes(1024))
     frigate_api(None)
     login(device_client, *ADMIN)
     r = use(device_client, "default")
@@ -930,3 +931,55 @@ def test_use_audits_the_name_and_default(seeded, settings, login):
     use(seeded, INSTALLER_FILE)
     use(seeded, "nothing.tflite")  # refused: no row
     assert use_rows(settings) == ["mine.tflite", "default", "default"]
+
+
+INSTALLER_MISSING = "The installer's model file isn't on the device."
+
+
+def test_the_installers_default_needs_its_file(device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)  # edgetpu, no installer's file in the cache
+    config = codedir / "frigate" / "config" / "config.yml"
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    for name in ("default", INSTALLER_FILE):
+        r = use(device_client, name)
+        assert (r.status_code, r.json()["error"]["code"], message(r)) == (409, "installer_missing", INSTALLER_MISSING)
+    (config.parent / "model_cache" / INSTALLER_FILE).mkdir()  # not a regular file
+    assert use(device_client, "default").status_code == 409
+    assert api.posts == [] and config.read_text() == PLUS_CONFIG and systemctl.restarts() == []
+    assert use_rows(device_client.app.state.settings) == []
+    (config.parent / "model_cache" / INSTALLER_FILE).rmdir()
+    (config.parent / "model_cache" / INSTALLER_FILE).write_bytes(bytes(1024))
+    assert use(device_client, "default").status_code == 202
+    assert yaml_of(api.posts[0][1])["model"]["path"] == f"/config/model_cache/{INSTALLER_FILE}"
+
+
+def test_frigates_own_default_needs_no_file(device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, "detectors:\n  cpu:\n    type: cpu\n")
+    frigate_api(None)
+    login(device_client, *ADMIN)
+    assert use(device_client, "default").status_code == 202  # no section to apply, so no file is needed
+
+
+def test_the_installers_default_needs_its_file_in_fake_mode(seeded, settings, login):
+    login(seeded, *ADMIN)
+    (fake.model_cache(settings) / INSTALLER_FILE).unlink()
+    r = use(seeded, "default")
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "installer_missing")
+    assert fake.running_model_file(settings).read_text() == PLUS_ID
+
+
+def test_a_use_is_refused_on_a_device_whose_detector_sets_a_model(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    detector_model = "detectors:\n  coral:\n    type: edgetpu\n    model:\n      path: /config/model_cache/a\n"
+    codedir = device_with_codedir(device_client, tmp_path, detector_model)
+    config = codedir / "frigate" / "config" / "config.yml"
+    login(device_client, *ADMIN)
+    for raw in (detector_model, None):
+        api = frigate_api(raw)
+        r = use(device_client, PLUS_ID)
+        assert (r.status_code, r.json()["error"]["code"]) == (409, "detector_model")
+        assert message(r) == ("Frigate's config sets a model inside detectors.coral; remove it in Frigate's config "
+                              "editor first.")
+        assert api.posts == []
+    assert config.read_text() == detector_model and backups_of(config) == [] and systemctl.restarts() == []

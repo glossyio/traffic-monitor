@@ -439,6 +439,7 @@ FRIGATE_UNIT = "frigate.service"
 DEFAULT = "default"  # the name the default route answers and audits
 RESTARTING = "Frigate is restarting; try again in a minute."
 DEFAULT_UNKNOWN = "Frigate's detector type can't be determined, so its default model can't be chosen."
+INSTALLER_MISSING = "The installer's model file isn't on the device."
 
 
 class UseQueued(BaseModel):
@@ -483,6 +484,17 @@ def _use(request: Request, background: BackgroundTasks, admin: User, section: di
     return UseQueued(name=name, applied=applied, restarts=[FRIGATE_UNIT])
 
 
+def _installer_file_there(cache: Path, name: str) -> bool:
+    try:
+        dir_fd = open_cache(cache)
+    except OSError:
+        return False
+    try:
+        return _regular(dir_fd, name)
+    finally:
+        os.close(dir_fd)
+
+
 def _use_default(request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
     settings, manifest, codedir = _state(request)
     _not_restarting(settings)
@@ -491,6 +503,8 @@ def _use_default(request: Request, background: BackgroundTasks, admin: User) -> 
         raise ApiError(409, "detector_unknown", DEFAULT_UNKNOWN)
     installer = installer_default(manifest, codedir)
     section = picker.default_section(detector, installer)
+    if section is not None and not _installer_file_there(model_cache_dir(settings, manifest), installer.file):
+        raise ApiError(409, "installer_missing", INSTALLER_MISSING)  # Frigate would restart into a missing model
     return _use(request, background, admin, section, installer.file if section is not None else "", DEFAULT)
 
 

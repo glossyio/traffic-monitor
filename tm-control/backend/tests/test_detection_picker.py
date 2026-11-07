@@ -204,16 +204,19 @@ def dump(doc):
     return out.getvalue()
 
 
-def outside_model(text):
-    """The text's lines that aren't the model section's."""
+def outside_model(text, collapse=True):
+    """The text's lines that aren't the model section's (its `model:` line and the indented lines under it), with
+    runs of blank lines made one when `collapse`: a section removed from between two blank lines leaves one."""
     lines, inside = [], False
     for line in text.splitlines():
         if line.startswith("model:"):
             inside = True
             continue
-        if inside and (line.startswith(" ") or not line):
+        if inside and line.startswith(" "):
             continue
         inside = False
+        if collapse and not line and lines and not lines[-1]:
+            continue
         lines.append(line)
     return lines
 
@@ -283,6 +286,71 @@ def test_replace_model_section_keeps_comments_and_the_rest():
     doc = load("mqtt:\n  enabled: false\n")
     replace_model_section(doc, {"path": f"plus://{PLUS_ID}"})
     assert dump(doc) == f"mqtt:\n  enabled: false\nmodel:\n  path: plus://{PLUS_ID}\n"
+
+
+DETECTORS = "detectors:\n  c:\n    type: edgetpu\n"
+AFTER = "\n# ffmpeg settings\nffmpeg:\n  a: 1\n"  # a comment and a blank line that belong to the key after model
+
+
+def edit(text, section):
+    doc = load(text)
+    replace_model_section(doc, section)
+    return dump(doc)
+
+
+def test_a_deleted_model_section_leaves_the_comment_after_it():
+    text = f"{DETECTORS}model:\n  path: /x\n{AFTER}"
+    deleted = edit(text, None)
+    assert deleted == f"{DETECTORS}{AFTER}"
+    assert outside_model(deleted, collapse=False) == outside_model(text, collapse=False)
+    # an end-of-line comment on the key before stays where it was, at its column
+    text = f"detectors:\n  c:\n    type: edgetpu  # the Coral\nmodel:\n  path: /x\n{AFTER}"
+    assert edit(text, None) == f"detectors:\n  c:\n    type: edgetpu  # the Coral\n{AFTER}"
+    # a key with a scalar value before model, and a model section that ends in a list
+    text = f"version: 0.16-0\nmodel:\n  attributes_map:\n    car:\n      - license_plate\n{AFTER}"
+    assert edit(text, None) == f"version: 0.16-0\n{AFTER}"
+
+
+def test_a_replaced_model_section_that_ended_in_a_list_keeps_the_comment_after_it():
+    text = (f"{DETECTORS}model:\n  path: /x\n  attributes_map:\n    car:\n      - license_plate\n"
+            "\n# ffmpeg settings, keep\nffmpeg:\n  a: 1\n")
+    replaced = edit(text, {"path": f"plus://{PLUS_ID}"})
+    assert replaced == f"{DETECTORS}model:\n  path: plus://{PLUS_ID}\n\n# ffmpeg settings, keep\nffmpeg:\n  a: 1\n"
+    assert outside_model(replaced, collapse=False) == outside_model(text, collapse=False)
+    # and the other way: a list in the new section takes the comment
+    replaced_back = edit(replaced, {"path": "/x", "attributes_map": {"car": ["license_plate"]}})
+    assert replaced_back == text
+
+
+def test_an_inserted_model_section_goes_before_the_comment_of_the_key_after_it():
+    text = f"{DETECTORS}{AFTER}"
+    inserted = edit(text, {"path": f"plus://{PLUS_ID}"})
+    assert inserted == f"{DETECTORS}\nmodel:\n  path: plus://{PLUS_ID}\n{AFTER}"
+    assert outside_model(inserted) == outside_model(text)  # only a blank line before model is new
+    assert edit(inserted, None) == text
+
+
+DETECTOR_MODEL = "detectors:\n  coral:\n    type: edgetpu\n    model:\n      path: /config/model_cache/old.tflite\n"
+DETECTOR_MODEL_REFUSAL = (
+    "Frigate's config sets a model inside detectors.coral; remove it in Frigate's config editor first.")
+
+
+def test_a_model_inside_a_detector_is_refused_before_any_write(tmp_path, monkeypatch):
+    codedir, config = codedir_with(tmp_path, DETECTOR_MODEL)
+    for raw in (DETECTOR_MODEL, None):  # through Frigate, then from the file
+        api = FakeFrigateApi(raw)
+        monkeypatch.setattr(httpjson, "get", api.get)
+        monkeypatch.setattr(httpjson, "post", api.post)
+        for section in ({"path": f"plus://{PLUS_ID}"}, None):
+            with pytest.raises(UseError) as refused:
+                apply(section, codedir)
+            assert (refused.value.status, refused.value.code, refused.value.message) == (
+                409, "detector_model", DETECTOR_MODEL_REFUSAL)
+        assert api.posts == []
+    assert config.read_text() == DETECTOR_MODEL and backups(config) == []
+    # a detector's model without a path (Frigate's resolved fields only) is no obstacle
+    codedir_with(tmp_path / "other", "detectors:\n  coral:\n    type: edgetpu\n    model: {}\n")
+    assert apply(None, tmp_path / "other") == "file"
 
 
 FRIGATE_MESSAGE = (
