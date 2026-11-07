@@ -30,7 +30,7 @@ function queue(chosen: File[]): File[] | string {
   const sidecar = chosen.find((file) => isSidecar(file.name))
   const others = chosen.filter((file) => file !== sidecar)
   if (sidecar && chosen.length === 1) return [sidecar]
-  if (others.length !== 1 || chosen.length > 2 || (sidecar && isArchive(others[0].name))) {
+  if (others.length !== 1 || others.some((file) => isSidecar(file.name)) || (sidecar && isArchive(others[0].name))) {
     return 'Choose one package, or one model file with or without its .json.'
   }
   if (!sidecar) return others
@@ -63,7 +63,10 @@ async function upload() {
     if (bare && !answer!.complete) needsFields.value = answer!.name
     else done.value = `Uploaded ${answer!.title}.`
   } catch (caught) {
-    error.value = messageOf(caught)
+    // A pair whose .json went through before its model file was refused: sending the pair again would be refused
+    // for the .json, so say what finishes it
+    const halfway = sends.length === 2 && answer !== undefined
+    error.value = messageOf(caught) + (halfway ? ' Its .json is on the device: upload the model file on its own to finish it.' : '')
   } finally {
     sending.value = false
     if (answer) emit('uploaded')
@@ -103,8 +106,16 @@ function saved(model: ModelOut) {
     </v-card-text>
     <v-card-actions class="px-4 pb-4">
       <v-spacer />
-      <v-btn variant="text" @click="emit('close')">Close</v-btn>
-      <v-btn v-if="!needsFields" color="primary" variant="flat" :loading="sending" :disabled="!files.length" @click="upload">
+      <v-btn variant="text" min-height="44" @click="emit('close')">Close</v-btn>
+      <v-btn
+        v-if="!needsFields"
+        color="primary"
+        variant="flat"
+        min-height="44"
+        :loading="sending"
+        :disabled="!files.length"
+        @click="upload"
+      >
         Upload
       </v-btn>
     </v-card-actions>
