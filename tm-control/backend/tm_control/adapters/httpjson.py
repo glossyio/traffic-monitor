@@ -1,7 +1,8 @@
-"""HTTP reads from the apps on this device (Frigate, Node-RED, go2rtc): a GET to 127.0.0.1 with a short timeout.
+"""HTTP requests to the apps on this device (Frigate, Node-RED, go2rtc): a GET or a POST to 127.0.0.1 with a short
+timeout.
 
-Neither function raises when the app doesn't answer, times out, or answers something unreadable; they return None
-in place of what's missing.
+None of these functions raises when the app doesn't answer, times out, or answers something unreadable; they return
+None in place of what's missing.
 """
 
 import json
@@ -22,16 +23,13 @@ def _body(response) -> bytes | None:
     return data if len(data) <= MAX_BODY else None
 
 
-def get(
-    url: str, headers: dict[str, str] | None = None, timeout: float | None = None
-) -> tuple[int | None, bytes | None]:
-    """The HTTP status and body of a GET, an error status's included; (None, None) when nothing answered in time.
-
-    Raises ValueError for a URL that isn't on 127.0.0.1: that's a mistake in the caller, not an app's state.
-    """
+def _loopback(url: str) -> None:
+    """Raise ValueError for a URL that isn't on 127.0.0.1: that's a mistake in the caller, not an app's state."""
     if urlsplit(url).hostname != "127.0.0.1":
-        raise ValueError("tm-control reads the apps on 127.0.0.1 only")
-    request = urllib.request.Request(url, headers=dict(headers or {}))
+        raise ValueError("tm-control reaches the apps on 127.0.0.1 only")
+
+
+def _send(request: urllib.request.Request, timeout: float | None) -> tuple[int | None, bytes | None]:
     try:
         with _OPENER.open(request, timeout=TIMEOUT if timeout is None else timeout) as response:
             return response.status, _body(response)
@@ -42,6 +40,29 @@ def get(
             return error.code, None
     except Exception:
         return None, None
+
+
+def get(
+    url: str, headers: dict[str, str] | None = None, timeout: float | None = None
+) -> tuple[int | None, bytes | None]:
+    """The HTTP status and body of a GET, an error status's included; (None, None) when nothing answered in time.
+
+    Raises ValueError for a URL that isn't on 127.0.0.1.
+    """
+    _loopback(url)
+    return _send(urllib.request.Request(url, headers=dict(headers or {})), timeout)
+
+
+def post(
+    url: str, body: bytes, content_type: str, headers: dict[str, str] | None = None, timeout: float | None = None
+) -> tuple[int | None, bytes | None]:
+    """The HTTP status and body of a POST of body as content_type, as get returns them.
+
+    Raises ValueError for a URL that isn't on 127.0.0.1.
+    """
+    _loopback(url)
+    sent = dict(headers or {}) | {"Content-Type": content_type}
+    return _send(urllib.request.Request(url, data=body, headers=sent, method="POST"), timeout)
 
 
 def get_json(url: str, headers: dict[str, str] | None = None, timeout: float | None = None) -> tuple[int | None, Any]:

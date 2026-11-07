@@ -112,8 +112,9 @@ def device_client(settings, monkeypatch):
     Its secrets are synthetic files (test-<name>-value) and its manifest the fixture's. The device is claimed by
     admin/correct horse 1 and has a viewer, viewer/viewer pass 1; log in with `login`. Not logged in.
 
-    The apps (Frigate, Node-RED, go2rtc, the broker) don't answer and config.yml is missing, so a status report
-    doesn't reach whatever runs on this machine's ports or read its files; the `apps` fixture answers for them.
+    The apps (Frigate, Node-RED, go2rtc, the broker) don't answer a GET or a POST and config.yml is missing, so a
+    status report doesn't reach whatever runs on this machine's ports or read its files; the `apps` fixture answers
+    for them.
     Likewise the hardware: no USB ids or PCI listing, device paths, unit files, kernel modules, media devices, or
     node-red-tm.env (test_hardware_checks.FakeHardware stands in for them). timedatectl fails, so the time check is
     unknown (test_api_time.FakeTimedatectl stands in for it).
@@ -122,6 +123,7 @@ def device_client(settings, monkeypatch):
     from tm_control.adapters.command import CommandResult
 
     monkeypatch.setattr(httpjson, "get", lambda url, headers=None, timeout=None: (None, None))
+    monkeypatch.setattr(httpjson, "post", lambda url, body, content_type, headers=None, timeout=None: (None, None))
     monkeypatch.setattr(mqtt, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
     monkeypatch.setattr(nodered, "config", lambda codedir: nodered.ConfigRead(None, "missing"))
     monkeypatch.setattr(hardware, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))

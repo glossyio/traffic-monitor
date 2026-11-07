@@ -47,11 +47,7 @@ model:
 {{ tmsetup_frigate_model_keep | to_nice_yaml(indent=2, sort_keys=False) | indent(2, first=True) -}}
 {% elif pci_available or usb_available %}
 model:
-  model_type: yolo-generic
-  width: 512
-  height: 512
-  path: /config/model_cache/{{ tmsetup_frigate_coral_model_file }}
-  labelmap_path: /config/labels-coco17.txt
+{{ tmsetup_frigate_coral_model | to_nice_yaml(indent=2, sort_keys=False) | indent(2, first=True) -}}
 {% endif %}
 
 ffmpeg:

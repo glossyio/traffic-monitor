@@ -1,5 +1,9 @@
-"""Cross-site request checks for the API: a request under /api/ that isn't GET or HEAD must send a JSON body and
-come from a page on this device.
+"""Cross-site request checks for the API: a request under /api/ that isn't GET or HEAD must send a JSON or
+octet-stream body and come from a page on this device.
+
+Both types are safe for the same reason: neither is CORS-safelisted (a cross-site page may send only text/plain,
+multipart/form-data, or form-urlencoded without a preflight), so a cross-site page can't send either one without a
+preflight that this API never answers. The Origin check below still applies to both.
 
 "From this device" means the Origin header (or, without one, the Referer) names the same host[:port] as the Host
 header. nginx forwards Host as the browser sent it ($http_host), port included. A failed check is a 403 `forbidden`.
@@ -15,6 +19,7 @@ from tm_control.core.errors import error_response
 log = logging.getLogger(__name__)
 
 SAFE_METHODS = frozenset({"GET", "HEAD"})
+BODY_TYPES = frozenset({"application/json", "application/octet-stream"})
 
 
 def _netloc(url: str) -> str | None:
@@ -27,8 +32,8 @@ def _netloc(url: str) -> str | None:
 
 def _problem(headers: Headers) -> str | None:
     """Why the request fails the check, or None when it passes."""
-    if headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
-        return "not JSON"
+    if headers.get("content-type", "").split(";")[0].strip().lower() not in BODY_TYPES:
+        return "not JSON or a byte stream"
     source = headers.get("origin") or headers.get("referer")
     if not source:
         return "no Origin or Referer"

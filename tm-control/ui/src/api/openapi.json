@@ -594,6 +594,279 @@
         }
       }
     },
+    "/api/v1/models": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Get Models",
+        "operationId": "get_models_api_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/upload/{filename}": {
+      "put": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Upload File",
+        "description": "Stream the body into model_cache as a model file, a sidecar (<model>.json), or an archive. `:path` lets a name\nwith a slash reach the name check, which refuses it.",
+        "operationId": "upload_file_api_v1_models_upload__filename__put",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/sidecar": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Write Sidecar",
+        "description": "Write <name>.json for a model file that has none, for the device's detector.",
+        "operationId": "write_sidecar_api_v1_models__name__sidecar_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SidecarForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/package": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Download Package",
+        "description": "The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model\nwith both halves, which a default never has.",
+        "operationId": "download_package_api_v1_models__name__package_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The package",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}": {
+      "delete": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Delete Model",
+        "description": "Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's a default.\nWhat runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is\nremoved.",
+        "operationId": "delete_model_api_v1_models__name__delete",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/default/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Default",
+        "description": "Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no\n`model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model.",
+        "operationId": "use_default_api_v1_models_default_use_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseQueued"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Model",
+        "description": "Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.\nA default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The\nrunning model may be used again: Frigate just restarts.",
+        "operationId": "use_model_api_v1_models__name__use_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UseQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -1214,6 +1487,54 @@
         ],
         "title": "Job"
       },
+      "LabelsOut": {
+        "properties": {
+          "recognised": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recognised"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate",
+                  "sidecar",
+                  "labels_file"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "tracked": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tracked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recognised",
+          "source",
+          "tracked"
+        ],
+        "title": "LabelsOut"
+      },
       "Memory": {
         "properties": {
           "total": {
@@ -1231,6 +1552,230 @@
           "available"
         ],
         "title": "Memory"
+      },
+      "ModelFileOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size",
+          "sha256"
+        ],
+        "title": "ModelFileOut"
+      },
+      "ModelOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "frigate_plus",
+              "local",
+              "installer_default",
+              "frigate_default"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "trained_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trained At"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "detectors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detectors"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/ModelFileOut"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "usable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable"
+          },
+          "deletable": {
+            "type": "boolean",
+            "title": "Deletable"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "title",
+          "trained_at",
+          "type",
+          "detectors",
+          "width",
+          "height",
+          "files",
+          "complete",
+          "running",
+          "usable",
+          "deletable",
+          "problem"
+        ],
+        "title": "ModelOut"
+      },
+      "ModelsState": {
+        "properties": {
+          "detector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detector"
+          },
+          "frigate_answers": {
+            "type": "boolean",
+            "title": "Frigate Answers"
+          },
+          "frigate_safe_mode": {
+            "type": "boolean",
+            "title": "Frigate Safe Mode"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "installer_default",
+                  "frigate_default"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "running": {
+            "$ref": "#/components/schemas/RunningOut"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOut"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "labels": {
+            "$ref": "#/components/schemas/LabelsOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detector",
+          "frigate_answers",
+          "frigate_safe_mode",
+          "default",
+          "running",
+          "models",
+          "labels"
+        ],
+        "title": "ModelsState"
       },
       "NewPassword": {
         "properties": {
@@ -1376,6 +1921,60 @@
         ],
         "title": "RestartQueued"
       },
+      "RunningOut": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate_plus",
+                  "local",
+                  "installer_default",
+                  "frigate_default"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "frigate",
+                  "config_file"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "source"
+        ],
+        "title": "RunningOut"
+      },
       "SecretState": {
         "properties": {
           "name": {
@@ -1498,6 +2097,88 @@
           "restartable"
         ],
         "title": "Service"
+      },
+      "SidecarForm": {
+        "properties": {
+          "model_type": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Model Type"
+          },
+          "width": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 1.0,
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "maximum": 8192.0,
+            "minimum": 1.0,
+            "title": "Height"
+          },
+          "input_tensor": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Input Tensor"
+          },
+          "input_pixel_format": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Input Pixel Format"
+          },
+          "input_dtype": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Dtype"
+          },
+          "labels": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Labels"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_type",
+          "width",
+          "height",
+          "input_tensor",
+          "input_pixel_format",
+          "labels"
+        ],
+        "title": "SidecarForm",
+        "description": "What Frigate needs to know about a model file: Frigate checks the values when the model is used."
       },
       "SystemInfo": {
         "properties": {
@@ -1838,6 +2519,36 @@
           "installing_user"
         ],
         "title": "TmInstall"
+      },
+      "UseQueued": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "applied": {
+            "type": "string",
+            "enum": [
+              "frigate",
+              "file"
+            ],
+            "title": "Applied"
+          },
+          "restarts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "applied",
+          "restarts"
+        ],
+        "title": "UseQueued"
       },
       "ValidationError": {
         "properties": {

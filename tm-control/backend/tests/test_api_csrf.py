@@ -27,7 +27,9 @@ def test_post_with_a_form_body_is_forbidden(claimed_client):
     assert_forbidden(claimed_client.post(LOGIN, data={"a": "b"}, headers={"Origin": "http://tm-test.local"}))
 
 
-@pytest.mark.parametrize("content_type", ["text/plain", "application/jsonx", "multipart/form-data; boundary=x", ""])
+@pytest.mark.parametrize(
+    "content_type", ["text/plain", "application/jsonx", "application/octet-streams", "multipart/form-data; boundary=x", ""]
+)
 def test_post_with_another_content_type_is_forbidden(claimed_client, content_type):
     headers = {"Origin": "http://tm-test.local", "Content-Type": content_type}
     assert_forbidden(claimed_client.post(LOGIN, content=b'{"username": "admin"}', headers=headers))
@@ -43,6 +45,16 @@ def test_json_with_a_charset_passes(claimed_client):
     headers = {"Origin": "http://tm-test.local", "Content-Type": "application/json; charset=utf-8"}
     r = claimed_client.post(LOGIN, content=b'{"username": "admin", "password": "correct horse 1"}', headers=headers)
     assert r.status_code == 200
+
+
+def test_an_octet_stream_body_from_this_origin_is_allowed(claimed_client):
+    """Not CORS-safelisted, so a cross-site page can't send it without a preflight; the Origin check still applies."""
+    headers = {"Origin": "http://tm-test.local", "Content-Type": "application/octet-stream"}
+    assert claimed_client.post("/api/v1/nope", content=b"\x00\x01", headers=headers).status_code == 404
+    headers["Origin"] = "http://evil.example"
+    assert_forbidden(claimed_client.post("/api/v1/nope", content=b"\x00\x01", headers=headers))
+    del headers["Origin"]
+    assert_forbidden(claimed_client.post("/api/v1/nope", content=b"\x00\x01", headers=headers))
 
 
 def test_the_port_is_part_of_the_host(settings):

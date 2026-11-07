@@ -100,6 +100,8 @@
         plate_recognizer: >-
           {{ tmsetup_bool_plate_recognizer | default('false') | bool
              or tmsetup_tm_control_plate_recognizer_stat_register.stat.exists }}
+      frigate:
+        coral_model: '{{ tmsetup_frigate_coral_model }}'
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results

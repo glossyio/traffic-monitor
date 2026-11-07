@@ -32,8 +32,11 @@ export function whenSessionLost(handler: () => void) {
 
 const errors: Middleware = {
   onRequest({ request }) {
-    // The API's cross-site check wants JSON on every request that changes something, even one without a body
-    if (request.method !== 'GET') request.headers.set('Content-Type', 'application/json')
+    // The API's cross-site check wants JSON on every request that changes something, even one without a body. An
+    // upload names its own type (application/octet-stream), which the check also accepts.
+    if (request.method !== 'GET' && !request.headers.has('Content-Type')) {
+      request.headers.set('Content-Type', 'application/json')
+    }
     return request
   },
   async onResponse({ request, response }) {

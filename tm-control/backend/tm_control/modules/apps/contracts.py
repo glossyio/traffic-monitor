@@ -240,19 +240,17 @@ def thingsboard(context: Context) -> list[Check]:
 
 PLUS_SCHEME = "plus://"
 MODEL_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")  # what a Frigate+ model id may be, and a safe file name in model_cache
-# tmsetup_frigate_coral_model_file in the role's vars/main.yml: the model the installer downloads and sets for a Coral
-CORAL_MODEL_FILE = "yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
 DETECTOR_TYPE = re.compile(r"Model does not support detector type of ([\w-]+)")
 FRIGATE_CONFIG_PROBLEM = {
     "missing": "Frigate's config.yml is missing",
     "unreadable": "Frigate's config.yml can't be read",
     "invalid": "Frigate's config.yml has a YAML error",
 }
-SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+SET_THE_KEY = Fix(kind="link", text="Set the key", href="/detection#frigate-plus")
 # How to get out of a Frigate that stops while it fetches a Frigate+ model it can't have
 WAYS_OUT = (
-    "enter the right key on the Device page, copy the model's two files into Frigate's model_cache directory, or put "
-    "the installer's model section back in Frigate's config.yml over SSH, then restart Frigate"
+    "enter the right key on the Detection page, upload the model's two files there, or choose Use the installer's "
+    "model on the Detection page, which works while Frigate is down"
 )
 
 
@@ -260,6 +258,13 @@ def model_path(config_file) -> str | None:
     """model.path in Frigate's config.yml; None when there's no model section or no path in it."""
     path = probes.mapping(probes.mapping(config_file.data).get("model")).get("path")
     return path if isinstance(path, str) else None
+
+
+def installer_model_file(manifest) -> str | None:
+    """The base name of the model file the installer sets on a device with a Coral; None when the manifest has no
+    such section (an older install, or one without the key)."""
+    path = (manifest.frigate.coral_model or {}).get("path")
+    return path.rsplit("/", 1)[-1] or None if isinstance(path, str) else None
 
 
 def plus_model_id(path) -> str | None:
@@ -314,19 +319,20 @@ def frigate_plus(context: Context) -> list[Check]:
                                 "compared.")
     path = model_path(read)
     key = context.secrets.is_set(FRIGATE_PLUS_API_KEY)
+    installer_file = installer_model_file(context.manifest)
     if not (path or "").startswith(PLUS_SCHEME):
         if not key:
             return check("ok", "Frigate+ isn't in use.")
         if not path:
             which = "Frigate's default model"  # no model section, as on a Hailo or CPU install
-        elif path.endswith(CORAL_MODEL_FILE):
+        elif installer_file and path.endswith(installer_file):
             which = "the installer's model"
         else:
             which = "a local model"
         return check("warn", "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but "
                              f"Frigate runs {which} rather than a Frigate+ model. Once a model is trained, pick it "
-                             "under Settings, System, Detectors and model in Frigate, or set model.path to "
-                             "plus://<model id> in its configuration editor.")
+                             "under Settings, System, Detectors and model in Frigate, or upload it on the Detection "
+                             "page and choose Use.")
     model_id = plus_model_id(path)
     if model_id is None:
         return check("error", "model.path in Frigate's config names a Frigate+ model id with characters a model id "
@@ -334,8 +340,8 @@ def frigate_plus(context: Context) -> list[Check]:
     cached = model_cached(context.manifest.codedir, model_id)
     if not cached and not key:
         return check("error", f"Frigate's config names the Frigate+ model {model_id}, but no key is set and the "
-                              "model's files aren't on the device, so Frigate can't download it. Set the key, or copy "
-                              f"{model_id} and {model_id}.json into Frigate's model_cache directory.", SET_THE_KEY)
+                              "model's files aren't on the device, so Frigate can't download it. Set the key, or "
+                              f"upload {model_id} and {model_id}.json on the Detection page.", SET_THE_KEY)
     running = probes.frigate_config(context)
     if running is None:
         line = traceback_last_line(probes.frigate_journal(context))

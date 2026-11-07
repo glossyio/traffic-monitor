@@ -18,6 +18,15 @@
     "options": {
         "plate_recognizer": false
     },
+    "frigate": {
+        "coral_model": {
+            "model_type": "yolo-generic",
+            "width": 512,
+            "height": 512,
+            "path": "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite",
+            "labelmap_path": "/config/labels-coco17.txt"
+        }
+    },
     "revproxy_locations": [
         "cockpit.conf",
         "dashboard.conf",

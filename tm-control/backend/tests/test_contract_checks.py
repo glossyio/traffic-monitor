@@ -1,10 +1,7 @@
 """The configuration checks: the names that config.yml and Frigate's config must agree on (CLAUDE.md, "Cross-component
 name contracts"), and the deployment values."""
 
-from pathlib import Path
-
 import pytest
-from ruamel.yaml import YAML
 
 from frigate_log import (
     CRASH_LOOP_TAIL,
@@ -25,12 +22,11 @@ from placeholders import PLACEHOLDER_KEY
 from tm_control.adapters import systemd
 from tm_control.adapters.systemd import AutomaticRestart
 from tm_control.core.checks import Fix, run_group
+from tm_control.core.manifest import FrigateInfo
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import checks as apps_checks
 from tm_control.modules.apps import contracts, probes
 from tm_control.modules.services import units
-
-REPO = Path(__file__).resolve().parents[3]
 
 FRIGATE_CONFIG = "http://127.0.0.1:5000/api/config"  # what the `apps` fixture answers (conftest.FakeApps)
 FRIGATE_VERSION = "http://127.0.0.1:5000/api/version"
@@ -342,7 +338,7 @@ def test_errors_outrank_warnings(apps):
 
 
 CORAL_PATH = "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"  # the installer's, as rendered
-SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+SET_THE_KEY = Fix(kind="link", text="Set the key", href="/detection#frigate-plus")
 
 
 def frigate_config_file(apps, text: str):
@@ -385,9 +381,14 @@ def frigate_stopped(apps, journal, state: dict | None = None):
     return {units.SHOW_UNITS: {"frigate.service": values | (state or {})}, probes.FRIGATE_JOURNAL: journal}
 
 
-def test_the_installers_model_file_matches_the_role():
-    role_vars = YAML(typ="safe", pure=True).load(REPO / "script/ansible/roles/tmsetup/vars/main.yml")
-    assert contracts.CORAL_MODEL_FILE == role_vars["tmsetup_frigate_coral_model_file"]
+def test_the_installers_model_comes_from_the_manifest(apps):
+    set_key(apps)
+    with_model(apps, CORAL_PATH)
+    assert frigate_plus_check(apps).detail == warning_naming("the installer's model")
+    context = apps.context()
+    context.manifest = context.manifest.model_copy(update={"frigate": FrigateInfo(coral_model=None)})
+    group = run_group(contracts.GROUP, context)
+    assert {c.id: c for c in group.checks}["config.frigate_plus"].detail == warning_naming("a local model")
 
 
 def test_frigate_plus_not_in_use_is_ok(apps):
@@ -401,7 +402,7 @@ def warning_naming(which):
     return (
         "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but Frigate runs "
         f"{which} rather than a Frigate+ model. Once a model is trained, pick it under Settings, System, Detectors "
-        "and model in Frigate, or set model.path to plus://<model id> in its configuration editor."
+        "and model in Frigate, or upload it on the Detection page and choose Use."
     )
 
 
@@ -448,8 +449,8 @@ def test_a_plus_model_without_a_key_or_cached_files_is_an_error_with_a_link(apps
     assert check.status == "error"
     assert check.detail == (
         f"Frigate's config names the Frigate+ model {MODEL_ID}, but no key is set and the model's files aren't on the "
-        f"device, so Frigate can't download it. Set the key, or copy {MODEL_ID} and {MODEL_ID}.json into Frigate's "
-        "model_cache directory."
+        f"device, so Frigate can't download it. Set the key, or upload {MODEL_ID} and {MODEL_ID}.json on the Detection "
+        "page."
     )
     assert check.fix == SET_THE_KEY
 

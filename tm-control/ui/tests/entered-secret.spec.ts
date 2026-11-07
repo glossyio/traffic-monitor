@@ -75,6 +75,15 @@ describe('an entered secret', () => {
     expect(field(wrapper, 'ThingsBoard access token').element.value).toBe('')
   })
 
+  it('hides its heading and state line when asked', async () => {
+    fakeApi({})
+    const wrapper = mountAlone(EnteredSecret, { secret: UNSET, hideTitle: true })
+    await flushPromises()
+    expect(wrapper.find('h3').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Not set.')
+    expect(field(wrapper, 'ThingsBoard access token').exists()).toBe(true)
+  })
+
   it('shows the ending of a set token and the Remove button', async () => {
     fakeApi({})
     const wrapper = await mountSecret(TOKEN)

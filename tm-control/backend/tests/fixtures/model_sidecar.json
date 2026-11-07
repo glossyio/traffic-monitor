@@ -1,0 +1,15 @@
+{
+  "id": "0123456789abcdef0123456789abcdef",
+  "name": "Test site yolov9",
+  "isBaseModel": false,
+  "trainDate": "2026-10-01T12:00:00Z",
+  "baseModel": "yolov9-s",
+  "type": "yolo-generic",
+  "supportedDetectors": ["edgetpu"],
+  "width": 320,
+  "height": 320,
+  "inputShape": "nhwc",
+  "pixelFormat": "rgb",
+  "labelMap": {"0": "person", "1": "bicycle", "2": "car"},
+  "verifiedCounts": {"front_door_cam": 12, "driveway_cam": 3}
+}

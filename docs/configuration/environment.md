@@ -50,7 +50,7 @@ sudo systemctl restart node-red-tm.service
 | Variable | Default | Meaning |
 |---|---|---|
 | `FRIGATE_RTSP_PASSWORD` | `password` | A password for cameras of your own: Frigate fills in `{FRIGATE_RTSP_PASSWORD}` in a camera's input path. The Traffic Monitor's own camera doesn't use it. The installer leaves it as you set it, unless you run it with `-f`. |
-| `PLUS_API_KEY` | the key you set, or empty | The [Frigate+](frigate-config.md#better-models) API key. The installer fills it from the device's secrets on every run; change it on the [Device page](../use/device-health.md#tokens-and-keys), not here. Empty means no key: Frigate can't submit snapshots or download a Frigate+ model. |
+| `PLUS_API_KEY` | the key you set, or empty | The [Frigate+](frigate-config.md#better-models) API key. The installer fills it from the device's secrets on every run; change it on the [Detection page](../use/detection.md#frigate-plus), not here. Empty means no key: Frigate can't submit snapshots or download a Frigate+ model. |
 
 The other lines are the installer's. Leave them as they are:
 
