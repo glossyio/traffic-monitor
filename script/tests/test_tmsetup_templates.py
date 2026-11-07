@@ -282,6 +282,23 @@ def test_api_and_logout_are_proxied_to_tm_control_on_loopback():
     assert "auth-" not in conf  # tm-control checks its own API calls
 
 
+def test_model_uploads_stream_to_tm_control_with_a_larger_body_limit():
+    """Only the upload location raises nginx's 1 MB body limit, and it streams the body instead of spooling it."""
+    conf = location("tm-control-api.conf")
+    blocks = dict(top_level_blocks(conf))
+    upload = blocks["location ^~ /api/v1/models/upload/"]
+    assert "client_max_body_size 100m;" in upload
+    assert "proxy_request_buffering off;" in upload
+    assert "proxy_buffering off;" in upload
+    assert "proxy_pass http://127.0.0.1:8090/api/v1/models/upload/;" in upload
+    assert "include /etc/nginx/tm/snippets/proxy-common.conf;" in upload
+    assert 'proxy_set_header X-TM-Required-Role "";' in upload
+    assert conf.index("location ^~ /api/v1/models/upload/") < conf.index("location /api/ {")
+    for name in LOCATIONS:
+        text = location(name)
+        assert text.count("client_max_body_size") == (1 if name == "tm-control-api.conf" else 0), name
+
+
 def test_ui_root_serves_the_built_app_with_history_fallback():
     """The UI is built into the image, outside the bind-mounted html directory, and stays open for login and setup."""
     conf = location("tm-control-ui.conf")
@@ -768,7 +785,7 @@ def tm_control_unit():
     return render(
         f"{TM_CONTROL_TEMPLATES}/tm-control.service.j2",
         tmsetup_codeowner="tmadmin", tmsetup_codegroup="tmadmin", tmsetup_secrets_dir="/etc/traffic-monitor/secrets",
-        tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_tm_control_port=8090,
+        tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_tm_control_port=8090, tmsetup_codedir="/opt/traffic-monitor",
     ).splitlines()
 
 
@@ -785,7 +802,6 @@ def test_tm_control_service_has_the_video_group():
     journal. video: vcgencmd get_throttled opens /dev/vcio_gencmd, which is root:video, mode 0660."""
     unit = tm_control_unit()
     assert "SupplementaryGroups=systemd-journal video" in unit
-    assert not any(line.startswith("ReadWritePaths=") for line in unit)
 
 
 def test_tm_control_reads_the_files_tmsetup_writes():
@@ -799,8 +815,13 @@ def test_tm_control_binds_to_loopback_only():
     assert "Environment=TM_CONTROL_BIND=127.0.0.1:8090" in tm_control_unit()
 
 
-def test_tm_control_has_no_write_paths_outside_its_state():
-    assert not any(line.startswith("ReadWritePaths=") for line in tm_control_unit())
+def test_tm_control_writes_only_its_state_and_frigates_config():
+    """The Detection page manages Frigate's model_cache and config.yml, so Frigate's config directory is the one
+    path outside the unit's own state and runtime directories that it may write."""
+    unit = tm_control_unit()
+    assert [line for line in unit if line.startswith("ReadWritePaths=")] == [
+        "ReadWritePaths=/opt/traffic-monitor/frigate/config"]
+    assert unit.index("ReadWritePaths=/opt/traffic-monitor/frigate/config") > unit.index("ProtectSystem=strict")
 
 
 def test_tm_control_runtime_directory_is_removed_when_it_stops():

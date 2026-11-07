@@ -1,6 +1,7 @@
 # /etc/systemd/system/tm-control.service, installed by tmsetup.sh (tm-control tag)
 # Runs unprivileged as the code owner. It starts units, sets the time, and reboots or powers off only through polkit
-# (/etc/polkit-1/rules.d/50-traffic-monitor.rules), and writes only its state and runtime directories.
+# (/etc/polkit-1/rules.d/50-traffic-monitor.rules), and writes only its state and runtime directories and Frigate's
+# config directory.
 # systemd-journal: a finished job unit is unloaded, so tm-control reads PID 1's job-end entries from the journal for
 # the job's result, and diagnostics includes the units' journals. video: vcgencmd get_throttled, for the power and
 # throttling check, opens /dev/vcio_gencmd, which is root:video.
@@ -23,6 +24,8 @@ RuntimeDirectory=tm-control
 RuntimeDirectoryMode=0700
 NoNewPrivileges=yes
 ProtectSystem=strict
+# Frigate's model_cache and config.yml, for the Detection page
+ReadWritePaths={{ tmsetup_codedir }}/frigate/config
 ProtectHome=yes
 PrivateTmp=yes
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

@@ -145,7 +145,7 @@ Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, 
 
 ### What the sandbox allows
 
-`tm-control.service` runs with `ProtectSystem=strict`, no `ReadWritePaths=`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. That shaped the probes:
+`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and Frigate's config directory (`ReadWritePaths`), for the models the Detection page manages. The rest of the file system is read-only to it. The sandbox also shaped the probes:
 
 * No netlink socket, so `lsusb` can't start. The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` instead, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
 * `vcgencmd get_throttled` needs the `video` group to open `/dev/vcio_gencmd`. Without it, the power check says to rerun the installer.
