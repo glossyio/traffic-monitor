@@ -2148,6 +2148,19 @@
             "maxItems": 1000,
             "minItems": 1,
             "title": "Labels"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           }
         },
         "type": "object",

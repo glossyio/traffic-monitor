@@ -85,6 +85,7 @@ describe('uploading a model', () => {
     expect(wrapper.find('form').exists()).toBe(true)
     // Frigate's documented example for a Coral is filled in; the labels are the model's own
     expect(field(wrapper, 'Width').element.value).toBe('320')
+    await field(wrapper, 'Name').setValue('Placeholder model')
     await field(wrapper, 'Labels').setValue('person\nbicycle\n\ncar\n')
     await click(wrapper, 'Save')
     expect(api.sent.at(-1)).toEqual({
@@ -98,10 +99,25 @@ describe('uploading a model', () => {
         input_pixel_format: 'rgb',
         input_dtype: null,
         labels: ['person', 'bicycle', 'car'],
+        name: 'Placeholder model',
       },
     })
     expect(wrapper.text()).toContain('Uploaded bare.tflite.')
     expect(wrapper.find('form').exists()).toBe(false)
+  })
+
+  it('sends no name when the Name field is left empty, so the file name is used', async () => {
+    const api = fakeApi({
+      [`PUT ${UPLOAD}/bare.tflite`]: json(201, model('bare.tflite', { title: 'bare.tflite', complete: false })),
+      'POST /api/v1/models/bare.tflite/sidecar': json(201, model('bare.tflite', { title: 'bare.tflite' })),
+    })
+    const wrapper = mountAlone(UploadModel, { detector: 'edgetpu' })
+    await choose(wrapper, [file('bare.tflite', 1000)])
+    await click(wrapper, 'Upload')
+    await field(wrapper, 'Name').setValue('   ')
+    await field(wrapper, 'Labels').setValue('car')
+    await click(wrapper, 'Save')
+    expect(api.sent.at(-1)?.body).toMatchObject({ labels: ['car'], name: null })
   })
 
   it('shows the API message when an upload is refused', async () => {

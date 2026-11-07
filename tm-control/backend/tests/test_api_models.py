@@ -284,6 +284,22 @@ def test_upload_a_bare_model_then_the_form_writes_a_sidecar(seeded, settings, lo
                                                      "plain.tflite.json"])
 
 
+def test_the_form_names_the_model_when_a_name_is_given(seeded, settings, login):
+    login(seeded, *ADMIN)
+    assert put(seeded, "named.tflite", b"\x04" * 64).status_code == 201
+    r = post_sidecar(seeded, "named.tflite", FORM | {"name": "  Placeholder model  "})
+    assert r.status_code == 201, r.text
+    assert r.json()["title"] == "Placeholder model"
+    written = json.loads((fake.model_cache(settings) / "named.tflite.json").read_text())
+    assert written["name"] == "Placeholder model"
+    assert set(written) == {"name", "type", "supportedDetectors", "width", "height", "inputShape", "pixelFormat",
+                            "labelMap"}  # nothing Frigate doesn't define
+    assert put(seeded, "other.tflite", b"\x05" * 64).status_code == 201
+    assert post_sidecar(seeded, "other.tflite", FORM | {"name": "   "}).status_code == 422
+    assert post_sidecar(seeded, "other.tflite", FORM | {"name": "x" * 65}).status_code == 422
+    assert not (fake.model_cache(settings) / "other.tflite.json").exists()
+
+
 def test_uploads_refuse_bad_names_existing_names_oversize_and_json_bodies(seeded, settings, login, monkeypatch):
     login(seeded, *ADMIN)
     for name in ("..%2Fx", "%2E%2E", "a%2Fb", ".hidden", ".json", "a.json.json", "-x", "x" * 129):

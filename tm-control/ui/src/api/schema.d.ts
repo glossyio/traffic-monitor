@@ -1003,6 +1003,8 @@ export interface components {
             input_dtype?: string | null;
             /** Labels */
             labels: string[];
+            /** Name */
+            name?: string | null;
         };
         /** SystemInfo */
         SystemInfo: {
