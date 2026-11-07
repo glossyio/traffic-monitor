@@ -126,6 +126,12 @@ function panel(wrapper: VueWrapper, title: string) {
   return found[0]
 }
 
+// The panel (title and content) whose title starts with `title`
+function panelOf(wrapper: VueWrapper, title: string) {
+  const toggle = panel(wrapper, title)
+  return wrapper.findAll('.v-expansion-panel').find((p) => p.element.contains(toggle.element))!
+}
+
 // The value under `label` in the facts grid
 function fact(wrapper: VueWrapper, label: string) {
   const found = wrapper.findAll('.facts > div').filter((c) => c.element.children[0]?.textContent?.trim() === label)
@@ -189,6 +195,23 @@ describe('the Detection page', () => {
     expect(installer.text()).not.toContain('trained')
     expect(installer.text()).toContain('1.0 KB, SHA-256 5f70bf18a086')
     expect(wrapper.text()).toContain('Frigate tracks only the objects that are in both lists.')
+    for (const title of ['All objects the model recognises (3)', 'Objects tracked on this device (6)']) {
+      expect(panel(wrapper, title).attributes('aria-expanded')).toBe('false')
+      expect(panel(wrapper, title).element.parentElement?.tagName).toBe('H3')
+    }
+    expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
+      'Other models on this device (2)',
+      'All objects the model recognises (3)',
+      'Objects tracked on this device (6)',
+    ])
+  })
+
+  it('opens each panel on its own, so both label lists and the models can be open at once', async () => {
+    signedIn(VIEWER, { [MODELS_PATH]: MODELS })
+    const { wrapper } = await mountApp('/detection')
+    const titles = ['Other models on this device', 'All objects the model recognises', 'Objects tracked on this device']
+    for (const title of titles) await panel(wrapper, title).trigger('click')
+    expect(titles.map((title) => panel(wrapper, title).attributes('aria-expanded'))).toEqual(['true', 'true', 'true'])
   })
 
   it("puts every model in the panel when Frigate's model is unknown", async () => {
@@ -271,9 +294,10 @@ describe('the Detection page', () => {
     Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
     signedIn(VIEWER, { [MODELS_PATH]: MODELS })
     const { wrapper } = await mountApp('/detection')
-    const recognises = wrapper.findAll('section section').find((s) => s.find('h3').text() === 'Recognises')!
+    await panel(wrapper, 'All objects the model recognises (3)').trigger('click')
+    const recognises = panelOf(wrapper, 'All objects the model recognises (3)')
     expect(recognises.text()).toContain('person')
-    await recognises.find('button').trigger('click')
+    await recognises.findAll('button').find((b) => b.text().trim() === 'Copy')!.trigger('click')
     await vi.waitFor(() => expect(recognises.text()).toContain('Copied.'))
     expect(writeText).toHaveBeenCalledWith('person, bicycle, car')
   })
@@ -291,10 +315,12 @@ describe('the Detection page', () => {
     expect(wrapper.text()).toContain(warning)
     expect(wrapper.text().indexOf(warning)).toBeLessThan(wrapper.text().indexOf('Detector'))
     expect(wrapper.find('.model.in-use').text()).toContain('Test site yolov9') // what the config file names
-    expect(wrapper.text()).toContain(
+    expect(panel(wrapper, 'All objects the model recognises').text().trim()).toBe('All objects the model recognises')
+    expect(panelOf(wrapper, 'All objects the model recognises').text()).toContain(
       "Frigate isn't answering, and the running model has no sidecar on the device.",
     )
-    expect(wrapper.text()).toContain('Tracked by this device')
+    expect(panel(wrapper, 'Objects tracked on this device (2)').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Tracked by this device')
   })
 
   it("says the running model's labels aren't known when Frigate answers without them", async () => {
@@ -302,6 +328,7 @@ describe('the Detection page', () => {
     signedIn(VIEWER, { [MODELS_PATH]: unknown })
     const { wrapper } = await mountApp('/detection')
     expect(wrapper.text()).toContain("The running model's labels aren't known.")
+    expect(panel(wrapper, 'All objects the model recognises').text().trim()).toBe('All objects the model recognises')
     expect(wrapper.text()).not.toContain("Frigate isn't answering")
   })
 

@@ -136,8 +136,10 @@ const others = computed<Block[]>(() => {
   return blocks
 })
 
-// The panels that are open, by value
-const open = ref<string[]>([])
+// The panels that are open, by value: one list per section, because a group of panels writes back only its own
+// values and would close the others' if they shared one
+const modelsOpen = ref<string[]>([])
+const labelsOpen = ref<string[]>([])
 
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
 // page waits for Frigate after a use. Each result shows where its action was: under the model, under the default's
@@ -344,7 +346,7 @@ function openUpload() {
         <!-- The other models in one panel, closed until tapped. Its title, a button, goes inside the h3, so the heading
              stays a heading for screen readers, as on the Device page. Eager: its content is on the page while it's
              closed, so the page's height is known when a link scrolls to the key panel. -->
-        <v-expansion-panels v-model="open" multiple flat>
+        <v-expansion-panels v-model="modelsOpen" multiple flat>
           <v-expansion-panel value="other-models" class="border" eager>
             <h3 class="text-subtitle-1 font-weight-medium">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
@@ -381,18 +383,35 @@ function openUpload() {
       <section class="mt-10">
         <h2 class="text-h6 mb-2">What the model recognises</h2>
         <p class="text-body-1 mb-4">Frigate tracks only the objects that are in both lists.</p>
-        <LabelChips v-if="state.labels.recognised" title="Recognises" :labels="state.labels.recognised" />
-        <section v-else>
-          <h3 class="text-subtitle-1 font-weight-medium mb-2">Recognises</h3>
-          <p class="text-body-2 text-secondary">
-            {{
-              state.frigate_answers
-                ? "The running model's labels aren't known."
-                : "Frigate isn't answering, and the running model has no sidecar on the device."
-            }}
-          </p>
-        </section>
-        <LabelChips title="Tracked by this device" :labels="state.labels.tracked" class="mt-6" />
+        <v-expansion-panels v-model="labelsOpen" multiple flat class="ga-3">
+          <v-expansion-panel value="recognised" class="border" eager>
+            <h3 class="text-subtitle-1 font-weight-medium">
+              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
+                All objects the model recognises{{ state.labels.recognised ? ` (${state.labels.recognised.length})` : '' }}
+              </v-expansion-panel-title>
+            </h3>
+            <v-expansion-panel-text>
+              <LabelChips v-if="state.labels.recognised" :labels="state.labels.recognised" />
+              <p v-else class="text-body-2 text-secondary">
+                {{
+                  state.frigate_answers
+                    ? "The running model's labels aren't known."
+                    : "Frigate isn't answering, and the running model has no sidecar on the device."
+                }}
+              </p>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+          <v-expansion-panel value="tracked" class="border" eager>
+            <h3 class="text-subtitle-1 font-weight-medium">
+              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
+                Objects tracked on this device ({{ state.labels.tracked.length }})
+              </v-expansion-panel-title>
+            </h3>
+            <v-expansion-panel-text>
+              <LabelChips :labels="state.labels.tracked" />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </section>
     </template>
 
