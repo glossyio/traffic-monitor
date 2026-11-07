@@ -204,7 +204,9 @@ Pi back yourself:
 - **Time zone:** set it on the Date and time page, or run `sudo timedatectl set-timezone <zone>` and then
   `sudo systemctl restart traffic-monitor.service revproxy.service`, so the containers pick it up.
 - **NTP:** turn it on on the Date and time page, or run `sudo timedatectl set-ntp true`.
-- **The ThingsBoard token and the Frigate+ key:** remove them on the Device page, under Tokens and keys.
+- **The ThingsBoard token:** remove it on the Device page, under Tokens and keys.
+- **The Frigate+ key:** remove it on the Detection page.
+- **The placeholder model:** delete `tmdev-placeholder.tflite` on the Detection page.
 - **The schema test's drop-in:** run `sudo rm -f /run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf`
   and `sudo systemctl daemon-reload`. Until you remove it, or the Pi reboots, every start of Node-RED skips the database
   migration. The test also sets the database's schema version to 0, and the migration can't bring it back, because

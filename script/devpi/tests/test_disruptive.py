@@ -19,9 +19,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, detector_name, entered_secret_states,
-                          find_hevc_decoder,
-                          frigate_host_devices, pi_now, request_from_this_machine, role_vars, session, status_checks,
-                          tm_login_or_none)
+                          find_hevc_decoder, frigate_host_devices, pi_now, request_from_this_machine,
+                          require_pii_free, role_vars, session, status_checks, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
 
@@ -562,8 +561,7 @@ def test_upload_package_and_delete_a_model_from_the_control_app(host, address, e
     unit's detector, its package is a zip of both files and SHA256SUMS that match what was sent and the listed hashes,
     and deleting it removes it. Frigate is never restarted: the placeholder isn't used. Leaves nothing behind, and
     skips when a placeholder from an earlier run is still listed, which this test didn't make."""
-    if not expect["pii_free"]:
-        pytest.skip("writes to Frigate's model_cache; set tm_expect.pii_free: true (bench units only)")
+    require_pii_free(expect)
     cookie = session(address, *tm_login)
     if PLACEHOLDER_MODEL in listed_models(address, cookie):
         pytest.skip(f"{PLACEHOLDER_MODEL} is already listed; delete it on the Detection page first")
