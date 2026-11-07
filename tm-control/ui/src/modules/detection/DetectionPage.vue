@@ -356,8 +356,9 @@ function openUpload() {
         />
         <!-- The other models in one panel, closed until tapped. Its title, a button, goes inside the h3, so the heading
              stays a heading for screen readers, as on the Device page. Eager: its content is on the page while it's
-             closed, so the page's height is known when a link scrolls to the key panel. -->
-        <v-expansion-panels v-model="modelsOpen" multiple flat>
+             closed, so the page's height is known when a link scrolls to the key panel. The panels take the page's
+             background, so the block in use is the only tinted thing on the page. -->
+        <v-expansion-panels v-model="modelsOpen" multiple flat bg-color="background">
           <v-expansion-panel value="other-models" class="border" eager>
             <h3 class="text-subtitle-1 font-weight-medium">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
@@ -394,7 +395,7 @@ function openUpload() {
       <section class="mt-10">
         <h2 class="text-h6 mb-2">What the model recognises</h2>
         <p class="text-body-1 mb-4">Frigate tracks only the objects that are in both lists.</p>
-        <v-expansion-panels v-model="labelsOpen" multiple flat class="ga-3">
+        <v-expansion-panels v-model="labelsOpen" multiple flat bg-color="background" class="ga-3">
           <v-expansion-panel value="recognised" class="border" eager>
             <h3 class="text-subtitle-1 font-weight-medium">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
@@ -428,11 +429,11 @@ function openUpload() {
 
     <!-- The last section is one panel, its title inside the h2, as the Device page's "Tokens and keys" is -->
     <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <v-expansion-panels v-model="keyOpen" multiple flat>
+      <v-expansion-panels v-model="keyOpen" multiple flat bg-color="background">
         <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
           <h2 class="text-h6">
             <v-expansion-panel-title class="text-h6">
-              <span class="d-flex flex-wrap align-baseline column-gap-3">
+              <span class="d-flex flex-wrap align-baseline key-title">
                 <span>Frigate+ API key</span>
                 <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
               </span>
@@ -479,5 +480,10 @@ function openUpload() {
 /* Clear the app bar when the page scrolls to the section */
 .frigate-plus {
   scroll-margin-top: 80px;
+}
+
+/* The key's state beside its name, or under it when the title wraps (Vuetify 3.13 has no column-gap class) */
+.key-title {
+  column-gap: 12px;
 }
 </style>

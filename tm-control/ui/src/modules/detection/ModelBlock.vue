@@ -51,11 +51,8 @@ function size(bytes: number) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`
 }
 
-// A file's name, unless it's the model's title already (a file with no sidecar), and its size. The template adds
-// the start of the hash, with the whole hash as the span's title.
-function fileLine(model: ModelOut, file: ModelFile) {
-  return file.name === model.title ? size(file.size) : `${file.name}, ${size(file.size)}`
-}
+// A file's name shows unless it's the model's title already (a file with no sidecar)
+const named = (model: ModelOut, file: ModelFile) => file.name !== model.title
 </script>
 
 <template>
@@ -68,9 +65,11 @@ function fileLine(model: ModelOut, file: ModelFile) {
     </div>
     <div v-if="block.facts" class="text-body-2 text-secondary">{{ block.facts }}</div>
     <template v-if="block.model">
-      <!-- On one line, so no space comes before the comma; the hash's start doesn't wrap away from "SHA-256" -->
+      <!-- A file's name, its size, and the start of its hash, with the whole hash as the span's title. On one line, so
+           no space comes before a comma. The name may break anywhere, so a long one (a Frigate+ model's 32 characters)
+           never leaves its comma to start the next line; the hash's start doesn't wrap away from "SHA-256". -->
       <div v-for="file in block.model.files" :key="file.name" class="text-body-2 text-secondary text-break">
-        {{ fileLine(block.model, file) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
+        <template v-if="named(block.model, file)"><span class="file-name">{{ file.name }}</span>, </template>{{ size(file.size) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
       </div>
       <div v-if="block.model.problem" class="text-body-2">{{ block.model.problem }}</div>
     </template>
@@ -116,3 +115,9 @@ function fileLine(model: ModelOut, file: ModelFile) {
     <ActionResult v-if="result" :result="result" />
   </div>
 </template>
+
+<style scoped>
+.file-name {
+  word-break: break-all;
+}
+</style>
