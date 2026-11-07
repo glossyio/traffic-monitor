@@ -311,7 +311,7 @@ def test_uploads_refuse_bad_names_existing_names_oversize_and_json_bodies(seeded
     r = put(seeded, "text.tflite", b"abc", content_type="text/plain")
     assert r.status_code == 403
     r = put(seeded, "m.zip", b"PK\x03\x04rest")
-    assert (r.status_code, message(r)) == (422, "Archives aren't accepted yet")
+    assert (r.status_code, message(r)) == (422, "The archive can't be read.")
     r = put(seeded, "m.zip", b"\x1f\x8brest")
     assert (r.status_code, message(r)) == (422, "The file isn't a zip archive.")
     r = put(seeded, "m.tgz", b"PK\x03\x04rest")
@@ -463,3 +463,183 @@ def test_audit_rows_name_the_model(seeded, settings, login):
         (admin.id, "models.sidecar", "b.tflite"),
         (admin.id, "models.delete", "a.tflite"),
     ]
+
+
+# Archives in, packages out.
+
+
+def zip_of(files: dict[str, bytes]) -> bytes:
+    import io
+    import zipfile
+
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as zf:
+        for name, data in files.items():
+            zf.writestr(name, data)
+    return out.getvalue()
+
+
+def package_of(client, name):
+    return client.get(f"{URL}/{name}/package")
+
+
+def packages(settings) -> list[str]:
+    directory = settings.state_dir / "packages"
+    return sorted(path.name for path in directory.iterdir()) if directory.exists() else []
+
+
+def test_upload_a_zip_package_and_download_it_back(seeded, settings, login):
+    import hashlib
+    import io
+    import zipfile
+
+    login(seeded, *ADMIN)
+    model, sidecar = b"\x05" * 300, sidecar_bytes(name="Zipped")
+    sums = "".join(f"{hashlib.sha256(data).hexdigest()}  {name}\n" for name, data in (
+        ("z.tflite", model), ("z.tflite.json", sidecar))).encode()
+    r = put(seeded, "z.zip", zip_of({"z.tflite": model, "z.tflite.json": sidecar, "SHA256SUMS": sums}))
+    assert r.status_code == 201, r.text
+    assert (r.json()["name"], r.json()["complete"], r.json()["title"]) == ("z.tflite", True, "Zipped")
+    assert cache_names(settings) == sorted(SEEDED + ["z.tflite", "z.tflite.json"])  # the archive's temp is gone
+    r = package_of(seeded, "z.tflite")
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert r.headers["content-disposition"] == 'attachment; filename="z.tflite.zip"'
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        assert zf.namelist() == ["z.tflite", "z.tflite.json", "SHA256SUMS"]
+        assert (zf.read("z.tflite"), zf.read("z.tflite.json"), zf.read("SHA256SUMS")) == (model, sidecar, sums)
+    assert packages(settings) == []  # removed once it was sent
+    assert stat_mode(settings.state_dir / "packages") == 0o700
+    delete(seeded, "z.tflite")
+    r = put(seeded, "again.tgz", tgz_of({}))  # an empty tar.gz has no pair
+    assert (r.status_code, message(r)) == (422, "The archive has no model file and sidecar pair.")
+    assert cache_names(settings) == SEEDED
+
+
+def stat_mode(path) -> int:
+    import stat
+
+    return stat.S_IMODE(path.stat().st_mode)
+
+
+def tgz_of(files: dict[str, bytes]) -> bytes:
+    import io
+    import tarfile
+
+    out = io.BytesIO()
+    with tarfile.open(fileobj=out, mode="w:gz") as tar:
+        for name, data in files.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+    return out.getvalue()
+
+
+def test_a_package_uploads_back_after_its_model_is_deleted(seeded, settings, login):
+    login(seeded, *ADMIN)
+    package = package_of(seeded, "mine.tflite")
+    assert package.status_code == 200
+    stored = (fake.model_cache(settings) / "mine.tflite").read_bytes()
+    assert delete(seeded, "mine.tflite").status_code == 204
+    r = put(seeded, "mine.tgz", b"")  # not gzip
+    assert r.status_code == 422
+    r = put(seeded, "mine.zip", package.content)
+    assert r.status_code == 201, r.text
+    assert (r.json()["name"], r.json()["complete"]) == ("mine.tflite", True)
+    assert (fake.model_cache(settings) / "mine.tflite").read_bytes() == stored
+    r = put(seeded, "mine.zip", package.content)  # never over the model now there
+    assert (r.status_code, message(r)) == (409, "A model named mine.tflite is already on the device; delete it first.")
+    assert cache_names(settings) == SEEDED
+
+
+def test_a_tgz_whose_bytes_are_not_gzip_is_refused(seeded, settings, login):
+    login(seeded, *ADMIN)
+    r = put(seeded, "m.tgz", b"PK\x03\x04" + zip_of({"m.tflite": b"x"}))
+    assert (r.status_code, message(r)) == (422, "The file isn't a tar.gz archive.")
+    r = put(seeded, "m.tgz", b"\x1f\x8b\x08\x00" + b"\x00" * 60)  # gzip's magic, then no gzip stream
+    assert (r.status_code, message(r)) == (422, "The archive can't be read.")
+    r = put(seeded, "m.tar.gz", tgz_of({"m.tflite": b"x", "m.tflite.json": sidecar_bytes(), "a": b"", "b": b""}))
+    assert (r.status_code, message(r)) == (422, "The archive holds more than a model, its sidecar, and SHA256SUMS.")
+    r = put(seeded, "m.tar.gz", tgz_of({"../m.tflite": b"x", "m.tflite.json": sidecar_bytes()}))
+    assert (r.status_code, message(r)) == (422, "An archive member has a path, or isn't a plain file.")
+    r = put(seeded, "m.tar.gz", tgz_of({"m.tflite": b"x", "m.tflite.json": sidecar_bytes(), "SHA256SUMS": b"0" * 64}))
+    assert (r.status_code, message(r)) == (422, "SHA256SUMS doesn't match the files.")
+    r = put(seeded, "m.tar.gz", tgz_of({INSTALLER_FILE: b"x", f"{INSTALLER_FILE}.json": sidecar_bytes()}))
+    assert r.status_code == 409  # the installer's file is in the cache
+    assert cache_names(settings) == SEEDED
+
+
+def test_an_archive_with_the_installers_name_is_refused_when_its_file_is_gone(seeded, settings, login):
+    login(seeded, *ADMIN)
+    (fake.model_cache(settings) / INSTALLER_FILE).unlink()
+    r = put(seeded, "m.tar.gz", tgz_of({INSTALLER_FILE: b"x", f"{INSTALLER_FILE}.json": sidecar_bytes()}))
+    assert (r.status_code, message(r)) == (422, "That name isn't allowed.")
+    assert INSTALLER_FILE not in cache_names(settings)
+
+
+def test_a_member_over_its_cap_is_a_413(seeded, settings, login):
+    import io
+    import tarfile
+
+    login(seeded, *ADMIN)
+    out = io.BytesIO()
+    with tarfile.open(fileobj=out, mode="w:gz") as tar:
+        info = tarfile.TarInfo("m.tflite.json")
+        info.size = 3 * 1024 * 1024
+        header = info.tobuf(tar.format, tar.encoding, tar.errors)  # the header alone, no 3 MB behind it
+        tar.fileobj.write(header)
+        tar.offset += len(header)
+    r = put(seeded, "m.tgz", out.getvalue())
+    assert (r.status_code, message(r)) == (413, "An archive member is larger than its cap.")
+    assert cache_names(settings) == SEEDED
+
+
+def test_a_package_of_an_incomplete_pair_is_404(seeded, settings, login):
+    login(seeded, *ADMIN)
+    put(seeded, "bare.tflite", b"\x01")
+    put(seeded, "half.tflite.json", sidecar_bytes())
+    (fake.model_cache(settings) / "broken.tflite").write_bytes(b"\x01")
+    (fake.model_cache(settings) / "broken.tflite.json").write_bytes(b"not json")
+    for name in ("bare.tflite", "half.tflite", "broken.tflite", INSTALLER_FILE, "missing.tflite"):
+        r = package_of(seeded, name)
+        assert r.status_code == 404, name
+    assert package_of(seeded, "%2E%2E").status_code == 422
+    assert packages(settings) == []
+
+
+def test_only_admins_download_a_package_and_the_download_is_audited(seeded, settings, login):
+    import sqlite3
+
+    assert package_of(seeded, PLUS_ID).status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert package_of(seeded, PLUS_ID).status_code == 403
+    login(seeded, *ADMIN)
+    assert package_of(seeded, PLUS_ID).status_code == 200
+    put(seeded, "a.zip", zip_of({"a.tflite": b"\x01", "a.tflite.json": sidecar_bytes()}))
+    admin = Users(seeded.app.state.state).by_username("admin")
+    con = sqlite3.connect(settings.state_dir / "state.sqlite")
+    try:
+        rows = con.execute(
+            "SELECT user_id, action, detail FROM audit WHERE action LIKE 'models.%' ORDER BY id").fetchall()
+    finally:
+        con.close()
+    assert rows == [(admin.id, "models.download", PLUS_ID), (admin.id, "models.upload", "a.tflite")]
+
+
+def test_a_package_that_cannot_be_built_leaves_no_file(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import package
+
+    login(seeded, *ADMIN)
+
+    def broken(dir_fd, name, out):
+        out.write(b"partial")
+        raise OSError("read failed")
+
+    monkeypatch.setattr(package, "write_package", broken)
+    r = package_of(seeded, "mine.tflite")
+    assert (r.status_code, message(r)) == (500, "The model's files can't be read.")
+    assert packages(settings) == []
+    monkeypatch.setattr("os.statvfs", lambda path: type("S", (), {"f_frsize": 4096, "f_bavail": 1000})())
+    r = package_of(seeded, "mine.tflite")
+    assert (r.status_code, message(r)) == (507, "The device would have less than 512 MB free.")

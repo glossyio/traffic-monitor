@@ -60,8 +60,9 @@ def archive_kind(filename: str) -> Literal["zip", "gzip"] | None:
     return next((kind for ending, kind in ARCHIVES.items() if filename.endswith(ending)), None)
 
 
-def free_space_ok(cache: Path, needed: int) -> bool:
-    """Whether the file system would still have FREE_SPACE_MIN bytes for unprivileged users after `needed` more."""
+def free_space_ok(cache: Path | int, needed: int) -> bool:
+    """Whether the file system, given by a path or a descriptor, would still have FREE_SPACE_MIN bytes for
+    unprivileged users after `needed` more."""
     try:
         found = os.statvfs(cache)
     except OSError:
@@ -80,7 +81,7 @@ def unlink_quietly(dir_fd: int, name: str) -> None:
         pass
 
 
-def _write_all(fd: int, data: bytes) -> None:
+def write_all(fd: int, data: bytes) -> None:
     view = memoryview(data)
     while view:
         view = view[os.write(fd, view):]
@@ -100,7 +101,7 @@ async def receive(stream: AsyncIterator[bytes], dir_fd: int, temp_name: str, lim
                 if size > cap:
                     raise too_large(limit) if size > limit else UploadError(413, LONG_BODY)
                 if chunk:
-                    await run_in_threadpool(_write_all, fd, chunk)
+                    await run_in_threadpool(write_all, fd, chunk)
             if declared is not None and size < declared:
                 raise UploadError(400, SHORT_BODY)
             await run_in_threadpool(os.fsync, fd)
@@ -117,7 +118,7 @@ def write_new(dir_fd: int, temp: str, data: bytes) -> None:
     fd = open_in(dir_fd, temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     try:
         try:
-            _write_all(fd, data)
+            write_all(fd, data)
             os.fsync(fd)
         finally:
             os.close(fd)
@@ -154,9 +155,3 @@ def place(dir_fd: int, temp: str, final: str) -> None:
 def check_archive(dir_fd: int, temp: str, kind: Literal["zip", "gzip"]) -> None:
     if read_small(dir_fd, temp, len(MAGIC[kind])) != MAGIC[kind]:
         raise UploadError(422, f"The file isn't a {ARCHIVE_TITLES[kind]} archive.")
-
-
-def place_archive(temp_path: Path, kind: Literal["zip", "gzip"], dir_fd: int) -> str:
-    """Unpack an archive's model and sidecar into the cache and return the model's name. Archives are refused for now;
-    the caller removes the temporary file."""
-    raise UploadError(422, "Archives aren't accepted yet")
