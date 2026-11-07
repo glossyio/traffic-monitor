@@ -5,6 +5,7 @@ dump-openapi` prints the API's OpenAPI document, from which the UI's client is t
 Neither needs a device's secrets, manifest, or state.
 """
 
+import copy
 import json
 import tempfile
 import time
@@ -13,13 +14,16 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from tm_control.adapters.command import CommandResult
+from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.adapters.timedate import Ntp, TimeState
 from tm_control.core.auth import Device, SetupCode
 from tm_control.core.checks import CheckGroup, Group
 from tm_control.core.claim_cli import CommandError
-from tm_control.core.settings import EULA_PATH, FAKE_MANIFEST, FAKE_STATUS, Settings
+from tm_control.core.settings import EULA_PATH, FAKE_FIXTURES, FAKE_MANIFEST, FAKE_STATUS, Settings
 from tm_control.core.state import State
 
+FAKE_RUNNING_MODEL = "running-model"  # the file holding the name of the model the fake Frigate runs
+FAKE_PLUS_ID = "0123456789abcdef0123456789abcdef"  # the fixture sidecar's model id
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
 
 # Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
@@ -39,11 +43,64 @@ def reset(settings: Settings) -> int:
     settings.state_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     state = State(settings.state_dir / "state.sqlite")
     state.migrate()
+    seed_model_cache(settings)
     code = SetupCode.generate()
     Device(state).set_setup_code_hash(SetupCode.hash_code(code))
     print(f"Fake device reset in {settings.state_dir}. Setup code: {code}")
     print("Restart `tm-control serve` if it's running, then open the UI's /setup page.")
     return 0
+
+
+def model_cache(settings: Settings) -> Path:
+    """The fake device's model_cache, beside its state directory."""
+    return settings.state_dir.parent / "model_cache"
+
+
+def running_model_file(settings: Settings) -> Path:
+    """The file naming the model the fake Frigate runs: empty or missing for Frigate's own default. It's beside
+    model_cache, not in it, so it isn't listed as a model."""
+    return settings.state_dir.parent / FAKE_RUNNING_MODEL
+
+
+def seed_model_cache(settings: Settings) -> None:
+    """Start the fake device's model_cache over with what a Coral unit shows: the installer's default (zeros, no
+    sidecar), the fixture sidecar's Frigate+ pair, and a local model with the same sidecar, which the fake Frigate
+    runs the Frigate+ one of."""
+    from tm_control.core.manifest import load_manifest
+    from tm_control.modules.apps.contracts import installer_model_file
+
+    cache = model_cache(settings)
+    cache.mkdir(parents=True, exist_ok=True)
+    for entry in cache.iterdir():
+        if entry.is_file() or entry.is_symlink():
+            entry.unlink()
+    installer = installer_model_file(load_manifest(settings.manifest_path))
+    if installer is not None:
+        (cache / installer).write_bytes(bytes(1024))
+    sidecar = (FAKE_FIXTURES / "model_sidecar.json").read_text()
+    (cache / FAKE_PLUS_ID).write_bytes(bytes(4096))
+    (cache / f"{FAKE_PLUS_ID}.json").write_text(sidecar)
+    local = {key: value for key, value in json.loads(sidecar).items() if key != "id"} | {"name": "My model"}
+    (cache / "mine.tflite").write_bytes(bytes(2048))
+    (cache / "mine.tflite.json").write_text(json.dumps(local, indent=2) + "\n")
+    running_model_file(settings).write_text(FAKE_PLUS_ID)
+
+
+def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
+    """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, and
+    a config.yml that is missing. Nothing outside the fake directory is read."""
+    config = json.loads((FAKE_FIXTURES / "frigate_api_config.json").read_text())
+    try:
+        name = running_model_file(settings).read_text().strip()
+    except OSError:
+        name = ""
+    detector = next(iter(config["detectors"].values()))
+    model = detector.setdefault("model", {})
+    if name:
+        model["path"] = f"/config/model_cache/{name}"
+    else:
+        model.pop("path", None)
+    return copy.deepcopy(config), ConfigRead(None, "missing")
 
 
 def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
