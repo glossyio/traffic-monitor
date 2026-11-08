@@ -127,7 +127,11 @@ def run_group(group: CheckGroup, context: Context, timeout: float = TIMEOUT) -> 
 
 
 class StatusCache:
-    """The status report, reused for `ttl` seconds so that page loads and polling don't re-run every probe."""
+    """The status report, reused for `ttl` seconds so that page loads and polling don't re-run every probe.
+
+    `prepare`, when given, runs before the checks of each report that isn't the cached one, so they see what it did
+    (the Location module's reconcile). It must not raise, and it holds up the report while it runs.
+    """
 
     def __init__(
         self,
@@ -135,11 +139,13 @@ class StatusCache:
         context_factory: Callable[[], Context],
         ttl: float = TTL,
         timeout: float = TIMEOUT,
+        prepare: Callable[[], None] | None = None,
     ):
         self.groups = list(groups)
         self.context_factory = context_factory
         self.ttl = ttl
         self.timeout = timeout
+        self.prepare = prepare
         self._lock = threading.Lock()  # one report at a time; requests that arrive meanwhile get its result
         self._report: Report | None = None
         self._at = 0.0
@@ -148,6 +154,8 @@ class StatusCache:
         with self._lock:
             if not force and self._report is not None and time.monotonic() - self._at < self.ttl:
                 return self._report
+            if self.prepare is not None:
+                self.prepare()
             context = self.context_factory()
             # Every group at once, so a hung app that several groups ask about costs one timeout, not one per group.
             with ThreadPoolExecutor(max_workers=max(1, len(self.groups)), thread_name_prefix="status") as pool:

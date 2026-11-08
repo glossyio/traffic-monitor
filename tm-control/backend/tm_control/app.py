@@ -18,6 +18,7 @@ from tm_control.core.secrets import NAMES, FakeSecrets, Secrets
 from tm_control.core.settings import Settings
 from tm_control.core.state import State
 from tm_control.modules.detection.inventory import MODEL_FILE_MAX
+from tm_control.modules.location import reconcile
 from tm_control.modules.location.reconcile import backup_dir
 from tm_control.modules.setup.eula import load_eula
 
@@ -71,8 +72,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.backup_dir = backup_dir(manifest)
     app.state.reconcile_lock = threading.Lock()
     check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
+    # Each report reconciles the places first (decision 5), so the Location check reads the result.
     app.state.status = StatusCache(
-        check_groups, lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state)
+        check_groups,
+        lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state),
+        prepare=lambda: reconcile.for_status_report(app.state),
     )
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)

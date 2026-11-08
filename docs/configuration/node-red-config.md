@@ -48,14 +48,16 @@ A `deployment:` block under a camera or radar can hold `bearing`, for a device w
 
 ### Edit the location by hand
 
-Use the [Location page](../use/location.md) to move the device or fix a value. If you edit this section by hand instead, Node-RED applies the change as soon as you save the file, and the control app records it the next time its Location page is opened:
+Use the [Location page](../use/location.md) to move the device or fix a value. If you edit this section by hand instead, Node-RED applies the change as soon as you save the file, and the control app records it the next time it's opened, on its home page, Status page, or Location page:
 
-* **`survey_id` set to a place the page lists** is a move there, as **Deploy here** would be. The file takes that place's location, replacing any `lat` or `lon` you changed in the same edit.
+* **`survey_id` set to a place the page lists** is a move there. The file takes that place's location, replacing any `lat` or `lon` you changed in the same edit. Node-RED starts the new deployments as soon as you save, at the location the file held then, and the control app gives them the place's location when it records the move. If the place has no location, those deployments keep the one the file held.
 * **`survey_id` set to an id the page doesn't list** becomes a new place, in use, at this file's `lat` and `lon`.
 * **Only `lat` or `lon` changed** is a correction of the place in use, as **Correct location** would be: the place's stored rows take the new location.
+* **`survey_id` emptied**, as `tmsetup.sh -f` leaves it, is put back: the control app writes the place in use and its location into the file again. The bearings and `database_precision` stay as the file has them.
+* **`lat` and `lon` both emptied**, when the place in use has a location, are put back too, because a place's location can be corrected but not removed. To keep the location out of the database, choose **No location stored** as the [precision](../use/location.md#choose-the-precision).
 * **A `lat` or `lon` that isn't a number in range**, such as one with a typo, stays in the file as you typed it. New deployments store no location until you fix it, and the Status page's Location check names the key.
 
-On a device upgraded from a release that recorded coordinates, the update leaves `survey_id` empty, and the control app fills it in the first time the Location page is opened; see [Places after an update](../build-your-own-device-diy/update.md#places-after-an-update).
+On a device upgraded from a release that recorded coordinates, the update leaves `survey_id` empty, and the control app fills it in the first time it's opened after Node-RED has started; see [Places after an update](../build-your-own-device-diy/update.md#places-after-an-update).
 
 ## sensors.cameras
 

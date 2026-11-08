@@ -133,6 +133,21 @@ def test_cache_runs_the_checks_again_after_the_ttl():
     assert fn.calls == 2
 
 
+def test_prepare_runs_before_each_fresh_report_and_not_for_a_cached_one():
+    order = []
+
+    def check(ctx):
+        order.append("check")
+        return [ok_check("demo.check")]
+
+    cache = StatusCache([CheckGroup("demo", "Demo", [check])], context, ttl=5.0, prepare=lambda: order.append("prepare"))
+    cache.report()
+    cache.report()
+    assert order == ["prepare", "check"]
+    cache.report(force=True)
+    assert order == ["prepare", "check", "prepare", "check"]
+
+
 def test_probes_memo_is_per_report():
     counter = counting(lambda: "Bus 001 Device 001: ID 1d6b:0002")
 

@@ -1,9 +1,11 @@
 """Keep the places store and Node-RED's config.yml in step.
 
-Once per unit (the device table's surveys_reconciled_at): on a fresh unit with nothing in the file, create the first
-place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb backup holds and
-work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no place has becomes
-a place, and changed coordinates become a correction of the place in use.
+Once per unit (the device table's surveys_reconciled_at): on a fresh unit with nothing in the file and no tmdb backup,
+create the first place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb
+backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
+place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
+use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) or its point (blank lat and lon)
+gets them back from the store: a place with a point is never corrected to none (decision 9).
 
 Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock.
 Nothing here logs a coordinate, a description, an id, or anything read from a file: only exception class names and
@@ -34,17 +36,19 @@ BACKUP_GLOB = "tmdb-v[01]-*.sqlite"
 DEFAULT_DESCRIPTION = "First location"
 MIN_SCHEMA_VERSION = 2  # tmdb has survey ids from migration 0002 on
 _LATEST_MS = 253402300799000  # 9999-12-31T23:59:59Z, beyond which a timestamp can't be formatted
+STATUS_LOCK_WAIT = 2.0  # seconds a status report waits for a write in progress before it leaves reconcile to the next
 
 
 class Outcome(BaseModel):
     """What a run did. imported: places created from the backup on this run; created_default: the first place was
     created on this run; followed: what following the file changed (unknown_id: a place was created for the file's
-    survey_id; coordinates: the place in use took the file's coordinates)."""
+    survey_id; coordinates: the place in use took the file's coordinates; restored: the file got the place in use, or
+    its point, back)."""
 
     state: Literal["done", "waiting_nodered", "config_unreadable"]
     imported: int = 0
     created_default: bool = False
-    followed: Literal["none", "unknown_id", "coordinates"] = "none"
+    followed: Literal["none", "unknown_id", "coordinates", "restored"] = "none"
 
 
 class _WaitForNodeRed(Exception):
@@ -84,19 +88,39 @@ def ensure(app_state, user_id: int | None = None) -> Outcome:
     places this creates. A ConfigError from saving config.yml (changed since it was read, or not writable) is raised.
     """
     with app_state.reconcile_lock:
+        return _ensure(app_state, user_id)
+
+
+def for_status_report(app_state) -> None:
+    """ensure() for a status report, which any user's request may start (so no user id), and which it must never
+    fail or hold up for long: a write in progress (a deploy that waits for Node-RED) leaves this run to the next
+    report, and an error is logged by its class name only."""
+    lock = app_state.reconcile_lock
+    if not lock.acquire(timeout=STATUS_LOCK_WAIT):
+        log.info("reconcile skipped for the status report: a write is in progress")
+        return
+    try:
+        _ensure(app_state, None)
+    except Exception as error:  # a ConfigError (the file changed meanwhile, or isn't writable) or anything else
+        log.warning("reconcile for the status report failed: %s", type(error).__name__)
+    finally:
+        lock.release()
+
+
+def _ensure(app_state, user_id) -> Outcome:
+    try:
+        config = NodeRedConfig(app_state.config_path)
+    except ConfigError:
+        return Outcome(state="config_unreadable")
+    places = Places(app_state.state)
+    imported, created_default = 0, False
+    if places.reconciled_at() is None:
         try:
-            config = NodeRedConfig(app_state.config_path)
-        except ConfigError:
-            return Outcome(state="config_unreadable")
-        places = Places(app_state.state)
-        imported, created_default = 0, False
-        if places.reconciled_at() is None:
-            try:
-                imported, created_default = _first_run(app_state, places, config, user_id)
-            except _WaitForNodeRed:
-                return Outcome(state="waiting_nodered")
-        followed = _follow(app_state, places, config, user_id)
-        return Outcome(state="done", imported=imported, created_default=created_default, followed=followed)
+            imported, created_default = _first_run(app_state, places, config, user_id)
+        except _WaitForNodeRed:
+            return Outcome(state="waiting_nodered")
+    followed = _follow(app_state, places, config, user_id)
+    return Outcome(state="done", imported=imported, created_default=created_default, followed=followed)
 
 
 # The one-time part
@@ -107,7 +131,10 @@ def _first_run(app_state, places: Places, config: NodeRedConfig, user_id) -> tup
     deployment = config.deployment()
     # Coordinates that don't parse still mean the file had a location: such a unit may be an upgraded one.
     no_location = _file_point(deployment) == (None, None) and not deployment.coordinates_invalid
-    if not places.list() and deployment.survey_id is None and no_location:
+    # create_app sets backup_dir (fake mode's is beside its state); else the manifest's codedir says where it is.
+    # A backup means an upgraded unit whatever the file says: its places are imported even when it has no location.
+    backup = _newest_backup(getattr(app_state, "backup_dir", None) or backup_dir(app_state.manifest))
+    if not places.list() and deployment.survey_id is None and no_location and backup is None:
         survey_id = new_survey_id()
         config.set_survey_id(survey_id)  # only the id: the operator's lat and lon text stays as it is
         if deployment.precision_missing:
@@ -118,7 +145,7 @@ def _first_run(app_state, places: Places, config: NodeRedConfig, user_id) -> tup
         return 0, True
 
     _check_nodered(app_state.nodered)
-    imported = _import_backup(app_state, places, user_id)
+    imported = _import_backup(app_state, places, backup, user_id)
     _put_in_use(places, config, deployment, user_id)
     places.mark_reconciled()
     return imported, False
@@ -134,11 +161,10 @@ def _check_nodered(nodered) -> None:
         raise _WaitForNodeRed
 
 
-def _import_backup(app_state, places: Places, user_id) -> int:
-    """Create a used place for each survey the backup's rows belong to, but not one already in the store (a run that
-    failed part-way is finished by the next; the reconciled flag stops it after that); the number created."""
-    # create_app sets backup_dir (fake mode's is beside its state); else the manifest's codedir says where it is.
-    path = _newest_backup(getattr(app_state, "backup_dir", None) or backup_dir(app_state.manifest))
+def _import_backup(app_state, places: Places, path: Path | None, user_id) -> int:
+    """Create a used place for each survey the rows of the backup at `path` belong to, but not one already in the
+    store (a run that failed part-way is finished by the next; the reconciled flag stops it after that); the number
+    created."""
     rows = _read_backup(path) if path is not None else None
     if not rows:
         return 0
@@ -280,23 +306,52 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             followed = "unknown_id"
         elif named.status != "in_use":
             # A deploy by hand, as the page's would be: the file takes that place's point (blank when it has none);
-            # neither place's point changes, and Node-RED re-rounds nothing. The file first, as in _put_in_use.
+            # neither place's point changes. The file first, as in _put_in_use.
             config.set_place(named.id, named.lat, named.lon)
             config.save()
             places.set_in_use(named.id)
+            # Node-RED's watch fired on the hand edit and started the new deployments at the coordinates the file
+            # held then; they take the place's point. Residual: a place with no point has nothing to give them, so
+            # those rows keep the coordinates the hand edit left (the engine starts no new rows when only lat and lon
+            # change, and the correction endpoint takes a point, never none). Only giving the place a point by hand
+            # in the file, which is followed as a correction, re-rounds them.
+            if named.lat is not None and named.lon is not None:
+                _re_round(app_state, named.id, named.lat, named.lon)
             return followed
 
     current = places.in_use()
-    if current is None or deployment.coordinates_invalid:
+    if current is None:
+        return followed
+    if deployment.survey_id is None and not deployment.survey_id_invalid:
+        # The file lost the place in use (tmsetup.sh -f renders it from the template): it goes back, with its stored
+        # point. The bearings and precision stay as the file has them. Node-RED starts no new deployment while the
+        # file names no survey, so the open rows are still the place's and need nothing from it.
+        _restore(config, current)
+        return "restored"
+    if deployment.coordinates_invalid:
         return followed  # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
     old, new = _point(current.lat, current.lon), _file_point(deployment)
     if old == new:
         return followed
+    if new == (None, None):
+        # A place with a point can't be corrected to no location (decision 9): the file gets the point back, so it
+        # and the engine agree with the store. Clearing lat and lon starts no new deployment, so no row changed.
+        _restore(config, current)
+        return "restored"
     places.set_point(current.id, new[0], new[1])
     places.record_correction(current.id, None, "location", point_text(*old), point_text(*new), None, "config", None)
-    if new != (None, None):
-        try:
-            app_state.nodered.correct_location(current.id, new[0], new[1])
-        except NodeRedError as error:
-            log.warning("re-rounding the place's rows in Node-RED failed: %s", type(error).__name__)
+    _re_round(app_state, current.id, new[0], new[1])
     return "coordinates"
+
+
+def _restore(config: NodeRedConfig, place: Survey) -> None:
+    config.set_place(place.id, place.lat, place.lon)
+    config.save()
+
+
+def _re_round(app_state, survey_id: str, lat: float, lon: float) -> None:
+    """Node-RED re-rounds the place's rows to this point; best effort, as the store and the file are already right."""
+    try:
+        app_state.nodered.correct_location(survey_id, lat, lon)
+    except NodeRedError as error:
+        log.warning("re-rounding the place's rows in Node-RED failed: %s", type(error).__name__)

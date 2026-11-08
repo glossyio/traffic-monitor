@@ -141,6 +141,10 @@ def device_client(settings, monkeypatch):
         path.write_text(f"test-{name}-value\n")
         path.chmod(0o600)
     client = TestClient(create_app(settings), base_url="http://tm-test.local")
+    # Node-RED's config.yml and the tmdb backups as on a device would be under the manifest's codedir, which a status
+    # report's reconcile reads: point them at paths that don't exist instead.
+    client.app.state.config_path = settings.state_dir.parent / "no-node-red" / "config.yml"
+    client.app.state.backup_dir = settings.state_dir.parent / "no-backup"
     state = client.app.state.state
     Device(state).claim(ADMIN, ADMIN_PASSWORD, load_eula(settings.eula_path).version)
     Users(state).create(VIEWER, VIEWER_PASSWORD, "viewer")

@@ -8,7 +8,7 @@ The control app's **Location** page records where the device is and which way it
 
 ## Places and deployments
 
-A *place* is somewhere the device has been, is, or will be. Each place has an id such as `3f9a1c2e-si`, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts, and only loses a pin on a map. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.
+A *place* is somewhere the device has been, is, or will be. Each place has an id such as `3f9a1c2e-si`, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts and records its data, only without saying where. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.
 
 One place is always **In use**. The others are **Planned**, entered ahead of a move, or **Used**, where the device has been. Claiming a new device creates its first place, **First location**, with no location.
 
@@ -32,7 +32,7 @@ Each place in the list shows its description, or **No description**, its mark (*
 
 **Before any place was recorded** counts the deployments recorded before the device had a place. They belong to no place, and the database keeps them as they are.
 
-If Node-RED hasn't answered yet, as right after an update, a warning at the top says past places may be missing. Reload the page once Node-RED is running.
+If Node-RED hasn't answered yet, as right after an update, a warning at the top says past places may be missing. Reload the page once Node-RED is running. Opening the control app's home page or Status page sets the places up too.
 
 ## Choose the precision
 

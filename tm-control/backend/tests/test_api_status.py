@@ -1,4 +1,5 @@
 import json
+import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,8 @@ from tm_control.adapters.command import CommandResult
 from tm_control.core.auth import Users
 from tm_control.core.checks import Group
 from tm_control.modules import MODULES
+from tm_control.modules.location import reconcile
+from tm_control.modules.location.places import Places
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 ORIGIN = {"Origin": "http://tm-test.local"}
@@ -95,6 +98,59 @@ def test_rescan_bypasses_the_cache(claimed_client, login):
     first = cache.report()
     claimed_client.post("/api/v1/status/rescan", json={}, headers=ORIGIN)
     assert cache.report() is not first
+
+
+def created_by(state):
+    con = state.connect()
+    try:
+        return [row[0] for row in con.execute("SELECT created_by FROM surveys")]
+    finally:
+        con.close()
+
+
+def test_a_viewers_status_report_reconciles_the_places(claimed_client, login):
+    """claimed_client's device was claimed without the claim API, so nothing has set its places up yet. Fake mode's
+    config.yml has a location and Node-RED answers, so the place in use comes from the file."""
+    state = claimed_client.app.state.state
+    places = Places(state)
+    assert places.reconciled_at() is None
+    Users(state).create(*VIEWER, "viewer")
+    login(claimed_client, *VIEWER)
+    assert claimed_client.get("/api/v1/status").status_code == 200
+    assert places.reconciled_at() is not None
+    assert places.in_use().source == "imported_config"
+    assert created_by(state) == [None]
+
+
+def test_a_status_report_skips_reconcile_while_the_lock_is_held(claimed_client, login, monkeypatch):
+    monkeypatch.setattr(reconcile, "STATUS_LOCK_WAIT", 0.05)
+    login(claimed_client, *ADMIN)
+    lock = claimed_client.app.state.reconcile_lock
+    lock.acquire()
+    try:
+        r = claimed_client.get("/api/v1/status")
+    finally:
+        lock.release()
+    assert r.status_code == 200, r.text
+    assert Places(claimed_client.app.state.state).reconciled_at() is None
+    # the next report, with the lock free, catches up
+    assert claimed_client.post("/api/v1/status/rescan", json={}, headers=ORIGIN).status_code == 200
+    assert Places(claimed_client.app.state.state).reconciled_at() is not None
+
+
+def test_a_failing_reconcile_leaves_the_status_report_whole(claimed_client, login, monkeypatch, caplog):
+    def broken(path):
+        raise RuntimeError("synthetic 45.52252")
+
+    monkeypatch.setattr(reconcile, "NodeRedConfig", broken)
+    login(claimed_client, *ADMIN)
+    with caplog.at_level(logging.INFO, logger=reconcile.__name__):
+        r = claimed_client.get("/api/v1/status")
+    assert r.status_code == 200, r.text
+    assert r.json()["groups"] == fake_groups()
+    messages = [record.getMessage() for record in caplog.records if record.name == reconcile.__name__]
+    assert messages == ["reconcile for the status report failed: RuntimeError"]
+    assert "45" not in caplog.text
 
 
 def test_openapi_declares_the_report_model(client):

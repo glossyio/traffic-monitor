@@ -215,6 +215,29 @@ def test_import_from_the_backup_groups_places_by_survey_id(unit):
     assert corrections(unit) == [] and unit.nodered.corrections == []
 
 
+def test_an_upgraded_unit_with_no_location_still_imports(unit):
+    """A backup means the unit was upgraded, so a file with no location and no survey_id takes the import path, not
+    the fresh unit's default place: it waits for Node-RED, imports the past places, and puts a new one in use."""
+    write_backup(unit, BACKUP_ROWS)
+    answer_usage(unit.nodered)
+    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    unit.nodered.down = True
+    assert reconcile.ensure(unit).state == "waiting_nodered"
+    assert Places(unit.state).list() == []
+    unit.nodered.down = False
+    outcome = reconcile.ensure(unit, user_id=unit.admin)
+    assert outcome == reconcile.Outcome(state="done", imported=2, created_default=False, followed="none")
+    places = Places(unit.state)
+    current = places.in_use()
+    assert (current.source, current.description, current.lat, current.lon) == ("imported_config", None, None, None)
+    assert current.id not in (FIRST, SECOND) and current.bearings == SENSORS
+    assert {places.get(FIRST).status, places.get(SECOND).status} == {"used"}
+    assert [place.status for place in places.list()].count("in_use") == 1
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (current.id, None, None)
+    assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
+
+
 def test_no_matching_point_creates_the_place_from_the_file(unit):
     write_backup(unit, BACKUP_ROWS)
     answer_usage(unit.nodered)
@@ -370,9 +393,31 @@ def test_following_a_known_survey_id_switches_the_place_in_use(unit):
     assert (places.get(first).lat, places.get(first).lon) == (45.0, -122.0)
     assert (places.get("3f9a1c2e-si").lat, places.get("3f9a1c2e-si").lon) == (45.52252, -122.6912)
     assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (45.0, -122.0)
-    assert corrections(unit) == [] and unit.nodered.calls == []
+    # Node-RED started the new deployments from the hand edit, at the file's old point: they take the place's
+    assert unit.nodered.named("correct_location") == [("correct_location", first, 45.0, -122.0)]
+    assert corrections(unit) == []
     assert len(places.list()) == 2
     assert reconcile.ensure(unit).followed == "none" and corrections(unit) == []
+
+
+def test_a_failed_re_rounding_after_a_switch_by_hand_is_logged_and_ignored(unit, caplog):
+    reconcile.ensure(unit)  # the first place, at 45.0, -122.0
+    places = Places(unit.state)
+    first = places.in_use().id
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    reconcile.ensure(unit)
+    unit.nodered.correction_error = NodeRedError("unreachable")
+    edit(unit, "survey_id: 3f9a1c2e-si", f"survey_id: {first}")
+    with caplog.at_level(logging.INFO, logger=reconcile.__name__):
+        outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.followed) == ("done", "none")
+    assert places.in_use().id == first
+    assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (45.0, -122.0)
+    assert unit.nodered.named("correct_location") == [("correct_location", first, 45.0, -122.0)]
+    warnings = [r.getMessage() for r in caplog.records if r.name == reconcile.__name__]
+    assert len(warnings) == 1 and warnings[0].endswith(": NodeRedError")
+    assert "45" not in caplog.text and "-si" not in caplog.text
 
 
 def test_switching_by_hand_to_a_place_with_no_point_blanks_the_files_coordinates(unit):
@@ -412,14 +457,52 @@ def test_coordinates_compare_at_five_places(unit):
     assert corrections(unit) == []
 
 
-def test_following_coordinates_removed_by_hand_asks_nothing_of_nodered(unit):
+def test_coordinates_blanked_by_hand_are_put_back(unit):
+    """A place with a point can't be corrected to no location (decision 9): the file gets the point back, so it and
+    the engine agree with the store again."""
     reconcile.ensure(unit)
     place = Places(unit.state).in_use()
+    unit.nodered.calls.clear()
     edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
-    assert reconcile.ensure(unit).followed == "coordinates"
-    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (None, None)
-    assert corrections(unit) == [(place.id, "location", "45.0,-122.0", None, None, "config", None)]
-    assert unit.nodered.named("correct_location") == []
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.followed) == ("done", "restored")
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.0, -122.0)
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
+    """After tmsetup.sh -f the file has the template's blank survey_id and location: the place in use goes back in,
+    with its stored point; the bearing and precision stay as the file has them."""
+    reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
+    place = Places(unit.state).in_use()
+    unit.nodered.calls.clear()
+    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    survey_id: {place.id}\n",
+         "lat:\n    lon:\n    bearing: ''\n    survey_id:  # names the place\n    database_precision: '1'\n")
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.followed) == ("done", "restored")
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.0, -122.0)
+    assert (deployment["bearing"], deployment["database_precision"]) == ("", "1")
+    assert "# names the place" in unit.config_path.read_text()
+    current = Places(unit.state).in_use()
+    assert (current.id, current.lat, current.lon) == (place.id, 45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.calls == []
+    assert len(Places(unit.state).list()) == 1
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_reset_file_gets_back_a_place_with_no_point_as_it_is(unit):
+    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    reconcile.ensure(unit)  # the default place, with no point
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    assert reconcile.ensure(unit).followed == "restored"
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, None, None)
+    assert corrections(unit) == [] and len(Places(unit.state).list()) == 1
 
 
 def test_a_failed_correction_in_nodered_is_logged_and_ignored(unit, caplog):
