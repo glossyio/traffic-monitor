@@ -113,10 +113,12 @@ def test_open_deployments_carry_the_configured_survey(host, codedir, node_red_co
     assert not wrong, f"open deployment rows without the configured survey {survey_id}: {', '.join(wrong)}"
 
 
-def test_every_survey_in_tmdb_is_a_known_place(host, codedir, address, admin_session):
-    """Each survey id on a deployment row is the id of a place on the Location page (GET /surveys), so no row names a
-    place the page can't show. Rows with no survey are the page's unassigned count, not a place. Only ids are kept."""
+def test_open_deployments_name_a_known_place(host, codedir, address, admin_session):
+    """Each survey id on an open deployment row is the id of a place on the Location page (GET /surveys), so the
+    unit is never recording to a place the page can't show. Closed rows may name a place that was deleted since: the
+    page allows deleting a used place, and tmdb keeps its rows. Rows with no survey are the page's unassigned count,
+    not a place. Only ids are kept."""
     used = {row[0] for row in db_query(host, codedir, "SELECT DISTINCT survey_id FROM deployment "
-                                                        "WHERE survey_id IS NOT NULL")}
+                                                        "WHERE survey_id IS NOT NULL AND entryEndDateTime IS NULL")}
     known = {place.get("id") for place in places_state(address, admin_session)["surveys"]}
-    assert used <= known, f"survey ids in tmdb's deployment table that GET /surveys doesn't list: {sorted(used - known)}"
+    assert used <= known, f"open deployment rows name survey ids GET /surveys doesn't list: {sorted(used - known)}"
