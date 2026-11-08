@@ -30,23 +30,32 @@ The device's access token isn't in this file. Set it on the control app's [Devic
 
 ## deployment
 
-Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data. When you move the device, set a new `survey_id`, and new `lat` and `lon` if you record a location, because changing only `lat` or `lon` doesn't start a new deployment. All of them are optional.
+Where the device is. Every event and reading is stored with a deployment id that points at these values. The control app's [Location page](../use/location.md) writes them when you claim the device, deploy it to a place, change the precision, or correct a value, so you rarely edit them here. All of them are optional.
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
-| `survey_id` | `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si` | empty | Names the place the device is used at, with no coordinates in it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error. |
+| `survey_id` | `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si` | empty | The place in use, with no coordinates in it. The Location page writes it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error. |
 | `database_precision` | `none`, `1`, or `2` | `'2'` | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too. |
-| `lat` | decimal degrees, such as `45.52252` | empty | Latitude, optional. Use five decimal places at most. The database stores it rounded to `database_precision`; this file keeps the exact value. |
+| `lat` | decimal degrees, such as `45.52252` | empty | Latitude of the place in use, optional, with five decimal places at most. The database stores it rounded to `database_precision`; this file and the control app keep the exact value. |
 | `lon` | decimal degrees, such as `-122.69120` | empty | Longitude, optional, with the same rules as `lat`. Set both or neither: a row with only one gets neither. |
-| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty | The compass direction the camera and radar face. Optional; a value that isn't one of these is logged as an error. |
+| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty | The compass direction the camera and radar face. Optional; a value that isn't one of these, including one with spaces around it, is logged as an error. |
 
-A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing `lat` or `lon` on its own doesn't change the coordinates already stored.
+A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id.
 
-On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor. To keep the current deployments while you set it, for example before you turn a camera, use the id the upgrade chose. The Node-RED editor at `http://<device>/nr/` shows it: in the **Context Data** sidebar, refresh **Global** and open `tm_status`, where `deployments` lists each current deployment with its `survey_id`. The `deployment` table in a [database download](../ui/database.md#download-the-database) has it too.
+Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer. The Location page can also round the rows already stored; see [Choose the precision](../use/location.md#choose-the-precision).
 
-Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.
+A `deployment:` block under a camera or radar can hold `bearing`, for a device whose cameras face different ways. A `lat` or `lon` there isn't read, because the location belongs to the whole device. The installer removes it, and the Status page's Location check warns about it until then.
 
-A `deployment:` block under a camera or radar can hold `bearing`, for a device whose cameras face different ways. A `lat` or `lon` there is no longer read, because the location belongs to the whole device.
+### Edit the location by hand
+
+Use the [Location page](../use/location.md) to move the device or fix a value. If you edit this section by hand instead, Node-RED applies the change as soon as you save the file, and the control app records it the next time its Location page is opened:
+
+* **`survey_id` set to a place the page lists** is a move there, as **Deploy here** would be. The file takes that place's location, replacing any `lat` or `lon` you changed in the same edit.
+* **`survey_id` set to an id the page doesn't list** becomes a new place, in use, at this file's `lat` and `lon`.
+* **Only `lat` or `lon` changed** is a correction of the place in use, as **Correct location** would be: the place's stored rows take the new location.
+* **A `lat` or `lon` that isn't a number in range**, such as one with a typo, stays in the file as you typed it. New deployments store no location until you fix it, and the Status page's Location check names the key.
+
+On a device upgraded from a release that recorded coordinates, the update leaves `survey_id` empty, and the control app fills it in the first time the Location page is opened; see [Places after an update](../build-your-own-device-diy/update.md#places-after-an-update).
 
 ## sensors.cameras
 

@@ -48,9 +48,13 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
-- `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The Location
-  page's `coordinates.ts` shows coordinates and names the bearing and precision choices; it never rounds, because the
-  API sends the stored coordinates already rounded.
+- `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
+  module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
+  editing a place (`PlaceForm.vue`), Deploy here's review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
+  importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the bearing and precision choices,
+  checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
+  (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
+  form's check.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form

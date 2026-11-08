@@ -53,15 +53,38 @@ A Frigate configuration from a backup may lack the camera stream login and the p
 
 Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices).
 
-Open `http://<device>/`, log in, and check the [Monitoring dashboard](../ui/monitoring.md) for new counts.
+Open `http://<device>/`, log in, and check the [Monitoring dashboard](../ui/monitoring.md) for new counts. After an update from a version without the Location page, open that page too; see [Places after an update](#places-after-an-update).
 
 To update several devices from your computer, use the remote form of the installer described in [Install the software](../software-installation.md#install-from-another-computer).
+
+## Places after an update
+
+An update from a version without the control app's Location page brings the location settings up to date:
+
+* The installer adds `database_precision: '2'` to `config.yml`, so the database stores the location rounded to about 1 km. It removes any `lat` and `lon` under a camera or radar, because the location belongs to the whole device, and its output names each sensor.
+* When Node-RED first starts, it saves a copy of the database, gives each location in the stored rows a place id, and rounds the stored coordinates to two decimal places, once. The copy keeps the exact rows until the next update that changes the database replaces it; see [Schema versions](../data-and-payloads/data-overview.md#schema-versions).
+
+Then open the control app's [Location page](../use/location.md) as the administrator. The first time it opens after Node-RED has started, it sets up the device's places:
+
+* Each location in the saved copy becomes a used place, marked **Imported from your previous settings**.
+* The place at the location in `config.yml` becomes the place in use, and the control app writes its id into `config.yml`, so the deployments running now carry on. If no imported place is at that location, for example because it changed while the device was off, the control app makes a new place from `config.yml`, and new deployments start.
+* A device with no location in `config.yml` gets one place, **First location**, with no location.
+
+!!! warning "Open the Location page before the next update"
+
+    The control app reads the past places from the saved copy, and the next update that changes the database replaces it. Open the Location page before then, and keep the copy until you have. The Status page's Location check says when the places haven't been set up yet.
+
+If there's no copy, or the control app can't read it, the control app skips the import and makes only the place in use, from `config.yml`. The past places' records stay in the database, grouped by place id, but the Location page doesn't list those places.
+
+??? note "A device whose sensors had their own coordinates"
+
+    The update gives each sensor's own location a place of its own. Once the control app writes the place in use into `config.yml`, each sensor whose location differed from the device's starts a new deployment there. Its earlier records stay with their own place, which the Location page lists as used.
 
 ## What an update changes
 
 An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. [What `-f` replaces](../reference/tmsetup.md#what-f-replaces) lists the files.
 
-Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: location and sensors in `config.yml`, and zones in Frigate. [First-time setup](../setup-guide.md) walks through each.
+Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the `deployment` and `sensors` sections of `config.yml`, and zones in Frigate. [First-time setup](../setup-guide.md) walks through each.
 
 Node-RED flow changes made in the editor on the device are replaced on every update. Commit them to the repository instead; see [Dev environment](../development/dev-environment.md).
 
