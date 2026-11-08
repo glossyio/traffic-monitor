@@ -13,9 +13,10 @@ import time
 import urllib.parse
 
 import pytest
-from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed,
-                          places_state, request_from_this_machine, retry_after, role_vars, session,
-                          set_secret_table, status_checks, tm_internal_token, tm_login_or_none)
+import yaml
+from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed, places_state,
+                          read_root_file, request_from_this_machine, require_pii_free, retry_after, role_vars,
+                          session, set_secret_table, status_checks, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -977,13 +978,17 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
     assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
 
 
-def test_in_use_place_matches_config_yml(address, admin_session, node_red_config):
+def test_in_use_place_matches_config_yml(address, admin_session, usable_host, expect, codedir):
     """The place in use and the precision the Location page shows are the ones config.yml holds. Precision is a string
-    there ('none', '1' or '2'), though an old file may have it as a number, and a missing one means '2'."""
-    deployment = node_red_config.get("deployment") or {}
-    wanted = (str(deployment.get("survey_id") or "").lower() or None,
-              str(deployment.get("database_precision") or "2").lower())
+    there ('none', '1' or '2'), though an old file may have it as a number, and a missing one means '2'; any other
+    value, 'NONE' included, is invalid and the flows and tm-control fall back to '2'. GET /surveys reconciles the file
+    (it can write the in-use place into it), so config.yml is read after it, not from the module's earlier read."""
+    require_pii_free(expect)
     state = places_state(address, admin_session)
+    config = yaml.safe_load(read_root_file(usable_host, f"{codedir}/node-red-tm/config/config.yml"))
+    deployment = config.get("deployment") or {}
+    precision = deployment.get("database_precision")
+    wanted = (str(deployment.get("survey_id") or "").lower() or None, "2" if precision is None else str(precision))
     found = (state.get("in_use"), state.get("precision"))
     assert found == wanted, f"(place in use, precision) from GET {API}/surveys and from config.yml: {found} and {wanted}"
 
