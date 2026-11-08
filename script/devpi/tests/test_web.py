@@ -14,8 +14,8 @@ import urllib.parse
 
 import pytest
 from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed,
-                          request_from_this_machine, retry_after, role_vars, session, set_secret_table,
-                          status_checks, tm_internal_token, tm_login_or_none)
+                          places_state, request_from_this_machine, retry_after, role_vars, session,
+                          set_secret_table, status_checks, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -727,18 +727,20 @@ TM_INTERNAL_STATUS = "http://127.0.0.1:1880/tm-internal/status"
 TM_INTERNAL_HEADER = "X-TM-Internal-Token"  # tm_control/adapters/nodered.py
 
 
-def tm_internal_answer(host, token=None):
-    """(HTTP status, JSON body or None) of Node-RED's internal status, asked on the Pi with this token or none.
+def tm_internal_answer(host, token=None, url=TM_INTERNAL_STATUS, body=None):
+    """(HTTP status, JSON body or None) of one of Node-RED's internal endpoints, asked on the Pi with this token or
+    none: a GET, or a POST of this JSON body.
 
     The token is on curl's command line, never under sudo, whose log would keep it; the CommandResult holds it, so it
     stays in here, where neither an assertion nor pytest -l in the test can print it.
     """
     header = "" if token is None else "-H " + shlex.quote(f"{TM_INTERNAL_HEADER}: {token}") + " "
-    result = host.run(f"curl -s --max-time 10 -w '\\n%{{http_code}}' {header}{TM_INTERNAL_STATUS}")
-    body, _, status = result.stdout.rpartition("\n")
+    post = "" if body is None else "-X POST -H 'Content-Type: application/json' -d " + shlex.quote(json.dumps(body)) + " "
+    result = host.run(f"curl -s --max-time 10 -w '\\n%{{http_code}}' {header}{post}{url}")
+    text, _, status = result.stdout.rpartition("\n")
     del result
     try:
-        return status, json.loads(body)
+        return status, json.loads(text)
     except ValueError:
         return status, None
 
@@ -758,6 +760,23 @@ def test_tm_internal_needs_the_token_on_the_pi(host, expect):
     assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
     assert isinstance(version, int) and not isinstance(version, bool), (
         f"Node-RED's status gives schema_version as {type(version).__name__}, not an integer")
+
+
+# The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body
+# holds no coordinate, so a request that got past the token check would change nothing.
+TM_INTERNAL_WRITES = [
+    "http://127.0.0.1:1880/tm-internal/surveys/3f9a1c2e-si/location",
+    "http://127.0.0.1:1880/tm-internal/deployments/1-00000000-d/bearing",
+]
+
+
+@pytest.mark.parametrize("url", TM_INTERNAL_WRITES, ids=[url.rsplit("/tm-internal/", 1)[1] for url in TM_INTERNAL_WRITES])
+def test_tm_internal_writes_need_the_token_on_the_pi(host, url):
+    """On the Pi, the two internal endpoints that correct a place's location and a deployment's bearing answer 401 to a
+    POST without the token or with a wrong one, before they read the body. No token is read, so this runs on every
+    unit."""
+    refused = (tm_internal_answer(host, url=url, body={})[0], tm_internal_answer(host, "tmdev-wrong-token", url, {})[0])
+    assert refused == ("401", "401"), f"without a token and with a wrong one, POST {url} answered {refused}"
 
 
 # The diagnostics through the proxy with the admin session, then: how many lines are the status section's header, and
@@ -942,6 +961,31 @@ def test_time_state_matches_timedatectl(host, address, admin_session):
     device = (host.check_output("timedatectl show -p Timezone --value"),
               host.check_output("timedatectl show -p NTP --value") == "yes")
     assert found == device, "(time zone, NTP on) from GET /time and from timedatectl differ"
+
+
+def test_surveys_needs_an_admin(address, admin_session, viewer_session):
+    """The Location page's places are for admins: a viewer gets require_admin's 403, and the admin gets the places with
+    the reconcile done and exactly one place in use. Only ids and states are kept: the
+    places hold coordinates."""
+    refusal = admin_refusal(request_from_this_machine(address, f"{API}/surveys", cookie=viewer_session))
+    assert refusal == (403, ADMIN_ONLY), f"GET {API}/surveys with a viewer session (status, message)"
+    state = places_state(address, admin_session)
+    in_use = [place.get("id") for place in state["surveys"] if place.get("status") == "in_use"]
+    assert state.get("reconcile") == "done", f"GET {API}/surveys: reconcile is {state.get('reconcile')!r}, not 'done'"
+    assert len(in_use) == 1 and state.get("in_use") == in_use[0], (
+        f"GET {API}/surveys: in_use is {state.get('in_use')!r} and the places in use are {in_use}")
+    assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
+
+
+def test_in_use_place_matches_config_yml(address, admin_session, node_red_config):
+    """The place in use and the precision the Location page shows are the ones config.yml holds. Precision is a string
+    there ('none', '1' or '2'), though an old file may have it as a number, and a missing one means '2'."""
+    deployment = node_red_config.get("deployment") or {}
+    wanted = (str(deployment.get("survey_id") or "").lower() or None,
+              str(deployment.get("database_precision") or "2").lower())
+    state = places_state(address, admin_session)
+    found = (state.get("in_use"), state.get("precision"))
+    assert found == wanted, f"(place in use, precision) from GET {API}/surveys and from config.yml: {found} and {wanted}"
 
 
 # Last in the module: it leaves this machine's address backing off for a few seconds.

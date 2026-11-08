@@ -8,7 +8,7 @@ print only counts, timestamps, sensor names, and survey ids.
 import re
 
 import pytest
-from devpi_checks import db_query, pi_now, require_pii_free
+from devpi_checks import db_query, pi_now, places_state, require_pii_free, session
 
 MAX_RADAR_AGE_SECONDS = 15 * 60
 MAX_EVENT_AGE_SECONDS = 60 * 60
@@ -17,6 +17,13 @@ MAX_EVENT_AGE_SECONDS = 60 * 60
 @pytest.fixture(autouse=True)
 def pii_free_only(expect):
     require_pii_free(expect)
+
+
+@pytest.fixture(scope="module")
+def admin_session(address, tm_login):
+    """The inventory admin's session cookie (Redacted); skips when the inventory has no tm_control_login."""
+    username, password = tm_login
+    return session(address, username, password)
 
 
 def test_schema_current(host, codedir, codeowner):
@@ -104,3 +111,12 @@ def test_open_deployments_carry_the_configured_survey(host, codedir, node_red_co
     wrong = sorted(f"{sensor_type}.{name}: {row_survey}" for sensor_type, name, row_survey in rows
                    if (sensor_type, name) in enabled and row_survey != survey_id)
     assert not wrong, f"open deployment rows without the configured survey {survey_id}: {', '.join(wrong)}"
+
+
+def test_every_survey_in_tmdb_is_a_known_place(host, codedir, address, admin_session):
+    """Each survey id on a deployment row is the id of a place on the Location page (GET /surveys), so no row names a
+    place the page can't show. Rows with no survey are the page's unassigned count, not a place. Only ids are kept."""
+    used = {row[0] for row in db_query(host, codedir, "SELECT DISTINCT survey_id FROM deployment "
+                                                        "WHERE survey_id IS NOT NULL")}
+    known = {place.get("id") for place in places_state(address, admin_session)["surveys"]}
+    assert used <= known, f"survey ids in tmdb's deployment table that GET /surveys doesn't list: {sorted(used - known)}"

@@ -161,11 +161,12 @@ def test_pid1_logs_how_each_start_job_ended(host):
         f"{len(entries)} job-end entries this boot")
 
 
-def test_tm_control_may_write_frigates_config_directory(host, codedir):
-    """tm-control.service's sandbox is read-only apart from its own directories and Frigate's config directory, which
-    holds model_cache and config.yml, for the Detection page."""
-    paths = host.check_output("systemctl show -p ReadWritePaths --value tm-control.service")
-    assert paths == f"{codedir}/frigate/config", f"tm-control.service's ReadWritePaths are {paths!r}"
+def test_tm_control_may_write_the_two_config_directories(host, codedir):
+    """tm-control.service's sandbox is read-only apart from its own directories, Frigate's config directory (the
+    Detection page's model_cache and config.yml) and Node-RED's (the config.yml the Location page writes)."""
+    paths = host.check_output("systemctl show -p ReadWritePaths --value tm-control.service").split()
+    expected = [f"{codedir}/frigate/config", f"{codedir}/node-red-tm/config"]
+    assert sorted(paths) == sorted(expected), f"tm-control.service's ReadWritePaths are {paths}, not {expected}"
 
 
 # A 2 MB body, over nginx's default 1 MB limit, sent from the Pi to nginx on port 80 with no session and no Origin
