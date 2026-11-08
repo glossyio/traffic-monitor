@@ -1,7 +1,8 @@
 <!--
   What a place's panel says about it: whether it was imported, when it was first and last used, its events, and its
   deployments. The page asks the API for the events and deployments when the panel first opens and passes them in as
-  `details` (undefined until then); `retry` asks it to try again after an error.
+  `details` (undefined until then); `retry` asks it to try again after an error. Each deployment of a used place or
+  the place in use has "Correct bearing", which asks the page to open its correction dialog (`correctBearing`).
 -->
 <script setup lang="ts">
 import type { components } from '../../api/schema'
@@ -23,7 +24,7 @@ defineProps<{
   details: Details | undefined
   nodered: boolean // whether Node-RED answered the usage counts
 }>()
-const emit = defineEmits<{ retry: [] }>()
+const emit = defineEmits<{ retry: []; correctBearing: [deployment: DeploymentOut] }>()
 
 // A time in ms as a date and time in the browser's words, such as "Oct 28, 2026, 2:32 PM"
 function dateTime(ms: number) {
@@ -92,8 +93,19 @@ function span(deployment: DeploymentOut) {
           <ul class="deployments d-flex flex-column ga-4 mb-6">
             <li v-for="deployment in details.deployments" :key="deployment.id">
               <div class="text-body-1 text-break">{{ deployment.sensor_name }}</div>
-              <div class="text-body-2 text-secondary">
-                {{ deployment.bearing ? `Facing ${bearingTitle(deployment.bearing)}` : 'No bearing set' }}
+              <div class="d-flex flex-wrap align-center column-gap-2">
+                <span class="text-body-2 text-secondary">
+                  {{ deployment.bearing ? `Facing ${bearingTitle(deployment.bearing)}` : 'No bearing set' }}
+                </span>
+                <v-btn
+                  v-if="place.status !== 'planned'"
+                  variant="text"
+                  color="primary"
+                  min-height="44"
+                  @click="emit('correctBearing', deployment)"
+                >
+                  Correct bearing
+                </v-btn>
               </div>
               <div class="text-body-2 text-secondary">{{ span(deployment) }}</div>
             </li>

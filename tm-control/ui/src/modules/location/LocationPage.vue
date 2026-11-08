@@ -3,8 +3,10 @@
   locations at (PUT /surveys/precision), and the places this unit knows, one panel each. Opening a panel asks for the
   place's events and deployments (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one
   edited, in PlaceForm's dialog. "Deploy here" opens DeployReview, which moves the unit to a planned or used place,
-  or, on the place in use, records a turn of the unit (a bearing changed). A planned or used place can be deleted
-  (DELETE /surveys/{id}) after a confirmation; the place in use can't.
+  or, on the place in use, records a turn of the unit (a bearing changed). A used place or the place in use can have
+  its location, or a deployment's bearing, corrected in CorrectDialog. "Import places" adds planned places from a CSV
+  in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a confirmation; the place in
+  use can't.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -14,7 +16,9 @@ import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import { PRECISIONS, bearingTitle, formatExact, formatStored, isCoarser, type Precision } from './coordinates'
+import CorrectDialog from './CorrectDialog.vue'
 import DeployReview from './DeployReview.vue'
+import ImportPlaces from './ImportPlaces.vue'
 import PlaceDetails, { type Details } from './PlaceDetails.vue'
 import PlaceForm from './PlaceForm.vue'
 
@@ -187,9 +191,9 @@ function openForm(place?: SurveyOut) {
 }
 
 // Deploying to a place, after DeployReview's review step. Once deployed, the list and the open panels' deployments
-// are loaded again: the place is in use now, and the one it replaced has ended its deployments. `deployTo` keeps the
-// last place after the dialog closes, so the dialog doesn't empty while it fades out; `reviews` counts the openings,
-// so each one starts a fresh review.
+// are loaded again (`refresh`): the place is in use now, and the one it replaced has ended its deployments. `deployTo`
+// keeps the last place after the dialog closes, so the dialog doesn't empty while it fades out; `reviews` counts the
+// openings, so each one starts a fresh review.
 const deployOpen = ref(false)
 const deployTo = ref<SurveyOut | null>(null)
 const reviews = ref(0)
@@ -200,7 +204,27 @@ function openReview(place: SurveyOut) {
   deployOpen.value = true
 }
 
-async function deployed() {
+// Correcting a place's location, or one deployment's bearing, in CorrectDialog. `correcting` keeps what was last
+// corrected after the dialog closes, as `deployTo` does. Once corrected, the list and the open panels load again.
+const correctOpen = ref(false)
+const correcting = ref<{ kind: 'location' | 'bearing'; place: SurveyOut; deployment?: DeploymentOut } | null>(null)
+
+function openCorrection(kind: 'location' | 'bearing', place: SurveyOut, deployment?: DeploymentOut) {
+  correcting.value = { kind, place, deployment }
+  correctOpen.value = true
+}
+
+// Importing places from a CSV in ImportPlaces; `imports` counts the openings, so each one starts over
+const importOpen = ref(false)
+const imports = ref(0)
+
+function openImport() {
+  imports.value += 1
+  importOpen.value = true
+}
+
+// The places and the open panels' details, loaded again after a deploy or a correction
+async function refresh() {
   await load()
   for (const id of Object.keys(details)) delete details[id]
   for (const id of open.value) if (id !== UNASSIGNED) void loadDetails(id)
@@ -290,7 +314,7 @@ onMounted(load)
         </p>
         <div class="d-flex flex-wrap ga-3 mb-4">
           <v-btn variant="outlined" color="primary" size="large" @click="openForm()">Add a place</v-btn>
-          <v-btn variant="outlined" color="primary" size="large">Import places</v-btn>
+          <v-btn variant="outlined" color="primary" size="large" @click="openImport">Import places</v-btn>
         </div>
         <p v-if="listResult" class="text-body-1 mb-4">{{ listResult }}</p>
 
@@ -322,6 +346,7 @@ onMounted(load)
                 :details="details[place.id]"
                 :nodered="state.nodered"
                 @retry="loadDetails(place.id)"
+                @correct-bearing="(deployment) => openCorrection('bearing', place, deployment)"
               />
               <div class="d-flex flex-wrap ga-3">
                 <v-btn color="primary" size="large" :disabled="working !== null" @click="openReview(place)">
@@ -336,7 +361,14 @@ onMounted(load)
                 >
                   Edit
                 </v-btn>
-                <v-btn v-if="place.status !== 'planned'" variant="outlined" color="primary" size="large">
+                <!-- A place with no point can't be corrected to one: that's a new place -->
+                <v-btn
+                  v-if="place.status !== 'planned' && place.lat !== null"
+                  variant="outlined"
+                  color="primary"
+                  size="large"
+                  @click="openCorrection('location', place)"
+                >
                   Correct location
                 </v-btn>
                 <v-btn
@@ -404,9 +436,28 @@ onMounted(load)
         :key="reviews"
         :place="deployTo"
         :state="state"
-        @deployed="deployed"
+        @deployed="refresh"
         @stale="load"
         @close="deployOpen = false"
+      />
+    </v-dialog>
+    <CorrectDialog
+      v-if="correcting"
+      v-model:open="correctOpen"
+      :kind="correcting.kind"
+      :place="correcting.place"
+      :deployment="correcting.deployment"
+      @corrected="refresh"
+      @stale="load"
+    />
+    <!-- Scrollable: a long preview scrolls inside the dialog, and the title and buttons stay in view -->
+    <v-dialog v-model="importOpen" max-width="560" scrollable aria-label="Import places">
+      <ImportPlaces
+        v-if="state"
+        :key="imports"
+        :sensors="state.sensors"
+        @imported="load"
+        @close="importOpen = false"
       />
     </v-dialog>
     <ConfirmDialog

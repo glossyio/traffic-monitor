@@ -20,6 +20,16 @@ export function parsePair(text: string): { lat: number; lon: number } | null {
   return { lat, lon }
 }
 
+// How far apart two points are, in km, along the earth's surface (the haversine formula, on a sphere of the earth's
+// mean radius). Correct location uses it only to tell a typo fixed nearby from a point that looks like a move.
+export function distanceKm(from: { lat: number; lon: number }, to: { lat: number; lon: number }): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180
+  const dLat = radians(to.lat - from.lat)
+  const dLon = radians(to.lon - from.lon)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(from.lat)) * Math.cos(radians(to.lat)) * Math.sin(dLon / 2) ** 2
+  return 2 * 6371 * Math.asin(Math.sqrt(a))
+}
+
 // What the database stores for a place. `places`, the precision's decimal places, pads 45 to "45.0"; the values
 // are already rounded to it, so padding changes no digit.
 export function formatStored(lat: number | null, lon: number | null, places?: number): string {

@@ -1,6 +1,14 @@
 // The Location page's coordinate helpers: the form's quick check of a pasted pair, and how places are shown.
 import { describe, expect, it } from 'vitest'
-import { BEARINGS, PRECISIONS, formatExact, formatStored, isCoarser, parsePair } from '../src/modules/location/coordinates'
+import {
+  BEARINGS,
+  PRECISIONS,
+  distanceKm,
+  formatExact,
+  formatStored,
+  isCoarser,
+  parsePair,
+} from '../src/modules/location/coordinates'
 
 describe('parsePair', () => {
   it('accepts a comma and a space, a comma alone, or spaces alone', () => {
@@ -41,6 +49,22 @@ describe('formatExact', () => {
   it('pads to five places', () => {
     expect(formatExact(45.52252, -122.6912)).toBe('45.52252, -122.69120')
     expect(formatExact(null, null)).toBe('No location')
+  })
+})
+
+// Loose bounds: the check only has to tell a typo fixed nearby from a point that looks like a move (over about 1 km)
+describe('distanceKm', () => {
+  it('measures a small correction as well under 1 km', () => {
+    const km = distanceKm({ lat: 45.52252, lon: -122.6912 }, { lat: 45.52, lon: -122.69 })
+    expect(km).toBeGreaterThan(0.2)
+    expect(km).toBeLessThan(0.5)
+  })
+
+  it('measures a far one as tens of kilometres, the same either way', () => {
+    const there = distanceKm({ lat: 45.0, lon: -122.0 }, { lat: 45.52252, lon: -122.6912 })
+    expect(there).toBeGreaterThan(70)
+    expect(there).toBeLessThan(90)
+    expect(distanceKm({ lat: 45.52252, lon: -122.6912 }, { lat: 45.0, lon: -122.0 })).toBeCloseTo(there, 6)
   })
 })
 

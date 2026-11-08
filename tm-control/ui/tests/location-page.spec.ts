@@ -82,6 +82,19 @@ const PLACES: PlacesState = {
   nodered: true,
 }
 
+// A deployment of the used place, as GET /surveys/{id}/deployments lists it
+const DEPLOYMENT = {
+  id: '1790000000000-0a1b2c3d-d',
+  started: 1790000000000,
+  ended: 1790500000000,
+  lat: 45.0,
+  lon: -122.0,
+  bearing: 'ne',
+  sensor_type: 'cameras',
+  sensor_name: 'picam_h265',
+  location_precision: 1,
+}
+
 // The title (a button) of the place's panel, found by the text it starts with
 function panel(wrapper: VueWrapper, title: string) {
   const found = wrapper.findAll('.v-expansion-panel-title').filter((t) => t.text().trim().startsWith(title))
@@ -360,5 +373,82 @@ describe('the Location page', () => {
     const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
     expect(gets('/api/v1/surveys')).toHaveLength(2)
     expect(gets('/api/v1/surveys/c0ffee01-si/deployments')).toHaveLength(2)
+  })
+
+  it("opens the location correction from Correct location, starting at the place's point", async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Correct location')
+    expect(dialogText()).toContain('Use this only if the location was entered wrong.')
+    expect(dialogField('Coordinates').value).toBe('45.00000, -122.00000')
+  })
+
+  it('offers no Correct location for a used place with no point', async () => {
+    const pointless = place({ id: 'c0ffee01-si', status: 'used', deployment_count: 1 })
+    signedIn(ADMIN, {
+      [SURVEYS]: { ...PLACES, surveys: [IN_USE, pointless] },
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    expect(button(wrapper, 'Deploy here').exists()).toBe(true)
+    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Correct location')).toBe(false)
+  })
+
+  it('opens the bearing correction from Correct bearing on a deployment', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 1, first_event: 1790000000, last_event: 1790000000 },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [DEPLOYMENT] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Correct bearing')
+    expect(dialogText()).toContain('Use this only if the bearing was entered wrong.')
+    expect(dialogText()).toContain('picam_h265')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Correct bearing')
+  })
+
+  it('loads the places and the open panel again after a correction', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 1, first_event: 1790000000, last_event: 1790000000 },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [DEPLOYMENT] },
+      'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/bearing': { ...DEPLOYMENT, bearing: 'se' },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Correct bearing')
+    await wrapper.findAllComponents({ name: 'VSelect' }).at(-1)!.setValue('se')
+    await flushPromises()
+    await clickInDialog('Correct')
+    const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
+    expect(gets('/api/v1/surveys')).toHaveLength(2)
+    expect(gets('/api/v1/surveys/c0ffee01-si/deployments')).toHaveLength(2)
+  })
+
+  it('opens the import from Import places and loads the places again after an import', async () => {
+    const preview = { rows: [{ line: 2, description: 'Bus stop on the hill', lat: null, lon: null, bearings: [] }] }
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'POST /api/v1/surveys/import': async (request: Request) => {
+        const body = (await request.clone().json()) as { dry_run: boolean }
+        return json(200, { ...preview, errors: [], created: body.dry_run ? [] : ['0f0e0d0c-si'] })
+      },
+    })
+    const { wrapper } = await mountApp('/location')
+    await click(wrapper, 'Import places')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Import places')
+    await typeInto(dialogField('Places as CSV'), 'description,lat,lon\nBus stop on the hill,,\n')
+    await clickInDialog('Preview')
+    await clickInDialog('Import')
+    expect(dialogText()).toContain('Added 1 place')
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
   })
 })

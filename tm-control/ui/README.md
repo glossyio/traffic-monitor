@@ -615,7 +615,7 @@ importing places open dialogs from this page, so they move nothing on it.
 | | place.                       | |
 | | Deployments (2)              | |
 | | picam_h265                   | |
-| | Facing N                     | |
+| | Facing N  Correct bearing    | |
 | | Nov 7, 2026, 10:15 PM to ... | |
 | | [Deploy here]                | |
 | | [Correct location] [Delete]  | |
@@ -635,8 +635,8 @@ importing places open dialogs from this page, so they move nothing on it.
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events
   and deployments once.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
-  four columns at 375 px, and the next task adds a button per deployment. A deployment that started and ended on the
-  same day names the day once.
+  four columns at 375 px, and each deployment has a "Correct bearing" button. A deployment that started and ended on
+  the same day names the day once.
 - Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
   rounded one stored with each record. The place in use has no Delete.
 - When Node-RED hasn't answered the first reconcile, or `config.yml` can't be read, a warning at the top says so, and
@@ -707,10 +707,30 @@ importing places open dialogs from this page, so they move nothing on it.
 - The deploy dialog keeps showing its review while it fades out, rather than emptying first, and each opening starts
   a fresh review. Both dialogs are named by their title for screen readers.
 
+#### Corrections, and importing places
+
+- A correction is for a value entered wrong, never for a move, and both dialogs (`CorrectDialog.vue`) open by saying
+  so: "Use this only if the location was entered wrong. Every record from this place will say it was at the new
+  point. To move the unit, use Deploy here instead." The bearing's says the same of its deployment, and both end with
+  "Copies and uploads that already left the device keep the old values." The button reads "Correct", not "Save".
+- "Correct location" shows only for a used place or the place in use that has a point: a correction needs one, and
+  a place with none is planned anew. The field starts at the exact point and can't be left blank. A new point more
+  than about 1 km from the old one (`distanceKm`) gets a second confirmation, with a red button, that gives the
+  distance and points to Deploy here. The same point again is allowed, because correcting again is how a correction
+  whose stored rows weren't re-rounded (502) is finished; the same bearing isn't, because there's nothing to finish.
+- "Correct bearing" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
+- The import is preview, then import. Preview sends the text as a dry run and lists the places the API read, by
+  line, with the lines it couldn't read in an error above them. Import sends the same text again and is enabled only
+  when the preview found places and no errors; any change to the text forgets the preview. The API creates every
+  place or none. A file is read into the same box as pasted text, so what's previewed is always on screen, and
+  64 KiB, the API's limit, is checked before anything is sent. The dialog is `scrollable`, so a long preview scrolls
+  under the title and the buttons stay in view.
+
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1280 px wide, with a used place opened, the coarser precision
-chosen, and the delete confirmation open. The place form, the review, and the result were checked at the same widths.
+chosen, and the delete confirmation open. The corrections, the far-move confirmation, and the import's preview and
+result were checked at the same widths. The place form, the review, and the result were checked at the same widths.
 
 - "Deployments" was both a fact (the count) and the list's heading. The heading now carries the count,
   "Deployments (2)".
@@ -720,6 +740,9 @@ chosen, and the delete confirmation open. The place form, the review, and the re
   "kept only on this device, outside the database", and a line under the checkbox says what happens without it.
 - At 375 px the review's "Stored in the database: 45.0, -122.0" broke between the two numbers, which read as two
   values. The pair now stays on one line.
+- "Correct bearing" was a small button, in smaller type than the "Facing N" beside it. It's the normal size now.
+- At 375 px the import's example header broke inside a sensor's name; it now breaks only after a comma. The preview
+  appeared below the fold, with Preview and Import scrolled away; the dialog now scrolls its content instead.
 
 #### Defaults rejected
 
@@ -735,3 +758,7 @@ chosen, and the delete confirmation open. The place form, the review, and the re
   about consequences, not ids.
 - Closing the review on its own after a deploy: the ids are what an admin may need to copy, and the warning that
   Node-RED hasn't reloaded must stay until it's read.
+- A table for the import's preview: a sensor column per sensor doesn't fit 375 px. Each place is a short list item,
+  as the deployments are.
+- One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
+  before anything is created.
