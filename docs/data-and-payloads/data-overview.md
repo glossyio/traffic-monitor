@@ -16,15 +16,15 @@ The Traffic Monitor is a data collection tool. Everything it collects is process
 
 ## Privacy
 
-We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number. It does record roughly where the device was, to about 1 km.
+We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is [de-identified](https://en.wikipedia.org/wiki/De-identification): it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.
 
 Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows the setting. A snapshot you choose to [submit to Frigate+](../configuration/frigate-config.md#submit-snapshots) does leave the device, and it can show people.
 
-With the default settings, the database holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). About 1 km still tells someone which part of town the device was in, so think about the place before you share the database: a device on a busy street is different from one at a house. To store less, choose a coarser precision on the [Location](../use/location.md) page before recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database.
+With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose **About 10 km** or **No location stored** on the [Location](../use/location.md) page before it starts recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database.
 
-The database can identify people if you:
+The database stops being de-identified if you:
 
 * Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
 * Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.
@@ -48,7 +48,7 @@ Tables for sensors the device doesn't have stay empty.
 | `radar_raw_speed_magnitude_single` | The strongest reading of each sample | No |
 | `radar_oc_payload` | Per-object summaries from the radar, including estimated length | No |
 | `airquality` | Air quality and weather readings. See [Air quality](air-quality-aq-payload.md). | No |
-| `deployment` | Where each sensor was, and when | Not on its own, but it gives the area: the location is rounded to about 1 km (two decimal places) by default, and never stored more precisely |
+| `deployment` | Where each sensor was, and when | No, except where homes are far apart: the location is rounded to about 1 km (two decimal places) by default and never stored more precisely, which in a rural area can point to a single home (see [Privacy](#privacy)) |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 
