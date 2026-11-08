@@ -163,6 +163,22 @@ class NodeRedConfig:
                 found.append(Bearing(sensor_type=sensor_type, sensor_name=str(name), bearing=bearing or ""))
         return found
 
+    def blank_bearings(self) -> list[tuple[str, str]]:
+        """(type, name) of every enabled sensor whose bearing, as the engine copies it down, is missing or empty; an
+        invalid one, which sensors() also reads as "", isn't blank."""
+        data = self._file.data
+        top = _mapping(data.get("deployment")).get("bearing")
+        found = []
+        for sensor_type in SENSOR_TYPES:
+            for name, sensor in _mapping(_mapping(data.get("sensors")).get(sensor_type)).items():
+                if not isinstance(sensor, Mapping) or sensor.get("enabled") is not True:
+                    continue
+                own = sensor.get("deployment")
+                value = own["bearing"] if isinstance(own, Mapping) and "bearing" in own else top
+                if _blank(value):
+                    found.append((sensor_type, str(name)))
+        return found
+
     def sharing(self) -> Literal["data", "none"]:
         """"data" when ThingsBoard uploads are enabled."""
         return "data" if _mapping(self._file.data.get("thingsboard")).get("enabled") is True else "none"

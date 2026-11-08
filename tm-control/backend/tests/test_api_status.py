@@ -150,7 +150,7 @@ def test_a_failing_reconcile_leaves_the_status_report_whole(claimed_client, logi
     assert r.json()["groups"] == fake_groups()
     messages = [record.getMessage() for record in caplog.records if record.name == reconcile.__name__]
     assert messages == ["reconcile for the status report failed: RuntimeError"]
-    assert "45" not in caplog.text
+    assert not any("45" in record.getMessage() for record in caplog.records)
 
 
 def test_openapi_declares_the_report_model(client):

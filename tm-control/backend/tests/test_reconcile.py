@@ -91,6 +91,15 @@ def file_deployment(unit):
     return read_config(unit.config_path).data["deployment"]
 
 
+def sensor_bearing(unit, sensor_type, name):
+    """The bearing in the sensor's own deployment block, or None when it has none."""
+    sensor = read_config(unit.config_path).data["sensors"][sensor_type][name]
+    return (sensor.get("deployment") or {}).get("bearing")
+
+
+RADAR = "        TM_RADAR_SERIAL_PORT_00:\n            enabled: true\n"
+
+
 def write_backup(unit, rows, schema=None, name="tmdb-v0-20261101T000000Z.sqlite"):
     """A pre-migration tmdb copy with a deployment table in the baseline shape (or `schema`) holding `rows`."""
     directory = reconcile.backup_dir(unit.manifest)
@@ -106,6 +115,7 @@ def write_backup(unit, rows, schema=None, name="tmdb-v0-20261101T000000Z.sqlite"
     return path
 
 
+INVALID_POINTS = ["lat: 45,0\n    lon: -122.0\n", "lat: 45.0\n    lon:\n"]  # a decimal comma; one of the two
 BACKUP_ROWS = [("A", 45.52252, -122.6912), ("B", 45.52252, -122.6912), ("C", 45.0, -122.0), ("D", 45.0, -122.0)]
 
 
@@ -292,7 +302,7 @@ def test_unreadable_backup_is_skipped(unit, caplog, content, error):
     assert (outcome.state, outcome.imported) == ("done", 0)
     warnings = [r for r in caplog.records if r.name == reconcile.__name__ and r.levelno >= logging.WARNING]
     assert [r.getMessage() for r in warnings] == [f"skipping the tmdb backup: {error}"]
-    assert "codedir" not in caplog.text and "45" not in caplog.text
+    assert not any("codedir" in m or "45" in m for m in (r.getMessage() for r in caplog.records))
     places = Places(unit.state)
     (place,) = places.list()
     assert (place.status, place.source, place.lat, place.lon) == ("in_use", "imported_config", 45.0, -122.0)
@@ -415,9 +425,8 @@ def test_a_failed_re_rounding_after_a_switch_by_hand_is_logged_and_ignored(unit,
     assert places.in_use().id == first
     assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (45.0, -122.0)
     assert unit.nodered.named("correct_location") == [("correct_location", first, 45.0, -122.0)]
-    warnings = [r.getMessage() for r in caplog.records if r.name == reconcile.__name__]
-    assert len(warnings) == 1 and warnings[0].endswith(": NodeRedError")
-    assert "45" not in caplog.text and "-si" not in caplog.text
+    messages = [r.getMessage() for r in caplog.records]
+    assert messages == ["re-rounding the place's rows in Node-RED failed: NodeRedError"]
 
 
 def test_switching_by_hand_to_a_place_with_no_point_blanks_the_files_coordinates(unit):
@@ -474,8 +483,10 @@ def test_coordinates_blanked_by_hand_are_put_back(unit):
 
 
 def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
-    """After tmsetup.sh -f the file has the template's blank survey_id and location: the place in use goes back in,
-    with its stored point; the bearing and precision stay as the file has them."""
+    """After tmsetup.sh -f the file has the template's blank survey_id, location, and bearing: the place in use goes
+    back in with its stored point, and each sensor with a blank bearing gets the place's back under its own block, so
+    the engine starts no deployment with no bearing. The top-level bearing and the precision stay as the file has
+    them."""
     reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
     place = Places(unit.state).in_use()
     unit.nodered.calls.clear()
@@ -486,12 +497,68 @@ def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
     deployment = file_deployment(unit)
     assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.0, -122.0)
     assert (deployment["bearing"], deployment["database_precision"]) == ("", "1")
+    assert sensor_bearing(unit, "cameras", "picam_h265") == "n"
+    assert sensor_bearing(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == "n"
     assert "# names the place" in unit.config_path.read_text()
     current = Places(unit.state).in_use()
     assert (current.id, current.lat, current.lon) == (place.id, 45.0, -122.0)
     assert corrections(unit) == [] and unit.nodered.calls == []
     assert len(Places(unit.state).list()) == 1
     assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_reset_file_leaves_a_bearing_the_operator_set(unit):
+    reconcile.ensure(unit)  # the place in use, its sensors facing n
+    place = Places(unit.state).in_use()
+    edit(unit, f"bearing: 'n'\n    survey_id: {place.id}\n", "bearing: ''\n    survey_id:\n")
+    edit(unit, RADAR, RADAR + "            deployment:\n                bearing: 'e'\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert sensor_bearing(unit, "cameras", "picam_h265") == "n"
+    assert sensor_bearing(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == "e"
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert Places(unit.state).in_use().bearings == SENSORS  # the store keeps the place's own
+
+
+@pytest.mark.parametrize("block", INVALID_POINTS)
+def test_a_reset_file_keeps_coordinates_that_arent_a_point_as_typed(unit, block):
+    reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    edit(unit, FIXTURE_POINT, block)
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert block in unit.config_path.read_text()  # as typed, for the Status check to name
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
+
+
+def test_a_reset_file_with_another_point_is_followed_as_a_correction(unit):
+    """tmsetup.sh -f renders the installer's lat and lon: a point other than the place's is a correction, as any hand
+    edit of the coordinates is, and the id goes back."""
+    reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    assert reconcile.ensure(unit).followed == "coordinates"
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.52252, -122.6912)
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.52252, -122.6912)
+    assert corrections(unit) == [(place.id, "location", "45.0,-122.0", "45.52252,-122.6912", None, "config", None)]
+    assert unit.nodered.corrections == [(place.id, 45.52252, -122.6912)]
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_reset_file_gives_a_place_with_no_point_the_files_point(unit):
+    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    reconcile.ensure(unit)  # the default place, with no point
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    edit(unit, "lat:\n    lon:\n", "lat: 45.52252\n    lon: -122.6912\n")
+    assert reconcile.ensure(unit).followed == "coordinates"
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.52252, -122.6912)
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.52252, -122.6912)
+    assert corrections(unit) == [(place.id, "location", None, "45.52252,-122.6912", None, "config", None)]
 
 
 def test_a_reset_file_gets_back_a_place_with_no_point_as_it_is(unit):
@@ -513,12 +580,8 @@ def test_a_failed_correction_in_nodered_is_logged_and_ignored(unit, caplog):
         outcome = reconcile.ensure(unit)
     assert (outcome.state, outcome.followed) == ("done", "coordinates")
     assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.52252, -122.6912)
-    warnings = [r.getMessage() for r in caplog.records if r.name == reconcile.__name__]
-    assert len(warnings) == 1 and warnings[0].endswith(": NodeRedError")
-    assert "45" not in caplog.text and "-si" not in caplog.text
-
-
-INVALID_POINTS = ["lat: 45,0\n    lon: -122.0\n", "lat: 45.0\n    lon:\n"]  # a decimal comma; one of the two
+    messages = [r.getMessage() for r in caplog.records]
+    assert messages == ["re-rounding the place's rows in Node-RED failed: NodeRedError"]
 
 
 @pytest.mark.parametrize("block", INVALID_POINTS)

@@ -93,6 +93,19 @@ def test_sensor_bearing_follows_the_engine_for_blank_and_invalid(path):
     assert [b.bearing for b in NodeRedConfig(path).sensors()] == ["n", "", ""]
 
 
+def test_blank_bearings_are_the_missing_and_empty_ones_not_the_invalid(path):
+    path.write_text(
+        "deployment:\n    bearing: ''\n"
+        "sensors:\n    cameras:\n"
+        "        a:\n            enabled: true\n"
+        "        b:\n            enabled: true\n            deployment:\n                bearing:\n"
+        "        c:\n            enabled: true\n            deployment:\n                bearing: up\n"
+        "        d:\n            enabled: true\n            deployment:\n                bearing: e\n"
+        "        e:\n            enabled: false\n"
+    )
+    assert NodeRedConfig(path).blank_bearings() == [("cameras", "a"), ("cameras", "b")]
+
+
 def test_sharing_reads_thingsboard_enabled(path):
     assert NodeRedConfig(path).sharing() == "none"
     path.write_text(path.read_text().replace("enabled: false\n    host", "enabled: true\n    host", 1))

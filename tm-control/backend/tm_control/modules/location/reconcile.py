@@ -4,8 +4,9 @@ Once per unit (the device table's surveys_reconciled_at): on a fresh unit with n
 create the first place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb
 backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
 place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
-use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) or its point (blank lat and lon)
-gets them back from the store: a place with a point is never corrected to none (decision 9).
+use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, and the
+place's bearings where the file's are blank; blank lat and lon get the place's point back, since a place with a point
+is never corrected to none (decision 9).
 
 Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock.
 Nothing here logs a coordinate, a description, an id, or anything read from a file: only exception class names and
@@ -322,31 +323,43 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     current = places.in_use()
     if current is None:
         return followed
-    if deployment.survey_id is None and not deployment.survey_id_invalid:
-        # The file lost the place in use (tmsetup.sh -f renders it from the template): it goes back, with its stored
-        # point. The bearings and precision stay as the file has them. Node-RED starts no new deployment while the
-        # file names no survey, so the open rows are still the place's and need nothing from it.
-        _restore(config, current)
-        return "restored"
+    # The file lost the place in use (tmsetup.sh -f renders it from the template): the id goes back, and each enabled
+    # sensor whose bearing is blank gets the place's back, so the engine, which holds a bearing change while no survey
+    # is named, starts no deployment with no bearing once the id returns. A bearing in the file is the operator's and
+    # stays, as does the precision. The coordinates are then followed as on any run, so a point the template rendered
+    # is a correction, a typo stays as typed, and blank ones get the place's point back. Saved with whatever follows.
+    restoring = deployment.survey_id is None and not deployment.survey_id_invalid
+    if restoring:
+        config.set_survey_id(current.id)
+        stored = {(b.sensor_type, b.sensor_name): b.bearing for b in current.bearings}
+        for sensor_type, name in config.blank_bearings():
+            if stored.get((sensor_type, name)):
+                config.set_sensor_bearing(sensor_type, name, stored[(sensor_type, name)])
     if deployment.coordinates_invalid:
-        return followed  # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
+        # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
+        return _saved(config, restoring) or followed
     old, new = _point(current.lat, current.lon), _file_point(deployment)
     if old == new:
-        return followed
+        return _saved(config, restoring) or followed
     if new == (None, None):
         # A place with a point can't be corrected to no location (decision 9): the file gets the point back, so it
         # and the engine agree with the store. Clearing lat and lon starts no new deployment, so no row changed.
-        _restore(config, current)
+        config.set_place(current.id, old[0], old[1])
+        config.save()
         return "restored"
+    _saved(config, restoring)  # the file first, as in _put_in_use
     places.set_point(current.id, new[0], new[1])
     places.record_correction(current.id, None, "location", point_text(*old), point_text(*new), None, "config", None)
     _re_round(app_state, current.id, new[0], new[1])
     return "coordinates"
 
 
-def _restore(config: NodeRedConfig, place: Survey) -> None:
-    config.set_place(place.id, place.lat, place.lon)
+def _saved(config: NodeRedConfig, restoring: bool) -> str | None:
+    """Save the restored id and bearings: "restored", or None when there was nothing to restore."""
+    if not restoring:
+        return None
     config.save()
+    return "restored"
 
 
 def _re_round(app_state, survey_id: str, lat: float, lon: float) -> None:

@@ -5,6 +5,7 @@ time becomes a single `unknown` check that names the exception class or the time
 hold a command's output or a secret.
 """
 
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -20,6 +21,8 @@ TIMEOUT = 5.0  # seconds for each group, and so for a whole report: the groups r
 TTL = 5.0  # seconds a report is reused before the checks run again
 
 T = TypeVar("T")
+
+log = logging.getLogger(__name__)
 
 
 class Fix(BaseModel):
@@ -130,7 +133,8 @@ class StatusCache:
     """The status report, reused for `ttl` seconds so that page loads and polling don't re-run every probe.
 
     `prepare`, when given, runs before the checks of each report that isn't the cached one, so they see what it did
-    (the Location module's reconcile). It must not raise, and it holds up the report while it runs.
+    (the Location module's reconcile). It holds up the report while it runs; an error in it is logged by its class
+    name and the report goes on.
     """
 
     def __init__(
@@ -155,7 +159,10 @@ class StatusCache:
             if not force and self._report is not None and time.monotonic() - self._at < self.ttl:
                 return self._report
             if self.prepare is not None:
-                self.prepare()
+                try:
+                    self.prepare()
+                except Exception as error:
+                    log.warning("the status report's prepare step failed: %s", type(error).__name__)
             context = self.context_factory()
             # Every group at once, so a hung app that several groups ask about costs one timeout, not one per group.
             with ThreadPoolExecutor(max_workers=max(1, len(self.groups)), thread_name_prefix="status") as pool:
