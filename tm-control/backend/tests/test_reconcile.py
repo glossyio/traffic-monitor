@@ -532,19 +532,19 @@ def test_a_reset_file_keeps_coordinates_that_arent_a_point_as_typed(unit, block)
     assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
 
 
-def test_a_reset_file_with_another_point_is_followed_as_a_correction(unit):
-    """tmsetup.sh -f renders the installer's lat and lon: a point other than the place's is a correction, as any hand
-    edit of the coordinates is, and the id goes back."""
+def test_a_reset_file_with_another_point_gets_the_places_point_back(unit):
+    """tmsetup.sh -f renders the installer's lat and lon, which say nothing about where the place is: the store wins,
+    with no correction (the Location page is where a place is corrected)."""
     reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
     place = Places(unit.state).in_use()
+    unit.nodered.calls.clear()
     edit(unit, f"survey_id: {place.id}", "survey_id:")
     edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
-    assert reconcile.ensure(unit).followed == "coordinates"
+    assert reconcile.ensure(unit).followed == "restored"
     deployment = file_deployment(unit)
-    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.52252, -122.6912)
-    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.52252, -122.6912)
-    assert corrections(unit) == [(place.id, "location", "45.0,-122.0", "45.52252,-122.6912", None, "config", None)]
-    assert unit.nodered.corrections == [(place.id, 45.52252, -122.6912)]
+    assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.0, -122.0)
+    assert (Places(unit.state).in_use().lat, Places(unit.state).in_use().lon) == (45.0, -122.0)
+    assert corrections(unit) == [] and unit.nodered.calls == []
     assert reconcile.ensure(unit).followed == "none"
 
 
