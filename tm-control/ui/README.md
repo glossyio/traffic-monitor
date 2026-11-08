@@ -686,15 +686,24 @@ importing places open dialogs from this page, so they move nothing on it.
 - The review (`DeployReview.vue`) is the one step on the page that changes what's recorded, so it says the
   consequences in words, one sensor at a time: "New deployment starts" (in the heading blue) or "Unchanged", the
   bearing it had, and a select for the one to deploy with. Moving to another place starts a new deployment for every
-  sensor, as the deployment engine does; "Unchanged" only shows for the place in use with its bearing kept. Then what
-  the database will store for the place, rounded by the API, what's shared, and that counts from now on attach to
-  the new deployment (only when one starts).
+  sensor, as the deployment engine does. Then what the database will store for the place, rounded by the API, what's
+  shared, and that counts from now on attach to the new deployment (only when one starts).
+- The place in use has "Deploy here" too, to record a turn of the unit. There the review starts from the bearings
+  `config.yml` has now, each sensor reads "Unchanged" until its bearing changes, and Deploy stays disabled until one
+  does, with a line that says so.
 - Deploy sends every enabled sensor's bearing, so what's recorded is what the review showed. While the API waits for
   Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
   dialog doesn't close it (`persistent`), so the answer isn't lost. The review then gives way to the result: the new
   deployment ids, each with Copy, or, when Node-RED hasn't reloaded the settings, a warning that the settings are
   saved and not to deploy again; Deploy is gone by then, so it can't be pressed twice. The list and any open panels
   load again behind the dialog.
+- A connection that drops while the API waits doesn't get the app's usual "try again": `config.yml` may be written
+  by then. The review says the settings may already be saved and to check the place before deploying again, Deploy
+  is gone, and the page loads the places, which show whether the deploy happened.
+- When the API refuses a save or a deploy because something changed since the page loaded (409), the dialog shows
+  its message and the page loads the places again behind it.
+- The deploy dialog keeps showing its review while it fades out, rather than emptying first, and each opening starts
+  a fresh review. Both dialogs are named by their title for screen readers.
 
 #### What the screenshot review changed
 

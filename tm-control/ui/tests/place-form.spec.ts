@@ -188,6 +188,28 @@ describe('the place form', () => {
     ])
   })
 
+  it('asks the page to reload the places when the save is refused as out of date', async () => {
+    fakeApi({
+      'PATCH /api/v1/surveys/0f0e0d0c-si': apiError(
+        409,
+        'not_planned',
+        'Only a planned place can be edited. Correct a used place instead.',
+      ),
+    })
+    const form = mountForm(PLANNED)
+    await flushPromises()
+    await clickInDialog('Save')
+    expect(dialogText()).toContain('Only a planned place can be edited.')
+    expect(form.emitted('stale')).toHaveLength(1)
+    expect(form.emitted('saved')).toBeUndefined()
+  })
+
+  it('names the dialog by its title', async () => {
+    mountForm()
+    await flushPromises()
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Add a place')
+  })
+
   it("shows the API's message when the save is refused", async () => {
     fakeApi({ 'POST /api/v1/surveys': apiError(422, 'validation', 'lat must be between -90 and 90.') })
     const form = mountForm()

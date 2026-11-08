@@ -2,8 +2,9 @@
   The Location page (GET /surveys), for admins only: the place the unit is at now, the precision the database stores
   locations at (PUT /surveys/precision), and the places this unit knows, one panel each. Opening a panel asks for the
   place's events and deployments (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one
-  edited, in PlaceForm's dialog. "Deploy here" on a planned or used place opens DeployReview, which moves the unit
-  there. A planned or used place can be deleted (DELETE /surveys/{id}) after a confirmation; the place in use can't.
+  edited, in PlaceForm's dialog. "Deploy here" opens DeployReview, which moves the unit to a planned or used place,
+  or, on the place in use, records a turn of the unit (a bearing changed). A planned or used place can be deleted
+  (DELETE /surveys/{id}) after a confirmation; the place in use can't.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -186,8 +187,18 @@ function openForm(place?: SurveyOut) {
 }
 
 // Deploying to a place, after DeployReview's review step. Once deployed, the list and the open panels' deployments
-// are loaded again: the place is in use now, and the one it replaced has ended its deployments.
+// are loaded again: the place is in use now, and the one it replaced has ended its deployments. `deployTo` keeps the
+// last place after the dialog closes, so the dialog doesn't empty while it fades out; `reviews` counts the openings,
+// so each one starts a fresh review.
+const deployOpen = ref(false)
 const deployTo = ref<SurveyOut | null>(null)
+const reviews = ref(0)
+
+function openReview(place: SurveyOut) {
+  deployTo.value = place
+  reviews.value += 1
+  deployOpen.value = true
+}
 
 async function deployed() {
   await load()
@@ -313,13 +324,7 @@ onMounted(load)
                 @retry="loadDetails(place.id)"
               />
               <div class="d-flex flex-wrap ga-3">
-                <v-btn
-                  v-if="place.status !== 'in_use'"
-                  color="primary"
-                  size="large"
-                  :disabled="working !== null"
-                  @click="deployTo = place"
-                >
+                <v-btn color="primary" size="large" :disabled="working !== null" @click="openReview(place)">
                   Deploy here
                 </v-btn>
                 <v-btn
@@ -384,15 +389,24 @@ onMounted(load)
       </section>
     </template>
 
-    <PlaceForm v-if="state" v-model:open="formOpen" :sensors="state.sensors" :survey="editing" @saved="load" />
+    <PlaceForm
+      v-if="state"
+      v-model:open="formOpen"
+      :sensors="state.sensors"
+      :survey="editing"
+      @saved="load"
+      @stale="load"
+    />
     <!-- Persistent: a click beside the dialog doesn't close it, so a deploy that's waiting for Node-RED can't be lost -->
-    <v-dialog :model-value="deployTo !== null" persistent max-width="560">
+    <v-dialog v-model="deployOpen" persistent max-width="560" aria-label="Deploy here">
       <DeployReview
         v-if="deployTo && state"
+        :key="reviews"
         :place="deployTo"
         :state="state"
         @deployed="deployed"
-        @close="deployTo = null"
+        @stale="load"
+        @close="deployOpen = false"
       />
     </v-dialog>
     <ConfirmDialog

@@ -2,11 +2,13 @@
   The dialog that adds a place (POST /surveys) or, given a planned `survey`, edits it (PATCH /surveys/{id}): a private
   description, the coordinates as one "latitude, longitude" field, and a bearing for each enabled sensor. On a secure
   (HTTPS) page the phone can fill in the coordinates; on plain HTTP browsers don't share a location, and the form says
-  so. The form starts over each time it opens. Emits `saved` with the place the API answered, then closes.
+  so. The form starts over each time it opens. Emits `saved` with the place the API answered, then closes; and
+  `stale` when the API refused because the place changed since the page loaded (409, such as a planned place that
+  was deployed meanwhile), so the page loads the places again.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { api, messageOf } from '../../api/client'
+import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { BEARINGS, formatExact, parsePair, startingBearings } from './coordinates'
 
@@ -18,7 +20,7 @@ const props = defineProps<{
   sensors: Bearing[] // the enabled sensors, each with its bearing in config.yml now
   survey?: SurveyOut // the planned place to edit; none to add one
 }>()
-const emit = defineEmits<{ saved: [survey: SurveyOut] }>()
+const emit = defineEmits<{ saved: [survey: SurveyOut]; stale: [] }>()
 
 const description = ref('')
 const coordinates = ref('')
@@ -91,6 +93,7 @@ async function save() {
     open.value = false
   } catch (failure) {
     error.value = messageOf(failure)
+    if (failure instanceof ApiError && failure.status === 409) emit('stale')
   } finally {
     saving.value = false
   }
@@ -103,7 +106,7 @@ const title = computed(() => {
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="560">
+  <v-dialog v-model="open" max-width="560" :aria-label="title">
     <v-card color="surface" rounded="lg">
       <v-card-title class="text-h6 text-wrap pt-4">{{ title }}</v-card-title>
       <v-form @submit.prevent="save">

@@ -131,6 +131,24 @@ describe('the deploy review', () => {
     expect(radar).toContain('Not set') // the select shows a blank bearing by its title
   })
 
+  it('disables Deploy at the place in use while every bearing is unchanged', async () => {
+    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
+    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
+    expect(sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()).toContain('Unchanged')
+    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).not.toContain('Counts from now on attach to the new deployment.')
+    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 'w')
+    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).toContain('Counts from now on attach to the new deployment.')
+  })
+
+  it("starts the place in use at the bearings config.yml has now, not the place's stored ones", async () => {
+    const turned = { ...IN_USE, bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' }] }
+    const wrapper = mountAlone(DeployReview, { place: turned, state: STATE })
+    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
+    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeDefined()
+  })
+
   it('says nothing is stored when the precision stores no location', async () => {
     const wrapper = mountAlone(DeployReview, {
       place: { ...USED, stored_lat: null, stored_lon: null },
@@ -208,5 +226,19 @@ describe('the deploy review', () => {
     await click(wrapper, 'Deploy')
     expect(wrapper.text()).toContain('config.yml changed since it was read.')
     expect(wrapper.emitted('deployed')).toBeUndefined()
+    expect(wrapper.emitted('stale')).toHaveLength(1) // the page loads the places again
+  })
+
+  it('says the settings may be saved when the connection drops, and offers no second deploy', async () => {
+    fakeApi({ [DEPLOY]: () => Promise.reject(new TypeError('fetch failed')) })
+    const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
+    await click(wrapper, 'Deploy')
+    expect(wrapper.text()).toContain(
+      'The connection dropped before the answer came. The settings may already be saved: close this and check the ' +
+        'place before deploying again.',
+    )
+    expect(wrapper.text()).not.toContain('try again')
+    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Deploy')).toBe(false)
+    expect(wrapper.emitted('deployed')).toHaveLength(1) // the page loads the places, to show what happened
   })
 })

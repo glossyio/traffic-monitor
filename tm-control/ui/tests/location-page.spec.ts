@@ -2,7 +2,7 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { components } from '../src/api/schema'
-import { ADMIN, VIEWER, json, signedIn } from './fake-api'
+import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
 import { button, click, clickInDialog, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type PlacesState = components['schemas']['PlacesState']
@@ -295,6 +295,52 @@ describe('the Location page', () => {
     expect(dialogText()).toContain('c0ffee01-si')
     expect(dialogText()).toContain('New deployment starts')
     expect(dialogText()).toContain('Counts from now on attach to the new deployment.')
+  })
+
+  it('offers Deploy here on the place in use, to record a turn of the unit', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/a1b2c3d4-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Front of the school')
+    await click(wrapper, 'Deploy here')
+    expect(dialogText()).toContain('Unchanged')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Deploy here')
+  })
+
+  it('loads the places again when a deploy is refused because config.yml changed', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+      'POST /api/v1/surveys/c0ffee01-si/deploy': apiError(
+        409,
+        'config_changed',
+        'config.yml changed since it was read. Reload the page and try again.',
+      ),
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Deploy here')
+    await clickInDialog('Deploy')
+    expect(dialogText()).toContain('config.yml changed since it was read.')
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
+  })
+
+  it('keeps the review in the dialog while it closes', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Deploy here')
+    await clickInDialog('Cancel')
+    // The dialog fades out; until it's gone it still shows the review, not an empty box
+    expect(dialogText()).toContain('c0ffee01-si')
   })
 
   it('loads the places and the open panel again after a deploy', async () => {
