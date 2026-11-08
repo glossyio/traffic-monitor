@@ -3,7 +3,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, json, signedIn } from './fake-api'
-import { button, click, clickInDialog, dialogText, field, mountApp } from './mount'
+import { button, click, clickInDialog, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -256,5 +256,61 @@ describe('the Location page', () => {
     await expand(wrapper, 'Before any place was recorded')
     expect(wrapper.text()).toContain('recorded before the unit had a place')
     expect(wrapper.text()).toContain('60 days ago')
+  })
+
+  it('opens the form from Add a place and reloads the list after saving', async () => {
+    const api = signedIn(ADMIN, { [SURVEYS]: PLACES, 'POST /api/v1/surveys': json(201, PLANNED) })
+    const { wrapper } = await mountApp('/location')
+    expect(dialogText()).toBe('')
+    await click(wrapper, 'Add a place')
+    expect(dialogText()).toContain('Add a place')
+    await typeInto(dialogField('Description'), 'Corner by the park')
+    await clickInDialog('Save')
+    expect(api.sent.filter((r) => r.method === 'POST').map((r) => r.path)).toEqual(['/api/v1/surveys'])
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2) // reloaded
+  })
+
+  it("opens the form from Edit with the planned place's values", async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/0f0e0d0c-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/0f0e0d0c-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Corner by the park')
+    await click(wrapper, 'Edit')
+    expect(dialogField('Description').value).toBe('Corner by the park')
+    expect(dialogField('Coordinates').value).toBe('45.00000, -122.00000')
+  })
+
+  it('opens the review from Deploy here on a used place', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Deploy here')
+    expect(dialogText()).toContain('c0ffee01-si')
+    expect(dialogText()).toContain('New deployment starts')
+    expect(dialogText()).toContain('Counts from now on attach to the new deployment.')
+  })
+
+  it('loads the places and the open panel again after a deploy', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+      'POST /api/v1/surveys/c0ffee01-si/deploy': { deployed_at: 1762000000000, reloaded: false, deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Deploy here')
+    await clickInDialog('Deploy')
+    expect(dialogText()).toContain("Don't deploy again.")
+    const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
+    expect(gets('/api/v1/surveys')).toHaveLength(2)
+    expect(gets('/api/v1/surveys/c0ffee01-si/deployments')).toHaveLength(2)
   })
 })

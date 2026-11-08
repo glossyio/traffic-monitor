@@ -1,6 +1,9 @@
 // Coordinates and the Location page's choices. The rules live in the backend (modules/location/coordinates.py):
 // parsePair is only the form's quick check before it sends, and the API's answer wins. Nothing here rounds a
 // coordinate: the API sends the stored values already rounded, and the exact ones already kept to five places.
+import type { components } from '../../api/schema'
+
+type Bearing = components['schemas']['Bearing']
 
 // A number with an optional sign and fraction: no exponent, no decimal comma, as the backend accepts
 const NUMBER = String.raw`[+-]?(?:\d+(?:\.\d+)?|\.\d+)`
@@ -46,6 +49,17 @@ export const BEARINGS = [
 
 export function bearingTitle(value: string): string {
   return BEARINGS.find((bearing) => bearing.value === value.trim().toLowerCase())?.title ?? value
+}
+
+// The bearing each sensor starts at in the place form and the deploy review: the place's own for that sensor, else
+// the sensor's bearing in config.yml now. One entry per sensor, in the sensors' order.
+export function startingBearings(sensors: Bearing[], place?: { bearings: Bearing[] }): Bearing[] {
+  return sensors.map((sensor) => {
+    const own = place?.bearings.find(
+      (kept) => kept.sensor_type === sensor.sensor_type && kept.sensor_name === sensor.sensor_name,
+    )
+    return { ...sensor, bearing: own ? own.bearing : sensor.bearing }
+  })
 }
 
 export type Precision = 'none' | '1' | '2'

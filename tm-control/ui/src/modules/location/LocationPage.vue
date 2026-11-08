@@ -1,8 +1,9 @@
 <!--
   The Location page (GET /surveys), for admins only: the place the unit is at now, the precision the database stores
   locations at (PUT /surveys/precision), and the places this unit knows, one panel each. Opening a panel asks for the
-  place's events and deployments (GET /surveys/{id}/events and /deployments). A planned or used place can be deleted
-  (DELETE /surveys/{id}) after a confirmation; the place in use can't.
+  place's events and deployments (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one
+  edited, in PlaceForm's dialog. "Deploy here" on a planned or used place opens DeployReview, which moves the unit
+  there. A planned or used place can be deleted (DELETE /surveys/{id}) after a confirmation; the place in use can't.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -12,6 +13,9 @@ import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import { PRECISIONS, bearingTitle, formatExact, formatStored, isCoarser, type Precision } from './coordinates'
+import DeployReview from './DeployReview.vue'
+import PlaceDetails, { type Details } from './PlaceDetails.vue'
+import PlaceForm from './PlaceForm.vue'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -39,15 +43,6 @@ function titleOf(place: SurveyOut) {
 function stored(place: SurveyOut) {
   const places = PRECISIONS.find((choice) => choice.value === state.value?.precision)?.places
   return formatStored(place.stored_lat, place.stored_lon, places)
-}
-
-// A time in ms as a date and time in the browser's words, such as "Oct 28, 2026, 2:32 PM"
-function dateTime(ms: number) {
-  return new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-}
-
-function day(ms: number) {
-  return new Date(ms).toLocaleDateString(undefined, { dateStyle: 'medium' })
 }
 
 function since(ms: number | null) {
@@ -116,12 +111,6 @@ async function savePrecision() {
 // The open panels, by place id. Opening a place's panel the first time asks for its events and deployments.
 const UNASSIGNED = 'unassigned'
 const open = ref<string[]>([])
-
-interface Details {
-  events: EventsOut | null
-  deployments: DeploymentOut[] | null
-  error: string
-}
 const details = reactive<Record<string, Details>>({})
 
 async function loadDetails(id: string) {
@@ -142,31 +131,6 @@ async function loadDetails(id: string) {
 watch(open, (ids) => {
   for (const id of ids) if (id !== UNASSIGNED && !(id in details)) void loadDetails(id)
 })
-
-function eventsLine(events: EventsOut) {
-  if (events.event_count === 0 || events.first_event === null || events.last_event === null) {
-    return 'No events recorded at this place.'
-  }
-  const count = events.event_count === 1 ? '1 event' : `${events.event_count} events`
-  return `${count} from ${day(events.first_event * 1000)} to ${day(events.last_event * 1000)}`
-}
-
-function usedFacts(place: SurveyOut) {
-  return [
-    { label: 'First used', value: since(place.first_used) },
-    { label: 'Last used', value: place.open_count > 0 ? 'In use now' : since(place.last_used) },
-  ]
-}
-
-// When a deployment ran. One that started and ended on the same day names the day once.
-function span(deployment: DeploymentOut) {
-  if (deployment.started === null) return ''
-  if (deployment.ended === null) return `Since ${dateTime(deployment.started)}`
-  const end = new Date(deployment.ended)
-  const sameDay = day(deployment.started) === day(deployment.ended)
-  const until = sameDay ? end.toLocaleTimeString(undefined, { timeStyle: 'short' }) : dateTime(deployment.ended)
-  return `${dateTime(deployment.started)} to ${until}`
-}
 
 // Deleting a place, after a confirmation. A used place's exact location goes with it; the database keeps the
 // rounded location stored with its rows.
@@ -212,7 +176,26 @@ async function deletePlace() {
   }
 }
 
-// The places, on opening the page and after a delete. The precision's choice follows the device's; the open panels
+// Adding a place, or editing a planned one, in PlaceForm's dialog
+const formOpen = ref(false)
+const editing = ref<SurveyOut | undefined>(undefined)
+
+function openForm(place?: SurveyOut) {
+  editing.value = place
+  formOpen.value = true
+}
+
+// Deploying to a place, after DeployReview's review step. Once deployed, the list and the open panels' deployments
+// are loaded again: the place is in use now, and the one it replaced has ended its deployments.
+const deployTo = ref<SurveyOut | null>(null)
+
+async function deployed() {
+  await load()
+  for (const id of Object.keys(details)) delete details[id]
+  for (const id of open.value) if (id !== UNASSIGNED) void loadDetails(id)
+}
+
+// The places, on opening the page and after a change. The precision's choice follows the device's; the open panels
 // stay open, but for a place that's gone.
 async function load() {
   loadError.value = ''
@@ -295,7 +278,7 @@ onMounted(load)
           This unit records against one place. Add a location only if you plan to move the unit or share data.
         </p>
         <div class="d-flex flex-wrap ga-3 mb-4">
-          <v-btn variant="outlined" color="primary" size="large">Add a place</v-btn>
+          <v-btn variant="outlined" color="primary" size="large" @click="openForm()">Add a place</v-btn>
           <v-btn variant="outlined" color="primary" size="large">Import places</v-btn>
         </div>
         <p v-if="listResult" class="text-body-1 mb-4">{{ listResult }}</p>
@@ -323,54 +306,31 @@ onMounted(load)
               </v-expansion-panel-title>
             </h3>
             <v-expansion-panel-text>
-              <p v-if="place.imported" class="text-body-1 mb-4">Imported from your previous settings</p>
-              <template v-if="state.nodered">
-                <v-row v-if="place.deployment_count > 0" dense class="mb-4">
-                  <v-col v-for="fact in usedFacts(place)" :key="fact.label" cols="6" sm="4">
-                    <div class="text-body-2 text-secondary">{{ fact.label }}</div>
-                    <div class="text-body-1">{{ fact.value }}</div>
-                  </v-col>
-                </v-row>
-                <p v-else class="text-body-1 mb-4">Not used yet.</p>
-              </template>
-
-              <template v-if="details[place.id]">
-                <v-alert v-if="details[place.id].error" type="error" class="mb-4">
-                  {{ details[place.id].error }}
-                  <template #append>
-                    <v-btn variant="text" @click="loadDetails(place.id)">Try again</v-btn>
-                  </template>
-                </v-alert>
-                <v-progress-linear
-                  v-else-if="!details[place.id].events"
-                  indeterminate
-                  color="primary"
-                  class="mb-4"
-                />
-                <template v-else>
-                  <p class="text-body-1 mb-4">{{ eventsLine(details[place.id].events!) }}</p>
-                  <template v-if="details[place.id].deployments?.length">
-                    <h4 class="text-body-1 font-weight-medium mb-2">
-                      Deployments ({{ details[place.id].deployments!.length }})
-                    </h4>
-                    <ul class="deployments d-flex flex-column ga-4 mb-6">
-                      <li v-for="deployment in details[place.id].deployments" :key="deployment.id">
-                        <div class="text-body-1 text-break">{{ deployment.sensor_name }}</div>
-                        <div class="text-body-2 text-secondary">
-                          {{ deployment.bearing ? `Facing ${bearingTitle(deployment.bearing)}` : 'No bearing set' }}
-                        </div>
-                        <div class="text-body-2 text-secondary">{{ span(deployment) }}</div>
-                      </li>
-                    </ul>
-                  </template>
-                </template>
-              </template>
-
+              <PlaceDetails
+                :place="place"
+                :details="details[place.id]"
+                :nodered="state.nodered"
+                @retry="loadDetails(place.id)"
+              />
               <div class="d-flex flex-wrap ga-3">
-                <v-btn v-if="place.status !== 'in_use'" color="primary" size="large" :disabled="working !== null">
+                <v-btn
+                  v-if="place.status !== 'in_use'"
+                  color="primary"
+                  size="large"
+                  :disabled="working !== null"
+                  @click="deployTo = place"
+                >
                   Deploy here
                 </v-btn>
-                <v-btn v-if="place.status === 'planned'" variant="outlined" color="primary" size="large">Edit</v-btn>
+                <v-btn
+                  v-if="place.status === 'planned'"
+                  variant="outlined"
+                  color="primary"
+                  size="large"
+                  @click="openForm(place)"
+                >
+                  Edit
+                </v-btn>
                 <v-btn v-if="place.status !== 'planned'" variant="outlined" color="primary" size="large">
                   Correct location
                 </v-btn>
@@ -424,6 +384,17 @@ onMounted(load)
       </section>
     </template>
 
+    <PlaceForm v-if="state" v-model:open="formOpen" :sensors="state.sensors" :survey="editing" @saved="load" />
+    <!-- Persistent: a click beside the dialog doesn't close it, so a deploy that's waiting for Node-RED can't be lost -->
+    <v-dialog :model-value="deployTo !== null" persistent max-width="560">
+      <DeployReview
+        v-if="deployTo && state"
+        :place="deployTo"
+        :state="state"
+        @deployed="deployed"
+        @close="deployTo = null"
+      />
+    </v-dialog>
     <ConfirmDialog
       v-model="confirmRound"
       title="Round the rows already stored?"
@@ -440,10 +411,3 @@ onMounted(load)
     />
   </div>
 </template>
-
-<style scoped>
-.deployments {
-  list-style: none;
-  padding: 0;
-}
-</style>

@@ -79,3 +79,18 @@ export function mountAlone(component: Component, props: Record<string, unknown>)
   mounted.push(wrapper)
   return wrapper
 }
+
+// The input in the open dialog whose <label for=...> reads `label`
+export function dialogField(label: string): HTMLInputElement {
+  const dialog = document.querySelector('.v-overlay-container .v-dialog')
+  const labels = [...(dialog?.querySelectorAll('label[for]') ?? [])].filter((l) => l.textContent?.trim() === label)
+  expect(labels.length, `one dialog field labelled "${label}"`).toBe(1)
+  return document.getElementById(labels[0].getAttribute('for')!) as HTMLInputElement
+}
+
+// Type into an input as a person would (or paste): the new value, then the input event Vue listens for
+export async function typeInto(input: HTMLInputElement, text: string) {
+  input.value = text
+  input.dispatchEvent(new Event('input'))
+  await flushPromises()
+}

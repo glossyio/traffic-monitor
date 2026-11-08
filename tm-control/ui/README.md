@@ -642,11 +642,64 @@ importing places open dialogs from this page, so they move nothing on it.
   panels leave out "First used" and "Last used" rather than saying a used place was never used.
 - `formatStored` pads the API's stored values to the precision's places ("45.0", not "45"); the values are already
   rounded, so padding changes no digit. Nothing on the page rounds a coordinate.
+- A panel's facts, events, and deployments are `PlaceDetails.vue`; the page keeps the buttons, because they open the
+  page's dialogs.
+
+#### Adding a place, and Deploy here
+
+```text
++----------------------------------+   +----------------------------------+
+| Add a place                      |   | Deploy here                      |
+| [Description                   ] |   | Corner by the park               |
+|  Private: it never leaves the    |   | 0f0e0d0c-si                      |
+|  device                          |   |                                  |
+| [Coordinates                   ] |   | picam_h265                       |
+|  Paste latitude, longitude ...   |   | New deployment starts      (blue)|
+| [Use this phone's location]      |   | Was N, now [NE  v]               |
+|  (HTTPS only; else one sentence) |   | TM_RADAR_SERIAL_PORT_00          |
+| A map pin is coming in a later   |   | New deployment starts            |
+| update.                          |   | Was not set, now [Not set v]     |
+| Which way each sensor faces here |   |                                  |
+| [Bearing, picam_h265         v]  |   | Stored in the database:          |
+| [Bearing, TM_RADAR_SERIAL_... v] |   | 45.0, -122.0                     |
+|                  [Cancel] [Save] |   | Not sharing                      |
++----------------------------------+   | Counts from now on attach to the |
+                                       | new deployment.                  |
+                                       |               [Cancel] [Deploy]  |
+                                       +----------------------------------+
+```
+
+- The form (`PlaceForm.vue`) is a dialog with a `v-model` for whether it's open, as `ConfirmDialog` is, and starts
+  over each time it opens. "Edit" on a planned place opens it with the place's values; a used place has "Correct
+  location" instead.
+- The coordinates are one field, because a maps app copies "latitude, longitude" as one string. `parsePair` checks
+  it as it's typed: a decimal comma, the wrong order (which puts the longitude out of the latitude's range), or
+  anything else that isn't a pair shows "Enter latitude, longitude with a dot as the decimal mark" and disables Save.
+  A blank field saves a place with no location. The backend still quantises what's sent to five places.
+- "Use this phone's location" shows only on a secure page, because browsers refuse the location to any other; on
+  plain HTTP one sentence says so instead. It asks for the precise reading and writes it into the field at five
+  decimal places, where the admin can still see and change it before saving. A refusal shows the browser's own
+  reason.
+- Each sensor's bearing starts at the place's own, else at the sensor's bearing in `config.yml` now, in the form and
+  the review alike (`startingBearings`). A new place starting at "Not set" would have saved a blank bearing that the
+  review then offered as the place's choice.
+- The review (`DeployReview.vue`) is the one step on the page that changes what's recorded, so it says the
+  consequences in words, one sensor at a time: "New deployment starts" (in the heading blue) or "Unchanged", the
+  bearing it had, and a select for the one to deploy with. Moving to another place starts a new deployment for every
+  sensor, as the deployment engine does; "Unchanged" only shows for the place in use with its bearing kept. Then what
+  the database will store for the place, rounded by the API, what's shared, and that counts from now on attach to
+  the new deployment (only when one starts).
+- Deploy sends every enabled sensor's bearing, so what's recorded is what the review showed. While the API waits for
+  Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
+  dialog doesn't close it (`persistent`), so the answer isn't lost. The review then gives way to the result: the new
+  deployment ids, each with Copy, or, when Node-RED hasn't reloaded the settings, a warning that the settings are
+  saved and not to deploy again; Deploy is gone by then, so it can't be pressed twice. The list and any open panels
+  load again behind the dialog.
 
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1280 px wide, with a used place opened, the coarser precision
-chosen, and the delete confirmation open.
+chosen, and the delete confirmation open. The place form, the review, and the result were checked at the same widths.
 
 - "Deployments" was both a fact (the count) and the list's heading. The heading now carries the count,
   "Deployments (2)".
@@ -654,6 +707,8 @@ chosen, and the delete confirmation open.
 - The deployments ran together; they're further apart now.
 - The precision's paragraph said the exact location "stays on this page", which isn't where it's kept. It now says
   "kept only on this device, outside the database", and a line under the checkbox says what happens without it.
+- At 375 px the review's "Stored in the database: 45.0, -122.0" broke between the two numbers, which read as two
+  values. The pair now stays on one line.
 
 #### Defaults rejected
 
@@ -661,3 +716,11 @@ chosen, and the delete confirmation open.
 - A select for the precision: three choices read better side by side, and the current one shows without a tap.
 - A strict accordion: comparing two places needs both open.
 - Icon-only actions in each panel: each button names what it does.
+- Separate latitude and longitude fields: a pasted pair would have to be split by hand, and two fields are where the
+  wrong order goes unnoticed.
+- A table for the review (sensor, before, after): its columns don't fit 375 px, and "New deployment starts" is a
+  sentence, not a cell.
+- Showing the deployment ids before Deploy: they don't exist until Node-RED starts the deployments, and the review is
+  about consequences, not ids.
+- Closing the review on its own after a deploy: the ids are what an admin may need to copy, and the warning that
+  Node-RED hasn't reloaded must stay until it's read.
