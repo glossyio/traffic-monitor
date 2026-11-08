@@ -1,7 +1,7 @@
 # tm-control UI
 
 The control app's web pages: first-run setup, login, the home page with the device card and app tiles, the Status,
-Device, Detection, and Date and time pages, the account page, and the admin's user list. It's a Vue 3 + Vuetify 3 + TypeScript
+Device, Detection, and Date and time pages, the admin's Location page, the account page, and the admin's user list. It's a Vue 3 + Vuetify 3 + TypeScript
 app built with Vite. The UI only
 shows what the API returns and posts what the operator types; the rules live in the Python backend
 (`tm-control/backend`).
@@ -43,12 +43,14 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
-  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users` to admins only.
+  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users` and `/location` to admins only.
 - `src/stores/session.ts` is the only store: the setup status and the logged-in user.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
-- `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries.
+- `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The Location
+  page's `coordinates.ts` shows coordinates and names the bearing and precision choices; it never rounds, because the
+  API sends the stored coordinates already rounded.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
@@ -571,3 +573,91 @@ narrowest phones:
 - "Expand for …" as a panel title: the chevron says that; the title names and counts what's inside.
 - The full hash on the page: 64 characters wrap into a block that hides the rest of the line.
 - Colored chips for the labels, or icons per object: the labels are Frigate's words, and copying them is the job.
+
+### Location
+
+For admins only, because the places hold exact coordinates. The page answers "where does the database think this
+unit is, and how precisely", and lists the places the unit has been or will go. Adding, deploying, correcting, and
+importing places open dialogs from this page, so they move nothing on it.
+
+```text
++----------------------------------+
+| Location                    (h5) |
+| (!) Node-RED hasn't answered yet |  only then
+| +------------------------------+ |
+| | Front of the school    (h4)  | |
+| | In use                       | |
+| | 34b17422-si                  | |
+| | Stored in the database       | |
+| | 45.5, -122.7                 | |
+| | Exact location               | |
+| | 45.52252, -122.69120         | |
+| | Sharing      Bearing, picam  | |
+| +------------------------------+ |
+| Precision                   (h6) |
+| ( ) No location stored           |
+| (o) About 10 km (default)        |
+| ( ) About 1 km                   |
+| [ ] Also round the rows already  |  coarser choice only
+|     stored                       |
+| [Save]                           |
+| Places                      (h6) |
+| [Add a place] [Import places]    |
+| +------------------------------+ |
+| | Front of the school (In use) | |
+| | 34b17422-si                  | |
+| | 45.5, -122.7               v | |
+| +------------------------------+ |
+| | No description (Used)        | |  opened
+| | First used    Last used      | |
+| | No events recorded at this   | |
+| | place.                       | |
+| | Deployments (2)              | |
+| | picam_h265                   | |
+| | Facing N                     | |
+| | Nov 7, 2026, 10:15 PM to ... | |
+| | [Deploy here]                | |
+| | [Correct location] [Delete]  | |
+| +------------------------------+ |
++----------------------------------+
+```
+
+- The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
+  about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
+  "Exact location", so an admin sees what the precision does to their point before changing it.
+- The precision is three radio buttons, coarsest first, with the area in words. "Also round the rows already stored"
+  shows only for a coarser choice, because a finer one can't bring back what was rounded away; a line says it applies
+  from the next deployment instead. Ticking it asks first ("This can't be undone.").
+- Each place is a bordered panel, as on the Detection page: its title says the description, the status chip, the id
+  in the secondary color, and the stored coordinates, so a closed list still says what each place is. The chip is in
+  the heading blue only for the place in use. The panels open independently, and opening one asks for its events
+  and deployments once.
+- The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
+  four columns at 375 px, and the next task adds a button per deployment. A deployment that started and ended on the
+  same day names the day once.
+- Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
+  rounded one stored with each record. The place in use has no Delete.
+- When Node-RED hasn't answered the first reconcile, or `config.yml` can't be read, a warning at the top says so, and
+  for a bad file points to the Location check on the Status page. When Node-RED doesn't answer the usage counts, the
+  panels leave out "First used" and "Last used" rather than saying a used place was never used.
+- `formatStored` pads the API's stored values to the precision's places ("45.0", not "45"); the values are already
+  rounded, so padding changes no digit. Nothing on the page rounds a coordinate.
+
+#### What the screenshot review changed
+
+The page was checked in fake mode at 375 px and 1280 px wide, with a used place opened, the coarser precision
+chosen, and the delete confirmation open.
+
+- "Deployments" was both a fact (the count) and the list's heading. The heading now carries the count,
+  "Deployments (2)".
+- A deployment that started and ended on the same day repeated the date. The end now shows the time only.
+- The deployments ran together; they're further apart now.
+- The precision's paragraph said the exact location "stays on this page", which isn't where it's kept. It now says
+  "kept only on this device, outside the database", and a line under the checkbox says what happens without it.
+
+#### Defaults rejected
+
+- A data table of the deployments: see above.
+- A select for the precision: three choices read better side by side, and the current one shows without a tap.
+- A strict accordion: comparing two places needs both open.
+- Icon-only actions in each panel: each button names what it does.
