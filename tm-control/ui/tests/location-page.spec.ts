@@ -213,8 +213,10 @@ describe('the Location page', () => {
     const { wrapper } = await mountApp('/location')
     const label = 'Also round the rows already stored'
     expect(wrapper.text()).not.toContain(label)
+    expect(wrapper.text()).toContain('so you can still export it in full later.')
+    expect(wrapper.text()).toContain('Exporting it is coming in a later update.')
 
-    await field(wrapper, 'About 1 km').setValue(true) // finer: applies from the next deployment
+    await field(wrapper, 'About 1 km (45.52, -122.69), the default').setValue(true) // finer: from the next deployment
     expect(wrapper.text()).not.toContain(label)
 
     await field(wrapper, 'No location stored').setValue(true) // coarser

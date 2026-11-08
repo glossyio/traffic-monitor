@@ -22,7 +22,7 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows the setting. A snapshot you choose to [submit to Frigate+](../configuration/frigate-config.md#submit-snapshots) does leave the device, and it can show people.
 
-With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
+With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
 
 The database stops being de-identified if you:
 
@@ -48,7 +48,7 @@ Tables for sensors the device doesn't have stay empty.
 | `radar_raw_speed_magnitude_single` | The strongest reading of each sample | No |
 | `radar_oc_payload` | Per-object summaries from the radar, including estimated length | No |
 | `airquality` | Air quality and weather readings. See [Air quality](air-quality-aq-payload.md). | No |
-| `deployment` | Where each sensor was, and when | No: the location is rounded to about 10 km (one decimal place) by default, and never finer than about 1 km |
+| `deployment` | Where each sensor was, and when | No: the location is rounded to about 1 km (two decimal places) by default, and never stored more precisely |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 

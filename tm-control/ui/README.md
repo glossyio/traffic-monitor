@@ -589,15 +589,16 @@ importing places open dialogs from this page, so they move nothing on it.
 | | In use                       | |
 | | 34b17422-si                  | |
 | | Stored in the database       | |
-| | 45.5, -122.7                 | |
+| | 45.52, -122.69               | |
 | | Exact location               | |
 | | 45.52252, -122.69120         | |
 | | Sharing      Bearing, picam  | |
 | +------------------------------+ |
 | Precision                   (h6) |
 | ( ) No location stored           |
-| (o) About 10 km (default)        |
-| ( ) About 1 km                   |
+| ( ) About 10 km (45.5, -122.7)   |
+| (o) About 1 km (45.52, -122.69), |
+|     the default                  |
 | [ ] Also round the rows already  |  coarser choice only
 |     stored                       |
 | [Save]                           |
@@ -606,7 +607,7 @@ importing places open dialogs from this page, so they move nothing on it.
 | +------------------------------+ |
 | | Front of the school (In use) | |
 | | 34b17422-si                  | |
-| | 45.5, -122.7               v | |
+| | 45.52, -122.69             v | |
 | +------------------------------+ |
 | | No description (Used)        | |  opened
 | | First used    Last used      | |
@@ -625,9 +626,10 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- The precision is three radio buttons, coarsest first, with the area in words. "Also round the rows already stored"
-  shows only for a coarser choice, because a finer one can't bring back what was rounded away; a line says it applies
-  from the next deployment instead. Ticking it asks first ("This can't be undone.").
+- The precision is three radio buttons, coarsest first, with the area in words and, in parentheses, one example point
+  stored at that precision, so "about 1 km" also reads as coordinates; "the default" follows about 1 km. "Also round
+  the rows already stored" shows only for a coarser choice, because a finer one can't bring back what was rounded
+  away; a line says it applies from the next deployment instead. Ticking it asks first ("This can't be undone.").
 - Each place is a bordered panel, as on the Detection page: its title says the description, the status chip, the id
   in the secondary color, and the stored coordinates, so a closed list still says what each place is. The chip is in
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events

@@ -435,26 +435,29 @@ def test_no_flow_reads_a_secret_from_config():
 
 @needs_node
 @pytest.mark.parametrize("given, expected, errors", [
-    ({}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({}, {"survey_id": None, "database_precision": "2"}, set()),
     ({"survey_id": "3f9a1c2e-si", "database_precision": "2"},
      {"survey_id": "3f9a1c2e-si", "database_precision": "2"}, set()),
-    ({"survey_id": "3F9A1C2E-si"}, {"survey_id": "3f9a1c2e-si", "database_precision": "1"}, set()),
-    ({"survey_id": "home"}, {"survey_id": None, "database_precision": "1"}, {"deployment.survey_id"}),
-    ({"database_precision": "3"}, {"survey_id": None, "database_precision": "1"}, {"deployment.database_precision"}),
+    ({"survey_id": "3F9A1C2E-si"}, {"survey_id": "3f9a1c2e-si", "database_precision": "2"}, set()),
+    ({"survey_id": "home"}, {"survey_id": None, "database_precision": "2"}, {"deployment.survey_id"}),
+    ({"database_precision": "3"}, {"survey_id": None, "database_precision": "2"}, {"deployment.database_precision"}),
     ({"database_precision": 1}, {"survey_id": None, "database_precision": "1"}, set()),
     ({"database_precision": "none"}, {"survey_id": None, "database_precision": "none"}, set()),
-    ({"database_precision": None}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({"database_precision": None}, {"survey_id": None, "database_precision": "2"}, set()),
 ], ids=["defaults", "both-set", "case-folded", "not-a-survey-id", "precision-3", "precision-yaml-number",
         "precision-none", "precision-blank"])
 def test_init_config_defaults_survey_keys(given, expected, errors):
-    """survey_id is a valid id or null, and database_precision is none, 1, or 2; a bad value is logged and dropped."""
+    """survey_id is a valid id or null, and database_precision is none, 1, or 2 (missing or invalid: the default, 2);
+    a bad value is logged and dropped."""
     config = new_device_config()
     config["deployment"].update(given)
     defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
     [step] = run_functions([(defaults, {"payload": config})])["results"]
     deployment = step["result"]["payload"]["deployment"]
     assert {key: deployment[key] for key in expected} == expected
-    assert {text.split()[3] for level, text, _ in step["logged"] if level == "error"} == errors
+    logged = [text for level, text, _ in step["logged"] if level == "error"]
+    assert {text.split()[3] for text in logged} == errors
+    assert all(text.endswith("using '2'") for text in logged if "database_precision" in text)
 
 
 @needs_node
@@ -516,9 +519,9 @@ def test_init_config_defaults_allows_a_blank_bearing(top, sensor, expected_top, 
 
 
 def test_config_template_has_the_survey_keys():
-    """A new device starts with no survey and one decimal place stored; the Location page sets survey_id later."""
+    """A new device starts with no survey and two decimal places stored; the Location page sets survey_id later."""
     deployment = new_device_config()["deployment"]
-    assert deployment["database_precision"] == "1"
+    assert deployment["database_precision"] == "2"
     assert "survey_id" in deployment and deployment["survey_id"] is None
 
 
@@ -861,6 +864,18 @@ def test_engine_inserts_a_row_per_enabled_sensor_on_a_fresh_database():
                                    "TM_RADAR_SERIAL_PORT_00": params["TM_RADAR_SERIAL_PORT_00"]["$id"],
                                    "TM_RADAR_SERIAL_PORT_01": None}
     assert run.global_context["tm_status"]["deployments"] == current
+
+
+@needs_node
+@pytest.mark.parametrize("precision", [MISSING, "3"], ids=["missing", "invalid"])
+def test_engine_stores_two_decimals_without_a_valid_precision(precision):
+    """The engine's own fallback matches init config defaults: about 1 km, two decimal places."""
+    place = {key: value for key, value in ENGINE_PLACE.items() if key != "database_precision"}
+    if precision is not MISSING:
+        place["database_precision"] = precision
+    run = engine(engine_sensors(), [], place)
+    assert {(m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) for m in run.insert} == {
+        (45.52, -122.69, 2)}
 
 
 @needs_node

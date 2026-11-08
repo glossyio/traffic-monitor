@@ -64,11 +64,12 @@ export function startingBearings(sensors: Bearing[], place?: { bearings: Bearing
 
 export type Precision = 'none' | '1' | '2'
 
-// How precisely the database stores each place, coarsest first. `places` is the number of decimal places kept.
+// How precisely the database stores each place, coarsest first. `places` is the number of decimal places kept. Each
+// title shows the same point stored at that precision, so the area in words reads as coordinates too.
 export const PRECISIONS: { value: Precision; title: string; places: number | undefined }[] = [
   { value: 'none', title: 'No location stored', places: undefined },
-  { value: '1', title: 'About 10 km (default)', places: 1 },
-  { value: '2', title: 'About 1 km', places: 2 },
+  { value: '1', title: 'About 10 km (45.5, -122.7)', places: 1 },
+  { value: '2', title: 'About 1 km (45.52, -122.69), the default', places: 2 },
 ]
 
 // Whether `next` stores less than `current`, which is when the rows already stored can be rounded to it

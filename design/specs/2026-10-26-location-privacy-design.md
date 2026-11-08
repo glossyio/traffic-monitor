@@ -104,15 +104,15 @@ The project wants operators to be able to share data, with the maintainer, with 
 
 ### 2. Precision
 
-- **`database_precision`:** `none`, `1` (the default), or `2` decimal places. Never finer. **(maintainer)**
+- **`database_precision`:** `none`, `1`, or `2` (the default) decimal places. Never finer. **(maintainer)** (changed 2026-11-07: the default was `1`)
   - The operator's "1 significant digit" means one decimal place; read literally, it would turn 45.52 into 50.
 - Round to the nearest value at that precision; don't truncate or add noise. Record the decimal places used in a new `location_precision` column, NULL when nothing is stored, so whoever reads the data knows a point is approximate. **(design call)**
 - What each precision means at 45.5°N (Portland):
 
   | Decimal places | Area | Scale | In `tmdb.sqlite`? |
   |---|---|---|---|
-  | 1 | about 11 × 8 km | a city | yes, the default |
-  | 2 | about 1.1 × 0.8 km | a neighborhood | the most it allows |
+  | 1 | about 11 × 8 km | a city | yes |
+  | 2 | about 1.1 × 0.8 km | a neighborhood | yes, the default (changed 2026-11-07), and the most it allows |
   | 3 | about 110 × 80 m | a block | no |
   | 4 | about 11 × 8 m | a house | no |
 
@@ -142,7 +142,7 @@ The project wants operators to be able to share data, with the maintainer, with 
 ### 4. tmdb migration
 
 - Add `location_precision` (INTEGER) and `survey_id` (TEXT) to `deployment`.
-- Round the existing rows' `lat`/`lon` to 1 decimal place and set `location_precision = 1`. This is destructive, so it needs a migration test with synthetic rows and a release-notes line. **(design call)**
+- Round the existing rows' `lat`/`lon` to 2 decimal places and set `location_precision = 2` (changed 2026-11-07: was 1, with the default). This is destructive, so it needs a migration test with synthetic rows and a release-notes line. **(design call)**
 - The runner's pre-migration backup (`db/backup/tmdb-v1-*.sqlite`) keeps the exact rows until the next migration replaces it. The release notes say so.
 - tm-control doesn't import the old exact history into `state.sqlite`. The backup is there for an operator who needs it. **(design call)**
 

@@ -203,7 +203,8 @@ def location(context: Context) -> list[Check]:
     if settings.survey_id_invalid:
         problems.append("deployment.survey_id isn't a survey id (8 hex characters and -si)")
     if settings.precision_invalid:
-        problems.append("deployment.database_precision isn't none, 1, or 2")
+        # Node-RED compares the text exactly (no case folding), so it stores the default instead
+        problems.append("deployment.database_precision isn't none, 1, or 2, so Node-RED stores the default, about 1 km")
     ignored = []
     for path, own, enabled in _sensor_deployments(read.data):
         if enabled and not _bearing_ok(own.get("bearing")):

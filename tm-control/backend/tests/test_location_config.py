@@ -27,7 +27,7 @@ def test_deployment_reads_the_fixture(path):
     assert deployment.survey_id is None
     assert deployment.lat == 45.0
     assert deployment.lon == -122.0
-    assert deployment.precision == "1"
+    assert deployment.precision == "2"
     assert not deployment.survey_id_invalid
     assert not deployment.precision_invalid
     assert deployment.precision_missing
@@ -49,7 +49,7 @@ def test_deployment_flags_invalid_values(path):
     path.write_text("deployment:\n    survey_id: nope\n    database_precision: '3'\n")
     deployment = NodeRedConfig(path).deployment()
     assert deployment.survey_id is None and deployment.survey_id_invalid
-    assert deployment.precision == "1" and deployment.precision_invalid
+    assert deployment.precision == "2" and deployment.precision_invalid
     assert not deployment.precision_missing  # there, but not a precision: the Status check reports it
 
 
@@ -63,7 +63,7 @@ def test_deployment_is_lenient_about_bad_coordinates(path):
 def test_deployment_without_a_block_is_the_defaults(path):
     path.write_text("sensors: {}\n")
     deployment = NodeRedConfig(path).deployment()
-    assert (deployment.survey_id, deployment.lat, deployment.lon, deployment.precision) == (None, None, None, "1")
+    assert (deployment.survey_id, deployment.lat, deployment.lon, deployment.precision) == (None, None, None, "2")
     assert not deployment.survey_id_invalid and not deployment.precision_invalid
 
 

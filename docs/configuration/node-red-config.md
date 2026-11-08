@@ -35,7 +35,7 @@ Where the device is. Every event and reading is stored with a deployment id that
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `survey_id` | `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si` | empty | Names the place the device is used at, with no coordinates in it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error. |
-| `database_precision` | `none`, `1`, or `2` | `'1'` | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too. |
+| `database_precision` | `none`, `1`, or `2` | `'2'` | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too. |
 | `lat` | decimal degrees, such as `45.52252` | empty | Latitude, optional. Use five decimal places at most. The database stores it rounded to `database_precision`; this file keeps the exact value. |
 | `lon` | decimal degrees, such as `-122.69120` | empty | Longitude, optional, with the same rules as `lat`. Set both or neither: a row with only one gets neither. |
 | `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty | The compass direction the camera and radar face. Optional; a value that isn't one of these is logged as an error. |

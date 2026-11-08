@@ -27,7 +27,7 @@ from tm_control.modules.location.coordinates import (
 from tm_control.modules.location.places import Bearing
 
 SENSOR_TYPES = ("cameras", "radars", "airquality_monitors")
-DEFAULT_PRECISION = "1"  # what the engine uses when database_precision is missing or invalid
+DEFAULT_PRECISION = "2"  # what the engine uses when database_precision is missing or invalid
 
 
 class ConfigError(Exception):

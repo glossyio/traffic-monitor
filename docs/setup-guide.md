@@ -59,13 +59,13 @@ The device can record where it is, so set this before you collect data. The loca
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
 ```
 
-1. Under `deployment`, enter the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Optionally enter the latitude and longitude from any map service. `survey_id` names the place without coordinates: use `<8 lower-case hex digits>-si`. Each place needs its own id. To make a fresh one, run `openssl rand -hex 4` and add `-si` to the output. The `3f9a1c2e-si` below is only an example; don't reuse it. `database_precision` is how much of the coordinates the database keeps: `none`, `1` (about 10 km, the default), or `2` (about 1 km). The exact coordinates stay in this file only.
+1. Under `deployment`, enter the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Optionally enter the latitude and longitude from any map service. `survey_id` names the place without coordinates: use `<8 lower-case hex digits>-si`. Each place needs its own id. To make a fresh one, run `openssl rand -hex 4` and add `-si` to the output. The `3f9a1c2e-si` below is only an example; don't reuse it. `database_precision` is how much of the coordinates the database keeps: `none`, `1` (about 10 km), or `2` (about 1 km, the default). The exact coordinates stay in this file only.
 2. Under `sensors`, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`.
 
 ```yaml
 deployment:
     survey_id: 3f9a1c2e-si
-    database_precision: '1'
+    database_precision: '2'
     lat: 45.52252
     lon: -122.69120
     bearing: n

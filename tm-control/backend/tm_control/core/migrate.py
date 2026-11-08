@@ -671,7 +671,7 @@ def _run_node_red(config_path, secrets_dir, dry_run):
     if add_precision:
         # After survey_id, as config.yml.j2 orders them; else after bearing.
         after = "survey_id" if "survey_id" in deployment else "bearing"
-        put_after(deployment, "database_precision", SingleQuotedScalarString("1"), after)
+        put_after(deployment, "database_precision", SingleQuotedScalarString("2"), after)  # the default, about 1 km
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
     try:

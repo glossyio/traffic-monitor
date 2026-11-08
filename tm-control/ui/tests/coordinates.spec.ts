@@ -51,7 +51,12 @@ describe('the choices', () => {
   })
 
   it('names the precisions, coarsest first', () => {
-    expect(PRECISIONS.map((p) => p.title)).toEqual(['No location stored', 'About 10 km (default)', 'About 1 km'])
+    expect(PRECISIONS.map((p) => p.title)).toEqual([
+      'No location stored',
+      'About 10 km (45.5, -122.7)',
+      'About 1 km (45.52, -122.69), the default',
+    ])
+    expect(PRECISIONS.map((p) => p.value)).toEqual(['none', '1', '2'])
     expect(isCoarser('none', '1')).toBe(true)
     expect(isCoarser('1', '2')).toBe(true)
     expect(isCoarser('2', '1')).toBe(false)

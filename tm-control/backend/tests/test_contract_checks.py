@@ -265,6 +265,14 @@ def test_location_rejects_a_bad_survey_id_and_precision(apps, deployment, detail
         assert value not in check.detail  # names the key, not its value
 
 
+def test_location_says_an_invalid_precision_stores_the_default(apps):
+    check = location_check(apps, database_precision="NONE")  # R10: Node-RED doesn't fold case, so it uses '2'
+    assert check.detail == (
+        "In config.yml, deployment.database_precision isn't none, 1, or 2, so Node-RED stores the default, about 1 km."
+        " Correct it, or leave it empty."
+    )
+
+
 @pytest.mark.parametrize(
     "deployment", [{"survey_id": SURVEY_ID.upper()}, {"database_precision": 2}, {"database_precision": "none"}]
 )
@@ -367,7 +375,7 @@ def test_location_with_no_place_says_no_location_is_set(apps, state):
 def test_location_without_a_state_skips_the_places_check(apps):
     check = location_check(apps, survey_id=SURVEY_ID)  # no State in the Context: nothing to compare with
     assert check.status == "ok"
-    assert check.detail == f"Place {SURVEY_ID} is in use at precision 1."
+    assert check.detail == f"Place {SURVEY_ID} is in use at precision 2."  # the fixture has none: the default
 
 
 def test_deployment_missing_is_ok(apps):

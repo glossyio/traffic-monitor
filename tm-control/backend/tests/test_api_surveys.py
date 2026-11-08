@@ -112,7 +112,7 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
     state = places(admin)
     assert state["reconcile"] == "done"
     assert state["nodered"] is True
-    assert state["precision"] == "1"
+    assert state["precision"] == "2"  # the fixture has none: the default
     assert state["sharing"] == "none"
     assert state["sensors"] == [bearing(CAMERA, "n"), bearing(RADAR, "n")]
     assert len(state["surveys"]) == 1
@@ -136,7 +136,7 @@ def test_create_a_planned_place_and_list_order(admin):
     second = create(admin, None, None, None)
     assert first["status"] == "planned" and first["source"] == "ui"
     assert first["bearings"] == [bearing(CAMERA, "e")]
-    assert (first["stored_lat"], first["stored_lon"]) == (45.5, -122.7)
+    assert (first["stored_lat"], first["stored_lon"]) == (45.52, -122.69)
     assert first["deployment_count"] == 0 and first["first_used"] is None
     assert second["lat"] is None and second["stored_lat"] is None and second["description"] is None
     listed = [s["id"] for s in places(admin)["surveys"]]
@@ -191,7 +191,7 @@ def test_deploy_writes_the_file_and_starts_deployments(admin):
     assert all(row["started"] >= result["deployed_at"] and row["ended"] is None for row in started)
     by_sensor = {(row["sensor_type"], row["sensor_name"]): row for row in started}
     assert by_sensor[CAMERA]["bearing"] == "e" and by_sensor[RADAR]["bearing"] == "n"
-    assert all(row["lat"] == 45.5 and row["lon"] == -122.7 and row["location_precision"] == 1 for row in started)
+    assert all(row["lat"] == 45.52 and row["lon"] == -122.69 and row["location_precision"] == 2 for row in started)
     assert {row["id"] for row in rows(admin, place["id"])} == set(by_sensor[s]["id"] for s in (CAMERA, RADAR))
 
     data = file_data(admin)
@@ -292,6 +292,7 @@ def test_deploy_unknown_place_is_404(admin):
 def test_precision_rewrite_rounds_the_open_rows_and_optionally_all(admin):
     old = first_place(admin)
     place = create(admin)
+    assert admin.put("/api/v1/surveys/precision", json={"precision": "1"}, headers=ORIGIN).status_code == 200
     deploy(admin, place["id"])
     r = admin.put("/api/v1/surveys/precision", json={"precision": "2"}, headers=ORIGIN)
     assert r.status_code == 200, r.text
@@ -345,7 +346,7 @@ def test_correct_location_rounds_the_rows_and_records_it(admin):
     )
     assert r.status_code == 200, r.text
     assert (r.json()["lat"], r.json()["lon"]) == (45.52252, -122.6912)
-    assert all((row["lat"], row["lon"]) == (45.5, -122.7) for row in rows(admin, in_use))
+    assert all((row["lat"], row["lon"]) == (45.52, -122.69) for row in rows(admin, in_use))
     data = file_data(admin)["deployment"]
     assert (data["lat"], data["lon"]) == (45.52252, -122.6912)
     places_store = Places(admin.app.state.state)
@@ -369,7 +370,7 @@ def test_correct_location_of_a_used_place_leaves_the_file(admin):
     deploy(admin, place["id"])
     r = admin.post(f"/api/v1/surveys/{old}/location", json={"lat": 45.52252, "lon": -122.6912}, headers=ORIGIN)
     assert r.status_code == 200, r.text
-    assert all((row["lat"], row["lon"]) == (45.5, -122.7) for row in rows(admin, old))
+    assert all((row["lat"], row["lon"]) == (45.52, -122.69) for row in rows(admin, old))
     assert file_data(admin)["deployment"]["survey_id"] == place["id"]
 
 

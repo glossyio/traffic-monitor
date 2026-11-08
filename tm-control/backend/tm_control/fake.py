@@ -387,7 +387,7 @@ class FakeNodeRed(NodeRed):
             "config": {"loaded_at": None, "errors": []},
             "deployment": {
                 "survey_id": place.survey_id if place else None,
-                "database_precision": place.precision if place else "1",
+                "database_precision": place.precision if place else "2",
             },
         }
 

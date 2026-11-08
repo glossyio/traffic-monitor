@@ -143,10 +143,10 @@ def test_first_run_creates_the_default_place_and_writes_its_id(unit):
     assert place.bearings == SENSORS
     deployment = file_deployment(unit)
     assert deployment["survey_id"] == place.id
-    assert deployment["database_precision"] == "1"
+    assert deployment["database_precision"] == "2"
     assert (deployment["lat"], deployment["lon"]) == (None, None)
     assert unit.config_path.read_text() == before.replace(
-        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {place.id}\n    database_precision: '1'\n", 1
+        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {place.id}\n    database_precision: '2'\n", 1
     )
     assert places.reconciled_at() is not None
     assert unit.nodered.calls == []

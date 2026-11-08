@@ -52,9 +52,9 @@ def test_migrate_adds_database_precision_once(config_yml, secrets_dir, capsys):
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
 
     new = config_yml.read_text()
-    assert "    bearing: 'n'\n    database_precision: '1'\n\nsensors:" in new  # quoted, after bearing, blank line kept
+    assert "    bearing: 'n'\n    database_precision: '2'\n\nsensors:" in new  # quoted, after bearing, blank line kept
     expected = data(original)
-    expected["deployment"]["database_precision"] = "1"
+    expected["deployment"]["database_precision"] = "2"
     assert data(new) == expected
     printed = output(capsys)
     assert f"{config_yml}: added deployment.database_precision (backup: " in printed
@@ -72,7 +72,7 @@ def test_migrate_puts_database_precision_after_survey_id(config_yml, secrets_dir
     )
     config_yml.write_text(text)
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
-    assert "    survey_id: 0123abcd-si  # the place\n    database_precision: '1'\n\nsensors:" in config_yml.read_text()
+    assert "    survey_id: 0123abcd-si  # the place\n    database_precision: '2'\n\nsensors:" in config_yml.read_text()
 
 
 def test_migrate_keeps_a_precision_the_file_has(config_yml, secrets_dir, capsys):
@@ -139,7 +139,7 @@ def test_migrate_ignores_a_sensor_deployment_with_only_a_bearing(config_yml, sec
     migrate.run_node_red(config_yml, secrets_dir)
     capsys.readouterr()
     after_precision = config_yml.read_text()
-    assert after_precision.replace("    database_precision: '1'\n", "") == text
+    assert after_precision.replace("    database_precision: '2'\n", "") == text
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
     assert output(capsys) == f"tm-control migrate: {config_yml}: up to date\n"
 

@@ -72,7 +72,7 @@ const onlyDefault = computed(() => state.value?.surveys.length === 1 && state.va
 
 // The precision. Rounding the rows already stored is offered only for a coarser choice: a finer one applies from
 // the next deployment, because the rows can't get back what was rounded away.
-const precisionChoice = ref<Precision>('1')
+const precisionChoice = ref<Precision>('2')
 const roundStored = ref(false)
 const offerRound = computed(() => state.value !== null && isCoarser(precisionChoice.value, state.value.precision))
 const finer = computed(() => state.value !== null && isCoarser(state.value.precision, precisionChoice.value))
@@ -254,7 +254,7 @@ onMounted(load)
         <h2 class="text-h6 mb-2">Precision</h2>
         <p class="text-body-1 mb-4">
           How precisely the database records where the unit is. The exact location is kept only on this device, outside
-          the database.
+          the database, so you can still export it in full later. Exporting it is coming in a later update.
         </p>
         <v-radio-group v-model="precisionChoice" hide-details @update:model-value="precisionChanged">
           <v-radio v-for="choice in PRECISIONS" :key="choice.value" :value="choice.value" :label="choice.title" />
