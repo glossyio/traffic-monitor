@@ -4,7 +4,8 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogText, mountApp } from './mount'
+import { click, clickInDialog, dialogText, mountAlone, mountApp } from './mount'
+import LabelChips from '../src/modules/detection/LabelChips.vue'
 
 type ModelsState = components['schemas']['ModelsState']
 type ModelOut = components['schemas']['ModelOut']
@@ -718,5 +719,64 @@ describe("the Detection page's actions", () => {
     await toggle.trigger('click')
     await click(wrapper, 'Upload a model')
     expect(dialogText()).toContain('A zip or tar.gz of the model file and its .json, not of a folder.')
+  })
+})
+
+describe('LabelChips', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'clipboard')
+    Reflect.deleteProperty(window, 'isSecureContext')
+  })
+
+  const LABELS = ['person', 'bicycle', 'car']
+  const chip = (wrapper: VueWrapper, label: string) => wrapper.findAll('.v-chip').find((c) => c.text() === label)!
+
+  it('leaves chips plain and shows no legend without marks', () => {
+    const wrapper = mountAlone(LabelChips, { labels: LABELS, markedLegend: 'Filled: tracked.', flaggedLegend: 'Amber.' })
+    expect(chip(wrapper, 'car').classes()).toContain('v-chip--variant-outlined')
+    expect(chip(wrapper, 'car').classes()).not.toContain('text-warning')
+    expect(chip(wrapper, 'car').classes()).not.toContain('text-primary')
+    expect(wrapper.text()).not.toContain('Filled: tracked.')
+    expect(wrapper.text()).not.toContain('Amber.')
+  })
+
+  it('fills a marked chip, and shows its legend only when a chip has the mark', () => {
+    const wrapper = mountAlone(LabelChips, { labels: LABELS, marked: ['person', 'dog'], markedLegend: 'Filled: tracked.' })
+    expect(chip(wrapper, 'person').classes()).toEqual(expect.arrayContaining(['v-chip--variant-tonal', 'text-primary']))
+    expect(chip(wrapper, 'car').classes()).toContain('v-chip--variant-outlined')
+    expect(wrapper.text()).toContain('Filled: tracked.')
+    const none = mountAlone(LabelChips, { labels: LABELS, marked: ['dog'], markedLegend: 'Filled: tracked.' })
+    expect(none.text()).not.toContain('Filled: tracked.')
+  })
+
+  it('outlines a flagged chip in amber, over a mark, with its legend', () => {
+    const wrapper = mountAlone(LabelChips, {
+      labels: LABELS,
+      marked: ['person'],
+      flagged: ['person', 'car'],
+      flaggedLegend: 'Amber: not recognised.',
+    })
+    for (const label of ['person', 'car']) {
+      expect(chip(wrapper, label).classes()).toEqual(expect.arrayContaining(['v-chip--variant-outlined', 'text-warning']))
+    }
+    expect(chip(wrapper, 'person').classes()).not.toContain('text-primary')
+    expect(wrapper.text()).toContain('Amber: not recognised.')
+    const none = mountAlone(LabelChips, { labels: LABELS, flagged: ['dog'], flaggedLegend: 'Amber: not recognised.' })
+    expect(none.text()).not.toContain('Amber: not recognised.')
+  })
+
+  it('titles the list with an h4', () => {
+    const wrapper = mountAlone(LabelChips, { title: 'Objects it recognises (3)', labels: LABELS })
+    expect(wrapper.find('h4').text()).toBe('Objects it recognises (3)')
+    expect(wrapper.find('h3').exists()).toBe(false)
+  })
+
+  it('still copies every label, whatever its mark', async () => {
+    const writeText = vi.fn(async () => {})
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
+    const wrapper = mountAlone(LabelChips, { labels: LABELS, marked: ['person'], flagged: ['car'] })
+    await wrapper.find('button').trigger('click')
+    expect(writeText).toHaveBeenCalledWith('person, bicycle, car')
   })
 })
