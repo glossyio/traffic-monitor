@@ -1,15 +1,15 @@
 # Network ports
 
-Other computers reach the Traffic Monitor's apps through the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) on port 80. The apps themselves accept connections only from the device.
+Other computers reach the Traffic Monitor's apps through the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) on port 80. The apps themselves, and the control app on port 8090, listen only on the device itself (loopback). The ports in the table below are the ones other computers can reach.
 
 | Port       | Used for                                                                                                                                     |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 22         | SSH                                                                                                                                          |
-| 80         | The home page and every app it links to                                                                                                      |
+| 80         | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) and every app behind its login                                |
 | 1883       | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). |
 | 5353 (UDP) | `<hostname>.local` names (mDNS)                                                                                                              |
 | 8554       | The camera stream (RTSP), with a username and password                                                                                       |
-| 9090       | Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load.                                                                 |
+| 9090       | Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering.                         |
 
 When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
 

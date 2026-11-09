@@ -761,6 +761,8 @@
       
         
       
+        
+      
     
     
     
@@ -840,6 +842,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -859,10 +889,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -880,8 +910,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1833,6 +1863,8 @@
       
         
       
+        
+      
     
     
     
@@ -1893,6 +1925,34 @@
     
   
     Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
   
 
     
@@ -2066,7 +2126,8 @@
   <h1 id="tune-object-detection">Tune object detection<a class="headerlink" href="#tune-object-detection" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Use Frigate&#39;s debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don&#39;t.</p>
 <p><a href="https://frigate.video/">Frigate</a> does the object detection. How well it works depends on the mounting height and angle, the camera, and the weather, so expect to adjust it for each site. The Traffic Monitor is not affiliated with the Frigate project.</p>
-<p>The Traffic Monitor's <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a> is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at <strong>Settings &gt; Configuration editor</strong>. Frigate's <a href="https://docs.frigate.video/configuration/">configuration reference</a> explains every setting.</p>
+<p>The Traffic Monitor's <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a> is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at <strong>Settings &gt; Configuration editor</strong>, when you're logged in to the device as the administrator. Frigate's <a href="https://docs.frigate.video/configuration/">configuration reference</a> explains every setting.</p>
+<p>Frigate's own login is off. The device's <a href="../../use/control-app/">login</a> passes your username and role on to Frigate: the administrator gets Frigate's admin role, and viewers its viewer role, which can watch and review but not change settings. Frigate's <strong>Logout</strong> logs you out of the device. Keep <code>auth: enabled: false</code> and the <code>proxy:</code> section as they are; with Frigate's login on, Frigate asks for a second login of its own, separate from the device's accounts.</p>
 <h2 id="see-what-frigate-sees">See what Frigate sees<a class="headerlink" href="#see-what-frigate-sees" title="Permanent link">&para;</a></h2>
 <p>Go to <strong>Settings &gt; Debug</strong> to watch detections live with their scores, and the motion regions Frigate is checking. <strong>Explore</strong> lists past detections with their snapshots, which is the quickest way to find missed bikes or a tree that's being called a person.</p>
 <figure>

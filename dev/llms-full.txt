@@ -334,25 +334,36 @@ Run the whole installer rather than a single tag, because one version's changes 
 
 Restart when the installer asks. When the services come back, the Node-RED service applies any database schema changes before it opens the database. [Schema versions](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#schema-versions) describes the copy it saves first.
 
+Every app asks for the device's login, and the Node-RED editor has no login of its own: it opens for the device's administrator. If the device has no administrator account yet, every page opens the setup page instead. Claim the device with the setup code from the end of the installer's output; until the device is claimed, `sudo cat /etc/traffic-monitor/setup-code` also shows it. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) walks through setup and adding accounts.
+
 The installer printed `tm-control migrate: WARNING`
 
-A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is. To find the warning later:
+The installer brings Frigate's configuration up to date, and warns about what it can't change safely. Each warning names the camera, stream, or setting. To find the warnings later:
 
 ```
 grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
 ```
 
-A Frigate configuration from a backup may lack the camera stream login. After you restore one, run `bash script/tmsetup.sh -t frigate` to add it.
+**A camera input or stream without a login.** A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is.
+
+**An `auth`, `proxy`, or `tls` setting.** The installer adds the settings that turn off Frigate's own login and let Frigate trust the user and role that the device's login passes on. It leaves a section that's already there as it is, and warns when a setting in it would get in the way:
+
+- `auth.enabled` or `tls.enabled` is true or missing: Frigate asks for its own login as well as the device's, or serves its port over TLS, which the device doesn't use.
+- A `proxy` setting doesn't match, followed by `auth was not added` when the file had no `auth` section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
+
+Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
+
+A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run `bash script/tmsetup.sh -t frigate` to add them.
 
 Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices).
 
-Open `http://<device>/` and check the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md) for new counts.
+Open `http://<device>/`, log in, and check the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md) for new counts.
 
 To update several devices from your computer, use the remote form of the installer described in [Install the software](https://docs.trafficmonitor.ai/dev/software-installation/#install-from-another-computer).
 
 ## What an update changes
 
-An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, and Frigate's recordings. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. [What `-f` replaces](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#what-f-replaces) lists the files.
+An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. [What `-f` replaces](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#what-f-replaces) lists the files.
 
 Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: location and sensors in `config.yml`, and zones in Frigate. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) walks through each.
 
@@ -399,7 +410,9 @@ bash traffic-monitor/script/tmsetup.sh
 
 The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-Near the end, the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/` and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+Near the end, the installer prints the device's **setup code**, which you need once to claim the device and create its administrator account. Keep it; [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find it.
+
+Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md).
 
@@ -419,12 +432,12 @@ bash traffic-monitor/script/tmsetup.sh -H <address>[,<address>] -l <username> -k
 | `-k` | Ask for the SSH password                                                          |
 | `-K` | Ask for the password for administrator rights. Raspberry Pi OS requires it.       |
 
-Remote devices reboot by themselves when the install needs it.
+Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address.
 
 ## Next steps
 
 1. [Choose a site and mount](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) the device.
-1. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md): turn on detection, adjust the zones, and record the location.
+1. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md): claim the device, turn on detection, adjust the zones, and record the location.
 # Deploy
 
 # Choose a site and mount
@@ -513,17 +526,26 @@ Plug the device in. It starts by itself, and the green LED on the Raspberry Pi s
 
 # First-time setup
 
-Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and an SSH client for step 4.
+Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, the device's setup code or administrator login, and an SSH client for step 4.
 
 As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
-## 1. Open the home page
+## 1. Claim the device
 
 Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains each link and how to find the address.
 
+A device that hasn't been claimed opens its setup page:
+
+1. Choose **Start setup**, and read and accept the license agreement.
+1. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.
+1. Create the administrator account with a username and password, and choose **Claim this device**.
+1. Optionally, set a new system password for Cockpit and SSH.
+
+[Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) explains each step, and how to add accounts for other people. If the device was claimed already, log in as the administrator.
+
 ## 2. Turn on detection
 
-1. Open **Frigate** from the home page.
+1. Open **Frigate** from the home page, logged in as the administrator.
 1. Go to **Settings > Configuration editor**.
 1. Under `cameras: picam_h265: detect:`, change `enabled: false` to `enabled: true`.
 1. Choose **Save & Restart**.
@@ -587,11 +609,119 @@ No counts?
 
 Work down the list:
 
-1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Go2RTC Feeds** from the home page to check that the camera itself streams.
+1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Camera feeds** from the home page to check that the camera itself streams.
 1. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.
 1. **Counts but no speeds.** The radar must be `enabled: true` and named in the camera's `camera_radar`, `zone_radar` must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
 1. **Still nothing.** Look at the logs in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md), then ask in the [chat](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md).
 # Use the device
+
+# Control app and login
+
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+
+What the login protects
+
+The login keeps people on your network out of the apps. The device uses plain HTTP, so passwords and images cross your network unencrypted. Use the device on a network you trust.
+
+## Claim the device
+
+A device that has no administrator yet sends every page to setup. That happens on a new device, after an update from a version without the login, and after [`reset-admin`](#if-the-administrators-password-is-lost). Setup has four steps: a welcome page, the license agreement, the administrator account, and the system password.
+
+You need the **setup code**, eight letters and digits written as `XXXX-XXXX`. It comes from one of two places:
+
+- **A pre-built unit:** the card that came with the device.
+
+- **A device you installed yourself:** the end of the installer's output, in a line like this one:
+
+  ```
+  This device isn't claimed yet. Open http://tm-01.local/ (or its IP address) and enter the setup code ABCD-EFGH
+  to create the administrator account. The code works once.
+  ```
+
+  The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo cat /etc/traffic-monitor/setup-code` also shows the code.
+
+To claim the device:
+
+1. Open `http://<device>/`. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains how to find the address.
+1. Choose **Start setup**, read the license agreement, and accept it.
+1. Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.
+1. Choose **Claim this device**. You're logged in as the administrator.
+1. Set a new [system password](#the-system-password), or choose **Skip for now**.
+
+Step 3 of setup creates the administrator account
+
+The code works once. After several wrong codes, setup makes you wait before the next try, a little longer after each wrong code.
+
+When the license agreement changes
+
+An update can bring a new version of the license agreement. Until the administrator accepts it, nobody can open the apps. The administrator sees the new version after logging in. Viewers see **Waiting for an administrator** until it's accepted.
+
+## The system password
+
+The system password is the password of the Raspberry Pi user account: the one you log in to Cockpit and SSH with. Setup offers to change it, with a **Use the same password as my account** checkbox. Skip the step to keep the password the account has. To change it later, use Cockpit's **Accounts** page, or run `passwd` over SSH.
+
+## Log in
+
+Open the home page or any app. Without a session, the device shows its login page, then takes you to the page you asked for. You stay logged in for a week, and using the device keeps the session going. To log out, choose **Log out** in the menu. Frigate's own **Logout** also logs you out of the device.
+
+After five wrong passwords in a row, the device makes you wait before the next try: a few seconds at first, and twice as long after each further wrong password, up to 5 minutes. It counts wrong passwords for the account and for the address they come from, so a wait for an account applies on every phone and computer. Sessions that are already logged in keep working. The count clears 15 minutes after the last wrong password, or when the login succeeds.
+
+## Administrators and viewers
+
+Each device has one administrator, the account created when it was claimed, and any number of viewers.
+
+| App or page                                                                                  | Administrator | Viewer |
+| -------------------------------------------------------------------------------------------- | ------------- | ------ |
+| Dashboard and Legacy Dashboard                                                               | Yes           | Yes    |
+| Downloads on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page | Yes           | No     |
+| Frigate: live view, review, and explore                                                      | Yes           | Yes    |
+| Frigate: settings and the configuration editor                                               | Yes           | No     |
+| Node-RED editor, Camera feeds, and Cockpit                                                   | Yes           | No     |
+| The **Users** page                                                                           | Yes           | No     |
+
+### Add a viewer
+
+1. Open **Users** from the menu.
+1. Under **Add a viewer**, enter a username and a password, and choose **Add viewer**.
+1. Give the person the username and password.
+
+Each viewer's menu on the **Users** page has **Set a new password**, which also logs them out everywhere, and **Remove**.
+
+## Change your password
+
+Open **Account** from the menu. Under **Change your password**, enter your current password and the new one. Every other browser and phone where you were logged in is logged out; this one stays logged in. Wrong current passwords count toward the same wait as wrong logins.
+
+**Log out everywhere**, on the same page, ends your sessions in every browser and on every phone, including the one you're using. Use it if you logged in on a device that isn't yours.
+
+## If you forget a password
+
+- **A viewer's password:** the administrator sets a new one on the **Users** page.
+- **The administrator's password:** see the next section.
+
+### If the administrator's password is lost
+
+Someone who can log in to the device with the Raspberry Pi user account can start over. Open a terminal over SSH, or in Cockpit at `http://<device>:9090`, and run:
+
+```
+sudo tm-control reset-admin
+```
+
+It removes every account, the administrator and all viewers, and prints a new setup code. Then [claim the device](#claim-the-device) again with that code. Your data and settings stay as they are.
+
+## If the control app is down
+
+When the control app doesn't answer, the apps can't check your login. Every app then shows a page that says the control app isn't answering, and the home page says **The control app isn't answering**. To start it again:
+
+- In a browser, open Cockpit at `http://<device>:9090`. It doesn't need the control app. Log in with your Raspberry Pi user account, go to **Services**, open `tm-control.service`, and restart it.
+
+- Over SSH, run:
+
+  ```
+  sudo systemctl restart tm-control.service
+  sudo journalctl -u tm-control.service -n 50   # if it stops again, the reason is in its log
+  ```
+
+An app that's down while the control app works, such as Frigate during a restart, shows a `502 Bad Gateway` error instead. [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md) covers the services and their logs.
 
 ______________________________________________________________________
 
@@ -601,16 +731,16 @@ ______________________________________________________________________
 
 Open `http://<device>/` in a browser on the same network. `<device>` is the hostname you set when you imaged the card, followed by `.local` (for example `http://tm-01.local/`), or the device's IP address.
 
-The home page links to every app on the device.
+The home page is the device's [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, and links to the apps your account can open. Its menu has your **Account**, the **Users** page for administrators, and **Log out**.
 
-| Link                                  | Path          | What it is                                                                                                                                                                                                                                                                                                                                                                                                                    | Login                          |
-| ------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Dashboard                             | `/dashboard/` | The Traffic Monitor dashboards: [Monitoring](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md), [Movements](https://docs.trafficmonitor.ai/dev/ui/movements/index.md), and [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md), which opens first. Switch pages in the sidebar.                                                                                                                   | None                           |
-| Frigate                               | `/frigate/`   | Object detection: live view, detections with snapshots and clips, zones, masks, and the Frigate settings. See [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md).                                                                                                                                                                                                              | None                           |
-| Legacy Dashboard                      | `/ui/`        | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | None                           |
-| Node-RED admin console                | `/nr/`        | The flow editor, for developers. See [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md).                                                                                                                                                                                                                                                                                              | `admin` / `password`           |
-| Go2RTC Feeds                          | `/feeds/`     | The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here.                                                                                                                                                                                                                                                 | None                           |
-| Cockpit-Project system administration | `/system/`    | Services, logs, containers, and a terminal. See [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md).                                                                                                                                                                                                                                                                                        | Your Raspberry Pi user account |
+| Link             | Path          | What it is                                                                                                                                                                                                                                                                                                                                                                                                                    | Who can open it                                                    |
+| ---------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Dashboard        | `/dashboard/` | The Traffic Monitor dashboards: [Monitoring](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md), [Movements](https://docs.trafficmonitor.ai/dev/ui/movements/index.md), and [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md), which opens first. Switch pages in the sidebar.                                                                                                                   | Any user. The Data export downloads need an administrator.         |
+| Frigate          | `/frigate/`   | Object detection: live view, detections with snapshots and clips, zones, masks, and the Frigate settings. See [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md).                                                                                                                                                                                                              | Any user. Frigate's settings need an administrator.                |
+| Legacy Dashboard | `/ui/`        | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](https://docs.trafficmonitor.ai/dev/add-ons/air-quality/index.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | Any user                                                           |
+| Node-RED editor  | `/nr/`        | The flow editor, for developers. See [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md).                                                                                                                                                                                                                                                                                              | Administrators                                                     |
+| Camera feeds     | `/feeds/`     | The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here.                                                                                                                                                                                                                                                 | Administrators                                                     |
+| Cockpit          | `/system/`    | Services, logs, containers, and a terminal. See [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md).                                                                                                                                                                                                                                                                                        | Administrators, who then log in with the Raspberry Pi user account |
 
 Finding the device's address
 
@@ -620,26 +750,27 @@ Finding the device's address
 
 If the home page doesn't load
 
-The apps accept connections only from the device, so they have no address of their own on your network. Open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md). [Network ports](https://docs.trafficmonitor.ai/dev/reference/network/index.md) lists what the device opens.
+The apps accept connections only from the device, so they have no address of their own on your network. If the apps show a page saying the control app isn't answering, restart it as described in [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down). If nothing loads, open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md). [Network ports](https://docs.trafficmonitor.ai/dev/reference/network/index.md) lists what the device opens. If the home page loads on a computer but times out on an Android phone, see [Troubleshooting](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/#troubleshooting).
 
 # System administration
 
 ## Cockpit
 
-Open `http://<device>/system/` and log in with your Raspberry Pi user account. [Cockpit](https://cockpit-project.org/) shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.
+Log in to the device as the administrator, open **Cockpit** from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on `http://<device>:9090` with only the Raspberry Pi login, which works when the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) doesn't. [Cockpit](https://cockpit-project.org/) shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.
 
 ## Services
 
-The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx runs on the host network, outside the pod, so the home page stays up when the pod is down.
+The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx and the control app run on the host, outside the pod, so the home page and the login stay up when the pod is down.
 
-| Service                    | What it runs                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `traffic-monitor.service`  | The pod that holds Frigate, Node-RED, and Plate Recognizer if installed                                      |
-| `frigate.service`          | Frigate, object detection                                                                                    |
-| `node-red-tm.service`      | Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker                                   |
-| `revproxy.service`         | nginx, which serves the home page and the `/dashboard/`, `/frigate/`, and other paths                        |
-| `plate-recognizer.service` | The optional [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on |
-| `go2rtc_server.service`    | go2rtc, which reads the Pi camera and streams it to Frigate. It runs on the host, not in the pod.            |
+| Service                    | What it runs                                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `traffic-monitor.service`  | The pod that holds Frigate, Node-RED, and Plate Recognizer if installed                                                                                                                     |
+| `frigate.service`          | Frigate, object detection                                                                                                                                                                   |
+| `node-red-tm.service`      | Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker                                                                                                                  |
+| `tm-control.service`       | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md): the home page's data, the login, and the device's accounts. nginx asks it to check the login for every app. |
+| `revproxy.service`         | nginx, which serves the home page and the `/dashboard/`, `/frigate/`, and other paths                                                                                                       |
+| `plate-recognizer.service` | The optional [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on                                                                                |
+| `go2rtc_server.service`    | go2rtc, which reads the Pi camera and streams it to Frigate. It runs on the host, not in the pod.                                                                                           |
 
 Over SSH:
 
@@ -660,11 +791,12 @@ sudo podman ps                                  # running containers
 | Change Frigate's config in its UI                 | Choose **Save & Restart** in Frigate's config editor, or restart `frigate.service`.                                                                                                                          |
 | Plug in a radar                                   | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.                                                                           |
 | Add or change an AI accelerator                   | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#add-an-accelerator-later). |
+| See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down).        |
 | Move the device to a new site                     | Follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) again: adjust the zones and update the location.                                                                          |
 
 ## Where things are
 
-Everything the installer manages lives under `/opt/traffic-monitor/`.
+The settings and data live under `/opt/traffic-monitor/`.
 
 | Path                                    | Contents                                                                                                                                        |
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -675,13 +807,22 @@ Everything the installer manages lives under `/opt/traffic-monitor/`.
 | `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                             |
 | `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed.                                                                                       |
 
+The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
+
+| Path                                 | Contents                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
+| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                               |
+| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device                                                          |
+| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                       |
+
 ______________________________________________________________________
 
 ## description: The Data export dashboard: download the database or a JSON export, and add comments for whoever analyzes the data.
 
 # Data export
 
-Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it.
+Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it. Both downloads need the device's administrator login; a [viewer](https://docs.trafficmonitor.ai/dev/use/control-app/#administrators-and-viewers) can open the page but not download.
 
 The Data export page
 
@@ -774,7 +915,9 @@ Manual confirmation counts; the left sheet matches the zones above
 
 [Frigate](https://frigate.video/) does the object detection. How well it works depends on the mounting height and angle, the camera, and the weather, so expect to adjust it for each site. The Traffic Monitor is not affiliated with the Frigate project.
 
-The Traffic Monitor's [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2) is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at **Settings > Configuration editor**. Frigate's [configuration reference](https://docs.frigate.video/configuration/) explains every setting.
+The Traffic Monitor's [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2) is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at **Settings > Configuration editor**, when you're logged in to the device as the administrator. Frigate's [configuration reference](https://docs.frigate.video/configuration/) explains every setting.
+
+Frigate's own login is off. The device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) passes your username and role on to Frigate: the administrator gets Frigate's admin role, and viewers its viewer role, which can watch and review but not change settings. Frigate's **Logout** logs you out of the device. Keep `auth: enabled: false` and the `proxy:` section as they are; with Frigate's login on, Frigate asks for a second login of its own, separate from the device's accounts.
 
 ## See what Frigate sees
 
@@ -942,6 +1085,7 @@ Otherwise the broker refuses Frigate's connection, and no events are recorded.
 | `TM_RPI_SN`                                            | the Raspberry Pi's serial number | Identifies the device in ThingsBoard, and fills `deviceName` in [deployment](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#deployment) records. Set by the installer.                                                                                                                                                                                       |
 | `TM_HOSTNAME`                                          | the device's hostname at install | Prefix for the file names of [data exports](https://docs.trafficmonitor.ai/dev/ui/database/index.md). Set by the installer.                                                                                                                                                                                                                                                       |
 | `NODE_RED_CREDENTIAL_SECRET`                           | `myNodeRED1234`                  | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it.                                                                                                                                            |
+| `TM_NR_TOKEN_KEY`                                      | generated on the device          | Lets the Node-RED editor check that the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) let you in. The installer sets it on every run; leave it. Without it, the editor refuses everyone.                                                                                                                                                          |
 | `TM_DATABASE_PATH_TMDB`                                | `/db/tmdb.sqlite`                | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path.                                                                                                                                                                                                     |
 | `TM_MQTT_BROKER_HOST`                                  | `localhost`                      | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).                                                                                                                                                                                    |
 | `TM_MQTT_BROKER_PORT`                                  | `1883`                           | The broker's port.                                                                                                                                                                                                                                                                                                                                                                |
@@ -951,16 +1095,16 @@ Otherwise the broker refuses Frigate's connection, and no events are recorded.
 
 # Network ports
 
-Other computers reach the Traffic Monitor's apps through the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) on port 80. The apps themselves accept connections only from the device.
+Other computers reach the Traffic Monitor's apps through the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) on port 80. The apps themselves, and the control app on port 8090, listen only on the device itself (loopback). The ports in the table below are the ones other computers can reach.
 
 | Port       | Used for                                                                                                                                     |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 22         | SSH                                                                                                                                          |
-| 80         | The home page and every app it links to                                                                                                      |
+| 80         | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) and every app behind its login                                |
 | 1883       | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). |
 | 5353 (UDP) | `<hostname>.local` names (mDNS)                                                                                                              |
 | 8554       | The camera stream (RTSP), with a username and password                                                                                       |
-| 9090       | Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load.                                                                 |
+| 9090       | Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering.                         |
 
 When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
 
@@ -1012,21 +1156,21 @@ Remote runs:
 
 ## Tags
 
-Each tag reruns one part of the install. Without `-t`, everything runs. The pod and the reverse proxy have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, and `revproxy` tags each update both.
+Each tag reruns one part of the install. Without `-t`, everything runs. The pod, the reverse proxy, and the control app that checks every login have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, `revproxy`, and `tm-control` tags each update all three.
 
-| Tag                | What it does                                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                               |
-| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                        |
-| `wifi`             | Wi-Fi setup                                                                                                                                                                                       |
-| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                            |
-| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                        |
-| `podman`           | The container runtime and the pod                                                                                                                                                                 |
-| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                           |
-| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                               |
-| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                           |
-| `revproxy`         | The home page and reverse proxy                                                                                                                                                                   |
-| `tm-control`       | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` and `go2rtc` tags install it too and run it to give Frigate's `config.yml` the stream login. |
+| Tag                | What it does                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                                                                                                                                                                                               |
+| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                                                                                                                                                                                        |
+| `wifi`             | Wi-Fi setup                                                                                                                                                                                                                                                                                                                                                       |
+| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                                                                                                                                                                                            |
+| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                                                                                                                                                                                        |
+| `podman`           | The container runtime and the pod                                                                                                                                                                                                                                                                                                                                 |
+| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                                                                                                                                                                                           |
+| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                                                                                                                                                                                               |
+| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                                                                                                                                                                                           |
+| `revproxy`         | The reverse proxy, with the home page built into its image                                                                                                                                                                                                                                                                                                        |
+| `tm-control`       | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login. |
 
 ## What `-f` replaces
 
@@ -1039,6 +1183,8 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys the installer generated in `/etc/traffic-monitor/secrets/`.
 
 ## Add an accelerator later
 
@@ -1148,7 +1294,7 @@ We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized d
 
 Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
-By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. Anyone on the device's network can still see images, though. The live view and the recordings have no login; [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) shows which apps ask for one. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows the setting.
+By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows the setting.
 
 The database stops being de-identified if you:
 
@@ -1636,11 +1782,15 @@ The radar must be enabled in [config.yml](https://docs.trafficmonitor.ai/dev/con
 
 Frigate shows no camera image
 
-Open **Go2RTC Feeds** from the home page. If the `picam_h265_detect` stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where `cameras: picam_h265:` needs `enabled: true`, or Frigate's video decoding is failing, which shows as ffmpeg errors in the `frigate.service` log. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md).
+Open **Camera feeds** from the home page, logged in as the administrator. If the `picam_h265_detect` stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where `cameras: picam_h265:` needs `enabled: true`, or Frigate's video decoding is failing, which shows as ffmpeg errors in the `frigate.service` log. If the stream doesn't play, check the camera cable, then look at the `go2rtc_server.service` log in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md).
 
 Detection is slow or misses objects
 
 Without an AI accelerator, Frigate detects on the CPU and can't keep up with a busy road. [Hardware](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/recommended-hardware/#ai-accelerator) lists the supported accelerators. If you added one after installing, see [Add an accelerator later](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#add-an-accelerator-later). With an accelerator, see [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md).
+
+The home page opens on a computer but not on an Android phone
+
+On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (**Settings > Apps > Chrome**, for example), allow **Nearby devices** or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone.
 
 The first install seems stuck
 
@@ -1658,7 +1808,7 @@ The Traffic Monitor reads the file again when you save it, so a change that does
 
 ### What does the device record?
 
-The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. Anyone on your network can still see the live view, the recordings, and Frigate's snapshots, because none of them has a login. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#privacy) explains, and lists the features that would change what's stored.
+The database records what passed (a label such as `car`), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. The live view, the recordings, and Frigate's snapshots are behind the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account can see them, and they're ordinary files on the device's card. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#privacy) explains, and lists the features that would change what's stored.
 
 ### Why this design?
 
@@ -1787,7 +1937,7 @@ The [repository](https://github.com/glossyio/traffic-monitor) is a monorepo with
 
 To develop on a device:
 
-1. Open the Node-RED editor at `http://<device>/nr/` and log in as `admin` with password `password`.
+1. Log in to the device as the administrator, then open the Node-RED editor at `http://<device>/nr/`. The editor has no login of its own.
 1. Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.
 1. Point the project's flow and package files at `container/node-red-tm/data/flows.json` and `package.json`, so your edits land in the repository's files.
 1. Commit your changes to a branch of your fork.
@@ -1819,6 +1969,10 @@ sudo systemctl start node-red-tm.service
 
 The database records each migration it applies. If you change a migration after applying it, restore the copy saved in `/opt/traffic-monitor/node-red-tm/db/backup/` and apply it again.
 
+## Control app
+
+The control app in `tm-control/` serves the home page and the login in front of every app. [tm-control](https://docs.trafficmonitor.ai/dev/development/tm-control/index.md) describes its code, how the login reaches each app, and how to run it on a laptop without a Pi.
+
 ## Testing on a dev Pi
 
 `script/devpi/tmdev.py` deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.
@@ -1828,3 +1982,121 @@ The Pis are defined in an inventory file that lists each Pi's address, login, an
 Warning
 
 Use these tools only with bench units, not field devices. Deploys pass `-y` to the installer, so the Pi reboots whenever the installer needs it.
+
+______________________________________________________________________
+
+## description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, root jobs, fake mode, and how to add a module.
+
+# tm-control
+
+`tm-control` is the device's control app: the home page, setup, the login in front of every app, and the device's accounts. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) describes it from the operator's side. This page is for changing it.
+
+It has three parts, all in the repository's [`tm-control/`](https://github.com/glossyio/traffic-monitor/tree/main/tm-control) folder:
+
+| Folder     | What it is                                            | How it reaches the device                                                                                                           |
+| ---------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/` | The Python app (FastAPI) and the `tm-control` command | Copied root-owned to `/usr/local/lib/traffic-monitor/tm-control`, with its own virtual environment, and run as `tm-control.service` |
+| `ui/`      | The web pages (Vue 3, Vuetify 3, TypeScript, Vite)    | Built into the reverse proxy's image and served by nginx at `/`                                                                     |
+| `jobs/`    | Scripts for the few things that need root             | Copied root-owned to `/usr/local/libexec/traffic-monitor/` and run by fixed systemd units                                           |
+
+## How it runs
+
+`tm-control.service` runs on the host, not in the pod, so the login keeps working when Podman doesn't. It runs as the code owner (default `tmadmin`), never as root, in a systemd sandbox, and listens on `127.0.0.1:8090` only. nginx is the only way in from the network.
+
+It reads two things the installer writes, and keeps one database of its own:
+
+- `/etc/traffic-monitor/secrets/`: the session key, Frigate's proxy secret, and the Node-RED editor's token key, each generated once on the device.
+- `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.
+- `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
+
+While the device is unclaimed, the installer keeps the setup code in a root-only file, `/etc/traffic-monitor/setup-code`, and hands it to `tm-control set-setup-code` on every run, which stores only its hash. The installer's command-line steps run as the code owner, and `sudo tm-control reset-admin` drops to that user after writing a new code file, so root never writes the database.
+
+## The login check
+
+nginx checks every app path with `auth_request` before it proxies the request. Each app's location file includes one of two snippets, `auth-viewer.conf` (any logged-in user) or `auth-admin.conf` (administrators), which send a subrequest to tm-control's `GET /api/v1/auth/verify`:
+
+```
+browser ──GET /frigate/──▶ nginx (port 80)
+                             │  auth_request /_auth  (internal location)
+                             │    X-Original-URI: /frigate/
+                             │    X-TM-Required-Role: viewer   (admin for /_auth_admin)
+                             │    Cookie: tm_session=…
+                             ▼
+                           tm-control 127.0.0.1:8090  /api/v1/auth/verify
+                             │
+       ┌─────────────────────┼──────────────────────────┬──────────────────────────┐
+       ▼                     ▼                          ▼                          ▼
+  200 + identity       401 + X-TM-Redirect         403 forbidden        no answer (down, timeout)
+  headers               (/setup, /login?next=…,     nginx returns 403    nginx returns 503 with
+       │                 /welcome, or /waiting)                          the rescue page
+       │                nginx answers 302
+       ▼
+  nginx proxies to the app, adding the headers that app needs
+```
+
+A 200 carries `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and, for administrators, `X-TM-NR-Token`. The snippets copy them into nginx variables, and each app's location passes on what that app understands:
+
+| App                                               | What nginx sends it                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frigate (`127.0.0.1:8971`)                        | `X-Forwarded-User` and `X-Forwarded-Groups` (the role), and `X-Proxy-Secret`, which Frigate checks against `FRIGATE_PROXY_AUTH_SECRET` in `frigate.env`. nginx always sends both forwarded headers, because Frigate serves a request with only the secret as its default role, and it blanks `Remote-User`, `Remote-Groups`, and `Remote-Role`, which Frigate would also trust. Frigate's own login is off (`auth: enabled: false`). |
+| Node-RED editor (`/nr/`)                          | `x-tm-nr-token`, a short-lived token that `settings.js` checks with `TM_NR_TOKEN_KEY` from `node-red-tm.env`. The editor has no users of its own.                                                                                                                                                                                                                                                                                    |
+| Dashboards, camera feeds, Cockpit, data downloads | No identity: nginx's check is the whole gate. Cockpit then asks for its own Raspberry Pi login.                                                                                                                                                                                                                                                                                                                                      |
+
+A few rules keep the check sound:
+
+- Only nginx's internal `/_auth` and `/_auth_admin` locations may call verify. A `location ^~ /api/v1/auth/verify` returns 404 to the network, the `/api/` location clears `X-TM-Required-Role`, and verify answers 404 without that header.
+- The check is always a `GET` without a body, and without the `Authorization` header, so Cockpit's Basic login never reaches tm-control.
+- Sessions last 7 days and roll: verify and the API re-issue a cookie that's more than a day old, and the snippets pass verify's `Set-Cookie` on to the browser. An app location must not set an `add_header` of its own, or it would drop that cookie.
+- Only the check's own failure, which `auth_request` turns into a 500, becomes the rescue page (`error_page 500 =503 /unavailable.html`). An app's own 502 or 504 stays as it is.
+
+The Node-RED token is `base64url(JSON {"u", "r", "exp"})`, a dot, and `base64url(HMAC-SHA256(key, first part))`, without padding, valid for 5 minutes. `NodeRedToken` in `backend/tm_control/core/auth.py` mints it, and `verifyProxyToken` in `container/node-red-tm/data/settings.js` checks it. Change both together; `script/tests/test_node_red_settings.py` runs tokens from one through the other.
+
+The rest of the API, under `/api/v1/`, checks the session cookie itself. Every error has one shape, `{"error": {"code", "message", "detail"}}`. A request that changes something must send JSON from a page on the device (a matching `Origin` or `Referer`), or it gets 403.
+
+## Backend layout
+
+```
+tm-control/backend/tm_control/
+  app.py         create_app(): loads the state, secrets, manifest, and license agreement, and mounts the modules
+  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin,
+                 and for development fake-reset and dump-openapi
+  fake.py        fake mode's reset and the OpenAPI dump
+  core/          shared rules: auth (passwords, sessions, backoff, setup code, users), csrf, errors, jobs,
+                 manifest, migrate (config updates for older installs), secrets, settings, state
+  adapters/      the outside world: command (runs an argv list with a timeout, never a shell), systemd, yamlfile
+  modules/       one folder per feature, each with a router: auth, setup, account, system, jobs
+```
+
+Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
+
+### Root jobs
+
+tm-control never runs as root and never uses sudo. polkit lets its user start, stop, and restart a fixed list of units (`tmsetup_tm_control_polkit` in the role's `vars/main.yml`), and that's all. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. The one job so far, `system-password`, sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts.
+
+## Run it on a laptop
+
+Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, and a job runner that pretends. Its state goes in `./.tm-control-fake/`. From the repository root, in the dev environment from [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md):
+
+```
+TM_CONTROL_FAKE=1 PYTHONPATH=tm-control/backend python -m tm_control fake-reset   # an unclaimed device; prints its setup code
+TM_CONTROL_FAKE=1 PYTHONPATH=tm-control/backend python -m tm_control serve        # the backend on 127.0.0.1:8090
+cd tm-control/ui && npm ci && npm run dev                                         # the UI on http://localhost:5173
+```
+
+In fake mode the API's interactive docs are at `/api/v1/docs`. `tm-control/ui/README.md` has the commands for regenerating the UI's typed client after an API change, and for building and testing the UI in the same Node image the device uses.
+
+Run the backend's tests with the rest of the off-device tests:
+
+```
+.venv/bin/python -m pytest tm-control/backend/tests script/tests container/node-red-tm/schema/tests
+```
+
+## Add a module
+
+A feature is one backend module and, if it has pages, one UI module.
+
+1. **Backend:** add `backend/tm_control/modules/<name>/` with a `router.py` (an `APIRouter`) and an `__init__.py` that makes `module = Module("<name>", router)`. Add it to `MODULES` in `modules/__init__.py`. Endpoints take `current_user` or `require_admin` from `modules/auth/deps.py`, and raise `ApiError` for anything the operator should see.
+1. **State:** if it needs tables, add the next migration in `core/state.py`.
+1. **UI:** add `ui/src/modules/<name>/` with its pages and an `index.ts` that lists its routes and menu entries, and add it to `ui/src/modules/index.ts`. Regenerate the typed client as the UI's README describes.
+1. **Root work:** add the job's name to `JOB_NAMES` in `core/jobs.py`, its script to `tm-control/jobs/`, its unit to the role's `templates/tm-control/`, and the unit to the polkit list.
+1. **A new app behind the login:** add its location file with an auth snippet to `container/revproxy/tm/locations/` and to `tmsetup_revproxy_locations`, and its tile to `APPS` in `modules/system/router.py` and to `ui/src/modules/home/apps.ts`.

@@ -761,6 +761,8 @@
       
         
       
+        
+      
     
     
     
@@ -840,6 +842,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -859,10 +889,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -880,8 +910,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1811,6 +1841,8 @@
       
         
       
+        
+      
     
     
     
@@ -1871,6 +1903,34 @@
     
   
     Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
   
 
     
@@ -2022,9 +2082,9 @@
   <h1 id="system-administration">System administration<a class="headerlink" href="#system-administration" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Restart services, read logs, and find the files on a Traffic Monitor, in the browser with Cockpit or over SSH.</p>
 <h2 id="cockpit">Cockpit<a class="headerlink" href="#cockpit" title="Permanent link">&para;</a></h2>
-<p>Open <code>http://&lt;device&gt;/system/</code> and log in with your Raspberry Pi user account. <a href="https://cockpit-project.org/">Cockpit</a> shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.</p>
+<p>Log in to the device as the administrator, open <strong>Cockpit</strong> from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on <code>http://&lt;device&gt;:9090</code> with only the Raspberry Pi login, which works when the <a href="../control-app/">control app</a> doesn't. <a href="https://cockpit-project.org/">Cockpit</a> shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.</p>
 <h2 id="services">Services<a class="headerlink" href="#services" title="Permanent link">&para;</a></h2>
-<p>The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx runs on the host network, outside the pod, so the home page stays up when the pod is down.</p>
+<p>The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx and the control app run on the host, outside the pod, so the home page and the login stay up when the pod is down.</p>
 <table>
 <thead>
 <tr>
@@ -2044,6 +2104,10 @@
 <tr>
 <td><code>node-red-tm.service</code></td>
 <td>Node-RED: the Traffic Monitor logic, dashboards, database, and MQTT broker</td>
+</tr>
+<tr>
+<td><code>tm-control.service</code></td>
+<td>The <a href="../control-app/">control app</a>: the home page's data, the login, and the device's accounts. nginx asks it to check the login for every app.</td>
 </tr>
 <tr>
 <td><code>revproxy.service</code></td>
@@ -2099,13 +2163,17 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 <td>Rerun the installer with <code>-t detectors -t frigate</code>, then update Frigate's detector settings. See <a href="../../reference/tmsetup/#add-an-accelerator-later">Add an accelerator later</a>.</td>
 </tr>
 <tr>
+<td>See a page saying the control app isn't answering</td>
+<td><code>sudo systemctl restart tm-control.service</code>, or restart it in Cockpit on port 9090. See <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</td>
+</tr>
+<tr>
 <td>Move the device to a new site</td>
 <td>Follow <a href="../../setup-guide/">First-time setup</a> again: adjust the zones and update the location.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="where-things-are">Where things are<a class="headerlink" href="#where-things-are" title="Permanent link">&para;</a></h2>
-<p>Everything the installer manages lives under <code>/opt/traffic-monitor/</code>.</p>
+<p>The settings and data live under <code>/opt/traffic-monitor/</code>.</p>
 <table>
 <thead>
 <tr>
@@ -2137,6 +2205,33 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 <tr>
 <td><code>plate-recognizer/plate-recognizer.env</code></td>
 <td>Plate Recognizer credentials, if the add-on is installed.</td>
+</tr>
+</tbody>
+</table>
+<p>The control app and the installer keep a few files elsewhere. Read them, but don't edit them.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/var/lib/tm-control/state.sqlite</code></td>
+<td>The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.</td>
+</tr>
+<tr>
+<td><code>/etc/traffic-monitor/manifest.json</code></td>
+<td>What the installer installed and found, which the control app reads</td>
+</tr>
+<tr>
+<td><code>/etc/traffic-monitor/secrets/</code></td>
+<td>Passwords and keys the installer generated on the device</td>
+</tr>
+<tr>
+<td><code>/etc/traffic-monitor/setup-code</code></td>
+<td>The setup code, until the device is claimed</td>
 </tr>
 </tbody>
 </table>

@@ -759,6 +759,8 @@
       
         
       
+        
+      
     
     
     
@@ -838,6 +840,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -857,10 +887,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -878,8 +908,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1778,6 +1808,8 @@
       
         
       
+        
+      
     
     
     
@@ -1838,6 +1870,34 @@
     
   
     Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
   
 
     
@@ -1955,7 +2015,7 @@
   
   <h1 id="network-ports">Network ports<a class="headerlink" href="#network-ports" title="Permanent link">&para;</a></h1>
 <p class="tm-description">The network ports a Traffic Monitor opens, and the login the camera stream needs.</p>
-<p>Other computers reach the Traffic Monitor's apps through the <a href="../../use/home-page/">home page</a> on port 80. The apps themselves accept connections only from the device.</p>
+<p>Other computers reach the Traffic Monitor's apps through the <a href="../../use/home-page/">home page</a> on port 80. The apps themselves, and the control app on port 8090, listen only on the device itself (loopback). The ports in the table below are the ones other computers can reach.</p>
 <table>
 <thead>
 <tr>
@@ -1970,7 +2030,7 @@
 </tr>
 <tr>
 <td>80</td>
-<td>The home page and every app it links to</td>
+<td>The <a href="../../use/control-app/">control app</a> and every app behind its login</td>
 </tr>
 <tr>
 <td>1883</td>
@@ -1986,7 +2046,7 @@
 </tr>
 <tr>
 <td>9090</td>
-<td>Cockpit, with your Raspberry Pi login. Use it if the home page doesn't load.</td>
+<td>Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering.</td>
 </tr>
 </tbody>
 </table>

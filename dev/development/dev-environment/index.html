@@ -16,7 +16,7 @@
         <link rel="prev" href="../../help-and-faq/where-can-i-get-support/">
       
       
-        <link rel="next" href="../contributing/">
+        <link rel="next" href="../tm-control/">
       
       
         
@@ -759,6 +759,8 @@
       
         
       
+        
+      
     
     
     
@@ -838,6 +840,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -857,10 +887,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -878,8 +908,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1720,6 +1750,8 @@
       
         
       
+        
+      
     
     
     
@@ -1873,6 +1905,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#control-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control app
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#testing-on-a-dev-pi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1892,6 +1935,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2002,6 +2073,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#control-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control app
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#testing-on-a-dev-pi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2053,7 +2135,7 @@
 <p><a href="https://nodered.org/">Node-RED</a> runs the Traffic Monitor's logic: it receives events from Frigate and readings from the radar, pairs events with speeds, writes the database, serves the dashboards, and sends data on. The flows are in the repository at <code>container/node-red-tm/data/flows.json</code>, and the installer copies them to the device on every run, so changes made only in a device's editor are lost on the next update.</p>
 <p>To develop on a device:</p>
 <ol>
-<li>Open the Node-RED editor at <code>http://&lt;device&gt;/nr/</code> and log in as <code>admin</code> with password <code>password</code>.</li>
+<li>Log in to the device as the administrator, then open the Node-RED editor at <code>http://&lt;device&gt;/nr/</code>. The editor has no login of its own.</li>
 <li>Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.</li>
 <li>Point the project's flow and package files at <code>container/node-red-tm/data/flows.json</code> and <code>package.json</code>, so your edits land in the repository's files.</li>
 <li>Commit your changes to a branch of your fork.</li>
@@ -2078,6 +2160,8 @@ sudo<span class="w"> </span>runuser<span class="w"> </span>-u<span class="w"> </
 sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>node-red-tm.service
 </code></pre></div>
 <p>The database records each migration it applies. If you change a migration after applying it, restore the copy saved in <code>/opt/traffic-monitor/node-red-tm/db/backup/</code> and apply it again.</p>
+<h2 id="control-app">Control app<a class="headerlink" href="#control-app" title="Permanent link">&para;</a></h2>
+<p>The control app in <code>tm-control/</code> serves the home page and the login in front of every app. <a href="../tm-control/">tm-control</a> describes its code, how the login reaches each app, and how to run it on a laptop without a Pi.</p>
 <h2 id="testing-on-a-dev-pi">Testing on a dev Pi<a class="headerlink" href="#testing-on-a-dev-pi" title="Permanent link">&para;</a></h2>
 <p><code>script/devpi/tmdev.py</code> deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.</p>
 <p>The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repository. <code>script/devpi/README.md</code> covers setup and use.</p>

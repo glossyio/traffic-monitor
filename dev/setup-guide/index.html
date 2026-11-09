@@ -776,10 +776,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-open-the-home-page" class="md-nav__link">
+  <a href="#1-claim-the-device" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Open the home page
+        1. Claim the device
       
     </span>
   </a>
@@ -854,6 +854,8 @@
   
     
     
+      
+        
       
         
       
@@ -942,6 +944,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -961,10 +991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -982,8 +1012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1822,6 +1852,8 @@
       
         
       
+        
+      
     
     
     
@@ -1902,6 +1934,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../development/contributing/" class="md-nav__link">
         
   
@@ -1957,10 +2017,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-open-the-home-page" class="md-nav__link">
+  <a href="#1-claim-the-device" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Open the home page
+        1. Claim the device
       
     </span>
   </a>
@@ -2043,13 +2103,21 @@
   
   <h1 id="first-time-setup">First-time setup<a class="headerlink" href="#first-time-setup" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Turn on detection, adjust the zones to your roadway, and record the device&#39;s location so it starts counting.</p>
-<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network, and an SSH client for step 4.</p>
+<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network, the device's setup code or administrator login, and an SSH client for step 4.</p>
 <p>As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.</p>
-<h2 id="1-open-the-home-page">1. Open the home page<a class="headerlink" href="#1-open-the-home-page" title="Permanent link">&para;</a></h2>
+<h2 id="1-claim-the-device">1. Claim the device<a class="headerlink" href="#1-claim-the-device" title="Permanent link">&para;</a></h2>
 <p>Open <code>http://&lt;device&gt;/</code>, where <code>&lt;device&gt;</code> is the hostname you set when imaging the card followed by <code>.local</code>, or the device's IP address. <a href="../use/home-page/">Home page and apps</a> explains each link and how to find the address.</p>
+<p>A device that hasn't been claimed opens its setup page:</p>
+<ol>
+<li>Choose <strong>Start setup</strong>, and read and accept the license agreement.</li>
+<li>Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.</li>
+<li>Create the administrator account with a username and password, and choose <strong>Claim this device</strong>.</li>
+<li>Optionally, set a new system password for Cockpit and SSH.</li>
+</ol>
+<p><a href="../use/control-app/">Control app and login</a> explains each step, and how to add accounts for other people. If the device was claimed already, log in as the administrator.</p>
 <h2 id="2-turn-on-detection">2. Turn on detection<a class="headerlink" href="#2-turn-on-detection" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Open <strong>Frigate</strong> from the home page.</li>
+<li>Open <strong>Frigate</strong> from the home page, logged in as the administrator.</li>
 <li>Go to <strong>Settings &gt; Configuration editor</strong>.</li>
 <li>Under <code>cameras: picam_h265: detect:</code>, change <code>enabled: false</code> to <code>enabled: true</code>.</li>
 <li>Choose <strong>Save &amp; Restart</strong>.</li>
@@ -2128,7 +2196,7 @@
 <summary>No counts?</summary>
 <p>Work down the list:</p>
 <ol>
-<li><strong>Frigate shows no boxes around moving objects.</strong> Detection is off (step 2), or the camera is off: in the configuration editor, <code>cameras: picam_h265:</code> needs <code>enabled: true</code>. If the live view is black, open <strong>Go2RTC Feeds</strong> from the home page to check that the camera itself streams.</li>
+<li><strong>Frigate shows no boxes around moving objects.</strong> Detection is off (step 2), or the camera is off: in the configuration editor, <code>cameras: picam_h265:</code> needs <code>enabled: true</code>. If the live view is black, open <strong>Camera feeds</strong> from the home page to check that the camera itself streams.</li>
 <li><strong>Frigate detects objects, but the dashboard stays at zero.</strong> The objects aren't passing through <code>zone_capture</code> (step 3), or the camera is off in the Traffic Monitor's settings: <code>sensors: cameras: picam_h265:</code> needs <code>enabled: true</code>, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.</li>
 <li><strong>Counts but no speeds.</strong> The radar must be <code>enabled: true</code> and named in the camera's <code>camera_radar</code>, <code>zone_radar</code> must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun <code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>.</li>
 <li><strong>Still nothing.</strong> Look at the logs in <a href="../use/system-admin/">System administration</a>, then ask in the <a href="../help-and-faq/where-can-i-get-support/">chat</a>.</li>

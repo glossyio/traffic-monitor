@@ -4,7 +4,7 @@ ______________________________________________________________________
 
 # Data export
 
-Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it.
+Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it. Both downloads need the device's administrator login; a [viewer](https://docs.trafficmonitor.ai/dev/use/control-app/#administrators-and-viewers) can open the page but not download.
 
 The Data export page
 

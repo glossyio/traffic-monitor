@@ -759,6 +759,8 @@
       
         
       
+        
+      
     
     
     
@@ -838,6 +840,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -857,10 +887,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -878,8 +908,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1845,6 +1875,8 @@
       
         
       
+        
+      
     
     
     
@@ -1905,6 +1937,34 @@
     
   
     Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
   
 
     
@@ -2100,11 +2160,15 @@
 </details>
 <details class="question">
 <summary>Frigate shows no camera image</summary>
-<p>Open <strong>Go2RTC Feeds</strong> from the home page. If the <code>picam_h265_detect</code> stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where <code>cameras: picam_h265:</code> needs <code>enabled: true</code>, or Frigate's video decoding is failing, which shows as ffmpeg errors in the <code>frigate.service</code> log. If the stream doesn't play, check the camera cable, then look at the <code>go2rtc_server.service</code> log in <a href="../../use/system-admin/">System administration</a>.</p>
+<p>Open <strong>Camera feeds</strong> from the home page, logged in as the administrator. If the <code>picam_h265_detect</code> stream plays there, the camera and its stream work, and the fault is between Frigate and the stream. Either the camera is off in Frigate's configuration editor, where <code>cameras: picam_h265:</code> needs <code>enabled: true</code>, or Frigate's video decoding is failing, which shows as ffmpeg errors in the <code>frigate.service</code> log. If the stream doesn't play, check the camera cable, then look at the <code>go2rtc_server.service</code> log in <a href="../../use/system-admin/">System administration</a>.</p>
 </details>
 <details class="question">
 <summary>Detection is slow or misses objects</summary>
 <p>Without an AI accelerator, Frigate detects on the CPU and can't keep up with a busy road. <a href="../../build-your-own-device-diy/recommended-hardware/#ai-accelerator">Hardware</a> lists the supported accelerators. If you added one after installing, see <a href="../../reference/tmsetup/#add-an-accelerator-later">Add an accelerator later</a>. With an accelerator, see <a href="../../configuration/frigate-config/">Tune object detection</a>.</p>
+</details>
+<details class="question">
+<summary>The home page opens on a computer but not on an Android phone</summary>
+<p>On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (<strong>Settings &gt; Apps &gt; Chrome</strong>, for example), allow <strong>Nearby devices</strong> or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone.</p>
 </details>
 <details class="question">
 <summary>The first install seems stuck</summary>
@@ -2120,7 +2184,7 @@
 </details>
 <h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h2>
 <h3 id="what-does-the-device-record">What does the device record?<a class="headerlink" href="#what-does-the-device-record" title="Permanent link">&para;</a></h3>
-<p>The database records what passed (a label such as <code>car</code>), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. Anyone on your network can still see the live view, the recordings, and Frigate's snapshots, because none of them has a login. <a href="../../data-and-payloads/data-overview/#privacy">Data and privacy</a> explains, and lists the features that would change what's stored.</p>
+<p>The database records what passed (a label such as <code>car</code>), when, how fast, and through which zones. It holds no images and no plate numbers with the default settings. Frigate keeps a cropped snapshot and a short clip of each detection for about an hour, so you can check what it saw, and you can turn that off. By default, the device sends no images or video anywhere: everything is processed on the device, and the database holds only metadata. The live view, the recordings, and Frigate's snapshots are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account can see them, and they're ordinary files on the device's card. <a href="../../data-and-payloads/data-overview/#privacy">Data and privacy</a> explains, and lists the features that would change what's stored.</p>
 <h3 id="why-this-design">Why this design?<a class="headerlink" href="#why-this-design" title="Permanent link">&para;</a></h3>
 <p>The Traffic Monitor is built privacy-first because we believe in:</p>
 <ul>

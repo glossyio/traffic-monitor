@@ -759,6 +759,8 @@
       
         
       
+        
+      
     
     
     
@@ -838,6 +840,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -857,10 +887,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
             
   
   
@@ -878,8 +908,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1785,6 +1815,8 @@
       
         
       
+        
+      
     
     
     
@@ -1845,6 +1877,34 @@
     
   
     Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
   
 
     
@@ -2008,6 +2068,11 @@
 <td><code>NODE_RED_CREDENTIAL_SECRET</code></td>
 <td><code>myNodeRED1234</code></td>
 <td>Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it.</td>
+</tr>
+<tr>
+<td><code>TM_NR_TOKEN_KEY</code></td>
+<td>generated on the device</td>
+<td>Lets the Node-RED editor check that the device's <a href="../../use/control-app/">login</a> let you in. The installer sets it on every run; leave it. Without it, the editor refuses everyone.</td>
 </tr>
 <tr>
 <td><code>TM_DATABASE_PATH_TMDB</code></td>
