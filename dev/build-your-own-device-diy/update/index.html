@@ -856,6 +856,8 @@
       
         
       
+        
+      
     
     
     
@@ -991,6 +993,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose the detection model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1010,10 +1040,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
             
   
   
@@ -1031,8 +1061,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2139,7 +2169,7 @@ bash<span class="w"> </span>script/tmsetup.sh
 <li>A <code>proxy</code> setting doesn't match, followed by <code>auth was not added</code> when the file had no <code>auth</code> section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.</li>
 </ul>
 <p>Change each named setting to match the <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a>, in <code>/opt/traffic-monitor/frigate/config/config.yml</code> over SSH. Then run <code>bash script/tmsetup.sh -t frigate</code>, which adds what's still missing, and restart Frigate with <code>sudo systemctl restart frigate.service</code>.</p>
-<p><strong>A token or key that wasn't moved.</strong> The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in <code>config.yml</code> or in <code>plate-recognizer.env</code>, and a Frigate+ key typed into <code>frigate.env</code>, to the device's secrets, and deletes the keys from <code>config.yml</code>. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into <code>frigate.env</code>. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and <code>config.yml</code> and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token or key on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>, and delete a key the installer left in <code>config.yml</code>.</p>
+<p><strong>A token or key that wasn't moved.</strong> The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in <code>config.yml</code> or in <code>plate-recognizer.env</code>, and a Frigate+ key typed into <code>frigate.env</code>, to the device's secrets, and deletes the keys from <code>config.yml</code>. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into <code>frigate.env</code>. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and <code>config.yml</code> and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>, or the Frigate+ key on its <a href="../../use/detection/#frigate-plus">Detection page</a>, and delete a key the installer left in <code>config.yml</code>.</p>
 <p><strong>A file that is a symbolic link, or a YAML error (<code>ERROR</code>).</strong> The installer refuses to change a <code>config.yml</code> or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's <code>config.yml</code> also stops the installer, as one in Frigate's does. Fix the error in <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code>, then run the installer again.</p>
 </details>
 <p>A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run <code>bash script/tmsetup.sh -t frigate</code> to add them.</p>

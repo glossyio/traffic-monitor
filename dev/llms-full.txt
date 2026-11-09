@@ -353,7 +353,7 @@ grep -E 'tm-control migrate: (WARNING|ERROR)' ~/tmsetup-*.log
 
 Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
 
-**A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env`, and a Frigate+ key typed into `frigate.env`, to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into `frigate.env`. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token or key on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), and delete a key the installer left in `config.yml`.
+**A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env`, and a Frigate+ key typed into `frigate.env`, to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into `frigate.env`. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), or the Frigate+ key on its [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), and delete a key the installer left in `config.yml`.
 
 **A file that is a symbolic link, or a YAML error (`ERROR`).** The installer refuses to change a `config.yml` or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's `config.yml` also stops the installer, as one in Frigate's does. Fix the error in `/opt/traffic-monitor/node-red-tm/config/config.yml`, then run the installer again.
 
@@ -623,7 +623,7 @@ Work down the list:
 
 # Control app and login
 
-The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 What the login protects
 
@@ -685,6 +685,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | Node-RED editor, Camera feeds, and Cockpit                                                   | Yes           | No                                                                                                        |
 | The **Users** page                                                                           | Yes           | No                                                                                                        |
 | Status, Device, and Date and time pages                                                      | Yes           | Read only; see [What viewers see](https://docs.trafficmonitor.ai/dev/use/device-health/#what-viewers-see) |
+| The **Detection** page                                                                       | Yes           | Read only; see [The Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page) |
 
 ### Add a viewer
 
@@ -730,9 +731,105 @@ When the control app doesn't answer, the apps can't check your login. Every app 
 
 An app that's down while the control app works, such as Frigate during a restart, shows a `502 Bad Gateway` error instead. [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md) covers the services and their logs.
 
+# Choose the detection model
+
+The control app's **Detection** page shows what the device looks for and which AI model does the looking, and lets the administrator change the model without SSH. [Frigate](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md) runs the model on the device's detector: a Coral or Hailo accelerator, or the processor when there's none. To get a better model for a difficult site, see [Better models](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models).
+
+## The Detection page
+
+**Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then four sections:
+
+- **Object detection** gives the **Detector**, such as `edgetpu` for a Coral, and the **Running model**, then [what the running model recognises](#what-the-model-recognises) and what the device tracks.
+- **Model in use** is the model Frigate runs. The section is left out when the page can't tell which model that is.
+- **Other models on this device** lists the rest, and its title counts them.
+- **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key.
+
+Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select **Files and objects** on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and [the objects it recognises](#what-the-model-recognises). A model with no list of objects has **Files** instead. A mark says when the model is:
+
+| Mark                       | Meaning                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| In use                     | Frigate runs this model.                                                      |
+| can't run on this detector | The model is built for another detector than the device's, so **Use** is off. |
+| incomplete                 | The model has its file but not its `.json`, or the other way round.           |
+
+The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be deleted either.
+
+Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
+
+When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and **Use** on a model, or on the installer's model, gives Frigate a config it can run.
+
+## Upload a model
+
+A model is a model file and a small `.json` file beside it, its *sidecar*, which tells Frigate how to use it. Choose **Upload a model** under **Other models on this device**, then pick one of these:
+
+- **A package** from whoever trained the model: a zip or tar.gz with the model file and its `.json` at the top level, not inside a folder. A zip must be stored or deflate-compressed, which is what ordinary zip tools make. If the package has a `SHA256SUMS` file, the device checks the files against it.
+- **The two files**, the model file and its `.json`. The `.json` must be named for the model file: `mine.tflite` and `mine.tflite.json`. The page sends the `.json` first.
+- **A model file alone.** The page then asks for what Frigate needs to know about it and writes the `.json` for you. The settings are a name for the model list (the file name when left empty), the model type, the width and height of its input, the input tensor, the pixel format, optionally the input data type, and the labels, one per line in the model's order. On a device with a Coral or Hailo accelerator, the fields start with Frigate's example for that detector. The values come from the model's documentation; Frigate's [reference config](https://docs.frigate.video/configuration/advanced/reference) lists what each setting accepts.
+- **A `.json` alone**, to finish a model file that's on the device already.
+
+The page shows every file when you pick, because a Frigate+ model's file has no extension.
+
+The limits are 100 MB for a model file, 2 MB for a `.json`, and at least 512 MB of free storage left afterwards. A model whose name is already on the device is refused; delete the old one first. A model file can't be named `default`, which the page keeps for the device's default. A model has to be built for the device's detector. The page marks one that isn't, and won't use it.
+
+Take models only from a source you trust
+
+A model is code that the detector runs. A model from an unknown source can make the device count wrongly or fail. Upload only models you trained, or that come from a source you trust.
+
+## Use a model
+
+Choose **Use** on a model and confirm. Frigate checks the whole configuration with the model in it and saves it, and then the device restarts Frigate. A restart takes about a minute, and the device counts nothing meanwhile. The page asks every few seconds and says when Frigate runs the model. If Frigate hasn't come back after 90 seconds, the page says so and links to the [Status page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-status-page).
+
+If Frigate refuses the change, the page shows Frigate's reason, and nothing changes. When Frigate isn't answering at all, the device edits Frigate's `config.yml` itself, keeps a backup beside it, and restarts Frigate. That's how **Use** on **The installer's model** gets a device out of a bad choice without SSH. On a device without a Coral, **Use** on **Frigate's built-in model** does the same.
+
+The page refuses a **Use** in these cases:
+
+- Frigate is restarting. Try again in a minute.
+- The device's detector can't be told, because Frigate isn't answering and its config file can't be read, so the model can't be checked against it.
+- Frigate's config sets a model inside a detector, which would override this one. Remove that model in Frigate's config editor first.
+- The installer's model file is gone from the device.
+
+## Download a model
+
+**Download** saves a zip with the model's file, its `.json`, and a `SHA256SUMS` file. The files are byte for byte what's on the device, so the zip is a backup, or a way to put the same model on another device with **Upload a model**. A `.json` keeps every field it came with, including ones the page doesn't show.
+
+A model without a `.json` the device can read downloads as its model file alone, under the file's own name, and the page says so before it starts. Whoever uploads that file is asked for [what Frigate needs to know about it](#upload-a-model). The installer's model and Frigate's built-in model download this way too. A device keeps their file names for its own copies, so rename such a file before you upload it.
+
+## Delete a model
+
+**Delete** asks first, then removes both of the model's files. It can't remove the model Frigate runs, the installer's model, or Frigate's built-in model. To delete the model that's running, use another model first, such as **The installer's model**.
+
+## What the model recognises
+
+The **Object detection** section lists two sets of objects. Each is closed until you select its title, which counts the objects, and each has a **Copy** button:
+
+- **Objects the running model recognises** is what the running model can detect. The list says where it came from: Frigate when it answers, otherwise the model's `.json` or the installer's labels file. Objects the device also tracks are filled. Frigate fills the gaps in a model's label map with entries named `unknown`, which the page leaves out, so its count can be lower than the label map's.
+- **Objects tracked on this device** is the objects Frigate is set to track, from its `objects:` `track` lists. Objects the running model doesn't recognise are amber, and the title counts them.
+
+Frigate tracks only the objects in both lists. To track more of what the model recognises, change the lists in Frigate's configuration editor; see [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/index.md). An object that's tracked but not recognised is also named under the two lists, so you see it while they're closed. The model can't detect it, so the device never counts it.
+
+Each model's card has its own list under **Files and objects**, read from that model's `.json` or, for the installer's model, its labels file. Frigate's built-in model has none. On the other models' cards, a line names the tracked objects that model doesn't recognise, which the device would stop counting if you switched to it.
+
+The running model's list and its card are read in different ways, but they should agree. When Frigate's list has different objects, a line under the facts says "Frigate reports a different list than this model's .json." This is rare, and it usually means someone edited the label map in Frigate's config on purpose.
+
+## Frigate+
+
+[Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) trains models on snapshots from your device. There are two ways to get one onto it:
+
+- **Online:** when the device has internet and a Frigate+ API key, pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
+- **Offline:** upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See [A device without internet](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#a-device-without-internet).
+
+Administrators enter the API key under **Frigate+**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
+
+- The page never shows the key back. The section's title says whether the key is set, its last four characters for a key of 12 or more characters, and "in use" while Frigate runs a Frigate+ model.
+- **Save** stores what you typed. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else. The eye icon shows the key while you type.
+- **Remove** asks first, then empties the key. Without a key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are on the device keeps running; one that isn't downloaded yet [stops Frigate](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#if-frigate-stops-over-a-model) until the key is set again, and the Status page's Frigate+ check says so.
+- Saving or removing restarts Frigate, which takes about a minute. The device counts nothing meanwhile.
+
+The ThingsBoard and Plate Recognizer keys are on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
+
 # Check and fix the device
 
-Three pages in the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH:
+Three pages in the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, [Detection](https://docs.trafficmonitor.ai/dev/use/detection/index.md), shows the object detection model and changes it:
 
 - **Status** checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.
 - **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
@@ -770,7 +867,7 @@ A check that isn't passing offers one of these:
 
 - **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 - **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-- **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload and **Set the key** for Frigate+, which open [Tokens and keys](#tokens-and-keys).
+- **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus).
 - **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md)).
 
 The control app can't restart itself. If it stops, see [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down).
@@ -781,14 +878,14 @@ The card at the top shows the device's name, its Raspberry Pi model and memory, 
 
 ### Tokens and keys
 
-Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** and **Set the key** links open it for you. It lists the ThingsBoard access token and the [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) API key, and the Plate Recognizer API token and license key when the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`. The [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) API key is on the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), next to the models it fetches.
 
 - A value is never shown back. The page says whether it's set and, for a token or key of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
-- **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long. A Frigate+ key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it.
-- **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read. Without a Frigate+ key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are already on the device keeps running; one that isn't downloaded yet [stops Frigate](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#if-frigate-stops-over-a-model) until the key is set again, and the Frigate+ check says so.
-- Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, and the Frigate+ key restarts Frigate; each takes about a minute. Traffic isn't counted while Node-RED or Frigate restarts.
+- **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.
+- **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
+- Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
 
-An older device may have kept a token in `config.yml` or in the add-on's env file, or a Frigate+ key in `frigate.env`. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
+An older device may have kept a token in `config.yml` or in the add-on's env file, or a Frigate+ key in `frigate.env`. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the Device page and the Detection page show it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
 
 ### Download diagnostics
 
@@ -823,10 +920,11 @@ A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A de
 
 ## What viewers see
 
-Viewers see all three pages, but can't change anything:
+Viewers see all four pages, but can't change anything:
 
 - **Status**: the same checks, without the Restart and Re-scan buttons.
 - **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
+- **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page).
 - **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
 
 ______________________________________________________________________
@@ -837,7 +935,7 @@ ______________________________________________________________________
 
 Open `http://<device>/` in a browser on the same network. `<device>` is the hostname you set when you imaged the card, followed by `.local` (for example `http://tm-01.local/`), or the device's IP address.
 
-The home page is the device's [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, a one-line summary of its health, and links to the apps your account can open. Its menu has **Status**, **Device**, and **Date and time** (see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md)), your **Account**, the **Users** page for administrators, and **Log out**.
+The home page is the device's [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, a one-line summary of its health, and links to the apps your account can open. Its menu has **Status**, **Device**, and **Date and time** (see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md)), **Detection** (see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md)), your **Account**, the **Users** page for administrators, and **Log out**.
 
 | Link             | Path          | What it is                                                                                                                                                                                                                                                                                                                                                                                                                    | Who can open it                                                    |
 | ---------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -907,25 +1005,25 @@ sudo podman ps                                  # running containers
 
 The settings and data live under `/opt/traffic-monitor/`.
 
-| Path                                    | Contents                                                                                                                                                                                                                    |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                                                                                             |
-| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [Env file settings](https://docs.trafficmonitor.ai/dev/configuration/environment/#node-red-tmenv).                                                                             |
-| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it.                         |
-| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                                                                                              |
-| `frigate/config/model_cache/`           | The models Frigate runs, such as a [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) model's two files.                                                                            |
-| `frigate/frigate.env`                   | Frigate's environment, including the Frigate+ API key, which comes from the device's secrets. See [Env file settings](https://docs.trafficmonitor.ai/dev/configuration/environment/#frigateenv).                            |
-| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                                                                                                         |
-| `plate-recognizer/plate-recognizer.env` | Plate Recognizer settings, if the add-on is installed. Its token and license key come from the device's secrets, which you set on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). |
+| Path                                    | Contents                                                                                                                                                                                                                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                                                                                                                                                      |
+| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [Env file settings](https://docs.trafficmonitor.ai/dev/configuration/environment/#node-red-tmenv).                                                                                                                                      |
+| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it.                                                                                  |
+| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                                                                                                                                                       |
+| `frigate/config/model_cache/`           | The models Frigate runs, such as a [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) model's two files. The control app's [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/index.md) uploads, downloads, and deletes them. |
+| `frigate/frigate.env`                   | Frigate's environment, including the Frigate+ API key, which comes from the device's secrets. See [Env file settings](https://docs.trafficmonitor.ai/dev/configuration/environment/#frigateenv).                                                                                     |
+| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                                                                                                                                                                  |
+| `plate-recognizer/plate-recognizer.env` | Plate Recognizer settings, if the add-on is installed. Its token and license key come from the device's secrets, which you set on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).                                                          |
 
 The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
 
-| Path                                 | Contents                                                                                                                                                                                |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.                                                                       |
-| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                                                                                                     |
-| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys) |
-| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                                                                                             |
+| Path                                 | Contents                                                                                                                                                                                                                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.                                                                                                                                                                |
+| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                                                                                                                                                                                              |
+| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys) and the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus) |
+| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                                                                                                                                                                                      |
 
 ______________________________________________________________________
 
@@ -1083,7 +1181,7 @@ cameras:
 
 ### Enter the key
 
-Frigate+ gives your account an API key. Enter it on the control app's Device page, under [Tokens and keys](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else, so a mis-pasted key is caught there. Saving or removing the key restarts Frigate, which takes about a minute. Traffic isn't counted until it's back.
+Frigate+ gives your account an API key. Enter it on the control app's Detection page, under [Frigate+](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus). The page checks the key's format, so a mis-pasted key is caught there. Saving or removing the key restarts Frigate, which takes about a minute. Traffic isn't counted until it's back.
 
 ### Submit snapshots
 
@@ -1123,22 +1221,16 @@ Frigate checks a model before it saves the change: if the model isn't on the dev
 Frigate downloads a model only when one of its two files is missing, so a device that's offline can use a Frigate+ model too:
 
 1. On another computer, download the model from Frigate+. You get two files: `<model id>` and `<model id>.json`.
-
-1. Copy both to the device over SSH, into Frigate's model folder:
-
-   ```
-   scp <model id> <model id>.json <username>@<hostname>.local:
-   ssh <username>@<hostname>.local
-   sudo cp <model id> <model id>.json /opt/traffic-monitor/frigate/config/model_cache/
-   ```
-
-1. Set `path: plus://<model id>` in the configuration editor, as in [Use a model](#use-a-model), and choose **Save & Restart**. Frigate reads the two files when you save, without contacting Frigate+. If either file is missing, it refuses the change, because it would have to download the model.
+1. On the control app's [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#upload-a-model), choose **Upload a model** and pick both files. You can also upload a package from whoever trained the model, or the two files from another device, which you can [download](https://docs.trafficmonitor.ai/dev/use/detection/#download-a-model) from its Detection page.
+1. Choose **Use** on the model. Frigate reads the two files when it checks the config, without contacting Frigate+, and the device restarts Frigate. If either file is missing, Frigate refuses the change, because it would have to download the model.
 
 The key is then needed only to submit snapshots, which takes internet as well.
 
 ### A model of your own
 
-You can also run a model that doesn't come from Frigate+. Copy its file into `/opt/traffic-monitor/frigate/config/model_cache/` as above, and set `path: /config/model_cache/<file>` in the `model:` section. Unlike a `plus://` model, it also needs the keys that describe it: `width`, `height`, `input_tensor`, `input_pixel_format`, `input_dtype`, `model_type`, and `labelmap_path`. Frigate's [reference config](https://docs.frigate.video/configuration/advanced/reference) lists their values. The model must suit the device's detector, as a Frigate+ model must.
+You can also run a model that doesn't come from Frigate+. On the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#upload-a-model), upload the model's file with its `.json`, or upload the file alone and fill in what Frigate needs to know about it; the page writes the `.json`. Choose **Use**, and the page writes the model's `model:` section for you: its path, input size, input layout, model type, and label map.
+
+To do it by hand instead, copy the model's file into `/opt/traffic-monitor/frigate/config/model_cache/` over SSH, and set `path: /config/model_cache/<file>` in the `model:` section. Unlike a `plus://` model, it also needs the keys that describe it: `width`, `height`, `input_tensor`, `input_pixel_format`, `input_dtype`, `model_type`, and `labelmap_path`. Frigate's [reference config](https://docs.frigate.video/configuration/advanced/reference) lists their values. The model must suit the device's detector, as a Frigate+ model must.
 
 ### What the installer keeps
 
@@ -1148,12 +1240,12 @@ Running the installer with `-f` replaces Frigate's config with a fresh copy, but
 
 The Status page's Configuration group has a **Frigate+** check. It compares the key with the `model:` section of Frigate's config and says whether Frigate could use the model:
 
-| Status       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Passed       | Frigate+ isn't in use: no key and no Frigate+ model. Or Frigate runs the Frigate+ model the config names. Without a key, it runs from the files on the device, and you can't submit snapshots.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Warning      | A key is set, but Frigate runs the installer's model, its own default model (on a device with no `model:` section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in [Use a model](#use-a-model).                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Problem      | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens Tokens and keys), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and **Set the key** opens Tokens and keys. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
-| Couldn't run | Frigate's config is missing or isn't valid YAML, or Frigate isn't answering and its log has no error to quote. Or Frigate is in safe mode for a reason other than the model, so whether it can use the model is unknown; the Apps group's **Frigate** check says why.                                                                                                                                                                                                                                                                                                                                                                                    |
+| Status       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Passed       | Frigate+ isn't in use: no key and no Frigate+ model. Or Frigate runs the Frigate+ model the config names. Without a key, it runs from the files on the device, and you can't submit snapshots.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Warning      | A key is set, but Frigate runs the installer's model, its own default model (on a device with no `model:` section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in [Use a model](#use-a-model).                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Problem      | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens the Frigate+ API key section of the Detection page), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and **Set the key** opens the Frigate+ API key section of the Detection page. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
+| Couldn't run | Frigate's config is missing or isn't valid YAML, or Frigate isn't answering and its log has no error to quote. Or Frigate is in safe mode for a reason other than the model, so whether it can use the model is unknown; the Apps group's **Frigate** check says why.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 When Frigate can't use its config, for example because of a model built for another detector, it starts in safe mode: it answers and looks healthy, but has no cameras and counts nothing. The Apps group's **Frigate** check reports that as a problem, whatever the cause, and quotes Frigate's messages. Fix the config in Frigate's configuration editor, then choose **Save & Restart**.
 
@@ -1169,15 +1261,16 @@ Frigate then fails each time it starts, restarts every few seconds, and counts n
 
 To get Frigate running again, do one of these:
 
-1. Enter the right key on the Device page, under [Tokens and keys](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). Saving it restarts Frigate, which then fetches the model.
-1. Copy the model's two files into Frigate's model folder, as in steps 1 and 2 of [A device without internet](#a-device-without-internet), then restart Frigate with `sudo systemctl restart frigate.service`.
-1. Over SSH, open Frigate's config as root with `sudo nano /opt/traffic-monitor/frigate/config/config.yml` and replace its `model:` section with the installer's. Copy it from the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), where its `path` names the `.tflite` file in `model_cache`, or from a backup beside the file, if an earlier run of the installer with `-f` left one. Only a device with a Coral has that section; on another device, delete the `model:` section. Then restart Frigate with `sudo systemctl restart frigate.service`.
+1. On the Detection page, under **Other models on this device**, choose [**Use**](https://docs.trafficmonitor.ai/dev/use/detection/#use-a-model) on **The installer's model** (on a device without a Coral, on **Frigate's built-in model**). While Frigate isn't answering, the device edits Frigate's config itself and restarts Frigate.
+1. Enter the right key on the Detection page, under [Frigate+](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus). Saving it restarts Frigate, which then fetches the model.
+1. Upload the model's two files on the Detection page, as in [A device without internet](#a-device-without-internet), and choose **Use**.
+1. As a last resort, over SSH, open Frigate's config as root with `sudo nano /opt/traffic-monitor/frigate/config/config.yml` and replace its `model:` section with the installer's. Copy it from the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), where its `path` names the `.tflite` file in `model_cache`, or from a backup beside the file, if an earlier run of the installer with `-f` left one. Only a device with a Coral has that section; on another device, delete the `model:` section. Then restart Frigate with `sudo systemctl restart frigate.service`.
 
 Running the installer with `-f` doesn't help, because it keeps the `model:` section.
 
 Info
 
-A wrong key on its own never stops Frigate. When it starts, Frigate contacts Frigate+ only to download a model whose files are missing, so a model whose files are on the device keeps running whatever the key. A planned update to the control app will let you change the model while Frigate is down.
+A wrong key on its own never stops Frigate. When it starts, Frigate contacts Frigate+ only to download a model whose files are missing, so a model whose files are on the device keeps running whatever the key.
 # Reference
 
 # config.yml settings
@@ -1317,10 +1410,10 @@ Otherwise the broker refuses Frigate's connection, and no events are recorded.
 
 `/opt/traffic-monitor/frigate/frigate.env` is written from [this template](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/frigate.env.j2). After editing it, restart Frigate with `sudo systemctl restart frigate.service`.
 
-| Variable                | Default                   | Meaning                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `FRIGATE_RTSP_PASSWORD` | `password`                | A password for cameras of your own: Frigate fills in `{FRIGATE_RTSP_PASSWORD}` in a camera's input path. The Traffic Monitor's own camera doesn't use it. The installer leaves it as you set it, unless you run it with `-f`.                                                                                                                                            |
-| `PLUS_API_KEY`          | the key you set, or empty | The [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) API key. The installer fills it from the device's secrets on every run; change it on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), not here. Empty means no key: Frigate can't submit snapshots or download a Frigate+ model. |
+| Variable                | Default                   | Meaning                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FRIGATE_RTSP_PASSWORD` | `password`                | A password for cameras of your own: Frigate fills in `{FRIGATE_RTSP_PASSWORD}` in a camera's input path. The Traffic Monitor's own camera doesn't use it. The installer leaves it as you set it, unless you run it with `-f`.                                                                                                                                        |
+| `PLUS_API_KEY`          | the key you set, or empty | The [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models) API key. The installer fills it from the device's secrets on every run; change it on the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), not here. Empty means no key: Frigate can't submit snapshots or download a Frigate+ model. |
 
 The other lines are the installer's. Leave them as they are:
 
@@ -1422,7 +1515,7 @@ With `-f`, each is replaced by a fresh copy from its template, and the old file 
 
 The fresh Frigate config keeps one thing from the old one: the `model:` section, if you chose a model, whether in Frigate's model picker, its configuration editor, or by hand (see [Better models](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models)). It's kept even when Frigate can't load that model; see [If Frigate stops over a model](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#if-frigate-stops-over-a-model). The installer's own model section for a Coral isn't kept, so the fresh copy gets the model for the accelerator the installer finds. Comments inside a kept section are lost; its keys keep their order. If the old config isn't valid YAML, the fresh copy gets the installer's model section, and the installer says so.
 
-No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token, the Frigate+ API key, and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env`, `frigate.env`, and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token, the Frigate+ API key, and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env`, `frigate.env`, and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), or the Frigate+ key on the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus).
 
 ## Add an accelerator later
 
@@ -2259,8 +2352,8 @@ It has three parts, all in the repository's [`tm-control/`](https://github.com/g
 
 It reads two things the installer writes, and keeps one database of its own:
 
-- `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator on the Device page: the ThingsBoard access token, the Frigate+ API key, and the Plate Recognizer token and license key. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
-- `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.
+- `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
+- `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (`frigate.coral_model`, from the role's `tmsetup_frigate_coral_model`), which the Detection page puts back.
 - `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
 
 While the device is unclaimed, the installer keeps the setup code in a root-only file, `/etc/traffic-monitor/setup-code`, and hands it to `tm-control set-setup-code` on every run, which stores only its hash. The installer's command-line steps run as the code owner, and `sudo tm-control reset-admin` drops to that user after writing a new code file, so root never writes the database.
@@ -2321,7 +2414,7 @@ tm-control/backend/tm_control/
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time
+                 hardware, secrets, system, time, detection
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
@@ -2382,9 +2475,30 @@ The Hardware group's accelerator check claims only the host side ("Ready on the 
 
 Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, the errors from its last `config.yml` load, the database's schema version, and each radar's port and last reading. A flow on the `init-config` tab serves it. It checks the `X-TM-Internal-Token` header against `TM_INTERNAL_TOKEN` in `node-red-tm.env`, which the installer fills from the `node_red_internal_token` secret on every run, and refuses every request when that variable is unset or empty. `adapters/nodered.py` reads it. nginx answers 404 for `/nr/tm-internal/` in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: `script/tests/test_node_red_flows.py` and `tests/fixtures/nodered_status.json` pin them.
 
+### The Detection module
+
+The `detection` module serves the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/index.md). It reads Frigate's running config and `config.yml`, and the files in Frigate's `model_cache`. Its routes, under `/api/v1/models`:
+
+| Route                           | Who                | What it does                                                                                                                                                |
+| ------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /models`                   | Any logged-in user | The detector, the running model, the models in `model_cache` with their files, hashes, and each one's labels, and the two label lists for the running model |
+| `PUT /models/upload/{filename}` | Admin              | Streams a model file, a sidecar, or a zip or tar.gz of both into `model_cache`                                                                              |
+| `POST /models/{name}/sidecar`   | Admin              | Writes the sidecar for a model file that has none, from the form's values                                                                                   |
+| `POST /models/{name}/use`       | Admin              | Sets Frigate's `model:` section to the model, then restarts Frigate                                                                                         |
+| `POST /models/default/use`      | Admin              | Puts back the installer's model, or removes the section on a device without a Coral                                                                         |
+| `GET /models/{name}/package`    | Admin              | A zip of the model's two files and `SHA256SUMS`                                                                                                             |
+| `GET /models/{name}/file`       | Admin              | The model file alone, for a model with no sidecar to package, such as the installer's                                                                       |
+| `DELETE /models/{name}`         | Admin              | Removes the model's files, unless it runs or is the installer's or Frigate's own default                                                                    |
+
+The module writes only inside `model_cache` and Frigate's `config.yml`, plus its own state directory. Every `model_cache` write goes through a descriptor of the directory opened with `O_NOFOLLOW`, after `valid_name` has checked the name; `config.yml` is edited by its path through `RoundTripFile`, as `tm-control migrate` edits config files (a backup, an atomic replace, the owner kept). When Frigate answers in safe mode, which it enters when its config fails to validate, it runs a stand-in config, so `GET /models` reads the detector and the running model from `config.yml` and says `frigate_safe_mode`; a Use still goes through Frigate's API, which validates the whole config. The caps are 100 MB for a request and a model file, 2 MB for a sidecar, 3 archive members, and 512 MB of free storage left afterwards. Use goes through Frigate's config API, which checks the whole config, and edits `config.yml` itself, with a backup, only when Frigate doesn't answer. Both end in a restart of `frigate.service`.
+
+Uploads need two things from the edge. nginx has its own location, `^~ /api/v1/models/upload/` in `tm-control-api.conf.j2`, with `client_max_body_size 100m` and `proxy_request_buffering off`, so the body streams to tm-control instead of being buffered. Because of that, tm-control reads the rest of a refused upload before it answers, so nginx can pass the answer on rather than a 502. The upload body is `application/octet-stream`, which the cross-site check in `core/csrf.py` admits along with `application/json`, because the check still requires a same-origin request. Every other `/api/` path keeps nginx's default body limit.
+
+The sidecars are a Frigate+ model record's JSON. The module reads only the fields the page shows and keeps the whole file as it was uploaded, so a download returns it unchanged. It never puts a record's other fields in an answer, a log line, or an audit row.
+
 ### What the sandbox allows
 
-`tm-control.service` runs with `ProtectSystem=strict`, no `ReadWritePaths=`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. That shaped the probes:
+`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and Frigate's config directory, `frigate/config` under the code directory (`ReadWritePaths`), for the models the Detection page manages. The rest of the system is read-only to it. The sandbox also shaped the probes:
 
 - No netlink socket, so `lsusb` can't start. The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` instead, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
 - `vcgencmd get_throttled` needs the `video` group to open `/dev/vcio_gencmd`. Without it, the power check says to rerun the installer.
@@ -2402,7 +2516,7 @@ TM_CONTROL_FAKE=1 PYTHONPATH=tm-control/backend python -m tm_control serve      
 cd tm-control/ui && npm ci && npm run dev                                         # the UI on http://localhost:5173
 ```
 
-In fake mode the API's interactive docs are at `/api/v1/docs`. `tm-control/ui/README.md` has the commands for building and testing the UI in the same Node image the device uses.
+Fake mode seeds `.tm-control-fake/model_cache` with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in `.tm-control-fake/running-model`; Use there changes that file and restarts nothing. In fake mode the API's interactive docs are at `/api/v1/docs`. `tm-control/ui/README.md` has the commands for building and testing the UI in the same Node image the device uses.
 
 Every change to the API regenerates the UI's typed client in the same commit, so each commit's tests pass:
 

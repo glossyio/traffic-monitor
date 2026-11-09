@@ -763,6 +763,8 @@
       
         
       
+        
+      
     
     
     
@@ -898,6 +900,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose the detection model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -917,10 +947,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
             
   
   
@@ -938,8 +968,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2025,6 +2055,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-detection-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Detection module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2243,6 +2284,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-detection-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Detection module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2347,8 +2399,8 @@
 <p><code>tm-control.service</code> runs on the host, not in the pod, so the login keeps working when Podman doesn't. It runs as the code owner (default <code>tmadmin</code>), never as root, in a systemd sandbox, and listens on <code>127.0.0.1:8090</code> only. nginx is the only way in from the network.</p>
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
-<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator on the Device page: the ThingsBoard access token, the Frigate+ API key, and the Plate Recognizer token and license key. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
-<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.</li>
+<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
+<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back.</li>
 <li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
 <p>While the device is unclaimed, the installer keeps the setup code in a root-only file, <code>/etc/traffic-monitor/setup-code</code>, and hands it to <code>tm-control set-setup-code</code> on every run, which stores only its hash. The installer's command-line steps run as the code owner, and <code>sudo tm-control reset-admin</code> drops to that user after writing a new code file, so root never writes the database.</p>
@@ -2415,7 +2467,7 @@
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time
+                 hardware, secrets, system, time, detection
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
@@ -2496,8 +2548,64 @@
 </ol>
 <h3 id="node-reds-internal-status">Node-RED's internal status<a class="headerlink" href="#node-reds-internal-status" title="Permanent link">&para;</a></h3>
 <p>Node-RED answers <code>GET /tm-internal/status</code> on <code>127.0.0.1:1880</code> with its uptime, the errors from its last <code>config.yml</code> load, the database's schema version, and each radar's port and last reading. A flow on the <code>init-config</code> tab serves it. It checks the <code>X-TM-Internal-Token</code> header against <code>TM_INTERNAL_TOKEN</code> in <code>node-red-tm.env</code>, which the installer fills from the <code>node_red_internal_token</code> secret on every run, and refuses every request when that variable is unset or empty. <code>adapters/nodered.py</code> reads it. nginx answers 404 for <code>/nr/tm-internal/</code> in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: <code>script/tests/test_node_red_flows.py</code> and <code>tests/fixtures/nodered_status.json</code> pin them.</p>
+<h3 id="the-detection-module">The Detection module<a class="headerlink" href="#the-detection-module" title="Permanent link">&para;</a></h3>
+<p>The <code>detection</code> module serves the <a href="../../use/detection/">Detection page</a>. It reads Frigate's running config and <code>config.yml</code>, and the files in Frigate's <code>model_cache</code>. Its routes, under <code>/api/v1/models</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Who</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /models</code></td>
+<td>Any logged-in user</td>
+<td>The detector, the running model, the models in <code>model_cache</code> with their files, hashes, and each one's labels, and the two label lists for the running model</td>
+</tr>
+<tr>
+<td><code>PUT /models/upload/{filename}</code></td>
+<td>Admin</td>
+<td>Streams a model file, a sidecar, or a zip or tar.gz of both into <code>model_cache</code></td>
+</tr>
+<tr>
+<td><code>POST /models/{name}/sidecar</code></td>
+<td>Admin</td>
+<td>Writes the sidecar for a model file that has none, from the form's values</td>
+</tr>
+<tr>
+<td><code>POST /models/{name}/use</code></td>
+<td>Admin</td>
+<td>Sets Frigate's <code>model:</code> section to the model, then restarts Frigate</td>
+</tr>
+<tr>
+<td><code>POST /models/default/use</code></td>
+<td>Admin</td>
+<td>Puts back the installer's model, or removes the section on a device without a Coral</td>
+</tr>
+<tr>
+<td><code>GET /models/{name}/package</code></td>
+<td>Admin</td>
+<td>A zip of the model's two files and <code>SHA256SUMS</code></td>
+</tr>
+<tr>
+<td><code>GET /models/{name}/file</code></td>
+<td>Admin</td>
+<td>The model file alone, for a model with no sidecar to package, such as the installer's</td>
+</tr>
+<tr>
+<td><code>DELETE /models/{name}</code></td>
+<td>Admin</td>
+<td>Removes the model's files, unless it runs or is the installer's or Frigate's own default</td>
+</tr>
+</tbody>
+</table>
+<p>The module writes only inside <code>model_cache</code> and Frigate's <code>config.yml</code>, plus its own state directory. Every <code>model_cache</code> write goes through a descriptor of the directory opened with <code>O_NOFOLLOW</code>, after <code>valid_name</code> has checked the name; <code>config.yml</code> is edited by its path through <code>RoundTripFile</code>, as <code>tm-control migrate</code> edits config files (a backup, an atomic replace, the owner kept). When Frigate answers in safe mode, which it enters when its config fails to validate, it runs a stand-in config, so <code>GET /models</code> reads the detector and the running model from <code>config.yml</code> and says <code>frigate_safe_mode</code>; a Use still goes through Frigate's API, which validates the whole config. The caps are 100 MB for a request and a model file, 2 MB for a sidecar, 3 archive members, and 512 MB of free storage left afterwards. Use goes through Frigate's config API, which checks the whole config, and edits <code>config.yml</code> itself, with a backup, only when Frigate doesn't answer. Both end in a restart of <code>frigate.service</code>.</p>
+<p>Uploads need two things from the edge. nginx has its own location, <code>^~ /api/v1/models/upload/</code> in <code>tm-control-api.conf.j2</code>, with <code>client_max_body_size 100m</code> and <code>proxy_request_buffering off</code>, so the body streams to tm-control instead of being buffered. Because of that, tm-control reads the rest of a refused upload before it answers, so nginx can pass the answer on rather than a 502. The upload body is <code>application/octet-stream</code>, which the cross-site check in <code>core/csrf.py</code> admits along with <code>application/json</code>, because the check still requires a same-origin request. Every other <code>/api/</code> path keeps nginx's default body limit.</p>
+<p>The sidecars are a Frigate+ model record's JSON. The module reads only the fields the page shows and keeps the whole file as it was uploaded, so a download returns it unchanged. It never puts a record's other fields in an answer, a log line, or an audit row.</p>
 <h3 id="what-the-sandbox-allows">What the sandbox allows<a class="headerlink" href="#what-the-sandbox-allows" title="Permanent link">&para;</a></h3>
-<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, no <code>ReadWritePaths=</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6</code>, and <code>SupplementaryGroups=systemd-journal video</code>. That shaped the probes:</p>
+<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and Frigate's config directory, <code>frigate/config</code> under the code directory (<code>ReadWritePaths</code>), for the models the Detection page manages. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
 <ul>
 <li>No netlink socket, so <code>lsusb</code> can't start. The Coral USB check reads the vendor and product ids from <code>/sys/bus/usb/devices</code> instead, and <code>ss</code> falls back to reading <code>/proc/net</code> for the MQTT broker's port.</li>
 <li><code>vcgencmd get_throttled</code> needs the <code>video</code> group to open <code>/dev/vcio_gencmd</code>. Without it, the power check says to rerun the installer.</li>
@@ -2511,7 +2619,7 @@
 <span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>serve<span class="w">        </span><span class="c1"># the backend on 127.0.0.1:8090</span>
 <span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                                         </span><span class="c1"># the UI on http://localhost:5173</span>
 </code></pre></div>
-<p>In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
+<p>Fake mode seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
 <p>Every change to the API regenerates the UI's typed client in the same commit, so each commit's tests pass:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>dump-openapi<span class="w"> </span>&gt;<span class="w"> </span>tm-control/ui/src/api/openapi.json
 <span class="o">(</span><span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>api:generate<span class="o">)</span><span class="w">   </span><span class="c1"># writes src/api/schema.d.ts</span>
