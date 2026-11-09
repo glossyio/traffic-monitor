@@ -273,6 +273,9 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
     config.save()
     if match is not None:
         places.set_in_use(match.id)
+    elif point == (None, None) and not deployment.coordinates_invalid and not places.list():
+        # Nothing in the file, and nothing imported (the backup couldn't be read): as a fresh unit starts
+        _create_in_use(places, survey_id, DEFAULT_DESCRIPTION, point, config.sensors(), "default", user_id)
     else:
         _create_from_file(places, config, deployment, survey_id, user_id)
 

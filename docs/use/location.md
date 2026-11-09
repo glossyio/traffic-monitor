@@ -30,7 +30,7 @@ Each place in the list shows its description, or **No description**, its mark (*
 * Its deployments: each sensor, the way it faced, and when it ran, with **Correct bearing**.
 * The buttons for what you can do with the place: **Deploy here**; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; and **Delete** for any place but the one in use.
 
-**Before any place was recorded** counts the deployments recorded before the device had a place. They belong to no place, and the database keeps them as they are.
+**Before any place was recorded** counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.
 
 If Node-RED hasn't answered yet, as right after an update, a warning at the top says past places may be missing. Reload the page once Node-RED is running. Opening the control app's home page or Status page sets the places up too.
 

@@ -74,7 +74,7 @@ def test_normalize_bearing(value, expected):
         # Not a tie in binary: 2.675 is stored a hair below 2.675, so it rounds down (as SQLite and toFixed do).
         (2.675, 2, 2.67),
         (-2.675, 2, -2.67),
-        (45.55, 1, 45.5),
+        (1.15, 1, 1.1),
         (3, 1, 3.0),
         ("4.5", 0, 5.0),
         (-0.04, 1, 0.0),
@@ -87,7 +87,7 @@ def test_round_half_away(value, places, expected):
 
 
 @pytest.mark.parametrize("places", [1, 2])
-@pytest.mark.parametrize("value", [0.25, -0.25, 1.25, -1.25, 2.675, 45.52252, -122.6912, 45.0, 0.05, -0.05, 45.55])
+@pytest.mark.parametrize("value", [0.25, -0.25, 1.25, -1.25, 2.675, 45.52252, -122.6912, 45.0, 0.05, -0.05, 1.15])
 def test_stored_matches_sqlite_round(value, places):
     # stored() predicts what tmdb holds, so it must agree with the database's own ROUND.
     expected = sqlite3.connect(":memory:").execute("SELECT ROUND(?, ?)", (value, places)).fetchone()[0]

@@ -310,6 +310,29 @@ def test_unreadable_backup_is_skipped(unit, caplog, content, error):
     assert unit.nodered.named("usage") == []
 
 
+NO_POINT = "lat:\n    lon:\n"
+
+
+def test_a_unit_with_no_location_and_an_unreadable_backup_gets_the_first_location(unit):
+    """It looks like an upgraded unit, but nothing can be imported, so it starts as a fresh one does."""
+    edit(unit, FIXTURE_POINT, NO_POINT)
+    directory = reconcile.backup_dir(unit.manifest)
+    directory.mkdir(parents=True)
+    (directory / "tmdb-v0-20261101T000000Z.sqlite").write_bytes(b"not a database")
+    assert reconcile.ensure(unit).state == "done"
+    (place,) = Places(unit.state).list()
+    assert (place.description, place.source, place.status, place.lat) == ("First location", "default", "in_use", None)
+    assert file_deployment(unit)["survey_id"] == place.id
+
+
+def test_a_unit_with_no_location_that_imported_places_gets_no_first_location(unit):
+    edit(unit, FIXTURE_POINT, NO_POINT)
+    write_backup(unit, BACKUP_ROWS)
+    answer_usage(unit.nodered)
+    assert reconcile.ensure(unit).imported > 0
+    assert Places(unit.state).in_use().description is None
+
+
 def test_a_backup_directory_that_cant_be_listed_is_skipped(unit, caplog, monkeypatch):
     def refused(self, pattern):
         raise PermissionError(13, "synthetic")

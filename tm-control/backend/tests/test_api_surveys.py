@@ -229,6 +229,19 @@ def test_deploy_body_bearings_win_and_are_checked(admin):
     assert file_data(admin)["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"]["bearing"] == ""
 
 
+def test_deploy_with_blank_bearings_adds_no_block_to_the_sensors(admin):
+    first_place(admin)
+    path = admin.app.state.config_path
+    path.write_text(path.read_text().replace("bearing: 'n'", "bearing: ''", 1))
+    places(admin)
+    place = create(admin, bearings=[])
+    deploy(admin, place["id"])
+    sensors = file_data(admin)["sensors"]
+    assert "deployment" not in sensors["cameras"]["picam_h265"]
+    assert "deployment" not in sensors["radars"]["TM_RADAR_SERIAL_PORT_00"]
+    assert file_data(admin)["deployment"]["survey_id"] == place["id"]
+
+
 def test_deploy_the_same_place_again_changes_nothing(admin):
     place = create(admin, bearings=[bearing(CAMERA, "e")])
     first = deploy(admin, place["id"])

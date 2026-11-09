@@ -268,9 +268,15 @@ def test_location_rejects_a_bad_survey_id_and_precision(apps, deployment, detail
 def test_location_says_an_invalid_precision_stores_the_default(apps):
     check = location_check(apps, database_precision="NONE")  # R10: Node-RED doesn't fold case, so it uses '2'
     assert check.detail == (
-        "In config.yml, deployment.database_precision isn't none, 1, or 2, so Node-RED stores the default, about 1 km."
-        " Correct it, or leave it empty."
+        "In config.yml, deployment.database_precision isn't none, 1, or 2. Correct it, or leave it empty. Until then,"
+        " Node-RED stores the default, about 1 km."
     )
+
+
+def test_location_says_what_the_default_is_for_after_every_problem(apps):
+    check = location_check(apps, database_precision="NONE", bearing="up")
+    assert "2; deployment.bearing" in check.detail or "; deployment.database_precision" in check.detail
+    assert check.detail.endswith("Correct them, or leave them empty. Until then, Node-RED stores the default, about 1 km.")
 
 
 @pytest.mark.parametrize(

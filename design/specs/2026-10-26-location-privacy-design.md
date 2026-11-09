@@ -104,7 +104,7 @@ The project wants operators to be able to share data, with the maintainer, with 
 
 ### 2. Precision
 
-- **`database_precision`:** `none`, `1`, or `2` (the default) decimal places. Never finer. **(maintainer)** (changed 2026-11-07: the default was `1`)
+- **`database_precision`:** `none`, `1`, or `2` (the default) decimal places. Never finer. The default was `1` until 2026-11-07. **(maintainer)**
   - The operator's "1 significant digit" means one decimal place; read literally, it would turn 45.52 into 50.
 - Round to the nearest value at that precision; don't truncate or add noise. Record the decimal places used in a new `location_precision` column, NULL when nothing is stored, so whoever reads the data knows a point is approximate. **(design call)**
 - What each precision means at 45.5°N (Portland):

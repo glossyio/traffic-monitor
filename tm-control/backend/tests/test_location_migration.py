@@ -112,7 +112,7 @@ def test_migrate_removes_per_sensor_coordinates_and_names_the_sensor(config_yml,
     assert config["deployment"]["lat"] == 45.0  # the top-level location stays
     printed = output(capsys)
     assert f"removed lat/lon under {SENSOR_PATH}.deployment; the location is per unit" in printed
-    assert "45.0" not in printed and "122" not in printed
+    assert "45.0" not in printed and "-122.0" not in printed  # with the sign: the backup's name has a time stamp
 
 
 def test_migrate_prunes_a_deployment_block_the_removal_empties(config_yml, secrets_dir, capsys):

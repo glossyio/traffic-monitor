@@ -202,9 +202,11 @@ def location(context: Context) -> list[Check]:
         problems.append(f"deployment.bearing {bearing_message}")
     if settings.survey_id_invalid:
         problems.append("deployment.survey_id isn't a survey id (8 hex characters and -si)")
+    meanwhile = ""
     if settings.precision_invalid:
+        problems.append("deployment.database_precision isn't none, 1, or 2")
         # Node-RED compares the text exactly (no case folding), so it stores the default instead
-        problems.append("deployment.database_precision isn't none, 1, or 2, so Node-RED stores the default, about 1 km")
+        meanwhile = " Until then, Node-RED stores the default, about 1 km."
     ignored = []
     for path, own, enabled in _sensor_deployments(read.data):
         if enabled and not _bearing_ok(own.get("bearing")):
@@ -212,7 +214,7 @@ def location(context: Context) -> list[Check]:
         ignored += [f"{path}.{key}" for key in ("lat", "lon") if key in own]
     if problems:
         fix = "Correct it, or leave it empty." if len(problems) == 1 else "Correct them, or leave them empty."
-        return check("error", f"In config.yml, {'; '.join(problems)}. {fix}")
+        return check("error", f"In config.yml, {'; '.join(problems)}. {fix}{meanwhile}")
 
     warnings = []
     if ignored:

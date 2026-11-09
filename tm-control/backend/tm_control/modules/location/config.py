@@ -231,7 +231,8 @@ class NodeRedConfig:
         put_after(block, "database_precision", SingleQuotedScalarString(precision), after="survey_id")
 
     def set_sensor_bearing(self, sensor_type: str, sensor_name: str, bearing: str) -> None:
-        """Write sensors.<type>.<name>.deployment.bearing, creating the sensor's deployment block when it has none.
+        """Write sensors.<type>.<name>.deployment.bearing, creating the sensor's deployment block when it has none and
+        the bearing says something the top-level one doesn't.
 
         Raises KeyError for a sensor that isn't in the file.
         """
@@ -246,6 +247,8 @@ class NodeRedConfig:
             raise KeyError(sensor_name)
         block = sensor.get("deployment")
         if block is None:
+            if bearing == "" and _blank(_mapping(self._file.data.get("deployment")).get("bearing")):
+                return  # it reads blank already (the engine copies the top-level bearing down): no block to add
             block = CommentedMap()
             last = list(sensor.keys())[-1] if sensor else None
             sensor["deployment"] = block

@@ -82,6 +82,34 @@ def test_sensors_lists_enabled_ones_with_the_copied_down_bearing(path):
     assert config.sensors()[0].bearing == "e"
 
 
+def test_a_blank_bearing_adds_no_block_where_the_sensor_already_reads_blank(path):
+    path.write_text("deployment:\n    bearing: ''\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+    config = NodeRedConfig(path)
+    config.set_sensor_bearing("cameras", "cam", "")
+    assert config.save() is False
+    assert "deployment" not in read_config(path).data["sensors"]["cameras"]["cam"]
+
+
+def test_a_blank_bearing_overrides_the_top_level_one_with_a_block_of_its_own(path):
+    path.write_text("deployment:\n    bearing: 'n'\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+    config = NodeRedConfig(path)
+    config.set_sensor_bearing("cameras", "cam", "")
+    assert config.save() is True
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"bearing": ""}
+    assert NodeRedConfig(path).sensors()[0].bearing == ""
+
+
+def test_a_blank_bearing_is_written_into_a_block_the_sensor_has(path):
+    path.write_text(
+        "deployment:\n    bearing: ''\nsensors:\n    cameras:\n        cam:\n            enabled: true\n"
+        "            deployment:\n                bearing: 'e'\n"
+    )
+    config = NodeRedConfig(path)
+    config.set_sensor_bearing("cameras", "cam", "")
+    assert config.save() is True
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"bearing": ""}
+
+
 def test_sensor_bearing_follows_the_engine_for_blank_and_invalid(path):
     path.write_text(
         "deployment:\n    bearing: 'N'\n"
