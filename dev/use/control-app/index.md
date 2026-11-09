@@ -1,6 +1,6 @@
 # Control app and login
 
-The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 What the login protects
 
@@ -53,14 +53,15 @@ After five wrong passwords in a row, the device makes you wait before the next t
 
 Each device has one administrator, the account created when it was claimed, and any number of viewers.
 
-| App or page                                                                                  | Administrator | Viewer |
-| -------------------------------------------------------------------------------------------- | ------------- | ------ |
-| Dashboard and Legacy Dashboard                                                               | Yes           | Yes    |
-| Downloads on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page | Yes           | No     |
-| Frigate: live view, review, and explore                                                      | Yes           | Yes    |
-| Frigate: settings and the configuration editor                                               | Yes           | No     |
-| Node-RED editor, Camera feeds, and Cockpit                                                   | Yes           | No     |
-| The **Users** page                                                                           | Yes           | No     |
+| App or page                                                                                  | Administrator | Viewer                                                                                                    |
+| -------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- |
+| Dashboard and Legacy Dashboard                                                               | Yes           | Yes                                                                                                       |
+| Downloads on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page | Yes           | No                                                                                                        |
+| Frigate: live view, review, and explore                                                      | Yes           | Yes                                                                                                       |
+| Frigate: settings and the configuration editor                                               | Yes           | No                                                                                                        |
+| Node-RED editor, Camera feeds, and Cockpit                                                   | Yes           | No                                                                                                        |
+| The **Users** page                                                                           | Yes           | No                                                                                                        |
+| Status, Device, and Date and time pages                                                      | Yes           | Read only; see [What viewers see](https://docs.trafficmonitor.ai/dev/use/device-health/#what-viewers-see) |
 
 ### Add a viewer
 

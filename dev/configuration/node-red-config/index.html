@@ -761,6 +761,8 @@
       
         
       
+        
+      
     
     
     
@@ -868,6 +870,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/device-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Check and fix the device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -887,10 +917,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   
@@ -908,8 +938,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1255,17 +1285,6 @@
     <span class="md-ellipsis">
       
         sensors.airquality_monitors
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        time
       
     </span>
   </a>
@@ -2094,17 +2113,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        time
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#addonsplate_recognizer" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2149,7 +2157,7 @@
 <p class="tm-description">Every setting in the Traffic Monitor&#39;s config.yml, with its type, default, and effect.</p>
 <p>The Traffic Monitor's own settings live in <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code> on the device. The installer writes it from <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/config/config.yml.j2">this template</a> on the first install and leaves it alone afterwards, unless you run the installer with <code>-f</code>.</p>
 <p>The Traffic Monitor reads the file again whenever you save it, so changes take effect without a restart. If the file has a YAML error, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.</p>
-<p>Keep the four top-level sections (<code>thingsboard</code>, <code>deployment</code>, <code>sensors</code>, <code>time</code>) in the file. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:</p>
+<p>Keep the three top-level sections (<code>thingsboard</code>, <code>deployment</code>, <code>sensors</code>) in the file. The file has no time settings: the installer's <code>-z</code> option sets the device's time zone, and you change it later on the <a href="../../use/device-health/#the-date-and-time-page">Date and time</a> page. A <code>time</code> section left from an older install is ignored. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:</p>
 <ul>
 <li>A camera or radar without <code>enabled</code> is off.</li>
 <li>A radar without <code>opt_api_commands_array</code> gets no extra commands.</li>
@@ -2236,6 +2244,7 @@
 <p>A <code>deployment:</code> block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.</p>
 <h2 id="sensorscameras">sensors.cameras<a class="headerlink" href="#sensorscameras" title="Permanent link">&para;</a></h2>
 <p>One entry per camera, named exactly as the camera is named in Frigate. The default camera is <code>picam_h265</code>. Events from a camera that isn't listed here, or is disabled, are ignored.</p>
+<p>To rename a camera, rename it in Frigate's config and choose <strong>Save &amp; Restart</strong>. Frigate uses a new camera name only after it restarts, so <strong>Save</strong> alone changes nothing yet. Then rename its entry here to match. Until both names agree, that camera's events aren't recorded, and the Status page's <strong>Cameras in config.yml</strong> check shows an error.</p>
 <table>
 <thead>
 <tr>
@@ -2327,31 +2336,6 @@
 <td>text</td>
 <td><code>readings</code></td>
 <td>Present in the template but not used. The device subscribes to every topic under <code>aq/</code>.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="time">time<a class="headerlink" href="#time" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Setting</th>
-<th>Type</th>
-<th>Default</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>timezone</code></td>
-<td>a <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">tz database name</a></td>
-<td>the installer's <code>-z</code> value, <code>America/Los_Angeles</code> unless you set one</td>
-<td>Present in the template but not used. The dashboards and the 04:00 daily reset use the device's time zone, which the installer's <code>-z</code> sets.</td>
-</tr>
-<tr>
-<td><code>npt_set</code></td>
-<td><code>true</code> or <code>false</code></td>
-<td><code>true</code></td>
-<td>Present in the template but not used.</td>
 </tr>
 </tbody>
 </table>

@@ -763,6 +763,8 @@
       
         
       
+        
+      
     
     
     
@@ -870,6 +872,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../device-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Check and fix the device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -889,10 +919,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   
@@ -910,8 +940,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2085,6 +2115,7 @@
 <p>Log in to the device as the administrator, open <strong>Cockpit</strong> from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on <code>http://&lt;device&gt;:9090</code> with only the Raspberry Pi login, which works when the <a href="../control-app/">control app</a> doesn't. <a href="https://cockpit-project.org/">Cockpit</a> shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.</p>
 <h2 id="services">Services<a class="headerlink" href="#services" title="Permanent link">&para;</a></h2>
 <p>The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx and the control app run on the host, outside the pod, so the home page and the login stay up when the pod is down.</p>
+<p>Start with the control app's <a href="../device-health/#the-status-page">Status page</a>: it shows each service's state, and when one has stopped or keeps failing, its check has a <strong>Restart</strong> button. Use Cockpit or SSH for the rest, such as restarting the control app itself, or a service that looks running but misbehaves.</p>
 <table>
 <thead>
 <tr>
@@ -2107,7 +2138,7 @@
 </tr>
 <tr>
 <td><code>tm-control.service</code></td>
-<td>The <a href="../control-app/">control app</a>: the home page's data, the login, and the device's accounts. nginx asks it to check the login for every app.</td>
+<td>The <a href="../control-app/">control app</a>: the home page's data, the login, the device's accounts, and the status checks. nginx asks it to check the login for every app.</td>
 </tr>
 <tr>
 <td><code>revproxy.service</code></td>

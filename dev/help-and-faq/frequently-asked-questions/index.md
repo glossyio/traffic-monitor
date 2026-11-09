@@ -30,6 +30,16 @@ A database download fails
 
 See [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database).
 
+The Status page says the database schema is behind
+
+Each time Node-RED starts, it updates the database's tables to the version the installed software expects. If an update fails, it's undone, and Node-RED runs on the old tables, where it may not be able to save new data. To see why it failed, run this over SSH or in Cockpit's terminal:
+
+```
+sudo journalctl -u node-red-tm | grep tmdb-migrate
+```
+
+If Node-RED started recently, the [diagnostics](https://docs.trafficmonitor.ai/dev/use/device-health/#download-diagnostics) on the Device page show the same lines. Restarting Node-RED tries the update again. If it fails again, [ask for help](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/index.md) and attach the diagnostics.
+
 I edited config.yml and nothing changed
 
 The Traffic Monitor reads the file again when you save it, so a change that doesn't take effect usually means a YAML error, such as a wrong indent or a missing space after a colon. The `node-red-tm.service` log in [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md) shows the error. Fix the file before you restart the service; [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) explains why.

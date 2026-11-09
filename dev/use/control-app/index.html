@@ -16,7 +16,7 @@
         <link rel="prev" href="../home-page/">
       
       
-        <link rel="next" href="../../ui/monitoring/">
+        <link rel="next" href="../device-health/">
       
       
         
@@ -763,6 +763,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../device-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Check and fix the device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1047,10 +1077,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   
@@ -1068,8 +1098,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2215,7 +2245,7 @@
   
   <h1 id="control-app-and-login">Control app and login<a class="headerlink" href="#control-app-and-login" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Claim a Traffic Monitor with its setup code, log in, add viewer accounts, change passwords, and get back in when the login or the control app fails.</p>
-<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
+<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see <a href="../device-health/">Check and fix the device</a>. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
 <div class="admonition info">
 <p class="admonition-title">What the login protects</p>
 <p>The login keeps people on your network out of the apps. The device uses plain HTTP, so passwords and images cross your network unencrypted. Use the device on a network you trust.</p>
@@ -2296,6 +2326,11 @@ to create the administrator account. The code works once.
 <td>The <strong>Users</strong> page</td>
 <td>Yes</td>
 <td>No</td>
+</tr>
+<tr>
+<td>Status, Device, and Date and time pages</td>
+<td>Yes</td>
+<td>Read only; see <a href="../device-health/#what-viewers-see">What viewers see</a></td>
 </tr>
 </tbody>
 </table>

@@ -761,6 +761,8 @@
       
         
       
+        
+      
     
     
     
@@ -868,6 +870,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/device-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Check and fix the device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -887,10 +917,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   
@@ -908,8 +938,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2177,6 +2207,13 @@
 <details class="question">
 <summary>A database download fails</summary>
 <p>See <a href="../../ui/database/#download-the-database">Data export</a>.</p>
+</details>
+<details class="question">
+<summary>The Status page says the database schema is behind</summary>
+<p>Each time Node-RED starts, it updates the database's tables to the version the installed software expects. If an update fails, it's undone, and Node-RED runs on the old tables, where it may not be able to save new data. To see why it failed, run this over SSH or in Cockpit's terminal:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>node-red-tm<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>tmdb-migrate
+</code></pre></div>
+<p>If Node-RED started recently, the <a href="../../use/device-health/#download-diagnostics">diagnostics</a> on the Device page show the same lines. Restarting Node-RED tries the update again. If it fails again, <a href="../where-can-i-get-support/">ask for help</a> and attach the diagnostics.</p>
 </details>
 <details class="question">
 <summary>I edited config.yml and nothing changed</summary>
