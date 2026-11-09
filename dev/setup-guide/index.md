@@ -1,6 +1,6 @@
 # First-time setup
 
-Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, the device's setup code or administrator login, and an SSH client for step 4.
+Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.
 
 As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
@@ -46,23 +46,23 @@ Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, c
 
 ## 4. Record the location and sensors
 
-The device can record where it is, so set this before you collect data. The location is optional. If the device stays in one place and you never share its data, you can leave `survey_id` blank and keep the default `database_precision`. On a device upgraded from a release that recorded coordinates, leave `survey_id` blank unless you're moving the device; [deployment settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#deployment) explains why. When you move the device, set a new `survey_id` (and the new coordinates, if you record them), because changing only the coordinates doesn't start a new deployment. Connect over SSH and open the Traffic Monitor settings file:
+The location is optional. If the device stays in one place and you never share its data, it can count without one. To record where the device is and which way it faces:
+
+1. Open **Location** from the control app's menu, as the administrator.
+1. Choose **Add a place**. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose the way each sensor faces. Choose **Save**.
+1. Open the new place in the list, choose **Deploy here**, check the review, and choose **Deploy**.
+
+To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the bearings there. [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md) explains each step, and how precisely the database stores the location.
+
+Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`. Connect over SSH and open the settings file:
 
 ```
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
 ```
 
-1. Under `deployment`, enter the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Optionally enter the latitude and longitude from any map service. `survey_id` names the place without coordinates: use `<8 lower-case hex digits>-si`. Each place needs its own id. To make a fresh one, run `openssl rand -hex 4` and add `-si` to the output. The `3f9a1c2e-si` below is only an example; don't reuse it. `database_precision` is how much of the coordinates the database keeps: `none`, `1` (about 10 km, the default), or `2` (about 1 km). The exact coordinates stay in this file only.
-1. Under `sensors`, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`.
+The camera and radar, as installed:
 
 ```
-deployment:
-    survey_id: 3f9a1c2e-si
-    database_precision: '1'
-    lat: 45.52252
-    lon: -122.69120
-    bearing: n
-
 sensors:
     cameras:
         picam_h265:

@@ -767,6 +767,8 @@
       
         
       
+        
+      
     
     
     
@@ -1077,6 +1079,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1096,10 +1126,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   
@@ -1117,8 +1147,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2308,7 +2338,7 @@
 </tr>
 <tr>
 <td>Configuration</td>
-<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, each camera's radar is enabled, and the location values are valid. In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see <a href="../../configuration/frigate-config/#the-frigate-check">The Frigate+ check</a>. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
+<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, and each camera's radar is enabled. The Location check is a problem when a <code>deployment</code> value in <code>config.yml</code> is one Node-RED won't accept, such as a coordinate out of range or a bearing with spaces around it, and names the key. It warns when a sensor still has its own <code>lat</code> or <code>lon</code>, when the device's places haven't been set up since an update, which the control app does by itself once Node-RED answers, and when <code>survey_id</code> names a place the device doesn't have, and links to the <a href="../location/">Location page</a>. In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see <a href="../../configuration/frigate-config/#the-frigate-check">The Frigate+ check</a>. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
 </tr>
 <tr>
 <td>Hardware</td>
@@ -2329,7 +2359,7 @@
 <ul>
 <li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
 <li><strong>Re-scan hardware</strong>, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.</li>
-<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>, or <strong>Set the key</strong> for Frigate+, which opens the Frigate+ API key section of the <a href="../detection/#frigate-plus">Detection page</a>.</li>
+<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>, or <strong>Set the key</strong> for Frigate+, which opens the Frigate+ API key section of the <a href="../detection/#frigate-plus">Detection page</a>, or <strong>Open the Location page</strong> for the Location check.</li>
 <li><strong>A sentence</strong> with the next step, such as rerunning the installer for Node-RED (<code>tmsetup.sh -t node-red-tm</code>; see <a href="../../reference/tmsetup/">Installer options</a>).</li>
 </ul>
 <p>The control app can't restart itself. If it stops, see <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</p>

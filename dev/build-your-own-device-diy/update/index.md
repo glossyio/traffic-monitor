@@ -41,7 +41,7 @@ grep -E 'tm-control migrate: (WARNING|ERROR)' ~/tmsetup-*.log
 
 Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
 
-**A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env`, and a Frigate+ key typed into `frigate.env`, to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into `frigate.env`. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), or the Frigate+ key on its [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), and delete a key the installer left in `config.yml`.
+**A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env`, and a Frigate+ key typed into `frigate.env`, to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into `frigate.env`. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env files are backed up with a timestamp, so the other value stays in the backup. That backup's name ends in `.migrate.bak`, and it stays until you delete it. Enter the token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), or the Frigate+ key on its [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), and delete a key the installer left in `config.yml`.
 
 **A file that is a symbolic link, or a YAML error (`ERROR`).** The installer refuses to change a `config.yml` or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's `config.yml` also stops the installer, as one in Frigate's does. Fix the error in `/opt/traffic-monitor/node-red-tm/config/config.yml`, then run the installer again.
 
@@ -49,15 +49,38 @@ A Frigate configuration from a backup may lack the camera stream login and the p
 
 Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see [Connect from other devices](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#connect-from-other-devices).
 
-Open `http://<device>/`, log in, and check the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md) for new counts.
+Open `http://<device>/`, log in, and check the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md) for new counts. After an update from a version without the Location page, that first visit to the control app also sets up the device's places; see [Places after an update](#places-after-an-update).
 
 To update several devices from your computer, use the remote form of the installer described in [Install the software](https://docs.trafficmonitor.ai/dev/software-installation/#install-from-another-computer).
+
+## Places after an update
+
+An update from a version without the control app's Location page brings the location settings up to date:
+
+- The installer adds `database_precision: '2'` to `config.yml`, so the database stores the location rounded to about 1 km. It removes any `lat` and `lon` under a camera or radar, because the location belongs to the whole device, and its output names each sensor.
+- When Node-RED first starts, it saves a copy of the database, gives each location in the stored rows a place id, and rounds the stored coordinates to two decimal places, once. The copy keeps the exact rows until the next update that changes the database replaces it; see [Schema versions](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#schema-versions).
+
+Then open the control app and log in, as any user. The first time its home page, Status page, or [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md) opens after Node-RED has started, the control app sets up the device's places:
+
+- Each location in the saved copy becomes a used place, marked **Imported from your previous settings**.
+- The place at the location in `config.yml` becomes the place in use, and the control app writes its id into `config.yml`, so the deployments running now carry on. If no imported place is at that location, for example because it changed while the device was off, the control app makes a new place from `config.yml`, and new deployments start.
+- A device with no location in `config.yml` gets a new place in use with no location. Its past places are imported all the same.
+
+Open the control app before the next update
+
+The control app reads the past places from the saved copy, and the next update that changes the database replaces it. Open the control app before then, and keep the copy until the Location page lists the places. If Node-RED hasn't answered yet, the Status page's Location check says the places haven't been set up, and the control app tries again each time a page that shows the checks opens.
+
+If there's no copy, or the control app can't read it, the control app skips the import and makes only the place in use, from `config.yml`. The past places' records stay in the database, grouped by place id, but the Location page doesn't list those places.
+
+A device whose sensors had their own coordinates
+
+The update gives each sensor's own location a place of its own. Once the control app writes the place in use into `config.yml`, each sensor whose location differed from the device's starts a new deployment there. Its earlier records stay with their own place, which the Location page lists as used.
 
 ## What an update changes
 
 An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. [What `-f` replaces](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#what-f-replaces) lists the files.
 
-Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: location and sensors in `config.yml`, and zones in Frigate. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) walks through each.
+Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the `sensors` section of `config.yml`, and zones in Frigate. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) walks through each. You don't need to copy back `survey_id`, `lat`, `lon`, `database_precision`, or the bearings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).
 
 Node-RED flow changes made in the editor on the device are replaced on every update. Commit them to the repository instead; see [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md).
 

@@ -765,6 +765,8 @@
       
         
       
+        
+      
     
     
     
@@ -928,6 +930,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -947,10 +977,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   
@@ -968,8 +998,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2066,6 +2096,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-location-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Location module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2295,6 +2336,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-location-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Location module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2367,7 +2419,7 @@
   <hr />
 <h2 id="description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check">description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, the status checks, root jobs and polkit, fake mode, and how to add a module or a check.<a class="headerlink" href="#description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check" title="Permanent link">&para;</a></h2>
 <h1 id="tm-control">tm-control<a class="headerlink" href="#tm-control" title="Permanent link">&para;</a></h1>
-<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, and Date and time pages. <a href="../../use/control-app/">Control app and login</a> and <a href="../../use/device-health/">Check and fix the device</a> describe it from the operator's side. This page is for changing it.</p>
+<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Detection, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/detection/">Choose the detection model</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
 <p>It has three parts, all in the repository's <a href="https://github.com/glossyio/traffic-monitor/tree/main/tm-control"><code>tm-control/</code></a> folder:</p>
 <table>
 <thead>
@@ -2401,7 +2453,7 @@
 <ul>
 <li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
 <li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back.</li>
-<li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
+<li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
 <p>While the device is unclaimed, the installer keeps the setup code in a root-only file, <code>/etc/traffic-monitor/setup-code</code>, and hands it to <code>tm-control set-setup-code</code> on every run, which stores only its hash. The installer's command-line steps run as the code owner, and <code>sudo tm-control reset-admin</code> drops to that user after writing a new code file, so root never writes the database.</p>
 <h2 id="the-login-check">The login check<a class="headerlink" href="#the-login-check" title="Permanent link">&para;</a></h2>
@@ -2467,7 +2519,7 @@
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time, detection
+                 hardware, secrets, system, time, detection, location
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
@@ -2547,7 +2599,7 @@
 <li>Add the check to <code>tests/fixtures/status_fake.json</code> if fake mode should show a new status or kind of fix.</li>
 </ol>
 <h3 id="node-reds-internal-status">Node-RED's internal status<a class="headerlink" href="#node-reds-internal-status" title="Permanent link">&para;</a></h3>
-<p>Node-RED answers <code>GET /tm-internal/status</code> on <code>127.0.0.1:1880</code> with its uptime, the errors from its last <code>config.yml</code> load, the database's schema version, and each radar's port and last reading. A flow on the <code>init-config</code> tab serves it. It checks the <code>X-TM-Internal-Token</code> header against <code>TM_INTERNAL_TOKEN</code> in <code>node-red-tm.env</code>, which the installer fills from the <code>node_red_internal_token</code> secret on every run, and refuses every request when that variable is unset or empty. <code>adapters/nodered.py</code> reads it. nginx answers 404 for <code>/nr/tm-internal/</code> in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: <code>script/tests/test_node_red_flows.py</code> and <code>tests/fixtures/nodered_status.json</code> pin them.</p>
+<p>Node-RED answers <code>GET /tm-internal/status</code> on <code>127.0.0.1:1880</code> with its uptime, the errors from its last <code>config.yml</code> load, the database's schema version, and each radar's port and last reading. A flow on the <code>init-config</code> tab serves it. It checks the <code>X-TM-Internal-Token</code> header against <code>TM_INTERNAL_TOKEN</code> in <code>node-red-tm.env</code>, which the installer fills from the <code>node_red_internal_token</code> secret on every run, and refuses every request when that variable is unset or empty. <code>adapters/nodered.py</code> reads it, and calls the Location module's endpoints on the same port with the same token (see <a href="#the-location-module">The Location module</a>). nginx answers 404 for <code>/nr/tm-internal/</code> in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: <code>script/tests/test_node_red_flows.py</code> and <code>tests/fixtures/nodered_status.json</code> pin them.</p>
 <h3 id="the-detection-module">The Detection module<a class="headerlink" href="#the-detection-module" title="Permanent link">&para;</a></h3>
 <p>The <code>detection</code> module serves the <a href="../../use/detection/">Detection page</a>. It reads Frigate's running config and <code>config.yml</code>, and the files in Frigate's <code>model_cache</code>. Its routes, under <code>/api/v1/models</code>:</p>
 <table>
@@ -2604,8 +2656,91 @@
 <p>The module writes only inside <code>model_cache</code> and Frigate's <code>config.yml</code>, plus its own state directory. Every <code>model_cache</code> write goes through a descriptor of the directory opened with <code>O_NOFOLLOW</code>, after <code>valid_name</code> has checked the name; <code>config.yml</code> is edited by its path through <code>RoundTripFile</code>, as <code>tm-control migrate</code> edits config files (a backup, an atomic replace, the owner kept). When Frigate answers in safe mode, which it enters when its config fails to validate, it runs a stand-in config, so <code>GET /models</code> reads the detector and the running model from <code>config.yml</code> and says <code>frigate_safe_mode</code>; a Use still goes through Frigate's API, which validates the whole config. The caps are 100 MB for a request and a model file, 2 MB for a sidecar, 3 archive members, and 512 MB of free storage left afterwards. Use goes through Frigate's config API, which checks the whole config, and edits <code>config.yml</code> itself, with a backup, only when Frigate doesn't answer. Both end in a restart of <code>frigate.service</code>.</p>
 <p>Uploads need two things from the edge. nginx has its own location, <code>^~ /api/v1/models/upload/</code> in <code>tm-control-api.conf.j2</code>, with <code>client_max_body_size 100m</code> and <code>proxy_request_buffering off</code>, so the body streams to tm-control instead of being buffered. Because of that, tm-control reads the rest of a refused upload before it answers, so nginx can pass the answer on rather than a 502. The upload body is <code>application/octet-stream</code>, which the cross-site check in <code>core/csrf.py</code> admits along with <code>application/json</code>, because the check still requires a same-origin request. Every other <code>/api/</code> path keeps nginx's default body limit.</p>
 <p>The sidecars are a Frigate+ model record's JSON. The module reads only the fields the page shows and keeps the whole file as it was uploaded, so a download returns it unchanged. It never puts a record's other fields in an answer, a log line, or an audit row.</p>
+<h3 id="the-location-module">The Location module<a class="headerlink" href="#the-location-module" title="Permanent link">&para;</a></h3>
+<p>The <code>location</code> module serves the <a href="../../use/location/">Location page</a>. It's for admins only, because the places hold exact coordinates: every route under <code>/api/v1/surveys</code> takes <code>require_admin</code>. The places are in <code>state.sqlite</code>; the place in use is also in Node-RED's <code>config.yml</code>, under <code>deployment:</code>, which is what Node-RED reads. tm-control never opens <code>tmdb.sqlite</code>, and Node-RED never opens <code>state.sqlite</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /surveys</code></td>
+<td>The place in use, the precision, the enabled sensors and their bearings, the places with Node-RED's usage counts, and the deployments recorded before any place. Runs the reconcile first.</td>
+</tr>
+<tr>
+<td><code>POST /surveys</code>, <code>PATCH</code> and <code>DELETE /surveys/{id}</code></td>
+<td>Plan a place, edit a planned one, delete one that isn't in use</td>
+</tr>
+<tr>
+<td><code>POST /surveys/{id}/deploy</code></td>
+<td>Writes the place and every enabled sensor's bearing into <code>config.yml</code>, then asks Node-RED every second, for up to 20 seconds, for the new deployments. <code>reloaded: false</code> when they didn't appear, which isn't an error: the file is written.</td>
+</tr>
+<tr>
+<td><code>PUT /surveys/precision</code></td>
+<td>Writes <code>database_precision</code>; with <code>round_stored</code>, also has Node-RED round the rows already stored</td>
+</tr>
+<tr>
+<td><code>POST /surveys/{id}/location</code>, <code>POST /surveys/{id}/deployments/{deployment_id}/bearing</code></td>
+<td>Corrections: the place's point, re-rounded in Node-RED's rows, or one deployment's bearing; each records a row in <code>survey_corrections</code></td>
+</tr>
+<tr>
+<td><code>GET /surveys/{id}/deployments</code>, <code>GET /surveys/{id}/events</code></td>
+<td>A place's deployments, and its event count and span, from Node-RED</td>
+</tr>
+<tr>
+<td><code>POST /surveys/import</code></td>
+<td>Planned places from a CSV: a dry run lists what it read, and the import creates all or none</td>
+</tr>
+</tbody>
+</table>
+<p>The rules:</p>
+<ul>
+<li><code>coordinates.py</code> holds them: survey ids (<code>&lt;8 hex&gt;-si</code>, from <code>secrets.token_hex(4)</code>), typed coordinates quantised to five decimal places half away from zero on their decimal text, and the stored ones rounded half away from zero, as SQLite's <code>ROUND</code> and the flows' <code>toFixed</code> do. The UI's <code>coordinates.ts</code> only checks a pasted pair before it sends; the API's answer wins.</li>
+<li><code>config.py</code> edits <code>config.yml</code> through <code>RoundTripFile</code>, with <code>mapping_indent=4</code>, so comments, key order, and quoting stay. Each save keeps a backup beside the file, of which the newest 10 stay, and replaces it atomically. The backups of Frigate's <code>config.yml</code> from the Detection page's file fallback follow the same limit. Pruning touches only these <code>config.yml.&lt;UTC stamp&gt;.bak</code> names. It leaves the Ansible backups from <code>tmsetup.sh</code>, a copy made by hand, and every <code>&lt;file&gt;.&lt;UTC stamp&gt;.migrate.bak</code> from <code>tm-control migrate</code>, which can hold the only copy of what the migration removed. A file changed since it was read is a <code>ConcurrentEditError</code>, which the API answers with 409 <code>config_changed</code>.</li>
+<li><code>reconcile.py</code> keeps the store and the file in step. It runs at claim, on every <code>GET /surveys</code>, and before the checks of every status report that isn't the cached one (<code>StatusCache</code>'s <code>prepare</code>), under <code>app.state.reconcile_lock</code>, which every write also holds. The status report waits at most two seconds for that lock, skips the run when a write holds it longer, and logs any error by its class name. Once per device it makes the first place: on a fresh device (no coordinates, no <code>survey_id</code>, and no backup), <strong>First location</strong> with no coordinates; on an upgraded one, a used place for each survey in the newest <code>tmdb-v0-*</code> or <code>tmdb-v1-*</code> backup in <code>node-red-tm/db/backup/</code>, opened read-only and immutable, then the place in use from the file. It waits until Node-RED reports schema version 2. An unreadable backup is skipped with one log line. Every run after that follows hand edits of the file, as <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a> describes.</li>
+<li>No coordinate, description, or reason is logged, audited, or put in an error message. Audit rows carry the survey id, and a deployment id or the precision.</li>
+</ul>
+<p>The module calls six Node-RED endpoints, besides <code>/tm-internal/status</code>, on <code>127.0.0.1:1880</code> with <code>X-TM-Internal-Token</code>. Flows on the <code>init-config</code> tab serve them, and <code>script/tests/test_node_red_flows.py</code> pins them:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /tm-internal/deployments?survey_id=&lt;id&gt;</code></td>
+<td>A survey's deployment rows</td>
+</tr>
+<tr>
+<td><code>GET /tm-internal/surveys/usage</code></td>
+<td>First start, last end, and open and total deployment counts for each survey, and for the rows with no survey</td>
+</tr>
+<tr>
+<td><code>GET /tm-internal/surveys/&lt;id&gt;/events</code></td>
+<td>A survey's event count, and its first and last event</td>
+</tr>
+<tr>
+<td><code>POST /tm-internal/deployments/precision</code></td>
+<td>Rounds every stored row to a coarser precision, or clears the coordinates for <code>none</code></td>
+</tr>
+<tr>
+<td><code>POST /tm-internal/surveys/&lt;id&gt;/location</code></td>
+<td>Rewrites a survey's stored coordinates from a new point, each row at its own precision</td>
+</tr>
+<tr>
+<td><code>POST /tm-internal/deployments/&lt;id&gt;/bearing</code></td>
+<td>Rewrites one deployment's bearing</td>
+</tr>
+</tbody>
+</table>
+<p><code>tm-control migrate --node-red-config</code>, run by the installer, also brings <code>deployment:</code> up to date: it adds <code>database_precision: '2'</code> where it's missing, and removes <code>lat</code> and <code>lon</code> from a sensor's own <code>deployment:</code> block. The Location check (<code>location</code> in <code>modules/apps/contracts.py</code>) checks the same keys at run time.</p>
 <h3 id="what-the-sandbox-allows">What the sandbox allows<a class="headerlink" href="#what-the-sandbox-allows" title="Permanent link">&para;</a></h3>
-<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and Frigate's config directory, <code>frigate/config</code> under the code directory (<code>ReadWritePaths</code>), for the models the Detection page manages. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
+<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and two config directories under the code directory (<code>ReadWritePaths</code>): Frigate's, <code>frigate/config</code>, for the models the Detection page manages, and Node-RED's, <code>node-red-tm/config</code>, for the <code>config.yml</code> the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
 <ul>
 <li>No netlink socket, so <code>lsusb</code> can't start. The Coral USB check reads the vendor and product ids from <code>/sys/bus/usb/devices</code> instead, and <code>ss</code> falls back to reading <code>/proc/net</code> for the MQTT broker's port.</li>
 <li><code>vcgencmd get_throttled</code> needs the <code>video</code> group to open <code>/dev/vcio_gencmd</code>. Without it, the power check says to rerun the installer.</li>
@@ -2614,12 +2749,12 @@
 <li>tm-control never writes the secrets directory; the <code>set-secret</code> job does.</li>
 </ul>
 <h2 id="run-it-on-a-laptop">Run it on a laptop<a class="headerlink" href="#run-it-on-a-laptop" title="Permanent link">&para;</a></h2>
-<p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, and a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>
+<p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix, and a fake Node-RED for the Location page. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>fake-reset<span class="w">   </span><span class="c1"># an unclaimed device; prints its setup code</span>
 <span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>serve<span class="w">        </span><span class="c1"># the backend on 127.0.0.1:8090</span>
 <span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                                         </span><span class="c1"># the UI on http://localhost:5173</span>
 </code></pre></div>
-<p>Fake mode seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
+<p>Fake mode seeds <code>.tm-control-fake/node-red-tm/config/config.yml</code> from <code>tests/fixtures/node_red_config_ok.yml</code> (a camera and a radar, and a <code>deployment</code> block at 45.0, -122.0 with no survey id), and keeps it, with whatever the app wrote to it, until the next <code>fake-reset</code>. Its Node-RED (<code>FakeNodeRed</code> in <code>fake.py</code>) keeps deployment rows in memory and runs the deployment engine's rules on them whenever that file changes, so deploys, corrections, and hand edits of the file behave as on a device; after a restart of <code>serve</code>, only the place in use has deployments. Its backup directory is empty, so there's nothing to import. Fake mode also seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
 <p>Every change to the API regenerates the UI's typed client in the same commit, so each commit's tests pass:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>dump-openapi<span class="w"> </span>&gt;<span class="w"> </span>tm-control/ui/src/api/openapi.json
 <span class="o">(</span><span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>api:generate<span class="o">)</span><span class="w">   </span><span class="c1"># writes src/api/schema.d.ts</span>

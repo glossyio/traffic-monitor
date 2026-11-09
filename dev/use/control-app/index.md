@@ -1,6 +1,6 @@
 # Control app and login
 
-The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 What the login protects
 
@@ -63,6 +63,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Users** page                                                                           | Yes           | No                                                                                                        |
 | Status, Device, and Date and time pages                                                      | Yes           | Read only; see [What viewers see](https://docs.trafficmonitor.ai/dev/use/device-health/#what-viewers-see) |
 | The **Detection** page                                                                       | Yes           | Read only; see [The Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page) |
+| The **Location** page                                                                        | Yes           | No                                                                                                        |
 
 ### Add a viewer
 

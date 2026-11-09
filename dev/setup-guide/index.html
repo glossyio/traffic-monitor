@@ -869,6 +869,8 @@
       
         
       
+        
+      
     
     
     
@@ -1032,6 +1034,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../use/location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1051,10 +1081,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   
@@ -1072,8 +1102,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2163,7 +2193,7 @@
   
   <h1 id="first-time-setup">First-time setup<a class="headerlink" href="#first-time-setup" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Turn on detection, adjust the zones to your roadway, and record the device&#39;s location so it starts counting.</p>
-<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network, the device's setup code or administrator login, and an SSH client for step 4.</p>
+<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.</p>
 <p>As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.</p>
 <h2 id="1-claim-the-device">1. Claim the device<a class="headerlink" href="#1-claim-the-device" title="Permanent link">&para;</a></h2>
 <p>Open <code>http://&lt;device&gt;/</code>, where <code>&lt;device&gt;</code> is the hostname you set when imaging the card followed by <code>.local</code>, or the device's IP address. <a href="../use/home-page/">Home page and apps</a> explains each link and how to find the address.</p>
@@ -2227,21 +2257,18 @@
 </figure>
 <p>Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, can have any other name. <a href="../help-and-faq/use-cases-and-scenarios/">Ideas and use cases</a> has examples.</p>
 <h2 id="4-record-the-location-and-sensors">4. Record the location and sensors<a class="headerlink" href="#4-record-the-location-and-sensors" title="Permanent link">&para;</a></h2>
-<p>The device can record where it is, so set this before you collect data. The location is optional. If the device stays in one place and you never share its data, you can leave <code>survey_id</code> blank and keep the default <code>database_precision</code>. On a device upgraded from a release that recorded coordinates, leave <code>survey_id</code> blank unless you're moving the device; <a href="../configuration/node-red-config/#deployment">deployment settings</a> explains why. When you move the device, set a new <code>survey_id</code> (and the new coordinates, if you record them), because changing only the coordinates doesn't start a new deployment. Connect over SSH and open the Traffic Monitor settings file:</p>
+<p>The location is optional. If the device stays in one place and you never share its data, it can count without one. To record where the device is and which way it faces:</p>
+<ol>
+<li>Open <strong>Location</strong> from the control app's menu, as the administrator.</li>
+<li>Choose <strong>Add a place</strong>. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose the way each sensor faces. Choose <strong>Save</strong>.</li>
+<li>Open the new place in the list, choose <strong>Deploy here</strong>, check the review, and choose <strong>Deploy</strong>.</li>
+</ol>
+<p>To record only the way the sensors face, choose <strong>Modify deployment</strong> on the place in use, <strong>First location</strong>, and change the bearings there. <a href="../use/location/">Places and location</a> explains each step, and how precisely the database stores the location.</p>
+<p>Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs <code>enabled: false</code> under <code>TM_RADAR_SERIAL_PORT_00</code>. Connect over SSH and open the settings file:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>nano<span class="w"> </span>/opt/traffic-monitor/node-red-tm/config/config.yml
 </code></pre></div>
-<ol>
-<li>Under <code>deployment</code>, enter the compass direction the camera faces as <code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code>. Optionally enter the latitude and longitude from any map service. <code>survey_id</code> names the place without coordinates: use <code>&lt;8 lower-case hex digits&gt;-si</code>. Each place needs its own id. To make a fresh one, run <code>openssl rand -hex 4</code> and add <code>-si</code> to the output. The <code>3f9a1c2e-si</code> below is only an example; don't reuse it. <code>database_precision</code> is how much of the coordinates the database keeps: <code>none</code>, <code>1</code> (about 10 km, the default), or <code>2</code> (about 1 km). The exact coordinates stay in this file only.</li>
-<li>Under <code>sensors</code>, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs <code>enabled: false</code> under <code>TM_RADAR_SERIAL_PORT_00</code>.</li>
-</ol>
-<div class="highlight"><pre><span></span><code><span class="nt">deployment</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">survey_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3f9a1c2e-si</span>
-<span class="w">    </span><span class="nt">database_precision</span><span class="p">:</span><span class="w"> </span><span class="s">'1'</span>
-<span class="w">    </span><span class="nt">lat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45.52252</span>
-<span class="w">    </span><span class="nt">lon</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-122.69120</span>
-<span class="w">    </span><span class="nt">bearing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">n</span>
-
-<span class="nt">sensors</span><span class="p">:</span>
+<p>The camera and radar, as installed:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">sensors</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">cameras</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">picam_h265</span><span class="p">:</span>
 <span class="w">            </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>

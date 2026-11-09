@@ -765,6 +765,8 @@
       
         
       
+        
+      
     
     
     
@@ -928,6 +930,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -947,10 +977,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   
@@ -968,8 +998,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2250,10 +2280,10 @@
 </tbody>
 </table>
 <h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h2>
-<p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number.</p>
+<p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.</p>
 <p>Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>. To keep them longer, raise the retention there, and treat the device as holding images of people.</p>
 <p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. The live view and the recordings are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting. A snapshot you choose to <a href="../../configuration/frigate-config/#submit-snapshots">submit to Frigate+</a> does leave the device, and it can show people.</p>
-<p>With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see <a href="#deployment">deployment</a>). The exact location stays in <code>config.yml</code>, which isn't part of the database.</p>
+<p>With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see <a href="#deployment">deployment</a>). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose <strong>About 10 km</strong> or <strong>No location stored</strong> on the <a href="../../use/location/">Location</a> page before it starts recording. The exact location stays on the device, in <code>config.yml</code> and in the control app's list of places, and neither is part of the database.</p>
 <p>The database stops being de-identified if you:</p>
 <ul>
 <li>Install the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Plate numbers go into the <code>plate_recognizer</code> table. Don't share a database from a device that has ever had the add-on on.</li>
@@ -2312,7 +2342,7 @@
 <tr>
 <td><code>deployment</code></td>
 <td>Where each sensor was, and when</td>
-<td>No: the location is rounded to about 10 km (one decimal place) by default, and never finer than about 1 km</td>
+<td>No, except where homes are far apart: the location is rounded to about 1 km (two decimal places) by default and never stored more precisely, which in a rural area can point to a single home (see <a href="#privacy">Privacy</a>)</td>
 </tr>
 <tr>
 <td><code>comments</code></td>
@@ -2395,7 +2425,7 @@
 </tr>
 </tbody>
 </table>
-<p>The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to <code>db/backup/tmdb-v&lt;N&gt;-&lt;time&gt;.sqlite</code> in the <code>node-red-tm</code> directory, where N is the schema version the device was on before, and that copy holds the exact rows. A device upgrading from a release (0.7.1 or earlier) has <code>tmdb-v0-…</code>, and a device that already ran a development build with the first schema version has <code>tmdb-v1-…</code>. The copy is kept until the next schema change succeeds, and you can delete it sooner. The first upgrade from a release copies the whole database, so it needs free space of about 1.2 times the database's size. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.</p>
+<p>The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to <code>db/backup/tmdb-v&lt;N&gt;-&lt;time&gt;.sqlite</code> in the <code>node-red-tm</code> directory, where N is the schema version the device was on before, and that copy holds the exact rows. A device upgrading from a release (0.7.1 or earlier) has <code>tmdb-v0-…</code>, and a device that already ran a development build with the first schema version has <code>tmdb-v1-…</code>. The copy is kept until the next schema change succeeds. You can delete it sooner, once the control app has read the past places from it; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Places after an update</a>. The first upgrade from a release copies the whole database, so it needs free space of about 1.2 times the database's size. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.</p>
 <h3 id="comments">comments<a class="headerlink" href="#comments" title="Permanent link">&para;</a></h3>
 <p>Free-text notes an operator adds on the <a href="../../ui/database/">Data export</a> page, for example "threshold lowered to 0.4" or "road work on the north side", so that whoever analyzes the data later knows what changed and when.</p>
 <table>

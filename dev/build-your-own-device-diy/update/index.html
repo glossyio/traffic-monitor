@@ -677,6 +677,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#places-after-an-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Places after an update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-an-update-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -858,6 +869,8 @@
       
         
       
+        
+      
     
     
     
@@ -1021,6 +1034,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1040,10 +1081,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   
@@ -1061,8 +1102,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2088,6 +2129,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#places-after-an-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Places after an update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-an-update-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2169,16 +2221,37 @@ bash<span class="w"> </span>script/tmsetup.sh
 <li>A <code>proxy</code> setting doesn't match, followed by <code>auth was not added</code> when the file had no <code>auth</code> section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.</li>
 </ul>
 <p>Change each named setting to match the <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a>, in <code>/opt/traffic-monitor/frigate/config/config.yml</code> over SSH. Then run <code>bash script/tmsetup.sh -t frigate</code>, which adds what's still missing, and restart Frigate with <code>sudo systemctl restart frigate.service</code>.</p>
-<p><strong>A token or key that wasn't moved.</strong> The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in <code>config.yml</code> or in <code>plate-recognizer.env</code>, and a Frigate+ key typed into <code>frigate.env</code>, to the device's secrets, and deletes the keys from <code>config.yml</code>. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into <code>frigate.env</code>. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and <code>config.yml</code> and the env files are backed up with a timestamp, so the other value stays in the backup. Enter the token on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>, or the Frigate+ key on its <a href="../../use/detection/#frigate-plus">Detection page</a>, and delete a key the installer left in <code>config.yml</code>.</p>
+<p><strong>A token or key that wasn't moved.</strong> The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in <code>config.yml</code> or in <code>plate-recognizer.env</code>, and a Frigate+ key typed into <code>frigate.env</code>, to the device's secrets, and deletes the keys from <code>config.yml</code>. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. A Frigate+ key moves only in the format Frigate+ shows it in, on its own or between double quotes; for a key it leaves, the installer writes the device's own key, or none, into <code>frigate.env</code>. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and <code>config.yml</code> and the env files are backed up with a timestamp, so the other value stays in the backup. That backup's name ends in <code>.migrate.bak</code>, and it stays until you delete it. Enter the token on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>, or the Frigate+ key on its <a href="../../use/detection/#frigate-plus">Detection page</a>, and delete a key the installer left in <code>config.yml</code>.</p>
 <p><strong>A file that is a symbolic link, or a YAML error (<code>ERROR</code>).</strong> The installer refuses to change a <code>config.yml</code> or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's <code>config.yml</code> also stops the installer, as one in Frigate's does. Fix the error in <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code>, then run the installer again.</p>
 </details>
 <p>A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run <code>bash script/tmsetup.sh -t frigate</code> to add them.</p>
 <p>Port 1883 accepts MQTT connections only from the device itself unless the broker has a login. If a display board, Home Assistant, or another device on your network reads MQTT from this device, give the broker a login and give it to that device; see <a href="../../data-and-payloads/integrations/#connect-from-other-devices">Connect from other devices</a>.</p>
-<p>Open <code>http://&lt;device&gt;/</code>, log in, and check the <a href="../../ui/monitoring/">Monitoring dashboard</a> for new counts.</p>
+<p>Open <code>http://&lt;device&gt;/</code>, log in, and check the <a href="../../ui/monitoring/">Monitoring dashboard</a> for new counts. After an update from a version without the Location page, that first visit to the control app also sets up the device's places; see <a href="#places-after-an-update">Places after an update</a>.</p>
 <p>To update several devices from your computer, use the remote form of the installer described in <a href="../../software-installation/#install-from-another-computer">Install the software</a>.</p>
+<h2 id="places-after-an-update">Places after an update<a class="headerlink" href="#places-after-an-update" title="Permanent link">&para;</a></h2>
+<p>An update from a version without the control app's Location page brings the location settings up to date:</p>
+<ul>
+<li>The installer adds <code>database_precision: '2'</code> to <code>config.yml</code>, so the database stores the location rounded to about 1 km. It removes any <code>lat</code> and <code>lon</code> under a camera or radar, because the location belongs to the whole device, and its output names each sensor.</li>
+<li>When Node-RED first starts, it saves a copy of the database, gives each location in the stored rows a place id, and rounds the stored coordinates to two decimal places, once. The copy keeps the exact rows until the next update that changes the database replaces it; see <a href="../../data-and-payloads/data-overview/#schema-versions">Schema versions</a>.</li>
+</ul>
+<p>Then open the control app and log in, as any user. The first time its home page, Status page, or <a href="../../use/location/">Location page</a> opens after Node-RED has started, the control app sets up the device's places:</p>
+<ul>
+<li>Each location in the saved copy becomes a used place, marked <strong>Imported from your previous settings</strong>.</li>
+<li>The place at the location in <code>config.yml</code> becomes the place in use, and the control app writes its id into <code>config.yml</code>, so the deployments running now carry on. If no imported place is at that location, for example because it changed while the device was off, the control app makes a new place from <code>config.yml</code>, and new deployments start.</li>
+<li>A device with no location in <code>config.yml</code> gets a new place in use with no location. Its past places are imported all the same.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Open the control app before the next update</p>
+<p>The control app reads the past places from the saved copy, and the next update that changes the database replaces it. Open the control app before then, and keep the copy until the Location page lists the places. If Node-RED hasn't answered yet, the Status page's Location check says the places haven't been set up, and the control app tries again each time a page that shows the checks opens.</p>
+</div>
+<p>If there's no copy, or the control app can't read it, the control app skips the import and makes only the place in use, from <code>config.yml</code>. The past places' records stay in the database, grouped by place id, but the Location page doesn't list those places.</p>
+<details class="note">
+<summary>A device whose sensors had their own coordinates</summary>
+<p>The update gives each sensor's own location a place of its own. Once the control app writes the place in use into <code>config.yml</code>, each sensor whose location differed from the device's starts a new deployment there. Its earlier records stay with their own place, which the Location page lists as used.</p>
+</details>
 <h2 id="what-an-update-changes">What an update changes<a class="headerlink" href="#what-an-update-changes" title="Permanent link">&para;</a></h2>
 <p>An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With <code>-f</code>, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. <a href="../../reference/tmsetup/#what-f-replaces">What <code>-f</code> replaces</a> lists the files.</p>
-<p>Use <code>-f</code> when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: location and sensors in <code>config.yml</code>, and zones in Frigate. <a href="../../setup-guide/">First-time setup</a> walks through each.</p>
+<p>Use <code>-f</code> when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the <code>sensors</code> section of <code>config.yml</code>, and zones in Frigate. <a href="../../setup-guide/">First-time setup</a> walks through each. You don't need to copy back <code>survey_id</code>, <code>lat</code>, <code>lon</code>, <code>database_precision</code>, or the bearings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>
 <p>Node-RED flow changes made in the editor on the device are replaced on every update. Commit them to the repository instead; see <a href="../../development/dev-environment/">Dev environment</a>.</p>
 <h2 id="update-one-component">Update one component<a class="headerlink" href="#update-one-component" title="Permanent link">&para;</a></h2>
 <p>Each installer tag reruns one component, plus anything that has to change with it; see <a href="../../reference/tmsetup/#tags">Tags</a>. For example, after plugging in a radar:</p>
