@@ -8,6 +8,7 @@ engine's rules in memory. Nothing here logs or audits a coordinate or a descript
 
 import importlib
 import logging
+import re
 import sqlite3
 
 import pytest
@@ -508,6 +509,34 @@ def test_a_file_changed_by_hand_while_a_write_runs_is_409(admin, monkeypatch):
     assert backups(admin) == before
     monkeypatch.undo()
     assert survey(places(admin), place["id"])["status"] == "planned"
+
+
+def reset_file(client, survey_id):
+    """What tmsetup.sh -f leaves: no survey id, and the template's precision."""
+    path = client.app.state.config_path
+    text = re.sub(r"database_precision: .*\n", "database_precision: '2'\n", path.read_text())
+    path.write_text(text.replace(f"survey_id: {survey_id}\n", "survey_id:\n"))
+
+
+def test_a_precision_saved_on_the_page_comes_back_after_a_reset(admin):
+    in_use = first_place(admin)
+    r = admin.put("/api/v1/surveys/precision", json={"precision": "none"}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    reset_file(admin, in_use)
+    state = places(admin)
+    assert state["precision"] == "none" and state["in_use"] == in_use
+    assert file_data(admin)["deployment"]["database_precision"] == "none"
+    assert file_data(admin)["deployment"]["survey_id"] == in_use
+
+
+def test_a_precision_saved_while_the_file_is_reset_is_the_one_kept(admin):
+    in_use = first_place(admin)
+    assert admin.put("/api/v1/surveys/precision", json={"precision": "none"}, headers=ORIGIN).status_code == 200
+    reset_file(admin, in_use)
+    r = admin.put("/api/v1/surveys/precision", json={"precision": "1"}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["precision"] == "1"
+    assert file_data(admin)["deployment"]["database_precision"] == "1"
 
 
 IMPORT_CSV = "description,lat,lon,picam_h265\nMain St,45.52252,-122.69120,n\nNo location,,,\n"

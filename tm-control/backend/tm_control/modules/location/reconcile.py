@@ -4,9 +4,10 @@ Once per unit (the device table's surveys_reconciled_at): on a fresh unit with n
 create the first place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb
 backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
 place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
-use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, the place's
-bearings where the file's are blank, and the place's point, if it has one, over whatever the installer rendered; blank
-lat and lon get the place's point back too, since a place with a point is never corrected to none (decision 9).
+use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, the precision
+last seen with a survey named, the place's bearings where the file's are blank, and the place's point, if it has one,
+over whatever the installer rendered; blank lat and lon get the place's point back too, since a place with a point is
+never corrected to none (decision 9).
 
 Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock.
 Nothing here logs a coordinate, a description, an id, or anything read from a file: only exception class names and
@@ -300,6 +301,7 @@ def _create_in_use(places: Places, survey_id: str, description, point, bearings:
 def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     deployment = config.deployment()
     followed = "none"
+    _keep_precision(places, deployment)
     if deployment.survey_id is not None:
         named = places.get(deployment.survey_id)
         if named is None:
@@ -326,12 +328,16 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     # The file lost the place in use (tmsetup.sh -f renders it from the template): the id goes back, and each enabled
     # sensor whose bearing is blank gets the place's back, so the engine, which holds a bearing change while no survey
     # is named, starts no deployment with no bearing once the id returns. A bearing in the file is the operator's and
-    # stays, as does the precision. The file's coordinates came from the installer's values, not from a correction:
-    # a place with a point gets it back whatever the file holds (the Location page is where a place is corrected); a
-    # typo stays as typed; only a place with no point follows the file's. Saved with whatever follows.
+    # stays. The precision is the template's, finer than an operator may have chosen, so the one last seen with a
+    # survey named goes back. The file's coordinates came from the installer's values, not from a correction: a place
+    # with a point gets it back whatever the file holds (the Location page is where a place is corrected); a typo
+    # stays as typed; only a place with no point follows the file's. Saved with whatever follows.
     restoring = deployment.survey_id is None and not deployment.survey_id_invalid
     if restoring:
         config.set_survey_id(current.id)
+        kept = places.kept_precision()
+        if kept is not None:
+            config.set_precision(kept)
         stored = {(b.sensor_type, b.sensor_name): b.bearing for b in current.bearings}
         for sensor_type, name in config.blank_bearings():
             if stored.get((sensor_type, name)):
@@ -354,6 +360,15 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     places.record_correction(current.id, None, "location", point_text(*old), point_text(*new), None, "config", None)
     _re_round(app_state, current.id, new[0], new[1])
     return "coordinates"
+
+
+def _keep_precision(places: Places, deployment: Deployment) -> None:
+    """Remember the file's precision while it names a survey, so a reset, which blanks the survey id, can't be taken
+    for the operator's choice."""
+    if deployment.survey_id is None or deployment.precision_missing or deployment.precision_invalid:
+        return
+    if places.kept_precision() != deployment.precision:
+        places.keep_precision(deployment.precision)
 
 
 def _saved(config: NodeRedConfig, restoring: bool) -> str | None:

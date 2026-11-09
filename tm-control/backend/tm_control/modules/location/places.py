@@ -184,6 +184,17 @@ class Places:
                 raise ValueError("the place in use cannot be deleted")
             con.execute("DELETE FROM surveys WHERE id = ?", (survey_id,))
 
+    def kept_precision(self) -> str | None:
+        """The database precision last chosen, which a config.yml reset from the template gets back; None until one
+        has been seen."""
+        with _reading(self.state) as con:
+            row = con.execute("SELECT value FROM device WHERE key = 'database_precision'").fetchone()
+        return None if row is None else row["value"]
+
+    def keep_precision(self, precision: str) -> None:
+        with _writing(self.state) as con:
+            con.execute("INSERT OR REPLACE INTO device (key, value) VALUES ('database_precision', ?)", (precision,))
+
     def reconciled_at(self) -> str | None:
         with _reading(self.state) as con:
             row = con.execute("SELECT value FROM device WHERE key = 'surveys_reconciled_at'").fetchone()

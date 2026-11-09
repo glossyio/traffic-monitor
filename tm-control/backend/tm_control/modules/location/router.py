@@ -392,6 +392,8 @@ def set_precision(body: PrecisionIn, request: Request, admin: User = Depends(req
         config = _load_config(app_state)
         config.set_precision(body.precision)
         _save(app_state, config)
+        # Now, not at the next reconcile: on a file that lost its survey id, that run would put the old one back.
+        Places(app_state.state).keep_precision(body.precision)
     Audit(app_state.state).record(admin.id, "survey.precision", body.precision)
     if body.round_stored:
         try:

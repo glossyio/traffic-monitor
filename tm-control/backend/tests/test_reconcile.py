@@ -485,8 +485,8 @@ def test_coordinates_blanked_by_hand_are_put_back(unit):
 def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
     """After tmsetup.sh -f the file has the template's blank survey_id, location, and bearing: the place in use goes
     back in with its stored point, and each sensor with a blank bearing gets the place's back under its own block, so
-    the engine starts no deployment with no bearing. The top-level bearing and the precision stay as the file has
-    them."""
+    the engine starts no deployment with no bearing. The top-level bearing stays as the file has it, and so does a
+    precision when none was ever seen with a survey named (this file had none)."""
     reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
     place = Places(unit.state).in_use()
     unit.nodered.calls.clear()
@@ -505,6 +505,67 @@ def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
     assert corrections(unit) == [] and unit.nodered.calls == []
     assert len(Places(unit.state).list()) == 1
     assert reconcile.ensure(unit).followed == "none"
+
+
+def named_with_precision(unit, precision):
+    """The first run done, then the file names the place in use and holds this precision. Returns the line to reset."""
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}\n", f"survey_id: {place.id}\n    database_precision: '{precision}'\n")
+    return f"survey_id: {place.id}\n    database_precision: '{precision}'\n"
+
+
+@pytest.mark.parametrize("chosen", ["none", "1", "2"])
+def test_a_reset_file_gets_back_the_precision_seen_with_the_survey(unit, chosen):
+    """tmsetup.sh -f renders the template's '2': an operator who chose less must not store more from then on."""
+    named = named_with_precision(unit, chosen)
+    assert reconcile.ensure(unit).followed == "none"  # seen with the survey named
+    edit(unit, named, "survey_id:\n    database_precision: '2'\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["database_precision"] == chosen
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_reset_file_gets_the_precision_back_when_it_also_gets_the_point_back(unit):
+    named = named_with_precision(unit, "none")
+    reconcile.ensure(unit)
+    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    {named}", "lat:\n    lon:\n    bearing: 'n'\n    survey_id:\n"
+         "    database_precision: '2'\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    deployment = file_deployment(unit)
+    assert (deployment["lat"], deployment["lon"], deployment["database_precision"]) == (45.0, -122.0, "none")
+
+
+def test_a_reset_file_with_a_typo_in_its_coordinates_still_gets_the_precision_back(unit):
+    named = named_with_precision(unit, "1")
+    reconcile.ensure(unit)
+    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    {named}", "lat: nope\n    lon: -122.0\n    bearing: 'n'\n"
+         "    survey_id:\n    database_precision: '2'\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["database_precision"] == "1"
+
+
+def test_a_hand_edit_of_the_precision_is_the_one_a_reset_gives_back(unit):
+    named = named_with_precision(unit, "1")
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, named, f"survey_id: {place.id}\n    database_precision: 'none'\n")
+    reconcile.ensure(unit)
+    edit(unit, f"survey_id: {place.id}\n    database_precision: 'none'\n", "survey_id:\n    database_precision: '2'\n")
+    reconcile.ensure(unit)
+    assert file_deployment(unit)["database_precision"] == "none"
+
+
+@pytest.mark.parametrize("bad", ["'NONE'", "'3'"])
+def test_a_precision_node_red_refuses_is_not_the_one_a_reset_gives_back(unit, bad):
+    named = named_with_precision(unit, "1")
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, named, f"survey_id: {place.id}\n    database_precision: {bad}\n")
+    reconcile.ensure(unit)
+    edit(unit, f"survey_id: {place.id}\n    database_precision: {bad}\n", "survey_id:\n    database_precision: '2'\n")
+    reconcile.ensure(unit)
+    assert file_deployment(unit)["database_precision"] == "1"
 
 
 def test_a_reset_file_leaves_a_bearing_the_operator_set(unit):
