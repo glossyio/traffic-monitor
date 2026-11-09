@@ -426,9 +426,7 @@ onMounted(load)
               </v-expansion-panel-title>
             </h3>
             <v-expansion-panel-text>
-              <p class="text-body-1 mb-4">
-                This setting is for the whole device: every place, the deployments running now, and every new one.
-              </p>
+              <p class="text-body-1 mb-4">This setting is for the whole device, not for one place.</p>
               <v-radio-group v-model="precisionChoice" hide-details @update:model-value="precisionChanged">
                 <v-radio v-for="choice in PRECISIONS" :key="choice.value" :value="choice.value" :label="choice.title" />
               </v-radio-group>

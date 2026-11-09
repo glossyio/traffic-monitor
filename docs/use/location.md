@@ -101,7 +101,7 @@ The place in use can't be deleted. Deploy another place first.
 
 ## Choose the precision
 
-**Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device: every place, the deployments running now, and every new one. Each choice shows how the same point would be stored:
+**Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:
 
 | Choice | The database stores |
 |---|---|

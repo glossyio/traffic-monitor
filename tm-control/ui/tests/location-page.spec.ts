@@ -245,9 +245,7 @@ describe('the Location page', () => {
     expect(wrapper.text()).not.toContain('This setting is for the whole device')
 
     await expand(wrapper, 'Change the precision')
-    expect(wrapper.text()).toContain(
-      'This setting is for the whole device: every place, the deployments running now, and every new one.',
-    )
+    expect(wrapper.text()).toContain('This setting is for the whole device, not for one place.')
     expect(wrapper.text().match(/keeps the exact location|exact location is kept/g)).toHaveLength(1) // said once
     expect(wrapper.text()).not.toContain('Exporting it is coming in a later update.')
   })
