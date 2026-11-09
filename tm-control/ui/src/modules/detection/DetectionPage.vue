@@ -1,7 +1,8 @@
 <!--
-  The Detection page (GET /models): the detector, the model Frigate runs, the models on the device with their files,
-  and the two label lists, for every logged-in user. Admins also get the actions (upload, use, download, delete) and
-  the Frigate+ API key's form, the frigate_plus_api_key row of GET /secrets, which the API refuses viewers.
+  The Detection page (GET /models), in four sections, for every logged-in user: Object detection (the detector, the
+  running model, and the two label lists), Model in use, Other models on this device, and Frigate+. Admins also get the
+  actions (upload, use, download, delete) and the Frigate+ API key's form, the frigate_plus_api_key row of GET /secrets,
+  which the API refuses viewers.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -51,8 +52,8 @@ const keyOpen = ref<string[]>(linkedToKey ? [FRIGATE_PLUS_ID] : [])
 // secrets answer, and "in use" only while Frigate runs a Frigate+ model
 const keyState = computed(() => {
   if (!key.value) return ''
-  if (!key.value.set) return 'Not set'
-  const set = key.value.ends_with ? `Set, ending in ${key.value.ends_with}` : 'Set'
+  if (!key.value.set) return 'API key not set'
+  const set = key.value.ends_with ? `API key set, ending in ${key.value.ends_with}` : 'API key set'
   return state.value?.running.kind === 'frigate_plus' ? `${set}, in use` : set
 })
 
@@ -75,12 +76,16 @@ onMounted(async () => {
   }
 })
 
-// The two facts above the models, as the Device page's Software grid has them
+// The two facts at the top, as the Device page's Software grid has them
 const detectorValue = computed(() => state.value?.detector ?? 'Unknown')
 
 const KINDS = {
   frigate_plus: 'a Frigate+ model',
   local: 'a local model',
+}
+const KIND_FACTS = {
+  frigate_plus: 'Frigate+ model',
+  local: 'Local model',
 }
 
 // The two defaults have no sidecar, so the API's title for each is its file name, which goes on the facts line
@@ -107,10 +112,12 @@ const runningValue = computed(() => {
   return title ? `${title}, ${kind}` : kind.charAt(0).toUpperCase() + kind.slice(1)
 })
 
-// The sidecar's facts in one line, such as "trained 2026-10-01, yolo-generic, for edgetpu, 320×320"
+// The kind and the sidecar's facts in one line, such as "Local model, trained 2026-10-01, yolo-generic, for edgetpu,
+// 320×320"
 function facts(model: ModelOut) {
   if (isDefaultKind(model.kind)) return model.name
   return [
+    KIND_FACTS[model.kind],
     model.trained_at ? `trained ${model.trained_at.slice(0, 10)}` : null,
     model.type,
     model.detectors.length ? `for ${model.detectors.join(' or ')}` : null,
@@ -120,8 +127,8 @@ function facts(model: ModelOut) {
     .join(', ')
 }
 
-// One bordered block per model: the one Frigate runs above the fold, the rest in the "Other models" panel. A default
-// with no file on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be.
+// One card per model: the one Frigate runs under "Model in use", the rest under "Other models". A default with no file
+// on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be.
 function listed(model: ModelOut): Block {
   return { key: model.name, title: titleOf(model), facts: facts(model), model, kind: model.kind, inUse: model.running }
 }
@@ -147,9 +154,32 @@ const others = computed<Block[]>(() => {
   return blocks
 })
 
-// The panels that are open, by value: one list per section, because a group of panels writes back only its own
+// Where the running model's list came from, as the recognised panel says
+const SOURCES = {
+  frigate: 'As Frigate reports them.',
+  sidecar: "From the model's .json, because Frigate didn't say.",
+  labels_file: "From the installer's labels file, because Frigate didn't say.",
+}
+
+// The tracked objects the running model doesn't recognise; none when what it recognises isn't known
+const unrecognised = computed(() => {
+  const { recognised, tracked } = state.value?.labels ?? {}
+  return recognised && tracked ? tracked.filter((label) => !recognised.includes(label)) : []
+})
+
+// Frigate's list against the .json of the model in use, as sets. Frigate pads its merged label map with "unknown"
+// entries, which are no objects.
+const listsDiffer = computed(() => {
+  const { recognised, source } = state.value?.labels ?? {}
+  const own = inUse.value?.model?.labels
+  if (source !== 'frigate' || !recognised || !own) return false
+  const objects = (labels: string[]) => new Set(labels.filter((label) => label !== 'unknown'))
+  const [reported, ours] = [objects(recognised), objects(own)]
+  return reported.size !== ours.size || [...reported].some((label) => !ours.has(label))
+})
+
+// The panels that are open, by value: one list per group, because a group of panels writes back only its own
 // values and would close the others' if they shared one
-const modelsOpen = ref<string[]>([])
 const labelsOpen = ref<string[]>([])
 
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
@@ -184,7 +214,7 @@ function missingFrom(block: Block) {
 }
 
 // What ModelBlock needs of the page's state for one block. A default's use shows its result at DEFAULT, so the
-// result follows the block when it moves above the fold.
+// result follows the block when it moves under "Model in use".
 function blockProps(block: Block) {
   const at = isDefaultKind(block.kind) ? DEFAULT : block.key
   const on = (action: string) => busy.value === `${action} ${action === 'use' ? at : block.key}`
@@ -362,64 +392,28 @@ function openUpload() {
             <div class="text-body-1 text-break">{{ runningValue }}</div>
           </v-col>
         </v-row>
-        <ModelBlock
-          v-if="inUse"
-          v-bind="blockProps(inUse)"
-          class="mb-4"
-          @use="askToUse(inUse)"
-          @download="download(inUse.model!)"
-          @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
-        />
-        <!-- The other models in one panel, closed until tapped. Its title, a button, goes inside the h3, so the heading
-             stays a heading for screen readers, as on the Device page. Eager: its content is on the page while it's
-             closed, so the page's height is known when a link scrolls to the key panel. The panels take the page's
-             background, so the block in use is the only tinted thing on the page. -->
-        <v-expansion-panels v-model="modelsOpen" multiple flat bg-color="background">
-          <v-expansion-panel value="other-models" class="border" eager>
-            <h3 class="text-subtitle-1 font-weight-medium">
-              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Other models on this device ({{ others.length }})
-              </v-expansion-panel-title>
-            </h3>
-            <v-expansion-panel-text>
-              <v-btn
-                v-if="session.isAdmin"
-                variant="outlined"
-                color="primary"
-                size="large"
-                :disabled="working"
-                @click="openUpload"
-              >
-                Upload a model
-              </v-btn>
-              <ActionResult v-if="result?.at === LIST" :result="result" />
-              <div class="d-flex flex-column ga-3 mt-4">
-                <ModelBlock
-                  v-for="block in others"
-                  :key="block.key"
-                  v-bind="blockProps(block)"
-                  @use="askToUse(block)"
-                  @download="download(block.model!)"
-                  @remove="confirming = { action: 'delete', title: block.title, model: block.model }"
-                />
-              </div>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </section>
-
-      <section class="mt-10">
-        <h2 class="text-h6 mb-2">What the model recognises</h2>
+        <p v-if="listsDiffer" class="text-body-2 mb-4">Frigate reports a different list than this model's .json.</p>
         <p class="text-body-1 mb-4">Frigate tracks only the objects that are in both lists.</p>
+        <!-- Each list in a panel, closed until tapped. Its title, a button, goes inside the h3, so the heading stays a
+             heading for screen readers, as on the Device page. Eager: its content is on the page while it's closed, so
+             the page's height is known when a link scrolls to the key panel. The panels take the page's background, so
+             the card in use is the only tinted thing on the page. -->
         <v-expansion-panels v-model="labelsOpen" multiple flat bg-color="background" class="ga-3">
           <v-expansion-panel value="recognised" class="border" eager>
             <h3 class="text-subtitle-1 font-weight-medium">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                All objects the model recognises{{ state.labels.recognised ? ` (${state.labels.recognised.length})` : '' }}
+                Objects the running model recognises{{ state.labels.recognised ? ` (${state.labels.recognised.length})` : '' }}
               </v-expansion-panel-title>
             </h3>
             <v-expansion-panel-text>
-              <LabelChips v-if="state.labels.recognised" :labels="state.labels.recognised" />
+              <template v-if="state.labels.recognised">
+                <p v-if="state.labels.source" class="text-body-2 text-secondary mb-2">{{ SOURCES[state.labels.source] }}</p>
+                <LabelChips
+                  :labels="state.labels.recognised"
+                  :marked="state.labels.tracked"
+                  marked-legend="Filled: tracked on this device."
+                />
+              </template>
               <p v-else class="text-body-2 text-secondary">
                 {{
                   state.frigate_answers
@@ -432,14 +426,64 @@ function openUpload() {
           <v-expansion-panel value="tracked" class="border" eager>
             <h3 class="text-subtitle-1 font-weight-medium">
               <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Objects tracked on this device ({{ state.labels.tracked.length }})
+                Objects tracked on this device ({{ state.labels.tracked.length
+                }}{{ unrecognised.length ? `, ${unrecognised.length} not recognised` : '' }})
               </v-expansion-panel-title>
             </h3>
             <v-expansion-panel-text>
-              <LabelChips :labels="state.labels.tracked" />
+              <LabelChips
+                :labels="state.labels.tracked"
+                :flagged="unrecognised"
+                flagged-legend="Amber: the running model doesn't recognise it."
+              />
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
+        <!-- Visible while the panels are closed -->
+        <div v-if="unrecognised.length" class="not-recognised mt-4">
+          <p class="text-body-2 mb-2">Tracked but not recognised by the running model:</p>
+          <div class="d-flex flex-wrap ga-2">
+            <v-chip v-for="label in unrecognised" :key="label" size="small" variant="outlined" color="warning">
+              {{ label }}
+            </v-chip>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="inUse" class="mt-10">
+        <h2 class="text-h6 mb-2">Model in use</h2>
+        <ModelBlock
+          v-bind="blockProps(inUse)"
+          @use="askToUse(inUse)"
+          @download="download(inUse.model!)"
+          @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
+        />
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-h6 mb-2">Other models on this device ({{ others.length }})</h2>
+        <v-btn
+          v-if="session.isAdmin"
+          variant="outlined"
+          color="primary"
+          size="large"
+          :disabled="working"
+          @click="openUpload"
+        >
+          Upload a model
+        </v-btn>
+        <ActionResult v-if="result?.at === LIST" :result="result" />
+        <div v-if="others.length" class="d-flex flex-column ga-3 mt-4">
+          <ModelBlock
+            v-for="block in others"
+            :key="block.key"
+            v-bind="blockProps(block)"
+            @use="askToUse(block)"
+            @download="download(block.model!)"
+            @remove="confirming = { action: 'delete', title: block.title, model: block.model }"
+          />
+        </div>
+        <p v-else class="text-body-2 text-secondary mt-4">No other models on this device.</p>
       </section>
     </template>
 
@@ -450,7 +494,7 @@ function openUpload() {
           <h2 class="text-h6">
             <v-expansion-panel-title class="text-h6">
               <span class="d-flex flex-wrap align-baseline key-title">
-                <span>Frigate+ API key</span>
+                <span>Frigate+</span>
                 <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
               </span>
             </v-expansion-panel-title>
