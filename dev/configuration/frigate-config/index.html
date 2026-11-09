@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Use Frigate's debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don't.">
+        <meta name="description" content="Use Frigate's debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don't, and use a Frigate+ model.">
       
       
       
@@ -1173,6 +1173,100 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Better models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enter-the-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enter the key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Submit snapshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-device-without-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A device without internet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-model-of-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A model of your own
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-installer-keeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the installer keeps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-frigate-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Frigate+ check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-frigate-stops-over-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If Frigate stops over a model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1325,7 +1419,7 @@
   <span class="md-ellipsis">
     
   
-    node-red-tm.env settings
+    Env file settings
   
 
     
@@ -2121,6 +2215,100 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Better models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enter-the-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enter the key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Submit snapshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-device-without-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A device without internet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-model-of-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A model of your own
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-installer-keeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the installer keeps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-frigate-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Frigate+ check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-frigate-stops-over-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If Frigate stops over a model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2154,7 +2342,7 @@
   
   
   <h1 id="tune-object-detection">Tune object detection<a class="headerlink" href="#tune-object-detection" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Use Frigate&#39;s debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don&#39;t.</p>
+<p class="tm-description">Use Frigate&#39;s debug view, object filters, masks, and camera streams to detect more of what you want and less of what you don&#39;t, and use a Frigate+ model.</p>
 <p><a href="https://frigate.video/">Frigate</a> does the object detection. How well it works depends on the mounting height and angle, the camera, and the weather, so expect to adjust it for each site. The Traffic Monitor is not affiliated with the Frigate project.</p>
 <p>The Traffic Monitor's <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a> is tuned for roadways seen from an oblique angle, with a side view of objects as they pass. Everything in it can be changed in Frigate's own UI, at <strong>Settings &gt; Configuration editor</strong>, when you're logged in to the device as the administrator. Frigate's <a href="https://docs.frigate.video/configuration/">configuration reference</a> explains every setting.</p>
 <p>Frigate's own login is off. The device's <a href="../../use/control-app/">login</a> passes your username and role on to Frigate: the administrator gets Frigate's admin role, and viewers its viewer role, which can watch and review but not change settings. Frigate's <strong>Logout</strong> logs you out of the device. Keep <code>auth: enabled: false</code> and the <code>proxy:</code> section as they are; with Frigate's login on, Frigate asks for a second login of its own, separate from the device's accounts.</p>
@@ -2195,7 +2383,117 @@
 <span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
 <h2 id="better-models">Better models<a class="headerlink" href="#better-models" title="Permanent link">&para;</a></h2>
-<p><a href="https://docs.frigate.video/plus/">Frigate+</a> offers paid models fine-tuned on your own snapshots, which can raise accuracy for a difficult site.</p>
+<p><a href="https://docs.frigate.video/plus/">Frigate+</a> is a paid service from the Frigate project, separate from the Traffic Monitor. You submit snapshots from your device, label them on the Frigate+ website, and Frigate+ trains a model on them, which can raise accuracy for a difficult site. Its documentation covers the account, labeling, and training.</p>
+<h3 id="enter-the-key">Enter the key<a class="headerlink" href="#enter-the-key" title="Permanent link">&para;</a></h3>
+<p>Frigate+ gives your account an API key. Enter it on the control app's Device page, under <a href="../../use/device-health/#tokens-and-keys">Tokens and keys</a>. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else, so a mis-pasted key is caught there. Saving or removing the key restarts Frigate, which takes about a minute. Traffic isn't counted until it's back.</p>
+<h3 id="submit-snapshots">Submit snapshots<a class="headerlink" href="#submit-snapshots" title="Permanent link">&para;</a></h3>
+<p>The key is all Frigate needs to submit snapshots. Open <strong>Explore</strong> in Frigate, select a detection, and submit its snapshot to Frigate+. The default config keeps snapshots on, but only for about an hour (see <a href="#recordings-and-snapshots">Recordings and snapshots</a>), so submit them soon or keep them longer.</p>
+<p>A snapshot you submit leaves the device: Frigate sends it to Frigate+, and it can show people.</p>
+<h3 id="use-a-model">Use a model<a class="headerlink" href="#use-a-model" title="Permanent link">&para;</a></h3>
+<p>A model trained by Frigate+ has to be built for the device's detector:</p>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Detector type to choose in Frigate+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coral accelerator</td>
+<td><code>edgetpu</code></td>
+</tr>
+<tr>
+<td>Hailo accelerator</td>
+<td><code>hailo8l</code></td>
+</tr>
+<tr>
+<td>No accelerator</td>
+<td><code>cpu</code></td>
+</tr>
+</tbody>
+</table>
+<p>Choose the <code>yolov9</code> model type; <code>mobiledet</code> is the older one. The <a href="../../use/device-health/#the-status-page">Status page</a> tells you which detector the device has, in its Hardware group.</p>
+<p>To use a model on a device that's online, either:</p>
+<ul>
+<li>pick it in Frigate's <strong>Settings &gt; System &gt; Detectors and model</strong>, or</li>
+<li>
+<p>in <strong>Settings &gt; Configuration editor</strong>, replace the whole <code>model:</code> section with only the model's path, then choose <strong>Save &amp; Restart</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">plus://&lt;model id&gt;</span>
+</code></pre></div>
+<p>Remove every other key under <code>model:</code>; Frigate+ supplies them.</p>
+</li>
+</ul>
+<p>Frigate checks a model before it saves the change: if the model isn't on the device yet, it fetches it with your key, and if the key is missing or wrong, the model id is wrong, or the device is offline, it refuses the change, shows why, and changes nothing. A model it accepts is on the device as two files in <code>/opt/traffic-monitor/frigate/config/model_cache/</code>, named after the model id: <code>&lt;model id&gt;</code> and <code>&lt;model id&gt;.json</code>. Frigate loads it when it restarts.</p>
+<h3 id="a-device-without-internet">A device without internet<a class="headerlink" href="#a-device-without-internet" title="Permanent link">&para;</a></h3>
+<p>Frigate downloads a model only when one of its two files is missing, so a device that's offline can use a Frigate+ model too:</p>
+<ol>
+<li>On another computer, download the model from Frigate+. You get two files: <code>&lt;model id&gt;</code> and <code>&lt;model id&gt;.json</code>.</li>
+<li>
+<p>Copy both to the device over SSH, into Frigate's model folder:</p>
+<div class="highlight"><pre><span></span><code>scp<span class="w"> </span>&lt;model<span class="w"> </span>id&gt;<span class="w"> </span>&lt;model<span class="w"> </span>id&gt;.json<span class="w"> </span>&lt;username&gt;@&lt;hostname&gt;.local:
+ssh<span class="w"> </span>&lt;username&gt;@&lt;hostname&gt;.local
+sudo<span class="w"> </span>cp<span class="w"> </span>&lt;model<span class="w"> </span>id&gt;<span class="w"> </span>&lt;model<span class="w"> </span>id&gt;.json<span class="w"> </span>/opt/traffic-monitor/frigate/config/model_cache/
+</code></pre></div>
+</li>
+<li>
+<p>Set <code>path: plus://&lt;model id&gt;</code> in the configuration editor, as in <a href="#use-a-model">Use a model</a>, and choose <strong>Save &amp; Restart</strong>. Frigate reads the two files when you save, without contacting Frigate+. If either file is missing, it refuses the change, because it would have to download the model.</p>
+</li>
+</ol>
+<p>The key is then needed only to submit snapshots, which takes internet as well.</p>
+<h3 id="a-model-of-your-own">A model of your own<a class="headerlink" href="#a-model-of-your-own" title="Permanent link">&para;</a></h3>
+<p>You can also run a model that doesn't come from Frigate+. Copy its file into <code>/opt/traffic-monitor/frigate/config/model_cache/</code> as above, and set <code>path: /config/model_cache/&lt;file&gt;</code> in the <code>model:</code> section. Unlike a <code>plus://</code> model, it also needs the keys that describe it: <code>width</code>, <code>height</code>, <code>input_tensor</code>, <code>input_pixel_format</code>, <code>input_dtype</code>, <code>model_type</code>, and <code>labelmap_path</code>. Frigate's <a href="https://docs.frigate.video/configuration/advanced/reference">reference config</a> lists their values. The model must suit the device's detector, as a Frigate+ model must.</p>
+<h3 id="what-the-installer-keeps">What the installer keeps<a class="headerlink" href="#what-the-installer-keeps" title="Permanent link">&para;</a></h3>
+<p>Running the installer with <code>-f</code> replaces Frigate's config with a fresh copy, but keeps the <code>model:</code> section you chose, however you set it, as long as it isn't the installer's own model. Comments inside the section are lost. After you change the accelerator, a kept model may not suit the new one, and the Status page says so. <a href="../../reference/tmsetup/#what-f-replaces">What <code>-f</code> replaces</a> and <a href="../../reference/tmsetup/#add-an-accelerator-later">Add an accelerator later</a> have the details.</p>
+<h3 id="the-frigate-check">The Frigate+ check<a class="headerlink" href="#the-frigate-check" title="Permanent link">&para;</a></h3>
+<p>The Status page's Configuration group has a <strong>Frigate+</strong> check. It compares the key with the <code>model:</code> section of Frigate's config and says whether Frigate could use the model:</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Passed</td>
+<td>Frigate+ isn't in use: no key and no Frigate+ model. Or Frigate runs the Frigate+ model the config names. Without a key, it runs from the files on the device, and you can't submit snapshots.</td>
+</tr>
+<tr>
+<td>Warning</td>
+<td>A key is set, but Frigate runs the installer's model, its own default model (on a device with no <code>model:</code> section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in <a href="#use-a-model">Use a model</a>.</td>
+</tr>
+<tr>
+<td>Problem</td>
+<td>Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (<strong>Set the key</strong> opens Tokens and keys), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and <strong>Set the key</strong> opens Tokens and keys. See <a href="#if-frigate-stops-over-a-model">If Frigate stops over a model</a>.</td>
+</tr>
+<tr>
+<td>Couldn't run</td>
+<td>Frigate's config is missing or isn't valid YAML, or Frigate isn't answering and its log has no error to quote. Or Frigate is in safe mode for a reason other than the model, so whether it can use the model is unknown; the Apps group's <strong>Frigate</strong> check says why.</td>
+</tr>
+</tbody>
+</table>
+<p>When Frigate can't use its config, for example because of a model built for another detector, it starts in safe mode: it answers and looks healthy, but has no cameras and counts nothing. The Apps group's <strong>Frigate</strong> check reports that as a problem, whatever the cause, and quotes Frigate's messages. Fix the config in Frigate's configuration editor, then choose <strong>Save &amp; Restart</strong>.</p>
+<h3 id="if-frigate-stops-over-a-model">If Frigate stops over a model<a class="headerlink" href="#if-frigate-stops-over-a-model" title="Permanent link">&para;</a></h3>
+<p>Frigate refuses a model it can't fetch when you save, so it ends up with one only in ways that skip that check:</p>
+<ul>
+<li>you edit Frigate's <code>config.yml</code> over SSH,</li>
+<li>the installer keeps the <code>model:</code> section with <code>-f</code> after the key was removed, or</li>
+<li>the key is removed or changed while the model's files aren't on the device yet.</li>
+</ul>
+<p>Frigate then fails each time it starts, restarts every few seconds, and counts nothing. On the Status page, Frigate's row in the Services group says it restarted after failures, and the <strong>Frigate</strong> and <strong>Frigate+</strong> checks quote the last error in Frigate's log.</p>
+<p>To get Frigate running again, do one of these:</p>
+<ol>
+<li>Enter the right key on the Device page, under <a href="../../use/device-health/#tokens-and-keys">Tokens and keys</a>. Saving it restarts Frigate, which then fetches the model.</li>
+<li>Copy the model's two files into Frigate's model folder, as in steps 1 and 2 of <a href="#a-device-without-internet">A device without internet</a>, then restart Frigate with <code>sudo systemctl restart frigate.service</code>.</li>
+<li>Over SSH, open Frigate's config as root with <code>sudo nano /opt/traffic-monitor/frigate/config/config.yml</code> and replace its <code>model:</code> section with the installer's. Copy it from the <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">default Frigate config</a>, where its <code>path</code> names the <code>.tflite</code> file in <code>model_cache</code>, or from a backup beside the file, if an earlier run of the installer with <code>-f</code> left one. Only a device with a Coral has that section; on another device, delete the <code>model:</code> section. Then restart Frigate with <code>sudo systemctl restart frigate.service</code>.</li>
+</ol>
+<p>Running the installer with <code>-f</code> doesn't help, because it keeps the <code>model:</code> section.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>A wrong key on its own never stops Frigate. When it starts, Frigate contacts Frigate+ only to download a model whose files are missing, so a model whose files are on the device keeps running whatever the key. A planned update to the control app will let you change the model while Frigate is down.</p>
+</div>
   
 
 

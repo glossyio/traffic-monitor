@@ -1212,7 +1212,7 @@
   <span class="md-ellipsis">
     
   
-    node-red-tm.env settings
+    Env file settings
   
 
     
@@ -2222,7 +2222,7 @@
 <h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h2>
 <p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number.</p>
 <p>Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>. To keep them longer, raise the retention there, and treat the device as holding images of people.</p>
-<p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. The live view and the recordings are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting.</p>
+<p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. The live view and the recordings are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting. A snapshot you choose to <a href="../../configuration/frigate-config/#submit-snapshots">submit to Frigate+</a> does leave the device, and it can show people.</p>
 <p>With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see <a href="#deployment">deployment</a>). The exact location stays in <code>config.yml</code>, which isn't part of the database.</p>
 <p>The database stops being de-identified if you:</p>
 <ul>

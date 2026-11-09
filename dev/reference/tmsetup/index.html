@@ -1212,7 +1212,7 @@
   <span class="md-ellipsis">
     
   
-    node-red-tm.env settings
+    Env file settings
   
 
     
@@ -2292,16 +2292,18 @@
 <li><code>/opt/traffic-monitor/node-red-tm/config/config.yml</code></li>
 <li><code>/opt/traffic-monitor/node-red-tm/node-red-tm.env</code></li>
 <li><code>/opt/traffic-monitor/frigate/config/config.yml</code>, which holds zones and masks drawn in Frigate</li>
-<li><code>/opt/traffic-monitor/frigate/frigate.env</code></li>
+<li><code>/opt/traffic-monitor/frigate/frigate.env</code>. Its Frigate+ key comes from the device's secrets.</li>
 <li><code>/opt/traffic-monitor/plate-recognizer/plate-recognizer.env</code>, if Plate Recognizer is installed. Its token and license key come from the device's secrets.</li>
 </ul>
 <p>With <code>-f</code>, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh <code>node-red-tm.env</code> and <code>frigate.env</code>. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in <a href="../../setup-guide/">First-time setup</a>.</p>
-<p>No run, with or without <code>-f</code>, replaces the device's accounts, its setup code, or the passwords and keys in <code>/etc/traffic-monitor/secrets/</code>, including the ThingsBoard token and the Plate Recognizer token and license key you entered. The installer writes those values into <code>node-red-tm.env</code> and <code>plate-recognizer.env</code> on every run, so a fresh copy from <code>-f</code> has them too. The installer takes no secret value as an option: enter them on the <a href="../../use/device-health/#tokens-and-keys">Device page</a>.</p>
+<p>The fresh Frigate config keeps one thing from the old one: the <code>model:</code> section, if you chose a model, whether in Frigate's model picker, its configuration editor, or by hand (see <a href="../../configuration/frigate-config/#better-models">Better models</a>). It's kept even when Frigate can't load that model; see <a href="../../configuration/frigate-config/#if-frigate-stops-over-a-model">If Frigate stops over a model</a>. The installer's own model section for a Coral isn't kept, so the fresh copy gets the model for the accelerator the installer finds. Comments inside a kept section are lost; its keys keep their order. If the old config isn't valid YAML, the fresh copy gets the installer's model section, and the installer says so.</p>
+<p>No run, with or without <code>-f</code>, replaces the device's accounts, its setup code, or the passwords and keys in <code>/etc/traffic-monitor/secrets/</code>, including the ThingsBoard token, the Frigate+ API key, and the Plate Recognizer token and license key you entered. The installer writes those values into <code>node-red-tm.env</code>, <code>frigate.env</code>, and <code>plate-recognizer.env</code> on every run, so a fresh copy from <code>-f</code> has them too. The installer takes no secret value as an option: enter them on the <a href="../../use/device-health/#tokens-and-keys">Device page</a>.</p>
 <h2 id="add-an-accelerator-later">Add an accelerator later<a class="headerlink" href="#add-an-accelerator-later" title="Permanent link">&para;</a></h2>
 <p>After you add or change a Coral or Hailo accelerator, rerun two tags and reboot when the installer asks:</p>
 <div class="highlight"><pre><span></span><code>bash<span class="w"> </span>traffic-monitor/script/tmsetup.sh<span class="w"> </span>-t<span class="w"> </span>detectors<span class="w"> </span>-t<span class="w"> </span>frigate
 </code></pre></div>
 <p>That installs the driver and gives Frigate's container the device. Frigate's own <code>config.yml</code> still names the old detector, because the installer writes its <code>detectors:</code> and <code>model:</code> sections only when it creates the file. Either edit those two sections by hand to match the <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2">template</a>, or add <code>-f</code> to the command above and then redo your Frigate settings, as <a href="#what-f-replaces">What <code>-f</code> replaces</a> describes.</p>
+<p><code>-f</code> keeps a model you chose, such as a Frigate+ model, and that model may not suit the new accelerator. If it doesn't, Frigate can't use it and counts nothing, and the Status page reports the problem. Pick a model built for the new accelerator (see <a href="../../configuration/frigate-config/#use-a-model">Use a model</a>), or, to get the installer's model for it, delete the <code>model:</code> section in Frigate's configuration editor before you run the installer with <code>-f</code>.</p>
 <h2 id="reboots">Reboots<a class="headerlink" href="#reboots" title="Permanent link">&para;</a></h2>
 <p>The installer edits the boot configuration and installs kernel drivers, so it asks to reboot when needed. On the device, it prompts, and with <code>-y</code> it doesn't ask. Either way the reboot starts one minute later. Remote devices reboot by themselves. Services stay stopped until the reboot.</p>
   

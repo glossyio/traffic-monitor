@@ -59,12 +59,14 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/node-red-tm/config/config.yml`
 - `/opt/traffic-monitor/node-red-tm/node-red-tm.env`
 - `/opt/traffic-monitor/frigate/config/config.yml`, which holds zones and masks drawn in Frigate
-- `/opt/traffic-monitor/frigate/frigate.env`
+- `/opt/traffic-monitor/frigate/frigate.env`. Its Frigate+ key comes from the device's secrets.
 - `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed. Its token and license key come from the device's secrets.
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
-No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env` and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
+The fresh Frigate config keeps one thing from the old one: the `model:` section, if you chose a model, whether in Frigate's model picker, its configuration editor, or by hand (see [Better models](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models)). It's kept even when Frigate can't load that model; see [If Frigate stops over a model](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#if-frigate-stops-over-a-model). The installer's own model section for a Coral isn't kept, so the fresh copy gets the model for the accelerator the installer finds. Comments inside a kept section are lost; its keys keep their order. If the old config isn't valid YAML, the fresh copy gets the installer's model section, and the installer says so.
+
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token, the Frigate+ API key, and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env`, `frigate.env`, and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
 
 ## Add an accelerator later
 
@@ -75,6 +77,8 @@ bash traffic-monitor/script/tmsetup.sh -t detectors -t frigate
 ```
 
 That installs the driver and gives Frigate's container the device. Frigate's own `config.yml` still names the old detector, because the installer writes its `detectors:` and `model:` sections only when it creates the file. Either edit those two sections by hand to match the [template](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), or add `-f` to the command above and then redo your Frigate settings, as [What `-f` replaces](#what-f-replaces) describes.
+
+`-f` keeps a model you chose, such as a Frigate+ model, and that model may not suit the new accelerator. If it doesn't, Frigate can't use it and counts nothing, and the Status page reports the problem. Pick a model built for the new accelerator (see [Use a model](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#use-a-model)), or, to get the installer's model for it, delete the `model:` section in Frigate's configuration editor before you run the installer with `-f`.
 
 ## Reboots
 

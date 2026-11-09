@@ -1359,7 +1359,7 @@
   <span class="md-ellipsis">
     
   
-    node-red-tm.env settings
+    Env file settings
   
 
     
@@ -2270,19 +2270,19 @@
 <tbody>
 <tr>
 <td>Services</td>
-<td>Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure.</td>
+<td>Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure. When it restarts itself again and again within minutes, as when its AI accelerator has failed, that does count, and the row says so.</td>
 </tr>
 <tr>
 <td>Apps</td>
-<td>Frigate answers and gets frames from each camera. Node-RED answers, loaded <code>config.yml</code> without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network.</td>
+<td>Frigate answers, isn't in safe mode (with no cameras because of a config error), and gets frames from each camera. When Frigate stopped on an error, the Frigate check quotes it. When Frigate isn't answering because it keeps stopping itself, the check says so and points at the Hardware group and the diagnostics. Node-RED answers, loaded <code>config.yml</code> without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network.</td>
 </tr>
 <tr>
 <td>Configuration</td>
-<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, each camera's radar is enabled, and the location values are valid. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
+<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, each camera's radar is enabled, and the location values are valid. In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see <a href="../../configuration/frigate-config/#the-frigate-check">The Frigate+ check</a>. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
 </tr>
 <tr>
 <td>Hardware</td>
-<td>Each AI accelerator, from plugged in to used by Frigate, or a warning when there's none and Frigate detects on the CPU. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.</td>
+<td>Each AI accelerator, from plugged in to passed to Frigate and listed in its config, or a warning when there's none and Frigate detects on the CPU. Whether detection works is Frigate's to report: when its detector keeps failing, Frigate restarts itself, and the Services and Apps rows say so. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.</td>
 </tr>
 <tr>
 <td>Device</td>
@@ -2299,21 +2299,21 @@
 <ul>
 <li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
 <li><strong>Re-scan hardware</strong>, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.</li>
-<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>.</li>
+<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload and <strong>Set the key</strong> for Frigate+, which open <a href="#tokens-and-keys">Tokens and keys</a>.</li>
 <li><strong>A sentence</strong> with the next step, such as rerunning the installer for Node-RED (<code>tmsetup.sh -t node-red-tm</code>; see <a href="../../reference/tmsetup/">Installer options</a>).</li>
 </ul>
 <p>The control app can't restart itself. If it stops, see <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</p>
 <h2 id="the-device-page">The Device page<a class="headerlink" href="#the-device-page" title="Permanent link">&para;</a></h2>
 <p>The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. <strong>Software</strong> lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.</p>
 <h3 id="tokens-and-keys">Tokens and keys<a class="headerlink" href="#tokens-and-keys" title="Permanent link">&para;</a></h3>
-<p>Administrators set the credentials the device uses for outside services in <strong>Tokens and keys</strong>. The section is closed when the page opens; select its heading to open it. The Status page's <strong>Set the token</strong> link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on is installed. Each is kept with the device's other secrets, not in <code>config.yml</code>.</p>
+<p>Administrators set the credentials the device uses for outside services in <strong>Tokens and keys</strong>. The section is closed when the page opens; select its heading to open it. The Status page's <strong>Set the token</strong> and <strong>Set the key</strong> links open it for you. It lists the ThingsBoard access token and the <a href="../../configuration/frigate-config/#better-models">Frigate+</a> API key, and the Plate Recognizer API token and license key when the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on is installed. Each is kept with the device's other secrets, not in <code>config.yml</code>.</p>
 <ul>
-<li>A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.</li>
-<li><strong>Save</strong> stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and <code>. _ ~ -</code>. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.</li>
-<li><strong>Remove</strong> asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.</li>
-<li>Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.</li>
+<li>A value is never shown back. The page says whether it's set and, for a token or key of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.</li>
+<li><strong>Save</strong> stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and <code>. _ ~ -</code>. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long. A Frigate+ key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it.</li>
+<li><strong>Remove</strong> asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read. Without a Frigate+ key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are already on the device keeps running; one that isn't downloaded yet <a href="../../configuration/frigate-config/#if-frigate-stops-over-a-model">stops Frigate</a> until the key is set again, and the Frigate+ check says so.</li>
+<li>Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, and the Frigate+ key restarts Frigate; each takes about a minute. Traffic isn't counted while Node-RED or Frigate restarts.</li>
 </ul>
-<p>An older device may have kept a token in <code>config.yml</code> or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when <code>config.yml</code> still holds a token key, which nothing reads, or when the upload is on without a token.</p>
+<p>An older device may have kept a token in <code>config.yml</code> or in the add-on's env file, or a Frigate+ key in <code>frigate.env</code>. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when <code>config.yml</code> still holds a token key, which nothing reads, or when the upload is on without a token.</p>
 <h3 id="download-diagnostics">Download diagnostics<a class="headerlink" href="#download-diagnostics" title="Permanent link">&para;</a></h3>
 <p>When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with <code>&lt;redacted&gt;</code>. The file names the device and holds its serial number.</p>
 <ul>

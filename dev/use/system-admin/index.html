@@ -1303,7 +1303,7 @@
   <span class="md-ellipsis">
     
   
-    node-red-tm.env settings
+    Env file settings
   
 
     
@@ -2178,8 +2178,12 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 <td><code>sudo systemctl restart node-red-tm.service</code>. The container reads the file only when it starts.</td>
 </tr>
 <tr>
+<td>Edit <code>frigate.env</code></td>
+<td><code>sudo systemctl restart frigate.service</code>.</td>
+</tr>
+<tr>
 <td>Change the MQTT broker login in <code>node-red-tm.env</code></td>
-<td><code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>. A restart isn't enough; <a href="../../configuration/environment/">node-red-tm.env settings</a> explains why.</td>
+<td><code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>. A restart isn't enough; <a href="../../configuration/environment/#node-red-tmenv">Env file settings</a> explains why.</td>
 </tr>
 <tr>
 <td>Change Frigate's config in its UI</td>
@@ -2219,7 +2223,7 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 </tr>
 <tr>
 <td><code>node-red-tm/node-red-tm.env</code></td>
-<td>Radar ports, database path, MQTT broker. See <a href="../../configuration/environment/">node-red-tm.env settings</a>.</td>
+<td>Radar ports, database path, MQTT broker. See <a href="../../configuration/environment/#node-red-tmenv">Env file settings</a>.</td>
 </tr>
 <tr>
 <td><code>node-red-tm/db/tmdb.sqlite</code></td>
@@ -2228,6 +2232,14 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 <tr>
 <td><code>frigate/config/config.yml</code></td>
 <td>Frigate's settings, including zones and masks.</td>
+</tr>
+<tr>
+<td><code>frigate/config/model_cache/</code></td>
+<td>The models Frigate runs, such as a <a href="../../configuration/frigate-config/#better-models">Frigate+</a> model's two files.</td>
+</tr>
+<tr>
+<td><code>frigate/frigate.env</code></td>
+<td>Frigate's environment, including the Frigate+ API key, which comes from the device's secrets. See <a href="../../configuration/environment/#frigateenv">Env file settings</a>.</td>
 </tr>
 <tr>
 <td><code>frigate/storage/</code></td>
