@@ -8,11 +8,16 @@ The control app's **Detection** page shows what the device looks for and which A
 
 ## The Detection page
 
-**Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then two facts: the **Detector**, such as `edgetpu` for a Coral, and the **Running model**. Below them is the model Frigate runs, marked **In use**. The device's other models are under **Other models on this device**, which stays closed until you select its title, and the title counts them. Then come [what the model recognises](#what-the-model-recognises) and the [Frigate+ API key](#frigate-plus).
+**Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then four sections:
+
+* **Object detection** gives the **Detector**, such as `edgetpu` for a Coral, and the **Running model**, then [what the running model recognises](#what-the-model-recognises) and what the device tracks.
+* **Model in use** is the model Frigate runs. The section is left out when the page can't tell which model that is.
+* **Other models on this device** lists the rest, and its title counts them.
+* **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key.
 
 ![The Detection page on a phone, as an administrator: the Detector and Running model facts, the model in use with a "Frigate runs My model." result under it, and the other models opened, each with its buttons](../assets/images/detection-page-models.png){ width="300" }
 
-Each model shows its name, when it was trained and what it's built for (when it says), and its files with their sizes and the start of each file's SHA-256 hash. A mark says when the model is:
+Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select **Files and objects** on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and [the objects it recognises](#what-the-model-recognises). A model with no list of objects has **Files** instead. A mark says when the model is:
 
 | Mark | Meaning |
 |---|---|
@@ -22,7 +27,7 @@ Each model shows its name, when it was trained and what it's built for (when it 
 
 The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be downloaded or deleted either.
 
-Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, the first thing under **Other models on this device**, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
+Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
 When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and **Use** on a model, or on the installer's model, gives Frigate a config it can run.
 
@@ -66,12 +71,16 @@ The page refuses a **Use** in these cases:
 
 ## What the model recognises
 
-The page lists two sets of objects. Each is closed until you select its title, which counts the objects, and each has a **Copy** button:
+The **Object detection** section lists two sets of objects. Each is closed until you select its title, which counts the objects, and each has a **Copy** button:
 
-* **All objects the model recognises** is what the running model can detect, read from Frigate when it answers.
-* **Objects tracked on this device** is the objects Frigate is set to track, from its `objects:` `track` lists.
+* **Objects the running model recognises** is what the running model can detect. The list says where it came from: Frigate when it answers, otherwise the model's `.json` or the installer's labels file. Objects the device also tracks are filled.
+* **Objects tracked on this device** is the objects Frigate is set to track, from its `objects:` `track` lists. Objects the running model doesn't recognise are amber, and the title counts them.
 
-Frigate tracks only the objects in both lists. To track more of what the model recognises, change the lists in Frigate's configuration editor; see [Tune object detection](../configuration/frigate-config.md).
+Frigate tracks only the objects in both lists. To track more of what the model recognises, change the lists in Frigate's configuration editor; see [Tune object detection](../configuration/frigate-config.md). An object that's tracked but not recognised is also named under the two lists, so you see it while they're closed. The model can't detect it, so the device never counts it.
+
+Each model's card has its own list under **Files and objects**, read from that model's `.json` or, for the installer's model, its labels file. Frigate's built-in model has none. On the other models' cards, a line names the tracked objects that model doesn't recognise, which the device would stop counting if you switched to it.
+
+The running model's list and its card are read in different ways, but they should agree. When Frigate's list has different objects, a line under the facts says "Frigate reports a different list than this model's .json." This is rare, and it usually means someone edited the label map in Frigate's config on purpose.
 
 ## Frigate+ { #frigate-plus }
 
@@ -82,7 +91,7 @@ Frigate tracks only the objects in both lists. To track more of what the model r
 
 ![The Frigate+ API key section opened on a phone: the two ways to get a model onto the device, the key field, and Save](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
 
-Administrators enter the API key under **Frigate+ API key**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
+Administrators enter the API key under **Frigate+**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
 
 * The page never shows the key back. The section's title says whether the key is set, its last four characters for a key of 12 or more characters, and "in use" while Frigate runs a Frigate+ model.
 * **Save** stores what you typed. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else. The eye icon shows the key while you type.
