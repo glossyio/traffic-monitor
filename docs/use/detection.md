@@ -15,7 +15,7 @@ The control app's **Detection** page shows what the device looks for and which A
 * **Other models on this device** lists the rest, and its title counts them.
 * **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key.
 
-![The Detection page on a phone, as an administrator: the Detector and Running model facts, the model in use with a "Frigate runs My model." result under it, and the other models opened, each with its buttons](../assets/images/detection-page-models.png){ width="300" }
+![The Detection page on a phone, as an administrator: the Detector and Running model facts, two closed lists of objects with three amber objects under them, the model in use with a "Frigate runs My model." result, Upload a model, and the other models' cards, one opened to show its files and objects](../assets/images/detection-page-models.png){ width="300" }
 
 Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select **Files and objects** on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and [the objects it recognises](#what-the-model-recognises). A model with no list of objects has **Files** instead. A mark says when the model is:
 
@@ -89,7 +89,7 @@ The running model's list and its card are read in different ways, but they shoul
 * **Online:** when the device has internet and a Frigate+ API key, pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
 * **Offline:** upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See [A device without internet](../configuration/frigate-config.md#a-device-without-internet).
 
-![The Frigate+ API key section opened on a phone: the two ways to get a model onto the device, the key field, and Save](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
+![The Frigate+ section opened on a phone: the two ways to get a model onto the device, the key field, and Save](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
 
 Administrators enter the API key under **Frigate+**, the last section of the page, which is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
 

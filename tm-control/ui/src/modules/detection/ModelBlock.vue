@@ -156,12 +156,19 @@ const named = (model: ModelOut, file: ModelFile) => file.name !== model.title
   word-break: break-all;
 }
 
-/* The fold's title and content line up with the card's other text */
+/* The fold's text lines up with the card's other text, and its title's hover and focus band reaches 8 px past that
+   text, so the text never touches the band's edge. The card's bottom padding gives way by the same 8 px, because the
+   title's own padding already leaves room there. */
+.fold {
+  margin: 0 -8px -8px;
+  width: auto;
+}
+
 .fold :deep(.v-expansion-panel-title) {
-  padding-inline: 0;
+  padding-inline: 8px;
 }
 
 .fold :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0 0 8px;
+  padding: 0 8px 8px;
 }
 </style>

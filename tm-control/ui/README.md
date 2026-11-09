@@ -591,6 +591,14 @@ narrowest phones:
 - Inside the panel, a Frigate+ model's 32-character file name filled a block's line at 360 and 375 px, and its comma
   started the next line. Narrower panel padding only moved the break, so the file name may now break anywhere.
 
+After the page was reshaped into four sections, it was checked again at 375 px and 1366 px, as an admin and as a viewer,
+through the `#frigate-plus` link, and through a Use and a Delete:
+
+- The fold's title text touched the edge of its hover and focus band, because the title had no side padding to keep it
+  aligned with the card's text. The fold now reaches 8 px past that text on each side, and the title and content pad
+  it back.
+- A closed card looked bottom-heavy, with the card's padding under the title's own. The fold takes back 8 px of it.
+
 #### Defaults rejected
 
 - A data table of the models: its columns don't fit 375 px, and most cells are empty for the installer's model.
