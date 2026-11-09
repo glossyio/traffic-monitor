@@ -1,10 +1,14 @@
-<!-- Asks before something that can't be undone. The confirm button names the action, as in "Remove viewer". -->
+<!--
+  Asks before something that can't be undone. The confirm button names the action, as in "Remove viewer", in the error
+  colour unless the page says the action changes nothing.
+-->
 <script setup lang="ts">
 const open = defineModel<boolean>({ required: true })
 defineProps<{
   title: string
   text: string
   confirmText: string
+  confirmColor?: string
 }>()
 const emit = defineEmits<{ confirm: [] }>()
 
@@ -23,7 +27,7 @@ function confirm() {
       <v-card-actions class="px-4 pb-4">
         <v-spacer />
         <v-btn variant="text" @click="open = false">Cancel</v-btn>
-        <v-btn color="error" variant="flat" @click="confirm">{{ confirmText }}</v-btn>
+        <v-btn :color="confirmColor ?? 'error'" variant="flat" @click="confirm">{{ confirmText }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

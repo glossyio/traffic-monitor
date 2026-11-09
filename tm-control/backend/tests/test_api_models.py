@@ -67,7 +67,7 @@ def test_get_models_lists_the_seeded_pairs_with_running_and_usable(seeded, login
         "local", "My model", True, False, True)
     assert set(plus) == {
         "name", "kind", "title", "trained_at", "type", "detectors", "width", "height", "files", "complete",
-        "running", "usable", "deletable", "problem",
+        "running", "usable", "deletable", "problem", "labels",
     }
     assert state["labels"]["recognised"] == ["person", "bicycle", "car"]
     assert state["labels"]["source"] == "sidecar"
@@ -135,6 +135,65 @@ def test_get_models_without_frigate_falls_back_to_the_file(device_client, login,
     assert [model["name"] for model in state["models"]] == [PLUS_ID]  # no installer file in the cache
     assert state["models"][0]["running"] is True and state["models"][0]["usable"] is True
     assert state["default"] == "installer_default"
+
+
+def test_each_model_lists_its_own_labels(seeded, login):
+    login(seeded, *ADMIN)
+    default, plus, mine = models_of(seeded)["models"]
+    assert plus["labels"] == ["person", "bicycle", "car"]
+    assert mine["labels"] == ["person", "bicycle", "car"]
+    assert default["labels"] is None  # fake mode has no installer's labels file
+
+
+def test_a_models_labels_are_in_label_map_index_order(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    sidecar = json.loads((cache / "mine.tflite.json").read_text())
+    sidecar["labelMap"] = {"10": "dog", "2": "cat", "0": "person"}
+    (cache / "mine.tflite.json").write_text(json.dumps(sidecar))
+    mine = next(model for model in models_of(seeded)["models"] if model["name"] == "mine.tflite")
+    assert mine["labels"] == ["person", "cat", "dog"]
+
+
+def test_a_model_file_without_a_sidecar_has_no_labels(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    (cache / "mine.tflite.json").unlink()
+    mine = next(model for model in models_of(seeded)["models"] if model["name"] == "mine.tflite")
+    assert mine["labels"] is None
+
+
+def test_the_installers_model_lists_its_labels_file(device_client, login, tmp_path):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    section = device_client.app.state.manifest.frigate.coral_model
+    (codedir / "frigate" / "config" / "model_cache" / INSTALLER_FILE).write_bytes(bytes(16))
+    labels_file = codedir / section["labelmap_path"].replace("/config/", "frigate/config/", 1)
+    labels_file.parent.mkdir(parents=True, exist_ok=True)
+    labels_file.write_text("person\n\nbicycle\ncar\n")
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    installer = next(model for model in state["models"] if model["kind"] == "installer_default")
+    assert installer["labels"] == ["person", "bicycle", "car"]
+    # Another model's list is still its own, and the top list is still the running model's
+    assert next(model for model in state["models"] if model["name"] == PLUS_ID)["labels"] == [
+        "person", "bicycle", "car"]
+    assert state["labels"]["source"] == "sidecar"
+
+
+def test_the_installers_labels_file_still_answers_when_its_model_file_is_gone(device_client, login, tmp_path):
+    config = "detectors:\n  coral:\n    type: edgetpu\n    device: usb\n"
+    codedir = device_with_codedir(device_client, tmp_path, config)
+    section = device_client.app.state.manifest.frigate.coral_model
+    config_file = codedir / "frigate" / "config" / "config.yml"
+    config_file.write_text(config + f"model:\n  path: {section['path']}\n")
+    labels_file = codedir / section["labelmap_path"].replace("/config/", "frigate/config/", 1)
+    labels_file.parent.mkdir(parents=True, exist_ok=True)
+    labels_file.write_text("person\ncar\n")
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    assert state["running"]["kind"] == "installer_default"
+    assert not any(model["kind"] == "installer_default" for model in state["models"])
+    assert state["labels"]["recognised"] == ["person", "car"] and state["labels"]["source"] == "labels_file"
 
 
 def test_default_is_what_the_default_route_would_apply_here(device_client, login, tmp_path):
@@ -708,6 +767,77 @@ def test_a_package_of_an_incomplete_pair_is_404(seeded, settings, login):
         assert r.status_code == 404, name
     assert package_of(seeded, "%2E%2E").status_code == 422
     assert packages(settings) == []
+
+
+def file_of(client, name):
+    return client.get(f"{URL}/{name}/file")
+
+
+def test_a_model_file_downloads_alone_with_or_without_a_sidecar(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    put(seeded, "bare.tflite", b"\x01\x02\x03")
+    (cache / "broken.tflite").write_bytes(b"\x04\x05")
+    (cache / "broken.tflite.json").write_bytes(b"not json")
+    for name in ("bare.tflite", "broken.tflite", INSTALLER_FILE, "mine.tflite"):
+        r = file_of(seeded, name)
+        assert r.status_code == 200, name
+        assert r.headers["content-type"] == "application/octet-stream"
+        assert r.headers["content-disposition"] == f'attachment; filename="{name}"'
+        assert r.content == (cache / name).read_bytes()
+    assert packages(settings) == []  # each copy was removed once it was sent
+    assert cache_names(settings) == sorted(SEEDED + ["bare.tflite", "broken.tflite", "broken.tflite.json"])
+
+
+def test_only_a_regular_model_file_downloads(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    put(seeded, "half.tflite.json", sidecar_bytes())
+    (cache / "dir.tflite").mkdir()
+    (cache / "link.tflite").symlink_to(cache / PLUS_ID)
+    for name in ("half.tflite", "dir.tflite", "link.tflite", "missing.tflite"):
+        r = file_of(seeded, name)
+        assert (r.status_code, message(r)) == (404, "There is no such model."), name
+    assert file_of(seeded, "%2E%2E").status_code == 422
+    assert file_of(seeded, "mine.tflite.json").status_code == 422  # a sidecar is no model's file
+    assert packages(settings) == []
+
+
+def test_only_admins_download_a_model_file_and_the_download_is_audited(seeded, settings, login):
+    import sqlite3
+
+    assert file_of(seeded, INSTALLER_FILE).status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert file_of(seeded, INSTALLER_FILE).status_code == 403
+    login(seeded, *ADMIN)
+    assert file_of(seeded, INSTALLER_FILE).status_code == 200
+    admin = Users(seeded.app.state.state).by_username("admin")
+    con = sqlite3.connect(settings.state_dir / "state.sqlite")
+    try:
+        rows = con.execute(
+            "SELECT user_id, action, detail FROM audit WHERE action LIKE 'models.%' ORDER BY id").fetchall()
+    finally:
+        con.close()
+    assert rows == [(admin.id, "models.download_file", INSTALLER_FILE)]
+
+
+def test_a_model_file_that_cannot_be_copied_leaves_no_file(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import package
+
+    login(seeded, *ADMIN)
+
+    def broken(dir_fd, name, out):
+        out.write(b"partial")
+        raise OSError("read failed")
+
+    monkeypatch.setattr(package, "write_file", broken)
+    r = file_of(seeded, INSTALLER_FILE)
+    assert (r.status_code, message(r)) == (500, "The model's file can't be read.")
+    assert packages(settings) == []
+    monkeypatch.setattr("os.statvfs", lambda path: type("S", (), {"f_frsize": 4096, "f_bavail": 1000})())
+    r = file_of(seeded, INSTALLER_FILE)
+    assert (r.status_code, message(r)) == (507, "The device would have less than 512 MB free.")
 
 
 def test_only_admins_download_a_package_and_the_download_is_audited(seeded, settings, login):
