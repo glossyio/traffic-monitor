@@ -4,6 +4,7 @@ atomically with a backup."""
 import contextlib
 import io
 import os
+import re
 import shutil
 import stat
 import tempfile
@@ -85,6 +86,7 @@ def _round_trip_yaml(mapping_indent):
 
 
 MAX_BACKUPS_PER_SECOND = 100
+KEEP_BACKUPS = 10  # of a file's own copies; see _prune_backups
 
 
 def backup_path(path, now=None):
@@ -119,8 +121,8 @@ def _create_backup(first, mode):
 
 
 def back_up(path, now=None):
-    """Copy path to backup_path(path), with its permission bits, times, and, when running as root, its owner. Return
-    the copy's path.
+    """Copy path to backup_path(path), with its permission bits, times, and, when running as root, its owner, and prune
+    the older copies (_prune_backups). Return the copy's path.
 
     The copy is made as a new file and never through a symbolic link, and neither is the original read through one:
     the name is easy to guess, and the directory may be writable by others (Node-RED's container mounts its config
@@ -148,7 +150,31 @@ def back_up(path, now=None):
         os.close(target)
     finally:
         os.close(source)
+    _prune_backups(path, backup)
     return backup
+
+
+def _prune_backups(path, made):
+    """Delete all but the newest KEEP_BACKUPS copies back_up() made of this file, always keeping `made`, the one just
+    made: a device with no real-time clock can stamp it earlier than the rest.
+
+    Only back_up()'s own names, as regular files: tmsetup's Ansible backups and a copy made by hand look different and
+    stay. Best effort: a copy that can't be listed or deleted is no reason to fail the save it protects.
+    """
+    pattern = re.compile(re.escape(path.name) + r"\.(\d{8}T\d{6}Z)(?:\.(\d+))?\.bak")
+    found = []
+    try:
+        with os.scandir(path.parent) as entries:
+            for entry in entries:
+                match = pattern.fullmatch(entry.name)
+                if match and entry.name != made.name and entry.is_file(follow_symlinks=False):
+                    found.append(((match[1], int(match[2] or 0)), entry.path))
+    except OSError:
+        return
+    found.sort(reverse=True)
+    for _, older in found[KEEP_BACKUPS - 1:]:
+        with contextlib.suppress(OSError):
+            os.unlink(older)
 
 
 def write_atomic(path, text):
