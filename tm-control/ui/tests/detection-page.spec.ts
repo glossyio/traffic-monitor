@@ -6,6 +6,7 @@ import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
 import { click, clickInDialog, dialogText, mountAlone, mountApp } from './mount'
 import LabelChips from '../src/modules/detection/LabelChips.vue'
+import ModelBlock, { type Block } from '../src/modules/detection/ModelBlock.vue'
 
 type ModelsState = components['schemas']['ModelsState']
 type ModelOut = components['schemas']['ModelOut']
@@ -124,6 +125,14 @@ function actions(wrapper: VueWrapper) {
     .map((b) => b.text().trim())
 }
 
+// A card's action buttons: the ones outside its fold
+function cardActions(card: ReturnType<typeof item>) {
+  return card
+    .findAll('button')
+    .filter((b) => !b.element.closest('.fold'))
+    .map((b) => b.text().trim())
+}
+
 // The title (a button) of the panel whose title starts with `title`
 function panel(wrapper: VueWrapper, title: string) {
   const found = wrapper.findAll('.v-expansion-panel-title').filter((t) => t.text().trim().startsWith(title))
@@ -205,7 +214,10 @@ describe('the Detection page', () => {
       expect(panel(wrapper, title).element.parentElement?.tagName).toBe('H3')
     }
     expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
+      'Test site yolov9',
       'Other models on this device (2)',
+      "The installer's model",
+      'My model',
       'All objects the model recognises (3)',
       'Objects tracked on this device (6)',
     ])
@@ -281,7 +293,7 @@ describe('the Detection page', () => {
     expect(panel(wrapper, 'Frigate+ API key').text().trim()).toBe('Frigate+ API key') // no state for a viewer
     expect(wrapper.findAll('form')).toEqual([])
     // The label lists' Copy buttons are the only buttons: nothing that changes the device
-    expect(actions(wrapper)).toEqual(['Copy', 'Copy'])
+    expect([...new Set(actions(wrapper))]).toEqual(['Copy'])
     expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false) // viewers get 403 there
   })
 
@@ -486,7 +498,7 @@ describe("the Detection page's actions", () => {
       [USE_MINE]: QUEUED,
     })
     const { wrapper } = await mountApp('/detection')
-    expect(item(wrapper, 'Test site yolov9').findAll('button').map((b) => b.text().trim())).not.toContain('Use')
+    expect(cardActions(item(wrapper, 'Test site yolov9'))).not.toContain('Use')
     await panel(wrapper, 'Other models').trigger('click')
     await clickIn(item(wrapper, 'My model'), 'Use')
     expect(dialogText()).toContain('Use My model?')
@@ -559,7 +571,7 @@ describe("the Detection page's actions", () => {
     })
     const { wrapper } = await mountApp('/detection')
     // The installer's model has no sidecar to package: its block has only Use
-    expect(item(wrapper, "The installer's model").findAll('button').map((b) => b.text().trim())).toEqual(['Use'])
+    expect(cardActions(item(wrapper, "The installer's model"))).toEqual(['Use'])
     await clickIn(item(wrapper, 'My model'), 'Download')
     expect(api.sent.at(-1)?.path).toBe('/api/v1/models/mine.tflite/package')
     expect(saved).toEqual(['mine.tflite.zip'])
@@ -586,7 +598,7 @@ describe("the Detection page's actions", () => {
     expect(wrapper.findAll('.model').some((i) => i.text().includes('My model'))).toBe(false)
     // The panel stays open, its count goes down, and the result is inside it
     expect(panel(wrapper, 'Other models on this device (1)').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.find('.v-expansion-panel').text()).toContain('Deleted My model.')
+    expect(panelOf(wrapper, 'Other models on this device (1)').text()).toContain('Deleted My model.')
   })
 
   it("lists Frigate's own Hailo model as its built-in model, running and with no buttons", async () => {
@@ -614,7 +626,7 @@ describe("the Detection page's actions", () => {
     expect(fact(wrapper, 'Running model')).toBe("Frigate's built-in model")
     const entry = wrapper.find('.model.in-use')
     expect(entry.text()).toContain("Frigate's built-in model")
-    expect(entry.findAll('button')).toHaveLength(0)
+    expect(cardActions(entry)).toEqual([])
     expect(entry.text()).toContain('In use')
     expect(entry.text()).not.toContain('incomplete')
     // Like the installer's entry, it has no sidecar: its file name is its facts line, shown once
@@ -652,10 +664,10 @@ describe("the Detection page's actions", () => {
     const installer = wrapper.find('.model.in-use')
     expect(installer.text()).toContain("The installer's model")
     expect(installer.text()).toContain("Frigate runs the installer's model.") // the result moved with its block
-    expect(installer.findAll('button')).toHaveLength(0)
+    expect(cardActions(installer)).toEqual([])
     const plus = item(wrapper, 'Test site yolov9')
     expect(plus.element.closest('.v-expansion-panel')).not.toBeNull()
-    expect(plus.findAll('button').map((b) => b.text().trim())).toEqual(['Use', 'Download'])
+    expect(cardActions(plus)).toEqual(['Use', 'Download'])
   })
 
   const NOTHING_RUNS = MODELS.models.map((model) => ({ ...model, running: false }))
@@ -680,7 +692,7 @@ describe("the Detection page's actions", () => {
       signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: state })
       const { wrapper } = await mountApp('/detection')
       const block = item(wrapper, title)
-      expect(block.findAll('button').map((b) => b.text().trim()).includes('Use')).toBe(offersUse)
+      expect(cardActions(block).includes('Use')).toBe(offersUse)
       expect(panel(wrapper, `Other models on this device (${others})`).exists()).toBe(true)
       // The default Frigate runs is the block in use; one that doesn't run is in the panel
       expect(block.classes('in-use')).toBe(state.running.kind === state.default)
@@ -778,5 +790,100 @@ describe('LabelChips', () => {
     const wrapper = mountAlone(LabelChips, { labels: LABELS, marked: ['person'], flagged: ['car'] })
     await wrapper.find('button').trigger('click')
     expect(writeText).toHaveBeenCalledWith('person, bicycle, car')
+  })
+})
+
+describe('ModelBlock', () => {
+  const [INSTALLER, , MINE] = MODELS.models
+  const listed = (model: ModelOut): Block => ({
+    key: model.name,
+    title: model.title,
+    facts: 'the facts',
+    model,
+    kind: model.kind,
+    inUse: model.running,
+  })
+  const card = (block: Block, props: Record<string, unknown> = {}) =>
+    mountAlone(ModelBlock, {
+      block,
+      admin: true,
+      busy: null,
+      working: false,
+      result: null,
+      useBlocked: null,
+      canUse: true,
+      tracked: ['person', 'dog'],
+      missing: [],
+      ...props,
+    })
+  const title = (wrapper: VueWrapper) => wrapper.find('.v-expansion-panel-title')
+  const fold = (wrapper: VueWrapper) => wrapper.find('.v-expansion-panel-text')
+  const button = (wrapper: VueWrapper, text: string) => wrapper.findAll('button').find((b) => b.text().trim() === text)!
+
+  it('titles the card with an h3 and keeps the facts and the buttons outside the fold', () => {
+    const wrapper = card(listed(MINE))
+    expect(wrapper.find('h3').text()).toBe('My model')
+    expect(wrapper.find('h3').classes()).toEqual(expect.arrayContaining(['text-body-1', 'text-break']))
+    expect(fold(wrapper).text()).not.toContain('the facts')
+    for (const text of ['Use', 'Download', 'Delete']) {
+      expect(button(wrapper, text).element.closest('.v-expansion-panel')).toBeNull()
+    }
+  })
+
+  it('keeps a closed fold titled "Files and objects" for a model with labels, with its files and objects inside', async () => {
+    const wrapper = card(listed(MINE))
+    expect(title(wrapper).text()).toBe('Files and objects')
+    expect(title(wrapper).attributes('aria-expanded')).toBe('false')
+    expect(title(wrapper).element.closest('h1, h2, h3, h4')).toBeNull() // a plain button, not a heading
+    expect(fold(wrapper).text()).toContain('mine.tflite, 2.0 KB, SHA-256 e5a00aa9991a')
+    expect(fold(wrapper).text()).toContain('mine.tflite.json, 417 bytes')
+    expect(fold(wrapper).find('h4').text()).toBe('Objects it recognises (3)')
+    expect(fold(wrapper).text()).toContain('Filled: tracked on this device.')
+    const person = fold(wrapper).findAll('.v-chip').find((c) => c.text() === 'person')!
+    expect(person.classes()).toContain('v-chip--variant-tonal')
+    await title(wrapper).trigger('click')
+    expect(title(wrapper).attributes('aria-expanded')).toBe('true')
+  })
+
+  it('titles the fold "Files" for a model without labels', () => {
+    const wrapper = card(listed(INSTALLER))
+    expect(title(wrapper).text()).toBe('Files')
+    expect(fold(wrapper).text()).toContain('1.0 KB, SHA-256 5f70bf18a086')
+    expect(fold(wrapper).find('h4').exists()).toBe(false)
+  })
+
+  it('has no fold on a block the page makes for a default with no file', () => {
+    const made: Block = {
+      key: '#frigate_default',
+      title: "Frigate's built-in model",
+      facts: 'Built into Frigate.',
+      model: null,
+      kind: 'frigate_default',
+      inUse: false,
+    }
+    expect(card(made).find('.v-expansion-panel').exists()).toBe(false)
+  })
+
+  it('keeps the problem line outside the fold', () => {
+    const wrapper = card(listed({ ...MINE, problem: 'The sidecar is missing.' }))
+    expect(wrapper.text()).toContain('The sidecar is missing.')
+    expect(fold(wrapper).text()).not.toContain('The sidecar is missing.')
+  })
+
+  it('names the tracked objects a switch would lose, as amber chips inside the fold', () => {
+    const wrapper = card(listed(MINE), { missing: ['dog', 'cat'] })
+    expect(fold(wrapper).text()).toContain("Doesn't recognise 2 objects tracked on this device:")
+    const amber = fold(wrapper).findAll('.v-chip.text-warning').map((c) => c.text())
+    expect(amber).toEqual(['dog', 'cat'])
+    const one = card(listed(MINE), { missing: ['dog'] })
+    expect(fold(one).text()).toContain("Doesn't recognise 1 object tracked on this device:")
+    expect(fold(card(listed(MINE))).text()).not.toContain("Doesn't recognise")
+  })
+
+  it('gives Use the most weight and marks Delete as destructive', () => {
+    const wrapper = card(listed(MINE))
+    expect(button(wrapper, 'Use').classes()).toEqual(expect.arrayContaining(['v-btn--variant-flat', 'bg-primary']))
+    expect(button(wrapper, 'Download').classes()).toEqual(expect.arrayContaining(['v-btn--variant-outlined', 'text-primary']))
+    expect(button(wrapper, 'Delete').classes()).toEqual(expect.arrayContaining(['v-btn--variant-outlined', 'text-error']))
   })
 })

@@ -175,6 +175,14 @@ function useBlocked(model: ModelOut) {
   return `${built}, and this device detects with ${state.value?.detector}.`
 }
 
+// The tracked objects a switch to this block's model would lose: none for the model in use, or when its labels aren't
+// known
+function missingFrom(block: Block) {
+  const labels = block.model?.labels
+  if (!labels || block.inUse) return []
+  return (state.value?.labels.tracked ?? []).filter((label) => !labels.includes(label))
+}
+
 // What ModelBlock needs of the page's state for one block. A default's use shows its result at DEFAULT, so the
 // result follows the block when it moves above the fold.
 function blockProps(block: Block) {
@@ -188,6 +196,8 @@ function blockProps(block: Block) {
     result: result.value?.at === at ? result.value : null,
     useBlocked: block.model && !isDefaultKind(block.kind) ? useBlocked(block.model) : null,
     canUse: isDefaultKind(block.kind) ? canUseDefault(block) : !block.inUse,
+    tracked: state.value?.labels.tracked ?? [],
+    missing: missingFrom(block),
   } as const
 }
 
