@@ -663,10 +663,11 @@ importing places open dialogs from this page, so they move nothing on it.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
   four columns at 375 px, and each deployment has a "Correct bearing" button.
 - The list is grouped by the deploy each row came from, newest first, so a place with four deployments reads as two
-  deploys of a camera and its radar, and the current one is on top on a phone. Rows that share an exact `started` are
-  one deploy, because Node-RED starts every row of a config load at the same time. The group's heading holds the start,
-  the latest end, or "running now" (so the border's color isn't the only signal), and names a day once when it started
-  and ended on the same one. A row shows its own end only when the heading doesn't say it. Cameras come first, and a
+  deploys of a camera and its radar, and the current one is on top on a phone. Rows that start within a second of a
+  group's first row are one deploy: this version's engine starts every row of a config load at the same instant, and
+  released versions' rows, which imported places hold, can be a millisecond or so apart. The group's heading holds the
+  start, the latest end, or "running now" (so the border's color isn't the only signal), and names a day once when it
+  started and ended on the same one. A row shows its own end only when the heading doesn't say it. Cameras come first, and a
   radar deployed with a camera is indented under it. That's order, not pairing: on a device with two cameras the
   radars sit under the last one, since the API doesn't send `camera_radar`.
 - The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place, "Re-deploy here"

@@ -2,9 +2,10 @@
   What a place's panel says about it: whether it was imported, when it was first and last used, its events, and its
   deployments. The page asks the API for the events and deployments when the panel first opens and passes them in as
   `details` (undefined until then); `retry` asks it to try again after an error. The deployments are grouped by the
-  deploy they came from: Node-RED starts every row of one config load at the same time, so rows that share `started`
-  are one deploy. Newest first, so the running one is on top on a phone. Each deployment of a used place or the place
-  in use has "Correct bearing", which asks the page to open its correction dialog (`correctBearing`).
+  deploy they came from: Node-RED starts every row of one config load together, at the same instant in this version
+  and a millisecond or so apart in released ones, so rows that start within a second of a deploy's first row are that
+  deploy. Newest first, so the running one is on top on a phone. Each deployment of a used place or the place in use
+  has "Correct bearing", which asks the page to open its correction dialog (`correctBearing`).
 -->
 <script setup lang="ts">
 import type { components } from '../../api/schema'
@@ -71,13 +72,24 @@ interface Deploy {
   rows: DeploymentOut[]
 }
 
-// The rows grouped by their exact start, newest deploy first; rows with no start, last
+// How far after a deploy's first row another row can start and still be that deploy, in ms
+const SAME_DEPLOY = 1000
+
+function sameDeploy(first: number | null, started: number | null) {
+  if (first === null || started === null) return first === started
+  return started - first < SAME_DEPLOY
+}
+
+// The rows grouped by the deploy they came from, newest first; rows with no start, last
 function deploysOf(deployments: DeploymentOut[]): Deploy[] {
-  const groups = new Map<number | null, DeploymentOut[]>()
-  for (const deployment of deployments) {
-    groups.set(deployment.started, [...(groups.get(deployment.started) ?? []), deployment])
+  const groups: { started: number | null; rows: DeploymentOut[] }[] = []
+  const byStart = [...deployments].sort((a, b) => (a.started ?? Infinity) - (b.started ?? Infinity))
+  for (const deployment of byStart) {
+    const last = groups[groups.length - 1]
+    if (last && sameDeploy(last.started, deployment.started)) last.rows.push(deployment)
+    else groups.push({ started: deployment.started, rows: [deployment] })
   }
-  const deploys = [...groups].map(([started, rows]) => {
+  const deploys = groups.map(({ started, rows }) => {
     const ends = rows.flatMap((row) => (row.ended === null ? [] : [row.ended]))
     const running = ends.length < rows.length
     return {

@@ -82,6 +82,30 @@ describe('the deployments in a place panel', () => {
     ])
   })
 
+  it('treats rows that started within a second as one deploy, as released versions recorded them', () => {
+    const deploys = panel([
+      row('radar', FIRST, FIRST + HOUR, 'radars', 'TM_RADAR_SERIAL_PORT_00'),
+      row('camera', FIRST + 1, FIRST + HOUR, 'cameras', 'picam_h265'),
+      row('radar-2', FIRST + 999, FIRST + HOUR, 'radars', 'TM_RADAR_SERIAL_PORT_01'),
+    ]).findAll('[data-deploy]')
+    expect(deploys).toHaveLength(1)
+    expect(deploys[0].findAll('[data-deployment]').map((d) => d.attributes('data-deployment'))).toEqual([
+      'camera',
+      'radar',
+      'radar-2',
+    ])
+  })
+
+  it('measures that second from the first row of the deploy, so it never chains into the next', () => {
+    const deploys = panel([
+      row('first', FIRST, null, 'cameras', 'picam_h265'),
+      row('near', FIRST + 600, null, 'radars', 'TM_RADAR_SERIAL_PORT_00'),
+      row('next', FIRST + 1000, null, 'radars', 'TM_RADAR_SERIAL_PORT_01'),
+    ]).findAll('[data-deploy]')
+    expect(deploys.map((deploy) => deploy.findAll('[data-deployment]').length)).toEqual([1, 2])
+    expect(deploys[0].find('[data-deployment]').attributes('data-deployment')).toBe('next')
+  })
+
   it('marks the running deploy with the primary color, and only that one', () => {
     const [running, ended] = panel(FOUR).findAll('[data-deploy]')
     expect(running.classes()).toContain('border-primary')
