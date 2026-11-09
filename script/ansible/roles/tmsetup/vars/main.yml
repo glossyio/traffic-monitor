@@ -89,6 +89,12 @@ tmsetup_secret_names:
   - frigate_proxy_secret
   - node_red_token_key
   - node_red_internal_token
+# Secrets a person types in (on the control app's Device page); tmsetup creates each file empty and never fills it.
+# An empty file means "not set".
+tmsetup_entered_secret_names:
+  - thingsboard_access_token
+  - plate_recognizer_token
+  - plate_recognizer_license_key
 
 # Install facts that only tmsetup writes: the secrets above, manifest.json, and the setup code while unclaimed
 tmsetup_etc_dir: /etc/traffic-monitor
@@ -110,6 +116,7 @@ tmsetup_tm_control_polkit:
     - revproxy.service
     - go2rtc_server.service
     - tm-job-system-password.service
+    - tm-job-set-secret.service
   unit_verbs:
     - start
     - stop

@@ -49,7 +49,6 @@ tmsetup_radar_paths:
 tmsetup_thingsboard_server: 'tb.server.com'
 tmsetup_thingsboard_protocol: 'https'
 tmsetup_thingsboard_port: '443'
-tmsetup_thingsboard_api_key: ''
 
 tmsetup_latitude: ''
 tmsetup_longitude: ''

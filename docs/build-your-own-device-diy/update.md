@@ -28,12 +28,12 @@ Restart when the installer asks. When the services come back, the Node-RED servi
 
 Every app asks for the device's login, and the Node-RED editor has no login of its own: it opens for the device's administrator. If the device has no administrator account yet, every page opens the setup page instead. Claim the device with the setup code from the end of the installer's output; until the device is claimed, `sudo cat /etc/traffic-monitor/setup-code` also shows it. [Control app and login](../use/control-app.md) walks through setup and adding accounts.
 
-??? warning "The installer printed `tm-control migrate: WARNING`"
+??? warning "The installer printed `tm-control migrate: WARNING` or `ERROR`"
 
-    The installer brings Frigate's configuration up to date, and warns about what it can't change safely. Each warning names the camera, stream, or setting. To find the warnings later:
+    The installer brings Frigate's configuration up to date, moves the ThingsBoard and Plate Recognizer tokens out of `config.yml` and the add-on's env file, and warns about what it can't change safely. An `ERROR` line means the installer stopped; the last item below covers the two causes. Each warning names the camera, stream, setting, or file. To find the warnings later:
 
     ```bash
-    grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
+    grep -E 'tm-control migrate: (WARNING|ERROR)' ~/tmsetup-*.log
     ```
 
     **A camera input or stream without a login.** A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](../configuration/frigate-config.md#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is.
@@ -44,6 +44,10 @@ Every app asks for the device's login, and the Node-RED editor has no login of i
     * A `proxy` setting doesn't match, followed by `auth was not added` when the file had no `auth` section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
 
     Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
+
+    **A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env` to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env file are backed up with a timestamp, so the other value stays in the backup. Enter the token or key on the control app's [Device page](../use/device-health.md#tokens-and-keys), and delete a key the installer left in `config.yml`.
+
+    **A file that is a symbolic link, or a YAML error (`ERROR`).** The installer refuses to change a `config.yml` or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's `config.yml` also stops the installer, as one in Frigate's does. Fix the error in `/opt/traffic-monitor/node-red-tm/config/config.yml`, then run the installer again.
 
 A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run `bash script/tmsetup.sh -t frigate` to add them.
 

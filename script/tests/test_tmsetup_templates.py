@@ -553,6 +553,8 @@ def test_pod_starts_even_if_its_network_unit_fails_once():
 
 
 LOGIN = {"username": "tm", "password": "s3cret"}
+ENTERED_SECRETS = {"thingsboard_access_token": "tb-placeholder-0001", "plate_recognizer_token": "pr-placeholder-0002",
+                   "plate_recognizer_license_key": "pr-placeholder-0003"}
 NO_LOGIN = {"username": "", "password": ""}
 
 
@@ -567,7 +569,7 @@ def render_node_red_env(login):
         ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
         tmsetup_mqtt_broker_login=login,
         tmsetup_secrets={"node_red_token_key": "placeholder-token-key",
-                         "node_red_internal_token": "placeholder-internal-token"},
+                         "node_red_internal_token": "placeholder-internal-token", **ENTERED_SECRETS},
     )
 
 
@@ -611,6 +613,33 @@ def test_node_red_env_template_has_the_internal_token():
     lines = render_node_red_env(NO_LOGIN).splitlines()
     token = lines.index("TM_INTERNAL_TOKEN=placeholder-internal-token")
     assert lines[token - 1].startswith("# ")
+
+
+def test_node_red_env_template_carries_the_entered_tokens():
+    """The flows read both tokens from the environment; their values come from the secrets directory."""
+    lines = render_node_red_env(NO_LOGIN).splitlines()
+    for line in ("TM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001", "TM_PLATE_RECOGNIZER_TOKEN=pr-placeholder-0002"):
+        index = lines.index(line)
+        assert lines[index - 1].startswith("# ") and "Device page" in lines[index - 1]
+
+
+def test_plate_recognizer_env_template_renders_from_the_secrets():
+    text = render("container/plate-recognizer/plate-recognizer.env.j2", tmsetup_secrets=ENTERED_SECRETS)
+    lines = text.splitlines()
+    assert [line for line in lines if line and not line.startswith("#")] == [
+        "TOKEN=pr-placeholder-0002", "LICENSE_KEY=pr-placeholder-0003", "WORKERS=2"]
+    assert any(line.startswith("# ") for line in lines)
+    assert "YYYYY" not in text and "XXXXX" not in text
+
+
+def test_node_red_config_template_has_no_secret_key():
+    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Device page."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
+              "tmsetup_bearing": "n"}
+    text = render("container/node-red-tm/config/config.yml.j2", **values)
+    assert "access_token" not in text
+    assert "addons" not in text
+    assert set(yaml.safe_load(text)["thingsboard"]) == {"enabled", "host", "protocol"}
 
 
 def test_node_red_config_template_has_no_time_section():
@@ -672,29 +701,39 @@ def test_tm_control_runtime_directory_is_removed_when_it_stops():
     assert not any(line.startswith("RuntimeDirectoryPreserve=") for line in tm_control_unit())
 
 
-def tm_job_unit():
+JOBS = ["system-password", "set-secret"]
+
+
+def tm_job_unit(job):
     return render(
-        f"{TM_CONTROL_TEMPLATES}/tm-job-system-password.service.j2",
+        f"{TM_CONTROL_TEMPLATES}/tm-job-{job}.service.j2",
         tmsetup_tm_control_dir=TM_CONTROL_DIR, tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor",
-        tmsetup_etc_dir="/etc/traffic-monitor",
+        tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_secrets_dir="/etc/traffic-monitor/secrets",
     )
 
 
-def test_job_unit_is_a_root_oneshot_without_install():
-    unit = tm_job_unit()
+@pytest.mark.parametrize("job", JOBS)
+def test_job_unit_is_a_root_oneshot_without_install(job):
+    unit = tm_job_unit(job)
     lines = unit.splitlines()
     assert "Type=oneshot" in lines
     assert "[Install]" not in unit
     assert not any(line.startswith(("User=", "DynamicUser=")) for line in lines)
-    assert (f"ExecStart={TM_CONTROL_DIR}/venv/bin/python -EP /usr/local/libexec/traffic-monitor/tm-job-system-password"
-            in lines)
+    assert f"ExecStart={TM_CONTROL_DIR}/venv/bin/python -EP /usr/local/libexec/traffic-monitor/tm-job-{job}" in lines
     assert "Environment=TM_CONTROL_MANIFEST=/etc/traffic-monitor/manifest.json" in lines
 
 
-def test_job_unit_never_hits_a_start_limit():
+@pytest.mark.parametrize("job", JOBS)
+def test_job_unit_never_hits_a_start_limit(job):
     """A start refused by the start limit would leave the job queued in tm-control."""
-    lines = tm_job_unit().splitlines()
+    lines = tm_job_unit(job).splitlines()
     assert "StartLimitIntervalSec=0" in lines[lines.index("[Unit]"):lines.index("[Service]")]
+
+
+def test_set_secret_unit_names_the_secrets_dir():
+    lines = tm_job_unit("set-secret").splitlines()
+    assert "Environment=TM_CONTROL_SECRETS_DIR=/etc/traffic-monitor/secrets" in lines
+    assert "Description=Traffic Monitor job: set an entered secret" in lines
 
 
 def polkit_rules():
@@ -721,6 +760,7 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert 'subject.user !== "tmadmin"' in rules
     assert 'action.id === "org.freedesktop.systemd1.manage-units"' in rules
     assert '"tm-job-system-password.service"' in rules
+    assert '"tm-job-set-secret.service"' in rules
     assert '["start", "stop", "restart"]' in rules
     assert rules.count("polkit.Result.YES") == 2
     # The code-owner test comes first, so neither YES is reached for anyone else
@@ -741,7 +781,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     polkit = load_role_yaml("vars/main.yml")["tmsetup_tm_control_polkit"]
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
-        "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service",
+        "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS

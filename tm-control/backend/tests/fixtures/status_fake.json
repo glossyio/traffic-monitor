@@ -137,6 +137,12 @@
                     "title": "Location",
                     "status": "ok",
                     "detail": "No location is set."
+                },
+                {
+                    "id": "config.thingsboard",
+                    "title": "ThingsBoard upload",
+                    "status": "ok",
+                    "detail": "The upload is off."
                 }
             ]
         },

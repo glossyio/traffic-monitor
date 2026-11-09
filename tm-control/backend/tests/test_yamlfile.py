@@ -1,3 +1,4 @@
+import os
 import stat
 from datetime import datetime, timezone
 
@@ -79,3 +80,83 @@ def test_failed_write_leaves_the_file_and_no_temp_files(frigate_config, monkeypa
         yamlfile.write_atomic(frigate_config, "new: content\n")
     assert frigate_config.read_text() == original
     assert sorted(p.name for p in frigate_config.parent.iterdir()) == ["config.yml"]
+
+
+# migrate runs as root in tmsetup, in directories that the code owner and Node-RED's container can write to.
+
+
+def test_back_up_refuses_a_link_planted_at_the_backup_name(frigate_config, tmp_path):
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    yamlfile.backup_path(frigate_config, NOW).symlink_to(target)
+    with pytest.raises(FileExistsError):
+        yamlfile.back_up(frigate_config, NOW)
+    assert target.read_text() == "not yours\n"
+
+
+def test_save_refuses_a_link_planted_at_the_backup_name(frigate_config, tmp_path):
+    original = frigate_config.read_text()
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    yamlfile.backup_path(frigate_config, NOW).symlink_to(target)
+    document = RoundTripFile(frigate_config)
+    document.data["mqtt"]["port"] = 1884
+    with pytest.raises(OSError):
+        document.save(now=NOW)
+    assert target.read_text() == "not yours\n"
+    assert frigate_config.read_text() == original
+
+
+def test_a_linked_file_is_neither_loaded_nor_backed_up(frigate_config, tmp_path):
+    link = tmp_path / "linked.yml"
+    link.symlink_to(frigate_config)
+    with pytest.raises(OSError):
+        RoundTripFile(link)
+    with pytest.raises(OSError):
+        yamlfile.back_up(link, NOW)
+    assert not yamlfile.backup_path(link, NOW).exists()
+
+
+def test_back_up_keeps_the_mode_and_as_root_sets_the_owner_through_the_open_file(frigate_config, monkeypatch):
+    owners = []
+    monkeypatch.setattr(yamlfile.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(yamlfile.os, "fchown", lambda fd, uid, gid: owners.append((uid, gid)))
+    monkeypatch.setattr(yamlfile.os, "chown", lambda *args: pytest.fail("chown by path follows a swapped name"))
+    backup = yamlfile.back_up(frigate_config, NOW)
+    assert backup.read_text() == frigate_config.read_text()
+    assert stat.S_IMODE(backup.stat().st_mode) == 0o640
+    assert owners == [(frigate_config.stat().st_uid, frigate_config.stat().st_gid)]
+
+
+def test_write_atomic_sets_mode_and_owner_through_the_open_file(frigate_config, monkeypatch):
+    owners = []
+    monkeypatch.setattr(yamlfile.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(yamlfile.os, "fchown", lambda fd, uid, gid: owners.append((uid, gid)))
+    monkeypatch.setattr(yamlfile.os, "chown", lambda *args: pytest.fail("chown by path follows a swapped name"))
+    monkeypatch.setattr(yamlfile.os, "chmod", lambda *args: pytest.fail("chmod by path follows a swapped name"))
+    yamlfile.write_atomic(frigate_config, "new: content\n")
+    assert frigate_config.read_text() == "new: content\n"
+    assert stat.S_IMODE(frigate_config.stat().st_mode) == 0o640
+    assert owners == [(frigate_config.stat().st_uid, frigate_config.stat().st_gid)]
+
+
+def test_write_atomic_refuses_a_path_that_became_a_link(tmp_path):
+    """Its mode would come from the link (0777), and as root its owner from whoever made it."""
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    link = tmp_path / "swapped.yml"
+    link.symlink_to(target)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.write_atomic(link, "new: content\n")
+    assert link.is_symlink() and target.read_text() == "not yours\n"
+    assert not list(tmp_path.glob(".swapped.yml.*.tmp"))
+
+
+def test_a_fifo_is_neither_read_nor_backed_up(tmp_path, prompt):
+    fifo = tmp_path / "config.yml"
+    os.mkfifo(fifo)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.read_text(fifo)
+    with pytest.raises(OSError, match="not a regular file"):
+        yamlfile.back_up(fifo, NOW)
+    assert not yamlfile.backup_path(fifo, NOW).exists()

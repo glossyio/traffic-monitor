@@ -3,7 +3,6 @@ thingsboard:
     host: tb.example.invalid
     protocol: http
     # port: 8080
-    access_token:
 
 deployment:
     lat: 45.0
