@@ -2,9 +2,17 @@
 
 from datetime import date
 
-from tm_control.adapters import systemd
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
-from tm_control.modules.services.units import Unit, active_since, restart_fix, restarts, unit_states, units_for
+from tm_control.modules.services.units import (
+    RESTART_LOOP_SPACING,
+    Unit,
+    active_since,
+    restart_causes,
+    restart_fix,
+    restarts,
+    unit_states,
+    units_for,
+)
 
 
 def _running(values: dict[str, str], today: date) -> str:
@@ -14,17 +22,6 @@ def _running(values: dict[str, str], today: date) -> str:
     if since.date() == today:
         return f"Running since {since:%H:%M}"
     return f"Running since {since:%Y-%m-%d %H:%M}"
-
-
-def restarted_itself(context: Context, unit: Unit, count: int) -> bool:
-    """Whether each of the unit's last `count` automatic restarts followed the exit it makes when it restarts itself,
-    from PID 1's journal this boot (read once per report). False when the journal can't tell."""
-    if unit.restarts_itself_with is None or context.settings.fake:
-        return False
-    exits = context.probe(f"services.restart_exits.{unit.unit}", lambda: systemd.automatic_restart_exits(unit.unit))
-    if exits is None or len(exits) < count:
-        return False
-    return all(status == unit.restarts_itself_with for status in exits[-count:])
 
 
 def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: Context) -> Check:
@@ -41,9 +38,17 @@ def unit_check(unit: Unit, values: dict[str, str] | None, today: date, context: 
         count = restarts(values)
         if count:
             times = "1 time" if count == 1 else f"{count} times"
-            if restarted_itself(context, unit, count):
+            causes = restart_causes(context, unit, count)
+            if causes is not None and all(cause == "itself" for cause in causes):
                 return check("ok", f"{_running(values, today)}. It restarted itself {times}, as {unit.title} does "
                                    f"when {unit.restarts_itself_when}.")
+            if causes is not None and "loop" in causes:
+                loops = causes.count("loop")  # count is at least 2: the first counted restart has nothing to pair with
+                of_them = "all of them " if loops == count else f"{loops} of them "
+                minutes = RESTART_LOOP_SPACING // 60
+                return check("warn", f"{_running(values, today)}, but it restarted {times}, {of_them}by stopping "
+                                     f"itself within {minutes} minutes of the restart before, which happens when "
+                                     f"something inside it keeps failing. {unit.restart_loop_hint}", restart)
             return check("warn", f"{_running(values, today)}, but it restarted {times} after failures.", restart)
         return check("ok", f"{_running(values, today)}.")
     if state == "activating":

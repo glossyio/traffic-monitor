@@ -11,6 +11,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
+from placeholders import PLACEHOLDER_KEY
 from tm_control.app import create_app
 from tm_control.core.auth import Device, Users
 from tm_control.modules import MODULES
@@ -23,6 +24,10 @@ ADMIN = ("admin", "correct horse 1")
 VIEWER = ("viewer", "viewer pass 1")
 TB = "thingsboard_access_token"
 TB_VALUE = "tb-placeholder-0001"
+FRIGATE_PLUS = "frigate_plus_api_key"
+FRIGATE_PLUS_MESSAGE = (
+    "A Frigate+ API key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it."
+)
 PR_TOKEN = "plate_recognizer_token"
 PR_KEY = "plate_recognizer_license_key"
 EMPTY_MESSAGE = "Enter a value, or leave this as it is."
@@ -80,7 +85,14 @@ def test_get_secrets_is_admin_only_and_lists_the_available_ones(claimed_client, 
                 "set": False,
                 "ends_with": None,
                 "restarts": ["node-red-tm.service"],
-            }
+            },
+            {
+                "name": FRIGATE_PLUS,
+                "title": "Frigate+ API key",
+                "set": False,
+                "ends_with": None,
+                "restarts": ["frigate.service"],
+            },
         ]
     }
 
@@ -89,12 +101,12 @@ def test_plate_recognizer_secrets_appear_only_with_the_addon(settings, tmp_path,
     client = addon_client(settings, tmp_path)
     login(client, *ADMIN)
     listed = client.get("/api/v1/secrets").json()["secrets"]
-    assert [s["name"] for s in listed] == [TB, PR_TOKEN, PR_KEY]
+    assert [s["name"] for s in listed] == [TB, FRIGATE_PLUS, PR_TOKEN, PR_KEY]
     assert [s["title"] for s in listed] == [
-        "ThingsBoard access token", "Plate Recognizer API token", "Plate Recognizer license key",
+        "ThingsBoard access token", "Frigate+ API key", "Plate Recognizer API token", "Plate Recognizer license key",
     ]
-    assert listed[1]["restarts"] == ["plate-recognizer.service", "node-red-tm.service"]
-    assert listed[2]["restarts"] == ["plate-recognizer.service"]
+    assert listed[2]["restarts"] == ["plate-recognizer.service", "node-red-tm.service"]
+    assert listed[3]["restarts"] == ["plate-recognizer.service"]
     assert set_secret(client, PR_TOKEN, "pr-placeholder-0002").status_code == 202
     assert set_secret(client, PR_KEY, "pr-placeholder-0003").status_code == 202
     state = secrets(client)
@@ -163,6 +175,30 @@ def test_plate_recognizer_values_take_printable_ascii(settings, tmp_path, login)
         assert r.json()["error"]["message"] == (
             "A Plate Recognizer value is 1 to 256 printable characters with no spaces."
         )
+
+
+def test_the_frigate_plus_key_row(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    state = secrets(claimed_client)[FRIGATE_PLUS]
+    assert state["title"] == "Frigate+ API key" and state["restarts"] == ["frigate.service"]
+    assert state["set"] is False and state["ends_with"] is None
+    assert set_secret(claimed_client, FRIGATE_PLUS, PLACEHOLDER_KEY).status_code == 202
+    assert claimed_client.app.state.jobs.last_request == {"name": FRIGATE_PLUS, "value": PLACEHOLDER_KEY}
+    r = claimed_client.get("/api/v1/secrets")
+    state = {secret["name"]: secret for secret in r.json()["secrets"]}[FRIGATE_PLUS]
+    assert state["set"] is True and state["ends_with"] == PLACEHOLDER_KEY[-4:]
+    assert PLACEHOLDER_KEY not in r.text
+
+
+def test_the_frigate_plus_key_is_refused_in_the_wrong_format(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    value = PLACEHOLDER_KEY.upper()
+    r = set_secret(claimed_client, FRIGATE_PLUS, value)
+    assert r.status_code == 422
+    assert r.json()["error"] == {"code": "validation", "message": FRIGATE_PLUS_MESSAGE, "detail": None}
+    assert value not in r.text
+    assert claimed_client.app.state.jobs.last_request is None
+    assert secrets(claimed_client)[FRIGATE_PLUS]["set"] is False
 
 
 def test_unknown_secret_is_404(claimed_client, login):

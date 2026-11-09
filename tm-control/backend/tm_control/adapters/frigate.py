@@ -1,12 +1,15 @@
-"""Frigate's API inside the pod, on its unauthenticated port 5000 (published on 127.0.0.1 only).
+"""Frigate's API inside the pod, on its unauthenticated port 5000 (published on 127.0.0.1 only), and its config.yml as
+the host has it.
 
-Each function returns None when Frigate doesn't answer, times out, or answers something else than expected.
+Each API function returns None when Frigate doesn't answer, times out, or answers something else than expected.
 /api/config masks the credentials in camera input paths (rtsp://*:*@...).
 """
 
 import re
+from pathlib import Path
 
 from tm_control.adapters import httpjson
+from tm_control.adapters.yamlfile import ConfigRead, read_config
 
 BASE = "http://127.0.0.1:5000/api"
 VERSION = re.compile(r"[0-9A-Za-z.+_-]{1,64}")  # such as 0.18.1-cf67f08
@@ -34,3 +37,9 @@ def config() -> dict | None:
 def stats() -> dict | None:
     """cameras.<name>.camera_fps and detectors.<name>.inference_speed and .pid, among others."""
     return _object("stats")
+
+
+def config_file(codedir) -> ConfigRead:
+    """<codedir>/frigate/config/config.yml as the host has it, which is what Frigate reads when it starts. Never
+    raises."""
+    return read_config(Path(codedir) / "frigate" / "config" / "config.yml")

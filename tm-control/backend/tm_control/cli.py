@@ -44,6 +44,8 @@ def run_migrate(args):
         codes.append(migrate.run_node_red(args.node_red_config, secrets_dir, dry_run=args.dry_run))
     if args.plate_recognizer_env:
         codes.append(migrate.run_plate_recognizer_env(args.plate_recognizer_env, secrets_dir, dry_run=args.dry_run))
+    if args.frigate_env:
+        codes.append(migrate.run_frigate_env(args.frigate_env, secrets_dir, dry_run=args.dry_run))
     return max(codes)
 
 
@@ -62,6 +64,11 @@ def main(argv=None):
         "--plate-recognizer-env",
         type=Path,
         help="path to plate-recognizer.env: move a TOKEN and LICENSE_KEY typed into it to the secret files",
+    )
+    migrate_parser.add_argument(
+        "--frigate-env",
+        type=Path,
+        help="path to frigate.env: move a PLUS_API_KEY typed into it to the secret files",
     )
     migrate_parser.add_argument(
         "--secrets-dir",
@@ -114,8 +121,10 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
     if args.command == "migrate":
-        if not (args.frigate_config or args.node_red_config or args.plate_recognizer_env):
-            migrate_parser.error("give at least one of --frigate-config, --node-red-config, --plate-recognizer-env")
+        if not (args.frigate_config or args.node_red_config or args.plate_recognizer_env or args.frigate_env):
+            migrate_parser.error(
+                "give at least one of --frigate-config, --node-red-config, --plate-recognizer-env, --frigate-env"
+            )
         return run_migrate(args)
     if args.command == "serve":
         return serve()

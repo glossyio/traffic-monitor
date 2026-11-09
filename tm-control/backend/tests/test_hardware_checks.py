@@ -156,7 +156,7 @@ def test_a_healthy_device_with_a_coral_usb_is_all_ok(hw):
     assert [c.title for c in checks.values()] == [
         "Coral USB Accelerator", "HEVC decoder", "HEVC decoder in Frigate", "Radar on /dev/ttyACM0",
     ]
-    assert "8.4 ms" in checks["hardware.detector.edgetpu_usb"].detail
+    assert checks["hardware.detector.edgetpu_usb"].detail == "Ready on the host and passed to Frigate."
     assert all(c.fix is None for c in checks.values())
 
 
@@ -197,13 +197,21 @@ def _no_pid(hw):
     (_not_passed, "error", "isn't passed to Frigate", RESCAN),
     (_not_configured, "error", "isn't in Frigate's config", RESCAN),
     (_no_pid, "error", "isn't running", RESTART_FRIGATE),
-    (lambda hw: None, "ok", "8.4 ms", None),
+    (lambda hw: None, "ok", "Ready on the host and passed to Frigate.", None),
 ])
 def test_detector_layers_name_the_first_failure(hw, change, status, fragment, fix):
     change(hw)
     check = hardware_group(hw)["hardware.detector.edgetpu_usb"]
     assert (check.status, check.fix) == (status, fix)
     assert fragment in check.detail
+
+
+def test_detector_ok_claims_only_what_the_host_shows(hw):
+    """Whether detection works is Frigate's to report: its stats keep a dead detector process's pid and the starting
+    10.0 ms (bench for #281), so the ok detail claims no more than the host side, and gives no speed."""
+    hw.apps.edit_json(STATS, lambda body: body["detectors"]["coral"].update(inference_speed=10.0, cpu=None, mem=None))
+    check = hardware_group(hw)["hardware.detector.edgetpu_usb"]
+    assert (check.status, check.detail, check.fix) == ("ok", "Ready on the host and passed to Frigate.", None)
 
 
 def test_detector_hints_name_the_installer_tags(hw):

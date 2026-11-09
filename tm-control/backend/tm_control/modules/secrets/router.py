@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.core.secrets import (
+    FRIGATE_PLUS_API_KEY,
     PLATE_RECOGNIZER_LICENSE_KEY,
     PLATE_RECOGNIZER_TOKEN,
     THINGSBOARD_ACCESS_TOKEN,
@@ -46,6 +47,16 @@ ENTERED: dict[str, EnteredSecret] = {
         shows_ending=True,
         message="A ThingsBoard access token is 1 to 256 letters, digits, dots, dashes, underscores, or tildes.",
         restarts=("node-red-tm.service",),
+        option=None,
+    ),
+    FRIGATE_PLUS_API_KEY: EnteredSecret(
+        title="Frigate+ API key",
+        pattern=re.compile(VALUE_PATTERNS[FRIGATE_PLUS_API_KEY]),
+        shows_ending=True,
+        message=(
+            "A Frigate+ API key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it."
+        ),
+        restarts=("frigate.service",),
         option=None,
     ),
     PLATE_RECOGNIZER_TOKEN: EnteredSecret(

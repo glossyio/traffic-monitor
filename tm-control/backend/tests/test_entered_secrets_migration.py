@@ -1,5 +1,5 @@
-"""tm-control migrate moves the ThingsBoard and Plate Recognizer secrets out of Node-RED's config.yml and a
-hand-entered plate-recognizer.env into the device's secret files. The values here are placeholders."""
+"""tm-control migrate moves the ThingsBoard and Plate Recognizer secrets out of Node-RED's config.yml, and a
+hand-entered plate-recognizer.env or frigate.env, into the device's secret files. The values here are placeholders."""
 
 import os
 import stat
@@ -11,7 +11,9 @@ from ruamel.yaml import YAML
 from tm_control.cli import main
 from tm_control.core import migrate
 from tm_control.core.secrets import ENTERED_SECRETS, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
-from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN, VALUE_RULES
+
+from placeholders import PLACEHOLDER_KEY
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 # Node-RED's config.yml as the template before this change rendered it with the role's defaults, byte for byte:
@@ -654,3 +656,153 @@ def test_an_unexpected_error_prints_only_its_kind(config_yml, env_file, secrets_
     printed = output(capsys)
     assert printed == f"tm-control migrate: ERROR {path}: PlantedError\n"
     assert "tb-placeholder-902" not in printed
+
+
+def frigate_env(tmp_path, key=PLACEHOLDER_KEY):
+    """frigate.env as frigate.env.j2 renders it, with placeholders, and PLUS_API_KEY set to key."""
+    path = tmp_path / "frigate" / "frigate.env"
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(
+        "# Frigate environment variables\n"
+        "FRIGATE_RTSP_PASSWORD=rtsp-placeholder-701\n"
+        "# Credentials Frigate uses to read the camera from go2rtc on the host (set by tmsetup.sh)\n"
+        "FRIGATE_GO2RTC_RTSP_USER=frigate\n"
+        "FRIGATE_GO2RTC_RTSP_PASSWORD=go2rtc-placeholder-702\n"
+        "# Frigate trusts the reverse proxy's user and role headers only with this secret (set by tmsetup.sh)\n"
+        "FRIGATE_PROXY_AUTH_SECRET=proxy-placeholder-703\n"
+        f"PLUS_API_KEY={key}\n"
+        "FRIGATE_MQTT_USER=frigate\n"
+        "FRIGATE_MQTT_PASSWORD=mqtt-placeholder-704\n"
+        "FRIGATE_HOME_DIR=/opt/traffic-monitor/frigate\n"
+        "FRIGATE_VERSION=0.18.1\n"
+        "# Keep in step with the /frigate location in revproxy's frigate.conf.j2 and the path in tm-control's APPS\n"
+        "FRIGATE_BASE_PATH=/frigate\n"
+    )
+    return path
+
+
+def frigate_backups(path):
+    return list(path.parent.glob("frigate.env.*.bak"))
+
+
+def holds_a_key(printed):
+    """Whether printed text holds the placeholder key's id, its secret part, or its first group, in either case."""
+    lowered = printed.lower()
+    return any(part in lowered for part in PLACEHOLDER_KEY.split(":") + [PLACEHOLDER_KEY[:8]])
+
+
+@pytest.mark.parametrize("quote", ["", '"'], ids=["bare", "between v0.5.0's quotes"])
+def test_a_frigate_plus_key_typed_into_frigate_env_moves(tmp_path, secrets_dir, quote, capsys):
+    """v0.5.0 rendered PLUS_API_KEY="", so a key typed between its quotes moves as the bare key."""
+    path = frigate_env(tmp_path, key=f"{quote}{PLACEHOLDER_KEY}{quote}")
+    original = path.read_text()
+
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: moved PLUS_API_KEY to the secrets files\n"
+    assert captured.err == ""
+    assert not holds_a_key(captured.out)
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == PLACEHOLDER_KEY + "\n"
+    assert stat.S_IMODE((secrets_dir / FRIGATE_PLUS_API_KEY).stat().st_mode) == 0o640
+    assert path.read_text() == original  # tmsetup writes the line from the secret file on the same run
+    assert not frigate_backups(path)
+
+    # The same value in both, as before tmsetup rewrites the line, is up to date and quiet
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    assert output(capsys) == f"tm-control migrate: {path}: up to date\n"
+
+
+@pytest.mark.parametrize("key", ["", '""'], ids=["v0.6.0 and later", "v0.5.0"])
+def test_an_empty_plus_api_key_line_is_up_to_date(tmp_path, secrets_dir, key, capsys):
+    """frigate.env.j2 wrote PLUS_API_KEY="" in v0.5.0 and PLUS_API_KEY= since; neither is a key."""
+    path = frigate_env(tmp_path, key=key)
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    assert captured.err == ""
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == ""
+    assert not frigate_backups(path)
+
+
+def test_a_missing_frigate_env_is_up_to_date(tmp_path, secrets_dir, capsys):
+    path = tmp_path / "frigate" / "frigate.env"  # a first install: the template renders it later
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    assert output(capsys) == f"tm-control migrate: {path}: up to date\n"
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == ""
+
+
+@pytest.mark.parametrize("key", [
+    PLACEHOLDER_KEY.upper(),
+    PLACEHOLDER_KEY.replace(":", ": "),
+    PLACEHOLDER_KEY.replace(":", ""),
+    f'"{PLACEHOLDER_KEY.upper()}"',
+    f'"{PLACEHOLDER_KEY}',
+    f"'{PLACEHOLDER_KEY}'",
+], ids=["uppercase", "a space", "no colon", "uppercase between quotes", "one quote", "single quotes"])
+def test_a_frigate_plus_key_that_frigate_would_reject_is_left_with_a_warning(tmp_path, secrets_dir, key, capsys):
+    """tmsetup writes the (empty) secret file over the PLUS_API_KEY line next, so the typed key's only copy is the
+    backup."""
+    path = frigate_env(tmp_path, key=key)
+    original = path.read_text()
+
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == ""
+    (backup,) = frigate_backups(path)
+    assert backup.read_text() == original
+    assert path.read_text() == original
+    (warning,) = captured.err.splitlines()
+    assert warning.startswith(f"tm-control migrate: WARNING {path}: PLUS_API_KEY isn't ")
+    assert VALUE_RULES[FRIGATE_PLUS_API_KEY] in warning
+    assert warning.endswith(f"Enter it on the control app's Device page; the env file was backed up to {backup}.")
+    assert key not in captured.out + captured.err
+    assert not holds_a_key(captured.out + captured.err)
+
+
+def test_a_quoted_frigate_plus_key_the_secret_file_holds_is_up_to_date(tmp_path, secrets_dir, capsys):
+    (secrets_dir / FRIGATE_PLUS_API_KEY).write_text(PLACEHOLDER_KEY + "\n")
+    path = frigate_env(tmp_path, key=f'"{PLACEHOLDER_KEY}"')
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == (f"tm-control migrate: {path}: up to date\n", "")
+    assert not frigate_backups(path)
+
+
+def test_a_frigate_plus_key_that_differs_from_the_secret_file_is_kept_out_with_a_warning(tmp_path, secrets_dir,
+                                                                                         capsys):
+    (secrets_dir / FRIGATE_PLUS_API_KEY).write_text(PLACEHOLDER_KEY + "\n")
+    other = PLACEHOLDER_KEY[:-1] + "8"
+    path = frigate_env(tmp_path, key=other)
+    original = path.read_text()
+
+    assert migrate.run_frigate_env(path, secrets_dir) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == PLACEHOLDER_KEY + "\n"
+    (backup,) = frigate_backups(path)
+    assert backup.read_text() == original
+    (warning,) = captured.err.splitlines()
+    assert warning.startswith(f"tm-control migrate: WARNING {path}: PLUS_API_KEY differs from the secrets file "
+                              f"{FRIGATE_PLUS_API_KEY}, which is kept")
+    assert f"(backup: {backup})" in warning
+    assert not holds_a_key(captured.out + captured.err)
+
+
+def test_frigate_env_dry_run_writes_nothing(tmp_path, secrets_dir, capsys):
+    path = frigate_env(tmp_path)
+    original = path.read_text()
+    assert migrate.run_frigate_env(path, secrets_dir, dry_run=True) == 0
+    assert output(capsys) == f"tm-control migrate: {path}: would move PLUS_API_KEY to the secrets files\n"
+    assert secret(secrets_dir, FRIGATE_PLUS_API_KEY) == ""
+    assert path.read_text() == original
+    assert not frigate_backups(path)
+
+    # A key Frigate would reject warns, but isn't backed up in a dry run either
+    path = frigate_env(tmp_path, key=PLACEHOLDER_KEY.upper())
+    assert migrate.run_frigate_env(path, secrets_dir, dry_run=True) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"tm-control migrate: {path}: up to date\n"
+    assert "a run without --dry-run backs up the env file" in captured.err
+    assert not holds_a_key(captured.err)
+    assert not frigate_backups(path)

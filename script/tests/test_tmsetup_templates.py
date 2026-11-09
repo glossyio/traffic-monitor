@@ -448,7 +448,9 @@ def test_tm_control_wrapper_runs_only_the_root_owned_copy():
     ast.parse(script)
 
 
-SECRETS = {"go2rtc_rtsp_password": "s3cret", "frigate_proxy_secret": "placeholder-secret"}
+SECRETS = {"go2rtc_rtsp_password": "s3cret", "frigate_proxy_secret": "placeholder-secret", "frigate_plus_api_key": ""}
+# Shaped like a Frigate+ key (Frigate's own pattern); the same value as tm-control's tests, kept here on its own
+PLACEHOLDER_KEY = "tmdev000-0000-0000-0000-000000000001:0123456789abcdef0123456789abcdef01234567"
 CREDENTIALED_INPUT = "rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect"
 
 
@@ -512,15 +514,106 @@ def test_new_frigate_configs_use_proxy_auth():
     assert config["tls"] == {"enabled": False}
 
 
+CORAL_FILE = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model_file"]
+CORAL_PCI = {"edgetpu_pci": {"dev_path_available": True, "exists": True, "frigate_type": "edgetpu",
+                             "frigate_device": "pci", "dev_path": "/dev/apex_0"}}
+# A Frigate+ model id is 32 hex characters; this one is made up
+KEPT = {"path": "plus://0123456789abcdef0123456789abcdef", "labelmap": {2: "vehicle"}}
+
+
+def frigate_config(**variables):
+    return yaml.safe_load(render("container/frigate/config/config.yml.j2", **variables))
+
+
+def test_a_kept_model_section_replaces_the_detector_default():
+    config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE,
+                            tmsetup_frigate_model_keep=KEPT)
+    assert config["model"] == KEPT  # a plus:// path, a nested labelmap, an int key: all round-trip
+    assert config["detectors"] == {"edgetpu_pci": {"type": "edgetpu", "device": "pci"}}
+
+
+def test_a_kept_model_section_is_written_on_a_device_without_a_coral():
+    assert frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep=KEPT)["model"] == KEPT
+
+
+def kept_model_text(keep):
+    """The rendered model section's text, from model: up to the blank line(s) and ffmpeg: that follow it."""
+    text = render("container/frigate/config/config.yml.j2", tmsetup_detectors={}, tmsetup_frigate_model_keep=keep)
+    return text[text.index("\nmodel:\n") + 1:text.index("ffmpeg:\n")]
+
+
+def test_a_kept_model_section_keeps_its_key_order():
+    keep = {"path": "plus://0123456789abcdef0123456789abcdef", "model_type": "yolo-generic", "width": 320,
+            "height": 320}
+    text = kept_model_text(keep)
+    assert text.splitlines()[1:5] == ["  path: plus://0123456789abcdef0123456789abcdef", "  model_type: yolo-generic",
+                                      "  width: 320", "  height: 320"]
+
+
+def test_a_kept_model_section_with_mixed_labelmap_keys_renders():
+    """from_yaml reads `0: car` as an int key and `bike: x` as a str one; sorting them would raise outside the
+    rescue that guards reading the section."""
+    keep = {"path": "/config/model_cache/my_yolo.onnx", "labelmap": {2: "vehicle", "bike": "bicycle", 0: "person"}}
+    assert frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep=keep)["model"] == keep
+    assert kept_model_text(keep).splitlines()[2:6] == ["  labelmap:", "    2: vehicle", "    bike: bicycle",
+                                                       "    0: person"]
+
+
+def test_a_kept_model_section_is_followed_by_one_blank_line_as_the_coral_default_is():
+    assert kept_model_text(KEPT).endswith("\n  labelmap:\n    2: vehicle\n\n")  # KEPT's last key, then one blank
+    coral = render("container/frigate/config/config.yml.j2", tmsetup_detectors=CORAL_PCI,
+                   tmsetup_frigate_coral_model_file=CORAL_FILE)
+    assert "\n  labelmap_path: /config/labels-coco17.txt\n\nffmpeg:\n" in coral
+
+
+def test_without_a_kept_section_the_coral_default_names_the_installers_model():
+    for keep in ({"tmsetup_frigate_model_keep": {}}, {}):
+        config = frigate_config(tmsetup_detectors=CORAL_PCI, tmsetup_frigate_coral_model_file=CORAL_FILE, **keep)
+        assert config["model"] == {
+            "model_type": "yolo-generic",
+            "width": 512,
+            "height": 512,
+            "path": f"/config/model_cache/{CORAL_FILE}",
+            "labelmap_path": "/config/labels-coco17.txt",
+        }
+
+
+def test_without_a_kept_section_and_without_a_coral_there_is_no_model_section():
+    assert "model" not in frigate_config(tmsetup_detectors={})
+    assert "model" not in frigate_config(tmsetup_detectors={}, tmsetup_frigate_model_keep={})
+
+
 def test_frigate_env_carries_the_proxy_secret():
     lines = render(
         "container/frigate/frigate.env.j2",
         tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
         tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
         tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate",
-        tmsetup_secrets={"go2rtc_rtsp_password": "p", "frigate_proxy_secret": "s"}, tmsetup_mqtt_broker_login=NO_LOGIN,
+        tmsetup_secrets={"go2rtc_rtsp_password": "p", "frigate_proxy_secret": "s", "frigate_plus_api_key": ""},
+        tmsetup_mqtt_broker_login=NO_LOGIN,
     ).splitlines()
     assert "FRIGATE_PROXY_AUTH_SECRET=s" in lines
+
+
+def frigate_plus_lines(key):
+    # Only the PLUS_API_KEY line and the comment above it, so a failing assert can't print the other values
+    lines = render(
+        "container/frigate/frigate.env.j2",
+        tmsetup_frigate_rtsp_password="password", tmsetup_frigate_mqtt_user="mqtt_user",
+        tmsetup_frigate_mqtt_password="mqtt_pass", tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_frigate_version="0.18.1", tmsetup_go2rtc_rtsp_user="frigate",
+        tmsetup_secrets={**SECRETS, "frigate_plus_api_key": key}, tmsetup_mqtt_broker_login=NO_LOGIN,
+    ).splitlines()
+    (index,) = [index for index, line in enumerate(lines) if line.startswith("PLUS_API_KEY")]
+    return lines[index - 1 : index + 1]
+
+
+def test_frigate_env_renders_the_frigate_plus_key_from_the_secrets():
+    """The key is set on the Device page and kept in the secrets, so -f writes it back rather than blanking it."""
+    comment, line = frigate_plus_lines(PLACEHOLDER_KEY)
+    assert line == f"PLUS_API_KEY={PLACEHOLDER_KEY}"
+    assert comment.startswith("#") and "Device page" in comment
+    assert frigate_plus_lines("")[1] == "PLUS_API_KEY="
 
 
 def test_frigate_location_uses_the_authenticated_port_and_fixed_identity_headers():

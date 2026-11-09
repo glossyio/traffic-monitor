@@ -1,5 +1,6 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
+import base64
 import subprocess
 
 import pytest
@@ -173,6 +174,9 @@ def frigate_credentials_tasks():
     return {task["name"]: task for task in load_role_yaml("tasks/frigate_credentials.yml")}
 
 
+FRIGATE_ENV_LINES = "TMSetup - Frigate Credentials - Add the go2rtc RTSP login, the proxy secret, and the Frigate+ key to frigate.env"
+
+
 def test_frigate_credentials_skip_files_a_device_does_not_have_yet():
     """Under -t go2rtc alone, Frigate may not be installed yet."""
     tasks = frigate_credentials_tasks()
@@ -184,24 +188,34 @@ def test_frigate_credentials_skip_files_a_device_does_not_have_yet():
         "{{ tmsetup_codedir }}/frigate/frigate.env",
         "{{ tmsetup_codedir }}/frigate/config/config.yml",
     ]
-    env = tasks["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    env = tasks[FRIGATE_ENV_LINES]
     migrate = tasks["TMSetup - Frigate Credentials - Update Frigate config from older installs"]
     assert env["when"] == "tmsetup_frigate_settings_stat_register.results[0].stat.exists"
     assert migrate["when"] == "tmsetup_frigate_settings_stat_register.results[1].stat.exists"
 
 
 def test_existing_frigate_env_gets_both_credentials_without_printing_them():
-    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
     assert task["no_log"] is True
     assert [item["key"] for item in task["loop"]][:2] == ["FRIGATE_GO2RTC_RTSP_USER", "FRIGATE_GO2RTC_RTSP_PASSWORD"]
 
 
 def test_existing_frigate_env_gets_the_proxy_secret_without_printing_it():
     """-t frigate, -t revproxy, or any edge tag on a device whose frigate.env predates proxy auth (Review Focus 2)."""
-    task = frigate_credentials_tasks()["TMSetup - Frigate Credentials - Add go2rtc RTSP credentials and the proxy secret to frigate.env"]
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
     assert task["no_log"] is True
     item = next(item for item in task["loop"] if item["key"] == "FRIGATE_PROXY_AUTH_SECRET")
     assert item["value"] == "{{ tmsetup_secrets['frigate_proxy_secret'] }}"
+    assert task["notify"] == "Restart frigate.service"
+
+
+def test_existing_frigate_env_gets_the_frigate_plus_key_without_printing_it():
+    """frigate.env isn't overwritten without -f, so every run writes the key set on the Device page into its line,
+    and an empty secret blanks it. Entered Secrets has moved a typed key to the secrets file first."""
+    task = frigate_credentials_tasks()[FRIGATE_ENV_LINES]
+    assert task["no_log"] is True
+    assert task["loop"][3] == {"key": "PLUS_API_KEY", "value": "{{ tmsetup_secrets['frigate_plus_api_key'] }}"}
+    assert len(task["loop"]) == 4
     assert task["notify"] == "Restart frigate.service"
 
 
@@ -226,6 +240,124 @@ def test_frigate_env_template_hides_its_diff():
     """frigate.env.j2 renders the go2rtc RTSP password, and a -f run with -a diff would print it into ~/tmsetup-*.log."""
     task = frigate_tasks()["TMSetup - Frigate Setup - Create Frigate container configuration files"]
     assert task["diff"] is False
+
+
+FRIGATE_TEMPLATE = "TMSetup - Frigate Setup - Create Frigate container configuration files"
+MODEL_START = "TMSetup - Frigate Setup - Start with no model section to keep"
+MODEL_STAT = "TMSetup - Frigate Setup - Check for an existing Frigate config"
+MODEL_SLURP = "TMSetup - Frigate Setup - Read the model section -f keeps"
+MODEL_BLOCK = "TMSetup - Frigate Setup - Carry the model section over -f"
+MODEL_KEEP = "TMSetup - Frigate Setup - Keep the device's model section across -f"
+FORCE = "tmsetup_force_configs | bool"
+CORAL_FILE = load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model_file"]
+
+
+def conditions(task):
+    when = task.get("when", [])
+    return when if isinstance(when, list) else [when]
+
+
+def model_keep_task():
+    return {task["name"]: task for task in frigate_tasks()[MODEL_BLOCK]["block"]}[MODEL_KEEP]
+
+
+def kept_model(config_text):
+    """Run the carry-over task's expression on a slurped config.yml, as Ansible would."""
+    task = model_keep_task()
+    slurped = {"content": base64.b64encode(config_text.encode()).decode()}
+    (name, value), = task["vars"].items()
+    current = evaluate(value, tmsetup_frigate_config_slurp_register=slurped)
+    return evaluate(task["ansible.builtin.set_fact"]["tmsetup_frigate_model_keep"],
+                    **{name: current, "tmsetup_frigate_coral_model_file": CORAL_FILE})
+
+
+def test_the_model_section_is_read_only_under_force():
+    """A plain run reads nothing: an operator's edit through Frigate's editor stays as it is (review focus 5)."""
+    tasks = frigate_tasks()
+    names = list(tasks)
+    order = [MODEL_START, MODEL_STAT, MODEL_SLURP, MODEL_BLOCK]
+    assert [names.index(name) for name in order] == sorted(names.index(name) for name in order)
+    assert names.index(MODEL_BLOCK) < names.index(FRIGATE_TEMPLATE)
+
+    start = tasks[MODEL_START]
+    assert "when" not in start
+    assert start["ansible.builtin.set_fact"] == {"tmsetup_frigate_model_keep": {}}
+
+    stat = tasks[MODEL_STAT]
+    assert conditions(stat) == [FORCE]
+    assert stat["become"] is True
+    assert stat["ansible.builtin.stat"] == {"path": "{{ tmsetup_codedir }}/frigate/config/config.yml", "get_checksum": False}
+    assert stat["register"] == "tmsetup_frigate_config_stat_register"
+
+    slurp = tasks[MODEL_SLURP]
+    exists = "tmsetup_frigate_config_stat_register.stat.exists"
+    assert conditions(slurp) == [FORCE, exists]  # in this order: the stat is skipped without -f
+    assert slurp["become"] is True
+    assert slurp["no_log"] is True
+    assert slurp["ansible.builtin.slurp"] == {"src": "{{ tmsetup_codedir }}/frigate/config/config.yml"}
+    assert slurp["register"] == "tmsetup_frigate_config_slurp_register"
+
+    block = tasks[MODEL_BLOCK]
+    assert conditions(block) == [FORCE, exists]
+    assert model_keep_task()["no_log"] is True
+
+
+@pytest.mark.parametrize("path", ["plus://abc", "/config/model_cache/mine.tflite"])
+def test_a_chosen_model_section_is_kept(path):
+    text = f"detectors:\n  coral:\n    type: edgetpu\nmodel:\n  path: {path}\n  width: 320\ncameras: {{}}\n"
+    assert kept_model(text) == {"path": path, "width": 320}
+
+
+def test_the_installers_own_model_section_is_not_carried():
+    """After a hardware change, -t detectors -t frigate -f must re-render the detector default (review focus 2)."""
+    text = f"model:\n  model_type: yolo-generic\n  path: /config/model_cache/{CORAL_FILE}\n"
+    assert kept_model(text) == {}
+
+
+@pytest.mark.parametrize("text", [
+    "model:\n  width: 320\n",
+    "model: plus://abc\n",
+    "cameras: {}\n",
+    "model:\n  path: ''\n",
+    "model:\n  path:\n",
+    "model:\n  path: 7\n",
+    "model:\n",
+    "",
+    "- model\n",
+    "just text\n",
+])
+def test_a_model_section_without_a_path_or_not_a_mapping_is_not_carried(text):
+    assert kept_model(text) == {}
+
+
+def test_an_unparseable_frigate_config_keeps_the_templates_section():
+    """The run that replaces a broken config.yml mustn't stop on it, and the message quotes nothing from it."""
+    block = frigate_tasks()[MODEL_BLOCK]
+    (keep, debug) = block["rescue"]
+    assert keep["ansible.builtin.set_fact"] == {"tmsetup_frigate_model_keep": {}}
+    msg = debug["ansible.builtin.debug"]["msg"]
+    assert "{{" not in msg
+    assert "YAML" in msg
+    with pytest.raises(Exception):
+        kept_model("model: [unclosed\n")
+
+
+def test_the_coral_model_file_is_one_variable():
+    downloads = frigate_tasks()["TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model"]
+    get_url = downloads["ansible.builtin.get_url"]
+    assert get_url["dest"] == "{{ tmsetup_codedir }}/frigate/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
+    assert get_url["url"].endswith("/{{ tmsetup_frigate_coral_model_file }}")
+    template = (REPO / "container/frigate/config/config.yml.j2").read_text()
+    assert "path: /config/model_cache/{{ tmsetup_frigate_coral_model_file }}" in template
+    # The role and the container templates name the file only through the variable; tm-control's own code and
+    # fixtures are pinned to it by their tests
+    holders = [
+        path.relative_to(REPO).as_posix()
+        for top in (ROLE, REPO / "container")
+        for path in top.rglob("*")
+        if path.is_file() and not path.is_symlink() and CORAL_FILE in path.read_text(errors="ignore")
+    ]
+    assert holders == ["script/ansible/roles/tmsetup/vars/main.yml"]
 
 
 def test_existing_frigate_config_is_migrated_as_the_code_owner():
@@ -255,10 +387,24 @@ def entered_secrets_tasks():
 ENTERED_SECRETS_MOVE = "TMSetup - Entered Secrets - Move them to the secrets directory"
 NODE_RED_CONFIG = "{{ tmsetup_codedir }}/node-red-tm/config/config.yml"
 PLATE_RECOGNIZER_ENV = "{{ tmsetup_codedir }}/plate-recognizer/plate-recognizer.env"
+FRIGATE_ENV = "{{ tmsetup_codedir }}/frigate/frigate.env"
 
 
 def stat_results(*exists):
     return {"results": [{"stat": {"exists": value}} for value in exists]}
+
+
+def test_every_tag_that_writes_plus_api_key_moves_a_typed_key_first():
+    """frigate_setup.yml (frigate.env under -f) and frigate_credentials.yml (the PLUS_API_KEY line on every run) write
+    the secret file's value over a key typed into frigate.env, so any tag that runs either must run the move too."""
+    main = load_role_yaml("tasks/main.yml")
+    imports = {task.get("ansible.builtin.import_tasks", {}).get("file"): (index, task)
+               for index, task in enumerate(main)}
+    position, entered = imports["entered_secrets.yml"]
+    for writer in ("frigate_setup.yml", "frigate_credentials.yml"):
+        index, task = imports[writer]
+        assert set(task["tags"]) <= set(entered["tags"]), f"{writer}: {set(task['tags']) - set(entered['tags'])}"
+        assert position < index, writer
 
 
 def test_entered_secrets_move_before_any_config_template_renders():
@@ -285,7 +431,7 @@ def test_entered_secrets_move_before_any_config_template_renders():
     update = tasks["TMSetup - Entered Secrets - Update the secrets fact"]
     assert order == [stat["name"], move["name"], show["name"], reread["name"], update["name"]]
 
-    assert stat["loop"] == [NODE_RED_CONFIG, PLATE_RECOGNIZER_ENV]
+    assert stat["loop"] == [NODE_RED_CONFIG, PLATE_RECOGNIZER_ENV, FRIGATE_ENV]
     assert stat["register"] == "tmsetup_entered_secrets_stat_register"
     assert move["become"] is True and reread["become"] is True
     assert reread["no_log"] is True and update["no_log"] is True
@@ -298,15 +444,20 @@ def test_entered_secrets_move_before_any_config_template_renders():
     base = ["/usr/local/bin/tm-control", "migrate", "--secrets-dir", "/etc/traffic-monitor/secrets"]
     paths = {"tmsetup_codedir": "/opt/tm", "tmsetup_secrets_dir": "/etc/traffic-monitor/secrets"}
     for exists, options in [
-        ((True, True), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
-                        "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
-        ((True, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml"]),
-        ((False, True), ["--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((True, True, True), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
+                              "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env",
+                              "--frigate-env", "/opt/tm/frigate/frigate.env"]),
+        ((True, True, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml",
+                               "--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((True, False, False), ["--node-red-config", "/opt/tm/node-red-tm/config/config.yml"]),
+        ((False, True, False), ["--plate-recognizer-env", "/opt/tm/plate-recognizer/plate-recognizer.env"]),
+        ((False, False, True), ["--frigate-env", "/opt/tm/frigate/frigate.env"]),
     ]:
         rendered = evaluate(argv, tmsetup_entered_secrets_stat_register=stat_results(*exists), **paths)
         assert rendered == base + options, exists
         assert "runuser" not in " ".join(rendered)  # root writes the secret files
-    for exists, runs in [((False, False), False), ((True, False), True), ((False, True), True), ((True, True), True)]:
+    for exists, runs in [((False, False, False), False), ((True, False, False), True), ((False, True, False), True),
+                         ((False, False, True), True), ((True, True, True), True)]:
         assert evaluate("{{ %s }}" % move["when"],
                         tmsetup_entered_secrets_stat_register=stat_results(*exists)) is runs, exists
 
@@ -319,6 +470,21 @@ def test_entered_secrets_move_before_any_config_template_renders():
                     tmsetup_entered_secret_names=["thingsboard_access_token", "plate_recognizer_token"],
                     tmsetup_entered_secrets_slurp_register=slurped) == {
         "generated": "kept", "thingsboard_access_token": "tb-placeholder-345", "plate_recognizer_token": ""}
+
+
+def test_a_typed_frigate_plus_key_moves_before_frigate_env_is_written():
+    """Under -t frigate, frigate_setup.yml renders frigate.env (with -f) and frigate_credentials.yml writes its
+    PLUS_API_KEY line from the secret, so a key typed into the file must be in the secret file by then."""
+    main = load_role_yaml("tasks/main.yml")
+
+    def position(file):
+        (index,) = [index for index, task in enumerate(main)
+                    if task.get("ansible.builtin.import_tasks", {}).get("file") == file]
+        return index
+
+    for file in ("entered_secrets.yml", "frigate_setup.yml", "frigate_credentials.yml"):
+        assert "frigate" in main[position(file)]["tags"], file
+    assert position("entered_secrets.yml") < position("frigate_setup.yml") < position("frigate_credentials.yml")
 
 
 def test_entered_secrets_move_counts_any_moved_line_as_a_change():

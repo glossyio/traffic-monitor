@@ -1,16 +1,22 @@
 """The configuration check group: the names that Frigate's config and Node-RED's config.yml must agree on, which
-fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the deployment's location values, and
-the ThingsBoard upload's settings.
+fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the deployment's location values, the
+ThingsBoard upload's settings, and whether the Frigate+ key and model are paired.
 
-Details name cameras, zones, radars, and config.yml keys, never another config value.
+Details name cameras, zones, radars, config.yml keys, and a Frigate+ model's id, never another config value. Log lines
+are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted: Frigate's validation
+messages when it starts in safe mode, and the last exception in its journal whenever Frigate doesn't answer.
 """
 
 import math
+import os
+import re
+import stat
+from pathlib import Path
 
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
-from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import probes
-from tm_control.modules.apps.checks import listed
+from tm_control.modules.apps.checks import REFUSED_KEY, listed, quoted, traceback_last_line, validation_messages
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
@@ -48,6 +54,9 @@ def cameras_in_config(context: Context) -> list[Check]:
     frigate = probes.frigate_config(context)
     if frigate is None:
         return check("unknown", "Frigate isn't answering, so its cameras can't be compared with config.yml.")
+    if probes.frigate_safe_mode(frigate):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so its cameras can't be compared with "
+                                "config.yml; see the Frigate check under Apps.")
     in_frigate = probes.frigate_cameras(frigate)
     configured = _sensors(read.data, "cameras")
     problems = []
@@ -81,6 +90,9 @@ def zones(context: Context) -> list[Check]:
     frigate = probes.frigate_config(context)
     if frigate is None:
         return check("unknown", "Frigate isn't answering, so the cameras' zones can't be checked.")
+    if probes.frigate_safe_mode(frigate):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see "
+                                "the Frigate check under Apps.")
     configured = _sensors(read.data, "cameras")
     problems = []
     for name, camera in probes.frigate_cameras(frigate).items():
@@ -224,4 +236,141 @@ def thingsboard(context: Context) -> list[Check]:
     return check("ok", "The upload is on, with a token set." if on else "The upload is off.")
 
 
-GROUP = CheckGroup("config", "Configuration", [cameras_in_config, zones, radar_names, location, thingsboard])
+# Frigate+
+
+PLUS_SCHEME = "plus://"
+MODEL_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")  # what a Frigate+ model id may be, and a safe file name in model_cache
+# tmsetup_frigate_coral_model_file in the role's vars/main.yml: the model the installer downloads and sets for a Coral
+CORAL_MODEL_FILE = "yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+DETECTOR_TYPE = re.compile(r"Model does not support detector type of ([\w-]+)")
+FRIGATE_CONFIG_PROBLEM = {
+    "missing": "Frigate's config.yml is missing",
+    "unreadable": "Frigate's config.yml can't be read",
+    "invalid": "Frigate's config.yml has a YAML error",
+}
+SET_THE_KEY = Fix(kind="link", text="Set the key", href="/device#tokens-and-keys")
+# How to get out of a Frigate that stops while it fetches a Frigate+ model it can't have
+WAYS_OUT = (
+    "enter the right key on the Device page, copy the model's two files into Frigate's model_cache directory, or put "
+    "the installer's model section back in Frigate's config.yml over SSH, then restart Frigate"
+)
+
+
+def model_path(config_file) -> str | None:
+    """model.path in Frigate's config.yml; None when there's no model section or no path in it."""
+    path = probes.mapping(probes.mapping(config_file.data).get("model")).get("path")
+    return path if isinstance(path, str) else None
+
+
+def plus_model_id(path) -> str | None:
+    """The model id in plus://<id> when it's one a model id can be; None for any other path."""
+    if not isinstance(path, str) or not path.startswith(PLUS_SCHEME):
+        return None
+    model_id = path[len(PLUS_SCHEME):]
+    return model_id if MODEL_ID.fullmatch(model_id) else None
+
+
+def _regular_file(path: Path) -> bool:
+    try:
+        return stat.S_ISREG(os.stat(path, follow_symlinks=False).st_mode)
+    except OSError:
+        return False
+
+
+def model_cached(codedir, model_id: str) -> bool:
+    """Both files of a Frigate+ model are in model_cache, so Frigate loads it without asking Frigate+ for it."""
+    cache = Path(codedir) / "frigate" / "config" / "model_cache"
+    return _regular_file(cache / model_id) and _regular_file(cache / f"{model_id}.json")
+
+
+def _model_problem(messages: list[str], model_id: str) -> str | None:
+    """Why Frigate couldn't use the model, from the validation messages it logged before starting in safe mode."""
+    for message in messages:
+        detector = DETECTOR_TYPE.search(message)
+        if detector:
+            kind = detector[1]
+            return (f"Frigate couldn't use the Frigate+ model {model_id} and started in safe mode, with no cameras: it "
+                    f"isn't built for the {kind} detector. Pick a model made for {kind} in Frigate+, then set it in "
+                    "Frigate.")
+    for message in messages:
+        if "model" in message.lower():
+            return (f"Frigate couldn't use the model {model_id} and started in safe mode, with no cameras. Its log "
+                    f"says: {quoted(message)}.")
+    return None
+
+
+def frigate_plus(context: Context) -> list[Check]:
+    """The Frigate+ key and Frigate's model are paired: a key with a plus:// model, or no key and no Frigate+ model.
+    For a plus:// model, says whether Frigate could use it. Whenever Frigate doesn't answer, whatever systemd says of
+    its unit (a unit restarted after each crash is active between them), quotes the last exception in its journal,
+    and says when Frigate+ gave no token for the key."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="config.frigate_plus", title="Frigate+", status=status, detail=detail, fix=fix)]
+
+    read = probes.frigate_config_file(context)
+    if read.data is None:
+        return check("unknown", f"{FRIGATE_CONFIG_PROBLEM[read.problem]}, so its model and the Frigate+ key can't be "
+                                "compared.")
+    path = model_path(read)
+    key = context.secrets.is_set(FRIGATE_PLUS_API_KEY)
+    if not (path or "").startswith(PLUS_SCHEME):
+        if not key:
+            return check("ok", "Frigate+ isn't in use.")
+        if not path:
+            which = "Frigate's default model"  # no model section, as on a Hailo or CPU install
+        elif path.endswith(CORAL_MODEL_FILE):
+            which = "the installer's model"
+        else:
+            which = "a local model"
+        return check("warn", "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but "
+                             f"Frigate runs {which} rather than a Frigate+ model. Once a model is trained, pick it "
+                             "under Settings, System, Detectors and model in Frigate, or set model.path to "
+                             "plus://<model id> in its configuration editor.")
+    model_id = plus_model_id(path)
+    if model_id is None:
+        return check("error", "model.path in Frigate's config names a Frigate+ model id with characters a model id "
+                              "can't have. Check the id in Frigate's configuration editor.")
+    cached = model_cached(context.manifest.codedir, model_id)
+    if not cached and not key:
+        return check("error", f"Frigate's config names the Frigate+ model {model_id}, but no key is set and the "
+                              "model's files aren't on the device, so Frigate can't download it. Set the key, or copy "
+                              f"{model_id} and {model_id}.json into Frigate's model_cache directory.", SET_THE_KEY)
+    running = probes.frigate_config(context)
+    if running is None:
+        line = traceback_last_line(probes.frigate_journal(context))
+        if line is None:
+            return check("unknown", f"Frigate isn't answering, so whether it loaded the Frigate+ model {model_id} is "
+                                    "unknown.")
+        if cached:
+            # Frigate reads a cached model from disk without asking Frigate+, so the fetch isn't what stopped it
+            return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. The "
+                                  f"Frigate+ model {model_id} is on the device, so Frigate didn't stop fetching it; "
+                                  "see the Frigate check under Apps.")
+        if REFUSED_KEY in line:
+            # Frigate raises this for any answer but a token from Frigate+: a wrong key, or Frigate+ unreachable
+            return check("error", "Frigate isn't answering: Frigate+ gave Frigate no token for the key when Frigate "
+                                  f"fetched the model {model_id}, as happens with a wrong key or when Frigate+ can't "
+                                  f"be reached. Its log's last error is: {quoted(line)}. To get Frigate running, "
+                                  f"{WAYS_OUT}.", SET_THE_KEY)
+        # Another exception shows how Frigate stopped, not why, so the detail doesn't claim the download failed
+        return check("error", f"Frigate isn't answering, and the last error in its log is: {quoted(line)}. If it "
+                              f"stopped while fetching the Frigate+ model {model_id}, check that the device is "
+                              f"online, then {WAYS_OUT}.")
+    if probes.frigate_safe_mode(running):
+        problem = _model_problem(validation_messages(probes.frigate_journal(context), limit=None), model_id)
+        if problem is not None:
+            return check("error", problem)
+        # Safe mode for another reason: the Apps group's Frigate check reports it. Frigate has no cameras then, so
+        # whether the model loads can't be known.
+        return check("unknown", f"Frigate's config names the Frigate+ model {model_id}, but Frigate is in safe mode "
+                                "for another reason; see the Frigate check under Apps.")
+    if key:
+        return check("ok", f"Frigate runs the Frigate+ model {model_id}. Snapshots can be submitted.")
+    return check("ok", f"Frigate runs the Frigate+ model {model_id}. It was loaded from the files on the device; set a "
+                       "key to submit snapshots.")
+
+
+GROUP = CheckGroup(
+    "config", "Configuration", [cameras_in_config, zones, radar_names, location, thingsboard, frigate_plus]
+)
