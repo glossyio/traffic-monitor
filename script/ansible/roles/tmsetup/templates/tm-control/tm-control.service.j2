@@ -24,8 +24,9 @@ RuntimeDirectory=tm-control
 RuntimeDirectoryMode=0700
 NoNewPrivileges=yes
 ProtectSystem=strict
-# Frigate's model_cache and config.yml, for the Detection page
+# Frigate's model_cache and config.yml, for the Detection page; Node-RED's config.yml, for the Location page
 ReadWritePaths={{ tmsetup_codedir }}/frigate/config
+ReadWritePaths={{ tmsetup_codedir }}/node-red-tm/config
 ProtectHome=yes
 PrivateTmp=yes
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

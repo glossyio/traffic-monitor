@@ -3,9 +3,10 @@
 --
 -- This migration rewrites existing data. Every deployment row whose lat and lon are both numbers
 -- gets a survey_id, one per exact (lat, lon) place, assigned before rounding, so rows at the same
--- spot share an id. Then those coordinates are rounded to one decimal place (about 11 km) and
--- location_precision is set to 1. Any other row (one of lat and lon missing, or either stored as
--- text, such as '') gets NULL for both, no survey_id, and no precision.
+-- spot share an id. Then those coordinates are rounded to two decimal places (about 1 km), the
+-- default precision, and location_precision is set to 2. Any other row (one of lat and lon
+-- missing, or either stored as text, such as '') gets NULL for both, no survey_id, and no
+-- precision.
 --
 -- The exact coordinates are not kept in this database. Before applying this file, the runner
 -- copies the database to db/backup/tmdb-v<version>-<UTC time>.sqlite, and that copy holds the
@@ -30,7 +31,7 @@ WHERE typeof(lat) IN ('real', 'integer') AND typeof(lon) IN ('real', 'integer');
 
 DROP TABLE deployment_place_survey;
 
-UPDATE deployment SET lat = ROUND(lat, 1), lon = ROUND(lon, 1), location_precision = 1
+UPDATE deployment SET lat = ROUND(lat, 2), lon = ROUND(lon, 2), location_precision = 2
 WHERE typeof(lat) IN ('real', 'integer') AND typeof(lon) IN ('real', 'integer');
 
 -- Every row the step above did not round: no location, so no survey_id either.

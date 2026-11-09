@@ -1,9 +1,12 @@
 """The tm-control web app: the FastAPI app behind nginx on 127.0.0.1:8090 (`tm-control serve`)."""
 
+import threading
+
 from fastapi import FastAPI, Request
 
 from tm_control import fake, modules
 from tm_control.adapters import systemd
+from tm_control.adapters.nodered import NodeRed, config_file_path
 from tm_control.core.auth import Backoff, NodeRedToken, Sessions
 from tm_control.core.checks import Context, StatusCache
 from tm_control.core.csrf import CsrfMiddleware
@@ -15,6 +18,8 @@ from tm_control.core.secrets import NAMES, FakeSecrets, Secrets
 from tm_control.core.settings import Settings
 from tm_control.core.state import State
 from tm_control.modules.detection.inventory import MODEL_FILE_MAX
+from tm_control.modules.location import reconcile
+from tm_control.modules.location.reconcile import backup_dir
 from tm_control.modules.setup.eula import load_eula
 
 API_PREFIX = "/api/v1"
@@ -54,9 +59,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
     app.state.fake_clock = fake.FakeClock() if settings.fake else None
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
+    # The Location module's: Node-RED's config.yml, its /tm-internal/ endpoints, and the lock reconcile runs under.
+    # The internal token was read above on a device (a missing one fails startup); FakeSecrets always has one.
+    # Fake mode seeds the file and runs a fake Node-RED over it, with no tmdb backups to import.
+    app.state.config_path = config_file_path(settings, manifest)
+    if settings.fake:
+        fake.seed_config(settings)
+        app.state.nodered = fake.FakeNodeRed(app.state.config_path)
+        app.state.backup_dir = fake.backup_dir(settings)
+    else:
+        app.state.nodered = NodeRed(secrets.node_red_internal_token)
+        app.state.backup_dir = backup_dir(manifest)
+    app.state.reconcile_lock = threading.Lock()
     check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
+    # Each report reconciles the places first (decision 5), so the Location check reads the result.
     app.state.status = StatusCache(
-        check_groups, lambda: Context(app.state.settings, app.state.manifest, app.state.secrets)
+        check_groups,
+        lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state),
+        prepare=lambda: reconcile.for_status_report(app.state),
     )
     install_error_handlers(app)
     app.add_middleware(CsrfMiddleware)

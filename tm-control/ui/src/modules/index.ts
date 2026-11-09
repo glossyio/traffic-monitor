@@ -5,6 +5,7 @@ import auth from './auth'
 import detection from './detection'
 import device from './device'
 import home from './home'
+import location from './location'
 import setup from './setup'
 import status from './status'
 import time from './time'
@@ -23,4 +24,4 @@ export interface Module {
 }
 
 // In menu order
-export const MODULES: Module[] = [home, status, device, detection, time, account, auth, setup]
+export const MODULES: Module[] = [home, status, device, detection, location, time, account, auth, setup]

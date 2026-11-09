@@ -37,7 +37,7 @@ sudo podman ps                                  # running containers
 
 | After you | Do this |
 |---|---|
-| Edit Node-RED's `config.yml` | Nothing. The Traffic Monitor reads the file again when you save it. If the change doesn't show, check the file for a YAML error. |
+| Edit Node-RED's `config.yml` | Nothing. The Traffic Monitor reads the file again when you save it. If the change doesn't show, check the file for a YAML error. For the location, use the control app's [Location page](location.md) instead; [Edit the location by hand](../configuration/node-red-config.md#edit-the-location-by-hand) says what a hand edit does. |
 | Edit `node-red-tm.env` | `sudo systemctl restart node-red-tm.service`. The container reads the file only when it starts. |
 | Edit `frigate.env` | `sudo systemctl restart frigate.service`. |
 | Change the MQTT broker login in `node-red-tm.env` | `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. A restart isn't enough; [Env file settings](../configuration/environment.md#node-red-tmenv) explains why. |
@@ -45,7 +45,7 @@ sudo podman ps                                  # running containers
 | Plug in a radar | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
 | Add or change an AI accelerator | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). |
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](control-app.md#if-the-control-app-is-down). |
-| Move the device to a new site | Follow [First-time setup](../setup-guide.md) again: adjust the zones, update the location, and set a new `survey_id`. |
+| Move the device to a new site | Choose **Deploy here** on the new place on the [Location page](location.md#move-or-turn-the-device), then adjust the zones as in [First-time setup](../setup-guide.md#3-adjust-the-zones). |
 
 ## Where things are
 

@@ -7,13 +7,18 @@ Neither needs a device's secrets, manifest, or state.
 
 import copy
 import json
+import math
+import secrets
+import shutil
 import tempfile
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from tm_control.adapters.command import CommandResult
+from tm_control.adapters.nodered import NodeRed, NodeRedError, config_file_path
 from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.adapters.timedate import Ntp, TimeState
 from tm_control.core.auth import Device, SetupCode
@@ -44,6 +49,10 @@ def reset(settings: Settings) -> int:
     state = State(settings.state_dir / "state.sqlite")
     state.migrate()
     seed_model_cache(settings)
+    config = config_file_path(settings, None)
+    for path in [config, *config.parent.glob(f"{config.name}.*.bak")]:
+        path.unlink(missing_ok=True)
+    seed_config(settings)
     code = SetupCode.generate()
     Device(state).set_setup_code_hash(SetupCode.hash_code(code))
     print(f"Fake device reset in {settings.state_dir}. Setup code: {code}")
@@ -84,6 +93,23 @@ def seed_model_cache(settings: Settings) -> None:
     (cache / "mine.tflite").write_bytes(bytes(2048))
     (cache / "mine.tflite.json").write_text(json.dumps(local, indent=2) + "\n")
     running_model_file(settings).write_text(FAKE_PLUS_ID)
+
+
+def seed_config(settings: Settings) -> Path:
+    """Give the fake device Node-RED's config.yml, the fixture's (a camera and a radar, at 45.0, -122.0, with no survey
+    id), when it has none; a file already there is kept, with whatever the fake device wrote to it."""
+    path = config_file_path(settings, None)
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(FAKE_FIXTURES / "node_red_config_ok.yml", path)
+        path.chmod(0o640)
+    return path
+
+
+def backup_dir(settings: Settings) -> Path:
+    """Where the fake device's tmdb backups would be: beside its state directory, and empty, so fake mode never reads
+    a real device's directory."""
+    return settings.state_dir.parent / "node-red-tm" / "db" / "backup"
 
 
 def use_model(settings: Settings, name: str) -> None:
@@ -243,3 +269,201 @@ def openapi_document() -> dict:
             setup_code_file=root / "setup-code",
         )
         return create_app(settings).openapi()
+
+
+class FakeNodeRed(NodeRed):
+    """Fake mode's Node-RED: the /tm-internal/ endpoints over deployment rows kept in memory, and the deployment
+    engine's rules (the flows' "deployment engine" function) run on them whenever config.yml changes.
+
+    Like the watch node, it notices a change to the file by itself (on its next call), so reconcile's writes and hand
+    edits are applied too; after_config_write applies one at once. It starts as Node-RED does, by running the engine
+    once, so the seeded file's sensors have open rows with no survey id, which the engine adopts once the file names a
+    survey. Events are never recorded: a survey's event count is always 0.
+    """
+
+    SCHEMA_VERSION = 2
+
+    def __init__(self, config_path: Path):
+        super().__init__("fake")
+        self.config_path = Path(config_path)
+        self.rows: list[dict] = []
+        self._lock = threading.RLock()
+        self._seen = None  # the file's (inode, size, mtime) when the engine last ran
+        self._deployment = None  # config.yml's deployment keys as last read (the engine's global.config.deployment)
+        self._watch()
+
+    # the watch node and the engine
+
+    def _signature(self):
+        try:
+            found = self.config_path.stat()
+        except OSError:
+            return None
+        return (found.st_ino, found.st_size, found.st_mtime_ns)
+
+    def _watch(self, force: bool = False) -> None:
+        with self._lock:
+            signature = self._signature()
+            if signature is not None and (force or signature != self._seen):
+                self._seen = signature
+                self._reload()
+
+    def after_config_write(self) -> None:
+        self._watch(force=True)
+
+    def _reload(self) -> None:
+        from tm_control.modules.location.config import ConfigError, NodeRedConfig
+
+        try:
+            config = NodeRedConfig(self.config_path)
+        except ConfigError:
+            return  # as init-config: a file that doesn't load leaves the previous config in place
+        self._deployment = config.deployment()
+        self._engine(self._deployment, config.sensors())
+
+    def _engine(self, place, sensors) -> None:
+        from tm_control.modules.location.coordinates import round_half_away
+
+        places = {"none": None, "1": 1, "2": 2}[place.precision]
+        now = int(time.time() * 1000)
+
+        def location(lat, lon, digits):
+            if lat is None or lon is None or digits is None:
+                return {"lat": None, "lon": None, "location_precision": None}
+            return {
+                "lat": round_half_away(lat, digits), "lon": round_half_away(lon, digits), "location_precision": digits,
+            }
+
+        def fineness(digits):
+            return 0 if digits is None else digits
+
+        stored = location(place.lat, place.lon, places)
+
+        def insert(sensor, survey_id, bearing):
+            row = {
+                "id": f"{now}-{secrets.token_hex(4)}-d", "entryStartDateTime": now, "entryEndDateTime": None,
+                **stored, "bearing": bearing, "sensorType": sensor.sensor_type, "sensorName": sensor.sensor_name,
+                "survey_id": survey_id,
+            }
+            self.rows.append(row)
+
+        for sensor in sensors:
+            open_rows = sorted(
+                (row for row in self.rows if row["entryEndDateTime"] is None
+                 and (row["sensorType"], row["sensorName"]) == (sensor.sensor_type, sensor.sensor_name)),
+                key=lambda row: row["entryStartDateTime"], reverse=True,
+            )
+            want_survey, want_bearing = place.survey_id, sensor.bearing
+            for older in open_rows[1:]:  # 1. one open row per sensor
+                older["entryEndDateTime"] = now
+            row = open_rows[0] if open_rows else None
+            if row is None:  # 2. no open row
+                insert(sensor, want_survey, want_bearing)
+                continue
+            same_bearing = (row["bearing"] or "").strip().lower() == want_bearing
+            if want_survey is not None and row["survey_id"] is None and same_bearing:  # 4. adopt
+                row.update(stored, survey_id=want_survey)
+            elif want_survey is not None and (row["survey_id"] != want_survey or not same_bearing):  # 5. new
+                row["entryEndDateTime"] = now
+                insert(sensor, want_survey, want_bearing)
+            elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
+                row.update(location(row["lat"], row["lon"], places))
+
+    # the endpoints
+
+    @staticmethod
+    def _check_survey(survey_id) -> None:
+        from tm_control.modules.location.coordinates import SURVEY_ID
+
+        if not isinstance(survey_id, str) or not SURVEY_ID.fullmatch(survey_id):
+            raise NodeRedError("bad_request", 400)
+
+    def report(self) -> dict:
+        self._watch()
+        place = self._deployment
+        return {
+            "status": "ok",
+            "schema_version": self.SCHEMA_VERSION,
+            "config": {"loaded_at": None, "errors": []},
+            "deployment": {
+                "survey_id": place.survey_id if place else None,
+                "database_precision": place.precision if place else "2",
+            },
+        }
+
+    def deployments(self, survey_id: str) -> list[dict]:
+        self._check_survey(survey_id)
+        self._watch()
+        with self._lock:
+            found = [dict(row) for row in self.rows if row["survey_id"] == survey_id]
+        return sorted(found, key=lambda row: row["entryStartDateTime"])
+
+    def usage(self) -> list[dict]:
+        self._watch()
+        groups: dict = {}
+        with self._lock:
+            for row in self.rows:
+                groups.setdefault(row["survey_id"], []).append(row)
+        answer = []
+        for survey_id in sorted(groups, key=lambda key: (key is not None, key or "")):  # NULL first, as SQLite
+            rows = groups[survey_id]
+            ends = [row["entryEndDateTime"] for row in rows if row["entryEndDateTime"] is not None]
+            answer.append({
+                "survey_id": survey_id,
+                "first_start": min(row["entryStartDateTime"] for row in rows),
+                "last_end": max(ends) if ends else None,
+                "open_count": sum(row["entryEndDateTime"] is None for row in rows),
+                "deployment_count": len(rows),
+            })
+        return answer
+
+    def events(self, survey_id: str) -> dict:
+        self._check_survey(survey_id)
+        return {"survey_id": survey_id, "event_count": 0, "first_event": None, "last_event": None}
+
+    def set_precision(self, precision: str) -> None:
+        from tm_control.modules.location.coordinates import round_half_away
+
+        if precision not in ("none", "1", "2"):
+            raise NodeRedError("bad_request", 400)
+        self._watch()
+        with self._lock:
+            for row in self.rows:
+                if precision == "none":
+                    if row["lat"] is not None or row["lon"] is not None:
+                        row.update(lat=None, lon=None, location_precision=None)
+                elif row["location_precision"] is not None and row["location_precision"] > int(precision):
+                    digits = int(precision)
+                    row.update(
+                        lat=None if row["lat"] is None else round_half_away(row["lat"], digits),
+                        lon=None if row["lon"] is None else round_half_away(row["lon"], digits),
+                        location_precision=digits,
+                    )
+
+    def correct_location(self, survey_id: str, lat: float, lon: float) -> None:
+        from tm_control.modules.location.coordinates import round_half_away
+
+        self._check_survey(survey_id)
+        for value, limit in ((lat, 90), (lon, 180)):
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
+                    or abs(value) > limit:
+                raise NodeRedError("bad_request", 400)
+        self._watch()
+        with self._lock:
+            for row in self.rows:
+                if row["survey_id"] == survey_id and row["location_precision"] is not None:
+                    digits = row["location_precision"]
+                    row.update(lat=round_half_away(lat, digits), lon=round_half_away(lon, digits))
+
+    def correct_bearing(self, deployment_id: str, bearing: str) -> None:
+        from tm_control.modules.location.coordinates import BEARINGS, DEPLOYMENT_ID
+
+        bearing = bearing.lower() if isinstance(bearing, str) else None
+        if not isinstance(deployment_id, str) or not DEPLOYMENT_ID.fullmatch(deployment_id) \
+                or (bearing != "" and bearing not in BEARINGS):
+            raise NodeRedError("bad_request", 400)
+        self._watch()
+        with self._lock:
+            for row in self.rows:
+                if row["id"] == deployment_id:
+                    row["bearing"] = bearing

@@ -53,6 +53,138 @@ def test_save_backs_up_the_previous_file(frigate_config):
     assert backup.read_text() == original
 
 
+def test_back_up_twice_in_the_same_second_makes_two_backups(frigate_config):
+    original = frigate_config.read_bytes()
+    first = yamlfile.back_up(frigate_config, NOW)
+    second = yamlfile.back_up(frigate_config, NOW)
+    third = yamlfile.back_up(frigate_config, NOW)
+    assert first == frigate_config.with_name("config.yml.20261002T153000Z.bak")
+    assert second == frigate_config.with_name("config.yml.20261002T153000Z.1.bak")
+    assert third == frigate_config.with_name("config.yml.20261002T153000Z.2.bak")
+    assert all(backup.read_bytes() == original for backup in (first, second, third))
+
+
+def backup_names(config):
+    return sorted(path.name for path in config.parent.glob("config.yml.*"))
+
+
+def test_back_up_keeps_only_the_newest_ten_of_its_own(frigate_config):
+    for hour in range(13):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    assert backup_names(frigate_config) == [f"config.yml.20261002T{hour:02}3000Z.bak" for hour in range(3, 13)]
+
+
+def test_back_up_orders_same_second_copies_by_their_number(frigate_config):
+    for number in range(1, 12):
+        frigate_config.with_name(f"config.yml.20261002T153000Z.{number}.bak").write_text("older")
+    yamlfile.back_up(frigate_config, datetime(2026, 10, 2, 16, 30, 0, tzinfo=timezone.utc))
+    # By number: .11 is newer than .9, though it sorts before it as text.
+    assert backup_names(frigate_config) == sorted(
+        [*(f"config.yml.20261002T153000Z.{number}.bak" for number in range(3, 12)), "config.yml.20261002T163000Z.bak"]
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "config.yml.1791000000.2026-10-02@15:30:00~",  # tmsetup's Ansible backups
+        "config.yml.bak",  # one made by hand
+        "config.yml.old.bak",
+        "config.yml.20261002T1530Z.bak",
+        "config.yml.20261002T153000Z.x.bak",
+        "other.yml.20200101T000000Z.bak",  # another file's
+    ],
+)
+def test_back_up_leaves_every_other_name_alone(frigate_config, name):
+    other = frigate_config.with_name(name)
+    other.write_text("kept")
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    assert other.read_text() == "kept"
+    assert len(list(frigate_config.parent.glob("config.yml.20261002T??????Z.bak"))) == 10
+
+
+def test_a_copy_to_keep_gets_a_name_pruning_leaves_alone(frigate_config):
+    kept = yamlfile.back_up(frigate_config, NOW, keep=True)
+    same_second = yamlfile.back_up(frigate_config, NOW, keep=True)
+    assert kept == frigate_config.with_name("config.yml.20261002T153000Z.migrate.bak")
+    assert same_second == frigate_config.with_name("config.yml.20261002T153000Z.migrate.1.bak")
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    assert kept.exists() and same_second.exists()
+    assert len(list(frigate_config.parent.glob("config.yml.20261002T??????Z.bak"))) == 10
+
+
+def test_making_a_copy_to_keep_prunes_nothing(frigate_config):
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    before = backup_names(frigate_config)
+    kept = yamlfile.back_up(frigate_config, NOW, keep=True)
+    assert backup_names(frigate_config) == sorted([*before, kept.name])
+
+
+def test_save_can_keep_its_copy(frigate_config):
+    document = RoundTripFile(frigate_config)
+    document.data["mqtt"]["port"] = 1884
+    assert document.save(now=NOW, keep=True) == frigate_config.with_name("config.yml.20261002T153000Z.migrate.bak")
+
+
+def test_back_up_prunes_only_regular_files(frigate_config, tmp_path):
+    target = tmp_path / "elsewhere"
+    target.write_text("target")
+    link = frigate_config.with_name("config.yml.20200101T000000Z.bak")
+    link.symlink_to(target)
+    directory = frigate_config.with_name("config.yml.20200101T000001Z.bak")
+    directory.mkdir()
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    assert link.is_symlink() and target.read_text() == "target" and directory.is_dir()
+
+
+def test_a_prune_that_fails_doesnt_fail_the_backup(frigate_config, monkeypatch):
+    for hour in range(10):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    real = os.unlink
+
+    def refuse(path, *args, **kwargs):
+        if str(path).endswith(".bak"):
+            raise PermissionError("read-only")
+        return real(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "unlink", refuse)
+    backup = yamlfile.back_up(frigate_config, datetime(2026, 10, 2, 11, 30, 0, tzinfo=timezone.utc))
+    assert backup.exists()
+
+
+def test_a_copy_made_with_the_clock_behind_is_kept(frigate_config):
+    """A Pi with no real-time clock can start before its clock is set, so a new copy can carry the oldest stamp."""
+    for hour in range(10):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    behind = yamlfile.back_up(frigate_config, datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
+    assert behind.exists()
+    assert len(backup_names(frigate_config)) == 10
+    assert not frigate_config.with_name("config.yml.20261002T003000Z.bak").exists()
+
+
+def test_back_up_gives_up_after_the_bounded_number_of_names(frigate_config, monkeypatch):
+    monkeypatch.setattr(yamlfile, "MAX_BACKUPS_PER_SECOND", 3)
+    for _ in range(3):
+        yamlfile.back_up(frigate_config, NOW)
+    with pytest.raises(FileExistsError):
+        yamlfile.back_up(frigate_config, NOW)
+    assert len(list(frigate_config.parent.glob("config.yml.*.bak"))) == 3
+
+
+def test_back_up_refuses_a_link_at_a_later_name_too(frigate_config, tmp_path):
+    target = tmp_path / "elsewhere"
+    target.write_text("not yours\n")
+    yamlfile.back_up(frigate_config, NOW)
+    frigate_config.with_name("config.yml.20261002T153000Z.1.bak").symlink_to(target)
+    with pytest.raises(FileExistsError):
+        yamlfile.back_up(frigate_config, NOW)
+    assert target.read_text() == "not yours\n"
+
+
 def test_save_keeps_the_file_mode(frigate_config):
     document = RoundTripFile(frigate_config)
     document.data["mqtt"]["port"] = 1884

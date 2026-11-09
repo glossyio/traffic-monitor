@@ -41,6 +41,43 @@ MIGRATIONS = [
     ALTER TABLE jobs ADD COLUMN prior_invocation TEXT;
     ALTER TABLE jobs ADD COLUMN invocation TEXT;
     """,
+    # The unit's places (design section 5): the exact history of where it stood and which way its sensors faced.
+    # map_mode, map_block_ref and map_side are created for the map feature and not written yet.
+    """
+    CREATE TABLE surveys (
+        id TEXT PRIMARY KEY,  -- '<8 hex>-si'
+        description TEXT,  -- private; never leaves the device
+        lat REAL, lon REAL,  -- exact, at most 5 decimal places; NULL for no location
+        status TEXT NOT NULL CHECK (status IN ('planned', 'in_use', 'used')),
+        source TEXT NOT NULL,  -- 'ui' | 'csv' | 'default' | 'imported_config' | 'imported_backup'
+        map_mode TEXT CHECK (map_mode IN ('block', 'rounded_point')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+    );
+    CREATE TABLE survey_bearings (
+        survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        sensor_type TEXT NOT NULL,
+        sensor_name TEXT NOT NULL,
+        bearing TEXT NOT NULL,
+        map_block_ref TEXT,
+        map_side TEXT CHECK (map_side IN ('left', 'right', 'both')),
+        PRIMARY KEY (survey_id, sensor_type, sensor_name)
+    );
+    CREATE TABLE survey_corrections (
+        id INTEGER PRIMARY KEY,
+        survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        deployment_id TEXT,
+        field TEXT NOT NULL CHECK (field IN ('location', 'bearing')),
+        old_value TEXT,  -- 'lat,lon' (NULL for no location) or a bearing
+        new_value TEXT,
+        reason TEXT,
+        source TEXT NOT NULL,  -- 'ui' | 'config'
+        at TEXT NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    );
+    CREATE INDEX survey_corrections_survey ON survey_corrections (survey_id);
+    """,
 ]
 
 

@@ -318,6 +318,24 @@ def status_checks(address, cookie):
     return {check["id"]: (check["status"], check["detail"]) for group in groups for check in group.get("checks", [])}
 
 
+def places_state(address, cookie, wait=30):
+    """The Location page's places (GET /surveys, admin only) as a dict, once the reconcile has run.
+
+    The status report runs the reconcile, so on a claimed unit it reads "done" as soon as Node-RED answers; this
+    asks again for up to `wait` seconds while it reads "waiting_nodered". Fails, without showing the body (which
+    holds the places' coordinates), if the answer isn't a places state. Callers keep ids and the precision only.
+    """
+    deadline = time.monotonic() + wait
+    while True:
+        answer = request_from_this_machine(address, f"{API}/surveys", cookie=cookie)
+        state = answer.json() if answer.status == 200 else None
+        if not isinstance(state, dict) or not isinstance(state.get("surveys"), list):
+            pytest.fail(f"GET {API}/surveys answered HTTP {answer.status}, not the places", pytrace=False)
+        if state.get("reconcile") != "waiting_nodered" or time.monotonic() >= deadline:
+            return state
+        time.sleep(2)
+
+
 def tm_internal_token(host):
     """Node-RED's internal token, which tm-control sends with each read of 127.0.0.1:1880/tm-internal/status, read as
     root and Redacted. Never print it; only tests on pii_free units read it."""

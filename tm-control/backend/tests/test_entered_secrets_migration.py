@@ -3,11 +3,13 @@ hand-entered plate-recognizer.env or frigate.env, into the device's secret files
 
 import os
 import stat
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 from ruamel.yaml import YAML
 
+from tm_control.adapters.yamlfile import back_up
 from tm_control.cli import main
 from tm_control.core import migrate
 from tm_control.core.secrets import ENTERED_SECRETS, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
@@ -150,21 +152,21 @@ def test_addons_at_the_end_of_the_file_go_with_their_blank_line(tmp_path, secret
 
 @pytest.mark.parametrize(("before", "after"), [
     (  # the only key, so thingsboard stays as an empty mapping
-        f"thingsboard:\n    access_token: {TOKEN}  # mine\n\n# the deployment\ndeployment:\n    lat: 1\n",
-        "thingsboard: {}\n\n# the deployment\ndeployment:\n    lat: 1\n",
+        f"thingsboard:\n    access_token: {TOKEN}  # mine\n\n# the deployment\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
+        "thingsboard: {}\n\n# the deployment\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
     (  # the first key, with a comment before the next
         f"addons:\n    plate_recognizer:\n        token: {PR_TOKEN}\n        # the url\n        url: http://x\n"
-        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n",
+        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
         "addons:\n    plate_recognizer:\n        # the url\n        url: http://x\n"
-        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n",
+        "\n    # other\n    other: [1, 2]\n\ndeployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
     (  # after a block list and after a flow list, where ruamel keeps the lines on the next key
         f"thingsboard:\n    hosts:\n        - a\n    access_token: {TOKEN}\n\n    # nested\n"
         f"addons:\n    list: [1]\n    plate_recognizer:\n        token: {PR_TOKEN}\n\n# the deployment\ndeployment:\n"
-        "    lat: 1\n",
+        "    lat: 1\n    database_precision: '1'\n",
         "thingsboard:\n    hosts:\n        - a\n\n    # nested\naddons:\n    list: [1]\n\n# the deployment\n"
-        "deployment:\n    lat: 1\n",
+        "deployment:\n    lat: 1\n    database_precision: '1'\n",
     ),
 ])
 def test_comments_and_blank_lines_around_a_deleted_key_stay(tmp_path, secrets_dir, before, after):
@@ -200,6 +202,17 @@ def test_a_set_file_wins_over_a_different_key(tmp_path, secrets_dir, capsys):
     assert "tb-placeholder-111" not in printed and "tb-placeholder-222" not in printed
     (backup,) = backups(config)
     assert "tb-placeholder-222" in backup.read_text()  # the one copy of the other value
+
+
+def test_the_copy_holding_the_other_value_outlasts_the_pages_saves(tmp_path, secrets_dir):
+    """update.md tells the operator the other value stays in the backup; the Location page saves this file often."""
+    config = write_config(tmp_path / "config.yml", access_token="tb-placeholder-222", addons="")
+    (secrets_dir / THINGSBOARD_ACCESS_TOKEN).write_text("tb-placeholder-111\n")
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    (kept,) = backups(config)
+    for second in range(12):
+        back_up(config, datetime(2030, 1, 1, 0, 0, second, tzinfo=timezone.utc))
+    assert "tb-placeholder-222" in kept.read_text()
 
 
 def test_the_same_value_in_both_removes_the_key_quietly(tmp_path, secrets_dir, capsys):
@@ -398,6 +411,16 @@ def test_plate_recognizer_env_moves_both_values(env_file, secrets_dir, capsys):
     assert secret(secrets_dir, PLATE_RECOGNIZER_LICENSE_KEY) == PR_KEY + "\n"
 
 
+def test_the_env_copy_holding_the_other_value_outlasts_later_backups(env_file, secrets_dir):
+    path = env_file(token="pr-placeholder-222")
+    (secrets_dir / PLATE_RECOGNIZER_TOKEN).write_text("pr-placeholder-111\n")
+    assert migrate.run_plate_recognizer_env(path, secrets_dir) == 0
+    (kept,) = path.parent.glob("plate-recognizer.env.*.bak")
+    for second in range(12):
+        back_up(path, datetime(2030, 1, 1, 0, 0, second, tzinfo=timezone.utc))
+    assert "pr-placeholder-222" in kept.read_text()
+
+
 def test_plate_recognizer_env_dry_run_writes_nothing(env_file, secrets_dir, capsys):
     path = env_file(token=PR_TOKEN, license_key=PR_KEY)
     assert migrate.run_plate_recognizer_env(path, secrets_dir, dry_run=True) == 0
@@ -578,7 +601,7 @@ def test_a_link_planted_at_the_backup_name_is_not_followed(config_yml, secrets_d
     target.write_text("not yours\n")
     planted = config_yml.with_name("config.yml.20261103T120000Z.bak")
     planted.symlink_to(target)
-    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None: planted)
+    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None, keep=False: planted)
     original = config_yml.read_text()
 
     assert migrate.run_node_red(config_yml, secrets_dir) == 1
@@ -595,7 +618,7 @@ def test_a_link_planted_at_the_env_backup_name_is_not_followed(env_file, secrets
     path = env_file(token="pr-placeholder 517")
     planted = path.with_name("plate-recognizer.env.20261103T120000Z.bak")
     planted.symlink_to(target)
-    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None: planted)
+    monkeypatch.setattr("tm_control.adapters.yamlfile.backup_path", lambda path, now=None, keep=False: planted)
     assert migrate.run_plate_recognizer_env(path, secrets_dir) == 1
     assert "ERROR" in output(capsys)
     assert target.read_text() == "not yours\n"

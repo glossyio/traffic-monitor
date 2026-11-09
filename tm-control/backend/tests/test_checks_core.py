@@ -1,5 +1,6 @@
 """The status check core: running a module's check functions with timeouts, the summary, the cache, and probe memos."""
 
+import logging
 import threading
 import time
 from datetime import datetime
@@ -131,6 +132,32 @@ def test_cache_runs_the_checks_again_after_the_ttl():
     time.sleep(0.1)
     cache.report()
     assert fn.calls == 2
+
+
+def test_prepare_runs_before_each_fresh_report_and_not_for_a_cached_one():
+    order = []
+
+    def check(ctx):
+        order.append("check")
+        return [ok_check("demo.check")]
+
+    cache = StatusCache([CheckGroup("demo", "Demo", [check])], context, ttl=5.0, prepare=lambda: order.append("prepare"))
+    cache.report()
+    cache.report()
+    assert order == ["prepare", "check"]
+    cache.report(force=True)
+    assert order == ["prepare", "check", "prepare", "check"]
+
+
+def test_a_prepare_that_raises_leaves_the_report_whole(caplog):
+    def prepare():
+        raise RuntimeError("secret-value")
+
+    cache = StatusCache([CheckGroup("demo", "Demo", [lambda ctx: [ok_check("demo.check")]])], context, prepare=prepare)
+    with caplog.at_level(logging.WARNING):
+        report = cache.report()
+    assert [check.id for group in report.groups for check in group.checks] == ["demo.check"]
+    assert [r.getMessage() for r in caplog.records] == ["the status report's prepare step failed: RuntimeError"]
 
 
 def test_probes_memo_is_per_report():

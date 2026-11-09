@@ -5,6 +5,7 @@ time becomes a single `unknown` check that names the exception class or the time
 hold a command's output or a secret.
 """
 
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -20,6 +21,8 @@ TIMEOUT = 5.0  # seconds for each group, and so for a whole report: the groups r
 TTL = 5.0  # seconds a report is reused before the checks run again
 
 T = TypeVar("T")
+
+log = logging.getLogger(__name__)
 
 
 class Fix(BaseModel):
@@ -52,16 +55,18 @@ class Report(BaseModel):
 
 
 class Context:
-    """What the check functions of one report share: the app's settings, manifest, and secrets, and probe results.
+    """What the check functions of one report share: the app's settings, manifest, and secrets, the state database (None
+    where a check has no use for it), and probe results.
 
     `probe(key, fn)` runs fn once per report (a command's output, an app's status) for every check that asks for
     the same key; `probes` holds the results.
     """
 
-    def __init__(self, settings, manifest, secrets):
+    def __init__(self, settings, manifest, secrets, state=None):
         self.settings = settings
         self.manifest = manifest
         self.secrets = secrets
+        self.state = state
         self.probes: dict[str, Any] = {}
         self._errors: dict[str, Exception] = {}
         self._locks: dict[str, threading.Lock] = {}
@@ -125,7 +130,12 @@ def run_group(group: CheckGroup, context: Context, timeout: float = TIMEOUT) -> 
 
 
 class StatusCache:
-    """The status report, reused for `ttl` seconds so that page loads and polling don't re-run every probe."""
+    """The status report, reused for `ttl` seconds so that page loads and polling don't re-run every probe.
+
+    `prepare`, when given, runs before the checks of each report that isn't the cached one, so they see what it did
+    (the Location module's reconcile). It holds up the report while it runs; an error in it is logged by its class
+    name and the report goes on.
+    """
 
     def __init__(
         self,
@@ -133,11 +143,13 @@ class StatusCache:
         context_factory: Callable[[], Context],
         ttl: float = TTL,
         timeout: float = TIMEOUT,
+        prepare: Callable[[], None] | None = None,
     ):
         self.groups = list(groups)
         self.context_factory = context_factory
         self.ttl = ttl
         self.timeout = timeout
+        self.prepare = prepare
         self._lock = threading.Lock()  # one report at a time; requests that arrive meanwhile get its result
         self._report: Report | None = None
         self._at = 0.0
@@ -146,6 +158,11 @@ class StatusCache:
         with self._lock:
             if not force and self._report is not None and time.monotonic() - self._at < self.ttl:
                 return self._report
+            if self.prepare is not None:
+                try:
+                    self.prepare()
+                except Exception as error:
+                    log.warning("the status report's prepare step failed: %s", type(error).__name__)
             context = self.context_factory()
             # Every group at once, so a hung app that several groups ask about costs one timeout, not one per group.
             with ThreadPoolExecutor(max_workers=max(1, len(self.groups)), thread_name_prefix="status") as pool:

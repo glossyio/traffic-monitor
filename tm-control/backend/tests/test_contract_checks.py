@@ -199,10 +199,14 @@ def test_a_camera_without_a_radar_is_fine(apps):
     [
         ({"lat": 91, "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
         ({"lat": -90, "lon": 180.5, "bearing": "n"}, "error", "deployment.lon"),
-        ({"lat": "45.1", "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
+        ({"lat": "abc", "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
+        ({"lat": 45, "lon": "1e2", "bearing": "n"}, "error", "deployment.lon"),
+        ({"lat": 45, "lon": None, "bearing": "n"}, "error", "deployment.lat"),  # one of the pair alone
         ({"lat": True, "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
         ({"lat": 45, "lon": 10, "bearing": "north"}, "error", "deployment.bearing"),
         ({"lat": 45, "lon": 10, "bearing": 90}, "error", "deployment.bearing"),
+        ({"lat": 45, "lon": 10, "bearing": " n"}, "error", "deployment.bearing"),  # Node-RED doesn't trim
+        ({"lat": 45, "lon": 10, "bearing": "  "}, "error", "deployment.bearing"),
         ({"lat": 45, "lon": 10, "bearing": ""}, "ok", None),
         ({"lat": 45, "lon": 10, "bearing": "SW"}, "ok", None),  # Node-RED lowercases it
         ({"lat": None, "lon": None, "bearing": ""}, "ok", None),  # as installed, before a location is set
@@ -216,9 +220,168 @@ def test_deployment_values(apps, deployment, status, key):
     if key:
         assert key in check.detail
         value = deployment[key.removeprefix("deployment.")]
-        if isinstance(value, str):
+        if isinstance(value, str) and len(value.strip()) > 2:  # shorter ones are inside the message
             assert value not in check.detail  # names the key, not its value
         assert "91" not in check.detail and "180.5" not in check.detail
+
+
+LOCATION_LINK = ("link", "/location", "Open the Location page")
+SURVEY_ID = "0123abcd-si"
+
+
+def location_check(apps, state=None, **deployment):
+    apps.edit_config_yml(lambda data: data["deployment"].update(deployment))
+    group = run_group(contracts.GROUP, apps.context(state))
+    return next(check for check in group.checks if check.id == "config.deployment")
+
+
+def fix_of(check):
+    return None if check.fix is None else (check.fix.kind, check.fix.href, check.fix.text)
+
+
+def test_location_title_and_id_are_unchanged(apps):
+    check = location_check(apps)
+    assert (check.id, check.title) == ("config.deployment", "Location")
+
+
+def test_location_accepts_quoted_coordinates(apps):
+    check = location_check(apps, lat="45.52252", lon=" -122.6912 ")
+    assert check.status == "ok", check.detail
+
+
+@pytest.mark.parametrize(
+    "deployment, detail",
+    [
+        ({"survey_id": "nonsense"}, "deployment.survey_id isn't a survey id (8 hex characters and -si)"),
+        ({"survey_id": SURVEY_ID, "database_precision": "3"}, "deployment.database_precision isn't none, 1, or 2"),
+        ({"database_precision": "NONE"}, "deployment.database_precision isn't none, 1, or 2"),  # R10: no case folding
+        ({"database_precision": True}, "deployment.database_precision isn't none, 1, or 2"),
+    ],
+)
+def test_location_rejects_a_bad_survey_id_and_precision(apps, deployment, detail):
+    check = location_check(apps, **deployment)
+    assert check.status == "error" and detail in check.detail
+    for value in ("nonsense", "NONE"):
+        assert value not in check.detail  # names the key, not its value
+
+
+def test_location_says_an_invalid_precision_stores_the_default(apps):
+    check = location_check(apps, database_precision="NONE")  # R10: Node-RED doesn't fold case, so it uses '2'
+    assert check.detail == (
+        "In config.yml, deployment.database_precision isn't none, 1, or 2. Correct it, or leave it empty. Until then,"
+        " Node-RED stores the default, about 1 km."
+    )
+
+
+def test_location_says_what_the_default_is_for_after_every_problem(apps):
+    check = location_check(apps, database_precision="NONE", bearing="up")
+    assert "2; deployment.bearing" in check.detail or "; deployment.database_precision" in check.detail
+    assert check.detail.endswith("Correct them, or leave them empty. Until then, Node-RED stores the default, about 1 km.")
+
+
+@pytest.mark.parametrize(
+    "deployment", [{"survey_id": SURVEY_ID.upper()}, {"database_precision": 2}, {"database_precision": "none"}]
+)
+def test_location_accepts_the_values_the_engine_accepts(apps, deployment):
+    assert location_check(apps, **deployment).status == "ok"
+
+
+def test_location_checks_each_enabled_sensors_own_bearing(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": "north"})
+    )
+    check = location_check(apps)
+    assert check.status == "error"
+    assert (
+        "sensors.cameras.picam_h265.deployment.bearing isn't one of n, s, e, w, ne, nw, se, sw, or empty"
+        in check.detail
+    )
+    assert "north" not in check.detail
+
+
+@pytest.mark.parametrize("bearing", [" n", "  "])
+def test_location_does_not_trim_a_sensors_own_bearing(apps, bearing):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": bearing}))
+    check = location_check(apps)
+    assert check.status == "error" and "sensors.cameras.picam_h265.deployment.bearing" in check.detail
+
+
+def test_location_ignores_a_disabled_sensors_bearing(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["airquality_monitors"]["sensorname01"].update(deployment={"bearing": "north"})
+    )
+    assert location_check(apps).status == "ok"
+
+
+def test_location_warns_about_per_sensor_coordinates(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"lat": 45.0, "lon": -122.0})
+    )
+    check = location_check(apps)
+    assert check.status == "warn"
+    assert "sensors.cameras.picam_h265.deployment.lat" in check.detail
+    assert "sensors.cameras.picam_h265.deployment.lon" in check.detail
+    assert "ignored; the location is per unit; tmsetup removes it" in check.detail
+    assert "45.0" not in check.detail and "122" not in check.detail
+    assert fix_of(check) == LOCATION_LINK
+
+
+def test_location_error_wins_over_a_warning(apps):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"lat": 45.0}))
+    assert location_check(apps, survey_id="nonsense").status == "error"
+
+
+@pytest.fixture
+def state(tmp_path):
+    from tm_control.core.state import State
+
+    state = State(tmp_path / "state.sqlite")
+    state.migrate()
+    return state
+
+
+def with_place(state, survey_id=SURVEY_ID, status="in_use"):
+    from tm_control.modules.location.places import Places
+
+    places = Places(state)
+    places.create(survey_id, "", None, None, [], "ui", status, None, now=1000)
+    places.mark_reconciled(now=1000)
+    return places
+
+
+def test_location_links_to_the_page_when_the_file_names_an_unknown_place(apps, state):
+    with_place(state, "ffffffff-si")
+    check = location_check(apps, state, survey_id=SURVEY_ID)
+    assert check.status == "warn"
+    assert "deployment.survey_id names a place this device doesn't have" in check.detail
+    assert SURVEY_ID not in check.detail
+    assert fix_of(check) == LOCATION_LINK
+
+
+def test_location_links_to_the_page_until_the_places_are_imported(apps, state):
+    check = location_check(apps, state)  # a fresh state: reconcile has not run
+    assert check.status == "warn"
+    assert "haven't been set up yet" in check.detail
+    assert fix_of(check) == LOCATION_LINK
+
+
+def test_location_says_which_place_is_in_use(apps, state):
+    with_place(state)
+    check = location_check(apps, state, survey_id=SURVEY_ID, database_precision="2")
+    assert (check.status, check.detail) == ("ok", f"Place {SURVEY_ID} is in use at precision 2.")
+    assert check.fix is None
+
+
+def test_location_with_no_place_says_no_location_is_set(apps, state):
+    with_place(state)
+    check = location_check(apps, state, lat=None, lon=None)
+    assert (check.status, check.detail) == ("ok", "No location is set.")
+
+
+def test_location_without_a_state_skips_the_places_check(apps):
+    check = location_check(apps, survey_id=SURVEY_ID)  # no State in the Context: nothing to compare with
+    assert check.status == "ok"
+    assert check.detail == f"Place {SURVEY_ID} is in use at precision 2."  # the fixture has none: the default
 
 
 def test_deployment_missing_is_ok(apps):

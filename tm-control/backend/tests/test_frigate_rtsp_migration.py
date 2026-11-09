@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
+from tm_control.adapters.yamlfile import back_up
 from tm_control.core import migrate
 
 REPO = Path(__file__).resolve().parents[3]
@@ -52,6 +54,15 @@ def test_rewrites_the_default_camera_input_and_nothing_else(frigate_config, caps
     assert [(a, b) for a, b in zip(old_lines, new_lines) if a != b] == [(DEFAULT_INPUT, MIGRATED_INPUT)]
     assert "updated 1 camera input(s)" in output(capsys)
     assert len(list(frigate_config.parent.glob("config.yml.*.bak"))) == 1
+
+
+def test_the_migrations_copy_outlasts_the_detection_pages_saves(frigate_config):
+    original = frigate_config.read_text()
+    assert migrate.run(frigate_config) == 0
+    (kept,) = frigate_config.parent.glob("config.yml.*.bak")
+    for second in range(12):
+        back_up(frigate_config, datetime(2030, 1, 1, 0, 0, second, tzinfo=timezone.utc))
+    assert kept.read_text() == original
 
 
 def test_running_twice_changes_nothing_the_second_time(frigate_config, capsys):

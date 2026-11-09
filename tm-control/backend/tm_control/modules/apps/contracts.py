@@ -7,7 +7,6 @@ are quoted only as checks.validation_messages and checks.traceback_last_line giv
 messages when it starts in safe mode, and the last exception in its journal whenever Frigate doesn't answer.
 """
 
-import math
 import os
 import re
 import stat
@@ -17,6 +16,9 @@ from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import REFUSED_KEY, listed, quoted, traceback_last_line, validation_messages
+from tm_control.modules.location.config import read_deployment
+from tm_control.modules.location.coordinates import exact
+from tm_control.modules.location.places import Places
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
@@ -145,35 +147,89 @@ def radar_names(context: Context) -> list[Check]:
     return check("ok", "Each radar in config.yml is named as in node-red-tm.env, and each camera's radar is enabled.")
 
 
-def _number_in(value, low: float, high: float) -> bool:
-    if value is None or value == "":
-        return True  # not set yet, as installed
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return False
-    return math.isfinite(value) and low <= value <= high
+LOCATION_LINK = Fix(kind="link", href="/location", text="Open the Location page")
+
+
+def _coordinate_problems(deployment: dict) -> list[str]:
+    """Which of deployment.lat and .lon isn't a number in range (numeric strings count), else, when only one is set,
+    that they go together. Names the keys, never a value."""
+    problems = []
+    for key, limit in (("lat", 90), ("lon", 180)):
+        try:
+            exact(deployment.get(key), key)
+        except ValueError:
+            problems.append(f"deployment.{key} isn't a number from -{limit} to {limit}")
+    if not problems:
+        blank = [deployment.get(key) is None or str(deployment.get(key)).strip() == "" for key in ("lat", "lon")]
+        if blank[0] != blank[1]:
+            problems.append("deployment.lat and deployment.lon must be set together, or both left empty")
+    return problems
+
+
+def _bearing_ok(value) -> bool:
+    """Node-RED's init config defaults lower-cases a bearing and looks it up as it is, with no trim: empty is fine,
+    ' n' and a run of spaces are not."""
+    return value is None or value == "" or (isinstance(value, str) and value.lower() in BEARINGS)
+
+
+def _sensor_deployments(data: dict) -> list[tuple[str, dict, bool]]:
+    """(path, the sensor's own deployment block, whether the sensor is enabled) for every sensor that has one."""
+    found = []
+    for sensor_type, sensors in probes.mapping(data.get("sensors")).items():
+        for name, sensor in probes.mapping(sensors).items():
+            sensor = probes.mapping(sensor)
+            if isinstance(sensor.get("deployment"), dict):
+                found.append((f"sensors.{sensor_type}.{name}.deployment", sensor["deployment"], _enabled(sensor)))
+    return found
 
 
 def location(context: Context) -> list[Check]:
-    """deployment.lat, .lon, and .bearing hold values Node-RED accepts."""
+    """The deployment block holds values Node-RED accepts (coordinates, bearings, survey id, stored precision), no
+    sensor carries its own coordinates, and the survey id in the file is a place this device has. Never shows a
+    value."""
 
-    def check(status, detail):
-        return [Check(id="config.deployment", title="Location", status=status, detail=detail)]
+    def check(status, detail, fix=None):
+        return [Check(id="config.deployment", title="Location", status=status, detail=detail, fix=fix)]
 
     read = probes.config_yml(context)
     if read.data is None:
         return check("unknown", f"{CONFIG_YML_PROBLEM[read.problem]}, so its location can't be checked.")
     deployment = probes.mapping(read.data.get("deployment"))
-    problems = []
-    if not _number_in(deployment.get("lat"), -90, 90):
-        problems.append("deployment.lat isn't a number from -90 to 90")
-    if not _number_in(deployment.get("lon"), -180, 180):
-        problems.append("deployment.lon isn't a number from -180 to 180")
-    bearing = deployment.get("bearing")
-    if bearing not in (None, "") and not (isinstance(bearing, str) and bearing.lower() in BEARINGS):
-        problems.append(f"deployment.bearing isn't one of {', '.join(BEARINGS)}, or empty")
+    settings = read_deployment(read)
+    problems = _coordinate_problems(deployment)
+    bearing_message = "isn't one of " + ", ".join(BEARINGS) + ", or empty"
+    if not _bearing_ok(deployment.get("bearing")):
+        problems.append(f"deployment.bearing {bearing_message}")
+    if settings.survey_id_invalid:
+        problems.append("deployment.survey_id isn't a survey id (8 hex characters and -si)")
+    meanwhile = ""
+    if settings.precision_invalid:
+        problems.append("deployment.database_precision isn't none, 1, or 2")
+        # Node-RED compares the text exactly (no case folding), so it stores the default instead
+        meanwhile = " Until then, Node-RED stores the default, about 1 km."
+    ignored = []
+    for path, own, enabled in _sensor_deployments(read.data):
+        if enabled and not _bearing_ok(own.get("bearing")):
+            problems.append(f"{path}.bearing {bearing_message}")
+        ignored += [f"{path}.{key}" for key in ("lat", "lon") if key in own]
     if problems:
         fix = "Correct it, or leave it empty." if len(problems) == 1 else "Correct them, or leave them empty."
-        return check("error", f"In config.yml, {'; '.join(problems)}. {fix}")
+        return check("error", f"In config.yml, {'; '.join(problems)}. {fix}{meanwhile}")
+
+    warnings = []
+    if ignored:
+        warnings.append(f"In config.yml, {listed(ignored)} {'is' if len(ignored) == 1 else 'are'} ignored; the "
+                        "location is per unit; tmsetup removes it.")
+    if context.state is not None:
+        places = Places(context.state)
+        if places.reconciled_at() is None:
+            warnings.append("This device's places haven't been set up yet.")
+        elif settings.survey_id is not None and places.get(settings.survey_id) is None:
+            warnings.append("deployment.survey_id names a place this device doesn't have.")
+    if warnings:
+        return check("warn", " ".join(warnings), LOCATION_LINK)
+    if settings.survey_id is not None:
+        return check("ok", f"Place {settings.survey_id} is in use at precision {settings.precision}.")
     if deployment.get("lat") in (None, "") and deployment.get("lon") in (None, ""):
         return check("ok", "No location is set.")
     return check("ok", "The location's values are valid.")

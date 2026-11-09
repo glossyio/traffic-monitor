@@ -515,6 +515,204 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Places
+         * @description The places, after the store and config.yml are brought into step. Node-RED not answering isn't an error here:
+         *     the places are listed with no counts and `nodered` false.
+         */
+        get: operations["list_places_api_v1_surveys_get"];
+        put?: never;
+        /**
+         * Create Place
+         * @description Plan a place.
+         */
+        post: operations["create_place_api_v1_surveys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/precision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Precision
+         * @description Write database_precision into config.yml (Node-RED re-rounds the open rows to a coarser one), and with
+         *     round_stored also lower every row already stored.
+         */
+        put: operations["set_precision_api_v1_surveys_precision_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Places
+         * @description Check a CSV of planned places (description,lat,lon, then a column per sensor holding its bearing) and, unless
+         *     dry_run, create them all, or none when any line is refused (422 with the problems in detail).
+         */
+        post: operations["import_places_api_v1_surveys_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Place
+         * @description Delete a place and its corrections (409 in_use for the place in use). Node-RED's rows keep its id.
+         */
+        delete: operations["delete_place_api_v1_surveys__survey_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit Place
+         * @description Edit a planned place (409 not_planned for one in use or used: correct those instead).
+         */
+        patch: operations["edit_place_api_v1_surveys__survey_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deploy Place
+         * @description Put the place in use: its id, point, and each enabled sensor's bearing into config.yml (a sensor the body leaves
+         *     out takes the place's stored bearing, else the file's), then wait for Node-RED to start the deployments.
+         *
+         *     Node-RED not answering isn't an error: the file is written, and `reloaded` is false.
+         */
+        post: operations["deploy_place_api_v1_surveys__survey_id__deploy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Place Deployments
+         * @description The place's deployments, oldest first.
+         */
+        get: operations["place_deployments_api_v1_surveys__survey_id__deployments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Place Events
+         * @description How many events the place's deployments recorded, and when the first and last began.
+         */
+        get: operations["place_events_api_v1_surveys__survey_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct Location
+         * @description Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,
+         *     and Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed
+         *     and the rows didn't; correcting again with the same pair re-rounds them.
+         */
+        post: operations["correct_location_api_v1_surveys__survey_id__location_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/deployments/{deployment_id}/bearing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct Bearing
+         * @description Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's bearing
+         *     and config.yml's change too, after Node-RED's row, so Node-RED doesn't start a new deployment. Refused (502) while
+         *     Node-RED doesn't answer (decision 12).
+         */
+        post: operations["correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -734,6 +932,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Bearing */
+        Bearing: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Bearing */
+            bearing: string;
+        };
+        /** BearingCorrection */
+        BearingCorrection: {
+            /** Bearing */
+            bearing: string;
+            /** Reason */
+            reason?: string | null;
+        };
         /** Check */
         Check: {
             /** Id */
@@ -767,6 +981,46 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** DeployIn */
+        DeployIn: {
+            /** Bearings */
+            bearings?: components["schemas"]["Bearing"][];
+        };
+        /** DeployOut */
+        DeployOut: {
+            /** Deployed At */
+            deployed_at: number;
+            /** Reloaded */
+            reloaded: boolean;
+            /** Deployments */
+            deployments: components["schemas"]["DeploymentOut"][];
+        };
+        /** DeploymentOut */
+        DeploymentOut: {
+            /** Id */
+            id: string;
+            /** Started */
+            started: number | null;
+            /** Ended */
+            ended: number | null;
+            /** Lat */
+            lat: number | null;
+            /** Lon */
+            lon: number | null;
+            /** Bearing */
+            bearing: string;
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Location Precision */
+            location_precision: number | null;
+        };
+        /** DeploymentsOut */
+        DeploymentsOut: {
+            /** Deployments */
+            deployments: components["schemas"]["DeploymentOut"][];
+        };
         /** Disk */
         Disk: {
             /** Path */
@@ -782,6 +1036,15 @@ export interface components {
         EulaAcceptance: {
             /** Version */
             version: string;
+        };
+        /** EventsOut */
+        EventsOut: {
+            /** Event Count */
+            event_count: number;
+            /** First Event */
+            first_event: number | null;
+            /** Last Event */
+            last_event: number | null;
         };
         /**
          * Fix
@@ -814,6 +1077,45 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** ImportIn */
+        ImportIn: {
+            /** Csv */
+            csv: string;
+            /**
+             * Dry Run
+             * @default true
+             */
+            dry_run: boolean;
+        };
+        /** ImportOut */
+        ImportOut: {
+            /** Rows */
+            rows: components["schemas"]["ImportRow"][];
+            /** Errors */
+            errors: components["schemas"]["ImportProblem"][];
+            /** Created */
+            created: string[];
+        };
+        /** ImportProblem */
+        ImportProblem: {
+            /** Line */
+            line: number;
+            /** Message */
+            message: string;
+        };
+        /** ImportRow */
+        ImportRow: {
+            /** Line */
+            line: number;
+            /** Description */
+            description: string | null;
+            /** Lat */
+            lat: number | null;
+            /** Lon */
+            lon: number | null;
+            /** Bearings */
+            bearings: components["schemas"]["Bearing"][];
+        };
         /** Job */
         Job: {
             /** Id */
@@ -840,6 +1142,15 @@ export interface components {
             source: ("frigate" | "sidecar" | "labels_file") | null;
             /** Tracked */
             tracked: string[];
+        };
+        /** LocationCorrection */
+        LocationCorrection: {
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+            /** Reason */
+            reason?: string | null;
         };
         /** Memory */
         Memory: {
@@ -936,6 +1247,33 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** PlacesState */
+        PlacesState: {
+            /**
+             * Precision
+             * @enum {string}
+             */
+            precision: "none" | "1" | "2";
+            /** In Use */
+            in_use: string | null;
+            /** Sensors */
+            sensors: components["schemas"]["Bearing"][];
+            /**
+             * Sharing
+             * @enum {string}
+             */
+            sharing: "data" | "none";
+            /** Surveys */
+            surveys: components["schemas"]["SurveyOut"][];
+            unassigned: components["schemas"]["Unassigned"] | null;
+            /**
+             * Reconcile
+             * @enum {string}
+             */
+            reconcile: "done" | "waiting_nodered" | "config_unreadable";
+            /** Nodered */
+            nodered: boolean;
+        };
         /** PowerQueued */
         PowerQueued: {
             /**
@@ -943,6 +1281,19 @@ export interface components {
              * @enum {string}
              */
             action: "reboot" | "power_off";
+        };
+        /** PrecisionIn */
+        PrecisionIn: {
+            /**
+             * Precision
+             * @enum {string}
+             */
+            precision: "none" | "1" | "2";
+            /**
+             * Round Stored
+             * @default false
+             */
+            round_stored: boolean;
         };
         /** Report */
         Report: {
@@ -1030,6 +1381,52 @@ export interface components {
             labels: string[];
             /** Name */
             name?: string | null;
+        };
+        /** SurveyIn */
+        SurveyIn: {
+            /** Description */
+            description?: string | null;
+            /** Lat */
+            lat?: number | null;
+            /** Lon */
+            lon?: number | null;
+            /** Bearings */
+            bearings?: components["schemas"]["Bearing"][];
+        };
+        /** SurveyOut */
+        SurveyOut: {
+            /** Id */
+            id: string;
+            /** Description */
+            description: string | null;
+            /** Lat */
+            lat: number | null;
+            /** Lon */
+            lon: number | null;
+            /** Status */
+            status: string;
+            /** Source */
+            source: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Bearings */
+            bearings: components["schemas"]["Bearing"][];
+            /** Stored Lat */
+            stored_lat: number | null;
+            /** Stored Lon */
+            stored_lon: number | null;
+            /** First Used */
+            first_used: number | null;
+            /** Last Used */
+            last_used: number | null;
+            /** Open Count */
+            open_count: number;
+            /** Deployment Count */
+            deployment_count: number;
+            /** Imported */
+            imported: boolean;
         };
         /** SystemInfo */
         SystemInfo: {
@@ -1129,6 +1526,18 @@ export interface components {
             branch: string;
             /** Installing User */
             installing_user: string;
+        };
+        /**
+         * Unassigned
+         * @description The deployment rows recorded before any place was: counted, not listed.
+         */
+        Unassigned: {
+            /** Deployment Count */
+            deployment_count: number;
+            /** First Start */
+            first_start: number | null;
+            /** Last End */
+            last_end: number | null;
         };
         /** UseQueued */
         UseQueued: {
@@ -1899,6 +2308,357 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UseQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_places_api_v1_surveys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacesState"];
+                };
+            };
+        };
+    };
+    create_place_api_v1_surveys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_precision_api_v1_surveys_precision_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacesState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_places_api_v1_surveys_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_place_api_v1_surveys__survey_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_place_api_v1_surveys__survey_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deploy_place_api_v1_surveys__survey_id__deploy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeployIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeployOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    place_deployments_api_v1_surveys__survey_id__deployments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    place_events_api_v1_surveys__survey_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_location_api_v1_surveys__survey_id__location_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BearingCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentOut"];
                 };
             };
             /** @description Validation Error */

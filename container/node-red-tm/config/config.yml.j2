@@ -9,8 +9,8 @@ deployment:
     lat: {{ tmsetup_latitude }}
     lon: {{ tmsetup_longitude }}
     bearing: '{{ tmsetup_bearing }}'
-    survey_id:  # names the place the device is used at (see the setup guide); a change here starts a new deployment
-    database_precision: '1'  # none, 1, or 2 decimal places stored in the database
+    survey_id:  # names the place the device is used at (set on the control app's Location page); a change here starts a new deployment
+    database_precision: '2'  # none, 1, or 2 decimal places stored in the database
 
 sensors:
     cameras:
