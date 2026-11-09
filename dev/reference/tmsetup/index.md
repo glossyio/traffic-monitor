@@ -60,11 +60,11 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/node-red-tm/node-red-tm.env`
 - `/opt/traffic-monitor/frigate/config/config.yml`, which holds zones and masks drawn in Frigate
 - `/opt/traffic-monitor/frigate/frigate.env`
-- `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
+- `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed. Its token and license key come from the device's secrets.
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
-No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys the installer generated in `/etc/traffic-monitor/secrets/`.
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env` and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
 
 ## Add an accelerator later
 

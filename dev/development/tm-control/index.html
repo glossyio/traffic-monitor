@@ -2347,7 +2347,7 @@
 <p><code>tm-control.service</code> runs on the host, not in the pod, so the login keeps working when Podman doesn't. It runs as the code owner (default <code>tmadmin</code>), never as root, in a systemd sandbox, and listens on <code>127.0.0.1:8090</code> only. nginx is the only way in from the network.</p>
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
-<li><code>/etc/traffic-monitor/secrets/</code>: the session key, Frigate's proxy secret, the Node-RED editor's token key, and the token for Node-RED's internal status, each generated once on the device. <code>DEVICE_SECRETS</code> in <code>core/secrets.py</code> lists these four and go2rtc's RTSP password, the same five names as the role's <code>tmsetup_secret_names</code> (a test keeps them equal), and the diagnostics redact the value of each.</li>
+<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Three are entered by an administrator on the Device page: the ThingsBoard access token and the Plate Recognizer token and license key. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
 <li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.</li>
 <li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
@@ -2415,7 +2415,7 @@
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, system, time
+                 hardware, secrets, system, time
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
@@ -2424,7 +2424,26 @@
 <li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH.</li>
 <li>Seven actions: <code>org.freedesktop.timedate1.set-time</code>, <code>set-timezone</code>, and <code>set-ntp</code> for the Date and time page, and <code>org.freedesktop.login1.reboot</code>, <code>reboot-multiple-sessions</code>, <code>power-off</code>, and <code>power-off-multiple-sessions</code> for the Device page. The <code>-ignore-inhibit</code> variants aren't granted, so tm-control asks logind (<code>CanReboot</code>, <code>CanPowerOff</code>) first and answers 409 while an inhibitor, such as an update, holds the device up.</li>
 </ul>
-<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. The one job so far, <code>system-password</code>, sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. <code>tmsetup.sh</code> also refuses to run as root, but a remote install with <code>-l root</code> still records root as the installing user, so the job's own check is the one that counts.</p>
+<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are two jobs:</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>system-password</code></td>
+<td>Sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. <code>tmsetup.sh</code> also refuses to run as root, but a remote install with <code>-l root</code> still records root as the installing user, so the job's own check is the one that counts.</td>
+</tr>
+<tr>
+<td><code>set-secret</code></td>
+<td>Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the three names in its own table, and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's <code>KEY=</code> lines in <code>node-red-tm.env</code> or <code>plate-recognizer.env</code>, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again.</td>
+</tr>
+</tbody>
+</table>
+<p><code>SECRETS</code> in <code>tm-control/jobs/tm-job-set-secret</code> repeats the secrets' patterns (<code>VALUE_PATTERNS</code> in <code>core/secrets.py</code>) and restart units (<code>ENTERED</code> in <code>modules/secrets/router.py</code>), because the script imports nothing from tm-control; tests keep them the same.</p>
 <h2 id="status-checks">Status checks<a class="headerlink" href="#status-checks" title="Permanent link">&para;</a></h2>
 <p><code>GET /api/v1/status</code> returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in <code>Module.check_groups</code>, and the report shows them in <code>MODULES</code> order: Services, Apps, Configuration (the apps module's second group), Hardware, Device (from the system module), and Date and time.</p>
 <p>A check function takes a <code>Context</code> and returns a list of <code>Check</code>s, each with an <code>id</code>, a <code>title</code>, a <code>status</code> (<code>ok</code>, <code>warn</code>, <code>error</code>, or <code>unknown</code>), a one- or two-sentence <code>detail</code> that says what to do, and an optional <code>fix</code>:</p>
@@ -2478,6 +2497,7 @@
 <li><code>vcgencmd get_throttled</code> needs the <code>video</code> group to open <code>/dev/vcio_gencmd</code>. Without it, the power check says to rerun the installer.</li>
 <li>The HEVC decoder check compares <code>/dev/rpi-hevc-dec</code> with the media device whose <code>/sys/bus/media/devices/mediaN/model</code> names the decoder.</li>
 <li><code>timedatectl show</code> prints its times as local strings; tm-control reads the clock itself.</li>
+<li>tm-control never writes the secrets directory; the <code>set-secret</code> job does.</li>
 </ul>
 <h2 id="run-it-on-a-laptop">Run it on a laptop<a class="headerlink" href="#run-it-on-a-laptop" title="Permanent link">&para;</a></h2>
 <p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, and a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>

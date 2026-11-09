@@ -973,6 +973,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#tokens-and-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tokens and keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#download-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2121,6 +2132,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#tokens-and-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tokens and keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#download-diagnostics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2256,7 +2278,7 @@
 </tr>
 <tr>
 <td>Configuration</td>
-<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, each camera's radar is enabled, and the location values are valid. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
+<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, each camera's radar is enabled, and the location values are valid. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
 </tr>
 <tr>
 <td>Hardware</td>
@@ -2277,12 +2299,21 @@
 <ul>
 <li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
 <li><strong>Re-scan hardware</strong>, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.</li>
-<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, or <strong>Diagnostics</strong> on the Device page.</li>
+<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>.</li>
 <li><strong>A sentence</strong> with the next step, such as rerunning the installer for Node-RED (<code>tmsetup.sh -t node-red-tm</code>; see <a href="../../reference/tmsetup/">Installer options</a>).</li>
 </ul>
 <p>The control app can't restart itself. If it stops, see <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</p>
 <h2 id="the-device-page">The Device page<a class="headerlink" href="#the-device-page" title="Permanent link">&para;</a></h2>
 <p>The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. <strong>Software</strong> lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.</p>
+<h3 id="tokens-and-keys">Tokens and keys<a class="headerlink" href="#tokens-and-keys" title="Permanent link">&para;</a></h3>
+<p>Administrators set the credentials the device uses for outside services in <strong>Tokens and keys</strong>. The section is closed when the page opens; select its heading to open it. The Status page's <strong>Set the token</strong> link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on is installed. Each is kept with the device's other secrets, not in <code>config.yml</code>.</p>
+<ul>
+<li>A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.</li>
+<li><strong>Save</strong> stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and <code>. _ ~ -</code>. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.</li>
+<li><strong>Remove</strong> asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.</li>
+<li>Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.</li>
+</ul>
+<p>An older device may have kept a token in <code>config.yml</code> or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when <code>config.yml</code> still holds a token key, which nothing reads, or when the upload is on without a token.</p>
 <h3 id="download-diagnostics">Download diagnostics<a class="headerlink" href="#download-diagnostics" title="Permanent link">&para;</a></h3>
 <p>When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with <code>&lt;redacted&gt;</code>. The file names the device and holds its serial number.</p>
 <ul>
@@ -2312,7 +2343,7 @@
 <p>Viewers see all three pages, but can't change anything:</p>
 <ul>
 <li><strong>Status</strong>: the same checks, without the Restart and Re-scan buttons.</li>
-<li><strong>Device</strong>: the card and the software versions, without <strong>Diagnostics</strong> and <strong>Power</strong>.</li>
+<li><strong>Device</strong>: the card and the software versions, without <strong>Tokens and keys</strong>, <strong>Diagnostics</strong>, and <strong>Power</strong>.</li>
 <li><strong>Date and time</strong>: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.</li>
 </ul>
   

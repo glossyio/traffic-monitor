@@ -66,7 +66,7 @@ The login crosses the network unencrypted, and anyone who has it can read every 
 
 ## ThingsBoard
 
-The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) with the server's hostname and the device's access token. The device picks up the change when you save the file.
+The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) with the server's hostname, and enter the device's access token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.
 
 Once connected, the device sends over ThingsBoard's HTTP API:
 

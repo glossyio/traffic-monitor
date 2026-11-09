@@ -2186,7 +2186,7 @@
 <td><code>host</code></td>
 <td>text</td>
 <td><code>tb.server.com</code> (a placeholder)</td>
-<td>The server's hostname, without protocol or port. Required when enabled.</td>
+<td>The server's hostname. If it starts with <code>http://</code> or <code>https://</code>, that is used and <code>protocol</code> is ignored. Required when enabled.</td>
 </tr>
 <tr>
 <td><code>protocol</code></td>
@@ -2200,14 +2200,9 @@
 <td>none</td>
 <td>Set it only if the server isn't on the standard port for the protocol.</td>
 </tr>
-<tr>
-<td><code>access_token</code></td>
-<td>text</td>
-<td>empty</td>
-<td>The device's access token from ThingsBoard. This is the one secret in the file.</td>
-</tr>
 </tbody>
 </table>
+<p>The device's access token isn't in this file. Set it on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>; it's kept with the device's other secrets.</p>
 <h2 id="deployment">deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
 <p>Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data. When you move the device, set a new <code>survey_id</code>, and new <code>lat</code> and <code>lon</code> if you record a location, because changing only <code>lat</code> or <code>lon</code> doesn't start a new deployment. All of them are optional.</p>
 <table>
@@ -2366,12 +2361,6 @@
 </thead>
 <tbody>
 <tr>
-<td><code>token</code></td>
-<td>text</td>
-<td>none</td>
-<td>Your Plate Recognizer API token. Plates aren't read until this is set.</td>
-</tr>
-<tr>
 <td><code>url</code></td>
 <td>URL</td>
 <td>none</td>
@@ -2379,6 +2368,7 @@
 </tr>
 </tbody>
 </table>
+<p>The API token and license key aren't in this file. Set them on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>; plates aren't read until they're set.</p>
   
 
 

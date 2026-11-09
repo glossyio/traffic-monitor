@@ -2256,7 +2256,7 @@
 <p>The login crosses the network unencrypted, and anyone who has it can read every topic and publish false data. Open MQTT only on a network you trust.</p>
 </div>
 <h2 id="thingsboard">ThingsBoard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
-<p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on in the <code>thingsboard</code> section of <a href="../../configuration/node-red-config/#thingsboard">config.yml</a> with the server's hostname and the device's access token. The device picks up the change when you save the file.</p>
+<p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on in the <code>thingsboard</code> section of <a href="../../configuration/node-red-config/#thingsboard">config.yml</a> with the server's hostname, and enter the device's access token on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>. Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.</p>
 <p>Once connected, the device sends over ThingsBoard's HTTP API:</p>
 <ul>
 <li>Each <a href="../events-payload/">event</a> as telemetry, with <code>ts</code> set to the event's <code>frame_time</code> in milliseconds and <code>values</code> holding every column of the event.</li>

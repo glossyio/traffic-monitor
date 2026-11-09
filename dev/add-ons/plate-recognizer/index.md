@@ -18,15 +18,9 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
    bash traffic-monitor/script/tmsetup.sh -C plate_recognizer
    ```
 
-1. Put your credentials in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`:
+1. Enter your API token and license key on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), under **Tokens and keys**. Saving each one restarts the add-on.
 
-   | Variable      | Value                                         |
-   | ------------- | --------------------------------------------- |
-   | `TOKEN`       | Your Plate Recognizer API token               |
-   | `LICENSE_KEY` | Your on-premise license key                   |
-   | `WORKERS`     | Parallel readers. `2` suits a Raspberry Pi 5. |
-
-1. Add the token and the add-on's address to `/opt/traffic-monitor/node-red-tm/config/config.yml`, and turn the add-on on for each camera whose events should be read:
+1. Add the add-on's address to `/opt/traffic-monitor/node-red-tm/config/config.yml`, and turn the add-on on for each camera whose events should be read:
 
    ```
    sensors:
@@ -37,17 +31,16 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
 
    addons:
        plate_recognizer:
-           token: <your API token>
            url: http://plate-recognizer:8080
    ```
 
-1. Restart the add-on so it reads its env file, and again whenever you change that file:
-
-   ```
-   sudo systemctl restart plate-recognizer.service
-   ```
-
    Node-RED picks up `config.yml` as soon as you save it, so it needs no restart.
+
+1. Optionally, set `WORKERS` in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env` to the number of plates to read in parallel. `2` suits a Raspberry Pi 5. After you change it, restart the add-on with `sudo systemctl restart plate-recognizer.service`.
+
+Upgrading a device that already reads plates
+
+The installer moves a token and license key you typed into the add-on's env file, and a token in `config.yml`, to the device's secrets. Plate reads carry on without you entering them again. The Device page shows them as set.
 
 Frigate's snapshots must stay on, which they are by default; the reader works from them.
 

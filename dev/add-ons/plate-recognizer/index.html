@@ -2082,32 +2082,10 @@
 </code></pre></div>
 </li>
 <li>
-<p>Put your credentials in <code>/opt/traffic-monitor/plate-recognizer/plate-recognizer.env</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Variable</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TOKEN</code></td>
-<td>Your Plate Recognizer API token</td>
-</tr>
-<tr>
-<td><code>LICENSE_KEY</code></td>
-<td>Your on-premise license key</td>
-</tr>
-<tr>
-<td><code>WORKERS</code></td>
-<td>Parallel readers. <code>2</code> suits a Raspberry Pi 5.</td>
-</tr>
-</tbody>
-</table>
+<p>Enter your API token and license key on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>, under <strong>Tokens and keys</strong>. Saving each one restarts the add-on.</p>
 </li>
 <li>
-<p>Add the token and the add-on's address to <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code>, and turn the add-on on for each camera whose events should be read:</p>
+<p>Add the add-on's address to <code>/opt/traffic-monitor/node-red-tm/config/config.yml</code>, and turn the add-on on for each camera whose events should be read:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">sensors</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">cameras</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">picam_h265</span><span class="p">:</span>
@@ -2116,17 +2094,18 @@
 
 <span class="nt">addons</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">plate_recognizer</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;your API token&gt;</span>
 <span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://plate-recognizer:8080</span>
-</code></pre></div>
-</li>
-<li>
-<p>Restart the add-on so it reads its env file, and again whenever you change that file:</p>
-<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>plate-recognizer.service
 </code></pre></div>
 <p>Node-RED picks up <code>config.yml</code> as soon as you save it, so it needs no restart.</p>
 </li>
+<li>
+<p>Optionally, set <code>WORKERS</code> in <code>/opt/traffic-monitor/plate-recognizer/plate-recognizer.env</code> to the number of plates to read in parallel. <code>2</code> suits a Raspberry Pi 5. After you change it, restart the add-on with <code>sudo systemctl restart plate-recognizer.service</code>.</p>
+</li>
 </ol>
+<div class="admonition info">
+<p class="admonition-title">Upgrading a device that already reads plates</p>
+<p>The installer moves a token and license key you typed into the add-on's env file, and a token in <code>config.yml</code>, to the device's secrets. Plate reads carry on without you entering them again. The Device page shows them as set.</p>
+</div>
 <p>Frigate's snapshots must stay on, which they are by default; the reader works from them.</p>
 <h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h2>
 <p>Each read goes into the <code>plate_recognizer</code> table, keyed by the event it belongs to.</p>

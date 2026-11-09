@@ -15,13 +15,14 @@ Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in th
 
 Uploads events, readings, and device telemetry to a [ThingsBoard](https://thingsboard.io/) server. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
 
-| Setting        | Type              | Default                         | Meaning                                                                         |
-| -------------- | ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
-| `enabled`      | `true` or `false` | `false`                         | Turn the upload on.                                                             |
-| `host`         | text              | `tb.server.com` (a placeholder) | The server's hostname, without protocol or port. Required when enabled.         |
-| `protocol`     | `http` or `https` | `https`                         | How to reach the server.                                                        |
-| `port`         | number            | none                            | Set it only if the server isn't on the standard port for the protocol.          |
-| `access_token` | text              | empty                           | The device's access token from ThingsBoard. This is the one secret in the file. |
+| Setting    | Type              | Default                         | Meaning                                                                                                                          |
+| ---------- | ----------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | `true` or `false` | `false`                         | Turn the upload on.                                                                                                              |
+| `host`     | text              | `tb.server.com` (a placeholder) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
+| `protocol` | `http` or `https` | `https`                         | How to reach the server.                                                                                                         |
+| `port`     | number            | none                            | Set it only if the server isn't on the standard port for the protocol.                                                           |
+
+The device's access token isn't in this file. Set it on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys); it's kept with the device's other secrets.
 
 ## deployment
 
@@ -81,5 +82,6 @@ Only needed with the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-o
 
 | Setting | Type | Default | Meaning                                                                 |
 | ------- | ---- | ------- | ----------------------------------------------------------------------- |
-| `token` | text | none    | Your Plate Recognizer API token. Plates aren't read until this is set.  |
 | `url`   | URL  | none    | The add-on's address inside the device, `http://plate-recognizer:8080`. |
+
+The API token and license key aren't in this file. Set them on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys); plates aren't read until they're set.

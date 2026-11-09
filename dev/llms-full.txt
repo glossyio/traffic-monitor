@@ -336,12 +336,12 @@ Restart when the installer asks. When the services come back, the Node-RED servi
 
 Every app asks for the device's login, and the Node-RED editor has no login of its own: it opens for the device's administrator. If the device has no administrator account yet, every page opens the setup page instead. Claim the device with the setup code from the end of the installer's output; until the device is claimed, `sudo cat /etc/traffic-monitor/setup-code` also shows it. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) walks through setup and adding accounts.
 
-The installer printed `tm-control migrate: WARNING`
+The installer printed `tm-control migrate: WARNING` or `ERROR`
 
-The installer brings Frigate's configuration up to date, and warns about what it can't change safely. Each warning names the camera, stream, or setting. To find the warnings later:
+The installer brings Frigate's configuration up to date, moves the ThingsBoard and Plate Recognizer tokens out of `config.yml` and the add-on's env file, and warns about what it can't change safely. An `ERROR` line means the installer stopped; the last item below covers the two causes. Each warning names the camera, stream, setting, or file. To find the warnings later:
 
 ```
-grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
+grep -E 'tm-control migrate: (WARNING|ERROR)' ~/tmsetup-*.log
 ```
 
 **A camera input or stream without a login.** A camera's input `path` in Frigate's configuration reads a stream on port 8554 without a login. If that path points at this device, for example by its IP address, add `{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@` before the host in Frigate's configuration editor. The [higher-resolution stream](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#higher-resolution-stream) section shows a complete path. If it points at another device, leave it as it is.
@@ -352,6 +352,10 @@ grep 'tm-control migrate: WARNING' ~/tmsetup-*.log
 - A `proxy` setting doesn't match, followed by `auth was not added` when the file had no `auth` section: Frigate could trust user and role headers the device doesn't set, so the installer leaves Frigate's own login on.
 
 Change each named setting to match the [default Frigate config](https://github.com/glossyio/traffic-monitor/blob/main/container/frigate/config/config.yml.j2), in `/opt/traffic-monitor/frigate/config/config.yml` over SSH. Then run `bash script/tmsetup.sh -t frigate`, which adds what's still missing, and restart Frigate with `sudo systemctl restart frigate.service`.
+
+**A token or key that wasn't moved.** The installer moves a ThingsBoard token, a Plate Recognizer token, and a license key that it finds in `config.yml` or in `plate-recognizer.env` to the device's secrets, and deletes the keys from `config.yml`. It leaves a value that isn't text, or that has a character a token can't have, such as a space, and warns about it. It also warns when a value differs from the one the device already holds. The device keeps the value it holds, and `config.yml` and the env file are backed up with a timestamp, so the other value stays in the backup. Enter the token or key on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), and delete a key the installer left in `config.yml`.
+
+**A file that is a symbolic link, or a YAML error (`ERROR`).** The installer refuses to change a `config.yml` or env file that is a symbolic link, and stops. Replace the link with the file itself, then run the installer again. A YAML error in Node-RED's `config.yml` also stops the installer, as one in Frigate's does. Fix the error in `/opt/traffic-monitor/node-red-tm/config/config.yml`, then run the installer again.
 
 A Frigate configuration from a backup may lack the camera stream login and the proxy settings. After you restore one, run `bash script/tmsetup.sh -t frigate` to add them.
 
@@ -751,14 +755,14 @@ Below it, each check shows a mark, its name, and one or two sentences about what
 
 The checks come in groups:
 
-| Group         | What it checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Services      | Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure.                                                                                                                                                                                                                                                                                                                                                                       |
-| Apps          | Frigate answers and gets frames from each camera. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network.                                                                                                                                                                                                                                                                         |
-| Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, each camera's radar is enabled, and the location values are valid. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) and [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). |
-| Hardware      | Each AI accelerator, from plugged in to used by Frigate, or a warning when there's none and Frigate detects on the CPU. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.                                                                                                                                                                                                                                                                                                                                              |
-| Device        | Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started.                                                                                                                                                                                                                                                                                         |
-| Date and time | Whether the clock was ever set, and whether it keeps time from the internet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Group         | What it checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Services      | Each Traffic Monitor service: running, stopped, starting, or running after restarts that followed failures. Frigate restarts itself when you save its config; that doesn't count as a failure.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Apps          | Frigate answers and gets frames from each camera. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network.                                                                                                                                                                                                                                                                                                                                                                             |
+| Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, each camera's radar is enabled, and the location values are valid. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) and [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). |
+| Hardware      | Each AI accelerator, from plugged in to used by Frigate, or a warning when there's none and Frigate detects on the CPU. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Device        | Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started.                                                                                                                                                                                                                                                                                                                                                                                             |
+| Date and time | Whether the clock was ever set, and whether it keeps time from the internet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### Fix a problem
 
@@ -766,7 +770,7 @@ A check that isn't passing offers one of these:
 
 - **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 - **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-- **A link** to the page that fixes it, such as **Set the date and time**, or **Diagnostics** on the Device page.
+- **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys).
 - **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md)).
 
 The control app can't restart itself. If it stops, see [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down).
@@ -774,6 +778,17 @@ The control app can't restart itself. If it stops, see [If the control app is do
 ## The Device page
 
 The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
+
+### Tokens and keys
+
+Administrators set the credentials the device uses for outside services in **Tokens and keys**. The section is closed when the page opens; select its heading to open it. The Status page's **Set the token** link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on is installed. Each is kept with the device's other secrets, not in `config.yml`.
+
+- A value is never shown back. The page says whether it's set and, for a token of 12 or more characters, its last four characters, so you can tell which one you entered. It never shows any of the license key.
+- **Save** stores what you typed in the box. The eye icon shows it while you type. A ThingsBoard token takes letters, digits, and `. _ ~ -`. A Plate Recognizer value takes printable ASCII characters without spaces. Both are up to 256 characters long.
+- **Remove** asks first, then empties the value. Without a ThingsBoard token the upload stops, and without the Plate Recognizer values plates aren't read.
+- Saving or removing restarts the app that uses the value, and the page waits for it. The ThingsBoard token and the license key restart one app and take about thirty seconds. The Plate Recognizer API token restarts the add-on and Node-RED, which takes about a minute. Traffic isn't counted while Node-RED restarts.
+
+An older device may have kept a token in `config.yml` or in the add-on's env file. The installer moves it to the device's secrets, so uploads and plate reads keep working, and the page shows it as set. A warning on the Status page's ThingsBoard upload check says when `config.yml` still holds a token key, which nothing reads, or when the upload is on without a token.
 
 ### Download diagnostics
 
@@ -811,7 +826,7 @@ A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A de
 Viewers see all three pages, but can't change anything:
 
 - **Status**: the same checks, without the Restart and Re-scan buttons.
-- **Device**: the card and the software versions, without **Diagnostics** and **Power**.
+- **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
 - **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
 
 ______________________________________________________________________
@@ -891,23 +906,23 @@ sudo podman ps                                  # running containers
 
 The settings and data live under `/opt/traffic-monitor/`.
 
-| Path                                    | Contents                                                                                                                                                                                            |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                                                                     |
-| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md).                                                     |
-| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it. |
-| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                                                                      |
-| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                                                                                 |
-| `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed.                                                                                                                                           |
+| Path                                    | Contents                                                                                                                                                                                                                    |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                                                                                             |
+| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md).                                                                             |
+| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it.                         |
+| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                                                                                              |
+| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                                                                                                         |
+| `plate-recognizer/plate-recognizer.env` | Plate Recognizer settings, if the add-on is installed. Its token and license key come from the device's secrets, which you set on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). |
 
 The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
 
-| Path                                 | Contents                                                                                                          |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
-| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                               |
-| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device                                                          |
-| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                       |
+| Path                                 | Contents                                                                                                                                                                                |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.                                                                       |
+| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                                                                                                     |
+| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys) |
+| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                                                                                             |
 
 ______________________________________________________________________
 
@@ -1081,13 +1096,14 @@ Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in th
 
 Uploads events, readings, and device telemetry to a [ThingsBoard](https://thingsboard.io/) server. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
 
-| Setting        | Type              | Default                         | Meaning                                                                         |
-| -------------- | ----------------- | ------------------------------- | ------------------------------------------------------------------------------- |
-| `enabled`      | `true` or `false` | `false`                         | Turn the upload on.                                                             |
-| `host`         | text              | `tb.server.com` (a placeholder) | The server's hostname, without protocol or port. Required when enabled.         |
-| `protocol`     | `http` or `https` | `https`                         | How to reach the server.                                                        |
-| `port`         | number            | none                            | Set it only if the server isn't on the standard port for the protocol.          |
-| `access_token` | text              | empty                           | The device's access token from ThingsBoard. This is the one secret in the file. |
+| Setting    | Type              | Default                         | Meaning                                                                                                                          |
+| ---------- | ----------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | `true` or `false` | `false`                         | Turn the upload on.                                                                                                              |
+| `host`     | text              | `tb.server.com` (a placeholder) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
+| `protocol` | `http` or `https` | `https`                         | How to reach the server.                                                                                                         |
+| `port`     | number            | none                            | Set it only if the server isn't on the standard port for the protocol.                                                           |
+
+The device's access token isn't in this file. Set it on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys); it's kept with the device's other secrets.
 
 ## deployment
 
@@ -1147,8 +1163,9 @@ Only needed with the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-o
 
 | Setting | Type | Default | Meaning                                                                 |
 | ------- | ---- | ------- | ----------------------------------------------------------------------- |
-| `token` | text | none    | Your Plate Recognizer API token. Plates aren't read until this is set.  |
 | `url`   | URL  | none    | The add-on's address inside the device, `http://plate-recognizer:8080`. |
+
+The API token and license key aren't in this file. Set them on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys); plates aren't read until they're set.
 
 ______________________________________________________________________
 
@@ -1181,6 +1198,8 @@ Otherwise the broker refuses Frigate's connection, and no events are recorded.
 | `TM_HOSTNAME`                                          | the device's hostname at install | Prefix for the file names of [data exports](https://docs.trafficmonitor.ai/dev/ui/database/index.md). Set by the installer.                                                                                                                                                                                                                                                       |
 | `NODE_RED_CREDENTIAL_SECRET`                           | `myNodeRED1234`                  | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it.                                                                                                                                            |
 | `TM_NR_TOKEN_KEY`                                      | generated on the device          | Lets the Node-RED editor check that the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) let you in. The installer sets it on every run; leave it. Without it, the editor refuses everyone.                                                                                                                                                          |
+| `TM_THINGSBOARD_ACCESS_TOKEN`                          | the token you set, or empty      | The device's access token for the [ThingsBoard upload](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#thingsboard). The installer fills it from the device's secrets on every run; change it on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), not here. Empty keeps the upload off.                               |
+| `TM_PLATE_RECOGNIZER_TOKEN`                            | the token you set, or empty      | The API token for the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. Filled and changed the same way. Empty keeps plate reads off.                                                                                                                                                                                              |
 | `TM_INTERNAL_TOKEN`                                    | generated on the device          | Lets the control app read Node-RED's state for the [Status page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-status-page). The installer sets it on every run; leave it. Without it, the Status page can't read Node-RED's state.                                                                                                                                   |
 | `TM_DATABASE_PATH_TMDB`                                | `/db/tmdb.sqlite`                | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path.                                                                                                                                                                                                     |
 | `TM_MQTT_BROKER_HOST`                                  | `localhost`                      | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).                                                                                                                                                                                    |
@@ -1276,11 +1295,11 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 - `/opt/traffic-monitor/node-red-tm/node-red-tm.env`
 - `/opt/traffic-monitor/frigate/config/config.yml`, which holds zones and masks drawn in Frigate
 - `/opt/traffic-monitor/frigate/frigate.env`
-- `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
+- `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed. Its token and license key come from the device's secrets.
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
 
-No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys the installer generated in `/etc/traffic-monitor/secrets/`.
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys in `/etc/traffic-monitor/secrets/`, including the ThingsBoard token and the Plate Recognizer token and license key you entered. The installer writes those values into `node-red-tm.env` and `plate-recognizer.env` on every run, so a fresh copy from `-f` has them too. The installer takes no secret value as an option: enter them on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys).
 
 ## Add an accelerator later
 
@@ -1597,7 +1616,7 @@ The login crosses the network unencrypted, and anyone who has it can read every 
 
 ## ThingsBoard
 
-The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) with the server's hostname and the device's access token. The device picks up the change when you save the file.
+The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) with the server's hostname, and enter the device's access token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.
 
 Once connected, the device sends over ThingsBoard's HTTP API:
 
@@ -1778,15 +1797,9 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
    bash traffic-monitor/script/tmsetup.sh -C plate_recognizer
    ```
 
-1. Put your credentials in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`:
+1. Enter your API token and license key on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys), under **Tokens and keys**. Saving each one restarts the add-on.
 
-   | Variable      | Value                                         |
-   | ------------- | --------------------------------------------- |
-   | `TOKEN`       | Your Plate Recognizer API token               |
-   | `LICENSE_KEY` | Your on-premise license key                   |
-   | `WORKERS`     | Parallel readers. `2` suits a Raspberry Pi 5. |
-
-1. Add the token and the add-on's address to `/opt/traffic-monitor/node-red-tm/config/config.yml`, and turn the add-on on for each camera whose events should be read:
+1. Add the add-on's address to `/opt/traffic-monitor/node-red-tm/config/config.yml`, and turn the add-on on for each camera whose events should be read:
 
    ```
    sensors:
@@ -1797,17 +1810,16 @@ You need a Plate Recognizer account with an on-premise (SDK) license, which give
 
    addons:
        plate_recognizer:
-           token: <your API token>
            url: http://plate-recognizer:8080
    ```
 
-1. Restart the add-on so it reads its env file, and again whenever you change that file:
-
-   ```
-   sudo systemctl restart plate-recognizer.service
-   ```
-
    Node-RED picks up `config.yml` as soon as you save it, so it needs no restart.
+
+1. Optionally, set `WORKERS` in `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env` to the number of plates to read in parallel. `2` suits a Raspberry Pi 5. After you change it, restart the add-on with `sudo systemctl restart plate-recognizer.service`.
+
+Upgrading a device that already reads plates
+
+The installer moves a token and license key you typed into the add-on's env file, and a token in `config.yml`, to the device's secrets. Plate reads carry on without you entering them again. The Device page shows them as set.
 
 Frigate's snapshots must stay on, which they are by default; the reader works from them.
 
@@ -2122,7 +2134,7 @@ It has three parts, all in the repository's [`tm-control/`](https://github.com/g
 
 It reads two things the installer writes, and keeps one database of its own:
 
-- `/etc/traffic-monitor/secrets/`: the session key, Frigate's proxy secret, the Node-RED editor's token key, and the token for Node-RED's internal status, each generated once on the device. `DEVICE_SECRETS` in `core/secrets.py` lists these four and go2rtc's RTSP password, the same five names as the role's `tmsetup_secret_names` (a test keeps them equal), and the diagnostics redact the value of each.
+- `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Three are entered by an administrator on the Device page: the ThingsBoard access token and the Plate Recognizer token and license key. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
 - `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, and the home page's colors.
 - `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, and an audit log. Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
 
@@ -2184,7 +2196,7 @@ tm-control/backend/tm_control/
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, system, time
+                 hardware, secrets, system, time
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
@@ -2196,7 +2208,14 @@ tm-control never runs as root and never uses sudo. polkit lets its user do two t
 - Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH.
 - Seven actions: `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp` for the Date and time page, and `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` for the Device page. The `-ignore-inhibit` variants aren't granted, so tm-control asks logind (`CanReboot`, `CanPowerOff`) first and answers 409 while an inhibitor, such as an update, holds the device up.
 
-A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. The one job so far, `system-password`, sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts.
+A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are two jobs:
+
+| Job               | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `system-password` | Sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts.                                                                                                                                                                                                                                                                                                                                                        |
+| `set-secret`      | Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the three names in its own table, and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's `KEY=` lines in `node-red-tm.env` or `plate-recognizer.env`, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again. |
+
+`SECRETS` in `tm-control/jobs/tm-job-set-secret` repeats the secrets' patterns (`VALUE_PATTERNS` in `core/secrets.py`) and restart units (`ENTERED` in `modules/secrets/router.py`), because the script imports nothing from tm-control; tests keep them the same.
 
 ## Status checks
 
@@ -2239,6 +2258,7 @@ Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, 
 - `vcgencmd get_throttled` needs the `video` group to open `/dev/vcio_gencmd`. Without it, the power check says to rerun the installer.
 - The HEVC decoder check compares `/dev/rpi-hevc-dec` with the media device whose `/sys/bus/media/devices/mediaN/model` names the decoder.
 - `timedatectl show` prints its times as local strings; tm-control reads the clock itself.
+- tm-control never writes the secrets directory; the `set-secret` job does.
 
 ## Run it on a laptop
 

@@ -2105,6 +2105,16 @@
 <td>Lets the Node-RED editor check that the device's <a href="../../use/control-app/">login</a> let you in. The installer sets it on every run; leave it. Without it, the editor refuses everyone.</td>
 </tr>
 <tr>
+<td><code>TM_THINGSBOARD_ACCESS_TOKEN</code></td>
+<td>the token you set, or empty</td>
+<td>The device's access token for the <a href="../../data-and-payloads/integrations/#thingsboard">ThingsBoard upload</a>. The installer fills it from the device's secrets on every run; change it on the <a href="../../use/device-health/#tokens-and-keys">Device page</a>, not here. Empty keeps the upload off.</td>
+</tr>
+<tr>
+<td><code>TM_PLATE_RECOGNIZER_TOKEN</code></td>
+<td>the token you set, or empty</td>
+<td>The API token for the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Filled and changed the same way. Empty keeps plate reads off.</td>
+</tr>
+<tr>
 <td><code>TM_INTERNAL_TOKEN</code></td>
 <td>generated on the device</td>
 <td>Lets the control app read Node-RED's state for the <a href="../../use/device-health/#the-status-page">Status page</a>. The installer sets it on every run; leave it. Without it, the Status page can't read Node-RED's state.</td>
