@@ -2199,7 +2199,7 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 </tr>
 <tr>
 <td>Move the device to a new site</td>
-<td>Follow <a href="../../setup-guide/">First-time setup</a> again: adjust the zones and update the location.</td>
+<td>Follow <a href="../../setup-guide/">First-time setup</a> again: adjust the zones, update the location, and set a new <code>survey_id</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -2223,7 +2223,7 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 </tr>
 <tr>
 <td><code>node-red-tm/db/tmdb.sqlite</code></td>
-<td>The database. <code>db/backup/</code> holds the copy saved before the most recent schema change.</td>
+<td>The database. <code>db/backup/</code> holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it.</td>
 </tr>
 <tr>
 <td><code>frigate/config/config.yml</code></td>

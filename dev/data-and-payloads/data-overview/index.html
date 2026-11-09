@@ -2223,11 +2223,13 @@
 <p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number.</p>
 <p>Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>. To keep them longer, raise the retention there, and treat the device as holding images of people.</p>
 <p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. The live view and the recordings are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting.</p>
+<p>With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see <a href="#deployment">deployment</a>). The exact location stays in <code>config.yml</code>, which isn't part of the database.</p>
 <p>The database stops being de-identified if you:</p>
 <ul>
 <li>Install the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Plate numbers go into the <code>plate_recognizer</code> table. Don't share a database from a device that has ever had the add-on on.</li>
 <li>Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.</li>
 <li>Write identifying details into operator comments.</li>
+<li>Keep the copy of the database that an upgrade leaves in <code>db/backup/</code>. It can hold the exact coordinates from before they were rounded (see <a href="#deployment">deployment</a>), so don't share it.</li>
 </ul>
 <p>For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A <a href="../../configuration/frigate-config/#masks">motion mask</a> only stops motion there from starting a detection; the area still shows in the live view and in recordings.</p>
 <p>Other software on the device, such as Frigate and the air quality sensor's service, keeps its own working data under its own retention rules.</p>
@@ -2280,7 +2282,7 @@
 <tr>
 <td><code>deployment</code></td>
 <td>Where each sensor was, and when</td>
-<td>Possibly: it holds the exact location, which is a home address if the device is mounted at a home</td>
+<td>No: the location is rounded to about 10 km (one decimal place) by default, and never finer than about 1 km</td>
 </tr>
 <tr>
 <td><code>comments</code></td>
@@ -2296,7 +2298,7 @@
 </table>
 <p>The <a href="../radar-payload/">radar</a> tables are described on their own page. The two tables below have no other page.</p>
 <h3 id="deployment">deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h3>
-<p>A row for each combination of sensor, location, and bearing the device has had, taken from the <code>deployment</code> settings in <a href="../../configuration/node-red-config/#deployment">config.yml</a>. Every other table's <code>deployment_id</code> column holds the <code>id</code> of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.</p>
+<p>A row for each combination of sensor, survey, and bearing the device has had, taken from the <code>deployment</code> settings in <a href="../../configuration/node-red-config/#deployment">config.yml</a>. A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Every other table's <code>deployment_id</code> column holds the <code>id</code> of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.</p>
 <table>
 <thead>
 <tr>
@@ -2322,19 +2324,29 @@
 <td>Unix time, in milliseconds, when it ended; empty for the current one</td>
 </tr>
 <tr>
+<td><code>survey_id</code></td>
+<td>TEXT</td>
+<td>The place: one id for each place the device has been used at, such as <code>3f9a1c2e-si</code>. It has no coordinates in it, so rows at the same place share it. Empty when no survey id was set.</td>
+</tr>
+<tr>
+<td><code>location_precision</code></td>
+<td>INTEGER</td>
+<td>The number of decimal places kept in <code>lat</code> and <code>lon</code>: <code>1</code> (about 10 km) or <code>2</code> (about 1 km). Empty when the row has no coordinates.</td>
+</tr>
+<tr>
 <td><code>lat</code></td>
 <td>REAL</td>
-<td>Latitude in decimal degrees</td>
+<td>Latitude in decimal degrees, rounded to <code>location_precision</code> decimal places; empty when no location was given or the precision is <code>none</code></td>
 </tr>
 <tr>
 <td><code>lon</code></td>
 <td>REAL</td>
-<td>Longitude in decimal degrees</td>
+<td>Longitude in decimal degrees, rounded the same way</td>
 </tr>
 <tr>
 <td><code>bearing</code></td>
 <td>TEXT</td>
-<td>Compass direction the sensor faces: <code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code></td>
+<td>Compass direction the sensor faces: <code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code>. Empty when no bearing was set; closed rows written by earlier releases can hold <code>null</code> or <code>undefined</code> instead.</td>
 </tr>
 <tr>
 <td><code>sensorType</code></td>
@@ -2349,10 +2361,11 @@
 <tr>
 <td><code>deviceName</code></td>
 <td>TEXT</td>
-<td>The Raspberry Pi's serial number (<code>TM_RPI_SN</code> in <a href="../../configuration/environment/">node-red-tm.env</a>). Rows written while the service starts, such as the first rows after an install, hold <code>undefined</code> instead.</td>
+<td>The Raspberry Pi's serial number (<code>TM_RPI_SN</code> in <a href="../../configuration/environment/">node-red-tm.env</a>). Rows written by earlier releases can hold <code>undefined</code> instead.</td>
 </tr>
 </tbody>
 </table>
+<p>The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to <code>db/backup/tmdb-v&lt;N&gt;-&lt;time&gt;.sqlite</code> in the <code>node-red-tm</code> directory, where N is the schema version the device was on before, and that copy holds the exact rows. A device upgrading from a release (0.7.1 or earlier) has <code>tmdb-v0-…</code>, and a device that already ran a development build with the first schema version has <code>tmdb-v1-…</code>. The copy is kept until the next schema change succeeds, and you can delete it sooner. The first upgrade from a release copies the whole database, so it needs free space of about 1.2 times the database's size. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.</p>
 <h3 id="comments">comments<a class="headerlink" href="#comments" title="Permanent link">&para;</a></h3>
 <p>Free-text notes an operator adds on the <a href="../../ui/database/">Data export</a> page, for example "threshold lowered to 0.4" or "road work on the north side", so that whoever analyzes the data later knows what changed and when.</p>
 <table>

@@ -572,19 +572,21 @@ Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, c
 
 ## 4. Record the location and sensors
 
-The device records its location with every event, so set it before you collect data. Connect over SSH and open the Traffic Monitor settings file:
+The device can record where it is, so set this before you collect data. The location is optional. If the device stays in one place and you never share its data, you can leave `survey_id` blank and keep the default `database_precision`. On a device upgraded from a release that recorded coordinates, leave `survey_id` blank unless you're moving the device; [deployment settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#deployment) explains why. When you move the device, set a new `survey_id` (and the new coordinates, if you record them), because changing only the coordinates doesn't start a new deployment. Connect over SSH and open the Traffic Monitor settings file:
 
 ```
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
 ```
 
-1. Under `deployment`, enter the latitude and longitude from any map service, and the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`.
+1. Under `deployment`, enter the compass direction the camera faces as `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Optionally enter the latitude and longitude from any map service. `survey_id` names the place without coordinates: use `<8 lower-case hex digits>-si`. Each place needs its own id. To make a fresh one, run `openssl rand -hex 4` and add `-si` to the output. The `3f9a1c2e-si` below is only an example; don't reuse it. `database_precision` is how much of the coordinates the database keeps: `none`, `1` (about 10 km, the default), or `2` (about 1 km). The exact coordinates stay in this file only.
 1. Under `sensors`, check that the entries match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`.
 
 ```
 deployment:
-    lat: 45.5225
-    lon: -122.6919
+    survey_id: 3f9a1c2e-si
+    database_precision: '1'
+    lat: 45.52252
+    lon: -122.69120
     bearing: n
 
 sensors:
@@ -883,20 +885,20 @@ sudo podman ps                                  # running containers
 | Plug in a radar                                   | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.                                                                           |
 | Add or change an AI accelerator                   | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#add-an-accelerator-later). |
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down).        |
-| Move the device to a new site                     | Follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) again: adjust the zones and update the location.                                                                          |
+| Move the device to a new site                     | Follow [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) again: adjust the zones, update the location, and set a new `survey_id`.                                                  |
 
 ## Where things are
 
 The settings and data live under `/opt/traffic-monitor/`.
 
-| Path                                    | Contents                                                                                                                                        |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                 |
-| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md). |
-| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change.                                                           |
-| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                  |
-| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                             |
-| `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed.                                                                                       |
+| Path                                    | Contents                                                                                                                                                                                            |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node-red-tm/config/config.yml`         | Traffic Monitor settings. See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md).                                                                     |
+| `node-red-tm/node-red-tm.env`           | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md).                                                     |
+| `node-red-tm/db/tmdb.sqlite`            | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it. |
+| `frigate/config/config.yml`             | Frigate's settings, including zones and masks.                                                                                                                                                      |
+| `frigate/storage/`                      | Frigate's snapshots and recordings.                                                                                                                                                                 |
+| `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed.                                                                                                                                           |
 
 The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
 
@@ -1073,7 +1075,6 @@ Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in th
 - A camera or radar without `enabled` is off.
 - A radar without `opt_api_commands_array` gets no extra commands.
 - ThingsBoard without `host` stays off.
-- A `deployment` without `lat` or `lon` isn't recorded, so leave the keys in place even when they're empty.
 - A camera whose `camera_radar` names a radar that isn't in the file records no events. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
 ## thingsboard
@@ -1090,15 +1091,23 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 
 ## deployment
 
-Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.
+Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data. When you move the device, set a new `survey_id`, and new `lat` and `lon` if you record a location, because changing only `lat` or `lon` doesn't start a new deployment. All of them are optional.
 
-| Setting   | Type                                          | Default | Meaning                                                    |
-| --------- | --------------------------------------------- | ------- | ---------------------------------------------------------- |
-| `lat`     | decimal degrees, such as `45.5225`            | empty   | Latitude. Four decimal places give address-level accuracy. |
-| `lon`     | decimal degrees, such as `-122.6919`          | empty   | Longitude.                                                 |
-| `bearing` | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw` | empty   | The compass direction the camera and radar face.           |
+| Setting              | Type                                                  | Default | Meaning                                                                                                                                                                                                                                  |
+| -------------------- | ----------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `survey_id`          | `<8 lower-case hex digits>-si`, such as `3f9a1c2e-si` | empty   | Names the place the device is used at, with no coordinates in it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error. |
+| `database_precision` | `none`, `1`, or `2`                                   | `'1'`   | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too.                                                                         |
+| `lat`                | decimal degrees, such as `45.52252`                   | empty   | Latitude, optional. Use five decimal places at most. The database stores it rounded to `database_precision`; this file keeps the exact value.                                                                                            |
+| `lon`                | decimal degrees, such as `-122.69120`                 | empty   | Longitude, optional, with the same rules as `lat`. Set both or neither: a row with only one gets neither.                                                                                                                                |
+| `bearing`            | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`         | empty   | The compass direction the camera and radar face. Optional; a value that isn't one of these is logged as an error.                                                                                                                        |
 
-A `deployment:` block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.
+A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing `lat` or `lon` on its own doesn't change the coordinates already stored.
+
+On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left `survey_id` in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor. To keep the current deployments while you set it, for example before you turn a camera, use the id the upgrade chose. The Node-RED editor at `http://<device>/nr/` shows it: in the **Context Data** sidebar, refresh **Global** and open `tm_status`, where `deployments` lists each current deployment with its `survey_id`. The `deployment` table in a [database download](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) has it too.
+
+Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.
+
+A `deployment:` block under a camera or radar can hold `bearing`, for a device whose cameras face different ways. A `lat` or `lon` there is no longer read, because the location belongs to the whole device.
 
 ## sensors.cameras
 
@@ -1111,7 +1120,7 @@ To rename a camera, rename it in Frigate's config and choose **Save & Restart**.
 | `enabled`          | `true` or `false`                  | `true` for `picam_h265`   | Record this camera's events. Frigate keeps running either way.                                                                    |
 | `camera_radar`     | a radar name from `sensors.radars` | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.    |
 | `plate_recognizer` | `true` or `false`                  | `false`                   | Send this camera's events to the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. |
-| `deployment`       | block                              | inherited                 | Per-camera `lat`, `lon`, and `bearing`.                                                                                           |
+| `deployment`       | block                              | inherited                 | Per-camera `bearing`.                                                                                                             |
 
 ## sensors.radars
 
@@ -1121,7 +1130,7 @@ One entry per radar. A radar's name is the name of the variable that holds its s
 | ------------------------ | ------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enabled`                | `true` or `false`        | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar.                                                                                                                                                                                                                                                |
 | `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'`       | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
-| `deployment`             | block                    | inherited                            | Per-radar `lat`, `lon`, and `bearing`.                                                                                                                                                                                                                                                                         |
+| `deployment`             | block                    | inherited                            | Per-radar `bearing`.                                                                                                                                                                                                                                                                                           |
 
 ## sensors.airquality_monitors
 
@@ -1383,11 +1392,14 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows the setting.
 
+With the default settings, the database holds only data that is safe to share. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 10 km by default and never finer than about 1 km (see [deployment](#deployment)). The exact location stays in `config.yml`, which isn't part of the database.
+
 The database stops being de-identified if you:
 
 - Install the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
 - Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.
 - Write identifying details into operator comments.
+- Keep the copy of the database that an upgrade leaves in `db/backup/`. It can hold the exact coordinates from before they were rounded (see [deployment](#deployment)), so don't share it.
 
 For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A [motion mask](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#masks) only stops motion there from starting a detection; the area still shows in the live view and in recordings.
 
@@ -1397,36 +1409,40 @@ Other software on the device, such as Frigate and the air quality sensor's servi
 
 Tables for sensors the device doesn't have stay empty.
 
-| Table                              | Contents                                                                                                                                                      | Could identify a person?                                                                          |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `events`                           | One row per object the camera detected, with direction and speed. See [Events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md). | Only through Frigate sub-labels or attributes, if you turn those on                               |
-| `radar_dov`                        | Detected object velocity readings from the radar                                                                                                              | No                                                                                                |
-| `radar_timed_speed_counts`         | Counts and average speeds the radar reports every 300 seconds                                                                                                 | No                                                                                                |
-| `radar_raw_speed_magnitude`        | Raw speed and magnitude readings, three per sample                                                                                                            | No                                                                                                |
-| `radar_raw_speed_magnitude_single` | The strongest reading of each sample                                                                                                                          | No                                                                                                |
-| `radar_oc_payload`                 | Per-object summaries from the radar, including estimated length                                                                                               | No                                                                                                |
-| `airquality`                       | Air quality and weather readings. See [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md).                    | No                                                                                                |
-| `deployment`                       | Where each sensor was, and when                                                                                                                               | Possibly: it holds the exact location, which is a home address if the device is mounted at a home |
-| `comments`                         | Notes typed on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page                                                                | Possibly, if the operator types names                                                             |
-| `plate_recognizer`                 | Plate reads from the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on                                          | Yes                                                                                               |
+| Table                              | Contents                                                                                                                                                      | Could identify a person?                                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `events`                           | One row per object the camera detected, with direction and speed. See [Events](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md). | Only through Frigate sub-labels or attributes, if you turn those on                                        |
+| `radar_dov`                        | Detected object velocity readings from the radar                                                                                                              | No                                                                                                         |
+| `radar_timed_speed_counts`         | Counts and average speeds the radar reports every 300 seconds                                                                                                 | No                                                                                                         |
+| `radar_raw_speed_magnitude`        | Raw speed and magnitude readings, three per sample                                                                                                            | No                                                                                                         |
+| `radar_raw_speed_magnitude_single` | The strongest reading of each sample                                                                                                                          | No                                                                                                         |
+| `radar_oc_payload`                 | Per-object summaries from the radar, including estimated length                                                                                               | No                                                                                                         |
+| `airquality`                       | Air quality and weather readings. See [Air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md).                    | No                                                                                                         |
+| `deployment`                       | Where each sensor was, and when                                                                                                                               | No: the location is rounded to about 10 km (one decimal place) by default, and never finer than about 1 km |
+| `comments`                         | Notes typed on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page                                                                | Possibly, if the operator types names                                                                      |
+| `plate_recognizer`                 | Plate reads from the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on                                          | Yes                                                                                                        |
 
 The [radar](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md) tables are described on their own page. The two tables below have no other page.
 
 ### deployment
 
-A row for each combination of sensor, location, and bearing the device has had, taken from the `deployment` settings in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#deployment). Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+A row for each combination of sensor, survey, and bearing the device has had, taken from the `deployment` settings in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#deployment). A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
 
-| Column               | Type              | Meaning                                                                                                                                                                                                                                               |
-| -------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                 | TEXT, primary key | The deployment id                                                                                                                                                                                                                                     |
-| `entryStartDateTime` | REAL              | Unix time, in milliseconds, when this deployment began                                                                                                                                                                                                |
-| `entryEndDateTime`   | REAL              | Unix time, in milliseconds, when it ended; empty for the current one                                                                                                                                                                                  |
-| `lat`                | REAL              | Latitude in decimal degrees                                                                                                                                                                                                                           |
-| `lon`                | REAL              | Longitude in decimal degrees                                                                                                                                                                                                                          |
-| `bearing`            | TEXT              | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`                                                                                                                                                                     |
-| `sensorType`         | TEXT              | `cameras`, `radars`, or `airquality_monitors`                                                                                                                                                                                                         |
-| `sensorName`         | TEXT              | The sensor's name in `config.yml`                                                                                                                                                                                                                     |
-| `deviceName`         | TEXT              | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md)). Rows written while the service starts, such as the first rows after an install, hold `undefined` instead. |
+| Column               | Type              | Meaning                                                                                                                                                                                                    |
+| -------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | TEXT, primary key | The deployment id                                                                                                                                                                                          |
+| `entryStartDateTime` | REAL              | Unix time, in milliseconds, when this deployment began                                                                                                                                                     |
+| `entryEndDateTime`   | REAL              | Unix time, in milliseconds, when it ended; empty for the current one                                                                                                                                       |
+| `survey_id`          | TEXT              | The place: one id for each place the device has been used at, such as `3f9a1c2e-si`. It has no coordinates in it, so rows at the same place share it. Empty when no survey id was set.                     |
+| `location_precision` | INTEGER           | The number of decimal places kept in `lat` and `lon`: `1` (about 10 km) or `2` (about 1 km). Empty when the row has no coordinates.                                                                        |
+| `lat`                | REAL              | Latitude in decimal degrees, rounded to `location_precision` decimal places; empty when no location was given or the precision is `none`                                                                   |
+| `lon`                | REAL              | Longitude in decimal degrees, rounded the same way                                                                                                                                                         |
+| `bearing`            | TEXT              | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Empty when no bearing was set; closed rows written by earlier releases can hold `null` or `undefined` instead.          |
+| `sensorType`         | TEXT              | `cameras`, `radars`, or `airquality_monitors`                                                                                                                                                              |
+| `sensorName`         | TEXT              | The sensor's name in `config.yml`                                                                                                                                                                          |
+| `deviceName`         | TEXT              | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](https://docs.trafficmonitor.ai/dev/configuration/environment/index.md)). Rows written by earlier releases can hold `undefined` instead. |
+
+The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to `db/backup/tmdb-v<N>-<time>.sqlite` in the `node-red-tm` directory, where N is the schema version the device was on before, and that copy holds the exact rows. A device upgrading from a release (0.7.1 or earlier) has `tmdb-v0-…`, and a device that already ran a development build with the first schema version has `tmdb-v1-…`. The copy is kept until the next schema change succeeds, and you can delete it sooner. The first upgrade from a release copies the whole database, so it needs free space of about 1.2 times the database's size. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.
 
 ### comments
 

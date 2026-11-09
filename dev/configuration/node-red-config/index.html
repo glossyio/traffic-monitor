@@ -2162,7 +2162,6 @@
 <li>A camera or radar without <code>enabled</code> is off.</li>
 <li>A radar without <code>opt_api_commands_array</code> gets no extra commands.</li>
 <li>ThingsBoard without <code>host</code> stays off.</li>
-<li>A <code>deployment</code> without <code>lat</code> or <code>lon</code> isn't recorded, so leave the keys in place even when they're empty.</li>
 <li>A camera whose <code>camera_radar</code> names a radar that isn't in the file records no events. On a device without a radar, remove <code>camera_radar</code> or keep the radar's entry with <code>enabled: false</code>.</li>
 </ul>
 <h2 id="thingsboard">thingsboard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
@@ -2210,7 +2209,7 @@
 </tbody>
 </table>
 <h2 id="deployment">deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
-<p>Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data and update them when you move the device.</p>
+<p>Where the device is. Every event and reading is stored with a deployment id that points at these values, so set them before you collect data. When you move the device, set a new <code>survey_id</code>, and new <code>lat</code> and <code>lon</code> if you record a location, because changing only <code>lat</code> or <code>lon</code> doesn't start a new deployment. All of them are optional.</p>
 <table>
 <thead>
 <tr>
@@ -2222,26 +2221,41 @@
 </thead>
 <tbody>
 <tr>
-<td><code>lat</code></td>
-<td>decimal degrees, such as <code>45.5225</code></td>
+<td><code>survey_id</code></td>
+<td><code>&lt;8 lower-case hex digits&gt;-si</code>, such as <code>3f9a1c2e-si</code></td>
 <td>empty</td>
-<td>Latitude. Four decimal places give address-level accuracy.</td>
+<td>Names the place the device is used at, with no coordinates in it. Each device makes its own ids, and two devices never need to share one. Upper case is folded to lower case; an id in any other form is ignored and logged as an error.</td>
+</tr>
+<tr>
+<td><code>database_precision</code></td>
+<td><code>none</code>, <code>1</code>, or <code>2</code></td>
+<td><code>'1'</code></td>
+<td>How many decimal places of <code>lat</code> and <code>lon</code> the database keeps: <code>none</code> stores no coordinates, <code>1</code> about 10 km, <code>2</code> about 1 km. A number without quotes works too.</td>
+</tr>
+<tr>
+<td><code>lat</code></td>
+<td>decimal degrees, such as <code>45.52252</code></td>
+<td>empty</td>
+<td>Latitude, optional. Use five decimal places at most. The database stores it rounded to <code>database_precision</code>; this file keeps the exact value.</td>
 </tr>
 <tr>
 <td><code>lon</code></td>
-<td>decimal degrees, such as <code>-122.6919</code></td>
+<td>decimal degrees, such as <code>-122.69120</code></td>
 <td>empty</td>
-<td>Longitude.</td>
+<td>Longitude, optional, with the same rules as <code>lat</code>. Set both or neither: a row with only one gets neither.</td>
 </tr>
 <tr>
 <td><code>bearing</code></td>
 <td><code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code></td>
 <td>empty</td>
-<td>The compass direction the camera and radar face.</td>
+<td>The compass direction the camera and radar face. Optional; a value that isn't one of these is logged as an error.</td>
 </tr>
 </tbody>
 </table>
-<p>A <code>deployment:</code> block with the same three settings under any sensor overrides these for that sensor, for a device whose cameras face different ways.</p>
+<p>A change of <code>survey_id</code>, or of a sensor's <code>bearing</code>, closes that sensor's current deployment and starts a new one. A change of <code>lat</code> or <code>lon</code> doesn't. While <code>survey_id</code> is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set <code>survey_id</code>, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id. Editing <code>lat</code> or <code>lon</code> on its own doesn't change the coordinates already stored.</p>
+<p>On a device upgraded from a release that recorded coordinates, the upgrade gave the current deployments a survey id but left <code>survey_id</code> in this file blank. Leave it blank unless the device moves: setting an id other than the one the upgrade chose starts a new deployment for every sensor. To keep the current deployments while you set it, for example before you turn a camera, use the id the upgrade chose. The Node-RED editor at <code>http://&lt;device&gt;/nr/</code> shows it: in the <strong>Context Data</strong> sidebar, refresh <strong>Global</strong> and open <code>tm_status</code>, where <code>deployments</code> lists each current deployment with its <code>survey_id</code>. The <code>deployment</code> table in a <a href="../../ui/database/#download-the-database">database download</a> has it too.</p>
+<p>Lowering <code>database_precision</code> rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer.</p>
+<p>A <code>deployment:</code> block under a camera or radar can hold <code>bearing</code>, for a device whose cameras face different ways. A <code>lat</code> or <code>lon</code> there is no longer read, because the location belongs to the whole device.</p>
 <h2 id="sensorscameras">sensors.cameras<a class="headerlink" href="#sensorscameras" title="Permanent link">&para;</a></h2>
 <p>One entry per camera, named exactly as the camera is named in Frigate. The default camera is <code>picam_h265</code>. Events from a camera that isn't listed here, or is disabled, are ignored.</p>
 <p>To rename a camera, rename it in Frigate's config and choose <strong>Save &amp; Restart</strong>. Frigate uses a new camera name only after it restarts, so <strong>Save</strong> alone changes nothing yet. Then rename its entry here to match. Until both names agree, that camera's events aren't recorded, and the Status page's <strong>Cameras in config.yml</strong> check shows an error.</p>
@@ -2277,7 +2291,7 @@
 <td><code>deployment</code></td>
 <td>block</td>
 <td>inherited</td>
-<td>Per-camera <code>lat</code>, <code>lon</code>, and <code>bearing</code>.</td>
+<td>Per-camera <code>bearing</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -2309,7 +2323,7 @@
 <td><code>deployment</code></td>
 <td>block</td>
 <td>inherited</td>
-<td>Per-radar <code>lat</code>, <code>lon</code>, and <code>bearing</code>.</td>
+<td>Per-radar <code>bearing</code>.</td>
 </tr>
 </tbody>
 </table>
