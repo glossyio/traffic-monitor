@@ -36,6 +36,11 @@ def normalize_survey_id(value) -> str | None:
     return text if SURVEY_ID.fullmatch(text) else None
 
 
+def is_coarser(precision: str, than: str) -> bool:
+    """Whether precision stores less of the location than `than`. Both must be one of PRECISIONS."""
+    return PRECISIONS.index(precision) < PRECISIONS.index(than)
+
+
 def normalize_precision(value) -> str | None:
     """`none`, `1` or `2` from what config.yml may hold (1, "1", "NONE", 2.0); None for anything else."""
     if isinstance(value, bool):

@@ -549,6 +549,37 @@ def test_a_reset_file_gets_back_the_precision_seen_with_the_survey(unit, chosen)
     assert reconcile.ensure(unit).followed == "none"
 
 
+@pytest.mark.parametrize(("kept", "typed"), [("2", "1"), ("2", "none"), ("1", "none")])
+def test_a_coarser_precision_typed_into_a_reset_file_stays(unit, kept, typed):
+    """The template only ever renders the finest value, so a coarser one is the operator's, and restoring the kept one
+    would be reconcile itself storing more than they chose."""
+    named = named_with_precision(unit, kept)
+    assert reconcile.ensure(unit).followed == "none"  # seen with the survey named
+    edit(unit, named, f"survey_id:\n    database_precision: '{typed}'\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["database_precision"] == typed
+
+
+def test_a_finer_precision_typed_into_a_reset_file_is_overwritten(unit):
+    named = named_with_precision(unit, "none")
+    assert reconcile.ensure(unit).followed == "none"
+    edit(unit, named, "survey_id:\n    database_precision: '1'\n")
+    reconcile.ensure(unit)
+    assert file_deployment(unit)["database_precision"] == "none"
+
+
+def test_the_next_reset_gives_back_a_coarser_precision_that_stood(unit):
+    named = named_with_precision(unit, "2")
+    place = Places(unit.state).in_use()
+    assert reconcile.ensure(unit).followed == "none"
+    edit(unit, named, "survey_id:\n    database_precision: 'none'\n")
+    reconcile.ensure(unit)  # the id is back, and 'none' stood
+    reconcile.ensure(unit)  # seen with the survey named
+    edit(unit, f"survey_id: {place.id}\n    database_precision: 'none'\n", "survey_id:\n    database_precision: '2'\n")
+    reconcile.ensure(unit)
+    assert file_deployment(unit)["database_precision"] == "none"
+
+
 def test_a_reset_file_gets_the_precision_back_when_it_also_gets_the_point_back(unit):
     named = named_with_precision(unit, "none")
     reconcile.ensure(unit)
