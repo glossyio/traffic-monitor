@@ -75,7 +75,7 @@ A model without a `.json` the device can read downloads as its model file alone,
 
 The **Object detection** section lists two sets of objects. Each is closed until you select its title, which counts the objects, and each has a **Copy** button:
 
-* **Objects the running model recognises** is what the running model can detect. The list says where it came from: Frigate when it answers, otherwise the model's `.json` or the installer's labels file. Objects the device also tracks are filled.
+* **Objects the running model recognises** is what the running model can detect. The list says where it came from: Frigate when it answers, otherwise the model's `.json` or the installer's labels file. Objects the device also tracks are filled. Frigate fills the gaps in a model's label map with entries named `unknown`, which the page leaves out, so its count can be lower than the label map's.
 * **Objects tracked on this device** is the objects Frigate is set to track, from its `objects:` `track` lists. Objects the running model doesn't recognise are amber, and the title counts them.
 
 Frigate tracks only the objects in both lists. To track more of what the model recognises, change the lists in Frigate's configuration editor; see [Tune object detection](../configuration/frigate-config.md). An object that's tracked but not recognised is also named under the two lists, so you see it while they're closed. The model can't detect it, so the device never counts it.

@@ -763,6 +763,31 @@ describe("the Detection page's actions", () => {
     expect(saved).toEqual(['bare.tflite'])
   })
 
+  it("downloads the file alone when the model's .json is on the device but can't be read", async () => {
+    const broken: ModelOut = {
+      ...BARE,
+      name: 'broken.tflite',
+      title: 'broken.tflite',
+      files: [
+        { name: 'broken.tflite', size: 2, sha256: BARE.files[0].sha256 },
+        { name: 'broken.tflite.json', size: 8, sha256: BARE.files[0].sha256 },
+      ],
+      problem: "The sidecar isn't a JSON object.",
+    }
+    const api = signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: { ...MODELS, models: [...MODELS.models, broken] },
+      'GET /api/v1/models/broken.tflite/file': fileResponse,
+    })
+    const saved = savedFiles()
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, 'broken.tflite'), 'Download')
+    expect(dialogText()).toContain('It has no .json the device can read')
+    await clickInDialog('Download')
+    expect(gets(api)).toEqual(['/api/v1/models/broken.tflite/file'])
+    expect(saved).toEqual(['broken.tflite'])
+  })
+
   it('downloads nothing when the operator cancels', async () => {
     const api = signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: WITH_BARE })
     const saved = savedFiles()
@@ -790,6 +815,38 @@ describe("the Detection page's actions", () => {
     await clickInDialog('Download')
     expect(gets(api)).toEqual([`/api/v1/models/${INSTALLER_NAME}/file`])
     expect(saved).toEqual([INSTALLER_NAME])
+  })
+
+  it("shows a refused download on the card it was asked from, a default's included", async () => {
+    signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: MODELS,
+      [`GET /api/v1/models/${INSTALLER_NAME}/file`]: apiError(500, 'internal', "The model's file can't be read."),
+    })
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, "The installer's model"), 'Download')
+    await clickInDialog('Download')
+    expect(item(wrapper, "The installer's model").find('.v-alert').text()).toContain("The model's file can't be read.")
+  })
+
+  it("shows a use of the default on the default's card only, when another default's file is on the device", async () => {
+    const builtIn: ModelOut = {
+      ...MODELS.models[0],
+      name: 'yolov6n.hef',
+      kind: 'frigate_default',
+      title: 'yolov6n.hef',
+      files: [{ name: 'yolov6n.hef', size: 2048, sha256: null }],
+    }
+    signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: { ...MODELS, detector: 'hailo8l', default: 'frigate_default', models: [builtIn, ...MODELS.models] },
+      'POST /api/v1/models/default/use': json(202, { name: 'default', applied: 'frigate', restarts: ['frigate.service'] }),
+    })
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, "Frigate's built-in model"), 'Use')
+    await clickInDialog('Use')
+    expect(item(wrapper, "Frigate's built-in model").text()).toContain('Frigate is restarting.')
+    expect(item(wrapper, "The installer's model").text()).not.toContain('Frigate is restarting.')
   })
 
   it('asks with a primary button, since a download changes nothing', async () => {

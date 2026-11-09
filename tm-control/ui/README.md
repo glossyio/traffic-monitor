@@ -557,10 +557,10 @@ buttons.
   the Device page's (`EnteredSecret.vue`) without its own heading and state line, which the title has.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
   Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
-  be). "Upload a model"
-  sits under the "Other models" heading, above the cards it adds to, visible with nothing to open. The device's default (the installer's model, or Frigate's
-  built-in model on a device without a Coral) has its own Use when Frigate runs something else, which puts it back
-  through `POST /models/default/use`; the defaults have no Delete. A Use that can't work is disabled, with the reason under it ("It's built for hailo8l, and this device
+  be). "Upload a model" sits under the "Other models" heading, above the cards it adds to, visible with nothing to
+  open. The device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has its
+  own Use when Frigate runs something else, which puts it back through `POST /models/default/use`; the defaults have
+  no Delete. A Use that can't work is disabled, with the reason under it ("It's built for hailo8l, and this device
   detects with edgetpu.").
 - "Upload a model" opens a dialog: one package, or a model file with or without its .json, sent the .json first. A
   model file sent alone opens a form for what Frigate needs to know about it, filled in with Frigate's documented

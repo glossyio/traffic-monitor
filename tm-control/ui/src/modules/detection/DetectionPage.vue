@@ -211,17 +211,19 @@ function missingFrom(block: Block) {
   return (state.value?.labels.tracked ?? []).filter((label) => !labels.includes(label))
 }
 
-// What ModelBlock needs of the page's state for one block. A default's use shows its result at DEFAULT, so the
-// result follows the block when it moves under "Model in use".
+// What ModelBlock needs of the page's state for one block. A use of the default shows its result at DEFAULT, on the
+// block of the default this device would get, so the result follows the block when it moves under "Model in use".
+// Any other result is at its block's key.
 function blockProps(block: Block) {
-  const at = isDefaultKind(block.kind) ? DEFAULT : block.key
+  const at = block.kind === state.value?.default ? DEFAULT : block.key
   const on = (action: string) => busy.value === `${action} ${action === 'use' ? at : block.key}`
+  const here = result.value?.at === at || result.value?.at === block.key
   return {
     block,
     admin: session.isAdmin,
     busy: on('use') ? 'use' : on('download') ? 'download' : on('delete') ? 'delete' : null,
     working: working.value,
-    result: result.value?.at === at ? result.value : null,
+    result: here ? result.value : null,
     useBlocked: block.model && !isDefaultKind(block.kind) ? useBlocked(block.model) : null,
     canUse: isDefaultKind(block.kind) ? canUseDefault(block) : !block.inUse,
     tracked: state.value?.labels.tracked ?? [],
