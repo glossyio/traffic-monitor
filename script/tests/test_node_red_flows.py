@@ -1,6 +1,7 @@
 """Check Node-RED's flows.json off-device."""
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -306,7 +307,8 @@ def test_init_config_defaults_loads_the_new_config_template():
 @needs_node
 def test_thingsboard_without_a_host_is_a_config_error():
     """Only this init config defaults error passes msg, so the catch records it in tm_status.config.errors. The lat,
-    lon, and bearing checks stay log-only: they flag the shipped empty defaults, and tm-control checks those keys."""
+    lon, and bearing checks stay log-only: they flag values that aren't coordinates or bearings, and tm-control checks
+    those keys."""
     flows = json.loads(FLOWS.read_text())
     defaults = named(flows, "init config defaults")
     assert INIT_DEFAULTS in named(flows, "catch: config.yml load errors")["scope"]
@@ -314,13 +316,109 @@ def test_thingsboard_without_a_host_is_a_config_error():
               "tmsetup_bearing": "n"}
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
     config["thingsboard"] = {"enabled": True, "access_token": "tb-token-1"}
-    config["deployment"] = {"lat": "north", "lon": "west", "bearing": ""}
+    config["deployment"] = {"lat": "north", "lon": "west", "bearing": "up"}
     [step] = run_functions([(defaults, {"payload": config})])["results"]
     # The key each message names ("Node-RED config.yml key thingsboard.host needs ..."), and whether msg came with it
     errors = {text.split()[3]: with_msg for level, text, with_msg in step["logged"] if level == "error"}
     assert errors == {"thingsboard.host": True, "deployment.lat": False, "deployment.lon": False,
                       "deployment.bearing": False}
     assert step["result"]["payload"]["thingsboard"]["enabled"] is False
+
+
+def new_device_config():
+    """The config.yml a new device gets, with its coordinates set to 0.0 and its bearing to n."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
+              "tmsetup_bearing": "n"}
+    return yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({"survey_id": "3f9a1c2e-si", "database_precision": "2"},
+     {"survey_id": "3f9a1c2e-si", "database_precision": "2"}, set()),
+    ({"survey_id": "3F9A1C2E-si"}, {"survey_id": "3f9a1c2e-si", "database_precision": "1"}, set()),
+    ({"survey_id": "home"}, {"survey_id": None, "database_precision": "1"}, {"deployment.survey_id"}),
+    ({"database_precision": "3"}, {"survey_id": None, "database_precision": "1"}, {"deployment.database_precision"}),
+    ({"database_precision": 1}, {"survey_id": None, "database_precision": "1"}, set()),
+    ({"database_precision": "none"}, {"survey_id": None, "database_precision": "none"}, set()),
+    ({"database_precision": None}, {"survey_id": None, "database_precision": "1"}, set()),
+], ids=["defaults", "both-set", "case-folded", "not-a-survey-id", "precision-3", "precision-yaml-number",
+        "precision-none", "precision-blank"])
+def test_init_config_defaults_survey_keys(given, expected, errors):
+    """survey_id is a valid id or null, and database_precision is none, 1, or 2; a bad value is logged and dropped."""
+    config = new_device_config()
+    config["deployment"].update(given)
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    deployment = step["result"]["payload"]["deployment"]
+    assert {key: deployment[key] for key in expected} == expected
+    assert {text.split()[3] for level, text, _ in step["logged"] if level == "error"} == errors
+
+
+@needs_node
+@pytest.mark.parametrize("coordinates", [
+    {"lat": "", "lon": ""},
+    {"lat": None, "lon": None},
+    {},
+    {"lat": "45.52252", "lon": "-122.69120"},
+], ids=["empty", "null", "missing", "quoted-number"])
+def test_init_config_defaults_allows_blank_coordinates(coordinates):
+    """Blank coordinates mean no location yet, and a number quoted in YAML is still a number; neither is an error."""
+    config = new_device_config()
+    config["deployment"] = {"bearing": "", **coordinates}
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    assert [text for level, text, _ in step["logged"] if level == "error"] == []
+    deployment = step["result"]["payload"]["deployment"]
+    expected = {key: coordinates.get(key) or "" for key in ("lat", "lon")}
+    assert {key: deployment[key] for key in ("lat", "lon")} == expected
+
+
+MISSING = object()
+
+
+@needs_node
+@pytest.mark.parametrize("top, sensor, expected_top, expected_sensor, errors", [
+    ("", None, "", "", []),
+    (None, None, "", "", []),
+    (MISSING, None, "", "", []),
+    ("NE", None, "ne", "ne", []),
+    ("up", None, "up", "up", ["top-level"]),
+    ("n", {"bearing": ""}, "n", "", []),
+    ("n", {"bearing": None}, "n", "", []),
+    ("n", {}, "n", "n", []),
+    (None, {}, "", "", []),
+    (None, {"lat": 0.0}, "", "", []),
+    (None, {"bearing": None}, "", "", []),
+    ("n", {"bearing": "up"}, "n", "", ["sensor"]),
+], ids=["top-empty", "top-null", "top-missing", "top-upper-case", "top-invalid", "sensor-empty", "sensor-null",
+        "sensor-block-empty", "top-null-sensor-block-empty", "top-null-sensor-block", "both-null", "sensor-invalid"])
+def test_init_config_defaults_allows_a_blank_bearing(top, sensor, expected_top, expected_sensor, errors):
+    """A blank bearing means none yet, at the top level and per sensor; only a bearing that isn't one is an error."""
+    config = new_device_config()
+    if top is MISSING:
+        del config["deployment"]["bearing"]
+    else:
+        config["deployment"]["bearing"] = top
+    camera = config["sensors"]["cameras"]["picam_h265"]
+    if sensor is not None:
+        camera["deployment"] = sensor
+    defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
+    [step] = run_functions([(defaults, {"payload": config})])["results"]
+    logged = [text for level, text, _ in step["logged"] if level == "error"]
+    assert ["top-level" if "top-level deployment.bearing" in text else "sensor" if text.startswith("Invalid bearing")
+            else text for text in logged] == errors
+    payload = step["result"]["payload"]
+    assert payload["deployment"]["bearing"] == expected_top
+    assert payload["sensors"]["cameras"]["picam_h265"]["deployment"]["bearing"] == expected_sensor
+
+
+def test_config_template_has_the_survey_keys():
+    """A new device starts with no survey and one decimal place stored; the Location page sets survey_id later."""
+    deployment = new_device_config()["deployment"]
+    assert deployment["database_precision"] == "1"
+    assert "survey_id" in deployment and deployment["survey_id"] is None
 
 
 def test_schema_version_is_recorded():
@@ -436,7 +534,7 @@ def test_radars_report_config_port_and_last_reading():
     def port(serial_id, text):
         return (port_status, {"status": {"text": text, "source": {"id": serial_id, "type": "serial in"}}})
 
-    config = {"deployment": {"lat": 0.0, "lon": 0.0, "bearing": "n"},
+    config = {"deployment": {"survey_id": None, "database_precision": "1", "lat": 0.0, "lon": 0.0, "bearing": "n"},
               "sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True},
                                      "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
     out = run_functions([
@@ -449,7 +547,7 @@ def test_radars_report_config_port_and_last_reading():
         status_step(),
     ], context={"config": config})
     body = out["results"][-1]["result"]["payload"]
-    assert body["deployment"] == {"lat": 0.0, "lon": 0.0, "bearing": "n"}
+    assert body["deployment"] == {"survey_id": None, "database_precision": "1"}
     radars = body["radars"]
     assert sorted(radars) == RADAR_NAMES
     assert radars["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
@@ -520,10 +618,629 @@ def test_a_radar_removed_from_the_config_is_no_longer_enabled():
     flows = json.loads(FLOWS.read_text())
     loaded = named(flows, "tm-internal: config loaded")
     before = {"sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True}}}}
-    after = {"deployment": {"lat": None, "lon": None, "bearing": ""}, "sensors": {"radars": {}}}
+    after = {"deployment": {"survey_id": None, "database_precision": "none", "lat": None, "lon": None, "bearing": ""},
+             "sensors": {"radars": {}}}
     out = run_functions([(loaded, {}), status_step()], context={"config": before})
     assert out["results"][1]["result"]["payload"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
     out = run_functions([(loaded, {}), status_step()], context={**out["global"], "config": after})
     body = out["results"][1]["result"]["payload"]
     assert body["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is False
-    assert body["deployment"] == {"lat": None, "lon": None, "bearing": None}
+    assert body["deployment"] == {"survey_id": None, "database_precision": "none"}
+
+
+@needs_node
+def test_config_loaded_records_the_survey_not_the_coordinates():
+    """tm-control's status page shows which survey the device records and how finely, never the exact location."""
+    flows = json.loads(FLOWS.read_text())
+    loaded = named(flows, "tm-internal: config loaded")
+    config = {"deployment": {"survey_id": "3f9a1c2e-si", "database_precision": "1", "lat": 45.52252,
+                             "lon": -122.69120, "bearing": "n"},
+              "sensors": {"radars": {}}}
+    out = run_functions([(loaded, {}), status_step()], context={"config": config})
+    assert out["global"]["tm_status"]["deployment"] == {"survey_id": "3f9a1c2e-si", "database_precision": "1"}
+    assert out["results"][1]["result"]["payload"]["deployment"] == {"survey_id": "3f9a1c2e-si",
+                                                                    "database_precision": "1"}
+
+
+def test_no_init_config_node_puts_coordinates_in_tm_status():
+    """tm_status.deployment holds the survey only. The engine's tm_status.deployments (the rounded tmdb rows) may
+    hold coordinates."""
+    flows = json.loads(FLOWS.read_text())
+    tab = tab_id(flows, "init-config")
+    offenders = [node["name"] for node in flows if node["type"] == "function" and node["z"] == tab
+                 and re.search(r"tm_status\.deployment\b", node["func"]) and "lat" in node["func"]]
+    assert offenders == []
+
+
+def test_deployment_attribute_has_no_top_level_coordinates():
+    """The deployments client attribute names the survey at the top level; only the per-sensor rows, which tmdb
+    stores rounded, carry coordinates."""
+    template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
+    for key in ("lat", "lon", "bearing"):
+        assert f"global.config.deployment.{key}" not in template
+    top = template[template.index('"deploymentTopLevel"'):]
+    assert '"survey_id": "{{global.config.deployment.survey_id}}"' in top
+    assert '"database_precision": "{{global.config.deployment.database_precision}}"' in top
+
+
+# The deployment engine on init-config: after each config load it compares every enabled sensor's open deployment
+# row with config.yml's survey id and that sensor's bearing, and writes the rows that start, end, or change.
+
+ENGINE_SURVEY = "3f9a1c2e-si"
+ENGINE_PLACE = {"survey_id": ENGINE_SURVEY, "database_precision": "1", "lat": 45.52252, "lon": -122.69120}
+ENGINE_SQL = {
+    "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
+    "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, "
+                         "deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, $bearing, "
+                         "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
+    "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
+                          "location_precision = $location_precision, bearing = $bearing WHERE id = $id",
+}
+OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, "
+                 "location_precision FROM deployment WHERE entryEndDateTime IS NULL "
+                 "ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "bearing", "sensorType", "sensorName",
+            "deviceName", "survey_id", "location_precision"}
+
+
+def engine_sensors(camera_deployment=None):
+    camera_deployment = {"bearing": "n"} if camera_deployment is None else camera_deployment
+    return {"cameras": {"picam_h265": {"enabled": True, "deployment": camera_deployment}},
+            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"bearing": "s"}},
+                       "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}
+
+
+def open_row(sensor_type, sensor_name, bearing, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
+             started=10, row_id=None):
+    """An open deployment row as the open-rows SELECT returns it."""
+    return {"id": row_id or f"{started}-{sensor_name}-d",
+            "entryStartDateTime": started, "lat": lat, "lon": lon, "bearing": bearing, "sensorType": sensor_type,
+            "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
+            "location_precision": precision}
+
+
+def camera_row(**kwargs):
+    return open_row("cameras", "picam_h265", kwargs.pop("bearing", "n"), **kwargs)
+
+
+def radar_row(**kwargs):
+    return open_row("radars", "TM_RADAR_SERIAL_PORT_00", kwargs.pop("bearing", "s"), **kwargs)
+
+
+class EngineRun:
+    """One run of the engine: its four outputs as lists of messages, and the global context and log after it."""
+
+    def __init__(self, out):
+        [step] = out["results"]
+        self.close, self.insert, self.rewrite, self.result = (
+            [] if output is None else output if isinstance(output, list) else [output] for output in step["result"])
+        self.global_context = out["global"]
+        self.logged = step["logged"]
+
+    @property
+    def payload(self):
+        [message] = self.result
+        return message["payload"]
+
+    def written(self):
+        return self.close + self.insert + self.rewrite
+
+
+def engine(sensors, open_rows, deployment, env=None):
+    flows = json.loads(FLOWS.read_text())
+    out = run_functions([(named(flows, "deployment engine"), {"sensors": sensors, "sqlActiveDeployments": open_rows})],
+                        env={"TM_RPI_SN": "serial-1", **(env or {})},
+                        context={"config": {"deployment": deployment, "sensors": sensors}})
+    return EngineRun(out)
+
+
+def deployment_ids(run):
+    sensors = run.global_context["config"]["sensors"]
+    return {name: sensor.get("deployment", {}).get("id") for kind in sensors.values() for name, sensor in kind.items()}
+
+
+@needs_node
+def test_engine_inserts_a_row_per_enabled_sensor_on_a_fresh_database():
+    run = engine(engine_sensors(), [], ENGINE_PLACE)
+    assert run.close == [] and run.rewrite == []
+    params = {message["params"]["$sensorName"]: message["params"] for message in run.insert}
+    assert set(params) == {"picam_h265", "TM_RADAR_SERIAL_PORT_00"}
+    for name, bearing, sensor_type in [("picam_h265", "n", "cameras"), ("TM_RADAR_SERIAL_PORT_00", "s", "radars")]:
+        row = params[name]
+        assert {key: row[key] for key in ("$survey_id", "$lat", "$lon", "$location_precision", "$deviceName",
+                                          "$bearing", "$sensorType")} == {
+            "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+            "$deviceName": "serial-1", "$bearing": bearing, "$sensorType": sensor_type}
+        assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-d", row["$id"])
+        assert isinstance(row["$started"], int)
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(set(row) == ROW_KEYS for row in current)
+    assert run.payload["updatedDeployment"] == []
+    assert deployment_ids(run) == {"picam_h265": params["picam_h265"]["$id"],
+                                   "TM_RADAR_SERIAL_PORT_00": params["TM_RADAR_SERIAL_PORT_00"]["$id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+    assert run.global_context["tm_status"]["deployments"] == current
+
+
+@needs_node
+def test_engine_leaves_matching_open_rows_alone():
+    rows = [camera_row(), radar_row()]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+    assert run.payload["currentDeployment"] == [{**row, "entryEndDateTime": None} for row in rows]
+    assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+
+
+@needs_node
+def test_engine_adopts_an_open_row_without_a_survey():
+    camera = camera_row(survey_id=None, lat=None, lon=None, precision=None)
+    run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [message["params"] for message in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": "n"}]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
+    assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
+        ENGINE_SURVEY, 45.5, -122.7, 1)
+
+
+@needs_node
+def test_engine_starts_a_deployment_on_a_new_survey_or_bearing():
+    rows = [camera_row(survey_id="aaaaaaaa-si"), radar_row(bearing="e")]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert {message["params"]["$id"] for message in run.close} == {row["id"] for row in rows}
+    assert all(isinstance(message["params"]["$ended"], int) for message in run.close)
+    assert {(m["params"]["$sensorName"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.insert} == {
+        ("picam_h265", ENGINE_SURVEY, "n"), ("TM_RADAR_SERIAL_PORT_00", ENGINE_SURVEY, "s")}
+    assert run.rewrite == []
+    updated = run.payload["updatedDeployment"]
+    assert {row["id"] for row in updated} == {row["id"] for row in rows}
+    ended = {message["params"]["$id"]: message["params"]["$ended"] for message in run.close}
+    assert all(row["entryEndDateTime"] == ended[row["id"]] for row in updated)
+    assert {row["id"] for row in run.payload["currentDeployment"]} == {m["params"]["$id"] for m in run.insert}
+
+
+@needs_node
+def test_engine_adopts_only_when_the_bearing_matches():
+    camera = camera_row(survey_id=None, bearing="w")
+    run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    assert [message["params"]["$sensorName"] for message in run.insert] == ["picam_h265"]
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_never_compares_coordinates():
+    run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "lat": 45.6})
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_ignores_coordinates_under_a_sensor():
+    sensors = engine_sensors({"bearing": "n", "lat": 40.0, "lon": -100.0})
+    run = engine(sensors, [], ENGINE_PLACE)
+    [camera] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "picam_h265"]
+    assert (camera["$lat"], camera["$lon"]) == (45.5, -122.7)
+
+
+@needs_node
+def test_engine_lowers_precision_in_place_and_ignores_a_raise():
+    rows = [camera_row(lat=45.52, lon=-122.69, precision=2), radar_row(lat=45.52, lon=-122.69, precision=2)]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
+        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
+    run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
+    """A lower precision re-rounds the row's own lat and lon and keeps its survey id, whatever config.yml says now."""
+    camera = camera_row(lat=45.52, lon=-122.69, precision=2)
+    place = {**ENGINE_PLACE, "survey_id": survey_id, "lat": 47.0, "lon": -120.0}
+    run = engine(engine_sensors(), [camera, radar_row()], place)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": "n"}]
+    rows = [camera_row(), radar_row()]
+    run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
+    assert run.close == [] and run.insert == []
+    assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
+        ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
+          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
+
+
+@needs_node
+@pytest.mark.parametrize("place", [
+    {**ENGINE_PLACE, "database_precision": "none"},
+    {**ENGINE_PLACE, "lat": ""},
+    {**ENGINE_PLACE, "lon": ""},
+    {**ENGINE_PLACE, "lat": None, "lon": None},
+], ids=["precision-none", "lat-blank", "lon-blank", "both-null"])
+def test_engine_stores_null_for_none_or_missing_coordinates(place):
+    """Review Focus 4: a half-blank location stores no coordinates at all, and no precision."""
+    run = engine(engine_sensors(), [], place)
+    assert len(run.insert) == 2
+    assert all((m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) == (None, None, None)
+               for m in run.insert)
+    assert [text for level, text, _ in run.logged if level == "error"] == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_creates_missing_rows_and_closes_nothing():
+    camera = camera_row(survey_id="aaaaaaaa-si", bearing="w")
+    run = engine(engine_sensors(), [camera], {**ENGINE_PLACE, "survey_id": None})
+    assert run.close == [] and run.rewrite == []
+    assert [(m["params"]["$sensorName"], m["params"]["$survey_id"]) for m in run.insert] == [
+        ("TM_RADAR_SERIAL_PORT_00", None)]
+    assert camera["id"] in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+def test_engine_rounds_string_coordinates():
+    """Review Focus 1: a coordinate quoted in YAML arrives as a string and is stored as the rounded number."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": "45.52252", "lon": "-122.69120"})
+    assert {(m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) for m in run.insert} == {
+        (45.5, -122.7, 1)}
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": "north"})
+    assert {(m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"]) for m in run.insert} == {
+        (None, None, None)}
+    errors = [text for level, text, _ in run.logged if level == "error"]
+    assert len(errors) == 1 and "deployment.lat" in errors[0]
+
+
+@needs_node
+def test_engine_rounds_halves_away_from_zero():
+    """As SQLite's ROUND does in the migration; JavaScript's Math.round would give -122.2."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "lat": 45.25, "lon": -122.25})
+    assert {(m["params"]["$lat"], m["params"]["$lon"]) for m in run.insert} == {(45.3, -122.3)}
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+def test_engine_closes_duplicate_open_rows(survey_id):
+    """Review Focus 2: two open rows for one sensor (left by the old engine) leave one, the newest, open."""
+    older, newer = camera_row(started=10, row_id="10-00000001-d"), camera_row(started=20, row_id="20-00000002-d")
+    run = engine(engine_sensors(), [older, newer, radar_row()], {**ENGINE_PLACE, "survey_id": survey_id})
+    assert [message["params"]["$id"] for message in run.close] == [older["id"]]
+    assert run.insert == [] and run.rewrite == []
+    assert newer["id"] in {row["id"] for row in run.payload["currentDeployment"]}
+    assert older["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+    assert [row["id"] for row in run.payload["updatedDeployment"]] == [older["id"]]
+
+
+@needs_node
+def test_engine_skips_disabled_sensors():
+    disabled = open_row("radars", "TM_RADAR_SERIAL_PORT_01", "e", survey_id="aaaaaaaa-si")
+    run = engine(engine_sensors(), [camera_row(), radar_row(), disabled], ENGINE_PLACE)
+    assert run.written() == []
+    assert disabled["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+@pytest.mark.parametrize("row_bearing, sensor_bearing",
+                         [(None, ""), ("", ""), ("N", "n"), ("n", "N"), ("null", ""), ("undefined", None),
+                          (" NULL ", ""), ("Undefined", "null")],
+                         ids=["null-row", "blank", "upper-case-row", "upper-case-config", "null-string-row",
+                              "undefined-string-row", "padded-upper-case-null-row", "null-string-config"])
+def test_engine_treats_blank_and_upper_case_bearings_as_equal(row_bearing, sensor_bearing):
+    """Releases 0.6.0 to 0.7.1 stored a blank bearing as the string 'null' (or 'undefined')."""
+    rows = [camera_row(bearing=row_bearing), radar_row()]
+    run = engine(engine_sensors({"bearing": sensor_bearing}), rows, ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    legacy = (row_bearing or "").strip().lower() in ("null", "undefined")  # stored as '' once; see the next test
+    assert [m["params"]["$id"] for m in run.rewrite] == ([rows[0]["id"]] if legacy else [])
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
+@pytest.mark.parametrize("row_bearing", ["null", "undefined", " NULL "])
+def test_engine_stores_a_legacy_blank_bearing_as_blank(survey_id, row_bearing):
+    """An open row keeps its deployment, and its 'null' or 'undefined' bearing is written back as ''."""
+    camera = camera_row(bearing=row_bearing)
+    run = engine(engine_sensors({"bearing": ""}), [camera, radar_row()], {**ENGINE_PLACE, "survey_id": survey_id})
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$bearing": ""}]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
+    assert current["bearing"] == ""
+    again = engine(engine_sensors({"bearing": ""}), [{**camera, "bearing": ""}, radar_row()],
+                   {**ENGINE_PLACE, "survey_id": survey_id})
+    assert again.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_bearing", ["null", "undefined"])
+def test_engine_adopts_a_row_with_a_legacy_blank_bearing(row_bearing):
+    rows = [camera_row(bearing=row_bearing, survey_id=None), radar_row()]
+    run = engine(engine_sensors({"bearing": ""}), rows, ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [(m["params"]["$id"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.rewrite] == [
+        (rows[0]["id"], ENGINE_SURVEY, "")]
+
+
+def test_engine_wiring():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    engine_node = named(flows, "deployment engine")
+    assert engine_node["z"] == tab_id(flows, "init-config")
+    assert engine_node["outputs"] == 4
+    assert "node.send" not in engine_node["func"] and "node.done" not in engine_node["func"]
+    for output, name in zip(engine_node["wires"][:3], ENGINE_SQL):
+        [target] = [by_id[node_id] for node_id in output]
+        assert (target["type"], target["name"], target["sqlquery"], target["mydb"]) == ("sqlite", name, "prepared",
+                                                                                         TMDB)
+        assert target["z"] == engine_node["z"]
+        assert " ".join(target["sql"].split()).rstrip(";") == ENGINE_SQL[name]
+    assert engine_node["wires"][3] == ["05c37560dd57ea90"]
+    assert "24efdc7f1231f7f0" not in by_id and "bc398ad5de3bd112" not in by_id
+    assert " ".join(by_id["696c3a7b0b83f7b5"]["template"].split()) == OPEN_ROWS_SQL
+    assert by_id["6d2f607b324415b4"]["wires"] == [[engine_node["id"]]]
+    group = by_id[engine_node["g"]]
+    assert set(group["nodes"]) >= {target_id for output in engine_node["wires"] for target_id in output}
+    assert not {"24efdc7f1231f7f0", "bc398ad5de3bd112"} & set(group["nodes"])
+
+
+# The per-survey endpoints tm-control calls on loopback, each behind its own copy of the status endpoint's token check.
+
+STATUS_TOKEN_CHECK = "cbc268130cc14c58"
+TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
+                     "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision"}
+TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
+                       "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
+                       "/tm-internal/deployments/precision": "post"}
+SURVEY_SQL = {
+    "/tm-internal/deployments": ("read survey deployments",
+                                 "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
+                                 "sensorName, survey_id, location_precision FROM deployment WHERE survey_id = "
+                                 "$survey_id ORDER BY entryStartDateTime"),
+    "/tm-internal/surveys/usage": ("read survey usage",
+                                   "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
+                                   "AS last_end, SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS "
+                                   "deployment_count FROM deployment WHERE survey_id IS NOT NULL GROUP BY survey_id"),
+    "/tm-internal/surveys/:id/events": ("read survey events",
+                                        "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, "
+                                        "MAX(start_time) AS last_event FROM events WHERE deployment_id IN (SELECT id "
+                                        "FROM deployment WHERE survey_id = $survey_id)"),
+}
+PRECISION_SQL = {
+    "rewrite precision": "UPDATE deployment SET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p "
+                         "WHERE location_precision > $p",
+    "rewrite precision to none": "UPDATE deployment SET lat = NULL, lon = NULL, location_precision = NULL "
+                                 "WHERE lat IS NOT NULL OR lon IS NOT NULL",
+}
+VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
+              "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
+              "/tm-internal/deployments/precision": "tm-internal: validate precision"}
+
+
+def tm_internal_endpoints():
+    flows = json.loads(FLOWS.read_text())
+    endpoints = {node["url"]: node for node in flows
+                 if node["type"] == "http in" and node.get("url", "").startswith("/tm-internal/")}
+    return flows, {node["id"]: node for node in flows}, endpoints
+
+
+def reachable(by_id, start_ids):
+    """Every node a message can reach from start_ids, following wires."""
+    seen, todo = set(), list(start_ids)
+    while todo:
+        node_id = todo.pop()
+        if node_id not in seen:
+            seen.add(node_id)
+            todo.extend(target for output in by_id[node_id].get("wires", []) for target in output)
+    return [by_id[node_id] for node_id in seen]
+
+
+def sql_text(node):
+    return " ".join(node["sql"].split()).rstrip(";")
+
+
+def test_every_tm_internal_endpoint_checks_the_token_first():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    assert set(endpoints) == TM_INTERNAL_PATHS
+    for url, endpoint in endpoints.items():
+        assert endpoint["method"] == TM_INTERNAL_METHODS[url], url
+        assert endpoint["z"] == tab_id(flows, "init-config"), url
+        [[check_id]] = endpoint["wires"]
+        check = by_id[check_id]
+        assert check["type"] == "function" and check["outputs"] == 2, url
+        assert check["name"] == "tm-internal: check token", url
+        assert check["func"] == by_id[STATUS_TOKEN_CHECK]["func"], url
+        refused = reachable(by_id, check["wires"][1])
+        assert [(node["type"], str(node["statusCode"])) for node in refused] == [("http response", "401")], url
+
+
+def test_refused_requests_reach_no_sql():
+    """Review Focus 5: a request without the token, or with a malformed value, answers before any sqlite node."""
+    _, by_id, endpoints = tm_internal_endpoints()
+    for url in TM_INTERNAL_PATHS - {"/tm-internal/status"}:
+        [[check_id]] = endpoints[url]["wires"]
+        refusals = list(by_id[check_id]["wires"][1])
+        if url in VALIDATORS:
+            [validate_id] = by_id[check_id]["wires"][0]
+            validator = by_id[validate_id]
+            assert (validator["type"], validator["name"], validator["outputs"]) == ("function", VALIDATORS[url], 2)
+            refusals += validator["wires"][1]
+            bad = reachable(by_id, validator["wires"][1])
+            assert [(node["type"], str(node["statusCode"])) for node in bad] == [("http response", "400")], url
+        assert [node["type"] for node in reachable(by_id, refusals) if node["type"] != "http response"] == [], url
+
+
+@pytest.mark.parametrize("url", sorted(SURVEY_SQL))
+def test_survey_reads_run_one_prepared_statement(url):
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints[url]["wires"]
+    [[before_id], _] = by_id[check_id]["wires"]
+    [[query_id]] = by_id[before_id]["wires"][:1]
+    query = by_id[query_id]
+    name, sql = SURVEY_SQL[url]
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
+    assert sql_text(query) == sql
+    [[shape_id]] = query["wires"]
+    [[answer_id]] = by_id[shape_id]["wires"]
+    assert by_id[shape_id]["type"] == "function"
+    assert (by_id[answer_id]["type"], by_id[answer_id]["statusCode"]) == ("http response", "")
+
+
+def test_precision_rewrite_uses_two_statements():
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints["/tm-internal/deployments/precision"]["wires"]
+    [[validate_id], _] = by_id[check_id]["wires"]
+    [[switch_id]] = by_id[validate_id]["wires"][:1]
+    switch = by_id[switch_id]
+    assert (switch["type"], switch["property"], switch["propertyType"]) == ("switch", "precision_none", "msg")
+    assert [rule["t"] for rule in switch["rules"]] == ["false", "true"]
+    queries = [by_id[target] for [target] in switch["wires"]]
+    assert [node["name"] for node in queries] == list(PRECISION_SQL)
+    shapes = set()
+    for query in queries:
+        assert (query["type"], query["sqlquery"], query["mydb"]) == ("sqlite", "prepared", TMDB)
+        assert sql_text(query) == PRECISION_SQL[query["name"]]
+        [[shape_id]] = query["wires"]
+        shapes.add(shape_id)
+    [shape_id] = shapes
+    [[answer_id]] = by_id[shape_id]["wires"]
+    assert (by_id[answer_id]["type"], by_id[answer_id]["statusCode"]) == ("http response", "")
+
+
+def test_survey_endpoints_sit_with_the_status_endpoint():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    status_group = by_id[endpoints["/tm-internal/status"]["g"]]
+    new = reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS - {"/tm-internal/status"}])
+    groups = {node["g"] for node in new}
+    assert len(groups) == 1
+    [group_id] = groups
+    assert by_id[group_id]["g"] == status_group["id"] and group_id in status_group["nodes"]
+    assert set(by_id[group_id]["nodes"]) >= {node["id"] for node in new}
+
+
+SURVEY_ID = "3f9a1c2e-si"
+
+
+def bad_request(detail):
+    return {"error": "bad_request", "detail": detail}
+
+
+@needs_node
+@pytest.mark.parametrize("name, msg, ok", [
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "x' OR 1=1"}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": "3F9A1C2E-si"}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {"survey_id": ["3f9a1c2e-si", "3f9a1c2e-si"]}}}, False),
+    ("tm-internal: validate survey query", {"req": {"query": {}}}, False),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
+    ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "2"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "1"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "none"}}, True),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "3"}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": 2}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "None"}}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": "precision=2"}, False),
+    ("tm-internal: validate precision", {"req": {}, "payload": {}}, False),
+])
+def test_tm_internal_validators(name, msg, ok):
+    validator = named(json.loads(FLOWS.read_text()), name)
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if not ok:
+        assert passed is None
+        detail = "precision" if name == "tm-internal: validate precision" else "survey_id"
+        assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+        return
+    assert refused is None
+    if name == "tm-internal: validate precision":
+        given = msg["payload"]["precision"]
+        if given == "none":
+            assert passed["params"] == {} and passed["precision_none"] is True
+        else:
+            assert passed["params"] == {"$p": int(given)} and passed["precision_none"] is False
+    else:
+        assert passed["params"] == {"$survey_id": SURVEY_ID}
+
+
+@needs_node
+def test_survey_usage_binds_no_parameters():
+    """A prepared sqlite node refuses a message without msg.params, and the usage request has nothing to bind."""
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints["/tm-internal/surveys/usage"]["wires"]
+    [[params_id], _] = by_id[check_id]["wires"]
+    [step] = run_functions([(by_id[params_id], {"req": {}, "payload": {}})])["results"]
+    assert step["result"]["params"] == {}
+
+
+def shape(url):
+    _, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints[url]["wires"]
+    for node in reachable(by_id, [check_id]):
+        if node["type"] == "function" and any(by_id[t]["type"] == "http response" and by_id[t]["statusCode"] == ""
+                                              for output in node["wires"] for t in output):
+            return node
+    raise AssertionError(url)
+
+
+DEPLOYMENT_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": "2026-10-30T12:00:00.000Z",
+                  "entryEndDateTime": None, "lat": 45.5, "lon": -122.7, "bearing": "n", "sensorType": "camera",
+                  "sensorName": "picam_h265", "survey_id": SURVEY_ID, "location_precision": 1}
+
+
+@needs_node
+@pytest.mark.parametrize("rows", [[DEPLOYMENT_ROW], []], ids=["rows", "none"])
+def test_deployments_answer(rows):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/deployments"), msg)])["results"]
+    assert step["result"]["payload"] == {"deployments": rows}
+    assert step["result"].get("statusCode") in (None, 200)
+
+
+@needs_node
+@pytest.mark.parametrize("rows", [
+    [{"survey_id": SURVEY_ID, "first_start": "2026-10-30T12:00:00.000Z", "last_end": None, "open_count": 2,
+      "deployment_count": 3}],
+    [],
+], ids=["rows", "none"])
+def test_survey_usage_answer(rows):
+    msg = {"params": {}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/surveys/usage"), msg)])["results"]
+    assert step["result"]["payload"] == {"surveys": rows}
+
+
+@needs_node
+@pytest.mark.parametrize("row, expected", [
+    ({"event_count": 12, "first_event": 1761800000.5, "last_event": 1761890000.25},
+     {"event_count": 12, "first_event": 1761800000.5, "last_event": 1761890000.25}),
+    ({"event_count": 0, "first_event": None, "last_event": None},
+     {"event_count": 0, "first_event": None, "last_event": None}),
+], ids=["events", "no-events"])
+def test_survey_events_answer(row, expected):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "req": {"params": {"id": SURVEY_ID}}, "payload": [row]}
+    [step] = run_functions([(shape("/tm-internal/surveys/:id/events"), msg)])["results"]
+    assert step["result"]["payload"] == {"survey_id": SURVEY_ID, **expected}
+
+
+@needs_node
+@pytest.mark.parametrize("params", [{"$p": 1}, {}], ids=["rounded", "none"])
+def test_precision_rewrite_answers_204(params):
+    msg = {"params": params, "precision_none": params == {}, "payload": []}
+    [step] = run_functions([(shape("/tm-internal/deployments/precision"), msg)])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_database_errors_answer_500():
+    """A failed query must still answer, or tm-control waits for a reply that never comes."""
+    flows, by_id, endpoints = tm_internal_endpoints()
+    queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
+               if node["type"] == "sqlite"}
+    assert len(queries) == 5
+    [catch] = [node for node in flows if node["type"] == "catch" and set(node.get("scope") or []) & queries]
+    assert set(catch["scope"]) == queries
+    answers = [node for node in reachable(by_id, [catch["id"]]) if node["type"] == "http response"]
+    assert [str(node["statusCode"]) for node in answers] == ["500"]

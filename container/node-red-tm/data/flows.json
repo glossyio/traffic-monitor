@@ -1291,15 +1291,16 @@
         "nodes": [
             "f6ecdd18d8e03f91",
             "689b64c16a889e0a",
-            "bc398ad5de3bd112",
             "6d2f607b324415b4",
-            "24efdc7f1231f7f0",
             "1ba33a74f2d3a680",
             "05c37560dd57ea90",
             "ac8b2de05ec27001",
             "696c3a7b0b83f7b5",
             "a2b2e69319628779",
-            "17455485af2d8cfc"
+            "17455485af2d8cfc",
+            "3c63afe206e5d65e",
+            "f5e4484aeb11facf",
+            "94dad283c8f696f4"
         ],
         "x": 88,
         "y": 439,
@@ -1552,12 +1553,13 @@
             "b586e0ff85dbff1b",
             "11d84b6cc7755d49",
             "e813005490ef2e46",
-            "2b50b0bfb900ff09"
+            "2b50b0bfb900ff09",
+            "3da2c0e89c06736d"
         ],
         "x": 74,
         "y": 1099,
-        "w": 952,
-        "h": 302
+        "w": 1836,
+        "h": 842
     },
     {
         "id": "484071aff09e5ec2",
@@ -2561,7 +2563,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`, msg);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\nmsg.payload.deployment.lat = typeof msg.payload.deployment.lat === \"undefined\" ? '' : msg.payload.deployment.lat;\nmsg.payload.deployment.lon = typeof msg.payload.deployment.lon === \"undefined\" ? '' : msg.payload.deployment.lon;\nmsg.payload.deployment.bearing = typeof msg.payload.deployment.bearing === \"undefined\" ? '' : msg.payload.deployment.bearing;\n\n//check for numeric (decimal) lon and lat\nif (msg.payload.deployment.lat !== null) {\n  if (typeof msg.payload.deployment.lat !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lat is not a valid type; needs to be numeric`);\n  }\n}\nif (msg.payload.deployment.lon !== null) {\n  if (typeof msg.payload.deployment.lon !== \"number\") {\n    node.error(`Node-RED config.yml top-level deployment.lon is not a valid type; needs to be numeric`);\n  }\n}\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow empty/null/undefined values\nif (msg.payload.deployment.bearing !== null) {\n  if (bearing_values.indexOf(msg.payload.deployment.bearing.toLowerCase()) !== -1) {\n    msg.payload.deployment.bearing = msg.payload.deployment.bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        if (sensorDeployment.hasOwnProperty('bearing')) {\n          const bearing = sensorDeployment.bearing.toLowerCase();\n          if (!bearing_values.includes(bearing)) {\n            node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n            sensorDeployment.bearing = '';\n          }\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\nreturn msg;",
+        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  if (typeof msg.payload.thingsboard.host === \"undefined\") {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`, msg);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (domain, front part)\n    msg.payload.thingsboard.url = `${msg.payload.thingsboard.host}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //warn if no access_token\n  if (typeof msg.payload.thingsboard.access_token === \"undefined\") {\n    node.warn(`Node-RED config.yml key thingsboard.access_token is not populated when thingsboard is enabled. access_token may be required for authentication.`);\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\n//blank (missing, null, or '') lat and lon mean no location yet\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  msg.payload.deployment[key] = (typeof value === \"undefined\" || value === null) ? '' : value;\n}\n//a blank (missing, null, or '') bearing means none yet\nif (typeof msg.payload.deployment.bearing === \"undefined\" || msg.payload.deployment.bearing === null) {\n  msg.payload.deployment.bearing = '';\n}\n\n//check for numeric (decimal) lon and lat; a number quoted in YAML is allowed and rounded later\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  const numeric = typeof value === \"number\" || (typeof value === \"string\" && value.trim() !== '');\n  if (value !== '' && !(numeric && Number.isFinite(Number(value)))) {\n    node.error(`Node-RED config.yml top-level deployment.${key} is not a valid type; needs to be numeric`);\n  }\n}\n\n//survey_id: names the place, set by hand in config.yml until the Location page ships; missing or empty means no survey\nconst survey_id = msg.payload.deployment.survey_id;\nif (typeof survey_id === \"undefined\" || survey_id === null || survey_id === '') {\n  msg.payload.deployment.survey_id = null;\n} else if (/^[0-9a-f]{8}-si$/.test(String(survey_id).toLowerCase())) {\n  msg.payload.deployment.survey_id = String(survey_id).toLowerCase();\n} else {\n  node.error(`Node-RED config.yml key deployment.survey_id is not a survey id (8 hex characters and -si); ignoring it`);\n  msg.payload.deployment.survey_id = null;\n}\n\n//database_precision: decimal places of lat and lon stored in the database\nconst precision_values = ['none', '1', '2'];\nconst precision_given = msg.payload.deployment.database_precision;\nconst database_precision = (typeof precision_given === \"undefined\" || precision_given === null || precision_given === '') ? '1' : String(precision_given);\nif (precision_values.includes(database_precision)) {\n  msg.payload.deployment.database_precision = database_precision;\n} else {\n  node.error(`Node-RED config.yml key deployment.database_precision is not a valid value; needs to be one of ${precision_values}; using '1'`);\n  msg.payload.deployment.database_precision = '1';\n}\n\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow a blank bearing (made '' above); lower-case a valid one\nif (msg.payload.deployment.bearing !== '') {\n  const bearing = msg.payload.deployment.bearing;\n  if (typeof bearing === \"string\" && bearing_values.includes(bearing.toLowerCase())) {\n    msg.payload.deployment.bearing = bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors)) {\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        const sensorBearing = sensorDeployment.bearing;\n        if (typeof sensorBearing === \"undefined\" || sensorBearing === null || sensorBearing === '') {\n          sensorDeployment.bearing = '';\n        } else if (typeof sensorBearing !== \"string\" || !bearing_values.includes(sensorBearing.toLowerCase())) {\n          node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n          sensorDeployment.bearing = '';\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2690,9 +2692,9 @@
         "type": "function",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "capture deployment info, send diff sql queries",
-        "func": "// msg.sqlActiveDeployments (sql query results, array of objects)\n// msg.sensors (sensorType.sensorName.properties)\n\nlet newArr = {};\nnewArr.updatedDeployment = [];\nnewArr.currentDeployment = [];\n\nconst sqlresults = msg.sqlActiveDeployments;\n\n//go through each sensor, see if new deployment configs (lat, lon, bearing) are different from previous deployment\nfor (const [sensorType, sensors] of Object.entries(msg.sensors)) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n            if (sensor.hasOwnProperty('deployment')) {\n                const sensorDeployment = sensor.deployment;\n\n                let newMsg = {};\n                newMsg.payload = {};\n                let updateMsg = {};\n                updateMsg.payload = {};\n                let mergedMsg = {};\n\n                let hasDifference = false;\n                newMsg.sqlSend = false;\n\n                //find matching sqlresult(s)\n                const sqlMatchObj = sqlresults.find(o => o.sensorName === sensorName);\n\n                if (sqlMatchObj) {\n                    //fields to check for differences\n                    [\"lat\", \"lon\", \"bearing\"].forEach(property => {\n                        if (sqlMatchObj[property] !== sensorDeployment[property]) {\n                            hasDifference = true;\n                        }\n                    });\n                }\n\n                //if new deployment, UPDATE old record's entryEndDateTime \n                if (hasDifference) {\n                    updateMsg.payload.id = sqlMatchObj.id;\n                    updateMsg.payload.entryEndDateTime = (new Date()).getTime();\n\n                    //send update query, updateMsg\n                    updateMsg.topic = `UPDATE deployment SET entryEndDateTime = ${updateMsg.payload.entryEndDateTime} WHERE id = '${updateMsg.payload.id}'`;\n                    updateMsg.sqlSend = true;\n                    node.send(updateMsg);\n                    mergedMsg = {...updateMsg.payload, ...sqlMatchObj};\n                    newArr.updatedDeployment.push(mergedMsg);\n                }\n\n                //if new deployment from difference or non-existing, and add new record\n                if (hasDifference || !sqlMatchObj) {\n                    const newDateTime = new Date();\n                    newMsg.payload.id = newDateTime.getTime() + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n                    newMsg.payload.entryStartDateTime = newDateTime.getTime();\n                    newMsg.payload.entryEndDateTime = '';\n                    newMsg.payload.lat = sensorDeployment[\"lat\"];\n                    newMsg.payload.lon = sensorDeployment[\"lon\"];\n                    newMsg.payload.bearing = sensorDeployment[\"bearing\"];\n                    newMsg.payload.sensorType = sensorType;\n                    newMsg.payload.sensorName = sensorName;\n                    newMsg.payload.deviceName = global.get(\"deviceAttributes.deviceName\");\n                    //send add record query, newPayload\n                    newMsg.topic = `INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName) VALUES ('${newMsg.payload.id}', ${newMsg.payload.entryStartDateTime}, ${newMsg.payload.lat}, ${newMsg.payload.lon}, '${newMsg.payload.bearing}', '${newMsg.payload.sensorType}', '${newMsg.payload.sensorName}', '${newMsg.payload.deviceName}')`;\n                    newMsg.sqlSend = true;\n                    node.send(newMsg);\n\n                    //update config with id\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, newMsg.payload.id);\n                }\n                //deployment already exists, no change\n                else {\n                    newMsg.payload = sqlMatchObj;\n                    global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, sqlMatchObj.id);\n                }\n                //collect all sensor info for output\n                newArr.currentDeployment.push(newMsg.payload);\n            }\n        }\n    }\n}\n\nmsg = {};\nmsg.payload = newArr;\n\nnode.done();\nreturn msg;",
-        "outputs": 1,
+        "name": "deployment engine",
+        "func": "// msg.sensors: config.yml's sensors (sensorType.sensorName.properties)\n// msg.sqlActiveDeployments: every open deployment row, newest first per sensor\n// A deployment is one sensor at one survey facing one way. It starts when the survey id or the bearing changes,\n// never when the coordinates do. The place (survey_id, lat, lon, database_precision) is per unit: the engine reads\n// it from the top-level deployment block and takes only the bearing from each sensor.\n// Outputs: 1 close deployment, 2 insert deployment, 3 rewrite deployment, 4 the deployment rows for ThingsBoard\n\nconst place = global.get(\"config.deployment\") || {};\nconst precisionPlaces = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst precision = place.database_precision in precisionPlaces ? precisionPlaces[place.database_precision] : 1;\nconst deviceName = env.get(\"TM_RPI_SN\") || null;\nconst now = Date.now();\n\n// half away from zero, as SQLite's ROUND (toFixed rounds the magnitude; Math.round would round -0.5 up)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\nfunction coordinate(value, key) {\n    if (typeof value === \"number\" && Number.isFinite(value)) {\n        return value;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    if (value !== undefined && value !== null && value !== '') {\n        node.error(`Node-RED config.yml top-level deployment.${key} is not a number; storing no location`);\n    }\n    return null;\n}\n\n// lat, lon and location_precision as tmdb stores them: all three, or all NULL when either coordinate is missing\nfunction location(lat, lon, places) {\n    if (lat === null || lon === null || places === null) {\n        return { lat: null, lon: null, location_precision: null };\n    }\n    return { lat: round(lat, places), lon: round(lon, places), location_precision: places };\n}\n\n// a blank bearing ('', null, missing, or the strings 'null' and 'undefined' that releases\n// 0.6.0 to 0.7.1 stored for a blank one) is '', and bearings compare trimmed and without case\nfunction bearingOf(value) {\n    const bearing = (typeof value === \"string\") ? value.trim().toLowerCase() : '';\n    return (bearing === 'null' || bearing === 'undefined') ? '' : bearing;\n}\n\n// a bearing stored as the string 'null' or 'undefined', which a rewrite stores as ''\nfunction legacyBearing(value) {\n    return typeof value === \"string\" && value.trim() !== '' && bearingOf(value) === '';\n}\n\n// rank of a precision: NULL (nothing stored) is the coarsest\nfunction fineness(places) {\n    return places === null || places === undefined ? 0 : places;\n}\n\nconst stored = location(coordinate(place.lat, \"lat\"), coordinate(place.lon, \"lon\"), precision);\n\nconst openRows = {};\nfor (const row of msg.sqlActiveDeployments || []) {\n    const key = `${row.sensorType}.${row.sensorName}`;\n    (openRows[key] = openRows[key] || []).push({ ...row, entryEndDateTime: null });\n}\n\nconst close = [];\nconst insert = [];\nconst rewrite = [];\nconst updatedDeployment = [];\nconst currentDeployment = [];\n\nfunction closeRow(row) {\n    close.push({ params: { $ended: now, $id: row.id } });\n    updatedDeployment.push({ ...row, entryEndDateTime: now });\n}\n\nfunction insertRow(sensorType, sensorName, want) {\n    const id = now + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n    const row = {\n        id, entryStartDateTime: now, entryEndDateTime: null, ...stored, bearing: want.bearing,\n        sensorType, sensorName, deviceName, survey_id: want.survey_id,\n    };\n    insert.push({\n        params: {\n            $id: row.id, $started: row.entryStartDateTime, $lat: row.lat, $lon: row.lon, $bearing: row.bearing,\n            $sensorType: sensorType, $sensorName: sensorName, $deviceName: deviceName, $survey_id: row.survey_id,\n            $location_precision: row.location_precision,\n        }\n    });\n    return row;\n}\n\nfunction rewriteRow(row, survey_id, rowLocation) {\n    const bearing = legacyBearing(row.bearing) ? '' : row.bearing;\n    const rewritten = { ...row, survey_id, ...rowLocation, bearing };\n    rewrite.push({\n        params: {\n            $id: row.id, $survey_id: survey_id, $lat: rewritten.lat, $lon: rewritten.lon,\n            $location_precision: rewritten.location_precision, $bearing: bearing,\n        }\n    });\n    return rewritten;\n}\n\n// an open row that stays open: a precision coarser than the row's re-rounds the row's own coordinates (a finer one\n// waits for the next deployment), and a legacy bearing is stored as ''\nfunction keepRow(row) {\n    const lower = fineness(row.location_precision) > fineness(precision);\n    if (!lower && !legacyBearing(row.bearing)) {\n        return row;\n    }\n    const rowLocation = lower ? location(row.lat, row.lon, precision)\n        : { lat: row.lat, lon: row.lon, location_precision: row.location_precision };\n    return rewriteRow(row, row.survey_id, rowLocation);\n}\n\nfunction decide(sensorType, sensorName, want, open) {\n    const [row, ...older] = open;\n    // 1. one open row per sensor: close every row after the newest\n    older.forEach(closeRow);\n    // 2. no open row: start a deployment\n    if (!row) {\n        return insertRow(sensorType, sensorName, want);\n    }\n    const sameBearing = bearingOf(row.bearing) === want.bearing;\n    // 3. no survey in config.yml: keep the open row\n    if (want.survey_id === null) {\n        return keepRow(row);\n    }\n    // 4. a row from before any survey, facing the same way, belongs to this survey\n    if (row.survey_id === null && sameBearing) {\n        return rewriteRow(row, want.survey_id, stored);\n    }\n    // 5. a new survey or a new bearing: end the deployment and start another\n    if (row.survey_id !== want.survey_id || !sameBearing) {\n        closeRow(row);\n        return insertRow(sensorType, sensorName, want);\n    }\n    // 6. the same deployment\n    return keepRow(row);\n}\n\nfor (const [sensorType, sensors] of Object.entries(msg.sensors || {})) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.enabled !== true) {\n            continue;\n        }\n        const want = {\n            survey_id: place.survey_id || null,\n            bearing: bearingOf((sensor.deployment || {}).bearing),\n        };\n        const open = (openRows[`${sensorType}.${sensorName}`] || [])\n            .sort((a, b) => b.entryStartDateTime - a.entryStartDateTime);\n        const current = decide(sensorType, sensorName, want, open);\n        currentDeployment.push(current);\n        global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, current.id);\n    }\n}\n\nglobal.set(\"tm_status.deployments\", currentDeployment);\n\nreturn [close, insert, rewrite, [{ payload: { updatedDeployment, currentDeployment } }]];\n",
+        "outputs": 4,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -2702,19 +2704,58 @@
         "y": 640,
         "wires": [
             [
-                "24efdc7f1231f7f0"
+                "3c63afe206e5d65e"
+            ],
+            [
+                "f5e4484aeb11facf"
+            ],
+            [
+                "94dad283c8f696f4"
+            ],
+            [
+                "05c37560dd57ea90"
             ]
         ]
     },
     {
-        "id": "bc398ad5de3bd112",
+        "id": "3c63afe206e5d65e",
         "type": "sqlite",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id;\n",
+        "name": "close deployment",
+        "x": 880,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f5e4484aeb11facf",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, location_precision)\nVALUES ($id, $started, $lat, $lon, $bearing, $sensorType, $sensorName, $deviceName, $survey_id, $location_precision);\n",
+        "name": "insert deployment",
+        "x": 880,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "94dad283c8f696f4",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "8004ba7ad5a9bd83",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, location_precision = $location_precision, bearing = $bearing\nWHERE id = $id;\n",
+        "name": "rewrite deployment",
         "x": 880,
         "y": 680,
         "wires": [
@@ -2746,36 +2787,6 @@
         "wires": [
             [
                 "689b64c16a889e0a"
-            ]
-        ]
-    },
-    {
-        "id": "24efdc7f1231f7f0",
-        "type": "switch",
-        "z": "3dae026ab340962a",
-        "g": "8004ba7ad5a9bd83",
-        "name": "submit sql or final payload?",
-        "property": "sqlSend",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "true"
-            },
-            {
-                "t": "else"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 580,
-        "y": 680,
-        "wires": [
-            [
-                "bc398ad5de3bd112"
-            ],
-            [
-                "05c37560dd57ea90"
             ]
         ]
     },
@@ -2827,12 +2838,12 @@
         "type": "template",
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
-        "name": "query latest active deployments",
+        "name": "query open deployments",
         "field": "topic",
         "fieldType": "msg",
         "format": "sql",
         "syntax": "mustache",
-        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName\nFROM deployment\nWHERE entryStartDateTime IN(\n  SELECT MAX(entryStartDateTime)\n  FROM deployment\n  WHERE entryEndDateTime IS NULL\n  GROUP BY sensorName, deviceName\n)\nORDER BY sensorName, deviceName;\n",
+        "template": "SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, location_precision\nFROM deployment\nWHERE entryEndDateTime IS NULL\nORDER BY sensorType, sensorName, entryStartDateTime DESC;\n",
         "output": "str",
         "x": 290,
         "y": 520,
@@ -3105,7 +3116,7 @@
         "z": "3dae026ab340962a",
         "g": "d9d94c0d493873b9",
         "name": "tm-internal: config loaded",
-        "func": "// After each load of config.yml that set global.config: which radars it enables, and the deployment\nconst config = global.get(\"config\") || {};\nconst deployment = config.deployment || {};\nconst value = (v) => (v === undefined || v === \"\" ? null : v);\nglobal.set(\"tm_status.deployment\", {\n    lat: value(deployment.lat),\n    lon: value(deployment.lon),\n    bearing: value(deployment.bearing),\n});\nconst radars = global.get(\"tm_status.radars\") || {};\nconst configured = (config.sensors && config.sensors.radars) || {};\nfor (const name of Object.keys(radars)) {\n    radars[name].enabled = false;\n}\nfor (const [name, radar] of Object.entries(configured)) {\n    radars[name] = Object.assign({}, radars[name], { enabled: Boolean(radar) && radar.enabled === true });\n}\nglobal.set(\"tm_status.radars\", radars);\nreturn null;",
+        "func": "// After each load of config.yml that set global.config: which radars it enables, and which survey the device\n// records and how finely. Never the coordinates: the status page shows the survey, not where the device is.\nconst config = global.get(\"config\") || {};\nconst deployment = config.deployment || {};\nconst value = (v) => (v === undefined || v === \"\" ? null : v);\nglobal.set(\"tm_status.deployment\", {\n    survey_id: value(deployment.survey_id),\n    database_precision: value(deployment.database_precision),\n});\nconst radars = global.get(\"tm_status.radars\") || {};\nconst configured = (config.sensors && config.sensors.radars) || {};\nfor (const name of Object.keys(radars)) {\n    radars[name].enabled = false;\n}\nfor (const [name, radar] of Object.entries(configured)) {\n    radars[name] = Object.assign({}, radars[name], { enabled: Boolean(radar) && radar.enabled === true });\n}\nglobal.set(\"tm_status.radars\", radars);\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3117,6 +3128,705 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "3da2c0e89c06736d",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-control surveys: /tm-internal/deployments and /tm-internal/surveys",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "13e034c27f12073e",
+            "d6d77916aa623b3e",
+            "46ec4a96876a6180",
+            "801ef0c11661b4d5",
+            "706879bceaee998e",
+            "5d5d7f4aabe982c2",
+            "d58198f387c8ad77",
+            "00d0fe52e5a436b8",
+            "722ff1870a9592d7",
+            "194d46afe06965b1",
+            "df0216c0cd929103",
+            "c335adbde4d2e983",
+            "dce8e3e7d11d02ac",
+            "dbaded55d9fab95d",
+            "bb1d4e25561c8185",
+            "989c5c3f902cca14",
+            "df33e934c03ead41",
+            "aeb616f924b157ef",
+            "eee4243f7e032aa3",
+            "557fa351bb022d12",
+            "cf34fb121154e23f",
+            "99214c31b9ada13d",
+            "ab3b5270b8e3f915",
+            "4f6a97b580e88ab5",
+            "90ea3834beb653d7",
+            "0e87d3a648825460",
+            "09eeb422484c0b40",
+            "0949284d931b774b",
+            "68e62b15570b6394",
+            "db7c70a85f045770",
+            "e1ed1757d394e260",
+            "d64eec52af1bd3c4",
+            "da8284b87f912452",
+            "e27f61c06fec6515",
+            "88360cc173468725",
+            "628da87e6b4869dc"
+        ],
+        "x": 94,
+        "y": 1419,
+        "w": 1786,
+        "h": 502
+    },
+    {
+        "id": "13e034c27f12073e",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1460,
+        "wires": [
+            [
+                "d6d77916aa623b3e"
+            ]
+        ]
+    },
+    {
+        "id": "d6d77916aa623b3e",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1460,
+        "wires": [
+            [
+                "801ef0c11661b4d5"
+            ],
+            [
+                "46ec4a96876a6180"
+            ]
+        ]
+    },
+    {
+        "id": "46ec4a96876a6180",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "801ef0c11661b4d5",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate survey query",
+        "func": "// Only a survey id reaches the query, so a malformed survey_id answers 400 without touching tmdb.\nconst surveyId = (msg.req.query || {}).survey_id;\nif (typeof surveyId === \"string\" && /^[0-9a-f]{8}-si$/.test(surveyId)) {\n    msg.params = { $survey_id: surveyId };\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"survey_id\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1460,
+        "wires": [
+            [
+                "5d5d7f4aabe982c2"
+            ],
+            [
+                "706879bceaee998e"
+            ]
+        ]
+    },
+    {
+        "id": "706879bceaee998e",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "5d5d7f4aabe982c2",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, sensorName, survey_id,\n    location_precision\nFROM deployment\nWHERE survey_id = $survey_id\nORDER BY entryStartDateTime;\n",
+        "name": "read survey deployments",
+        "x": 1080,
+        "y": 1460,
+        "wires": [
+            [
+                "d58198f387c8ad77"
+            ]
+        ]
+    },
+    {
+        "id": "d58198f387c8ad77",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer deployments",
+        "func": "// One survey's deployment rows, oldest first\nmsg.payload = { deployments: msg.payload };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1460,
+        "wires": [
+            [
+                "00d0fe52e5a436b8"
+            ]
+        ]
+    },
+    {
+        "id": "00d0fe52e5a436b8",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1460,
+        "wires": []
+    },
+    {
+        "id": "722ff1870a9592d7",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/usage",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1560,
+        "wires": [
+            [
+                "194d46afe06965b1"
+            ]
+        ]
+    },
+    {
+        "id": "194d46afe06965b1",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1560,
+        "wires": [
+            [
+                "c335adbde4d2e983"
+            ],
+            [
+                "df0216c0cd929103"
+            ]
+        ]
+    },
+    {
+        "id": "df0216c0cd929103",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "c335adbde4d2e983",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: usage params",
+        "func": "// The usage query has nothing to bind, but a prepared sqlite node refuses a message without msg.params\nmsg.params = {};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1560,
+        "wires": [
+            [
+                "dce8e3e7d11d02ac"
+            ]
+        ]
+    },
+    {
+        "id": "dce8e3e7d11d02ac",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) AS last_end,\n    SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS deployment_count\nFROM deployment\nWHERE survey_id IS NOT NULL\nGROUP BY survey_id;\n",
+        "name": "read survey usage",
+        "x": 1080,
+        "y": 1560,
+        "wires": [
+            [
+                "dbaded55d9fab95d"
+            ]
+        ]
+    },
+    {
+        "id": "dbaded55d9fab95d",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer survey usage",
+        "func": "// One row per survey id in tmdb: its first start, its latest end, how many of its deployments are still open, and\n// how many it has in all. last_end skips open deployments, so it is null only when none has ended.\nmsg.payload = { surveys: msg.payload };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1560,
+        "wires": [
+            [
+                "bb1d4e25561c8185"
+            ]
+        ]
+    },
+    {
+        "id": "bb1d4e25561c8185",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "989c5c3f902cca14",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/:id/events",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1660,
+        "wires": [
+            [
+                "df33e934c03ead41"
+            ]
+        ]
+    },
+    {
+        "id": "df33e934c03ead41",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1660,
+        "wires": [
+            [
+                "eee4243f7e032aa3"
+            ],
+            [
+                "aeb616f924b157ef"
+            ]
+        ]
+    },
+    {
+        "id": "aeb616f924b157ef",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "eee4243f7e032aa3",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate survey path",
+        "func": "// Only a survey id reaches the query, so a malformed path answers 400 without touching tmdb.\nconst surveyId = (msg.req.params || {}).id;\nif (typeof surveyId === \"string\" && /^[0-9a-f]{8}-si$/.test(surveyId)) {\n    msg.params = { $survey_id: surveyId };\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"survey_id\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1660,
+        "wires": [
+            [
+                "cf34fb121154e23f"
+            ],
+            [
+                "557fa351bb022d12"
+            ]
+        ]
+    },
+    {
+        "id": "557fa351bb022d12",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "cf34fb121154e23f",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, MAX(start_time) AS last_event\nFROM events\nWHERE deployment_id IN (SELECT id FROM deployment WHERE survey_id = $survey_id);\n",
+        "name": "read survey events",
+        "x": 1080,
+        "y": 1660,
+        "wires": [
+            [
+                "99214c31b9ada13d"
+            ]
+        ]
+    },
+    {
+        "id": "99214c31b9ada13d",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer survey events",
+        "func": "// How many events the survey's deployments recorded, and the first and last event start (Unix seconds, null\n// with no events)\nconst row = (Array.isArray(msg.payload) && msg.payload[0]) || {};\nmsg.payload = {\n    survey_id: msg.params.$survey_id,\n    event_count: row.event_count || 0,\n    first_event: row.first_event == null ? null : row.first_event,\n    last_event: row.last_event == null ? null : row.last_event,\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 1660,
+        "wires": [
+            [
+                "ab3b5270b8e3f915"
+            ]
+        ]
+    },
+    {
+        "id": "ab3b5270b8e3f915",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "4f6a97b580e88ab5",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments/precision",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 1760,
+        "wires": [
+            [
+                "90ea3834beb653d7"
+            ]
+        ]
+    },
+    {
+        "id": "90ea3834beb653d7",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1760,
+        "wires": [
+            [
+                "09eeb422484c0b40"
+            ],
+            [
+                "0e87d3a648825460"
+            ]
+        ]
+    },
+    {
+        "id": "0e87d3a648825460",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "09eeb422484c0b40",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate precision",
+        "func": "// tm-control lowers the precision of every stored deployment coordinate: \"2\" or \"1\" decimal places, or \"none\"\n// to remove them. Only those three strings reach the database. A row already at that precision or coarser\n// doesn't match the UPDATE, so a finer precision changes nothing.\nconst body = msg.payload;\nconst precision = body !== null && typeof body === \"object\" ? body.precision : undefined;\nif (precision === \"none\") {\n    msg.params = {};\n    msg.precision_none = true;\n    return [msg, null];\n}\nif (precision === \"1\" || precision === \"2\") {\n    msg.params = { $p: Number(precision) };\n    msg.precision_none = false;\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"precision\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 1760,
+        "wires": [
+            [
+                "68e62b15570b6394"
+            ],
+            [
+                "0949284d931b774b"
+            ]
+        ]
+    },
+    {
+        "id": "0949284d931b774b",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "68e62b15570b6394",
+        "type": "switch",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "remove coordinates?",
+        "property": "precision_none",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "false"
+            },
+            {
+                "t": "true"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1060,
+        "y": 1760,
+        "wires": [
+            [
+                "db7c70a85f045770"
+            ],
+            [
+                "e1ed1757d394e260"
+            ]
+        ]
+    },
+    {
+        "id": "db7c70a85f045770",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p\nWHERE location_precision > $p;\n",
+        "name": "rewrite precision",
+        "x": 1340,
+        "y": 1740,
+        "wires": [
+            [
+                "d64eec52af1bd3c4"
+            ]
+        ]
+    },
+    {
+        "id": "e1ed1757d394e260",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET lat = NULL, lon = NULL, location_precision = NULL\nWHERE lat IS NOT NULL OR lon IS NOT NULL;\n",
+        "name": "rewrite precision to none",
+        "x": 1340,
+        "y": 1780,
+        "wires": [
+            [
+                "d64eec52af1bd3c4"
+            ]
+        ]
+    },
+    {
+        "id": "d64eec52af1bd3c4",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer precision rewrite",
+        "func": "// The rewrite answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1580,
+        "y": 1760,
+        "wires": [
+            [
+                "da8284b87f912452"
+            ]
+        ]
+    },
+    {
+        "id": "da8284b87f912452",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1800,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "e27f61c06fec6515",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "catch: tm-internal query errors",
+        "scope": [
+            "5d5d7f4aabe982c2",
+            "dce8e3e7d11d02ac",
+            "cf34fb121154e23f",
+            "db7c70a85f045770",
+            "e1ed1757d394e260"
+        ],
+        "uncaught": false,
+        "x": 310,
+        "y": 1880,
+        "wires": [
+            [
+                "88360cc173468725"
+            ]
+        ]
+    },
+    {
+        "id": "88360cc173468725",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: database error",
+        "func": "// The sqlite node has logged the error; tm-control gets a 500 rather than waiting for a reply that\n// never comes\nmsg.statusCode = 500;\nmsg.payload = { error: \"database_error\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 1880,
+        "wires": [
+            [
+                "628da87e6b4869dc"
+            ]
+        ]
+    },
+    {
+        "id": "628da87e6b4869dc",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "500",
+        "headers": {},
+        "x": 820,
+        "y": 1880,
+        "wires": []
     },
     {
         "id": "0612ca7936dee14a",
@@ -6938,7 +7648,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": \"{{lat}}\",\n            \"lon\": \"{{lon}}\",\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"lat\": \"{{global.config.deployment.lat}}\",\n            \"lon\": \"{{global.config.deployment.lon}}\",\n            \"bearing\": \"{{global.config.deployment.bearing}}\"\n        }\n    }\n}",
+        "template": "{\n    \"deployments\": {\n        {{#payload.currentDeployment}}\n        \"{{sensorName}}\": {\n            \"sensorType\": \"{{sensorType}}\",\n            \"lat\": \"{{lat}}\",\n            \"lon\": \"{{lon}}\",\n            \"bearing\": \"{{bearing}}\",\n            \"id\": \"{{id}}\"\n        },\n        {{/payload.currentDeployment}}\n        \"deploymentTopLevel\": {\n            \"survey_id\": \"{{global.config.deployment.survey_id}}\",\n            \"database_precision\": \"{{global.config.deployment.database_precision}}\"\n        }\n    }\n}",
         "output": "json",
         "x": 430,
         "y": 1400,

@@ -44,7 +44,7 @@ sudo podman ps                                  # running containers
 | Plug in a radar | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
 | Add or change an AI accelerator | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). |
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](control-app.md#if-the-control-app-is-down). |
-| Move the device to a new site | Follow [First-time setup](../setup-guide.md) again: adjust the zones and update the location. |
+| Move the device to a new site | Follow [First-time setup](../setup-guide.md) again: adjust the zones, update the location, and set a new `survey_id`. |
 
 ## Where things are
 
@@ -54,7 +54,7 @@ The settings and data live under `/opt/traffic-monitor/`.
 |---|---|
 | `node-red-tm/config/config.yml` | Traffic Monitor settings. See [config.yml settings](../configuration/node-red-config.md). |
 | `node-red-tm/node-red-tm.env` | Radar ports, database path, MQTT broker. See [node-red-tm.env settings](../configuration/environment.md). |
-| `node-red-tm/db/tmdb.sqlite` | The database. `db/backup/` holds the copy saved before the most recent schema change. |
+| `node-red-tm/db/tmdb.sqlite` | The database. `db/backup/` holds the copy saved before the most recent schema change. After the upgrade that rounded the stored coordinates, that copy still has the exact ones, so don't share it. |
 | `frigate/config/config.yml` | Frigate's settings, including zones and masks. |
 | `frigate/storage/` | Frigate's snapshots and recordings. |
 | `plate-recognizer/plate-recognizer.env` | Plate Recognizer credentials, if the add-on is installed. |

@@ -30,8 +30,7 @@
         }
     },
     "deployment": {
-        "lat": 45.0,
-        "lon": -122.0,
-        "bearing": "n"
+        "survey_id": null,
+        "database_precision": "1"
     }
 }
