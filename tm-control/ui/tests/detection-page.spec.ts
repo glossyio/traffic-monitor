@@ -41,6 +41,7 @@ const MODELS: ModelsState = {
       usable: null,
       deletable: false,
       problem: null,
+      labels: null,
     },
     {
       name: '0123456789abcdef0123456789abcdef',
@@ -68,6 +69,7 @@ const MODELS: ModelsState = {
       usable: true,
       deletable: false,
       problem: null,
+      labels: ['person', 'bicycle', 'car'],
     },
     {
       name: 'mine.tflite',
@@ -87,6 +89,7 @@ const MODELS: ModelsState = {
       usable: true,
       deletable: true,
       problem: null,
+      labels: ['person', 'bicycle', 'car'],
     },
   ],
   labels: {

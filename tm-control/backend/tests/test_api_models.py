@@ -67,7 +67,7 @@ def test_get_models_lists_the_seeded_pairs_with_running_and_usable(seeded, login
         "local", "My model", True, False, True)
     assert set(plus) == {
         "name", "kind", "title", "trained_at", "type", "detectors", "width", "height", "files", "complete",
-        "running", "usable", "deletable", "problem",
+        "running", "usable", "deletable", "problem", "labels",
     }
     assert state["labels"]["recognised"] == ["person", "bicycle", "car"]
     assert state["labels"]["source"] == "sidecar"
@@ -135,6 +135,65 @@ def test_get_models_without_frigate_falls_back_to_the_file(device_client, login,
     assert [model["name"] for model in state["models"]] == [PLUS_ID]  # no installer file in the cache
     assert state["models"][0]["running"] is True and state["models"][0]["usable"] is True
     assert state["default"] == "installer_default"
+
+
+def test_each_model_lists_its_own_labels(seeded, login):
+    login(seeded, *ADMIN)
+    default, plus, mine = models_of(seeded)["models"]
+    assert plus["labels"] == ["person", "bicycle", "car"]
+    assert mine["labels"] == ["person", "bicycle", "car"]
+    assert default["labels"] is None  # fake mode has no installer's labels file
+
+
+def test_a_models_labels_are_in_label_map_index_order(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    sidecar = json.loads((cache / "mine.tflite.json").read_text())
+    sidecar["labelMap"] = {"10": "dog", "2": "cat", "0": "person"}
+    (cache / "mine.tflite.json").write_text(json.dumps(sidecar))
+    mine = next(model for model in models_of(seeded)["models"] if model["name"] == "mine.tflite")
+    assert mine["labels"] == ["person", "cat", "dog"]
+
+
+def test_a_model_file_without_a_sidecar_has_no_labels(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    (cache / "mine.tflite.json").unlink()
+    mine = next(model for model in models_of(seeded)["models"] if model["name"] == "mine.tflite")
+    assert mine["labels"] is None
+
+
+def test_the_installers_model_lists_its_labels_file(device_client, login, tmp_path):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    section = device_client.app.state.manifest.frigate.coral_model
+    (codedir / "frigate" / "config" / "model_cache" / INSTALLER_FILE).write_bytes(bytes(16))
+    labels_file = codedir / section["labelmap_path"].replace("/config/", "frigate/config/", 1)
+    labels_file.parent.mkdir(parents=True, exist_ok=True)
+    labels_file.write_text("person\n\nbicycle\ncar\n")
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    installer = next(model for model in state["models"] if model["kind"] == "installer_default")
+    assert installer["labels"] == ["person", "bicycle", "car"]
+    # Another model's list is still its own, and the top list is still the running model's
+    assert next(model for model in state["models"] if model["name"] == PLUS_ID)["labels"] == [
+        "person", "bicycle", "car"]
+    assert state["labels"]["source"] == "sidecar"
+
+
+def test_the_installers_labels_file_still_answers_when_its_model_file_is_gone(device_client, login, tmp_path):
+    config = "detectors:\n  coral:\n    type: edgetpu\n    device: usb\n"
+    codedir = device_with_codedir(device_client, tmp_path, config)
+    section = device_client.app.state.manifest.frigate.coral_model
+    config_file = codedir / "frigate" / "config" / "config.yml"
+    config_file.write_text(config + f"model:\n  path: {section['path']}\n")
+    labels_file = codedir / section["labelmap_path"].replace("/config/", "frigate/config/", 1)
+    labels_file.parent.mkdir(parents=True, exist_ok=True)
+    labels_file.write_text("person\ncar\n")
+    login(device_client, *ADMIN)
+    state = models_of(device_client)
+    assert state["running"]["kind"] == "installer_default"
+    assert not any(model["kind"] == "installer_default" for model in state["models"])
+    assert state["labels"]["recognised"] == ["person", "car"] and state["labels"]["source"] == "labels_file"
 
 
 def test_default_is_what_the_default_route_would_apply_here(device_client, login, tmp_path):

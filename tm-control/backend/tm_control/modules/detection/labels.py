@@ -47,19 +47,32 @@ def _labels_file(path: Path) -> list[str] | None:
     return [line for line in lines if line] or None
 
 
+def _installer_labels(installer: InstallerDefault | None) -> list[str] | None:
+    """The installer's labels file, as its model is known to recognise."""
+    return _labels_file(installer.labels_file) if installer is not None and installer.labels_file is not None else None
+
+
+def of_model(model: Model, installer: InstallerDefault | None) -> list[str] | None:
+    """What one model recognises, whether or not it runs: its sidecar's labels in label-map index order, the labels
+    file for the installer's model, and None for a file that says nothing about it."""
+    if model.sidecar is not None:
+        return list(model.sidecar.labels)
+    return _installer_labels(installer) if model.kind == "installer_default" else None
+
+
 def recognised(
     frigate_config: dict | None, running: Running, models: list[Model], installer: InstallerDefault | None
 ) -> tuple[list[str] | None, str | None]:
     """What the running model recognises and where that came from: Frigate's own label map, else the running model's
-    sidecar, else, for the installer's default, its labels file."""
+    sidecar, else, for the installer's default, its labels file, which answers even when its model file is gone."""
     labels = _labelmap(frigate_config)
     if labels is not None:
         return labels, "frigate"
     model = next((model for model in models if model.name == running.name), None)
     if model is not None and model.sidecar is not None:
-        return list(model.sidecar.labels), "sidecar"
-    if running.kind == "installer_default" and installer is not None and installer.labels_file is not None:
-        labels = _labels_file(installer.labels_file)
+        return of_model(model, installer), "sidecar"
+    if running.kind == "installer_default":
+        labels = _installer_labels(installer)
         if labels is not None:
             return labels, "labels_file"
     return None, None

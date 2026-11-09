@@ -149,7 +149,7 @@ The `detection` module serves the [Detection page](../use/detection.md). It read
 
 | Route | Who | What it does |
 |---|---|---|
-| `GET /models` | Any logged-in user | The detector, the running model, the models in `model_cache` with their files and hashes, and the two label lists |
+| `GET /models` | Any logged-in user | The detector, the running model, the models in `model_cache` with their files, hashes, and each one's labels, and the two label lists for the running model |
 | `PUT /models/upload/{filename}` | Admin | Streams a model file, a sidecar, or a zip or tar.gz of both into `model_cache` |
 | `POST /models/{name}/sidecar` | Admin | Writes the sidecar for a model file that has none, from the form's values |
 | `POST /models/{name}/use` | Admin | Sets Frigate's `model:` section to the model, then restarts Frigate |

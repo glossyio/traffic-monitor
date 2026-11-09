@@ -869,6 +869,8 @@ export interface components {
             deletable: boolean;
             /** Problem */
             problem: string | null;
+            /** Labels */
+            labels: string[] | null;
         };
         /** ModelsState */
         ModelsState: {

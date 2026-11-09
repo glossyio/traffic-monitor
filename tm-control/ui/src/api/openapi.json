@@ -1694,6 +1694,20 @@
               }
             ],
             "title": "Problem"
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels"
           }
         },
         "type": "object",
@@ -1711,7 +1725,8 @@
           "running",
           "usable",
           "deletable",
-          "problem"
+          "problem",
+          "labels"
         ],
         "title": "ModelOut"
       },

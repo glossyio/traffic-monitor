@@ -28,6 +28,7 @@ function model(name: string, changes: Partial<ModelOut> = {}): ModelOut {
     usable: true,
     deletable: true,
     problem: null,
+    labels: null,
     ...changes,
   }
 }

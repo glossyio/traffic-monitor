@@ -40,6 +40,7 @@ from tm_control.modules.detection.inventory import (
     MODEL_FILE_MAX,
     SIDECAR,
     SIDECAR_MAX,
+    InstallerDefault,
     Model,
     SidecarError,
     default_files,
@@ -52,7 +53,7 @@ from tm_control.modules.detection.inventory import (
     stat_in,
     valid_name,
 )
-from tm_control.modules.detection.labels import recognised, tracked
+from tm_control.modules.detection.labels import of_model, recognised, tracked
 from tm_control.modules.detection.picker import Running, UseError, detector_type, running_model
 from tm_control.modules.detection.upload import UploadError
 from tm_control.modules.services.units import restart_or_log
@@ -81,6 +82,7 @@ class ModelOut(BaseModel):
     usable: bool | None  # whether the device's detector is one the model supports; None when that can't be told
     deletable: bool
     problem: str | None
+    labels: list[str] | None  # what this model recognises, from its sidecar or the installer's labels file
 
 
 class RunningOut(BaseModel):
@@ -130,7 +132,7 @@ def _frigate(request: Request) -> tuple[dict | None, ConfigRead]:
     return (None if probes.frigate_safe_mode(frigate_config) else frigate_config), config_file
 
 
-def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut:
+def _model_out(model: Model, running: Running, detector: str | None, installer: InstallerDefault | None) -> ModelOut:
     sidecar = model.sidecar
     frigates_own = model.kind == running.kind == "frigate_default" and running.path is None  # Frigate runs it unasked
     is_running = model.name == running.name or frigates_own
@@ -149,6 +151,7 @@ def _model_out(model: Model, running: Running, detector: str | None) -> ModelOut
         usable=None if sidecar is None or detector is None else detector in sidecar.detectors,
         deletable=not is_running and model.kind in ("frigate_plus", "local"),
         problem=model.problem,
+        labels=of_model(model, installer),
     )
 
 
@@ -173,7 +176,7 @@ def get_models(request: Request, user: User = Depends(current_user)):
         frigate_safe_mode=safe_mode,
         default=default,
         running=RunningOut(name=running.name, kind=running.kind, source=running.source),
-        models=[_model_out(model, running, detector) for model in models],
+        models=[_model_out(model, running, detector, installer) for model in models],
         labels=LabelsOut(recognised=labels, source=source, tracked=tracked(frigate_config)),
     )
 
@@ -238,7 +241,7 @@ def _listed(request: Request, name: str, frigate_answer: tuple[dict | None, Conf
     if model is None:
         raise ApiError(500, "internal", "The model was written but isn't listed.")
     running = running_model(frigate_config, config_file, installer, models)
-    return _model_out(model, running, detector)
+    return _model_out(model, running, detector, installer)
 
 
 def _reserved(installer, detector: str | None) -> dict[str, str]:
