@@ -13,6 +13,7 @@ deployment id, or the precision) only.
 
 import csv
 import io
+import logging
 import math
 import time
 from time import sleep
@@ -36,6 +37,8 @@ from tm_control.modules.location.coordinates import (
     stored,
 )
 from tm_control.modules.location.places import Bearing, Places, Survey
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/surveys", tags=["location"])
 
@@ -613,7 +616,6 @@ def correct_bearing(
         if row is None:
             raise ApiError(404, "not_found", "There is no such deployment.")
         open_here = row.ended is None and place.status == "in_use"
-        config = _load_config(app_state) if open_here else None
         try:
             app_state.nodered.correct_bearing(row.id, bearing)
         except NodeRedError as error:
@@ -621,17 +623,38 @@ def correct_bearing(
         places = Places(app_state.state)
         if open_here:
             try:
-                config.set_sensor_bearing(row.sensor_type, row.sensor_name, bearing)
-            except KeyError:
-                pass  # the sensor is no longer in the file: only the row and the place change
-            else:
-                _save(app_state, config)
+                _write_bearing(app_state, row, bearing)
+            except ApiError:
+                _put_row_back(app_state.nodered, row)
+                raise
             places.set_bearing(place.id, row.sensor_type, row.sensor_name, bearing)
         places.record_correction(
             place.id, row.id, "bearing", row.bearing, bearing, _description(body.reason), "ui", admin.id
         )
     Audit(app_state.state).record(admin.id, "survey.correct_bearing", f"{place.id} {row.id}")
     return row.model_copy(update={"bearing": bearing})
+
+
+def _write_bearing(app_state, row: DeploymentOut, bearing: str) -> None:
+    """The sensor's bearing into config.yml, read now so an edit made while Node-RED answered isn't a conflict. A sensor
+    no longer in the file has nothing to change: only the row and the place do."""
+    config = _load_config(app_state)
+    try:
+        config.set_sensor_bearing(row.sensor_type, row.sensor_name, bearing)
+    except KeyError:
+        return
+    except ConfigError as error:
+        raise _config_error(error) from None
+    _save(app_state, config)
+
+
+def _put_row_back(nodered, row: DeploymentOut) -> None:
+    """The file refused the bearing, so the row keeps its old one, and a retry records the real old value. Best effort:
+    the refusal is what the caller answers."""
+    try:
+        nodered.correct_bearing(row.id, row.bearing)
+    except NodeRedError as error:
+        log.warning("putting a deployment's bearing back in Node-RED failed: %s", type(error).__name__)
 
 
 # CSV import

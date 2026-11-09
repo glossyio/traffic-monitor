@@ -425,6 +425,119 @@ def test_correct_bearing_on_a_closed_row_leaves_the_file(admin):
     assert all(b["bearing"] == "n" for b in survey(places(admin), old)["bearings"])
 
 
+def camera_row_of(admin, survey_id):
+    return next(row for row in rows(admin, survey_id) if row["sensor_type"] == "cameras")
+
+
+def correction_rows(client):
+    con = client.app.state.state.connect()
+    try:
+        return con.execute("SELECT field FROM survey_corrections").fetchall()
+    finally:
+        con.close()
+
+
+def test_a_hand_edit_while_node_red_rewrites_the_row_is_kept(admin, monkeypatch):
+    """config.yml is read after Node-RED's row changed, so an edit made during that call isn't a conflict."""
+    in_use = first_place(admin)
+    row = camera_row_of(admin, in_use)
+    nodered = admin.app.state.nodered
+    real = nodered.correct_bearing
+
+    def edited_during(deployment_id, new_bearing):
+        real(deployment_id, new_bearing)
+        path = admin.app.state.config_path
+        path.write_text(path.read_text() + "\n# edited by hand\n")
+
+    monkeypatch.setattr(nodered, "correct_bearing", edited_during)
+    r = admin.post(f"/api/v1/surveys/{in_use}/deployments/{row['id']}/bearing", json={"bearing": "sw"}, headers=ORIGIN)
+    monkeypatch.undo()
+    assert r.status_code == 200, r.text
+    text = admin.app.state.config_path.read_text()
+    assert "# edited by hand" in text
+    assert file_data(admin)["sensors"]["cameras"]["picam_h265"]["deployment"]["bearing"] == "sw"
+    assert len(correction_rows(admin)) == 1
+
+
+def test_a_file_changed_while_saving_a_bearing_puts_the_row_back(admin, monkeypatch):
+    """A 409 must leave nothing half done: the row keeps its bearing, and a retry records the real old value."""
+    from tm_control.modules.location import config as location_config
+
+    in_use = first_place(admin)
+    row = camera_row_of(admin, in_use)
+    real_save = location_config.NodeRedConfig.save
+
+    def edited_first(self):
+        path = admin.app.state.config_path
+        path.write_text(path.read_text() + "\n# edited by hand\n")
+        return real_save(self)
+
+    monkeypatch.setattr(location_config.NodeRedConfig, "save", edited_first)
+    url = f"/api/v1/surveys/{in_use}/deployments/{row['id']}/bearing"
+    r = admin.post(url, json={"bearing": "sw"}, headers=ORIGIN)
+    monkeypatch.undo()
+    assert r.status_code == 409 and r.json()["error"]["code"] == "config_changed"
+    assert camera_row_of(admin, in_use)["bearing"] == row["bearing"]
+    assert "deployment" not in file_data(admin)["sensors"]["cameras"]["picam_h265"]  # the refused save wrote nothing
+    assert correction_rows(admin) == []
+    assert ("survey.correct_bearing", f"{in_use} {row['id']}") not in audit_rows(admin)
+    assert bearing(CAMERA, row["bearing"]) in survey(places(admin), in_use)["bearings"]
+
+
+def test_an_unreadable_file_after_the_row_changed_puts_the_row_back(admin, monkeypatch):
+    in_use = first_place(admin)
+    row = camera_row_of(admin, in_use)
+    nodered = admin.app.state.nodered
+    path = admin.app.state.config_path
+    text = path.read_text()
+    real = nodered.correct_bearing
+
+    def broke_the_file(deployment_id, new_bearing):
+        real(deployment_id, new_bearing)
+        monkeypatch.setattr(nodered, "correct_bearing", real)  # the revert goes through
+        path.write_text("{ not yaml")
+
+    monkeypatch.setattr(nodered, "correct_bearing", broke_the_file)
+    r = admin.post(f"/api/v1/surveys/{in_use}/deployments/{row['id']}/bearing", json={"bearing": "sw"}, headers=ORIGIN)
+    path.write_text(text)
+    assert r.status_code == 500 and r.json()["error"]["code"] == "config_error"
+    assert camera_row_of(admin, in_use)["bearing"] == row["bearing"]
+    assert correction_rows(admin) == []
+
+
+def test_a_failed_revert_is_logged_by_class_and_still_answers_409(admin, monkeypatch, caplog):
+    from tm_control.modules.location import config as location_config
+
+    in_use = first_place(admin)
+    row = camera_row_of(admin, in_use)
+    nodered = admin.app.state.nodered
+    real_save = location_config.NodeRedConfig.save
+    real = nodered.correct_bearing
+    sent = []
+
+    def first_works(deployment_id, new_bearing):
+        sent.append(new_bearing)
+        if len(sent) > 1:
+            raise NodeRedError("unreachable")
+        real(deployment_id, new_bearing)
+
+    def edited_first(self):
+        path = admin.app.state.config_path
+        path.write_text(path.read_text() + "\n# edited by hand\n")
+        return real_save(self)
+
+    monkeypatch.setattr(nodered, "correct_bearing", first_works)
+    monkeypatch.setattr(location_config.NodeRedConfig, "save", edited_first)
+    with caplog.at_level(logging.WARNING):
+        r = admin.post(
+            f"/api/v1/surveys/{in_use}/deployments/{row['id']}/bearing", json={"bearing": "sw"}, headers=ORIGIN
+        )
+    monkeypatch.undo()
+    assert r.status_code == 409
+    assert sent == ["sw", row["bearing"]]
+    assert "NodeRedError" in caplog.text and row["id"] not in caplog.text
+
+
 def test_correct_bearing_refusals(admin, monkeypatch):
     in_use = first_place(admin)
     row = rows(admin, in_use)[0]
