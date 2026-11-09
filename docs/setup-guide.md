@@ -59,7 +59,7 @@ The location is optional. If the device stays in one place and you never share i
 2. Choose **Add a place**. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose the way each sensor faces. Choose **Save**.
 3. Open the new place in the list, choose **Deploy here**, check the review, and choose **Deploy**.
 
-To record only the way the sensors face, choose **Deploy here** on the place in use, **First location**, and change the bearings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
+To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the bearings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
 
 Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`. Connect over SSH and open the settings file:
 

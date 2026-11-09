@@ -75,7 +75,7 @@ describe('correcting a location', () => {
     await flushPromises()
     expect(dialogText()).toContain(
       'Use this only if the location was entered wrong. Every record from this place will say it was at the new ' +
-        'point. To move the unit, use Deploy here instead.',
+        'point. If the unit moved, deploy it to the place it moved to instead.',
     )
     expect(dialogText()).toContain('Copies and uploads that already left the device keep the old values.')
     expect(dialogField('Coordinates').value).toBe('45.52252, -122.69120')
@@ -172,6 +172,7 @@ describe('correcting a bearing', () => {
     const dialog = mountCorrect('bearing', NEAR, DEPLOYMENT)
     await flushPromises()
     expect(dialogText()).toContain('picam_h265')
+    expect(dialogText()).toContain('If the unit was turned, use Modify deployment on the place in use instead.')
     expect(dialogText()).toContain('Copies and uploads that already left the device keep the old values.')
     expect(correctButton().disabled).toBe(true) // nothing to correct until the bearing changes
     await choose(dialog, 'se')

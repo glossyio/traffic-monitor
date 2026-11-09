@@ -72,6 +72,14 @@ export function startingBearings(sensors: Bearing[], place?: { bearings: Bearing
   })
 }
 
+// What deploying to a place is called, by the place's status: the button on the place and the review's title
+// (`action`), and the review's button that does it (`confirm`). At the place in use only bearings can change.
+export function deployWords(status: string): { action: string; confirm: string } {
+  if (status === 'in_use') return { action: 'Modify deployment', confirm: 'Modify' }
+  if (status === 'used') return { action: 'Re-deploy here', confirm: 'Re-deploy' }
+  return { action: 'Deploy here', confirm: 'Deploy' }
+}
+
 export type Precision = 'none' | '1' | '2'
 
 // How precisely the database stores each place, coarsest first. `places` is the number of decimal places kept. Each

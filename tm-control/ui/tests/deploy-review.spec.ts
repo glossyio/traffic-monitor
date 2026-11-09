@@ -1,4 +1,4 @@
-// The review step before "Deploy here": what each sensor does, what the database stores, and the result of
+// The review step before a deploy: what each sensor does, what the database stores, and the result of
 // POST /surveys/{id}/deploy, which waits for Node-RED to start the deployments.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -106,6 +106,21 @@ describe('the deploy review', () => {
     Reflect.deleteProperty(window, 'isSecureContext')
   })
 
+  it.each([
+    ['planned', 'Deploy here', 'Deploy'],
+    ['used', 'Re-deploy here', 'Re-deploy'],
+    ['in_use', 'Modify deployment', 'Modify'],
+  ] as const)('names itself for a %s place', (status, title, confirm) => {
+    const wrapper = mountAlone(DeployReview, { place: place({ status }), state: STATE })
+    expect(wrapper.find('.v-card-title').text()).toBe(title)
+    expect(button(wrapper, confirm).exists()).toBe(true)
+  })
+
+  it('says what a bearing change does at the place in use', () => {
+    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
+    expect(wrapper.text()).toContain('Every sensor keeps its deployment. Change a bearing to start a new one.')
+  })
+
   it('starts a new deployment for every sensor at a place not in use', async () => {
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
     expect(wrapper.text()).toContain('Corner by the park')
@@ -131,14 +146,14 @@ describe('the deploy review', () => {
     expect(radar).toContain('Not set') // the select shows a blank bearing by its title
   })
 
-  it('disables Deploy at the place in use while every bearing is unchanged', async () => {
+  it('disables Modify at the place in use while every bearing is unchanged', async () => {
     const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
     expect(sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()).toContain('Unchanged')
-    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeDefined()
+    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).not.toContain('Counts from now on attach to the new deployment.')
     await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 'w')
-    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeUndefined()
+    expect(button(wrapper, 'Modify').attributes('disabled')).toBeUndefined()
     expect(wrapper.text()).toContain('Counts from now on attach to the new deployment.')
   })
 
@@ -146,7 +161,7 @@ describe('the deploy review', () => {
     const turned = { ...IN_USE, bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' }] }
     const wrapper = mountAlone(DeployReview, { place: turned, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
-    expect(button(wrapper, 'Deploy').attributes('disabled')).toBeDefined()
+    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
   })
 
   it('says nothing is stored when the precision stores no location', async () => {
@@ -162,7 +177,7 @@ describe('the deploy review', () => {
     const api = fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
     await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 'e')
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(api.sent).toEqual([
       {
         method: 'POST',
@@ -182,7 +197,7 @@ describe('the deploy review', () => {
     let answer: (response: Response) => void = () => {}
     fakeApi({ [DEPLOY]: () => new Promise<Response>((resolve) => (answer = resolve)) })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain('Waiting for Node-RED to reload the settings')
     expect(button(wrapper, 'Cancel').attributes('disabled')).toBeDefined()
     answer(json(200, { deployed_at: 1762000000000, reloaded: true, deployments: ROWS }))
@@ -193,12 +208,12 @@ describe('the deploy review', () => {
   it("says Node-RED hasn't reloaded yet and not to deploy again", async () => {
     fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: false, deployments: [] } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain(
       "The settings are saved. Node-RED hasn't reloaded them yet; the deployments appear once it does. " +
         "Don't deploy again.",
     )
-    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Deploy')).toBe(false)
+    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Re-deploy')).toBe(false)
     expect(wrapper.emitted('deployed')).toHaveLength(1)
   })
 
@@ -208,7 +223,7 @@ describe('the deploy review', () => {
     Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
     fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain('1762000000000-0123abcd-d')
     expect(wrapper.text()).toContain('1762000000000-4567cdef-d')
     const copies = wrapper.findAll('button').filter((b) => b.text().trim() === 'Copy')
@@ -223,7 +238,7 @@ describe('the deploy review', () => {
       [DEPLOY]: apiError(409, 'config_changed', 'config.yml changed since it was read. Reload the page and try again.'),
     })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain('config.yml changed since it was read.')
     expect(wrapper.emitted('deployed')).toBeUndefined()
     expect(wrapper.emitted('stale')).toHaveLength(1) // the page loads the places again
@@ -232,13 +247,13 @@ describe('the deploy review', () => {
   it('says the settings may be saved when the connection drops, and offers no second deploy', async () => {
     fakeApi({ [DEPLOY]: () => Promise.reject(new TypeError('fetch failed')) })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await click(wrapper, 'Deploy')
+    await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain(
       'The connection dropped before the answer came. The settings may already be saved: close this and check the ' +
         'place before deploying again.',
     )
     expect(wrapper.text()).not.toContain('try again')
-    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Deploy')).toBe(false)
+    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Re-deploy')).toBe(false)
     expect(wrapper.emitted('deployed')).toHaveLength(1) // the page loads the places, to show what happened
   })
 })

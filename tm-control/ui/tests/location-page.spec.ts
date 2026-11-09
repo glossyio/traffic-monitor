@@ -3,7 +3,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
-import { button, click, clickInDialog, dialogField, dialogText, field, mountApp, typeInto } from './mount'
+import { button, click, clickInDialog, dialogButtons, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -102,6 +102,10 @@ function panel(wrapper: VueWrapper, title: string) {
   return found[0]
 }
 
+function panelIsOpen(wrapper: VueWrapper, title: string) {
+  return panel(wrapper, title).element.closest('.v-expansion-panel')?.classList.contains('v-expansion-panel--active')
+}
+
 // Open a place's panel and wait for what it asks the API
 async function expand(wrapper: VueWrapper, title: string) {
   await panel(wrapper, title).trigger('click')
@@ -152,7 +156,7 @@ describe('the Location page', () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
     const titles = wrapper.findAll('.v-expansion-panel-title').map((t) => t.text())
-    expect(titles).toHaveLength(3)
+    expect(titles).toHaveLength(4) // and the precision, last
     expect(titles[0]).toContain('Front of the school')
     expect(titles[0]).toContain('In use')
     expect(titles[0]).toContain('45.5, -122.7')
@@ -196,7 +200,7 @@ describe('the Location page', () => {
     expect(wrapper.text()).toContain('picam_h265')
     expect(wrapper.text()).toContain('Deployments (1)')
     expect(wrapper.text()).toContain('Facing NE')
-    expect(button(wrapper, 'Deploy here').exists()).toBe(true)
+    expect(button(wrapper, 'Re-deploy here').exists()).toBe(true)
     expect(button(wrapper, 'Correct location').exists()).toBe(true)
     expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Edit')).toBe(false) // a used place is corrected
   })
@@ -218,31 +222,144 @@ describe('the Location page', () => {
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2) // reloaded
   })
 
+  it('puts the precision last and closed, naming the current choice, with a note under the card', async () => {
+    signedIn(ADMIN, { [SURVEYS]: PLACES })
+    const { wrapper } = await mountApp('/location')
+    const headings = wrapper.findAll('h2').map((h) => h.text())
+    expect(headings.findIndex((h) => h === 'Places')).toBeLessThan(headings.findIndex((h) => h.startsWith('Precision')))
+    const title = panel(wrapper, 'Precision')
+    expect(title.text()).toContain('About 10 km (45.5, -122.7)')
+    expect(panelIsOpen(wrapper, 'Precision')).toBe(false)
+    expect(wrapper.text()).not.toContain('This setting is for the whole device')
+
+    const note = wrapper.find('[data-precision-note]')
+    expect(note.text()).toBe(
+      "The database stores each place's location rounded, at the precision set under Precision at the end of this " +
+        'page. That is what a shared copy of the database reveals. This device keeps the exact location you enter, ' +
+        'outside the database.',
+    )
+    const card = wrapper.find('.v-card').element
+    expect(card.compareDocumentPosition(note.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const places = wrapper.findAll('h2').find((h) => h.text() === 'Places')!.element
+    expect(note.element.compareDocumentPosition(places) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    await expand(wrapper, 'Precision')
+    expect(wrapper.text()).toContain(
+      'This setting is for the whole device: every place, the deployments running now, and every new one. The exact ' +
+        'location is kept on this device, outside the database, so a later update can still export it in full.',
+    )
+    expect(wrapper.text()).not.toContain('Exporting it is coming in a later update.')
+  })
+
   it('offers to round the stored rows only when the precision goes down and confirms it', async () => {
     const api = signedIn(ADMIN, {
-      [SURVEYS]: PLACES,
-      'PUT /api/v1/surveys/precision': { ...PLACES, precision: 'none' },
+      [SURVEYS]: { ...PLACES, precision: '2' },
+      'PUT /api/v1/surveys/precision': PLACES,
     })
     const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
     const label = 'Also round the rows already stored'
     expect(wrapper.text()).not.toContain(label)
-    expect(wrapper.text()).toContain('so you can still export it in full later.')
-    expect(wrapper.text()).toContain('Exporting it is coming in a later update.')
 
-    await field(wrapper, 'About 1 km (45.52, -122.69), the default').setValue(true) // finer: from the next deployment
-    expect(wrapper.text()).not.toContain(label)
-
-    await field(wrapper, 'No location stored').setValue(true) // coarser
+    await field(wrapper, 'About 10 km (45.5, -122.7)').setValue(true) // coarser
+    expect(wrapper.text()).toContain('Older rows keep theirs unless you tick the box.')
     await field(wrapper, label).setValue(true)
     await click(wrapper, 'Save')
+    expect(dialogText()).toContain('Round the rows already stored?')
     expect(dialogText()).toContain("This can't be undone.")
     expect(api.sent.some((r) => r.method === 'PUT')).toBe(false)
     await clickInDialog('Save and round')
     const put = api.sent.filter((r) => r.method === 'PUT')
     expect(put.map((r) => [r.path, r.body])).toEqual([
-      ['/api/v1/surveys/precision', { precision: 'none', round_stored: true }],
+      ['/api/v1/surveys/precision', { precision: '1', round_stored: true }],
     ])
-    expect(wrapper.text()).toContain('Saved.')
+    expect(wrapper.text()).toContain('Saved. The rows already stored are rounded.')
+    expect(panelIsOpen(wrapper, 'Precision')).toBe(true) // so the result can be read
+  })
+
+  it('offers nothing to round for a finer choice', async () => {
+    signedIn(ADMIN, { [SURVEYS]: PLACES })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
+    await field(wrapper, 'About 1 km (45.52, -122.69), the default').setValue(true)
+    expect(wrapper.text()).not.toContain('Also round the rows already stored')
+    expect(wrapper.text()).toContain('A finer precision applies from the next deployment.')
+  })
+
+  it('says No location stored removes the stored location, and asks in those words', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'PUT /api/v1/surveys/precision': { ...PLACES, precision: 'none' },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
+    await field(wrapper, 'No location stored').setValue(true)
+    expect(wrapper.text()).toContain(
+      'No location stored removes the stored location from the deployments running now at once. Tick the box to ' +
+        'remove it from every row already in the database as well. The exact location stays on this device, but the ' +
+        "database can't get the rounded values back.",
+    )
+    expect(wrapper.text()).not.toContain('Older rows keep theirs')
+    await field(wrapper, 'Also remove it from the rows already stored').setValue(true)
+    await click(wrapper, 'Save')
+    expect(dialogText()).toContain('Remove the stored location from every row?')
+    expect(dialogText()).toContain("Every row in the database loses its stored location. This can't be undone.")
+    await clickInDialog('Save and remove')
+    expect(api.sent.filter((r) => r.method === 'PUT').map((r) => r.body)).toEqual([
+      { precision: 'none', round_stored: true },
+    ])
+    expect(wrapper.text()).toContain('Saved. The rows already stored no longer hold a location.')
+  })
+
+  it('saves without asking when the box is left clear', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'PUT /api/v1/surveys/precision': { ...PLACES, precision: 'none' },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
+    await field(wrapper, 'No location stored').setValue(true)
+    await click(wrapper, 'Save')
+    expect(api.sent.filter((r) => r.method === 'PUT').map((r) => r.body)).toEqual([
+      { precision: 'none', round_stored: false },
+    ])
+    expect(panel(wrapper, 'Precision').text()).toContain('No location stored') // the title follows the device
+  })
+
+  it('loads the places again when saving the precision is refused because config.yml changed', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'PUT /api/v1/surveys/precision': apiError(
+        409,
+        'config_changed',
+        'config.yml changed since it was read. Reload the page and try again.',
+      ),
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
+    await field(wrapper, 'No location stored').setValue(true)
+    await click(wrapper, 'Save')
+    expect(wrapper.text()).toContain('config.yml changed since it was read.')
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined() // the choice follows the device again
+  })
+
+  it('stays as it is when Node-RED refuses to round the rows, so Save can be pressed again', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'PUT /api/v1/surveys/precision': apiError(
+        502,
+        'nodered',
+        "config.yml now has the new precision, but the stored rows weren't changed.",
+      ),
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Precision')
+    await field(wrapper, 'No location stored').setValue(true)
+    await click(wrapper, 'Save')
+    expect(wrapper.text()).toContain("the stored rows weren't changed.")
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(1)
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeUndefined()
   })
 
   it('says when Node-RED has not answered', async () => {
@@ -267,7 +384,7 @@ describe('the Location page', () => {
     signedIn(ADMIN, { [SURVEYS]: { ...PLACES, unassigned } })
     const { wrapper } = await mountApp('/location')
     const titles = wrapper.findAll('.v-expansion-panel-title').map((t) => t.text())
-    expect(titles.at(-1)).toContain('4 deployments') // after the places
+    expect(titles.at(-2)).toContain('4 deployments') // after the places, before the precision
     await expand(wrapper, 'Before any place was recorded')
     expect(wrapper.text()).toContain('recorded before the unit had a place')
     expect(wrapper.text()).toContain('60 days ago')
@@ -298,7 +415,7 @@ describe('the Location page', () => {
     expect(dialogField('Coordinates').value).toBe('45.00000, -122.00000')
   })
 
-  it('opens the review from Deploy here on a used place', async () => {
+  it('opens the review from Re-deploy here on a used place', async () => {
     signedIn(ADMIN, {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
@@ -306,13 +423,13 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Deploy here')
+    await click(wrapper, 'Re-deploy here')
     expect(dialogText()).toContain('c0ffee01-si')
     expect(dialogText()).toContain('New deployment starts')
     expect(dialogText()).toContain('Counts from now on attach to the new deployment.')
   })
 
-  it('offers Deploy here on the place in use, to record a turn of the unit', async () => {
+  it('offers Modify deployment on the place in use, to record a turn of the unit', async () => {
     signedIn(ADMIN, {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
@@ -320,9 +437,35 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'Front of the school')
-    await click(wrapper, 'Deploy here')
+    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Deploy here')).toBe(false)
+    await click(wrapper, 'Modify deployment')
     expect(dialogText()).toContain('Unchanged')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe(
+      'Modify deployment',
+    )
+  })
+
+  it('offers Deploy here on a planned place', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/0f0e0d0c-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/0f0e0d0c-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Corner by the park')
+    await click(wrapper, 'Deploy here')
     expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Deploy here')
+    expect(dialogButtons('Deploy')).toHaveLength(1)
+  })
+
+  it('keeps the import dialog open on a click beside it, so its result is seen', async () => {
+    signedIn(ADMIN, { [SURVEYS]: PLACES })
+    const { wrapper } = await mountApp('/location')
+    await click(wrapper, 'Import places')
+    const dialog = wrapper
+      .findAllComponents({ name: 'VDialog' })
+      .find((found) => found.vm.$attrs['aria-label'] === 'Import places')
+    expect(dialog?.props('persistent')).toBe(true)
   })
 
   it('loads the places again when a deploy is refused because config.yml changed', async () => {
@@ -338,8 +481,8 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Deploy here')
-    await clickInDialog('Deploy')
+    await click(wrapper, 'Re-deploy here')
+    await clickInDialog('Re-deploy')
     expect(dialogText()).toContain('config.yml changed since it was read.')
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
   })
@@ -352,7 +495,7 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Deploy here')
+    await click(wrapper, 'Re-deploy here')
     await clickInDialog('Cancel')
     // The dialog fades out; until it's gone it still shows the review, not an empty box
     expect(dialogText()).toContain('c0ffee01-si')
@@ -367,8 +510,8 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Deploy here')
-    await clickInDialog('Deploy')
+    await click(wrapper, 'Re-deploy here')
+    await clickInDialog('Re-deploy')
     expect(dialogText()).toContain("Don't deploy again.")
     const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
     expect(gets('/api/v1/surveys')).toHaveLength(2)
@@ -397,7 +540,7 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    expect(button(wrapper, 'Deploy here').exists()).toBe(true)
+    expect(button(wrapper, 'Re-deploy here').exists()).toBe(true)
     expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Correct location')).toBe(false)
   })
 

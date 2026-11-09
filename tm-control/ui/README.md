@@ -50,7 +50,7 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
   module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
-  editing a place (`PlaceForm.vue`), Deploy here's review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
+  editing a place (`PlaceForm.vue`), the deploy review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
   importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the bearing and precision choices,
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
@@ -598,14 +598,8 @@ importing places open dialogs from this page, so they move nothing on it.
 | | 45.52252, -122.69120         | |
 | | Sharing      Bearing, picam  | |
 | +------------------------------+ |
-| Precision                   (h6) |
-| ( ) No location stored           |
-| ( ) About 10 km (45.5, -122.7)   |
-| (o) About 1 km (45.52, -122.69), |
-|     the default                  |
-| [ ] Also round the rows already  |  coarser choice only
-|     stored                       |
-| [Save]                           |
+| The database stores each place's |  above the fold, points to the
+| location rounded ...             |  panel at the end of the page
 | Places                      (h6) |
 | [Add a place] [Import places]    |
 | +------------------------------+ |
@@ -617,12 +611,29 @@ importing places open dialogs from this page, so they move nothing on it.
 | | First used    Last used      | |
 | | No events recorded at this   | |
 | | place.                       | |
-| | Deployments (2)              | |
-| | picam_h265                   | |
-| | Facing N  Correct bearing    | |
-| | Nov 7, 2026, 10:15 PM to ... | |
-| | [Deploy here]                | |
+| | Deployments (4)              | |
+| | | Deployed Nov 7, 10:15 PM,  | |  newest first; the running one
+| | | running now                | |  has a blue left border
+| | | picam_h265                 | |
+| | | Facing N  Correct bearing  | |
+| | |   TM_RADAR_SERIAL_PORT_00  | |  indented under its camera
+| | |   Facing N  Correct bearing| |
+| | | Deployed Nov 2, ... to ... | |  grey left border
+| | | picam_h265 ...             | |
+| | [Re-deploy here]             | |  by status, see below
 | | [Correct location] [Delete]  | |
+| +------------------------------+ |
+| +------------------------------+ |
+| | Precision  About 1 km ...  v | |  (h2) closed; opened below
+| | This setting is for the whole| |
+| | device: ...                  | |
+| | ( ) No location stored       | |
+| | ( ) About 10 km (example)    | |
+| | (o) About 1 km (example),    | |
+| |     the default              | |
+| | [ ] Also round the rows      | |  coarser choice only
+| |     already stored           | |
+| | [Save]                       | |
 | +------------------------------+ |
 +----------------------------------+
 ```
@@ -630,17 +641,34 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- The precision is three radio buttons, coarsest first, with the area in words and, in parentheses, one example point
-  stored at that precision, so "about 1 km" also reads as coordinates; "the default" follows about 1 km. "Also round
-  the rows already stored" shows only for a coarser choice, because a finer one can't bring back what was rounded
-  away; a line says it applies from the next deployment instead. Ticking it asks first ("This can't be undone.").
+- The precision comes last, as one closed panel, because most devices never change it and the places are what the page
+  is used for. Its title names the device's choice, so the value shows without a tap, and a note under the card says
+  what the database stores and where to change it. The panel stays open after Save, so the result line can be read.
+- Inside, the precision is three radio buttons, coarsest first, with the area in words and, in parentheses, one example
+  point stored at that precision, so "about 1 km" also reads as coordinates; "the default" follows about 1 km. "Also
+  round the rows already stored" shows only for a coarser choice, because a finer one can't bring back what was rounded
+  away; a line says it applies from the next deployment instead. Ticking it asks first ("This can't be undone."). For
+  No location stored, the box, its line, and the confirmation say "remove" rather than "round", because that's what
+  happens.
+- When saving the precision is refused because `config.yml` changed (409), the page loads the places again, as every
+  other write does. A 502 doesn't reload: the file has the choice and the rows don't, and pressing Save again finishes
+  it.
 - Each place is a bordered panel, as on the Detection page: its title says the description, the status chip, the id
   in the secondary color, and the stored coordinates, so a closed list still says what each place is. The chip is in
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events
   and deployments once.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
-  four columns at 375 px, and each deployment has a "Correct bearing" button. A deployment that started and ended on
-  the same day names the day once.
+  four columns at 375 px, and each deployment has a "Correct bearing" button.
+- The list is grouped by the deploy each row came from, newest first, so a place with four deployments reads as two
+  deploys of a camera and its radar, and the current one is on top on a phone. Rows that share an exact `started` are
+  one deploy, because Node-RED starts every row of a config load at the same time. The group's heading holds the start,
+  the latest end, or "running now" (so the border's color isn't the only signal), and names a day once when it started
+  and ended on the same one. A row shows its own end only when the heading doesn't say it. Cameras come first, and a
+  radar deployed with a camera is indented under it. That's order, not pairing: on a device with two cameras the
+  radars sit under the last one, since the API doesn't send `camera_radar`.
+- The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place, "Re-deploy here"
+  for a used one, and "Modify deployment" for the place in use, where only bearings can change. The review's title and
+  its dialog's name use the same words, and its button reads "Deploy", "Re-deploy", or "Modify".
 - Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
   rounded one stored with each record. The place in use has no Delete.
 - When Node-RED hasn't answered the first reconcile, or `config.yml` can't be read, a warning at the top says so, and
@@ -651,7 +679,7 @@ importing places open dialogs from this page, so they move nothing on it.
 - A panel's facts, events, and deployments are `PlaceDetails.vue`; the page keeps the buttons, because they open the
   page's dialogs.
 
-#### Adding a place, and Deploy here
+#### Adding a place, and the deploy review
 
 ```text
 +----------------------------------+   +----------------------------------+
@@ -694,8 +722,8 @@ importing places open dialogs from this page, so they move nothing on it.
   bearing it had, and a select for the one to deploy with. Moving to another place starts a new deployment for every
   sensor, as the deployment engine does. Then what the database will store for the place, rounded by the API, what's
   shared, and that counts from now on attach to the new deployment (only when one starts).
-- The place in use has "Deploy here" too, to record a turn of the unit. There the review starts from the bearings
-  `config.yml` has now, each sensor reads "Unchanged" until its bearing changes, and Deploy stays disabled until one
+- The place in use has "Modify deployment", to record a turn of the unit. There the review starts from the bearings
+  `config.yml` has now, each sensor reads "Unchanged" until its bearing changes, and Modify stays disabled until one
   does, with a line that says so.
 - Deploy sends every enabled sensor's bearing, so what's recorded is what the review showed. While the API waits for
   Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
@@ -715,12 +743,13 @@ importing places open dialogs from this page, so they move nothing on it.
 
 - A correction is for a value entered wrong, never for a move, and both dialogs (`CorrectDialog.vue`) open by saying
   so: "Use this only if the location was entered wrong. Every record from this place will say it was at the new
-  point. To move the unit, use Deploy here instead." The bearing's says the same of its deployment, and both end with
+  point. If the unit moved, deploy it to the place it moved to instead." The bearing's says the same of its deployment
+  and points to Modify deployment, and both end with
   "Copies and uploads that already left the device keep the old values." The button reads "Correct", not "Save".
 - "Correct location" shows only for a used place or the place in use that has a point: a correction needs one, and
   a place with none is planned anew. The field starts at the exact point and can't be left blank. A new point more
   than about 1 km from the old one (`distanceKm`) gets a second confirmation, with a red button, that gives the
-  distance and points to Deploy here. The same point again is allowed, because correcting again is how a correction
+  distance and says to deploy instead. The same point again is allowed, because correcting again is how a correction
   whose stored rows weren't re-rounded (502) is finished; the same bearing isn't, because there's nothing to finish.
 - "Correct bearing" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
 - The import is preview, then import. Preview sends the text as a dry run and lists the places the API read, by
@@ -728,7 +757,7 @@ importing places open dialogs from this page, so they move nothing on it.
   when the preview found places and no errors; any change to the text forgets the preview. The API creates every
   place or none. A file is read into the same box as pasted text, so what's previewed is always on screen, and
   64 KiB, the API's limit, is checked before anything is sent. The dialog is `scrollable`, so a long preview scrolls
-  under the title and the buttons stay in view.
+  under the title and the buttons stay in view, and `persistent`, so a click beside it can't hide the result.
 
 #### What the screenshot review changed
 
@@ -747,6 +776,18 @@ result were checked at the same widths. The place form, the review, and the resu
 - "Correct bearing" was a small button, in smaller type than the "Facing N" beside it. It's the normal size now.
 - At 375 px the import's example header broke inside a sensor's name; it now breaks only after a comma. The preview
   appeared below the fold, with Preview and Import scrolled away; the dialog now scrolls its content instead.
+
+After the first bench runs, the page was checked again in fake mode at 375 px and 1280 px wide, with a deploy history
+on one place, the precision panel open, and No location stored chosen:
+
+- The precision sat between the card and the places, pushing the places off the first screen for a setting most devices
+  never change. It moved to the end, closed, with its value in the title and a note under the card.
+- A flat list of four deployments with four dates read as four events. They're grouped by deploy now.
+- "Deploy here" on a place the unit had already used, or on the one it's at, said the wrong thing. The button now
+  follows the status.
+- "Also round the rows" read wrong for No location stored, which removes the location. It has its own words now.
+- `column-gap-3` isn't a Vuetify class, so on a wide screen the panel's title read "PrecisionAbout 1 km". It's `gc-3`
+  now, and the deployment line's `column-gap-2` became `gc-2`.
 
 #### Defaults rejected
 

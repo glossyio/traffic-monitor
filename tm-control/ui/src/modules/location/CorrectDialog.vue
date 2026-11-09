@@ -76,7 +76,7 @@ const canCorrect = computed(() =>
 const farText = computed(
   () =>
     `The new point is about ${Math.round(distance.value)} km from the old one. ` +
-    'If the unit moved, use Deploy here instead.',
+    'If the unit moved, deploy it to the place it moved to instead.',
 )
 
 function askToCorrect() {
@@ -124,7 +124,7 @@ async function correct() {
           <template v-if="kind === 'location'">
             <p class="text-body-1 mb-6">
               Use this only if the location was entered wrong. Every record from this place will say it was at the new
-              point. To move the unit, use Deploy here instead.
+              point. If the unit moved, deploy it to the place it moved to instead.
             </p>
             <v-text-field
               v-model="coordinates"
@@ -146,7 +146,7 @@ async function correct() {
             <p class="text-body-2 text-secondary text-break mb-4">{{ deployment.id }}</p>
             <p class="text-body-1 mb-6">
               Use this only if the bearing was entered wrong. Every record from this deployment will say the sensor
-              faced the new way. If the unit was turned, use Deploy here instead.
+              faced the new way. If the unit was turned, use Modify deployment on the place in use instead.
             </p>
             <v-select
               v-model="bearing"

@@ -1,11 +1,11 @@
 <!--
-  The review step before "Deploy here" (POST /surveys/{id}/deploy), the content of the page's dialog. It shows what
-  deploying does rather than how: for each enabled sensor whether a new deployment starts, with its bearing then and
+  The review step before a deploy (POST /surveys/{id}/deploy), the content of the page's dialog, named by the place's
+  status (deployWords: Deploy here, Re-deploy here, or Modify deployment). It shows what deploying does rather than how: for each enabled sensor whether a new deployment starts, with its bearing then and
   the one to deploy with (which can be changed here); what the database stores for the place; what's shared. Deploy
   sends every sensor's bearing and waits, inside the request, for Node-RED to start the deployments. Then the review
   gives way to the result: the new deployment ids to copy, or, when Node-RED hasn't reloaded the settings yet, a line
   that says the deploy is done and shouldn't be repeated. At the place in use, only a sensor whose bearing changes
-  starts a new deployment (the unit was turned), and Deploy waits for one to change.
+  starts a new deployment (the unit was turned), and Modify waits for one to change.
 
   Emits `deployed` once the API has answered, or once the connection dropped while it waited (the settings may be
   saved by then); `stale` when the API refused because something changed since the page loaded (409), so the page
@@ -16,7 +16,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { copyText } from '../../components/clipboard'
-import { BEARINGS, PRECISIONS, bearingTitle, formatStored, startingBearings } from './coordinates'
+import { BEARINGS, PRECISIONS, bearingTitle, deployWords, formatStored, startingBearings } from './coordinates'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -31,6 +31,7 @@ const inUse = props.state.in_use
 const sensors = props.state.sensors
 const precision = props.state.precision
 const sharing = props.state.sharing
+const words = deployWords(props.place.status)
 
 // The bearing to deploy each sensor with: the place's own, else the sensor's current one. At the place in use, the
 // current one: that's what runs, and the review starts from no change.
@@ -105,7 +106,7 @@ async function copy(id: string) {
 
 <template>
   <v-card color="surface" rounded="lg">
-    <v-card-title class="text-h6 text-wrap pt-4">Deploy here</v-card-title>
+    <v-card-title class="text-h6 text-wrap pt-4">{{ words.action }}</v-card-title>
     <v-card-text>
       <p class="text-subtitle-1 font-weight-medium text-break">{{ place.description ?? 'No description' }}</p>
       <p class="text-body-2 text-secondary mb-6">{{ place.id }}</p>
@@ -144,7 +145,7 @@ async function copy(id: string) {
         <p v-else class="text-body-1">Nothing stored in the database</p>
         <p class="text-body-1">{{ sharingLine }}</p>
         <p v-if="anyNew" class="text-body-1 mt-4">Counts from now on attach to the new deployment.</p>
-        <p v-else class="text-body-1 mt-4">Every sensor keeps its deployment. Change a bearing to record a turn.</p>
+        <p v-else class="text-body-1 mt-4">Every sensor keeps its deployment. Change a bearing to start a new one.</p>
 
         <div v-if="deploying" role="status" class="mt-6">
           <v-progress-linear indeterminate color="primary" class="mb-2" />
@@ -185,7 +186,7 @@ async function copy(id: string) {
       <template v-if="reviewing">
         <v-btn variant="text" min-height="44" :disabled="deploying" @click="emit('close')">Cancel</v-btn>
         <v-btn color="primary" variant="flat" min-height="44" :loading="deploying" :disabled="!anyNew" @click="deploy">
-          Deploy
+          {{ words.confirm }}
         </v-btn>
       </template>
       <v-btn v-else color="primary" variant="flat" min-height="44" @click="emit('close')">Close</v-btn>

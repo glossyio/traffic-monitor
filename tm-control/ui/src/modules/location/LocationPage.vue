@@ -1,21 +1,30 @@
 <!--
-  The Location page (GET /surveys), for admins only: the place the unit is at now, the precision the database stores
-  locations at (PUT /surveys/precision), and the places this unit knows, one panel each. Opening a panel asks for the
-  place's events and deployments (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one
-  edited, in PlaceForm's dialog. "Deploy here" opens DeployReview, which moves the unit to a planned or used place,
-  or, on the place in use, records a turn of the unit (a bearing changed). A used place or the place in use can have
-  its location, or a deployment's bearing, corrected in CorrectDialog. "Import places" adds planned places from a CSV
-  in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a confirmation; the place in
-  use can't.
+  The Location page (GET /surveys), for admins only: the place the unit is at now, the places this unit knows, one
+  panel each, and last, closed, the precision the database stores locations at (PUT /surveys/precision). A note under
+  the card says the precision is there. Opening a place's panel asks for its events and deployments
+  (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one edited, in PlaceForm's dialog.
+  "Deploy here" on a planned place, or "Re-deploy here" on a used one, opens DeployReview to move the unit there;
+  "Modify deployment" on the place in use opens it to record a turn of the unit (a bearing changed). A used place or
+  the place in use can have its location, or a deployment's bearing, corrected in CorrectDialog. "Import places" adds
+  planned places from a CSV in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a
+  confirmation; the place in use can't.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { api, messageOf } from '../../api/client'
+import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
-import { PRECISIONS, bearingTitle, formatExact, formatStored, isCoarser, type Precision } from './coordinates'
+import {
+  PRECISIONS,
+  bearingTitle,
+  deployWords,
+  formatExact,
+  formatStored,
+  isCoarser,
+  type Precision,
+} from './coordinates'
 import CorrectDialog from './CorrectDialog.vue'
 import DeployReview from './DeployReview.vue'
 import ImportPlaces from './ImportPlaces.vue'
@@ -74,9 +83,15 @@ const cardItems = computed(() => {
 // Only the place the device made at first run, with no coordinates: most units never need more
 const onlyDefault = computed(() => state.value?.surveys.length === 1 && state.value.surveys[0].lat === null)
 
-// The precision. Rounding the rows already stored is offered only for a coarser choice: a finer one applies from
-// the next deployment, because the rows can't get back what was rounded away.
+// The precision, a closed panel at the end of the page (`precisionOpen`) whose title names the device's choice. Rounding
+// the rows already stored is offered only for a coarser choice: a finer one applies from the next deployment, because
+// the rows can't get back what was rounded away. No location stored removes the location rather than rounding it, so it
+// has words of its own.
+const PRECISION_PANEL = 'precision'
+const precisionOpen = ref<string | undefined>(undefined)
 const precisionChoice = ref<Precision>('2')
+const devicePrecision = computed(() => PRECISIONS.find((choice) => choice.value === state.value?.precision)?.title)
+const removing = computed(() => precisionChoice.value === 'none')
 const roundStored = ref(false)
 const offerRound = computed(() => state.value !== null && isCoarser(precisionChoice.value, state.value.precision))
 const finer = computed(() => state.value !== null && isCoarser(state.value.precision, precisionChoice.value))
@@ -105,9 +120,13 @@ async function savePrecision() {
     state.value = data as PlacesState
     precisionChoice.value = state.value.precision
     roundStored.value = false
-    precisionResult.value = { text: round ? 'Saved. The rows already stored are rounded.' : 'Saved.', error: false }
+    const removed = state.value.precision === 'none'
+    const rows = removed ? 'no longer hold a location' : 'are rounded'
+    precisionResult.value = { text: round ? `Saved. The rows already stored ${rows}.` : 'Saved.', error: false }
   } catch (error) {
     precisionResult.value = { text: messageOf(error), error: true }
+    // A 502 is not reloaded: the file has the choice but the rows don't, and Save again is the way to finish
+    if (error instanceof ApiError && error.status === 409) await load()
   } finally {
     savingPrecision.value = false
   }
@@ -274,38 +293,11 @@ onMounted(load)
       />
       <p v-else class="text-body-1">No place is in use.</p>
 
-      <section class="mt-10">
-        <h2 class="text-h6 mb-2">Precision</h2>
-        <p class="text-body-1 mb-4">
-          How precisely the database records where the unit is. The exact location is kept only on this device, outside
-          the database, so you can still export it in full later. Exporting it is coming in a later update.
-        </p>
-        <v-radio-group v-model="precisionChoice" hide-details @update:model-value="precisionChanged">
-          <v-radio v-for="choice in PRECISIONS" :key="choice.value" :value="choice.value" :label="choice.title" />
-        </v-radio-group>
-        <template v-if="offerRound">
-          <v-checkbox v-model="roundStored" label="Also round the rows already stored" hide-details class="mt-2" />
-          <p class="text-body-2 text-secondary">
-            The deployments running now take the new precision at once. Older rows keep theirs unless you tick the
-            box.
-          </p>
-        </template>
-        <p v-if="finer" class="text-body-2 text-secondary mt-2">
-          A finer precision applies from the next deployment. The rows already stored stay as they are.
-        </p>
-        <v-btn
-          color="primary"
-          size="large"
-          class="mt-4"
-          :loading="savingPrecision"
-          :disabled="precisionChoice === state.precision"
-          @click="askToSavePrecision"
-        >
-          Save
-        </v-btn>
-        <v-alert v-if="precisionResult?.error" type="error" class="mt-4">{{ precisionResult.text }}</v-alert>
-        <p v-else-if="precisionResult" class="text-body-1 mt-4">{{ precisionResult.text }}</p>
-      </section>
+      <p class="text-body-2 text-secondary mt-4" data-precision-note>
+        The database stores each place's location rounded, at the precision set under
+        <strong>Precision</strong> at the end of this page. That is what a shared copy of the database reveals. This
+        device keeps the exact location you enter, outside the database.
+      </p>
 
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Places</h2>
@@ -350,7 +342,7 @@ onMounted(load)
               />
               <div class="d-flex flex-wrap ga-3">
                 <v-btn color="primary" size="large" :disabled="working !== null" @click="openReview(place)">
-                  Deploy here
+                  {{ deployWords(place.status).action }}
                 </v-btn>
                 <v-btn
                   v-if="place.status === 'planned'"
@@ -419,6 +411,64 @@ onMounted(load)
           </v-expansion-panel>
         </v-expansion-panels>
       </section>
+
+      <!-- One panel, styled as a place's, with its title in an h2 as a section's: most devices never need to change this -->
+      <section class="mt-10">
+        <v-expansion-panels v-model="precisionOpen" flat bg-color="background">
+          <v-expansion-panel :value="PRECISION_PANEL" class="border">
+            <h2 class="text-body-1">
+              <v-expansion-panel-title>
+                <span class="d-flex flex-wrap align-baseline gc-3">
+                  <span class="text-h6">Precision</span>
+                  <span class="text-body-2 text-secondary">{{ devicePrecision }}</span>
+                </span>
+              </v-expansion-panel-title>
+            </h2>
+            <v-expansion-panel-text>
+              <p class="text-body-1 mb-4">
+                This setting is for the whole device: every place, the deployments running now, and every new one. The
+                exact location is kept on this device, outside the database, so a later update can still export it in
+                full.
+              </p>
+              <v-radio-group v-model="precisionChoice" hide-details @update:model-value="precisionChanged">
+                <v-radio v-for="choice in PRECISIONS" :key="choice.value" :value="choice.value" :label="choice.title" />
+              </v-radio-group>
+              <template v-if="offerRound">
+                <v-checkbox
+                  v-model="roundStored"
+                  :label="removing ? 'Also remove it from the rows already stored' : 'Also round the rows already stored'"
+                  hide-details
+                  class="mt-2"
+                />
+                <p v-if="removing" class="text-body-2 text-secondary">
+                  No location stored removes the stored location from the deployments running now at once. Tick the box
+                  to remove it from every row already in the database as well. The exact location stays on this device,
+                  but the database can't get the rounded values back.
+                </p>
+                <p v-else class="text-body-2 text-secondary">
+                  The deployments running now take the new precision at once. Older rows keep theirs unless you tick the
+                  box.
+                </p>
+              </template>
+              <p v-if="finer" class="text-body-2 text-secondary mt-2">
+                A finer precision applies from the next deployment. The rows already stored stay as they are.
+              </p>
+              <v-btn
+                color="primary"
+                size="large"
+                class="mt-4"
+                :loading="savingPrecision"
+                :disabled="precisionChoice === state.precision"
+                @click="askToSavePrecision"
+              >
+                Save
+              </v-btn>
+              <v-alert v-if="precisionResult?.error" type="error" class="mt-4">{{ precisionResult.text }}</v-alert>
+              <p v-else-if="precisionResult" class="text-body-1 mt-4">{{ precisionResult.text }}</p>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </section>
     </template>
 
     <PlaceForm
@@ -430,7 +480,12 @@ onMounted(load)
       @stale="load"
     />
     <!-- Persistent: a click beside the dialog doesn't close it, so a deploy that's waiting for Node-RED can't be lost -->
-    <v-dialog v-model="deployOpen" persistent max-width="560" aria-label="Deploy here">
+    <v-dialog
+      v-model="deployOpen"
+      persistent
+      max-width="560"
+      :aria-label="deployTo ? deployWords(deployTo.status).action : undefined"
+    >
       <DeployReview
         v-if="deployTo && state"
         :key="reviews"
@@ -450,8 +505,9 @@ onMounted(load)
       @corrected="refresh"
       @stale="load"
     />
-    <!-- Scrollable: a long preview scrolls inside the dialog, and the title and buttons stay in view -->
-    <v-dialog v-model="importOpen" max-width="560" scrollable aria-label="Import places">
+    <!-- Scrollable: a long preview scrolls inside the dialog, and the title and buttons stay in view. Persistent: a
+         click beside it doesn't hide a request in progress, or the result it ends with. -->
+    <v-dialog v-model="importOpen" persistent max-width="560" scrollable aria-label="Import places">
       <ImportPlaces
         v-if="state"
         :key="imports"
@@ -462,9 +518,13 @@ onMounted(load)
     </v-dialog>
     <ConfirmDialog
       v-model="confirmRound"
-      title="Round the rows already stored?"
-      text="Every location the database already holds is rounded to the new precision. This can't be undone."
-      confirm-text="Save and round"
+      :title="removing ? 'Remove the stored location from every row?' : 'Round the rows already stored?'"
+      :text="
+        removing
+          ? 'Every row in the database loses its stored location. This can\'t be undone.'
+          : 'Every location the database already holds is rounded to the new precision. This can\'t be undone.'
+      "
+      :confirm-text="removing ? 'Save and remove' : 'Save and round'"
       @confirm="savePrecision"
     />
     <ConfirmDialog
