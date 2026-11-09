@@ -10,7 +10,7 @@ from tm_control.adapters import httpjson
 from tm_control.adapters.yamlfile import ConfigRead, _round_trip_yaml
 from tm_control.modules.detection import picker
 from tm_control.modules.detection.inventory import InstallerDefault, Model, ModelFile, parse_sidecar
-from tm_control.modules.detection.labels import recognised, tracked
+from tm_control.modules.detection.labels import of_model, recognised, tracked
 from tm_control.modules.detection.picker import (
     FRIGATE_HEADER,
     Running,
@@ -137,6 +137,35 @@ def test_recognised_ignores_a_labelmap_it_cannot_read(labelmap):
     frigate = answer({"c": {"model": {"path": f"{CACHE}/{PLUS_ID}", "labelmap": labelmap}}})
     running = running_model(frigate, NO_FILE, INSTALLER, models)
     assert recognised(frigate, running, models, INSTALLER) == (["person", "bicycle", "car"], "sidecar")
+
+
+def test_recognised_leaves_out_frigates_unknown_padding():
+    models = [plus_model()]
+    labelmap = {str(index): "unknown" for index in range(91)} | {"0": "person", "1": "bicycle", "16": "bear"}
+    frigate = answer({"coral": {"model": {"path": f"{CACHE}/{PLUS_ID}", "labelmap": labelmap}}})
+    running = running_model(frigate, NO_FILE, INSTALLER, models)
+    assert recognised(frigate, running, models, INSTALLER) == (["person", "bicycle", "bear"], "frigate")
+
+
+def test_a_labelmap_of_nothing_but_unknown_says_nothing():
+    models = [plus_model()]
+    labelmap = {str(index): "unknown" for index in range(91)}
+    frigate = answer({"coral": {"model": {"path": f"{CACHE}/{PLUS_ID}", "labelmap": labelmap}}})
+    running = running_model(frigate, NO_FILE, INSTALLER, models)
+    assert recognised(frigate, running, models, INSTALLER) == (["person", "bicycle", "car"], "sidecar")
+
+
+def test_a_models_own_list_leaves_out_unknown_too(tmp_path):
+    record = json.loads(FIXTURE.read_bytes())
+    record["labelMap"] = {"0": "person", "1": "unknown", "2": "car", "3": "unknown"}
+    padded = Model("padded", "local", parse_sidecar(json.dumps(record).encode()), (), True, None)
+    assert of_model(padded, INSTALLER) == ["person", "car"]
+    labels_file = tmp_path / "labels.txt"
+    labels_file.write_text("person\nunknown\ncar\n")
+    installer = InstallerDefault(INSTALLER.section, INSTALLER_FILE, labels_file)
+    assert of_model(default_model(), installer) == ["person", "car"]
+    running = Running(INSTALLER_FILE, "installer_default", f"{CACHE}/{INSTALLER_FILE}", "config_file")
+    assert recognised(None, running, [default_model()], installer) == (["person", "car"], "labels_file")
 
 
 def test_tracked_is_the_ordered_union_of_global_and_camera_lists():

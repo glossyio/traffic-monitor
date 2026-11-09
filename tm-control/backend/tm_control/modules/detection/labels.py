@@ -9,17 +9,24 @@ from tm_control.modules.detection.inventory import LABEL_KEY, InstallerDefault, 
 from tm_control.modules.detection.picker import Running, first_detector
 
 LABELS_FILE_MAX = 1024 * 1024
+UNKNOWN = "unknown"  # what Frigate pads its merged label map with (74 of a stock Coral unit's 91 entries); not an object
+
+
+def _objects(labels) -> list[str]:
+    return [label for label in labels if label != UNKNOWN]
 
 
 def _labelmap(config: dict | None) -> list[str] | None:
-    """The first detector's model.labelmap (the top-level one if the detector has none), in index order; None for a
-    missing, empty, or malformed one."""
+    """The objects in the first detector's model.labelmap (the top-level one if the detector has none), in index order;
+    None for a missing, empty, or malformed one, or one with no objects."""
     for section in (first_detector(config), probes.mapping(config)):
         labelmap = probes.mapping(section.get("model")).get("labelmap")
         if not isinstance(labelmap, dict) or not labelmap:
             continue
         if all(LABEL_KEY.fullmatch(str(key)) and isinstance(label, str) for key, label in labelmap.items()):
-            return [label for _, label in sorted(labelmap.items(), key=lambda item: int(item[0]))]
+            labels = _objects(label for _, label in sorted(labelmap.items(), key=lambda item: int(item[0])))
+            if labels:
+                return labels
     return None
 
 
@@ -44,7 +51,7 @@ def _labels_file(path: Path) -> list[str] | None:
         lines = [line.strip() for line in data.decode("utf-8").splitlines()]
     except UnicodeDecodeError:
         return None
-    return [line for line in lines if line] or None
+    return _objects(line for line in lines if line) or None
 
 
 def _installer_labels(installer: InstallerDefault | None) -> list[str] | None:
@@ -56,7 +63,7 @@ def of_model(model: Model, installer: InstallerDefault | None) -> list[str] | No
     """What one model recognises, whether or not it runs: its sidecar's labels in label-map index order, the labels
     file for the installer's model, and None for a file that says nothing about it."""
     if model.sidecar is not None:
-        return list(model.sidecar.labels)
+        return _objects(model.sidecar.labels)
     return _installer_labels(installer) if model.kind == "installer_default" else None
 
 

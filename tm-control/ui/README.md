@@ -535,8 +535,8 @@ buttons.
 - The running model's list appears in two places on purpose. The list at the top is what Frigate reports, and it's the
   only list a model with no `.json` can have, such as Frigate's built-in model. The card's list is read from the
   model's `.json` or the installer's labels file, so the card in use looks like every other card. A caption in the top
-  list says where it came from (`labels.source`). When it's Frigate's and the objects differ from the card's, as sets
-  and ignoring entries named `unknown`, one plain line under the facts says so. It has no alert color: it's rare, and
+  list says where it came from (`labels.source`). When it's Frigate's and the objects differ from the card's, as sets,
+  one plain line under the facts says so. It has no alert color: it's rare, and
   usually a deliberate label-map edit.
 - The label lists are chips because they are many short words that wrap well on a phone. A sentence above the two
   panels says how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second
@@ -598,6 +598,8 @@ through the `#frigate-plus` link, and through a Use and a Delete:
   aligned with the card's text. The fold now reaches 8 px past that text on each side, and the title and content pad
   it back.
 - A closed card looked bottom-heavy, with the card's padding under the title's own. The fold takes back 8 px of it.
+- On a Coral unit running the installer's model, Frigate's list had 91 entries, 74 of them `unknown`, so the top list
+  read "(91)" over rows of `unknown` chips while the card said 17. The API now leaves `unknown` out of every list.
 
 #### Defaults rejected
 

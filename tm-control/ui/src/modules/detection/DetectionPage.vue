@@ -167,14 +167,12 @@ const unrecognised = computed(() => {
   return recognised && tracked ? tracked.filter((label) => !recognised.includes(label)) : []
 })
 
-// Frigate's list against the .json of the model in use, as sets. Frigate pads its merged label map with "unknown"
-// entries, which are no objects.
+// Frigate's list against the .json of the model in use, as sets
 const listsDiffer = computed(() => {
   const { recognised, source } = state.value?.labels ?? {}
   const own = inUse.value?.model?.labels
   if (source !== 'frigate' || !recognised || !own) return false
-  const objects = (labels: string[]) => new Set(labels.filter((label) => label !== 'unknown'))
-  const [reported, ours] = [objects(recognised), objects(own)]
+  const [reported, ours] = [new Set(recognised), new Set(own)]
   return reported.size !== ours.size || [...reported].some((label) => !ours.has(label))
 })
 

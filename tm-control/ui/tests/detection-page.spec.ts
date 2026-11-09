@@ -362,7 +362,6 @@ describe('the Detection page', () => {
   it.each([
     ['Frigate and the .json differ', ['person', 'dog'], 'frigate', true],
     ['the same objects in another order', ['car', 'person', 'bicycle'], 'frigate', false],
-    ["Frigate's padding of unknown entries", ['person', 'bicycle', 'car', 'unknown', 'unknown'], 'frigate', false],
     ['a list that is not from Frigate', ['person', 'dog'], 'sidecar', false],
   ] as [string, string[], 'frigate' | 'sidecar', boolean][])(
     'compares the two lists as sets: %s',
