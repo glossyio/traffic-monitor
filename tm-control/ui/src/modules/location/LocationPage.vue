@@ -1,7 +1,7 @@
 <!--
   The Location page (GET /surveys), for admins only: the place the unit is at now, the places this unit knows, one
-  panel each, and last, closed, the precision the database stores locations at (PUT /surveys/precision). A note under
-  the card says the precision is there. Opening a place's panel asks for its events and deployments
+  panel each, and last the precision the database stores locations at (PUT /surveys/precision), its header and reason
+  always in view and its choices in a closed panel. Opening a place's panel asks for its events and deployments
   (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one edited, in PlaceForm's dialog.
   "Deploy here" on a planned place, or "Re-deploy here" on a used one, opens DeployReview to move the unit there;
   "Modify deployment" on the place in use opens it to record a turn of the unit (a bearing changed). A used place or
@@ -83,7 +83,7 @@ const cardItems = computed(() => {
 // Only the place the device made at first run, with no coordinates: most units never need more
 const onlyDefault = computed(() => state.value?.surveys.length === 1 && state.value.surveys[0].lat === null)
 
-// The precision, a closed panel at the end of the page (`precisionOpen`) whose title names the device's choice. Rounding
+// The precision's choices, a closed panel at the end of the page (`precisionOpen`) that names the device's choice. Rounding
 // the rows already stored is offered only for a coarser choice: a finer one applies from the next deployment, because
 // the rows can't get back what was rounded away. No location stored removes the location rather than rounding it, so it
 // has words of its own.
@@ -293,12 +293,6 @@ onMounted(load)
       />
       <p v-else class="text-body-1">No place is in use.</p>
 
-      <p class="text-body-2 text-secondary mt-4" data-precision-note>
-        The database stores each place's location rounded, at the precision set under
-        <strong>Precision</strong> at the end of this page. That is what a shared copy of the database reveals. This
-        device keeps the exact location you enter, outside the database.
-      </p>
-
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Places</h2>
         <p v-if="onlyDefault" class="text-body-1 mb-4">
@@ -412,23 +406,28 @@ onMounted(load)
         </v-expansion-panels>
       </section>
 
-      <!-- One panel, styled as a place's, with its title in an h2 as a section's: most devices never need to change this -->
       <section class="mt-10">
+        <h2 class="text-h6 mb-2">Precision</h2>
+        <p class="text-body-1 mb-4">
+          To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A
+          shared copy of the database holds only the rounded location. This device keeps the exact location you enter,
+          outside the database. A later update will let you choose to export the database with each place's exact
+          location, for analysis and mapping.
+        </p>
+        <!-- One panel, styled as a place's: most devices never need to change this -->
         <v-expansion-panels v-model="precisionOpen" flat bg-color="background">
           <v-expansion-panel :value="PRECISION_PANEL" class="border">
-            <h2 class="text-body-1">
+            <h3 class="text-body-1">
               <v-expansion-panel-title>
-                <span class="d-flex flex-wrap align-baseline gc-3">
-                  <span class="text-h6">Precision</span>
-                  <span class="text-body-2 text-secondary">{{ devicePrecision }}</span>
+                <span class="d-flex flex-column ga-1">
+                  <span class="text-subtitle-1 font-weight-medium">Change the precision</span>
+                  <span class="text-body-2 text-secondary">Now: {{ devicePrecision }}</span>
                 </span>
               </v-expansion-panel-title>
-            </h2>
+            </h3>
             <v-expansion-panel-text>
               <p class="text-body-1 mb-4">
-                This setting is for the whole device: every place, the deployments running now, and every new one. The
-                exact location is kept on this device, outside the database, so a later update can still export it in
-                full.
+                This setting is for the whole device: every place, the deployments running now, and every new one.
               </p>
               <v-radio-group v-model="precisionChoice" hide-details @update:model-value="precisionChanged">
                 <v-radio v-for="choice in PRECISIONS" :key="choice.value" :value="choice.value" :label="choice.title" />

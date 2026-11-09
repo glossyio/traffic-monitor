@@ -222,32 +222,33 @@ describe('the Location page', () => {
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2) // reloaded
   })
 
-  it('puts the precision last and closed, naming the current choice, with a note under the card', async () => {
+  it('heads the precision like the places, says why under the header, and keeps the choices closed', async () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
-    const headings = wrapper.findAll('h2').map((h) => h.text())
-    expect(headings.findIndex((h) => h === 'Places')).toBeLessThan(headings.findIndex((h) => h.startsWith('Precision')))
-    const title = panel(wrapper, 'Precision')
-    expect(title.text()).toContain('About 10 km (45.5, -122.7)')
-    expect(panelIsOpen(wrapper, 'Precision')).toBe(false)
-    expect(wrapper.text()).not.toContain('This setting is for the whole device')
+    const sections = wrapper.findAll('section > h2')
+    expect(sections.map((h) => h.text())).toEqual(['Places', 'Precision'])
+    expect(sections[1].classes()).toEqual(sections[0].classes())
 
-    const note = wrapper.find('[data-precision-note]')
-    expect(note.text()).toBe(
-      "The database stores each place's location rounded, at the precision set under Precision at the end of this " +
-        'page. That is what a shared copy of the database reveals. This device keeps the exact location you enter, ' +
-        'outside the database.',
+    const note = sections[1].element.nextElementSibling as HTMLElement
+    expect(note.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      "To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A " +
+        'shared copy of the database holds only the rounded location. This device keeps the exact location you enter, ' +
+        "outside the database. A later update will let you choose to export the database with each place's exact " +
+        'location, for analysis and mapping.',
     )
     const card = wrapper.find('.v-card').element
-    expect(card.compareDocumentPosition(note.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    const places = wrapper.findAll('h2').find((h) => h.text() === 'Places')!.element
-    expect(note.element.compareDocumentPosition(places) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(card.nextElementSibling?.tagName).toBe('SECTION') // nothing else between the card and the places
 
-    await expand(wrapper, 'Precision')
+    const title = panel(wrapper, 'Change the precision')
+    expect(title.text()).toContain('Now: About 10 km (45.5, -122.7)')
+    expect(panelIsOpen(wrapper, 'Change the precision')).toBe(false)
+    expect(wrapper.text()).not.toContain('This setting is for the whole device')
+
+    await expand(wrapper, 'Change the precision')
     expect(wrapper.text()).toContain(
-      'This setting is for the whole device: every place, the deployments running now, and every new one. The exact ' +
-        'location is kept on this device, outside the database, so a later update can still export it in full.',
+      'This setting is for the whole device: every place, the deployments running now, and every new one.',
     )
+    expect(wrapper.text().match(/keeps the exact location|exact location is kept/g)).toHaveLength(1) // said once
     expect(wrapper.text()).not.toContain('Exporting it is coming in a later update.')
   })
 
@@ -257,7 +258,7 @@ describe('the Location page', () => {
       'PUT /api/v1/surveys/precision': PLACES,
     })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     const label = 'Also round the rows already stored'
     expect(wrapper.text()).not.toContain(label)
 
@@ -274,13 +275,13 @@ describe('the Location page', () => {
       ['/api/v1/surveys/precision', { precision: '1', round_stored: true }],
     ])
     expect(wrapper.text()).toContain('Saved. The rows already stored are rounded.')
-    expect(panelIsOpen(wrapper, 'Precision')).toBe(true) // so the result can be read
+    expect(panelIsOpen(wrapper, 'Change the precision')).toBe(true) // so the result can be read
   })
 
   it('offers nothing to round for a finer choice', async () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     await field(wrapper, 'About 1 km (45.52, -122.69), the default').setValue(true)
     expect(wrapper.text()).not.toContain('Also round the rows already stored')
     expect(wrapper.text()).toContain('A finer precision applies from the next deployment.')
@@ -292,7 +293,7 @@ describe('the Location page', () => {
       'PUT /api/v1/surveys/precision': { ...PLACES, precision: 'none' },
     })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     await field(wrapper, 'No location stored').setValue(true)
     expect(wrapper.text()).toContain(
       'No location stored removes the stored location from the deployments running now at once. Tick the box to ' +
@@ -317,13 +318,13 @@ describe('the Location page', () => {
       'PUT /api/v1/surveys/precision': { ...PLACES, precision: 'none' },
     })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     await field(wrapper, 'No location stored').setValue(true)
     await click(wrapper, 'Save')
     expect(api.sent.filter((r) => r.method === 'PUT').map((r) => r.body)).toEqual([
       { precision: 'none', round_stored: false },
     ])
-    expect(panel(wrapper, 'Precision').text()).toContain('No location stored') // the title follows the device
+    expect(panel(wrapper, 'Change the precision').text()).toContain('No location stored') // the title follows the device
   })
 
   it('loads the places again when saving the precision is refused because config.yml changed', async () => {
@@ -336,7 +337,7 @@ describe('the Location page', () => {
       ),
     })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     await field(wrapper, 'No location stored').setValue(true)
     await click(wrapper, 'Save')
     expect(wrapper.text()).toContain('config.yml changed since it was read.')
@@ -354,7 +355,7 @@ describe('the Location page', () => {
       ),
     })
     const { wrapper } = await mountApp('/location')
-    await expand(wrapper, 'Precision')
+    await expand(wrapper, 'Change the precision')
     await field(wrapper, 'No location stored').setValue(true)
     await click(wrapper, 'Save')
     expect(wrapper.text()).toContain("the stored rows weren't changed.")

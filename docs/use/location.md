@@ -18,9 +18,9 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Detection**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](../data-and-payloads/integrations.md) server, and the way each sensor faces. Under it, a note says how the database stores the location. Then come the list of places and, last and closed, the [precision](#choose-the-precision), with the current choice beside its title.
+**Location** is in the control app's menu, after **Detection**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](../data-and-payloads/integrations.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
 
-![The Location page on a phone: the place in use with its stored and exact location, a note about the precision, the list of places, and the closed Precision panel at the end](../assets/images/location-page.png){ width="300" }
+![The Location page on a phone: the place in use with its stored and exact location, the list of places, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
 
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 
@@ -101,7 +101,7 @@ The place in use can't be deleted. Deploy another place first.
 
 ## Choose the precision
 
-**Precision**, at the end of the page, sets how much of the location the database stores. It's closed until you open it, because most devices never need to change it. The setting is for the whole device: every place, the deployments running now, and every new one. Each choice shows how the same point would be stored:
+**Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device: every place, the deployments running now, and every new one. Each choice shows how the same point would be stored:
 
 | Choice | The database stores |
 |---|---|
@@ -109,7 +109,7 @@ The place in use can't be deleted. Deploy another place first.
 | **About 10 km** (45.5, -122.7) | One decimal place, about a city |
 | **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
 
-The exact location is never stored in the database. It stays on this device, so a later update can still export it in full. Choose one and **Save**.
+The exact location is never stored in the database. It stays on this device, and a later update will let you choose to export the database with each place's exact location, for analysis and mapping. Choose one and **Save**.
 
 * **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
 * **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.

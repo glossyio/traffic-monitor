@@ -598,8 +598,6 @@ importing places open dialogs from this page, so they move nothing on it.
 | | 45.52252, -122.69120         | |
 | | Sharing      Bearing, picam  | |
 | +------------------------------+ |
-| The database stores each place's |  above the fold, points to the
-| location rounded ...             |  panel at the end of the page
 | Places                      (h6) |
 | [Add a place] [Import places]    |
 | +------------------------------+ |
@@ -623,8 +621,12 @@ importing places open dialogs from this page, so they move nothing on it.
 | | [Re-deploy here]             | |  by status, see below
 | | [Correct location] [Delete]  | |
 | +------------------------------+ |
+| Precision                   (h6) |
+| To better protect your privacy,  |  always in view
+| by default the database ...      |
 | +------------------------------+ |
-| | Precision  About 1 km ...  v | |  (h2) closed; opened below
+| | Change the precision       v | |  closed; opened below
+| | Now: About 1 km ...          | |
 | | This setting is for the whole| |
 | | device: ...                  | |
 | | ( ) No location stored       | |
@@ -641,9 +643,10 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- The precision comes last, as one closed panel, because most devices never change it and the places are what the page
-  is used for. Its title names the device's choice, so the value shows without a tap, and a note under the card says
-  what the database stores and where to change it. The panel stays open after Save, so the result line can be read.
+- The precision comes last, because most devices never change it and the places are what the page is used for. Its
+  header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
+  and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
+  shows without a tap. The panel stays open after Save, so the result line can be read.
 - Inside, the precision is three radio buttons, coarsest first, with the area in words and, in parentheses, one example
   point stored at that precision, so "about 1 km" also reads as coordinates; "the default" follows about 1 km. "Also
   round the rows already stored" shows only for a coarser choice, because a finer one can't bring back what was rounded
@@ -781,13 +784,14 @@ After the first bench runs, the page was checked again in fake mode at 375 px an
 on one place, the precision panel open, and No location stored chosen:
 
 - The precision sat between the card and the places, pushing the places off the first screen for a setting most devices
-  never change. It moved to the end, closed, with its value in the title and a note under the card.
+  never change. It moved to the end, with its choices closed and the current one in the panel's title. A first version
+  put the whole section in the panel and a note under the card; the header and the reason read better together, in view.
 - A flat list of four deployments with four dates read as four events. They're grouped by deploy now.
 - "Deploy here" on a place the unit had already used, or on the one it's at, said the wrong thing. The button now
   follows the status.
 - "Also round the rows" read wrong for No location stored, which removes the location. It has its own words now.
-- `column-gap-3` isn't a Vuetify class, so on a wide screen the panel's title read "PrecisionAbout 1 km". It's `gc-3`
-  now, and the deployment line's `column-gap-2` became `gc-2`.
+- `column-gap-2` isn't a Vuetify class, so the deployment line's gap came only from its button's padding. It's `gc-2`
+  now.
 
 #### Defaults rejected
 
