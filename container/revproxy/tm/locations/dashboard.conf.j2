@@ -2,5 +2,6 @@
 location /dashboard/ {
     proxy_pass http://127.0.0.1:1880/dashboard/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
+    include /etc/nginx/tm/snippets/auth-viewer.conf;
     proxy_set_header Referer "";
 }

@@ -1,0 +1,8 @@
+// Vuetify's SASS settings (https://vuetifyjs.com/en/features/sass-variables/).
+// The operating system's own fonts: the device is often offline, so nothing is downloaded. And buttons in sentence
+// case, which reads more easily than Vuetify's default capitals.
+@use 'vuetify/settings' with (
+  $body-font-family: (system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif),
+  $button-text-transform: none,
+  $button-text-letter-spacing: normal,
+);

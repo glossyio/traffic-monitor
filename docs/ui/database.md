@@ -4,7 +4,7 @@ description: The Data export dashboard: download the database or a JSON export, 
 
 # Data export
 
-Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it.
+Open `http://<device>/dashboard/database`, or **Database** in the dashboard's sidebar. This page gets data off the device and lets you leave notes in it. Both downloads need the device's administrator login; a [viewer](../use/control-app.md#administrators-and-viewers) can open the page but not download.
 
 <figure markdown="span">
   ![Data export dashboard with a comment form, a database download button, and JSON export choices](../assets/images/tm-dash-2026-03-database.png)

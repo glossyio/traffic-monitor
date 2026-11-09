@@ -71,5 +71,5 @@ tmsetup_homepage_colors:
   background: '#0C1120'
   header_text: '#3a82ff'
   body_text: '#f8fafc'
-  link_hover_text: '#8895a7S'
+  link_hover_text: '#8895a7'
 ...

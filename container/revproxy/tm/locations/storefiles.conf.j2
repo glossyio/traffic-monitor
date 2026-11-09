@@ -3,6 +3,7 @@
 location /storefiles {
     proxy_pass http://127.0.0.1:1880;
     include /etc/nginx/tm/snippets/proxy-common.conf;
+    include /etc/nginx/tm/snippets/auth-admin.conf;
     # Stream the download as Node-RED writes it; a whole tmdb.sqlite can be several GB.
     proxy_buffering off;
     # A database download first copies tmdb.sqlite, which can take minutes before the first byte.

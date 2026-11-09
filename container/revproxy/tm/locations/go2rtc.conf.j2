@@ -2,6 +2,7 @@
 # View streams only. go2rtc's API can add stream sources and change its config, so refuse every
 # method but GET, any src that isn't a plain stream name, and API paths the players don't use.
 location /feeds/ {
+    include /etc/nginx/tm/snippets/auth-admin.conf;
     limit_except GET { deny all; }
     # Parameter names must be lowercase and unencoded. nginx finds $arg_src ignoring case and
     # without decoding it, but go2rtc decodes names and tells SRC from src, so ?%73rc= or

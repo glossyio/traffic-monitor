@@ -5,3 +5,7 @@ site/
 __pycache__/
 .pytest_cache/
 .claude/worktrees/
+# tm-control's UI build, and fake mode's state (tm-control/ui/README.md)
+tm-control/ui/node_modules/
+tm-control/ui/dist/
+.tm-control-fake/

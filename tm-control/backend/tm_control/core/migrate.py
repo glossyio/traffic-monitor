@@ -5,10 +5,32 @@ import sys
 from urllib.parse import urlsplit
 
 from ruamel.yaml import YAMLError
+from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.error import CommentMark
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.tokens import CommentToken
 
 from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile
 
 PREFIX = "tm-control migrate:"
+
+# nginx serves Frigate's authenticated port (8971) once tm-control has logged the user in, and passes the user, their
+# role, and the proxy secret. Frigate's own login and TLS are off, and it trusts those headers only with the secret,
+# which it fills in from frigate.env. Keep in step with the same sections of config.yml.j2.
+PROXY_AUTH_SECRET_PLACEHOLDER = "{FRIGATE_PROXY_AUTH_SECRET}"
+PROXY_HEADER_MAP = {"user": "x-forwarded-user", "role": "x-forwarded-groups"}
+PROXY_DEFAULT_ROLE = "viewer"
+PROXY_AUTH_SECTIONS = {
+    "auth": {"enabled": False},
+    "proxy": {
+        "header_map": PROXY_HEADER_MAP,
+        "auth_secret": PROXY_AUTH_SECRET_PLACEHOLDER,
+        "default_role": PROXY_DEFAULT_ROLE,
+        "logout_url": "/logout",
+    },
+    "tls": {"enabled": False},
+}
+PROXY_AUTH_COMMENT = "The reverse proxy logs users in and passes who they are; Frigate's own login is off (tm-control)."
 
 # Frigate reads the Pi camera from go2rtc on the host, through its camera inputs and through the sources of
 # its own bundled go2rtc's streams. Since the host's go2rtc RTSP server requires credentials, both must carry
@@ -154,6 +176,87 @@ def _warn(kind, name, problem, detail):
     print(f"{PREFIX} WARNING {message}", file=sys.stderr)
 
 
+def _round_trip(value):
+    """A value from PROXY_AUTH_SECTIONS as ruamel round-trip types, with the placeholder quoted as the template has it."""
+    if isinstance(value, dict):
+        return CommentedMap((key, _round_trip(item)) for key, item in value.items())
+    if value == PROXY_AUTH_SECRET_PLACEHOLDER:
+        return DoubleQuotedScalarString(value)  # unquoted, YAML would read {...} as a mapping
+    return value
+
+
+def add_proxy_auth(config):
+    """Add whichever of the auth:, proxy:, and tls: sections are missing. Return whether any were.
+
+    They go right after mqtt: (or at the top if there is none), with the comment and blank line config.yml.j2 has, so
+    the file reads like a new install's. Sections that exist are left alone; proxy_auth_problems checks them. If an
+    existing proxy: section has a problem, auth: isn't added either: Frigate's own login stays on, because turning it
+    off would let Frigate trust headers the reverse proxy doesn't set.
+    """
+    if not isinstance(config, CommentedMap):
+        return False
+    missing = [key for key in PROXY_AUTH_SECTIONS if key not in config]
+    if "auth" in missing and _proxy_section_is_unsafe(config):
+        missing.remove("auth")
+    if not missing:
+        return False
+    keys = list(config)
+    position = keys.index("mqtt") + 1 if "mqtt" in keys else 0
+    for offset, key in enumerate(missing):
+        config.insert(position + offset, key, _round_trip(PROXY_AUTH_SECTIONS[key]))
+    config.yaml_set_comment_before_after_key(missing[0], before=PROXY_AUTH_COMMENT)
+    if position + len(missing) < len(config):
+        # ruamel keeps a blank line after a value as a comment token on that value's key.
+        last = config[missing[-1]]
+        last.ca.items[list(last)[-1]] = [None, None, CommentToken("\n\n", CommentMark(0), None), None]
+    return True
+
+
+def proxy_auth_problems(config):
+    """Settings in existing auth:, proxy:, or tls: sections that keep Frigate from accepting the proxy's login.
+
+    Return each as a key path and what's wrong with it, never the value: proxy.auth_secret may hold the secret itself.
+    """
+    if not isinstance(config, dict):
+        return []
+    problems = []
+    for section in ("auth", "tls"):
+        if section not in config:
+            continue
+        settings = config[section] if isinstance(config[section], dict) else {}
+        if "enabled" not in settings:
+            problems.append(f"{section}.enabled is missing")  # Frigate's default is true
+        elif settings["enabled"] is True:
+            problems.append(f"{section}.enabled is true")
+        elif settings["enabled"] is not False:
+            problems.append(f"{section}.enabled is not false")
+    if "proxy" in config:
+        proxy = config["proxy"] if isinstance(config["proxy"], dict) else {}
+        header_map = proxy.get("header_map") if isinstance(proxy.get("header_map"), dict) else {}
+        for key, header in PROXY_HEADER_MAP.items():
+            if str(header_map.get(key, "")).lower() != header:  # HTTP header names ignore case
+                problems.append(f"proxy.header_map.{key} is not {header}")
+        if proxy.get("auth_secret") is None:
+            problems.append("proxy.auth_secret is missing")
+        elif proxy["auth_secret"] != PROXY_AUTH_SECRET_PLACEHOLDER:
+            problems.append(f"proxy.auth_secret is not {PROXY_AUTH_SECRET_PLACEHOLDER}")
+        if proxy.get("default_role", PROXY_DEFAULT_ROLE) != PROXY_DEFAULT_ROLE:
+            problems.append(f"proxy.default_role is not {PROXY_DEFAULT_ROLE}")
+    return problems
+
+
+def _proxy_section_is_unsafe(config):
+    return "proxy" in config and any(problem.startswith("proxy.") for problem in proxy_auth_problems(config))
+
+
+# What each section's problem does to Frigate behind the reverse proxy, for the warning.
+_PROXY_AUTH_CONSEQUENCE = {
+    "auth": "so Frigate asks for its own login as well as the reverse proxy's",
+    "proxy": "so Frigate may trust headers the reverse proxy doesn't set",
+    "tls": "so Frigate serves port 8971 over TLS, which the reverse proxy doesn't use",
+}
+
+
 def _describe_yaml_error(error):
     """Name a YAML error and where it is.
 
@@ -187,17 +290,35 @@ def run(frigate_config, dry_run=False):
     changed = inputs_changed + streams_changed
     for kind, name, problem, detail in uncredentialed_rtsp_8554_inputs(document.data):
         _warn(kind, name, problem, detail)
-    if not changed:
+    proxy_auth_added = add_proxy_auth(document.data)
+    for problem in proxy_auth_problems(document.data):
+        consequence = _PROXY_AUTH_CONSEQUENCE[problem.partition(".")[0]]
+        print(
+            f"{PREFIX} WARNING {problem}, {consequence}. Set it as a new install's config.yml has it.",
+            file=sys.stderr,
+        )
+    if isinstance(document.data, dict) and "auth" not in document.data:
+        print(
+            f"{PREFIX} WARNING auth was not added, so Frigate's own login stays on until proxy is fixed.",
+            file=sys.stderr,
+        )
+    if not changed and not proxy_auth_added:
         print(f"{PREFIX} {frigate_config}: up to date")
         return 0
     what = "camera input(s) and stream source(s)" if streams_changed else "camera input(s)"
+    # Each step that changed something, as (what a dry run would do, what was done)
+    steps = []
+    if changed:
+        steps.append((f"update {changed} {what}", f"updated {changed} {what}"))
+    if proxy_auth_added:
+        steps.append(("add proxy auth settings", "added proxy auth settings"))
     if dry_run:
-        print(f"{PREFIX} {frigate_config}: would update {changed} {what} to use go2rtc RTSP credentials")
+        print(f"{PREFIX} {frigate_config}: would " + ", ".join(would for would, _ in steps))
         return 0
     try:
         backup = document.save()
     except (OSError, ConcurrentEditError) as error:
         print(f"{PREFIX} ERROR writing {frigate_config}: {error}", file=sys.stderr)
         return 1
-    print(f"{PREFIX} {frigate_config}: updated {changed} {what} to use go2rtc RTSP credentials (backup: {backup})")
+    print(f"{PREFIX} {frigate_config}: " + ", ".join(done for _, done in steps) + f" (backup: {backup})")
     return 0

@@ -14,7 +14,7 @@ The [repository](https://github.com/glossyio/traffic-monitor) is a monorepo with
 
 To develop on a device:
 
-1. Open the Node-RED editor at `http://<device>/nr/` and log in as `admin` with password `password`.
+1. Log in to the device as the administrator, then open the Node-RED editor at `http://<device>/nr/`. The editor has no login of its own.
 2. Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.
 3. Point the project's flow and package files at `container/node-red-tm/data/flows.json` and `package.json`, so your edits land in the repository's files.
 4. Commit your changes to a branch of your fork.
@@ -44,6 +44,10 @@ sudo systemctl start node-red-tm.service
 ```
 
 The database records each migration it applies. If you change a migration after applying it, restore the copy saved in `/opt/traffic-monitor/node-red-tm/db/backup/` and apply it again.
+
+## Control app
+
+The control app in `tm-control/` serves the home page and the login in front of every app. [tm-control](tm-control.md) describes its code, how the login reaches each app, and how to run it on a laptop without a Pi.
 
 ## Testing on a dev Pi
 

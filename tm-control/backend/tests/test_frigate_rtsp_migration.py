@@ -13,6 +13,22 @@ MIGRATED_INPUT = (
 )
 
 
+# Configs that already have the proxy auth sections, so these tests see only the RTSP step's changes;
+# test_frigate_proxy_migration.py covers that step and the two together.
+PROXY_AUTH = (
+    "auth:\n  enabled: false\n"
+    "proxy:\n  header_map:\n    user: x-forwarded-user\n    role: x-forwarded-groups\n"
+    '  auth_secret: "{FRIGATE_PROXY_AUTH_SECRET}"\n  default_role: viewer\n  logout_url: /logout\n'
+    "tls:\n  enabled: false\n"
+)
+
+
+@pytest.fixture
+def frigate_config(frigate_config):
+    frigate_config.write_text(PROXY_AUTH + frigate_config.read_text())
+    return frigate_config
+
+
 def output(capsys):
     captured = capsys.readouterr()
     return captured.out + captured.err
@@ -90,7 +106,7 @@ def test_dry_run_reports_without_writing(frigate_config, capsys):
 
 def test_config_without_cameras_is_up_to_date(tmp_path, capsys):
     path = tmp_path / "config.yml"
-    path.write_text("mqtt:\n  enabled: false\n")
+    path.write_text(PROXY_AUTH + "mqtt:\n  enabled: false\n")
     assert migrate.run(path) == 0
     assert "up to date" in output(capsys)
 
@@ -299,13 +315,13 @@ def test_leaves_go2rtc_entries_that_arent_strings_alone(frigate_config, capsys):
     old_lines, new_lines = original.splitlines(), frigate_config.read_text().splitlines()
     assert [(a, b) for a, b in zip(old_lines, new_lines) if a != b] == [(DEFAULT_INPUT, MIGRATED_INPUT)]
     printed = output(capsys)
-    assert "updated 1 camera input(s) to use" in printed
+    assert "updated 1 camera input(s) (backup: " in printed
     assert "WARNING" not in printed
 
 
 def test_go2rtc_section_that_isnt_a_mapping_is_ignored(tmp_path, capsys):
     path = tmp_path / "config.yml"
-    path.write_text("go2rtc:\n  streams:\n    - rtsp://host.containers.internal:8554/a\ncameras:\n")
+    path.write_text(PROXY_AUTH + "go2rtc:\n  streams:\n    - rtsp://host.containers.internal:8554/a\ncameras:\n")
     assert migrate.run(path) == 0
     assert "up to date" in output(capsys)
 

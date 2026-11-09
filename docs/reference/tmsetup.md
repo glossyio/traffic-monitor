@@ -40,7 +40,7 @@ Remote runs:
 
 ## Tags
 
-Each tag reruns one part of the install. Without `-t`, everything runs. The pod and the reverse proxy have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, and `revproxy` tags each update both.
+Each tag reruns one part of the install. Without `-t`, everything runs. The pod, the reverse proxy, and the control app that checks every login have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, `revproxy`, and `tm-control` tags each update all three.
 
 | Tag | What it does |
 |---|---|
@@ -53,8 +53,8 @@ Each tag reruns one part of the install. Without `-t`, everything runs. The pod 
 | `frigate` | Frigate's container, settings, and the devices it needs |
 | `node-red-tm` | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar. |
 | `plate-recognizer` | The optional Plate Recognizer container |
-| `revproxy` | The home page and reverse proxy |
-| `tm-control` | Installs the `tm-control` command, which updates settings files from earlier versions. The `frigate` and `go2rtc` tags install it too and run it to give Frigate's `config.yml` the stream login. |
+| `revproxy` | The reverse proxy, with the home page built into its image |
+| `tm-control` | The [control app](../use/control-app.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login. |
 
 ## What `-f` replaces
 
@@ -67,6 +67,8 @@ Every run replaces the container images, service units, Node-RED flows, and the 
 * `/opt/traffic-monitor/plate-recognizer/plate-recognizer.env`, if Plate Recognizer is installed
 
 With `-f`, each is replaced by a fresh copy from its template, and the old file stays next to it with a timestamp in its name so you can copy your settings back. The MQTT broker login carries into the fresh `node-red-tm.env` and `frigate.env`. A fresh Frigate config has detection off and the sample zones, so afterwards turn detection on and redo your zones and masks, as in [First-time setup](../setup-guide.md).
+
+No run, with or without `-f`, replaces the device's accounts, its setup code, or the passwords and keys the installer generated in `/etc/traffic-monitor/secrets/`.
 
 ## Add an accelerator later
 

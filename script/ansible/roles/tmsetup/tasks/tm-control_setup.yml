@@ -8,6 +8,7 @@
     - /usr/local/lib/traffic-monitor
     - '{{ tmsetup_tm_control_dir }}'
     - '{{ tmsetup_tm_control_dir }}/backend'
+    - '{{ tmsetup_libexec_dir }}'
   ansible.builtin.file:
     path: '{{ item }}'
     state: directory
@@ -23,6 +24,18 @@
     owner: root
     group: root
     mode: u=rwX,go=rX
+  notify: Restart tm-control.service
+
+# Run as root by tm-job-<name>.service units (templates/tm-control/), which tm-control starts through polkit
+- name: TMSetup - tm-control Setup - Copy the job scripts
+  become: true
+  ansible.builtin.copy:
+    src: tm-control/jobs/
+    dest: '{{ tmsetup_libexec_dir }}/'
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart tm-control.service
 
 - name: TMSetup - tm-control Setup - Copy pinned requirements
   become: true
@@ -51,6 +64,7 @@
       - '{{ tmsetup_tm_control_dir }}/requirements.txt'
   register: tmsetup_tm_control_pip_register
   changed_when: "'Successfully installed' in tmsetup_tm_control_pip_register.stdout"
+  notify: Restart tm-control.service
 
 - name: TMSetup - tm-control Setup - Install the tm-control command
   become: true
@@ -60,6 +74,7 @@
     owner: root
     group: root
     mode: '0755'
+  notify: Restart tm-control.service
 
 - name: TMSetup - tm-control Setup - Check the tm-control command runs
   become: true

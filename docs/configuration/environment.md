@@ -28,6 +28,7 @@ sudo systemctl restart node-red-tm.service
 | `TM_RPI_SN` | the Raspberry Pi's serial number | Identifies the device in ThingsBoard, and fills `deviceName` in [deployment](../data-and-payloads/data-overview.md#deployment) records. Set by the installer. |
 | `TM_HOSTNAME` | the device's hostname at install | Prefix for the file names of [data exports](../ui/database.md). Set by the installer. |
 | `NODE_RED_CREDENTIAL_SECRET` | `myNodeRED1234` | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it. |
+| `TM_NR_TOKEN_KEY` | generated on the device | Lets the Node-RED editor check that the device's [login](../use/control-app.md) let you in. The installer sets it on every run; leave it. Without it, the editor refuses everyone. |
 | `TM_DATABASE_PATH_TMDB` | `/db/tmdb.sqlite` | The database, as seen inside the container. On the device it's `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite`. Leave it; schema migrations and downloads expect this path. |
 | `TM_MQTT_BROKER_HOST` | `localhost` | The MQTT broker that Node-RED hosts. Frigate and the air quality sensor publish to it. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md). |
 | `TM_MQTT_BROKER_PORT` | `1883` | The broker's port. |

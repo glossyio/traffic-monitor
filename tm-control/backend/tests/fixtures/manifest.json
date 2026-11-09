@@ -1,0 +1,68 @@
+{
+    "manifest_version": 1,
+    "tm_version": "0.7.1-test",
+    "git": {
+        "commit": "0000000000000000000000000000000000000000",
+        "branch": "test"
+    },
+    "installing_user": "pi",
+    "codedir": "/opt/traffic-monitor",
+    "codeowner": "tmadmin",
+    "components": {
+        "frigate": "0.18.1",
+        "node_red": "5.0.8",
+        "go2rtc": "v1.9.14",
+        "nginx": "1.31.0",
+        "hailo": "4.21.0"
+    },
+    "options": {
+        "plate_recognizer": false
+    },
+    "revproxy_locations": [
+        "cockpit.conf",
+        "dashboard.conf",
+        "frigate.conf",
+        "go2rtc.conf",
+        "legacy-ui.conf",
+        "nodered.conf",
+        "storefiles.conf"
+    ],
+    "probes": {
+        "detectors": {
+            "edgetpu_usb": {
+                "dev_path": "/dev/bus/usb",
+                "check_exists": "lsusb | grep -i 1a6e:089a",
+                "frigate_type": "edgetpu",
+                "frigate_device": "usb"
+            },
+            "edgetpu_pci": {
+                "dev_path": "/dev/apex_0",
+                "check_exists": "lspci -nn | grep -i coral",
+                "frigate_type": "edgetpu",
+                "frigate_device": "pci"
+            },
+            "hailo8l": {
+                "dev_path": "/dev/hailo0",
+                "check_exists": "lspci -nn | grep -i hailo",
+                "frigate_type": "hailo8l",
+                "frigate_device": "PCIe"
+            }
+        },
+        "radar_paths": [
+            "/dev/ttyACM0",
+            "/dev/ttyACM1",
+            "/dev/ttyACM2",
+            "/dev/ttyACM3"
+        ],
+        "hevc_device": "/dev/rpi-hevc-dec"
+    },
+    "homepage": {
+        "font": "Helvetica",
+        "colors": {
+            "background": "#0C1120",
+            "header_text": "#3a82ff",
+            "body_text": "#f8fafc",
+            "link_hover_text": "#8895a7"
+        }
+    }
+}

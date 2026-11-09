@@ -12,6 +12,7 @@ skipped, so running the repo's other tests never touches a Pi.
 
 import collections
 import json
+import logging
 import os
 import re
 import sys
@@ -23,7 +24,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import devlog  # noqa: E402
 from devpi_checks import (DEFAULT_CODEDIR, DEFAULT_CODEOWNER, Redacted, pi_json, read_root_file,  # noqa: E402
-                          require_pii_free, validate_expect)
+                          require_pii_free, tm_control_login, validate_expect)
 
 HERE = Path(__file__).resolve().parent
 OUTCOME_ORDER = ("passed", "failed", "error", "skipped")
@@ -36,9 +37,15 @@ SUITE = pytest.StashKey[dict]()
 HOST_PROBLEMS = pytest.StashKey[dict]()
 
 
+# trylast, like testinfra's own pytest_configure, and registered after it, so this one runs after it
+@pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "disruptive: restarts services or reboots the Pi; runs only with TM_DEV_DISRUPTIVE=1")
+    # testinfra logs every command and its output ("RUN <CommandResult>") at debug level, and its pytest_configure
+    # turns that on for -vv. Some commands carry a session cookie, and reset-admin's output holds a setup code, so
+    # keep testinfra at WARNING: neither -vv nor --log-level=DEBUG may capture them.
+    logging.getLogger("testinfra").setLevel(logging.WARNING)
     hosts = os.environ.get("TM_DEV_HOSTS")
     if not hosts:
         config.stash[SKIP_REASON] = "device tests run only through tmdev.py test (or with TM_DEV_HOSTS set)"
@@ -220,6 +227,15 @@ def codedir(hostvars):
 @pytest.fixture(scope="module")
 def codeowner(hostvars):
     return hostvars.get("tmsetup_codeowner", DEFAULT_CODEOWNER)
+
+
+@pytest.fixture(scope="module")
+def tm_login(hostvars):
+    """The dev Pi's tm-control admin login, as Redacted (username, password). Skips when the inventory has none.
+
+    Tests take this rather than hostvars, which now holds the password.
+    """
+    return tm_control_login(hostvars)
 
 
 @pytest.fixture(scope="module")

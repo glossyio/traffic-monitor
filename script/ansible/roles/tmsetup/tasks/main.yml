@@ -20,8 +20,9 @@
     file: secrets.yml
 
 # The pod and revproxy must change together: the pod stopped publishing port 80 when nginx moved to the
-# host network, and nginx proxies to go2rtc's API on loopback. So the MQTT login read (the pod uses it),
-# the pod, and revproxy each run under all of these tags.
+# host network, and nginx proxies to go2rtc's API on loopback. nginx also asks tm-control to check every
+# login, so tm-control must be installed and running too. So the MQTT login read (the pod uses it), the
+# pod, tm-control, Frigate's credentials, and revproxy each run under all of these tags.
 - name: TMSetup - Main - Read the MQTT broker login
   tags:
     - podman
@@ -29,6 +30,7 @@
     - node-red-tm
     - revproxy
     - go2rtc
+    - tm-control
   ansible.builtin.import_tasks:
     file: mqtt_broker.yml
 
@@ -52,6 +54,7 @@
     - node-red-tm
     - revproxy
     - go2rtc
+    - tm-control
   ansible.builtin.import_tasks:
     file: podman_setup.yml
 
@@ -73,11 +76,25 @@
 
 - name: TMSetup - Main - Setup tm-control command line
   tags:
-    - tm-control
+    - podman
     - frigate
+    - node-red-tm
     - go2rtc
+    - revproxy
+    - tm-control
   ansible.builtin.import_tasks:
     file: tm-control_setup.yml
+
+- name: TMSetup - Main - Setup tm-control service
+  tags:
+    - podman
+    - frigate
+    - node-red-tm
+    - go2rtc
+    - revproxy
+    - tm-control
+  ansible.builtin.import_tasks:
+    file: tm-control_service.yml
 
 - name: TMSetup - Main - Setup Frigate
   tags:
@@ -87,8 +104,12 @@
 
 - name: TMSetup - Main - Give Frigate the go2rtc RTSP login
   tags:
-    - go2rtc
+    - podman
     - frigate
+    - node-red-tm
+    - go2rtc
+    - revproxy
+    - tm-control
   ansible.builtin.import_tasks:
     file: frigate_credentials.yml
 
@@ -112,6 +133,7 @@
     - frigate
     - node-red-tm
     - go2rtc
+    - tm-control
   ansible.builtin.import_tasks:
     file: revproxy_setup.yml
 
@@ -182,7 +204,24 @@
     - plate-recognizer
     - go2rtc
     - revproxy
+    - tm-control
   ansible.builtin.import_tasks:
     file: start_services.yml
+
+# The one place the installer shows the setup code (tasks/tm-control_service.yml), and only while unclaimed
+- name: TMSetup - Main - Show the setup code
+  tags:
+    - podman
+    - frigate
+    - node-red-tm
+    - go2rtc
+    - revproxy
+    - tm-control
+  when: tmsetup_tm_control_claim_register.stdout | default('') == 'unclaimed'
+  ansible.builtin.debug:
+    msg: >-
+      This device isn't claimed yet. Open http://{{ ansible_facts['hostname'] }}.local/ (or its IP address)
+      and enter the setup code {{ tmsetup_tm_control_setup_code_register.content | b64decode | trim }}
+      to create the administrator account. The code works once.
 
 ...

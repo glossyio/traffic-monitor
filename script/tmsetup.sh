@@ -195,6 +195,13 @@ _run_ansible() { # Run _ANSIBLE_CMD; if sudo wanted a password Ansible didn't ha
   return "${status}"
 }
 
+_refuse_root() { # Stop if run as root: the install records who ran it, and the control app sets that user's password
+  if [[ "${EUID}" -eq 0 ]]; then
+    printf "Run tmsetup.sh as your normal user (the one you log in with), not as root or with sudo. It asks for sudo itself.\n"
+    exit 1
+  fi
+}
+
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
@@ -260,6 +267,8 @@ _tmsetup_remote(){ # Installation on Remote hosts
 }
 
 ### Start of MAIN
+
+_refuse_root
 
 # Collect command-line options
 while getopts ":fhkKTuvya:d:g:H:l:L:o:t:z:C:" opt;

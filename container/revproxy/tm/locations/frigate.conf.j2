@@ -1,7 +1,15 @@
-# frigate - Frigate
+# frigate - Frigate, on its authenticated port; the proxy passes who's logged in
 location /frigate/ {
-    proxy_pass http://127.0.0.1:5000/;
+    include /etc/nginx/tm/snippets/auth-viewer.conf;
+    proxy_pass http://127.0.0.1:8971/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
     proxy_set_header X-Forwarded-Scheme $scheme;
     proxy_set_header X-Ingress-Path "/frigate";
+    proxy_set_header X-Proxy-Secret $tm_frigate_secret;
+    proxy_set_header X-Forwarded-User $tm_user;
+    proxy_set_header X-Forwarded-Groups $tm_role;
+    # Frigate trusts these too; never let a client supply them
+    proxy_set_header Remote-User "";
+    proxy_set_header Remote-Groups "";
+    proxy_set_header Remote-Role "";
 }

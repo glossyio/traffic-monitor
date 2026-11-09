@@ -125,6 +125,7 @@ nav:
       - First-time setup: setup-guide.md
   - Use the device:
       - Home page and apps: use/home-page.md
+      - Control app and login: use/control-app.md
       - Dashboards:
           - Monitoring: ui/monitoring.md
           - Movements: ui/movements.md
@@ -151,4 +152,5 @@ nav:
       - Get support: help-and-faq/where-can-i-get-support.md
   - Development:
       - Dev environment: development/dev-environment.md
+      - tm-control: development/tm-control.md
       - Contributing and writing docs: development/contributing.md
