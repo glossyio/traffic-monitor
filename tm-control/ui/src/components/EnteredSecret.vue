@@ -3,7 +3,8 @@
   asks to see what they typed), Save (POST /secrets/{name}), and Remove (DELETE /secrets/{name}) after a confirmation.
   Each starts the set-secret root job, which restarts the apps that read the value; the form waits for it and says how
   it went. The value is never shown back: the field starts empty and is emptied once the device has it. Emits
-  `changed` when a job has finished, so the page can load the secrets' state again.
+  `changed` when a job has finished, so the page can load the secrets' state again. With `hideTitle`, the heading
+  and the state line are left out, for a page whose own heading says them.
 -->
 <script setup lang="ts">
 import { mdiEye, mdiEyeOff } from '@mdi/js'
@@ -16,7 +17,7 @@ import { followJob } from './jobs'
 
 type SecretState = components['schemas']['SecretState']
 
-const props = defineProps<{ secret: SecretState }>()
+const props = defineProps<{ secret: SecretState; hideTitle?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 
 // The set-secret job can wait out two restarts of up to two minutes each, longer than setup's two minutes
@@ -139,8 +140,10 @@ const unknown = {
 
 <template>
   <div>
-    <h3 class="text-subtitle-1 font-weight-medium">{{ secret.title }}</h3>
-    <p class="text-body-2 text-secondary mb-3">{{ stateLine }}</p>
+    <template v-if="!hideTitle">
+      <h3 class="text-subtitle-1 font-weight-medium">{{ secret.title }}</h3>
+      <p class="text-body-2 text-secondary mb-3">{{ stateLine }}</p>
+    </template>
     <v-form ref="form" :disabled="running !== null" @submit.prevent="save">
       <v-text-field
         v-model="value"

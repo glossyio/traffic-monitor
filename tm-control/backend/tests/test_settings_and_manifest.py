@@ -6,9 +6,10 @@ import pytest
 
 from tm_control.adapters.command import run
 from tm_control.app import create_app
-from tm_control.core.manifest import ManifestError, load_manifest
+from tm_control.core.manifest import FrigateInfo, ManifestError, load_manifest
 from tm_control.core.secrets import DEVICE_SECRETS, NAMES, NODE_RED_INTERNAL_TOKEN, FakeSecrets, MissingSecret, Secrets
 from tm_control.core.settings import Settings
+from tm_control.modules.apps import contracts
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -85,6 +86,21 @@ def test_manifest_fixture_loads():
     assert m.tm_version == "0.7.1-test" and m.git.branch == "test"
     assert m.probes.hevc_device == "/dev/rpi-hevc-dec" and len(m.probes.radar_paths) == 4
     assert m.homepage.colors["background"] == "#0C1120"
+
+
+def test_an_older_manifest_without_frigate_loads_with_no_coral_model(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["frigate"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).frigate.coral_model is None
+
+
+def test_the_fixture_manifest_names_the_coral_model():
+    manifest = load_manifest(FIXTURES / "manifest.json")
+    assert list(manifest.frigate.coral_model) == ["model_type", "width", "height", "path", "labelmap_path"]
+    assert contracts.installer_model_file(manifest) == "yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"
+    assert contracts.installer_model_file(manifest.model_copy(update={"frigate": FrigateInfo()})) is None
 
 
 def test_manifest_error_names_the_path_not_the_content(tmp_path):

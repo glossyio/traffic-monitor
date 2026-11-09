@@ -13,9 +13,9 @@ import time
 import urllib.parse
 
 import pytest
-from devpi_checks import (API, UNCLAIMED, Redacted, entered_secret_states, is_claimed, request_from_this_machine,
-                          retry_after, role_vars, session, set_secret_table, status_checks, tm_internal_token,
-                          tm_login_or_none)
+from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed,
+                          request_from_this_machine, retry_after, role_vars, session, set_secret_table,
+                          status_checks, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -885,6 +885,52 @@ def test_frigate_plus_check_is_on_the_status_page(address, admin_session):
     assert "config.frigate_plus" in found, f"the Configuration group has no Frigate+ check: {sorted(found)}"
     status, detail = found["config.frigate_plus"]
     assert status in ("ok", "warn"), f"config.frigate_plus: {status}" + (f" ({detail})" if detail else "")
+
+
+SHA256_HEX = re.compile(r"[0-9a-f]{64}")
+
+
+def models_answer(address, cookie):
+    """GET /models as this session: (HTTP status, the answer's JSON or None, the body's text)."""
+    answer = request_from_this_machine(address, f"{API}/models", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    return answer.status, found if isinstance(found, dict) else None, answer.body.decode(errors="replace")
+
+
+@pytest.mark.parametrize("role", ["admin", "viewer"])
+def test_models_lists_the_device_detector_and_the_running_model(request, address, expect, role):
+    """Any signed-in user reads the Detection page's model list: the detector is the inventory's co-processor as
+    Frigate names it, the labels Frigate tracks are listed, and a Coral unit lists the installer's model as one file
+    with its hash. The inventory has no field for Frigate being healthy, so what Frigate answers is checked only
+    against itself: when it answers, the running model comes from it."""
+    state = models_answer(address, request.getfixturevalue(f"{role}_session"))[1]
+    assert state is not None, f"GET {API}/models as {role} didn't answer 200 with a JSON object"
+    assert state.get("detector") == detector_name(expect), (
+        f"the detector for ai_coprocessor {expect['ai_coprocessor']!r} as {role}: {state.get('detector')!r}")
+    assert isinstance(state.get("frigate_answers"), bool), "frigate_answers isn't true or false"
+    running = state.get("running")
+    assert isinstance(running, dict) and set(running) == {"name", "kind", "source"}, (
+        f"running's keys: {sorted(running) if isinstance(running, dict) else running!r}")
+    if state["frigate_answers"]:
+        assert running["source"] == "frigate" and running["kind"] is not None, (
+            f"Frigate answers, but the running model (kind, source) is ({running['kind']}, {running['source']})")
+    labels = state.get("labels")
+    tracked = labels.get("tracked") if isinstance(labels, dict) else None
+    assert isinstance(tracked, list) and tracked, "labels.tracked is empty: Frigate's config tracks no label"
+    if expect["ai_coprocessor"].startswith("edgetpu"):
+        defaults = [model for model in state.get("models", []) if model.get("kind") == "installer_default"]
+        assert len(defaults) == 1, f"a Coral unit lists {len(defaults)} installer defaults, not one"
+        files = defaults[0].get("files")
+        assert isinstance(files, list) and len(files) == 1, f"the installer's model has {files!r} for files"
+        assert SHA256_HEX.fullmatch(files[0].get("sha256") or ""), "the installer's model file has no 64-digit sha256"
+
+
+def test_models_answers_no_verified_counts(address, admin_session, viewer_session):
+    """The per-camera counts a Frigate+ record keeps in its sidecar are never sent, to an admin or a viewer."""
+    found = {role: "verifiedCounts" in models_answer(address, cookie)[2]
+             for role, cookie in {"admin": admin_session, "viewer": viewer_session}.items()}
+    assert found == {"admin": False, "viewer": False}, (
+        f"GET {API}/models has verifiedCounts, by role: {found}")
 
 
 def test_time_state_matches_timedatectl(host, address, admin_session):

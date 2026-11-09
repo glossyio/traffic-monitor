@@ -350,6 +350,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Models */
+        get: operations["get_models_api_v1_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/upload/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upload File
+         * @description Stream the body into model_cache as a model file, a sidecar (<model>.json), or an archive. `:path` lets a name
+         *     with a slash reach the name check, which refuses it.
+         */
+        put: operations["upload_file_api_v1_models_upload__filename__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/sidecar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Sidecar
+         * @description Write <name>.json for a model file that has none, for the device's detector.
+         */
+        post: operations["write_sidecar_api_v1_models__name__sidecar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Package
+         * @description The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model
+         *     with both halves, which a default never has. GET /models/{name}/file sends any model's file alone.
+         */
+        get: operations["download_package_api_v1_models__name__package_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download File
+         * @description The model's file alone, as an attachment under its own name, whether or not it has a sidecar: the download for
+         *     a model with none to package, such as a default, or a file whose details were never filled in.
+         */
+        get: operations["download_file_api_v1_models__name__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Model
+         * @description Remove the model's file and its sidecar, whichever are there, unless Frigate runs it or it's a default.
+         *     What runs is Frigate's answer, or config.yml's when Frigate doesn't answer; when neither can say, nothing is
+         *     removed.
+         */
+        delete: operations["delete_model_api_v1_models__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/default/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Default
+         * @description Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no
+         *     `model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model.
+         */
+        post: operations["use_default_api_v1_models_default_use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Model
+         * @description Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
+         *     A default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The
+         *     running model may be used again: Frigate just restarts.
+         */
+        post: operations["use_model_api_v1_models__name__use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -667,12 +832,81 @@ export interface components {
             /** Log */
             log: string[];
         };
+        /** LabelsOut */
+        LabelsOut: {
+            /** Recognised */
+            recognised: string[] | null;
+            /** Source */
+            source: ("frigate" | "sidecar" | "labels_file") | null;
+            /** Tracked */
+            tracked: string[];
+        };
         /** Memory */
         Memory: {
             /** Total */
             total: number;
             /** Available */
             available: number;
+        };
+        /** ModelFileOut */
+        ModelFileOut: {
+            /** Name */
+            name: string;
+            /** Size */
+            size: number;
+            /** Sha256 */
+            sha256: string | null;
+        };
+        /** ModelOut */
+        ModelOut: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "frigate_plus" | "local" | "installer_default" | "frigate_default";
+            /** Title */
+            title: string;
+            /** Trained At */
+            trained_at: string | null;
+            /** Type */
+            type: string | null;
+            /** Detectors */
+            detectors: string[];
+            /** Width */
+            width: number | null;
+            /** Height */
+            height: number | null;
+            /** Files */
+            files: components["schemas"]["ModelFileOut"][];
+            /** Complete */
+            complete: boolean;
+            /** Running */
+            running: boolean;
+            /** Usable */
+            usable: boolean | null;
+            /** Deletable */
+            deletable: boolean;
+            /** Problem */
+            problem: string | null;
+            /** Labels */
+            labels: string[] | null;
+        };
+        /** ModelsState */
+        ModelsState: {
+            /** Detector */
+            detector: string | null;
+            /** Frigate Answers */
+            frigate_answers: boolean;
+            /** Frigate Safe Mode */
+            frigate_safe_mode: boolean;
+            /** Default */
+            default: ("installer_default" | "frigate_default") | null;
+            running: components["schemas"]["RunningOut"];
+            /** Models */
+            models: components["schemas"]["ModelOut"][];
+            labels: components["schemas"]["LabelsOut"];
         };
         /** NewPassword */
         NewPassword: {
@@ -726,6 +960,15 @@ export interface components {
             /** Unit */
             unit: string;
         };
+        /** RunningOut */
+        RunningOut: {
+            /** Name */
+            name: string | null;
+            /** Kind */
+            kind: ("frigate_plus" | "local" | "installer_default" | "frigate_default") | null;
+            /** Source */
+            source: ("frigate" | "config_file") | null;
+        };
         /** SecretState */
         SecretState: {
             /** Name */
@@ -765,6 +1008,28 @@ export interface components {
             restarts: number;
             /** Restartable */
             restartable: boolean;
+        };
+        /**
+         * SidecarForm
+         * @description What Frigate needs to know about a model file: Frigate checks the values when the model is used.
+         */
+        SidecarForm: {
+            /** Model Type */
+            model_type: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Input Tensor */
+            input_tensor: string;
+            /** Input Pixel Format */
+            input_pixel_format: string;
+            /** Input Dtype */
+            input_dtype?: string | null;
+            /** Labels */
+            labels: string[];
+            /** Name */
+            name?: string | null;
         };
         /** SystemInfo */
         SystemInfo: {
@@ -864,6 +1129,18 @@ export interface components {
             branch: string;
             /** Installing User */
             installing_user: string;
+        };
+        /** UseQueued */
+        UseQueued: {
+            /** Name */
+            name: string;
+            /**
+             * Applied
+             * @enum {string}
+             */
+            applied: "frigate" | "file";
+            /** Restarts */
+            restarts: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -1390,6 +1667,238 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsState"];
+                };
+            };
+        };
+    };
+    upload_file_api_v1_models_upload__filename__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_sidecar_api_v1_models__name__sidecar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SidecarForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_package_api_v1_models__name__package_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The package */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_api_v1_models__name__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The model file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_api_v1_models__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    use_default_api_v1_models_default_use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseQueued"];
+                };
+            };
+        };
+    };
+    use_model_api_v1_models__name__use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseQueued"];
                 };
             };
             /** @description Validation Error */

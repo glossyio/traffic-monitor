@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+import jinja2
 import pytest
 from tmsetup_render import REPO, evaluate, load_role_yaml, render
 
@@ -30,12 +31,19 @@ GIT_OK = {
 }
 
 
+def expanded_coral_model(variables):
+    """The vars file's Coral model section with its path expanded, as Ansible's lazy templating gives it."""
+    model = variables["tmsetup_frigate_coral_model"]
+    return {**model, "path": jinja2.Environment().from_string(model["path"]).render(**variables)}
+
+
 def collected_manifest(**registers):
     """tmsetup_tm_control_manifest as the role's set_fact builds it, for a device without Plate Recognizer."""
     task = next(task for task in load_role_yaml("tasks/tm-control_service.yml")
                 if task["name"] == "TMSetup - tm-control Service - Collect the install manifest")
     variables = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
     variables.update({
+        "tmsetup_frigate_coral_model": expanded_coral_model(variables),
         "ansible_facts": {"user_id": "pi"},
         "tmsetup_tm_control_plate_recognizer_stat_register": {"stat": {"exists": False}},
         **GIT_OK, **registers,
@@ -71,9 +79,22 @@ def test_manifest_renders_valid_json_with_the_fields_tm_control_reads():
     }
     assert manifest.options == {"plate_recognizer": False}
     assert manifest.revproxy_locations == role_vars["tmsetup_revproxy_locations"]
+    assert manifest.frigate.coral_model == {
+        "model_type": "yolo-generic", "width": 512, "height": 512,
+        "path": f"/config/model_cache/{role_vars['tmsetup_frigate_coral_model_file']}",
+        "labelmap_path": "/config/labels-coco17.txt",
+    }
     assert manifest.probes.radar_paths == defaults["tmsetup_radar_paths"]
     assert manifest.probes.hevc_device == role_vars["tmsetup_hevc_device"]
     assert manifest.homepage.colors == defaults["tmsetup_homepage_colors"]
+
+
+def test_the_manifest_carries_the_coral_model_section():
+    role_vars = load_role_yaml("vars/main.yml")
+    model = collected_manifest()["frigate"]["coral_model"]
+    assert isinstance(model, dict)
+    assert model == expanded_coral_model(role_vars)
+    assert json.loads(rendered_manifest())["frigate"]["coral_model"] == model
 
 
 def test_manifest_records_only_the_static_detector_probes():

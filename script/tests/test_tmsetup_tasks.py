@@ -347,8 +347,10 @@ def test_the_coral_model_file_is_one_variable():
     get_url = downloads["ansible.builtin.get_url"]
     assert get_url["dest"] == "{{ tmsetup_codedir }}/frigate/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
     assert get_url["url"].endswith("/{{ tmsetup_frigate_coral_model_file }}")
+    assert load_role_yaml("vars/main.yml")["tmsetup_frigate_coral_model"]["path"] == (
+        "/config/model_cache/{{ tmsetup_frigate_coral_model_file }}")
     template = (REPO / "container/frigate/config/config.yml.j2").read_text()
-    assert "path: /config/model_cache/{{ tmsetup_frigate_coral_model_file }}" in template
+    assert "tmsetup_frigate_coral_model | to_nice_yaml" in template
     # The role and the container templates name the file only through the variable; tm-control's own code and
     # fixtures are pinned to it by their tests
     holders = [

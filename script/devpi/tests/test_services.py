@@ -159,3 +159,34 @@ def test_pid1_logs_how_each_start_job_ended(host):
     assert ended == [("1", "start", "done")], (
         f"PID 1's job-end entries for tm-control.service's current run (pid, type, result): {ended}; "
         f"{len(entries)} job-end entries this boot")
+
+
+def test_tm_control_may_write_frigates_config_directory(host, codedir):
+    """tm-control.service's sandbox is read-only apart from its own directories and Frigate's config directory, which
+    holds model_cache and config.yml, for the Detection page."""
+    paths = host.check_output("systemctl show -p ReadWritePaths --value tm-control.service")
+    assert paths == f"{codedir}/frigate/config", f"tm-control.service's ReadWritePaths are {paths!r}"
+
+
+# A 2 MB body, over nginx's default 1 MB limit, sent from the Pi to nginx on port 80 with no session and no Origin
+# header, and the Host header the other tests send. curl's default Expect: 100-continue stays: nginx checks the size
+# from the headers and refuses before any body is sent. Nothing in the body is a secret, and no request is let
+# through to change anything.
+BODY_MB = 2
+PUT_BODY = ("head -c {size} /dev/zero | curl -s -o /dev/null -w '%{{http_code}}' --max-time 30 -X PUT "
+            "-H {host_header} -H 'Content-Type: application/octet-stream' --data-binary @- http://localhost{path}")
+
+
+def put_two_megabytes(host, address, path):
+    return host.run(PUT_BODY.format(size=BODY_MB * 1024 * 1024, host_header=shlex.quote(f"Host: {address}"),
+                                    path=path)).stdout.strip()
+
+
+def test_model_uploads_are_proxied_with_the_larger_limit(host, address):
+    """nginx lets a model upload's body through up to 100 MB, and keeps its default 1 MB limit for every other API
+    path. Without a session or an Origin header, a 2 MB upload reaches tm-control, whose cross-site check answers 403,
+    where nginx's own limit would have answered 413; the same body to the secrets path is stopped by nginx."""
+    found = (put_two_megabytes(host, address, f"{API}/models/upload/x.tflite"),
+             put_two_megabytes(host, address, f"{API}/secrets/x"))
+    assert found == ("403", "413"), (
+        f"a 2 MB PUT to {API}/models/upload/x.tflite and to {API}/secrets/x answered {found}, not (403, 413)")

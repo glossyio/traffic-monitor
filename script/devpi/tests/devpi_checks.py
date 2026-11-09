@@ -119,6 +119,13 @@ def validate_expect(expect):
     }
 
 
+def detector_name(expect):
+    """The detector type the Detection page reports for this unit's inventory entry: Frigate's names for the
+    co-processors, and cpu when there is none."""
+    kind = expect["ai_coprocessor"]
+    return "edgetpu" if kind.startswith("edgetpu") else "hailo8l" if kind.startswith("hailo8") else "cpu"
+
+
 def require_pii_free(expect):
     if not expect["pii_free"]:
         pytest.skip("reads config.yml or tmdb.sqlite; set tm_expect.pii_free: true (bench units only)")
@@ -227,19 +234,21 @@ def request_from_this_machine(address, path, method="GET", cookie=None, body=Non
     """Send one request to the Pi's port 80 from this machine and return its Answer. Redirects aren't followed.
 
     A write (any method but GET and HEAD) is sent as JSON with Origin: http://<address>, as the device's own pages
-    send it; tm-control refuses any other write (tm_control/core/csrf.py). Never raises for an HTTP or network
-    error, so no traceback shows the cookie or the body.
+    send it; tm-control refuses any other write (tm_control/core/csrf.py). A body that is bytes is sent as it is, and
+    headers can then name its Content-Type, as the model upload does. Never raises for an HTTP or network error, so
+    no traceback shows the cookie or the body.
     """
     # The body goes straight into the request, whose repr doesn't show it: a local holding it as bytes would print
     # under pytest -l, password included.
-    request = urllib.request.Request(f"http://{address}{path}", method=method,
-                                     data=json.dumps(body).encode() if body is not None else None)
+    data = body if isinstance(body, bytes) else json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(f"http://{address}{path}", method=method, data=data)
     for name, value in (headers or {}).items():
         request.add_header(name, value)
     if cookie is not None:
         request.add_header("Cookie", cookie)
     if method not in ("GET", "HEAD"):
-        request.add_header("Content-Type", "application/json")
+        if not request.has_header("Content-type"):
+            request.add_header("Content-Type", "application/json")
         request.add_header("Origin", f"http://{address}")
     try:
         with urllib.request.build_opener(NoRedirect).open(request, timeout=30) as response:
