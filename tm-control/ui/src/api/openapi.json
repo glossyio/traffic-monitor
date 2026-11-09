@@ -728,7 +728,7 @@
           "models"
         ],
         "summary": "Download Package",
-        "description": "The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model\nwith both halves, which a default never has.",
+        "description": "The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model\nwith both halves, which a default never has. GET /models/{name}/file sends any model's file alone.",
         "operationId": "download_package_api_v1_models__name__package_get",
         "parameters": [
           {
@@ -746,6 +746,50 @@
             "description": "The package",
             "content": {
               "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{name}/file": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Download File",
+        "description": "The model's file alone, as an attachment under its own name, whether or not it has a sidecar: the download for\na model with none to package, such as a default, or a file whose details were never filled in.",
+        "operationId": "download_file_api_v1_models__name__file_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The model file",
+            "content": {
+              "application/octet-stream": {
                 "schema": {
                   "type": "string",
                   "format": "binary"

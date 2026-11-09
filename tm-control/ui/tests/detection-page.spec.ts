@@ -4,7 +4,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogText, mountAlone, mountApp } from './mount'
+import { click, clickInDialog, dialogButtons, dialogText, mountAlone, mountApp } from './mount'
 import LabelChips from '../src/modules/detection/LabelChips.vue'
 import ModelBlock, { type Block } from '../src/modules/detection/ModelBlock.vue'
 
@@ -698,12 +698,109 @@ describe("the Detection page's actions", () => {
       saved.push(this.download)
     })
     const { wrapper } = await mountApp('/detection')
-    // The installer's model has no sidecar to package: its block has only Use
-    expect(cardActions(item(wrapper, "The installer's model"))).toEqual(['Use'])
+    // The installer's model has no sidecar to package: its Download is of the file alone, and it has no Delete
+    expect(cardActions(item(wrapper, "The installer's model"))).toEqual(['Use', 'Download'])
     await clickIn(item(wrapper, 'My model'), 'Download')
     expect(api.sent.at(-1)?.path).toBe('/api/v1/models/mine.tflite/package')
     expect(saved).toEqual(['mine.tflite.zip'])
     expect(blobs[0].size).toBe(zip.length)
+  })
+
+  // A model file on the device with no .json: uploaded on its own, its details never filled in
+  const BARE: ModelOut = {
+    name: 'bare.tflite',
+    kind: 'local',
+    title: 'bare.tflite',
+    trained_at: null,
+    type: null,
+    detectors: [],
+    width: null,
+    height: null,
+    files: [{ name: 'bare.tflite', size: 3, sha256: '039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81' }],
+    complete: false,
+    running: false,
+    usable: null,
+    deletable: true,
+    problem: null,
+    labels: null,
+  }
+  const WITH_BARE = { ...MODELS, models: [...MODELS.models, BARE] }
+  const INSTALLER_NAME = MODELS.models[0].name
+
+  // The names the page saved files under
+  function savedFiles() {
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => 'blob:http://localhost/file')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    const saved: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      saved.push(this.download)
+    })
+    return saved
+  }
+  const fileResponse = () =>
+    new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'Content-Type': 'application/octet-stream' } })
+  const gets = (api: ReturnType<typeof signedIn>) =>
+    api.sent.filter((r) => r.method === 'GET' && r.path.startsWith('/api/v1/models/')).map((r) => r.path)
+
+  it('says a model with no .json downloads as its file alone, then saves the file under its own name', async () => {
+    const api = signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: WITH_BARE,
+      'GET /api/v1/models/bare.tflite/file': fileResponse,
+    })
+    const saved = savedFiles()
+    const { wrapper } = await mountApp('/detection')
+    expect(cardActions(item(wrapper, 'bare.tflite'))).toEqual(['Use', 'Download', 'Delete'])
+    await clickIn(item(wrapper, 'bare.tflite'), 'Download')
+    expect(dialogText()).toContain('Download bare.tflite?')
+    expect(dialogText()).toContain(
+      'It has no .json the device can read, so the download is the model file alone. ' +
+        'Whoever uploads the file fills in what Frigate needs to know about it.',
+    )
+    expect(gets(api)).toEqual([]) // nothing is fetched until the operator has read that
+    await clickInDialog('Download')
+    expect(gets(api)).toEqual(['/api/v1/models/bare.tflite/file'])
+    expect(saved).toEqual(['bare.tflite'])
+  })
+
+  it('downloads nothing when the operator cancels', async () => {
+    const api = signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: WITH_BARE })
+    const saved = savedFiles()
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, 'bare.tflite'), 'Download')
+    await clickInDialog('Cancel')
+    expect(gets(api)).toEqual([])
+    expect(saved).toEqual([])
+  })
+
+  it("says the installer's model file must be renamed before it's uploaded", async () => {
+    const api = signedIn(ADMIN, {
+      [SECRETS]: { secrets: TWO_SECRETS },
+      [MODELS_PATH]: MODELS,
+      [`GET /api/v1/models/${INSTALLER_NAME}/file`]: fileResponse,
+    })
+    const saved = savedFiles()
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, "The installer's model"), 'Download')
+    expect(dialogText()).toContain("Download the installer's model?")
+    expect(dialogText()).toContain(
+      'It has no .json, so the download is the model file alone. A device keeps this file name for its own copy, ' +
+        'so rename the file before uploading it. Whoever uploads it fills in what Frigate needs to know about it.',
+    )
+    await clickInDialog('Download')
+    expect(gets(api)).toEqual([`/api/v1/models/${INSTALLER_NAME}/file`])
+    expect(saved).toEqual([INSTALLER_NAME])
+  })
+
+  it('asks with a primary button, since a download changes nothing', async () => {
+    signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: WITH_BARE })
+    const { wrapper } = await mountApp('/detection')
+    await clickIn(item(wrapper, 'bare.tflite'), 'Download')
+    const [confirm] = dialogButtons('Download')
+    expect([...confirm.classList]).toContain('bg-primary')
+    await clickInDialog('Cancel')
+    await clickIn(item(wrapper, 'My model'), 'Delete')
+    expect([...dialogButtons('Delete')[0].classList]).toContain('bg-error')
   })
 
   it('deletes after the confirm and reloads the list', async () => {
@@ -729,7 +826,7 @@ describe("the Detection page's actions", () => {
     expect(others.text().indexOf('Deleted My model.')).toBeLessThan(others.text().indexOf("The installer's model"))
   })
 
-  it("lists Frigate's own Hailo model as its built-in model, running and with no buttons", async () => {
+  it("lists Frigate's own Hailo model as its built-in model, running and with only Download", async () => {
     const builtIn: ModelOut = {
       ...MODELS.models[0],
       name: 'yolov6n.hef',
@@ -754,7 +851,7 @@ describe("the Detection page's actions", () => {
     expect(fact(wrapper, 'Running model')).toBe("Frigate's built-in model")
     const entry = wrapper.find('.model.in-use')
     expect(entry.text()).toContain("Frigate's built-in model")
-    expect(cardActions(entry)).toEqual([])
+    expect(cardActions(entry)).toEqual(['Download'])
     expect(entry.text()).toContain('In use')
     expect(entry.text()).not.toContain('incomplete')
     // Like the installer's entry, it has no sidecar: its file name is its facts line, shown once
@@ -792,7 +889,7 @@ describe("the Detection page's actions", () => {
     const installer = wrapper.find('.model.in-use')
     expect(installer.text()).toContain("The installer's model")
     expect(installer.text()).toContain("Frigate runs the installer's model.") // the result moved with its block
-    expect(cardActions(installer)).toEqual([])
+    expect(cardActions(installer)).toEqual(['Download'])
     const plus = item(wrapper, 'Test site yolov9')
     expect(section(wrapper, 'Other models').element.contains(plus.element)).toBe(true)
     expect(cardActions(plus)).toEqual(['Use', 'Download'])
@@ -1010,6 +1107,15 @@ describe('ModelBlock', () => {
     const one = card(listed(MINE), { missing: ['dog'] })
     expect(fold(one).text()).toContain("Doesn't recognise 1 object tracked on this device:")
     expect(fold(card(listed(MINE))).text()).not.toContain("Doesn't recognise")
+  })
+
+  it('offers Download for any model with a model file, and not for one with only a .json', () => {
+    const texts = (wrapper: VueWrapper) => wrapper.findAll('button').map((b) => b.text().trim())
+    expect(texts(card(listed(INSTALLER), { canUse: false }))).toContain('Download')
+    const bare = { ...MINE, complete: false, files: [MINE.files[0]], labels: null }
+    expect(texts(card(listed(bare)))).toContain('Download')
+    const half = { ...MINE, complete: false, files: [MINE.files[1]], labels: null }
+    expect(texts(card(listed(half)))).not.toContain('Download')
   })
 
   it('gives Use the most weight and marks Delete as destructive', () => {

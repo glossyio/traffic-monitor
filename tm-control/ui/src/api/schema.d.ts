@@ -418,9 +418,30 @@ export interface paths {
         /**
          * Download Package
          * @description The model's file, its sidecar, and SHA256SUMS in a zip, as an attachment named <name>.zip: only for a model
-         *     with both halves, which a default never has.
+         *     with both halves, which a default never has. GET /models/{name}/file sends any model's file alone.
          */
         get: operations["download_package_api_v1_models__name__package_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{name}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download File
+         * @description The model's file alone, as an attachment under its own name, whether or not it has a sidecar: the download for
+         *     a model with none to package, such as a default, or a file whose details were never filled in.
+         */
+        get: operations["download_file_api_v1_models__name__file_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1767,6 +1788,37 @@ export interface operations {
                 };
                 content: {
                     "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_api_v1_models__name__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The model file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
             /** @description Validation Error */

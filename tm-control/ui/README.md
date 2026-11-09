@@ -54,7 +54,7 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
   (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
   (`clipboard.ts`, the diagnostics and the label lists), and saving a file (`download.ts`, the diagnostics and the
-  model packages).
+  model packages and files).
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -471,7 +471,7 @@ sit in this layout without moving anything.
 | +--------------------------------+ |
 | | The installer's model     (h3) | |
 | | yolov9-s-...edgetpu.tflite     | |
-| | [Use]                          | |  <- filled
+| | [Use] [Download]               | |  <- filled, outlined
 | | > Files and objects            | |
 | +--------------------------------+ |
 | +--------------------------------+ |
@@ -556,17 +556,22 @@ buttons.
   `/detection#frigate-plus`, which opens the panel and scrolls to it once the models have loaded. The key's form is
   the Device page's (`EnteredSecret.vue`) without its own heading and state line, which the title has.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
-  Download (outlined, a model with both files), and Delete (red outline, when the API says it can be). "Upload a model"
+  Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
+  be). "Upload a model"
   sits under the "Other models" heading, above the cards it adds to, visible with nothing to open. The device's default (the installer's model, or Frigate's
   built-in model on a device without a Coral) has its own Use when Frigate runs something else, which puts it back
-  through `POST /models/default/use`; the defaults have no Download or Delete, and the device has no package of
-  them. A Use that can't work is disabled, with the reason under it ("It's built for hailo8l, and this device
+  through `POST /models/default/use`; the defaults have no Delete. A Use that can't work is disabled, with the reason under it ("It's built for hailo8l, and this device
   detects with edgetpu.").
 - "Upload a model" opens a dialog: one package, or a model file with or without its .json, sent the .json first. A
   model file sent alone opens a form for what Frigate needs to know about it, filled in with Frigate's documented
   example for a Coral or a Hailo-8L; only the labels are always the person's to type. A .json sent alone finishes a
   model file already on the device. The picker shows every file, because a Frigate+ model file has no extension and
   a phone's picker would hide it behind a filter; the device tells the kinds apart by name.
+- Download saves a model with both its files as a package (`<name>.zip`), without asking. A model without a .json
+  the device can read, and a default, downloads as its model file alone, under its own name, after a dialog that says
+  so and that whoever uploads the file fills in what Frigate needs to know about it; for a default it also says to
+  rename the file first, because a device keeps that name for its own copy. That dialog's button is primary, not the
+  error colour, since a download changes nothing.
 - Use and Delete ask first. Use says Frigate restarts and that traffic isn't counted meanwhile; after the device
   accepts, "Frigate is restarting." shows under the model, and the page asks again every 3 seconds until Frigate
   answers with the model ("Frigate runs My model."), or, after 90 seconds, points to the Status page. Each result

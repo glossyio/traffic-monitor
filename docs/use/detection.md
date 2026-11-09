@@ -25,7 +25,7 @@ Each model is a card with its name, its kind (Frigate+ or local), and when it wa
 | can't run on this detector | The model is built for another detector than the device's, so **Use** is off. |
 | incomplete | The model has its file but not its `.json`, or the other way round. |
 
-The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be downloaded or deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be downloaded or deleted either.
+The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be deleted either.
 
 Everyone who can log in sees the models, the label lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
@@ -64,6 +64,8 @@ The page refuses a **Use** in these cases:
 ## Download a model
 
 **Download** saves a zip with the model's file, its `.json`, and a `SHA256SUMS` file. The files are byte for byte what's on the device, so the zip is a backup, or a way to put the same model on another device with **Upload a model**. A `.json` keeps every field it came with, including ones the page doesn't show.
+
+A model without a `.json` the device can read downloads as its model file alone, under the file's own name, and the page says so before it starts. Whoever uploads that file is asked for [what Frigate needs to know about it](#upload-a-model). The installer's model and Frigate's built-in model download this way too. A device keeps their file names for its own copies, so rename such a file before you upload it.
 
 ## Delete a model
 

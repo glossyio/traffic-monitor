@@ -1,4 +1,4 @@
-// Saving what the device sent as a file: the Device page's diagnostics and the Detection page's model packages.
+// Saving what the device sent as a file: the Device page's diagnostics and the Detection page's model packages and model files.
 
 // A link to the data in memory, with the file's name, clicked once. Some browsers only follow a link that's in the
 // page, and still read the file after click() returns, so it's freed later.

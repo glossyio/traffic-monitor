@@ -1,7 +1,8 @@
 """A model packaged for download: a zip of its file, its sidecar, and SHA256SUMS, which an upload of the zip checks.
+A model with no sidecar to package downloads as its file alone.
 
-The files are read through model_cache's descriptor without following a link, and the zip is written to a new name
-in tm-control's own state directory, which the route removes once it has been sent.
+The files are read through model_cache's descriptor without following a link, and the zip, or the file's copy, is
+written to a new name in tm-control's own state directory, which the route removes once it has been sent.
 """
 
 import hashlib
@@ -61,6 +62,18 @@ def write_package(dir_fd: int, name: str, out: BinaryIO) -> None:
         archive.writestr(info, "".join(lines))
 
 
+def write_file(dir_fd: int, name: str, out: BinaryIO) -> None:
+    """A copy of the regular file <name>, in 1 MiB blocks."""
+    fd = open_in(dir_fd, name, os.O_RDONLY)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise OSError("not a regular file")
+        while block := os.read(fd, HASH_BLOCK):
+            out.write(block)
+    finally:
+        os.close(fd)
+
+
 def _sweep(dir_fd: int) -> None:
     now = time.time()
     for entry in os.listdir(dir_fd):
@@ -72,9 +85,9 @@ def _sweep(dir_fd: int) -> None:
                 pass
 
 
-def create(state_dir: Path, name: str) -> tuple[Path, BinaryIO]:
-    """A new, empty file for the package in <state_dir>/packages (created 0700), named <name>-<random>.zip and
-    created O_EXCL, 0600. Packages older than STALE_AFTER are removed first."""
+def create(state_dir: Path, name: str, suffix: str = ".zip") -> tuple[Path, BinaryIO]:
+    """A new, empty file for the download in <state_dir>/packages (created 0700), named <name>-<random><suffix> and
+    created O_EXCL, 0600. Downloads older than STALE_AFTER are removed first."""
     directory = state_dir / PACKAGES
     try:
         directory.mkdir(mode=0o700)
@@ -83,7 +96,7 @@ def create(state_dir: Path, name: str) -> tuple[Path, BinaryIO]:
     dir_fd = open_cache(directory)
     try:
         _sweep(dir_fd)
-        file = f"{name}-{secrets.token_hex(8)}.zip"
+        file = f"{name}-{secrets.token_hex(8)}{suffix}"
         fd = open_in(dir_fd, file, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
     finally:
         os.close(dir_fd)

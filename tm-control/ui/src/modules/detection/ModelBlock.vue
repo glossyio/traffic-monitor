@@ -1,6 +1,7 @@
 <!--
   One model on the Detection page, in a bordered card: its title and chip, its facts, the API's problem, and for admins
-  its buttons, the reason a Use can't work, and the result of its last action. Below those, a closed fold holds one line
+  its buttons, the reason a Use can't work, and the result of its last action. Download is on every card whose model
+  file is on the device. Below those, a closed fold holds one line
   per file and, when the model's labels are known, its objects and any tracked objects it doesn't recognise. The card
   for the model Frigate runs is tinted. A block the page makes for a default with no file on the device has no fold.
   The page keeps the state and the actions; the buttons only emit.
@@ -37,7 +38,10 @@ const props = defineProps<{
 defineEmits<{ use: []; download: []; remove: [] }>()
 
 const isDefault = computed(() => props.block.kind === 'installer_default' || props.block.kind === 'frigate_default')
-const canDownload = computed(() => !isDefault.value && !!props.block.model?.complete)
+const canDownload = computed(() => {
+  const model = props.block.model
+  return !!model && model.files.some((file) => file.name === model.name)
+})
 const canDelete = computed(() => !isDefault.value && !!props.block.model?.deletable)
 
 const mark = computed(() => {
@@ -75,7 +79,7 @@ const named = (model: ModelOut, file: ModelFile) => file.name !== model.title
     </div>
     <div v-if="block.facts" class="text-body-2 text-secondary">{{ block.facts }}</div>
     <div v-if="block.model?.problem" class="text-body-2">{{ block.model.problem }}</div>
-    <!-- The defaults have no package and can't be deleted; their Use puts back the device's default -->
+    <!-- The defaults can't be deleted; their Use puts back the device's default -->
     <template v-if="admin">
       <div v-if="canUse || canDownload || canDelete" class="d-flex flex-wrap ga-2 mt-2">
         <v-btn

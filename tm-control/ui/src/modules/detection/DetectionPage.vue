@@ -229,21 +229,51 @@ function blockProps(block: Block) {
   } as const
 }
 
+// A default's title inside a sentence
+const asked = (block: Block) =>
+  block.kind === 'installer_default' ? "the installer's model" : "Frigate's built-in model"
+
 function askToUse(block: Block) {
   if (block.model && !isDefaultKind(block.kind)) {
     confirming.value = { action: 'use', title: block.title, model: block.model }
   } else {
-    const title = block.kind === 'installer_default' ? "the installer's model" : "Frigate's built-in model"
-    confirming.value = { action: 'use', title, model: null }
+    confirming.value = { action: 'use', title: asked(block), model: null }
   }
 }
 
-// The confirmation: a use or a delete of a model, or a use of the default (model null)
+// A model with both its files downloads as a package. Any other downloads as its model file alone, once the operator
+// has read what an upload of that file will need. A default's file can't be uploaded under its own name, which every
+// device keeps for its own copy.
+const packaged = (model: ModelOut) => model.complete && !isDefaultKind(model.kind)
+
+function askToDownload(block: Block) {
+  const model = block.model!
+  if (packaged(model)) void download(model)
+  else if (isDefaultKind(block.kind)) confirming.value = { action: 'downloadDefault', title: asked(block), model }
+  else confirming.value = { action: 'download', title: block.title, model }
+}
+
+// The confirmation: a use or a delete of a model, a use of the default (model null), or a download of a model file
+// alone
+const FILLS_IN = 'fills in what Frigate needs to know about it.'
 const CONFIRM = {
   use: { verb: 'Use', text: "Frigate restarts, which takes about a minute. Traffic isn't counted while it does." },
   delete: { verb: 'Delete', text: "Both of its files are removed from the device. This can't be undone." },
+  download: {
+    verb: 'Download',
+    text:
+      'It has no .json the device can read, so the download is the model file alone. Whoever uploads the file ' +
+      FILLS_IN,
+  },
+  downloadDefault: {
+    verb: 'Download',
+    text:
+      'It has no .json, so the download is the model file alone. A device keeps this file name for its own copy, ' +
+      `so rename the file before uploading it. Whoever uploads it ${FILLS_IN}`,
+  },
 }
-const confirming = ref<{ action: 'use' | 'delete'; title: string; model: ModelOut | null } | null>(null)
+type Action = keyof typeof CONFIRM
+const confirming = ref<{ action: Action; title: string; model: ModelOut | null } | null>(null)
 const confirmOpen = computed({
   get: () => confirming.value !== null,
   set: (open: boolean) => {
@@ -254,7 +284,8 @@ const confirmOpen = computed({
 function confirmed() {
   const { action, model } = confirming.value!
   if (action === 'delete') void remove(model!)
-  else void use(model)
+  else if (action === 'use') void use(model)
+  else void download(model!)
 }
 
 // Use a model, or the default, then ask GET /models every 3 seconds until Frigate answers with it, for 90 seconds
@@ -315,11 +346,12 @@ async function download(model: ModelOut) {
   result.value = null
   busy.value = `download ${model.name}`
   try {
-    const { data } = await api.GET('/api/v1/models/{name}/package', {
+    const whole = packaged(model)
+    const { data } = await api.GET(whole ? '/api/v1/models/{name}/package' : '/api/v1/models/{name}/file', {
       params: { path: { name: model.name } },
       parseAs: 'blob',
     })
-    saveBlob(data as Blob, `${model.name}.zip`)
+    saveBlob(data as Blob, whole ? `${model.name}.zip` : model.name)
   } catch (error) {
     result.value = { at: model.name, type: 'error', text: messageOf(error) }
   } finally {
@@ -453,7 +485,7 @@ function openUpload() {
         <ModelBlock
           v-bind="blockProps(inUse)"
           @use="askToUse(inUse)"
-          @download="download(inUse.model!)"
+          @download="askToDownload(inUse)"
           @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
         />
       </section>
@@ -477,7 +509,7 @@ function openUpload() {
             :key="block.key"
             v-bind="blockProps(block)"
             @use="askToUse(block)"
-            @download="download(block.model!)"
+            @download="askToDownload(block)"
             @remove="confirming = { action: 'delete', title: block.title, model: block.model }"
           />
         </div>
@@ -529,6 +561,7 @@ function openUpload() {
       :title="confirming ? `${CONFIRM[confirming.action].verb} ${confirming.title}?` : ''"
       :text="confirming ? CONFIRM[confirming.action].text : ''"
       :confirm-text="confirming ? CONFIRM[confirming.action].verb : ''"
+      :confirm-color="confirming && CONFIRM[confirming.action].verb === 'Download' ? 'primary' : undefined"
       @confirm="confirmed"
     />
   </div>

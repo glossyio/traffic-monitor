@@ -769,6 +769,77 @@ def test_a_package_of_an_incomplete_pair_is_404(seeded, settings, login):
     assert packages(settings) == []
 
 
+def file_of(client, name):
+    return client.get(f"{URL}/{name}/file")
+
+
+def test_a_model_file_downloads_alone_with_or_without_a_sidecar(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    put(seeded, "bare.tflite", b"\x01\x02\x03")
+    (cache / "broken.tflite").write_bytes(b"\x04\x05")
+    (cache / "broken.tflite.json").write_bytes(b"not json")
+    for name in ("bare.tflite", "broken.tflite", INSTALLER_FILE, "mine.tflite"):
+        r = file_of(seeded, name)
+        assert r.status_code == 200, name
+        assert r.headers["content-type"] == "application/octet-stream"
+        assert r.headers["content-disposition"] == f'attachment; filename="{name}"'
+        assert r.content == (cache / name).read_bytes()
+    assert packages(settings) == []  # each copy was removed once it was sent
+    assert cache_names(settings) == sorted(SEEDED + ["bare.tflite", "broken.tflite", "broken.tflite.json"])
+
+
+def test_only_a_regular_model_file_downloads(seeded, settings, login):
+    login(seeded, *ADMIN)
+    cache = fake.model_cache(settings)
+    put(seeded, "half.tflite.json", sidecar_bytes())
+    (cache / "dir.tflite").mkdir()
+    (cache / "link.tflite").symlink_to(cache / PLUS_ID)
+    for name in ("half.tflite", "dir.tflite", "link.tflite", "missing.tflite"):
+        r = file_of(seeded, name)
+        assert (r.status_code, message(r)) == (404, "There is no such model."), name
+    assert file_of(seeded, "%2E%2E").status_code == 422
+    assert file_of(seeded, "mine.tflite.json").status_code == 422  # a sidecar is no model's file
+    assert packages(settings) == []
+
+
+def test_only_admins_download_a_model_file_and_the_download_is_audited(seeded, settings, login):
+    import sqlite3
+
+    assert file_of(seeded, INSTALLER_FILE).status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert file_of(seeded, INSTALLER_FILE).status_code == 403
+    login(seeded, *ADMIN)
+    assert file_of(seeded, INSTALLER_FILE).status_code == 200
+    admin = Users(seeded.app.state.state).by_username("admin")
+    con = sqlite3.connect(settings.state_dir / "state.sqlite")
+    try:
+        rows = con.execute(
+            "SELECT user_id, action, detail FROM audit WHERE action LIKE 'models.%' ORDER BY id").fetchall()
+    finally:
+        con.close()
+    assert rows == [(admin.id, "models.download_file", INSTALLER_FILE)]
+
+
+def test_a_model_file_that_cannot_be_copied_leaves_no_file(seeded, settings, login, monkeypatch):
+    from tm_control.modules.detection import package
+
+    login(seeded, *ADMIN)
+
+    def broken(dir_fd, name, out):
+        out.write(b"partial")
+        raise OSError("read failed")
+
+    monkeypatch.setattr(package, "write_file", broken)
+    r = file_of(seeded, INSTALLER_FILE)
+    assert (r.status_code, message(r)) == (500, "The model's file can't be read.")
+    assert packages(settings) == []
+    monkeypatch.setattr("os.statvfs", lambda path: type("S", (), {"f_frsize": 4096, "f_bavail": 1000})())
+    r = file_of(seeded, INSTALLER_FILE)
+    assert (r.status_code, message(r)) == (507, "The device would have less than 512 MB free.")
+
+
 def test_only_admins_download_a_package_and_the_download_is_audited(seeded, settings, login):
     import sqlite3
 
