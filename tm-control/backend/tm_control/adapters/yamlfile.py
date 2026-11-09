@@ -89,11 +89,12 @@ MAX_BACKUPS_PER_SECOND = 100
 KEEP_BACKUPS = 10  # of a file's own copies; see _prune_backups
 
 
-def backup_path(path, now=None):
+def backup_path(path, now=None, keep=False):
     """Where save() copies the current file before replacing it, e.g. config.yml.20261002T153000Z.bak. When that name
-    is taken (a second save in the same second), back_up() uses config.yml.20261002T153000Z.1.bak, .2.bak, and so on."""
+    is taken (a second save in the same second), back_up() uses config.yml.20261002T153000Z.1.bak, .2.bak, and so on.
+    A copy to keep (keep=True) is config.yml.20261002T153000Z.migrate.bak, a name _prune_backups skips."""
     now = now or datetime.now(timezone.utc)
-    return path.with_name(f"{path.name}.{now:%Y%m%dT%H%M%SZ}.bak")
+    return path.with_name(f"{path.name}.{now:%Y%m%dT%H%M%SZ}{'.migrate' if keep else ''}.bak")
 
 
 def read_text(path):
@@ -120,9 +121,12 @@ def _create_backup(first, mode):
     raise AssertionError("unreachable")
 
 
-def back_up(path, now=None):
+def back_up(path, now=None, keep=False):
     """Copy path to backup_path(path), with its permission bits, times, and, when running as root, its owner, and prune
     the older copies (_prune_backups). Return the copy's path.
+
+    keep=True is for tm-control migrate: its copy records what the installer removed, and may be the only place left
+    that holds it, so it stays for good, and making it deletes nothing.
 
     The copy is made as a new file and never through a symbolic link, and neither is the original read through one:
     the name is easy to guess, and the directory may be writable by others (Node-RED's container mounts its config
@@ -132,7 +136,7 @@ def back_up(path, now=None):
     try:
         original = os.fstat(source)
         mode = stat.S_IMODE(original.st_mode)
-        backup, target = _create_backup(backup_path(path, now), mode)
+        backup, target = _create_backup(backup_path(path, now, keep), mode)
         try:
             with os.fdopen(os.dup(source), "rb") as reader, os.fdopen(os.dup(target), "wb") as writer:
                 shutil.copyfileobj(reader, writer)
@@ -150,7 +154,8 @@ def back_up(path, now=None):
         os.close(target)
     finally:
         os.close(source)
-    _prune_backups(path, backup)
+    if not keep:
+        _prune_backups(path, backup)
     return backup
 
 
@@ -158,8 +163,9 @@ def _prune_backups(path, made):
     """Delete all but the newest KEEP_BACKUPS copies back_up() made of this file, always keeping `made`, the one just
     made: a device with no real-time clock can stamp it earlier than the rest.
 
-    Only back_up()'s own names, as regular files: tmsetup's Ansible backups and a copy made by hand look different and
-    stay. Best effort: a copy that can't be listed or deleted is no reason to fail the save it protects.
+    Only back_up()'s own names, as regular files: a copy made with keep=True, tmsetup's Ansible backups, and a copy made
+    by hand look different and stay. Best effort: a copy that can't be listed or deleted is no reason to fail the save
+    it protects.
     """
     pattern = re.compile(re.escape(path.name) + r"\.(\d{8}T\d{6}Z)(?:\.(\d+))?\.bak")
     found = []
@@ -252,14 +258,15 @@ class RoundTripFile:
             text = text.removesuffix("\n")  # keep a missing final newline, so an unedited file renders identically
         return text
 
-    def save(self, now=None):
-        """Write the edited data if it differs from the file. Return the backup's path, or None if nothing changed."""
+    def save(self, now=None, keep=False):
+        """Write the edited data if it differs from the file. Return the backup's path, or None if nothing changed.
+        keep=True: see back_up."""
         text = self.render()
         if text == self._loaded_text:
             return None
         if read_text(self.path) != self._loaded_text:
             raise ConcurrentEditError(f"{self.path} changed after it was loaded; not saving")
-        backup = back_up(self.path, now)
+        backup = back_up(self.path, now, keep)
         write_atomic(self.path, text)
         self._loaded_text = text
         return backup

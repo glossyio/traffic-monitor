@@ -321,7 +321,7 @@ def run(frigate_config, dry_run=False):
         print(f"{PREFIX} {frigate_config}: would " + ", ".join(would for would, _ in steps))
         return 0
     try:
-        backup = document.save()
+        backup = document.save(keep=True)
     except (OSError, ConcurrentEditError) as error:
         print(f"{PREFIX} ERROR writing {frigate_config}: {error}", file=sys.stderr)
         return 1
@@ -675,7 +675,7 @@ def _run_node_red(config_path, secrets_dir, dry_run):
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
     try:
-        backup = document.save()
+        backup = document.save(keep=True)
     except (OSError, ConcurrentEditError) as error:
         print(f"{PREFIX} ERROR writing {config_path}: {error}", file=sys.stderr)
         return 1
@@ -779,7 +779,7 @@ def _run_env(env_path, secrets_dir, dry_run, entries, placeholders, normalise=No
         if not dry_run:
             try:
                 # Once per content: an add-on's setup, which rewrites the lines, doesn't run while it's turned off.
-                backup = _same_backup(env_path, text) or back_up(env_path)
+                backup = _same_backup(env_path, text) or back_up(env_path, keep=True)
             except OSError as error:
                 print(f"{PREFIX} ERROR writing a backup of {env_path}: {error}", file=sys.stderr)
                 return 1

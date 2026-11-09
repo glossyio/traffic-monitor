@@ -104,6 +104,31 @@ def test_back_up_leaves_every_other_name_alone(frigate_config, name):
     assert len(list(frigate_config.parent.glob("config.yml.20261002T??????Z.bak"))) == 10
 
 
+def test_a_copy_to_keep_gets_a_name_pruning_leaves_alone(frigate_config):
+    kept = yamlfile.back_up(frigate_config, NOW, keep=True)
+    same_second = yamlfile.back_up(frigate_config, NOW, keep=True)
+    assert kept == frigate_config.with_name("config.yml.20261002T153000Z.migrate.bak")
+    assert same_second == frigate_config.with_name("config.yml.20261002T153000Z.migrate.1.bak")
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    assert kept.exists() and same_second.exists()
+    assert len(list(frigate_config.parent.glob("config.yml.20261002T??????Z.bak"))) == 10
+
+
+def test_making_a_copy_to_keep_prunes_nothing(frigate_config):
+    for hour in range(12):
+        yamlfile.back_up(frigate_config, datetime(2026, 10, 2, hour, 30, 0, tzinfo=timezone.utc))
+    before = backup_names(frigate_config)
+    kept = yamlfile.back_up(frigate_config, NOW, keep=True)
+    assert backup_names(frigate_config) == sorted([*before, kept.name])
+
+
+def test_save_can_keep_its_copy(frigate_config):
+    document = RoundTripFile(frigate_config)
+    document.data["mqtt"]["port"] = 1884
+    assert document.save(now=NOW, keep=True) == frigate_config.with_name("config.yml.20261002T153000Z.migrate.bak")
+
+
 def test_back_up_prunes_only_regular_files(frigate_config, tmp_path):
     target = tmp_path / "elsewhere"
     target.write_text("target")
