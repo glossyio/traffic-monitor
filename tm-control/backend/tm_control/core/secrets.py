@@ -8,7 +8,13 @@ from pathlib import Path
 SESSION_KEY = "tm_control_session_key"
 FRIGATE_PROXY_SECRET = "frigate_proxy_secret"
 NODE_RED_TOKEN_KEY = "node_red_token_key"
-NAMES = (SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY)
+NODE_RED_INTERNAL_TOKEN = "node_red_internal_token"  # X-TM-Internal-Token for Node-RED's /tm-internal/ endpoints
+# The ones tm-control needs to start
+NAMES = (SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY, NODE_RED_INTERNAL_TOKEN)
+# Every secret tmsetup generates (tmsetup_secret_names), whether tm-control uses it or not: diagnostics strips them all.
+DEVICE_SECRETS = (
+    "go2rtc_rtsp_password", SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY, NODE_RED_INTERNAL_TOKEN,
+)
 
 
 class MissingSecret(RuntimeError):
@@ -48,6 +54,10 @@ class Secrets:
     @property
     def node_red_token_key(self) -> str:
         return self.read(NODE_RED_TOKEN_KEY)
+
+    @property
+    def node_red_internal_token(self) -> str:
+        return self.read(NODE_RED_INTERNAL_TOKEN)
 
 
 class FakeSecrets(Secrets):

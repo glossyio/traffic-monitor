@@ -84,6 +84,8 @@ Free-text notes an operator adds on the [Data export](../ui/database.md) page, f
 
 The tables are defined by numbered migrations in the repository's [`container/node-red-tm/schema/`](https://github.com/glossyio/traffic-monitor/tree/main/container/node-red-tm/schema) folder, and `schema.sql` there shows the whole current schema. Each time the Node-RED service starts, it applies any migrations the database doesn't have yet and records the schema version in the database. Before it does, it saves a copy of the database in `/opt/traffic-monitor/node-red-tm/db/backup/` and keeps only the most recent copy. It makes no copy of a new database, or when the disk has less free space than about 1.2 times the database's size. It also makes none when the only migration to apply is the first, which only adds missing tables. You can read the version with `PRAGMA user_version;`.
 
+If a migration fails, it's rolled back, and Node-RED starts on the previous version, which may not be able to save new data. The control app's [Status page](../use/device-health.md#the-status-page) then shows **Database schema** as a problem. To see why, run `sudo journalctl -u node-red-tm | grep tmdb-migrate`, or download the diagnostics on the Device page. See [the FAQ entry](../help-and-faq/frequently-asked-questions.md#troubleshooting).
+
 ## Getting the data
 
 * **Download** the whole database, or a JSON export of events, radar readings, or air quality readings over a date range, from the [Data export](../ui/database.md) page.

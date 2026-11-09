@@ -34,6 +34,16 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
     See [Data export](../ui/database.md#download-the-database).
 
+??? question "The Status page says the database schema is behind"
+
+    Each time Node-RED starts, it updates the database's tables to the version the installed software expects. If an update fails, it's undone, and Node-RED runs on the old tables, where it may not be able to save new data. To see why it failed, run this over SSH or in Cockpit's terminal:
+
+    ```bash
+    sudo journalctl -u node-red-tm | grep tmdb-migrate
+    ```
+
+    If Node-RED started recently, the [diagnostics](../use/device-health.md#download-diagnostics) on the Device page show the same lines. Restarting Node-RED tries the update again. If it fails again, [ask for help](where-can-i-get-support.md) and attach the diagnostics.
+
 ??? question "I edited config.yml and nothing changed"
 
     The Traffic Monitor reads the file again when you save it, so a change that doesn't take effect usually means a YAML error, such as a wrong indent or a missing space after a colon. The `node-red-tm.service` log in [System administration](../use/system-admin.md) shows the error. Fix the file before you restart the service; [config.yml settings](../configuration/node-red-config.md) explains why.

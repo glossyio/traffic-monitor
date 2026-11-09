@@ -1,5 +1,7 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
+import subprocess
+
 import pytest
 from tmsetup_render import evaluate, load_role_yaml
 
@@ -257,6 +259,27 @@ def test_node_red_token_key_is_written_on_every_run_without_printing_it():
     main = load_role_yaml("tasks/main.yml")
     setup = next(task for task in main if task.get("ansible.builtin.import_tasks", {}).get("file") == "node-red-tm_setup.yml")
     assert "node-red-tm" in setup["tags"]
+
+
+def test_node_red_env_gains_the_internal_token_on_every_run():
+    """Like TM_NR_TOKEN_KEY: an existing node-red-tm.env isn't rewritten without -f, and Node-RED refuses every
+    /tm-internal/ request without TM_INTERNAL_TOKEN, so the token goes in on every -t node-red-tm run."""
+    assert "node_red_internal_token" in load_role_yaml("vars/main.yml")["tmsetup_secret_names"]
+    tasks = load_role_yaml("tasks/node-red-tm_setup.yml")
+    names = [task["name"] for task in tasks]
+    (token,) = [task for task in tasks
+                if task.get("ansible.builtin.lineinfile", {}).get("regexp") == "^TM_INTERNAL_TOKEN="]
+    stat = tasks[names.index("TMSetup - Node-RED-TM Setup - Check for node-red-tm.env")]
+    assert token["when"] == f"{stat['register']}.stat.exists"
+    assert token["no_log"] is True
+    assert token["become"] is True
+    assert token["notify"] == "Restart node-red-tm.service"
+    assert token["ansible.builtin.lineinfile"]["path"] == "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env"
+    assert token["ansible.builtin.lineinfile"]["line"] == (
+        "TM_INTERNAL_TOKEN={{ tmsetup_secrets['node_red_internal_token'] }}")
+    assert "loop" not in token and "tags" not in token
+    quadlets = names.index("TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red")
+    assert names.index(stat["name"]) < names.index(token["name"]) < quadlets
 
 
 def test_installer_says_when_an_update_closes_mqtt_to_the_network():
@@ -621,3 +644,17 @@ def test_image_build_is_only_started_when_nothing_changed():
 def test_ui_source_directory_belongs_to_the_code_owner():
     directories = revproxy_tasks()["TMSetup - revproxy Setup - Create NGinx directory"]["loop"]
     assert {"path": "{{ tmsetup_codedir }}/revproxy/ui", "mode": "0750"} in directories
+
+
+@pytest.mark.parametrize("line, found", [
+    ("Bus 002 Device 002: ID 1a6e:089a Global Unichip Corp.", True),  # before the runtime loads the firmware
+    ("Bus 002 Device 003: ID 18d1:9302 Google Inc.", True),  # after it (#217)
+    ("Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub", False),
+])
+def test_coral_usb_probe_matches_both_usb_ids(line, found):
+    """detectors_check.yml runs check_exists in a shell; here lsusb is a function that prints one synthetic line."""
+    check_exists = load_role_yaml("defaults/main.yml")["tmsetup_detectors"]["edgetpu_usb"]["check_exists"]
+    assert check_exists.startswith("lsusb | ")
+    script = f'lsusb() {{ printf "%s\\n" "$LSUSB_LINE"; }}\n{check_exists} >/dev/null'
+    result = subprocess.run(["bash", "-c", script], env={"LSUSB_LINE": line, "PATH": "/usr/bin:/bin"}, check=False)
+    assert (result.returncode == 0) is found

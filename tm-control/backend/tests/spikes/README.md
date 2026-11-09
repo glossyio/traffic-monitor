@@ -1,4 +1,4 @@
-# tm-control M2 spikes
+# tm-control spikes
 
 Before M2 depended on them, two behaviors were checked in throwaway local Podman containers on a dev machine, not on a Pi:
 
@@ -58,3 +58,39 @@ In the table, "secret" means the request sent `x-proxy-secret: spike-secret`.
 **Result: pass.** With `auth.enabled: false`, Frigate rejects any request that lacks the correct secret, including one with no secret header at all. It takes the role from `x-forwarded-groups`. It ignores a stray `remote-role` header when the mapped header names a role. If the secret is present but the user and role headers aren't, the request is served as `default_role` (viewer).
 
 Two points carry into M2. nginx must always send the secret, and it should still clear `remote-role`. The `remote-role` probe only shows that the mapped header wins when both headers are present, not what Frigate does when only `remote-role` is sent.
+
+## M3: time and power through polkit, on a bench Pi
+
+Before M3's date and time, reboot, and shut-down actions depended on them, these were checked on a bench Pi from the dev-Pi inventory, running M2, with `script/devpi/tmdev.py run`. Nothing was rebooted and the clock wasn't changed: `set-ntp` was given its current value.
+
+Date: 2026-10-28. Raspberry Pi 5, Debian GNU/Linux 13 (trixie), systemd 257 (257.13-1~deb13u1).
+
+A temporary rule, `/etc/polkit-1/rules.d/49-tm-m3-spike.rules`, allowed the code owner (`tmadmin`) these seven action ids and nothing else. It was removed after the probes.
+
+- `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp`
+- `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions`
+
+The probes ran as the code owner (`runuser -u tmadmin`), and again under the service's sandbox: `systemd-run --uid=tmadmin -p NoNewPrivileges=yes -p ProtectSystem=strict -p ProtectHome=yes -p PrivateTmp=yes -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6" --wait --pipe`.
+
+| Probe | Without the rule | With the rule |
+| --- | --- | --- |
+| `timedatectl set-ntp <current value>` | `Failed to set ntp: Interactive authentication required.`, exit 1 | exit 0 |
+| The same under the sandbox | not run | exit 0 |
+| `busctl call org.freedesktop.login1 … CanReboot` | `s "challenge"` | `s "yes"`, also under the sandbox |
+| `busctl call org.freedesktop.login1 … CanPowerOff` | `s "challenge"` | `s "yes"` |
+
+Two login sessions were open, so logind evaluated the `-multiple-sessions` ids, and `yes` covers both. After the rule was removed, `CanReboot` answered `challenge` again.
+
+| Probe | Observed |
+| --- | --- |
+| `vcgencmd get_throttled` as the code owner | `Can't open device file: /dev/vcio_gencmd`, exit 255 |
+| The same under the sandbox with `SupplementaryGroups=video` | `throttled=0x0`, exit 0 (`/dev/vcio_gencmd` is `root:video`, mode 0660) |
+
+**Result: pass.** The seven action ids are the complete list for the time, reboot, and power-off actions, and the `video` group is enough for `vcgencmd`.
+
+Other observations that M3's tasks rely on:
+
+- `ss -ltnH` under `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6` prints `Cannot open netlink socket: Address family not supported by protocol` on stderr, then falls back to `/proc/net/tcp` and lists the listening sockets, exit 0. The pod's published ports show as listening sockets (`127.0.0.1:1883` on this unit, whose broker had no login).
+- `timedatectl show` prints `TimeUSec` and `RTCTimeUSec` as local time strings, such as `Wed 2026-10-28 14:41:35 PDT`, and systemd 257's `timedatectl` has no `--timestamp=` option.
+- `/sys/class/media/` doesn't exist. Each media device's model name is in `/sys/bus/media/devices/mediaN/model` (one read `rpi-hevc-dec`), which the code owner can read, and `readlink -f /dev/rpi-hevc-dec` named the same `/dev/media0`.
+- `/proc/modules` lists `apex` on this unit, which has a Coral PCIe.

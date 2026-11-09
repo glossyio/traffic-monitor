@@ -88,6 +88,7 @@ tmsetup_secret_names:
   - tm_control_session_key
   - frigate_proxy_secret
   - node_red_token_key
+  - node_red_internal_token
 
 # Install facts that only tmsetup writes: the secrets above, manifest.json, and the setup code while unclaimed
 tmsetup_etc_dir: /etc/traffic-monitor
@@ -98,7 +99,8 @@ tmsetup_tm_control_dir: /usr/local/lib/traffic-monitor/tm-control
 tmsetup_libexec_dir: /usr/local/libexec/traffic-monitor
 # tm-control listens on loopback only; nginx proxies to it
 tmsetup_tm_control_port: 8090
-# What polkit lets tm-control's user (the code owner) do: these verbs on these units, nothing else
+# What polkit lets tm-control's user (the code owner) do: these verbs on these units, and these actions (set the date,
+# time, time zone, and NTP; reboot and power off, also while someone else is logged in), nothing else
 tmsetup_tm_control_polkit:
   units:
     - traffic-monitor.service
@@ -112,6 +114,14 @@ tmsetup_tm_control_polkit:
     - start
     - stop
     - restart
+  actions:
+    - org.freedesktop.timedate1.set-time
+    - org.freedesktop.timedate1.set-timezone
+    - org.freedesktop.timedate1.set-ntp
+    - org.freedesktop.login1.reboot
+    - org.freedesktop.login1.reboot-multiple-sessions
+    - org.freedesktop.login1.power-off
+    - org.freedesktop.login1.power-off-multiple-sessions
 
 # go2rtc RTSP user that Frigate logs in as; the password is tmsetup_secrets['go2rtc_rtsp_password']
 tmsetup_go2rtc_rtsp_user: frigate

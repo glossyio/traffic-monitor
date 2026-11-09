@@ -16,6 +16,8 @@ The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-rada
 
 Across the tables, `direction` is `inbound` (toward the radar) or `outbound` (away from it), speeds are positive for inbound and negative for outbound, and the unit is the radar's speed unit, mph by default. `radarName` is the radar's name from [config.yml](../configuration/node-red-config.md#sensorsradars), and `deployment_id` points at the [deployment](data-overview.md#deployment) the reading was taken in.
 
+The times come from the radar's own clock, which starts again from zero whenever the radar loses power. The Traffic Monitor sets that clock from the device's clock when the service starts, whenever config.yml is saved, every hour, and within about half a minute of a radar being plugged back in.
+
 ## radar_dov
 
 | Column | Type | Meaning | Values |

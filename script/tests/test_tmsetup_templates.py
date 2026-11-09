@@ -565,7 +565,9 @@ def render_node_red_env(login):
     return render(
         "container/node-red-tm/node-red-tm.env.j2",
         ansible_facts={"hostname": "tm-test"}, tmsetup_raspberry_pi_serial="0000", tmsetup_tm_version="0.0.0",
-        tmsetup_mqtt_broker_login=login, tmsetup_secrets={"node_red_token_key": "placeholder-token-key"},
+        tmsetup_mqtt_broker_login=login,
+        tmsetup_secrets={"node_red_token_key": "placeholder-token-key",
+                         "node_red_internal_token": "placeholder-internal-token"},
     )
 
 
@@ -604,6 +606,19 @@ def test_node_red_env_template_carries_the_token_key():
     assert lines[key - 2].startswith("NODE_RED_CREDENTIAL_SECRET=")
 
 
+def test_node_red_env_template_has_the_internal_token():
+    """The flows check GET /tm-internal/status's X-TM-Internal-Token header against TM_INTERNAL_TOKEN."""
+    lines = render_node_red_env(NO_LOGIN).splitlines()
+    token = lines.index("TM_INTERNAL_TOKEN=placeholder-internal-token")
+    assert lines[token - 1].startswith("# ")
+
+
+def test_node_red_config_template_has_no_time_section():
+    """Nothing reads time:; the time zone is set at install (tmsetup_timezone) and later in the control app."""
+    config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
+    assert set(config) == {"thingsboard", "deployment", "sensors"}
+
+
 def test_nodered_location_passes_the_proxy_token():
     """The admin snippet sets $tm_nr_token only for admins; setting the header also replaces one a client sent."""
     conf = location("nodered.conf")
@@ -629,9 +644,12 @@ def test_tm_control_runs_as_the_code_owner_in_a_sandbox():
         assert line in unit
 
 
-def test_tm_control_reads_the_journal_for_job_status():
-    """A finished oneshot job unit is unloaded, so tm-control reads PID 1's job-end entries from the journal."""
-    assert "SupplementaryGroups=systemd-journal" in tm_control_unit()
+def test_tm_control_service_has_the_video_group():
+    """systemd-journal: a finished oneshot job unit is unloaded, so tm-control reads PID 1's job-end entries from the
+    journal. video: vcgencmd get_throttled opens /dev/vcio_gencmd, which is root:video, mode 0660."""
+    unit = tm_control_unit()
+    assert "SupplementaryGroups=systemd-journal video" in unit
+    assert not any(line.startswith("ReadWritePaths=") for line in unit)
 
 
 def test_tm_control_reads_the_files_tmsetup_writes():
@@ -687,14 +705,36 @@ def polkit_rules():
     )
 
 
+TIME_AND_POWER_ACTIONS = [
+    "org.freedesktop.timedate1.set-time",
+    "org.freedesktop.timedate1.set-timezone",
+    "org.freedesktop.timedate1.set-ntp",
+    "org.freedesktop.login1.reboot",
+    "org.freedesktop.login1.reboot-multiple-sessions",
+    "org.freedesktop.login1.power-off",
+    "org.freedesktop.login1.power-off-multiple-sessions",
+]
+
+
 def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     rules = polkit_rules()
     assert 'subject.user !== "tmadmin"' in rules
     assert 'action.id === "org.freedesktop.systemd1.manage-units"' in rules
     assert '"tm-job-system-password.service"' in rules
     assert '["start", "stop", "restart"]' in rules
-    assert "timedate1" not in rules and "login1" not in rules
-    assert rules.count("polkit.Result.YES") == 1
+    assert rules.count("polkit.Result.YES") == 2
+    # The code-owner test comes first, so neither YES is reached for anyone else
+    assert rules.index('subject.user !== "tmadmin"') < rules.index("polkit.Result.YES")
+
+
+def test_polkit_rules_allow_the_time_and_power_actions():
+    rules = polkit_rules()
+    actions = "[" + ", ".join(f'"{action}"' for action in TIME_AND_POWER_ACTIONS) + "]"
+    assert f"var actions = {actions};" in rules
+    assert "actions.indexOf(action.id) >= 0" in rules
+    # No other action id: the unit rule names manage-units, and the list is the only other place one appears
+    ids = set(re.findall(r'"(org\.freedesktop\.[a-z0-9.-]+)"', rules))
+    assert ids == {"org.freedesktop.systemd1.manage-units", *TIME_AND_POWER_ACTIONS}
 
 
 def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
@@ -704,6 +744,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
         "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
+    assert polkit["actions"] == TIME_AND_POWER_ACTIONS
 
 
 def js_brackets_balance(source):

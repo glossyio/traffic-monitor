@@ -6,3 +6,7 @@ location /nr/ {
     # The editor's login: tm-control's token for admins. Setting it here also replaces one a client sent.
     proxy_set_header x-tm-nr-token $tm_nr_token;
 }
+# Node-RED's internal endpoints answer tm-control on loopback only, never through the proxy, even for an admin.
+location ^~ /nr/tm-internal/ { return 404; }
+# Node-RED matches paths whatever their case, so /nr/TM-Internal/status must be refused too.
+location ~* "^/nr/tm-internal(/|$)" { return 404; }

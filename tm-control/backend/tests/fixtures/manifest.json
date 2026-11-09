@@ -31,7 +31,7 @@
         "detectors": {
             "edgetpu_usb": {
                 "dev_path": "/dev/bus/usb",
-                "check_exists": "lsusb | grep -i 1a6e:089a",
+                "check_exists": "lsusb | grep -iE '1a6e:089a|18d1:9302'",
                 "frigate_type": "edgetpu",
                 "frigate_device": "usb"
             },
