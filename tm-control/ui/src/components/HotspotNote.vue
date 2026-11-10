@@ -10,7 +10,7 @@ const session = useSession()
 
 <template>
   <v-alert v-if="session.status?.hotspot" type="info" variant="tonal" class="mb-6">
-    You're on this unit's hotspot. It has no internet. On an iPhone, open http://{{ session.status.hotspot.local_name }}/
-    in Safari to save downloaded files.
+    You're on this unit's hotspot. It has no internet. On an iPhone, tap Cancel, choose Use Without Internet, then open
+    http://{{ session.status.hotspot.local_name }}/ in Safari to save downloaded files.
   </v-alert>
 </template>

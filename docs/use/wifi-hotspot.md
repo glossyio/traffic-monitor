@@ -19,7 +19,10 @@ The hotspot has no internet, and a phone on it reaches only the unit. Nothing on
 ### Phones
 
 * **Android 17:** the sign-in window is the way in. Android 17 browsers can't open the unit while the phone is on its hotspot, so don't close the window until you're done. See [the Android 17 entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) if the page doesn't open on your home network either.
-* **iPhone:** the sign-in window opens the control app, but it shows a downloaded file's contents instead of saving it. To save a download, open the `.local` name in Safari. The login and setup pages show that name while the phone is on the hotspot. An iPhone also leaves a hotspot that has no internet about a minute after the screen locks, so keep the screen on while you work.
+    * The database and JSON downloads on the [Data export page](../ui/database.md) save from the sign-in window. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
+    * **Download diagnostics** on the Device page doesn't save from the sign-in window: the phone says "Could not download". Download it from a computer on the unit's network instead.
+    * Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
+* **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in Safari. The login and setup pages show that name while the phone is on the hotspot. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
 
 Tested with a Pixel 7 on Android 17 and an iPhone on iOS 18.7, in November 2026.
 
@@ -29,12 +32,12 @@ The hotspot yields to the networks the unit has saved. A unit joins a saved netw
 
 | Situation | What happens |
 |---|---|
-| The unit starts with a saved network in range | It joins the network. The hotspot stays off. |
+| The unit starts with a saved network in range | It's on the network within a minute. The hotspot stays off. |
 | The unit starts with no saved network in range | The hotspot is up about 15 seconds after the unit starts. |
-| The unit's Wi-Fi network disappears | The hotspot starts about a minute later. |
-| A saved network has the wrong password | Joining takes about 25 seconds to fail, and the hotspot is back about a second after. |
+| The unit's Wi-Fi network disappears | The hotspot starts about 75 seconds later. |
+| A saved network has the wrong password | The hotspot is away for about a minute while the unit tries the network, then comes back. |
 
-While the hotspot is up and nobody is joined to it, the unit looks for its saved networks every 5 minutes and joins one it hears. A network that won't join waits 5 minutes before its next try, then 15 minutes, then 60 minutes after each further failure. While a phone is joined to the hotspot, the unit doesn't look, so nothing interrupts the phone.
+While the hotspot is up and nobody is joined to it, the unit looks for its saved networks every 5 minutes and joins one it hears. A network that won't join is tried again about 10 minutes after the failure, then about 20 minutes after the next one, then about 65 minutes after each further failure. While a phone is joined to the hotspot, the unit doesn't look, so nothing interrupts the phone.
 
 The Status page's Hotspot check says which of these the unit is in, and its **Restart the hotspot** button has the unit look at its radio at once.
 

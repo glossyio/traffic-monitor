@@ -5,7 +5,7 @@ import { click, mountApp } from './mount'
 
 const HOTSPOT = { local_name: 'tm-fake.local' }
 const NOTE =
-  "You're on this unit's hotspot. It has no internet. On an iPhone, open http://tm-fake.local/ in Safari to save downloaded files."
+  "You're on this unit's hotspot. It has no internet. On an iPhone, tap Cancel, choose Use Without Internet, then open http://tm-fake.local/ in Safari to save downloaded files."
 
 function device(claimed: boolean, hotspot: typeof HOTSPOT | null) {
   return fakeApi({
