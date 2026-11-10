@@ -1141,3 +1141,43 @@ def test_a_changed_firewall_file_reloads_rather_than_restarts():
     assert firewall["notify"] == "Reload the hotspot firewall" or "Reload the hotspot firewall" in firewall["notify"]
     unit = (ROLE / "templates/network/tm-hotspot-firewall.service.j2").read_text()
     assert "ExecReload=" in unit
+
+
+def test_the_firewall_unit_is_started_before_the_hotspot_profile_exists():
+    tasks = wifi_task_list()
+    names = [t["name"] for t in tasks]
+    start = next(
+        i for i, t in enumerate(tasks)
+        if t.get("ansible.builtin.systemd_service", {}).get("name") == "tm-hotspot-firewall.service"
+    )
+    systemd = tasks[start]["ansible.builtin.systemd_service"]
+    assert systemd["state"] == "started"
+    assert systemd["enabled"] is True
+    assert systemd["daemon_reload"] is True
+    assert start > names.index("TMSetup - WiFi Setup - Install the hotspot firewall unit")
+    assert start > names.index("TMSetup - WiFi Setup - Install the hotspot firewall rules")
+    assert start < names.index(HOTSPOT_TASK)
+
+
+def test_a_refusal_from_the_helper_stops_the_install_with_its_sentence():
+    tasks = wifi_task_list()
+    names = [t["name"] for t in tasks]
+    helper = tasks[names.index(HOTSPOT_TASK)]
+    assert helper["no_log"] is True
+    assert helper["failed_when"] is False
+    stop_name = "TMSetup - WiFi Setup - Stop if the hotspot couldn't be set up"
+    assert names.index(stop_name) == names.index(HOTSPOT_TASK) + 1
+    stop = tasks[names.index(stop_name)]
+    assert "no_log" not in stop
+    assert "tmsetup_wifi_hotspot_register.stderr" in stop["ansible.builtin.fail"]["msg"]
+    assert stop["when"] == "tmsetup_wifi_hotspot_register.rc != 0"
+
+
+def test_nothing_parses_the_helpers_output_when_it_refused():
+    register = {"rc": 1, "stdout": "", "stderr": "No Wi-Fi device wlan0."}
+    helper = wifi_tasks()[HOTSPOT_TASK]
+    assert evaluate("{{ " + helper["changed_when"] + " }}", tmsetup_wifi_hotspot_register=register) is False
+    ok = {"rc": 0, "stdout": '{"changed": true, "autoconnect": true}', "stderr": ""}
+    assert evaluate("{{ " + helper["changed_when"] + " }}", tmsetup_wifi_hotspot_register=ok) is True
+    radio = wifi_tasks()[RADIO_TASK]["when"]
+    assert radio[0] == "tmsetup_wifi_hotspot_register.rc == 0"

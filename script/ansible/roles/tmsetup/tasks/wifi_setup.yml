@@ -110,6 +110,15 @@
     group: root
     mode: '0644'
 
+# Started here too, not only in start_services.yml, so the table is loaded before the profile can bring the hotspot up
+- name: TMSetup - WiFi Setup - Start and enable the hotspot firewall
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: tm-hotspot-firewall.service
+    state: started
+
 - name: TMSetup - WiFi Setup - Make every name on the hotspot resolve to this device
   become: true
   ansible.builtin.template:
@@ -129,7 +138,8 @@
     group: root
     mode: '0755'
 
-# Prints one JSON line. It writes the hotspot password to the password file, so the output is hidden.
+# Prints one JSON line. It writes the hotspot password to the password file, so the output is hidden. A refusal is one
+# sentence on stderr with no password in it, which the next task shows.
 - name: TMSetup - WiFi Setup - Create or adopt the hotspot
   become: true
   no_log: true
@@ -151,7 +161,13 @@
       - --group
       - '{{ tmsetup_codegroup }}'
   register: tmsetup_wifi_hotspot_register
-  changed_when: (tmsetup_wifi_hotspot_register.stdout | from_json).changed
+  failed_when: false
+  changed_when: tmsetup_wifi_hotspot_register.rc == 0 and (tmsetup_wifi_hotspot_register.stdout | from_json).changed
+
+- name: TMSetup - WiFi Setup - Stop if the hotspot couldn't be set up
+  ansible.builtin.fail:
+    msg: "The hotspot couldn't be set up: {{ tmsetup_wifi_hotspot_register.stderr | trim }}"
+  when: tmsetup_wifi_hotspot_register.rc != 0
 
 - name: TMSetup - WiFi Setup - Read whether the Wi-Fi radio is on
   become: true
@@ -163,6 +179,7 @@
   become: true
   ansible.builtin.command: nmcli radio wifi on
   when:
+    - tmsetup_wifi_hotspot_register.rc == 0
     - (tmsetup_wifi_hotspot_register.stdout | from_json).autoconnect
     - tmsetup_wifi_radio_register.stdout | trim == 'disabled'
   changed_when: true
