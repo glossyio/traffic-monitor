@@ -223,6 +223,19 @@ _ask_wifi_country() { # Ask for the Wi-Fi country when this device has none and 
   done
 }
 
+_show_card() { # Show the device's card on the terminal only: it has the hotspot password and the setup code
+  [[ -x /usr/local/bin/tm-control ]] || return 0
+  # Everything this script prints is copied to the log (exec > >(tee ...) above). The card goes straight to the
+  # terminal and is never held in a variable or a file, so it can't get into the log.
+  if ( : > /dev/tty ) 2>/dev/null; then
+    if sudo /usr/local/bin/tm-control card --unclaimed-only > /dev/tty; then
+      printf "The device's card (hotspot password and setup code) was shown on the terminal and is not in this log.\n"
+    fi
+  fi
+  printf "Show the card any time with: sudo tm-control card\n"
+  return 0
+}
+
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
@@ -250,6 +263,10 @@ _tmsetup_local(){ # Installation on localhost only
   cd "${_START_DIR}"
   printf "\n\n"
   _print_result "${_EXIT_STATUS}"
+  # Before the reboot question, so answering yes doesn't skip it
+  if [[ "${_EXIT_STATUS}" -eq 0 ]]; then
+    _show_card
+  fi
   if [[ "$(<"${REBOOT_TOUCH_FILE}")" -ne 0 ]] ;then
     _pline
     printf "Reboot is required to complete the installation.\n"

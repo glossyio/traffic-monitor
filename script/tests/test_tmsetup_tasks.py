@@ -1218,3 +1218,27 @@ def test_the_hotspots_dns_directory_is_created_before_the_dns_file():
     assert (directory["owner"], directory["group"], directory["mode"]) == ("root", "root", "0755")
     assert made["become"] is True
     assert names.index(made["name"]) < names.index("TMSetup - WiFi Setup - Make every name on the hotspot resolve to this device")
+
+
+def test_no_installer_task_reads_the_hotspot_password():
+    """The hotspot password stays in its root-only file: the one task that names it hands the helper the file's path
+    after --password-file, and no other task, handler or template names it, so Ansible never holds its value."""
+    mentions = []
+    for path in sorted(ROLE.rglob("*")):
+        if path.is_file() and not path.is_symlink() and "hotspot_password" in path.read_text(errors="replace"):
+            mentions.append(path.relative_to(ROLE).as_posix())
+    assert mentions == ["tasks/wifi_setup.yml"]
+    tasks = [task for task in load_role_yaml("tasks/wifi_setup.yml") if "hotspot_password" in str(task)]
+    (task,) = tasks
+    argv = task["ansible.builtin.command"]["argv"]
+    assert argv[argv.index("--password-file") + 1] == "{{ tmsetup_secrets_dir }}/hotspot_password"
+    assert [arg for arg in argv if "hotspot_password" in arg] == ["{{ tmsetup_secrets_dir }}/hotspot_password"]
+    assert "slurp" not in str(task) and "lookup" not in str(task)
+
+
+def test_the_setup_code_notice_points_at_the_card():
+    notice = load_role_yaml("tasks/main.yml")[-1]
+    assert notice["name"] == "TMSetup - Main - Show the setup code"
+    msg = " ".join(notice["ansible.builtin.debug"]["msg"].split())
+    assert msg.endswith("The code works once. For the device's hotspot name and password, run sudo tm-control card on it.")
+    assert "hotspot_password" not in msg and "tmsetup_secrets" not in msg
