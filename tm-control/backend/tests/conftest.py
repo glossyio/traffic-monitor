@@ -117,9 +117,10 @@ def device_client(settings, monkeypatch):
     for them.
     Likewise the hardware: no USB ids or PCI listing, device paths, unit files, kernel modules, media devices, or
     node-red-tm.env (test_hardware_checks.FakeHardware stands in for them). timedatectl fails, so the time check is
-    unknown (test_api_time.FakeTimedatectl stands in for it).
+    unknown (test_api_time.FakeTimedatectl stands in for it). nmcli and iw fail, so the network checks are unknown
+    (test_network_checks.FakeNetwork stands in for them).
     """
-    from tm_control.adapters import hardware, httpjson, mqtt, nodered, timedate
+    from tm_control.adapters import hardware, httpjson, mqtt, network, nodered, timedate
     from tm_control.adapters.command import CommandResult
 
     monkeypatch.setattr(httpjson, "get", lambda url, headers=None, timeout=None: (None, None))
@@ -134,6 +135,8 @@ def device_client(settings, monkeypatch):
     monkeypatch.setattr(hardware, "MEDIA_DEVICES", settings.state_dir / "no-media")
     monkeypatch.setattr(hardware, "radar_ports", lambda codedir: None)
     monkeypatch.setattr(timedate, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
+    monkeypatch.setattr(network, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
+    monkeypatch.setattr(network, "radio_kind", lambda device, sys_net=None: "builtin")
     settings = dataclasses.replace(settings, fake=False)
     settings.secrets_dir.mkdir(mode=0o700, parents=True)
     for name in NAMES:

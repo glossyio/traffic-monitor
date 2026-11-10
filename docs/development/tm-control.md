@@ -200,9 +200,10 @@ The module calls six Node-RED endpoints, besides `/tm-internal/status`, on `127.
 
 ### What the sandbox allows
 
-`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and two config directories under the code directory (`ReadWritePaths`): Frigate's, `frigate/config`, for the models the Detection page manages, and Node-RED's, `node-red-tm/config`, for the `config.yml` the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:
+`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and two config directories under the code directory (`ReadWritePaths`): Frigate's, `frigate/config`, for the models the Detection page manages, and Node-RED's, `node-red-tm/config`, for the `config.yml` the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:
 
-* No netlink socket, so `lsusb` can't start. The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` instead, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
+* The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` rather than running `lsusb`, which needed a netlink socket the service first lacked, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
+* `AF_NETLINK` is there for `iw`, which reads the Wi-Fi country for the Network checks. The Network checks otherwise use `nmcli`, which needs nothing more, and never ask it for a password.
 * `vcgencmd get_throttled` needs the `video` group to open `/dev/vcio_gencmd`. Without it, the power check says to rerun the installer.
 * The HEVC decoder check compares `/dev/rpi-hevc-dec` with the media device whose `/sys/bus/media/devices/mediaN/model` names the decoder.
 * `timedatectl show` prints its times as local strings; tm-control reads the clock itself.

@@ -5,6 +5,7 @@
 # systemd-journal: a finished job unit is unloaded, so tm-control reads PID 1's job-end entries from the journal for
 # the job's result, and diagnostics includes the units' journals. video: vcgencmd get_throttled, for the power and
 # throttling check, opens /dev/vcio_gencmd, which is root:video.
+# AF_NETLINK: iw reads the Wi-Fi country for the Network checks.
 
 [Unit]
 Description=Traffic Monitor control app (tm-control)
@@ -29,7 +30,7 @@ ReadWritePaths={{ tmsetup_codedir }}/frigate/config
 ReadWritePaths={{ tmsetup_codedir }}/node-red-tm/config
 ProtectHome=yes
 PrivateTmp=yes
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 Restart=on-failure
 RestartSec=2
 

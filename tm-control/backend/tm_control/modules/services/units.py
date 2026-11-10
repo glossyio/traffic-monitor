@@ -43,6 +43,9 @@ UNITS = [
     Unit("tm-control.service", "Control app", restartable=False),
 ]
 
+# Units a check's fix may start that aren't rows in the Services list (they are in tmsetup_tm_control_polkit).
+FIX_UNITS = ("tm-network-retry.service",)
+
 PROPERTIES = ["LoadState", "ActiveState", "SubState", "NRestarts", "ActiveEnterTimestamp", "InvocationID"]
 RUNNING = ("active", "reloading")
 

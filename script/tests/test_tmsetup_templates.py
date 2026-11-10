@@ -799,8 +799,14 @@ def test_tm_control_runs_as_the_code_owner_in_a_sandbox():
     unit = tm_control_unit()
     for line in ["User=tmadmin", "Group=tmadmin", "NoNewPrivileges=yes", "ProtectSystem=strict", "ProtectHome=yes",
                  "PrivateTmp=yes", "StateDirectory=tm-control", "StateDirectoryMode=0700", "RuntimeDirectory=tm-control",
-                 "RuntimeDirectoryMode=0700", "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6"]:
+                 "RuntimeDirectoryMode=0700", "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK"]:
         assert line in unit
+
+
+def test_tm_control_service_explains_why_it_may_open_netlink_sockets():
+    """iw reads the Wi-Fi country through generic netlink; without AF_NETLINK it fails and the check is unknown."""
+    header = [line for line in tm_control_unit() if line.startswith("#")]
+    assert any("AF_NETLINK: iw reads the Wi-Fi country for the Network checks" in line for line in header)
 
 
 def test_tm_control_service_has_the_video_group():
@@ -918,6 +924,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
         "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
+        "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS
