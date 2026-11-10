@@ -46,21 +46,124 @@
     mode: '0644'
   notify: Restart NetworkManager service
 
-- name: TMSetup - WiFi Setup - Add sudoers entry to allow tmadmin to restart NetworkManager
-  become: true
-  community.general.sudoers:
-    user: "{{ tmsetup_codeowner }}"
-    name: "{{ tmsetup_codeowner }}"
-    commands: /usr/bin/systemctl restart NetworkManager.service
-    nopassword: true
-    state: present
-
-- name: TMSetup - WiFi Setup - Setup crontab
+# The old Wi-Fi check (cron entry, sudoers entry, scripts) is replaced by the hotspot profile below
+- name: TMSetup - WiFi Setup - Remove the old Wi-Fi check from cron
   become: true
   ansible.builtin.cron:
     name: Traffic Monitor Wifi Check
     user: "{{ tmsetup_codeowner }}"
-    minute: '*/5'
-    job: '/bin/bash {{ tmsetup_codedir }}/utils/wlan_check.sh -q'
-    state: present
+    state: absent
+
+- name: TMSetup - WiFi Setup - Remove the old NetworkManager restart from sudoers
+  become: true
+  community.general.sudoers:
+    name: "{{ tmsetup_codeowner }}"
+    state: absent
+
+- name: TMSetup - WiFi Setup - Remove the old Wi-Fi check scripts
+  become: true
+  loop:
+    - wlan_check.sh
+    - network-wlan-ap
+  ansible.builtin.file:
+    path: "{{ tmsetup_codedir }}/utils/{{ item }}"
+    state: absent
+
+# The same directories and modes as tm-control_setup.yml and tm-control_service.yml, so -t wifi works on its own
+- name: TMSetup - WiFi Setup - Create the root job directory
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_libexec_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: TMSetup - WiFi Setup - Create the configuration directory
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_etc_dir }}'
+    state: directory
+    owner: root
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0750'
+
+# The firewall file and the DNS file come before the profile: a hotspot that NetworkManager starts the moment the
+# profile exists must already have both. The DNS file needs no handler; dnsmasq reads it when the hotspot starts.
+# The firewall file replaces the table in one step, so a reload leaves no moment without the rule.
+- name: TMSetup - WiFi Setup - Install the hotspot firewall rules
+  become: true
+  ansible.builtin.template:
+    src: network/tm-hotspot-firewall.nft.j2
+    dest: '{{ tmsetup_etc_dir }}/hotspot-firewall.nft'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload the hotspot firewall
+
+- name: TMSetup - WiFi Setup - Install the hotspot firewall unit
+  become: true
+  ansible.builtin.template:
+    src: network/tm-hotspot-firewall.service.j2
+    dest: /etc/systemd/system/tm-hotspot-firewall.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: TMSetup - WiFi Setup - Make every name on the hotspot resolve to this device
+  become: true
+  ansible.builtin.template:
+    src: network/tm-hotspot-dns.conf.j2
+    dest: /etc/NetworkManager/dnsmasq-shared.d/tm-hotspot.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+# tm-control's install copies all of the job scripts; this one is also needed for -t wifi alone
+- name: TMSetup - WiFi Setup - Copy the hotspot helper
+  become: true
+  ansible.builtin.copy:
+    src: tm-control/jobs/tm-hotspot-setup
+    dest: '{{ tmsetup_libexec_dir }}/tm-hotspot-setup'
+    owner: root
+    group: root
+    mode: '0755'
+
+# Prints one JSON line. It writes the hotspot password to the password file, so the output is hidden.
+- name: TMSetup - WiFi Setup - Create or adopt the hotspot
+  become: true
+  no_log: true
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - -EP
+      - '{{ tmsetup_libexec_dir }}/tm-hotspot-setup'
+      - --profile
+      - '{{ tmsetup_hotspot_profile }}'
+      - --device
+      - '{{ tmsetup_wifi_device }}'
+      - --address
+      - "{{ tmsetup_hotspot_address }}/{{ tmsetup_hotspot_subnet.split('/')[1] }}"
+      - --ssid
+      - "TM-{{ tmsetup_raspberry_pi_serial[-4:] | upper }}"
+      - --password-file
+      - '{{ tmsetup_secrets_dir }}/hotspot_password'
+      - --group
+      - '{{ tmsetup_codegroup }}'
+  register: tmsetup_wifi_hotspot_register
+  changed_when: (tmsetup_wifi_hotspot_register.stdout | from_json).changed
+
+- name: TMSetup - WiFi Setup - Read whether the Wi-Fi radio is on
+  become: true
+  ansible.builtin.command: nmcli radio wifi
+  register: tmsetup_wifi_radio_register
+  changed_when: false
+
+- name: TMSetup - WiFi Setup - Turn the Wi-Fi radio on
+  become: true
+  ansible.builtin.command: nmcli radio wifi on
+  when:
+    - (tmsetup_wifi_hotspot_register.stdout | from_json).autoconnect
+    - tmsetup_wifi_radio_register.stdout | trim == 'disabled'
+  changed_when: true
 ...

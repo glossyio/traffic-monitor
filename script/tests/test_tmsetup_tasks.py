@@ -1038,3 +1038,106 @@ def test_a_device_without_a_country_gets_us():
 def test_the_wifi_tools_are_installed_before_anything_uses_them():
     names = list(wifi_tasks())
     assert names[0] == "TMSetup - WiFi Setup - Install the Wi-Fi tools"
+
+
+def wifi_task_list():
+    return load_role_yaml("tasks/wifi_setup.yml")
+
+
+HOTSPOT_TASK = "TMSetup - WiFi Setup - Create or adopt the hotspot"
+RADIO_TASK = "TMSetup - WiFi Setup - Turn the Wi-Fi radio on"
+
+
+def test_the_old_wifi_check_is_removed_from_upgraded_devices():
+    tasks = wifi_task_list()
+    cron = next(t for t in tasks if "ansible.builtin.cron" in t)
+    assert cron["ansible.builtin.cron"]["state"] == "absent"
+    assert cron["ansible.builtin.cron"]["name"] == "Traffic Monitor Wifi Check"
+    sudoers = next(t for t in tasks if "community.general.sudoers" in t)
+    assert sudoers["community.general.sudoers"]["state"] == "absent"
+    removed = [
+        t for t in tasks
+        if "ansible.builtin.file" in t and t["ansible.builtin.file"].get("state") == "absent"
+    ]
+    assert len(removed) == 1
+    assert removed[0]["ansible.builtin.file"]["path"] == "{{ tmsetup_codedir }}/utils/{{ item }}"
+    assert sorted(removed[0]["loop"]) == ["network-wlan-ap", "wlan_check.sh"]
+
+
+def test_the_old_wifi_scripts_are_gone_from_the_repo():
+    assert not (REPO / "utils" / "wlan_check.sh").exists()
+    assert not (REPO / "utils" / "network-wlan-ap").exists()
+    for path in ("tasks/wifi_setup.yml", "handlers/main.yml"):
+        for task in load_role_yaml(path):
+            text = str(task)
+            if "state': 'absent'" in text:
+                continue
+            assert "wlan_check" not in text and "network-wlan-ap" not in text, task["name"]
+
+
+def test_the_firewall_and_dns_files_come_before_the_hotspot_profile():
+    tasks = wifi_task_list()
+    index = {t["name"]: i for i, t in enumerate(tasks)}
+
+    def dest_of(task):
+        for module in ("ansible.builtin.template", "ansible.builtin.copy"):
+            if module in task:
+                return task[module]["dest"]
+        return None
+
+    position = {dest_of(t): i for i, t in enumerate(tasks) if dest_of(t)}
+    hotspot = index[HOTSPOT_TASK]
+    assert position["{{ tmsetup_etc_dir }}/hotspot-firewall.nft"] < hotspot
+    assert position["/etc/NetworkManager/dnsmasq-shared.d/tm-hotspot.conf"] < hotspot
+    assert position["/etc/systemd/system/tm-hotspot-firewall.service"] < hotspot
+    assert position["{{ tmsetup_libexec_dir }}/tm-hotspot-setup"] < hotspot
+    assert index[RADIO_TASK] > hotspot
+
+
+def test_the_hotspot_task_hides_its_output_and_reports_change_from_the_helper():
+    task = wifi_tasks()[HOTSPOT_TASK]
+    assert task["no_log"] is True
+    assert task["register"] == "tmsetup_wifi_hotspot_register"
+    assert "from_json" in task["changed_when"] and "changed" in task["changed_when"]
+    argv = task["ansible.builtin.command"]["argv"]
+    assert argv[:3] == ["/usr/bin/python3", "-EP", "{{ tmsetup_libexec_dir }}/tm-hotspot-setup"]
+    assert "{{ tmsetup_secrets_dir }}/hotspot_password" in argv
+    assert "{{ tmsetup_hotspot_address }}/{{ tmsetup_hotspot_subnet.split('/')[1] }}" in argv
+
+
+def test_the_radio_is_turned_on_only_when_the_hotspot_is_wanted():
+    conditions = wifi_tasks()[RADIO_TASK]["when"]
+    text = " ".join(conditions) if isinstance(conditions, list) else conditions
+    assert "autoconnect" in text
+    assert "tmsetup_wifi_hotspot_register" in text
+
+
+def test_no_wifi_task_restarts_networkmanager_except_the_two_conf_files():
+    notifying = {
+        t["name"] for t in wifi_task_list() if "Restart NetworkManager service" in (t.get("notify") or [])
+        or t.get("notify") == "Restart NetworkManager service"
+    }
+    assert notifying == {
+        "TMSetup - WiFi Setup - Copy wifi powersave config",
+        "TMSetup - WiFi Setup - Copy network connectivity check config",
+    }
+
+
+def test_the_firewall_unit_is_started_with_the_services():
+    task = next(
+        t for t in load_role_yaml("tasks/start_services.yml") if "tm-hotspot-firewall.service" in str(t)
+    )
+    systemd = task["ansible.builtin.systemd_service"]
+    assert systemd["name"] == "tm-hotspot-firewall.service"
+    assert systemd["state"] == "started"
+    assert systemd["enabled"] is True
+
+
+def test_a_changed_firewall_file_reloads_rather_than_restarts():
+    handler = next(h for h in load_role_yaml("handlers/main.yml") if h["name"] == "Reload the hotspot firewall")
+    assert handler["ansible.builtin.systemd_service"]["state"] == "reloaded"
+    assert handler["ansible.builtin.systemd_service"]["name"] == "tm-hotspot-firewall.service"
+    firewall = next(t for t in wifi_task_list() if "hotspot-firewall.nft" in str(t.get("ansible.builtin.template", {})))
+    assert firewall["notify"] == "Reload the hotspot firewall" or "Reload the hotspot firewall" in firewall["notify"]
+    unit = (ROLE / "templates/network/tm-hotspot-firewall.service.j2").read_text()
+    assert "ExecReload=" in unit

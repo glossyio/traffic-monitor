@@ -982,3 +982,47 @@ def test_revproxy_image_puts_the_ui_where_its_location_serves_it():
 def test_revproxy_build_context_leaves_out_the_mounted_config_and_node_modules():
     ignored = (REPO / "container/revproxy/.containerignore").read_text().split()
     assert {"html", "tm", "nginx.conf", "ui/node_modules", "ui/dist"} <= set(ignored)
+
+
+NETWORK = "script/ansible/roles/tmsetup/templates/network/"
+ETC_DIR = "/etc/traffic-monitor"
+
+
+def hotspot_vars():
+    role = load_role_yaml("vars/main.yml")
+    return {name: role[name] for name in ("tmsetup_wifi_device", "tmsetup_hotspot_subnet", "tmsetup_hotspot_address")}
+
+
+def firewall_file():
+    return render(NETWORK + "tm-hotspot-firewall.nft.j2", **hotspot_vars())
+
+
+def test_the_firewall_drops_only_the_hotspot_subnet():
+    lines = [line.strip() for line in firewall_file().splitlines()]
+    rules = [line for line in lines if line.endswith(" drop")]
+    assert rules == [
+        'iifname "wlan0" ip saddr 10.42.0.0/24 drop',
+        'oifname "wlan0" ip daddr 10.42.0.0/24 drop',
+    ]
+    assert not [line for line in lines if line.startswith(("iifname", "oifname")) and " ip s" not in line and " ip d" not in line]
+    assert "policy accept" in firewall_file()
+
+
+def test_the_firewall_file_can_be_loaded_twice():
+    lines = [line.strip() for line in firewall_file().splitlines()]
+    assert lines.index("table inet tm_hotspot") < lines.index("delete table inet tm_hotspot")
+
+
+def test_the_firewall_unit_loads_before_networkmanager():
+    text = render(NETWORK + "tm-hotspot-firewall.service.j2", tmsetup_etc_dir=ETC_DIR)
+    lines = text.splitlines()
+    before = next(line for line in lines if line.startswith("Before="))
+    assert "NetworkManager.service" in before.split("=", 1)[1].split()
+    assert "RemainAfterExit=yes" in lines
+    assert f"ExecStart=/usr/sbin/nft -f {ETC_DIR}/hotspot-firewall.nft" in lines
+    assert f"ExecReload=/usr/sbin/nft -f {ETC_DIR}/hotspot-firewall.nft" in lines
+
+
+def test_every_name_on_the_hotspot_resolves_to_the_unit():
+    text = render(NETWORK + "tm-hotspot-dns.conf.j2", **hotspot_vars())
+    assert "address=/#/10.42.0.1" in text.splitlines()
