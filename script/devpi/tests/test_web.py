@@ -218,6 +218,35 @@ def test_data_export_errors_from_this_machine(address, admin_session, query, exp
     assert status == expected, f"/storefiles{query} returned {status}"
 
 
+def download_link(address, admin_session):
+    """A one-time /storefiles link for a file that doesn't exist (Redacted, so no failure prints it), or a failure."""
+    answer = request_from_this_machine(address, f"{API}/auth/download-link", "POST", admin_session,
+                                       {"files": "tmdev-missing.json"})
+    url = answer.json().get("url") if answer.status == 200 and isinstance(answer.json(), dict) else None
+    assert isinstance(url, str) and url.startswith("/storefiles?"), f"download-link answered HTTP {answer.status}"
+    return Redacted(url, "download link")
+
+
+def test_a_download_link_works_once_without_the_cookie(host, address, admin_session):
+    """Android's sign-in window hands a download to a helper that sends no cookie; a link lets it in once.
+
+    No file is downloaded: the link names a missing file, so Node-RED's 404 shows the login check passed.
+    """
+    url = download_link(address, admin_session)
+    assert request_from_this_machine(address, url).status == 404, "the link's first use without a cookie"
+    again = request_from_this_machine(address, url)
+    # Redacted: if the token ever leaked into the redirect, pytest -l mustn't print it
+    location = Redacted(again.headers.get("Location") or "", "login redirect")
+    to_login, holds_token = location.startswith("/login?next="), "tm_token" in urllib.parse.unquote(location)
+    expected = (302, True, False)
+    assert (again.status, to_login, holds_token) == expected, "the link's second use: (status, to login, holds token)"
+
+    # From the Pi itself to its own address: another client address than this machine's
+    other = Redacted(shlex.quote(f"http://{address}{download_link(address, admin_session)}"), "download link")
+    status = host.run(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 {other}").stdout.strip()
+    assert status == "302", "a link used from another address"
+
+
 def curl_outcome(result):
     """curl's exit code, the HTTP status it printed last, and whether the headers offered a file to save.
 
