@@ -1,0 +1,341 @@
+#!/usr/bin/python3
+"""Create, adopt, or keep the NetworkManager profile of the device's Wi-Fi hotspot.
+
+tmsetup runs this as root (`python -EP`) with the wanted profile name, Wi-Fi device, address, network name (SSID),
+password file, and the group that may read the file. It prints one JSON line, exit status 0:
+{"changed": bool, "created": bool, "adopted": <old profile name> | null, "ssid": str, "secured": bool,
+"autoconnect": bool, "active": bool}. A refusal is one sentence on stderr and exit status 1. The password is never
+printed. In order:
+1. It reads every Wi-Fi profile with nmcli (names are unescaped from the terse format) and each one's mode.
+2. The target is the profile named --profile. If there is none, it is the access-point profile to adopt: the one with
+   autoconnect on that was used last, or, if none has autoconnect on, the one used last. If there is none of those
+   either, there is no target.
+3. Create, with no target: a new password is written to the password file first, then the profile is added: WPA2
+   personal on 2.4 GHz, the address shared (NetworkManager's DHCP and NAT), IPv6 off, and a low autoconnect priority
+   so that a saved network wins when both could connect. The password is an nmcli argument, as for anyone who uses
+   nmcli: it is in that process's argv while it runs, visible only to accounts on the unit. Nothing logs it.
+4. Adopt, a target under another name: when the password file doesn't exist, it gets the profile's own password
+   (empty for an open hotspot). The profile is renamed to --profile and set to start by itself, and every other
+   access-point profile is set not to, so that exactly one hotspot starts.
+5. Ensure, for every target: the device, priority, mode, address method, address, and IPv6 method are set to the
+   wanted values when they differ, and so is the password, when the file has one and the profile is WPA2 personal:
+   the file is the source of truth. Never touched after creation: the name on air, hidden, the band, autoconnect
+   (adoption aside), and the security of an adopted profile.
+6. It never activates or deactivates a profile, so a phone joined to the hotspot stays joined. "active" says whether
+   the target is up.
+The password file is written under a temporary name in its directory (O_CREAT|O_EXCL|O_NOFOLLOW) and renamed, mode
+0640, owner root, group --group, and an existing file is never rewritten by create or adopt.
+
+Standard library only, and no tm_control imports: this runs from the root-owned copy in
+/usr/local/libexec/traffic-monitor/. Tests set NMCLI to a stand-in, which is ignored when running as root.
+"""
+
+import argparse
+import grp
+import ipaddress
+import json
+import os
+import secrets
+import stat
+import subprocess
+import sys
+
+NMCLI = "/usr/bin/nmcli"
+ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0, 1, I, O
+PRIORITY = "-100"
+WIFI = "802-11-wireless"
+PSK = "802-11-wireless-security.psk"
+KEY_MGMT = "802-11-wireless-security.key-mgmt"
+MAX_PASSWORD_FILE = 1024  # bytes
+
+
+class Refused(Exception):
+    """The request can't be carried out. The message says why and never holds a password."""
+
+
+def new_password():
+    """Three groups of four characters from ALPHABET, joined by hyphens."""
+    return "-".join("".join(secrets.choice(ALPHABET) for _ in range(4)) for _ in range(3))
+
+
+def unescape(value):
+    """A value as nmcli -t and -g print it: a backslash escapes the character after it (`:` and `\\`)."""
+    out, escaped = [], False
+    for char in value:
+        if char == "\\" and not escaped:
+            escaped = True
+        else:
+            out.append(char)
+            escaped = False
+    return "".join(out)
+
+
+def split_terse(line):
+    """The unescaped fields of one nmcli -t line, split at the colons that aren't escaped."""
+    fields, current, escaped = [], [], False
+    for char in line:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    fields.append("".join(current))
+    return fields
+
+
+def choose_adoptee(profiles):
+    """The access-point profile to adopt, or None.
+
+    Each profile is a dict with name, mode, autoconnect (bool), and timestamp (int, the last use). Only mode "ap"
+    counts. Of those, the ones that start by themselves come first, and the highest timestamp wins.
+    """
+    access_points = [profile for profile in profiles if profile.get("mode") == "ap"]
+    starting = [profile for profile in access_points if profile.get("autoconnect")]
+    candidates = starting or access_points
+    return max(candidates, key=lambda profile: profile.get("timestamp", 0), default=None)
+
+
+def nmcli_binary():
+    """nmcli, or a stand-in from NMCLI for tests; root always runs the real one."""
+    if os.geteuid() == 0:
+        return NMCLI
+    return os.environ.get("NMCLI") or NMCLI
+
+
+class Nmcli:
+    """Runs nmcli and keeps any password it learns out of what this script says."""
+
+    def __init__(self, binary):
+        self.binary = binary
+        self.hidden = []
+
+    def hide(self, *values):
+        self.hidden.extend(value for value in values if value)
+
+    def scrub(self, text):
+        for value in self.hidden:
+            text = text.replace(value, "[hidden]")
+        return text
+
+    def run(self, *args):
+        verb = next((arg for arg in args if arg in ("show", "add", "modify")), "command")
+        try:
+            result = subprocess.run(
+                [self.binary, *args],
+                capture_output=True,
+                stdin=subprocess.DEVNULL,
+                env={**os.environ, "LC_ALL": "C.UTF-8"},  # yes and no, not a translation
+                timeout=60,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise Refused(f"nmcli could not run ({type(error).__name__})") from None
+        if result.returncode != 0:
+            lines = result.stderr.decode("utf-8", errors="replace").strip().splitlines()
+            reason = f": {self.scrub(lines[0])}" if lines else ""
+            raise Refused(f"nmcli {verb} failed with exit status {result.returncode}{reason}")
+        return result.stdout.decode("utf-8", errors="replace")
+
+    def get(self, ref, *properties, reveal=False):
+        """The unescaped values of properties of the profile `ref` (["uuid", ...] or ["id", ...]), one per property."""
+        out = self.run(*(["-s"] if reveal else []), "-g", ",".join(properties), "connection", "show", *ref)
+        lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
+        if len(lines) != len(properties):
+            raise Refused("nmcli answered with an unexpected number of lines")
+        return [unescape(line) for line in lines]
+
+
+def read_profiles(nm):
+    """Every profile as a dict: name, uuid, type, autoconnect, timestamp, and for Wi-Fi ones mode."""
+    out = nm.run("-t", "-f", "NAME,UUID,TYPE,AUTOCONNECT,TIMESTAMP", "connection", "show")
+    profiles = []
+    for line in out.splitlines():
+        fields = split_terse(line)
+        if len(fields) != 5:
+            raise Refused("nmcli listed a profile in a form this script doesn't know")
+        name, uuid, kind, autoconnect, timestamp = fields
+        profile = {"name": name, "uuid": uuid, "type": kind, "autoconnect": autoconnect == "yes",
+                   "timestamp": int(timestamp) if timestamp.isdigit() else 0}
+        if kind == WIFI:
+            profile["mode"] = nm.get(["uuid", uuid], f"{WIFI}.mode")[0]
+        profiles.append(profile)
+    return profiles
+
+
+def read_password_file(path):
+    """The password file's text without its line end, or None when there is no file."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise Refused(f"the password file can't be read ({error.strerror})") from None
+    with os.fdopen(fd, "rb") as file:
+        if not stat.S_ISREG(os.fstat(file.fileno()).st_mode):
+            raise Refused("the password file is not a plain file")
+        data = file.read(MAX_PASSWORD_FILE + 1)
+    if len(data) > MAX_PASSWORD_FILE:
+        raise Refused("the password file is too large")
+    return data.decode("utf-8", errors="replace").rstrip("\r\n")
+
+
+def write_password_file(path, text, group):
+    """Write text to a new file `path`, mode 0640, owner root and group `group` when running as root."""
+    directory, name = os.path.split(path)
+    gid = None
+    if os.geteuid() == 0:
+        try:
+            gid = grp.getgrnam(group).gr_gid
+        except KeyError:
+            raise Refused(f"there is no group {group} on this device") from None
+    temporary = os.path.join(directory or ".", f".{name}.{os.getpid()}.tmp")
+    try:
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o640)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as file:
+                os.fchmod(file.fileno(), 0o640)
+                if gid is not None:
+                    os.fchown(file.fileno(), 0, gid)
+                file.write(text)
+            os.rename(temporary, path)
+        except BaseException:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+            raise
+    except OSError as error:
+        raise Refused(f"the password file can't be written ({error.strerror})") from None
+
+
+def create(nm, args, password):
+    nm.run(
+        "connection", "add", "type", "wifi",
+        "connection.id", args.profile,
+        "connection.interface-name", args.device,
+        "connection.autoconnect", "yes",
+        "connection.autoconnect-priority", PRIORITY,
+        f"{WIFI}.mode", "ap",
+        f"{WIFI}.ssid", args.ssid,
+        f"{WIFI}.band", "bg",
+        f"{WIFI}.hidden", "no",
+        f"{WIFI}.cloned-mac-address", "permanent",
+        KEY_MGMT, "wpa-psk",
+        "802-11-wireless-security.proto", "rsn",
+        "802-11-wireless-security.pairwise", "ccmp",
+        "802-11-wireless-security.group", "ccmp",
+        PSK, password,
+        "ipv4.method", "shared",
+        "ipv4.addresses", args.address,
+        "ipv6.method", "disabled",
+    )
+
+
+def setup(nm, args):
+    profiles = read_profiles(nm)
+    named = [profile for profile in profiles if profile["name"] == args.profile]
+    if named and named[0]["type"] != WIFI:
+        raise Refused(f"the profile {args.profile} exists but is not a Wi-Fi profile")
+    target = named[0] if named else choose_adoptee(profiles)
+    stored = read_password_file(args.password_file)
+    nm.hide(stored)
+
+    if target is None:  # create
+        if stored is None:
+            stored = new_password()
+            nm.hide(stored)
+            write_password_file(args.password_file, stored, args.group)
+        elif not stored:
+            raise Refused("the password file exists but is empty, so remove it to let a hotspot be created")
+        create(nm, args, stored)
+        active = args.profile in active_names(nm)
+        return {"changed": True, "created": True, "adopted": None, "ssid": args.ssid, "secured": True,
+                "autoconnect": True, "active": active}
+
+    ref = ["uuid", target["uuid"]]
+    adopted = None if named else target["name"]
+    known_psk = None
+    changes = []
+    autoconnect = target["autoconnect"]
+    if adopted:
+        if stored is None:
+            known_psk = nm.get(ref, PSK, reveal=True)[0]
+            nm.hide(known_psk)
+            write_password_file(args.password_file, known_psk, args.group)
+            stored = known_psk
+        changes += [("connection.id", args.profile), ("connection.autoconnect", "yes")]
+        autoconnect = True
+
+    wanted = [
+        ("connection.interface-name", args.device),
+        ("connection.autoconnect-priority", PRIORITY),
+        (f"{WIFI}.mode", "ap"),
+        ("ipv4.method", "shared"),
+        ("ipv4.addresses", args.address),
+        ("ipv6.method", "disabled"),
+    ]
+    current = nm.get(ref, *(key for key, _ in wanted), KEY_MGMT, f"{WIFI}.ssid")
+    changes += [(key, value) for (key, value), have in zip(wanted, current) if have != value]
+    key_mgmt, ssid = current[len(wanted):]
+    if stored and key_mgmt == "wpa-psk":
+        have = known_psk if known_psk is not None else nm.get(ref, PSK, reveal=True)[0]
+        nm.hide(have)
+        if have != stored:
+            changes.append((PSK, stored))
+
+    others = []
+    if adopted:
+        others = [p for p in profiles if p.get("mode") == "ap" and p["uuid"] != target["uuid"] and p["autoconnect"]]
+    if changes:
+        nm.run("connection", "modify", *ref, *(word for pair in changes for word in pair))
+    for other in others:
+        nm.run("connection", "modify", "uuid", other["uuid"], "connection.autoconnect", "no")
+
+    return {"changed": bool(changes or others), "created": False, "adopted": adopted, "ssid": ssid,
+            "secured": bool(key_mgmt), "autoconnect": autoconnect, "active": args.profile in active_names(nm)}
+
+
+def active_names(nm):
+    return {split_terse(line)[0] for line in nm.run("-t", "-f", "NAME", "connection", "show", "--active").splitlines()}
+
+
+def parse(argv):
+    parser = argparse.ArgumentParser(prog="tm-hotspot-setup", allow_abbrev=False)
+    for option in ("profile", "device", "address", "ssid", "password-file", "group"):
+        parser.add_argument(f"--{option}", required=True)
+    args = parser.parse_args(argv[1:])
+    for option in ("profile", "device", "group", "password_file"):
+        value = getattr(args, option)
+        if not value or value.startswith("-"):
+            raise Refused(f"--{option.replace('_', '-')} is not a usable value")
+    if not 1 <= len(args.ssid.encode("utf-8")) <= 32:
+        raise Refused("the network name must be 1 to 32 bytes")
+    try:
+        if ipaddress.ip_interface(args.address).version != 4 or "/" not in args.address:
+            raise ValueError
+    except ValueError:
+        raise Refused("the address must be an IPv4 address with a prefix length, like 10.42.0.1/24") from None
+    return args
+
+
+def main(argv):
+    nm = Nmcli(nmcli_binary())
+    try:
+        result = setup(nm, parse(argv))
+    except Refused as error:
+        print(f"refused: {nm.scrub(str(error))}", file=sys.stderr)
+        return 1
+    except Exception as error:  # a message could quote a password, so print only the kind of error
+        print(f"failed: {type(error).__name__}", file=sys.stderr)
+        return 1
+    print(json.dumps(result))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
