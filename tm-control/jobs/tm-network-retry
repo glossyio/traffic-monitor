@@ -147,7 +147,8 @@ class Nmcli:
         return found
 
     def details(self, uuid):
-        """(mode, hidden, priority, ssid) of a Wi-Fi profile."""
+        """(mode, hidden, priority, ssid) of a Wi-Fi profile. Every property belongs to a setting every Wi-Fi profile has
+        (connection, 802-11-wireless), so nmcli -g leaves out none of the lines."""
         keys = f"{WIFI}.mode,{WIFI}.hidden,connection.autoconnect-priority,{WIFI}.ssid"
         lines = self.out("-g", keys, "connection", "show", "uuid", uuid).split("\n")
         mode, hidden, priority, ssid = (unescape(lines[i]) if i < len(lines) else "" for i in range(4))

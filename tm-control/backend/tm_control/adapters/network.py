@@ -95,18 +95,20 @@ class Hotspot:
 
 def hotspot(profile: str) -> Hotspot | None | Literal[False]:
     """The hotspot profile's settings; False when NetworkManager answered and has no such profile."""
-    keys = f"connection.autoconnect,{WIFI}.ssid,{WIFI}-security.key-mgmt"
-    answer = _run(["nmcli", "-g", keys, "connection", "show", profile])
-    if answer is None:
-        return None
-    status, out = answer
-    if status == NO_SUCH_PROFILE:
-        return False
-    if status != 0:
-        return None
-    # -g prints each value on its own line, in the order asked for; an unset one is an empty line
-    lines = out.split("\n")
-    autoconnect, ssid, key_mgmt = (unescape(lines[i]) if i < len(lines) else "" for i in range(3))
+    # One call per property: nmcli -g leaves out the lines of a setting the profile doesn't have (an open profile has
+    # no 802-11-wireless-security), so with several properties in one call the values could not be told apart.
+    values = []
+    for key in ("connection.autoconnect", f"{WIFI}.ssid", f"{WIFI}-security.key-mgmt"):
+        answer = _run(["nmcli", "-g", key, "connection", "show", profile])
+        if answer is None:
+            return None
+        status, out = answer
+        if status == NO_SUCH_PROFILE:
+            return False
+        if status != 0:
+            return None
+        values.append(unescape(out.split("\n")[0]))
+    autoconnect, ssid, key_mgmt = values
     return Hotspot(autoconnect == "yes", ssid, key_mgmt)
 
 

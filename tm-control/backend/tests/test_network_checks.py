@@ -363,20 +363,42 @@ def test_no_such_profile_is_false_not_none(commands):
 
 def test_the_hotspot_profile_is_read_by_property(commands):
     commands("nmcli", """
-        [ "$1" = "-g" ] && [ "$3" = connection ] && [ "$5" = tm-hotspot ] || exit 2
-        printf 'yes\\nTM-AB12\\nwpa-psk\\n'
+        [ "$1" = "-g" ] && [ "$3" = connection ] && [ "$4" = show ] && [ "$5" = tm-hotspot ] || exit 2
+        case "$2" in
+          connection.autoconnect) echo yes ;;
+          802-11-wireless.ssid) echo TM-AB12 ;;
+          802-11-wireless-security.key-mgmt) echo wpa-psk ;;
+          *) exit 2 ;;
+        esac
         """)
     assert network.hotspot("tm-hotspot") == Hotspot(True, "TM-AB12", "wpa-psk")
 
 
 def test_a_hotspot_with_no_security_has_an_empty_key_management(commands):
-    commands("nmcli", "printf 'no\\nTM-AB12\\n\\n'")
+    # as real nmcli answers: no 802-11-wireless-security setting, so no line for it
+    commands("nmcli", """
+        case "$2" in
+          connection.autoconnect) echo no ;;
+          802-11-wireless.ssid) echo TM-AB12 ;;
+        esac
+        """)
     assert network.hotspot("tm-hotspot") == Hotspot(False, "TM-AB12", "")
+
+
+def test_a_profile_missing_a_whole_setting_in_the_middle_keeps_the_values_apart(commands):
+    # all of nmcli -g's lines for an absent setting are left out, whatever their place in the request
+    commands("nmcli", """
+        case "$2" in
+          connection.autoconnect) echo yes ;;
+          802-11-wireless-security.key-mgmt) echo wpa-psk ;;
+        esac
+        """)
+    assert network.hotspot("tm-hotspot") == Hotspot(True, "", "wpa-psk")
 
 
 def test_nmcli_is_never_asked_for_secrets(commands, tmp_path):
     log = tmp_path / "calls"
-    commands("nmcli", f"echo \"$@\" >> {log}\nprintf 'yes\\nx\\nwpa-psk\\n'")
+    commands("nmcli", f"echo \"$@\" >> {log}\necho yes")
     network.hotspot("tm-hotspot")
     network.saved_networks()
     assert "-s" not in log.read_text().split() and "--show-secrets" not in log.read_text()

@@ -142,12 +142,20 @@ class Nmcli:
         return result.stdout.decode("utf-8", errors="replace")
 
     def get(self, ref, *properties, reveal=False):
-        """The unescaped values of properties of the profile `ref` (["uuid", ...] or ["id", ...]), one per property."""
-        out = self.run(*(["-s"] if reveal else []), "-g", ",".join(properties), "connection", "show", *ref)
-        lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
-        if len(lines) != len(properties):
-            raise Refused("nmcli answered with an unexpected number of lines")
-        return [unescape(line) for line in lines]
+        """The unescaped values of properties of the profile `ref` (["uuid", ...] or ["id", ...]), one per property.
+
+        One call each: `nmcli -g` leaves out the lines of a setting the profile doesn't have (an open profile has no
+        802-11-wireless-security), so several properties in one call could not be told apart. A left-out one reads ""."""
+        values = []
+        for prop in properties:
+            out = self.run(*(["-s"] if reveal else []), "-g", prop, "connection", "show", *ref)
+            lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
+            if lines == [""]:
+                lines = []
+            if len(lines) > 1:
+                raise Refused("nmcli answered with an unexpected number of lines")
+            values.append(unescape(lines[0]) if lines else "")
+        return values
 
 
 def read_profiles(nm):

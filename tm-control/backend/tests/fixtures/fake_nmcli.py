@@ -11,7 +11,10 @@ in "psk" is replaced by "***" when the call is `add` or `modify`.
 
 Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t and -g):
   [-t] -f FIELDS connection show [--active]      one line per profile; FIELDS from NAME UUID TYPE AUTOCONNECT TIMESTAMP
-  [-t] [-s] -g PROPS connection show REF         one line per property, empty when unset; psk only with -s
+  [-t] [-s] -g PROPS connection show REF         one line per property, empty when unset; psk only with -s. Like
+                                                 nmcli, it leaves out a property whose setting (the part before the
+                                                 first ".") the profile doesn't have: connection, ipv4, ipv6, the
+                                                 profile's type, and any setting with a stored property are present
   connection add type wifi PROP VALUE ...        connection.id names the new profile
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
   connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
@@ -126,7 +129,11 @@ def main(argv):
     elif verb == "show":
         name = find(state, rest)
         props = state["profiles"][name]
+        present = {"connection", "ipv4", "ipv6", value_of(name, props, "connection.type")}
+        present |= {key.split(".")[0] for key in props}
         for key in fields[1].split(","):
+            if key.split(".")[0] not in present:
+                continue
             secret = key.endswith(".psk") and "-s" not in flags
             print("" if secret else escape(value_of(name, props, key)))
     elif verb == "modify":
