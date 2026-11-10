@@ -49,7 +49,7 @@ sudo podman ps                                  # running containers
 
 ## The device's card
 
-`sudo tm-control card` prints the device's address, the name and password of its [hotspot](wifi-hotspot.md), and its setup code while it's unclaimed. It needs `sudo` because the password and the code are in files only root can read. `sudo tm-control card --json` prints the same values as JSON. If you lose the administrator's password, `sudo tm-control reset-admin` starts the accounts over; see [If the administrator's password is lost](control-app.md#if-the-administrators-password-is-lost).
+`sudo tm-control card` prints the device's address, the name and password of its [hotspot](wifi-hotspot.md), and its setup code while it's unclaimed. It needs `sudo` because the code is in a file only root can read, and the password in a file only root and the installing user's group can. `sudo tm-control card --json` prints the same values as JSON. If you lose the administrator's password, `sudo tm-control reset-admin` starts the accounts over; see [If the administrator's password is lost](control-app.md#if-the-administrators-password-is-lost).
 
 ## Where things are
 

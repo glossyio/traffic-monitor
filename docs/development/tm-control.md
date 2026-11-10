@@ -214,7 +214,7 @@ Two scripts in `jobs/` run as root, and neither is a `tm-job` unit. Both are sta
 
 nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign `Host`. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to `http://10.42.0.1/`, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets `X-TM-Hotspot: 1` from the address a request arrived on, replacing any value the client sent, and `GET /api/v1/setup/status` then returns `hotspot.local_name`, which the login and setup pages show to an iPhone.
 
-`sudo tm-control card` (`core/card.py`) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the root-only files and nmcli's answer first, and only then opens the state database. `--json` prints the same values, and `--unclaimed-only`, which the installer passes, prints nothing and exits 3 once the device is claimed.
+`sudo tm-control card` (`core/card.py`) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. `--json` prints the same values, and `--unclaimed-only`, which the installer passes, prints nothing and exits 3 once the device is claimed.
 
 ### What the sandbox allows
 

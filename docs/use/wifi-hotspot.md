@@ -46,7 +46,7 @@ The Status page's Hotspot check says which of these the unit is in, and its **Re
 
 The installer makes the password on the unit, at random, when it sets up the hotspot. It's twelve letters and digits in three groups, such as `ABCD-EFGH-JKLM`, and it's different on every unit. It never comes from the serial number, so knowing the name tells nobody the password.
 
-The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable only by root and the install group. To read it, run `sudo tm-control card` on the unit. Over Ethernet or SSH works when you're locked out of the hotspot. The installer shows the card on the terminal and keeps the password out of its log; a run from another computer with `-H` prints only a reminder of the command.
+The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable only by root and the installing user's group (`tmadmin` unless you installed with `-g`). To read it, run `sudo tm-control card` on the unit. Over Ethernet or SSH works when you're locked out of the hotspot. The installer shows the card on the terminal and keeps the password out of its log; a run from another computer with `-H` prints only a reminder of the command.
 
 ### Change the password
 
@@ -79,7 +79,7 @@ A hotspot you made yourself in NetworkManager is kept. When a unit has no profil
 A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. To set a password, run these two commands on the unit, with a password of 8 to 63 characters in place of `<password>`:
 
 ```bash
-sudo nmcli connection modify tm-hotspot 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.psk '<password>'
+sudo nmcli connection modify tm-hotspot 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.proto rsn 802-11-wireless-security.pairwise ccmp 802-11-wireless-security.group ccmp 802-11-wireless-security.psk '<password>'
 sudoedit /etc/traffic-monitor/secrets/hotspot_password
 ```
 

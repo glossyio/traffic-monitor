@@ -59,7 +59,7 @@ Each tag reruns one part of the install. Without `-t`, everything runs. The pod,
 
 ## The device's card
 
-When a run on the device ends while the device is unclaimed, the installer shows its **card** on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, never to the installer's log. A run from another computer with `-H` prints a reminder only. `sudo tm-control card` prints the card on the device at any time.
+When a run on the device ends while the device is unclaimed, the installer shows its **card** on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, so the hotspot's password stays out of the installer's log; the setup code is still in it. A run from another computer with `-H` prints a reminder only. `sudo tm-control card` prints the card on the device at any time.
 
 ## What `-f` replaces
 

@@ -1,6 +1,6 @@
 """The device's card: `sudo tm-control card` prints its addresses, its hotspot's name and password, and its setup code.
 
-The hotspot password and the setup code are root-only files, so this is the one place a person can read them back.
+The hotspot password (mode 0640, root and the code group) and the setup code (root-only) are files tm-control's code never reads, so this is the one place a person can read them back.
 Run as root it reads the manifest, the hotspot's name, the password file and the setup-code file first, and only then
 opens the state database for the claim state, which drops to the state directory's owner (see claim_cli.open_state).
 The card goes to stdout and nowhere else: nothing here logs, stores, or returns it to a caller that writes it down.
@@ -34,7 +34,7 @@ class Card:
 
 
 def _read(path) -> str | None:
-    """A root-only file's text without its trailing newline, or None when it can't be read."""
+    """A file's text, read as root, without its trailing newline, or None when it can't be read."""
     try:
         return path.read_text().strip("\r\n")
     except OSError:
