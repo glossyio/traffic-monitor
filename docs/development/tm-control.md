@@ -21,7 +21,7 @@ It has three parts, all in the repository's [`tm-control/`](https://github.com/g
 It reads two things the installer writes, and keeps one database of its own:
 
 * `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
-* `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (`frigate.coral_model`, from the role's `tmsetup_frigate_coral_model`), which the Detection page puts back.
+* `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (`frigate.coral_model`, from the role's `tmsetup_frigate_coral_model`), which the Detection page puts back, and `network`, the hotspot's Wi-Fi device, profile name, and address (`wlan0`, `tm-hotspot`, `10.42.0.1`, from the role's `tmsetup_wifi_device`, `tmsetup_hotspot_profile`, and `tmsetup_hotspot_address`), which the Network checks and `tm-control card` read.
 * `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (`surveys`, `survey_bearings`, and `survey_corrections`). Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
 
 While the device is unclaimed, the installer keeps the setup code in a root-only file, `/etc/traffic-monitor/setup-code`, and hands it to `tm-control set-setup-code` on every run, which stores only its hash. The installer's command-line steps run as the code owner, and `sudo tm-control reset-admin` drops to that user after writing a new code file, so root never writes the database.
@@ -73,16 +73,17 @@ The rest of the API, under `/api/v1/`, checks the session cookie itself. Every e
 ```text
 tm-control/backend/tm_control/
   app.py         create_app(): loads the state, secrets, manifest, and license agreement, and mounts the modules
-  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin,
+  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin, card,
                  and for development fake-reset and dump-openapi
   fake.py        fake mode's reset and the OpenAPI dump
   core/          shared rules: auth (passwords, sessions, backoff, setup code, users), csrf, errors, jobs,
-                 manifest, migrate (config updates for older installs), secrets, settings, state
+                 card (the device's card), manifest, migrate (config updates for older installs), secrets, settings, state
   adapters/      the outside world: command (runs an argv list with a timeout and an output cap, never a shell),
-                 systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
+                 systemd, timedate, sysinfo, hardware, network (nmcli and iw, read-only), the apps' HTTP APIs (frigate,
+                 nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time, detection, location
+                 hardware, network, secrets, system, time, detection, location
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
@@ -91,7 +92,7 @@ Rules live in the backend; the UI shows what the API returns and posts what the 
 
 tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in `tmsetup_tm_control_polkit` in the role's `vars/main.yml`, and nothing else:
 
-* Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH.
+* Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. `tm-network-retry.service` is on it for the Hotspot check's fix, and `FIX_UNITS` in `modules/services/units.py` lists the units like it, which a check's fix may start but the Services list doesn't show; `POST /services/{unit}/restart` accepts them.
 * Seven actions: `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp` for the Date and time page, and `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` for the Device page. The `-ignore-inhibit` variants aren't granted, so tm-control asks logind (`CanReboot`, `CanPowerOff`) first and answers 409 while an inhibitor, such as an update, holds the device up.
 
 A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are two jobs:
@@ -105,7 +106,7 @@ A time zone change restarts `traffic-monitor.service` and `revproxy.service` aft
 
 ## Status checks
 
-`GET /api/v1/status` returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in `Module.check_groups`, and the report shows them in `MODULES` order: Services, Apps, Configuration (the apps module's second group), Hardware, Device (from the system module), and Date and time.
+`GET /api/v1/status` returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in `Module.check_groups`, and the report shows them in `MODULES` order: Services, Apps, Configuration (the apps module's second group), Hardware, Network, Device (from the system module), and Date and time.
 
 A check function takes a `Context` and returns a list of `Check`s, each with an `id`, a `title`, a `status` (`ok`, `warn`, `error`, or `unknown`), a one- or two-sentence `detail` that says what to do, and an optional `fix`:
 
@@ -197,6 +198,23 @@ The module calls six Node-RED endpoints, besides `/tm-internal/status`, on `127.
 | `POST /tm-internal/deployments/<id>/bearing` | Rewrites one deployment's bearing |
 
 `tm-control migrate --node-red-config`, run by the installer, also brings `deployment:` up to date: it adds `database_precision: '2'` where it's missing, and removes `lat` and `lon` from a sensor's own `deployment:` block. The Location check (`location` in `modules/apps/contracts.py`) checks the same keys at run time.
+
+### The Network module and the hotspot
+
+The `network` module has no routes yet. It adds the Network check group (`hotspot`, `wifi`, `internet`, and `wifi_country`, in `modules/network/checks.py`), read-only through `adapters/network.py`, which runs `nmcli` and `iw` and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is `unknown`. The hotspot's values come from the manifest's `network` section. The checks' words are the contract with [the operator page](../use/wifi-hotspot.md).
+
+Two scripts in `jobs/` run as root, and neither is a `tm-job` unit. Both are standard-library Python with no `tm_control` imports, run as `/usr/bin/python3 -EP` from the root-owned `/usr/local/libexec/traffic-monitor/`, and read no password into their output:
+
+| Script | Run by | What it does |
+|---|---|---|
+| `tm-hotspot-setup` | The installer's `wifi` tasks | Creates the `tm-hotspot` profile, or adopts an access-point profile made by hand, and ensures its device, priority, mode, address, and IPv6 setting. The password file is the source of truth for the password. It never activates or deactivates a profile, so a joined phone stays joined. Its docstring lists the order of its steps and its exit statuses. |
+| `tm-network-retry` | `tm-network-retry.timer`, 90 seconds after boot and 5 minutes after each run ends, and the Hotspot check's **Restart the hotspot** | Keeps the radio on a known network or on the hotspot. It starts the hotspot when no network holds the radio, leaves it alone while a phone is joined, and scans for the saved networks otherwise, one network per run, with a 5, 15, then 60 minute wait after each failure. Its docstring lists its steps and outcomes. It keeps its memory in `/run/traffic-monitor/network-retry.json`. |
+
+`tm-hotspot-firewall.service` loads the `inet tm_hotspot` nftables table before NetworkManager can start the hotspot. The table drops forwarded traffic into and out of the hotspot's subnet, so phones on it reach the unit and nothing behind it.
+
+nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign `Host`. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to `http://10.42.0.1/`, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets `X-TM-Hotspot: 1` from the address a request arrived on, replacing any value the client sent, and `GET /api/v1/setup/status` then returns `hotspot.local_name`, which the login and setup pages show to an iPhone.
+
+`sudo tm-control card` (`core/card.py`) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the root-only files and nmcli's answer first, and only then opens the state database. `--json` prints the same values, and `--unclaimed-only`, which the installer passes, prints nothing and exits 3 once the device is claimed.
 
 ### What the sandbox allows
 

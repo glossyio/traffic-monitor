@@ -47,6 +47,10 @@ sudo podman ps                                  # running containers
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](control-app.md#if-the-control-app-is-down). |
 | Move the device to a new site | Choose **Deploy here** on the new place on the [Location page](location.md#move-or-turn-the-device), then adjust the zones as in [First-time setup](../setup-guide.md#3-adjust-the-zones). |
 
+## The device's card
+
+`sudo tm-control card` prints the device's address, the name and password of its [hotspot](wifi-hotspot.md), and its setup code while it's unclaimed. It needs `sudo` because the password and the code are in files only root can read. `sudo tm-control card --json` prints the same values as JSON. If you lose the administrator's password, `sudo tm-control reset-admin` starts the accounts over; see [If the administrator's password is lost](control-app.md#if-the-administrators-password-is-lost).
+
 ## Where things are
 
 The settings and data live under `/opt/traffic-monitor/`.
@@ -68,5 +72,5 @@ The control app and the installer keep a few files elsewhere. Read them, but don
 |---|---|
 | `/var/lib/tm-control/state.sqlite` | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
 | `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads |
-| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
+| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, including the hotspot's password, and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
 | `/etc/traffic-monitor/setup-code` | The setup code, until the device is claimed |

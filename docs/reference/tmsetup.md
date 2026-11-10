@@ -25,6 +25,7 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 | `-d PATH` | Install folder. Default `/opt/traffic-monitor`. The docs assume the default. |
 | `-o USER` | Owner of the installed files and processes. Default `tmadmin`, created by the installer. |
 | `-g GROUP` | Group of the installed files. Default `tmadmin`. |
+| `-w CODE` | The Wi-Fi country, a two-letter code such as `US` or `GB`. Without it, the installer asks when the device has none and the run includes the `wifi` tag; with `-y` or a remote run it keeps the device's country, or sets `US` when there is none. See [The Wi-Fi country](../use/wifi-hotspot.md#the-wi-fi-country). |
 | `-z TIMEZONE` | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`. |
 | `-L PATH` | Where to write the installer's log. |
 | `-a ARG` | Pass an extra argument to the underlying Ansible run, without its leading hyphen. |
@@ -46,7 +47,7 @@ Each tag reruns one part of the install. Without `-t`, everything runs. The pod,
 |---|---|
 | `base` | Operating system packages, the owner account, and Cockpit. It runs with every `-t`. |
 | `full_upgrade` | The `apt full-upgrade`, when `-u` is given |
-| `wifi` | Wi-Fi setup |
+| `wifi` | The Wi-Fi country, the [hotspot](../use/wifi-hotspot.md) (its profile, its password file, the firewall that keeps phones on it from reaching other networks, and the DNS that sends every name on it to the device), and the timer that moves the radio between a saved network and the hotspot. It sets the hotspot's password to the one in the password file, and never restarts a hotspot that is up. |
 | `go2rtc` | The camera streaming service on the host, and the stream login Frigate uses to read it |
 | `detectors` | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later). |
 | `podman` | The container runtime and the pod |
@@ -55,6 +56,10 @@ Each tag reruns one part of the install. Without `-t`, everything runs. The pod,
 | `plate-recognizer` | The optional Plate Recognizer container |
 | `revproxy` | The reverse proxy, with the home page built into its image |
 | `tm-control` | The [control app](../use/control-app.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login. |
+
+## The device's card
+
+When a run on the device ends while the device is unclaimed, the installer shows its **card** on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, never to the installer's log. A run from another computer with `-H` prints a reminder only. `sudo tm-control card` prints the card on the device at any time.
 
 ## What `-f` replaces
 
