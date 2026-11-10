@@ -80,7 +80,8 @@ def test_the_card_goes_to_the_terminal_not_the_log():
     lines = [line for line in script_code_lines() if not line.strip().startswith("printf")]  # messages aren't runs
     runs = [line for line in lines if "tm-control card" in line]
     assert len(runs) == 1, runs
-    assert runs[0].strip() == "if sudo /usr/local/bin/tm-control card --unclaimed-only > /dev/tty; then"
+    # the redirect is made inside sudo (sudo's pty puts the terminal in raw mode), not by this shell
+    assert runs[0].strip() == "if sudo sh -c 'exec /usr/local/bin/tm-control card --unclaimed-only > /dev/tty'; then"
     for line in lines:
         # nothing assigns from the command, pipes it, or sends it anywhere else
         if "tm-control" in line and " card" in line:
@@ -113,3 +114,41 @@ def test_a_successful_remote_run_says_how_to_show_the_card_without_showing_it():
     # a pointer only: the remote branch never runs the card, over ssh or otherwise
     assert "_show_card" not in remote
     assert not [line for line in remote.splitlines() if "tm-control card" in line and "printf" not in line]
+
+
+def _finish_log_function():
+    text = SCRIPT.read_text()
+    start = text.index("_finish_log() {")
+    return text[start:text.index("\n}\n", start) + 3]
+
+
+def test_the_script_waits_for_the_logs_tee_before_it_exits():
+    """ssh -t hangs up when the script exits and kills tee before it writes the last lines."""
+    text = SCRIPT.read_text()
+    assert text.index('exec > >(tee -i "${_LOGFILE}")') < text.index("_LOG_TEE_PID=$!") < text.index("trap _finish_log EXIT")
+    assert len(re.findall(r"^\s*trap\b", text, re.M)) == 1
+    function = _finish_log_function()
+    assert "local status=$?" in function and "exec >&- 2>&-" in function
+    assert 'wait "${_LOG_TEE_PID}"' in function and 'exit "${status}"' in function
+
+
+@pytest.mark.parametrize("code", [0, 3])
+def test_the_last_lines_reach_the_log_and_the_exit_status_is_kept(tmp_path, code):
+    log = tmp_path / "run.log"
+    snippet = f"""set -e
+{_finish_log_function()}
+exec > >(sleep 0.3; tee -i "{log}")
+_LOG_TEE_PID=$!
+exec 2>&1
+trap _finish_log EXIT
+printf "first\\n"
+printf "last line\\n"
+exit {code}
+"""
+    shown = tmp_path / "shown.txt"
+    with shown.open("w") as out:  # a file, not a pipe: run() returns when bash does, not when tee does
+        result = subprocess.run(["bash", "-c", snippet], stdout=out, stderr=subprocess.STDOUT, timeout=30, check=False)
+    # read at once: the delayed tee has had to be waited for
+    assert result.returncode == code
+    assert log.read_text() == "first\nlast line\n"
+    assert shown.read_text() == "first\nlast line\n"

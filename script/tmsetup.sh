@@ -226,9 +226,12 @@ _ask_wifi_country() { # Ask for the Wi-Fi country when this device has none and 
 _show_card() { # Show the device's card on the terminal only: it has the hotspot password and the setup code
   [[ -x /usr/local/bin/tm-control ]] || return 0
   # Everything this script prints is copied to the log (exec > >(tee ...) above). The card goes straight to the
-  # terminal and is never held in a variable or a file, so it can't get into the log.
+  # terminal and is never held in a variable or a file, so it can't get into the log. The redirect is made inside
+  # sudo: sudo runs the command in its own pty and puts the user's terminal in raw mode, so a write that goes
+  # straight to the terminal from out here loses the \n to \r\n translation and prints as a staircase, while
+  # /dev/tty inside sudo is sudo's pty, which it relays to the terminal.
   if ( : > /dev/tty ) 2>/dev/null; then
-    if sudo /usr/local/bin/tm-control card --unclaimed-only > /dev/tty; then
+    if sudo sh -c 'exec /usr/local/bin/tm-control card --unclaimed-only > /dev/tty'; then
       printf "The device's card (hotspot password and setup code) was shown on the terminal and is not in this log.\n"
     fi
   fi
@@ -427,7 +430,16 @@ printf "This directory %s is just a tmp directory for traffic-monitor tmsetup.sh
 _log_check "${_LOGFILE}"
 # Log all further output to logfile
 exec > >(tee -i "${_LOGFILE}")
+_LOG_TEE_PID=$!
 exec 2>&1
+
+_finish_log() { # Let the log's tee write the last lines before the script ends, or a hung-up terminal kills it first
+  local status=$?
+  exec >&- 2>&-
+  wait "${_LOG_TEE_PID}" 2>/dev/null || true
+  exit "${status}"
+}
+trap _finish_log EXIT
 
 if [ "${_FORCE}" = true ]
 then
