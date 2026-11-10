@@ -14,6 +14,8 @@ location /api/ {
     proxy_buffering off;
     # Only nginx's /_auth locations name a required role, and tm-control's verify answers nothing without one
     proxy_set_header X-TM-Required-Role "";
+    # Set here, from the address the request arrived on, so a client's own X-TM-Hotspot never reaches tm-control
+    proxy_set_header X-TM-Hotspot $tm_on_hotspot;
 }
 # Only nginx's internal /_auth locations may call verify. A prefix match, not =: nginx decodes
 # /api/v1/auth/verify%0A to a trailing newline, which would miss an exact match and reach /api/.

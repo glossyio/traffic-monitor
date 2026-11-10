@@ -110,6 +110,12 @@ def snippet(name):
     return render(f"container/revproxy/tm/snippets/{name}.j2")
 
 
+def nginx_main_conf(hostname="tm-ab12"):
+    """nginx.conf as the role renders it: with the role's variables and the host's hostname fact."""
+    variables = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
+    return render("container/revproxy/nginx.conf.j2", ansible_facts={"hostname": hostname}, **variables)
+
+
 def location_block(conf, header):
     """One location block's text, from its header to the first closing brace at the start of a line."""
     start = conf.index(header)
@@ -195,7 +201,7 @@ def test_no_app_location_adds_its_own_headers(name):
 
 
 def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
-    nginx_conf = render("container/revproxy/nginx.conf.j2")
+    nginx_conf = nginx_main_conf()
     assert TM_CONTROL_LOCATIONS <= set(LOCATIONS)
     assert "location / " not in nginx_conf
     assert "include /etc/nginx/tm/locations/*.conf;" in nginx_conf
@@ -204,7 +210,7 @@ def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
 
 def test_redirects_keep_the_port_the_browser_used():
     """Relative Location headers, so the login redirect works behind a port-forward or an SSH tunnel."""
-    (server,) = [body for header, body in top_level_blocks(render("container/revproxy/nginx.conf.j2")) if header == "http"]
+    (server,) = [body for header, body in top_level_blocks(nginx_main_conf()) if header == "http"]
     assert "absolute_redirect off;" in dict(top_level_blocks(server))["server"]
 
 
@@ -1054,3 +1060,69 @@ def test_the_retry_runs_the_root_owned_copy_with_the_system_python():
     assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/x/tm-network-retry" in lines
     assert "Environment=TM_WIFI_DEVICE=wlan0 TM_HOTSPOT_PROFILE=tm-hotspot" in lines
     assert "After=NetworkManager.service" in lines
+
+
+def sign_in(server_addr, host, hostname="tm-ab12"):
+    """Whether the sign-in map flags a request that arrived on server_addr with this Host: the first map's pattern
+    from the rendered file, applied with Python's re to the value nginx builds ("$server_addr $host")."""
+    conf = nginx_main_conf(hostname)
+    match = re.search(r'map "\$server_addr \$host" \$tm_sign_in \{(.*?)\n    \}', conf, re.DOTALL)
+    assert match
+    (pattern,) = re.findall(r'^\s*"~(.*)" 1;$', match.group(1), re.MULTILINE)
+    return re.search(pattern, f"{server_addr} {host}") is not None
+
+
+@pytest.mark.parametrize("host", ["connectivitycheck.gstatic.com", "captive.apple.com", "example.com", "_",
+                                  "10.42.0.10", "tm-ab12.local.example.com", "xtm-ab12", "10.42.0.1.example.com"])
+def test_a_foreign_host_is_redirected_only_on_the_hotspot_address(host):
+    assert sign_in("10.42.0.1", host)
+    assert not sign_in("192.168.1.57", host)
+    assert not sign_in("127.0.0.1", host)
+
+
+@pytest.mark.parametrize("host", ["10.42.0.1", "tm-ab12", "tm-ab12.local"])
+def test_the_units_own_names_are_served_on_the_hotspot(host):
+    assert not sign_in("10.42.0.1", host)
+
+
+def test_the_hotspot_address_in_the_pattern_is_escaped():
+    """The dots are literal: another server address that differs only where a dot is must not match."""
+    assert not sign_in("10X42X0X1", "example.com")
+
+
+def test_the_redirect_goes_to_the_hotspot_address_before_any_location():
+    (http,) = [body for header, body in top_level_blocks(nginx_main_conf()) if header == "http"]
+    server = dict(top_level_blocks(http))["server"]
+    lines = [line.strip() for line in server.splitlines() if line.strip() and not line.strip().startswith("#")]
+    redirect = "if ($tm_sign_in) { return 302 http://10.42.0.1/; }"
+    # First in the server block, ahead of the locations; absolute, so the phone leaves the foreign name
+    assert lines[0] == redirect
+    assert lines.count(redirect) == 1
+    assert lines.index(redirect) < lines.index("include /etc/nginx/tm/locations/*.conf;")
+
+
+def test_a_hostname_with_regex_characters_is_escaped():
+    assert not sign_in("10.42.0.1", "tm.ab12", hostname="tm.ab12")
+    assert sign_in("10.42.0.1", "tmxab12", hostname="tm.ab12")
+
+
+def test_the_hotspot_map_names_the_hotspot_address_only():
+    conf = nginx_main_conf()
+    match = re.search(r"map \$server_addr \$tm_on_hotspot \{(.*?)\}", conf, re.DOTALL)
+    assert match
+    entries = [line.strip() for line in match.group(1).splitlines() if line.strip()]
+    assert entries == ['default "";', "10.42.0.1 1;"]
+
+
+def test_the_api_learns_from_nginx_whether_the_request_came_over_the_hotspot():
+    """location /api/ sets X-TM-Hotspot from $tm_on_hotspot (an empty value sends no header, and a client's own is
+    replaced either way); no other location sets it. The shared snippet is included in the same location, so the
+    location's other proxy_set_header lines are not dropped."""
+    wanted = "proxy_set_header X-TM-Hotspot $tm_on_hotspot;"
+    api = location("tm-control-api.conf")
+    assert wanted in location_block(api, "location /api/ {")
+    assert "include /etc/nginx/tm/snippets/proxy-common.conf;" in location_block(api, "location /api/ {")
+    assert api.count("proxy_set_header X-TM-Hotspot") == 1
+    for name in LOCATIONS:
+        if name != "tm-control-api.conf":
+            assert "X-TM-Hotspot" not in location(name), name
