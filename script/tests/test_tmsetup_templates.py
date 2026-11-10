@@ -262,6 +262,14 @@ def test_auth_locations_are_internal_and_name_the_role(path, role):
     assert "proxy_set_header Cookie" not in block and "proxy_pass_request_headers" not in block
 
 
+@pytest.mark.parametrize("name", ["/_auth", "/_auth_admin"])
+def test_verify_is_told_the_browsers_address_and_nothing_the_client_sent(name):
+    """A download link is checked against the browser's address, so the check must get nginx's own $remote_addr."""
+    block = location_block(location("tm-control-auth.conf"), f"location = {name} {{")
+    assert "proxy_set_header X-Forwarded-For $remote_addr;" in block
+    assert "$proxy_add_x_forwarded_for" not in block and "$http_x_forwarded_for" not in block
+
+
 def test_failed_logins_redirect_and_the_rescue_page_is_internal():
     conf = location("tm-control-auth.conf")
     assert "location @tm_login { return 302 $tm_redirect; }" in conf

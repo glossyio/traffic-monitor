@@ -35,6 +35,7 @@ browser ──GET /frigate/──▶ nginx (port 80)
                              │  auth_request /_auth  (internal location)
                              │    X-Original-URI: /frigate/
                              │    X-TM-Required-Role: viewer   (admin for /_auth_admin)
+                             │    X-Forwarded-For: the browser's address
                              │    Cookie: tm_session=…
                              ▼
                            tm-control 127.0.0.1:8090  /api/v1/auth/verify
@@ -67,6 +68,16 @@ A few rules keep the check sound:
 The Node-RED token is `base64url(JSON {"u", "r", "exp"})`, a dot, and `base64url(HMAC-SHA256(key, first part))`, without padding, valid for 5 minutes. `NodeRedToken` in `backend/tm_control/core/auth.py` mints it, and `verifyProxyToken` in `container/node-red-tm/data/settings.js` checks it. Change both together; `script/tests/test_node_red_settings.py` runs tokens from one through the other.
 
 The rest of the API, under `/api/v1/`, checks the session cookie itself. Every error has one shape, `{"error": {"code", "message", "detail"}}`. A request that changes something must send JSON from a page on the device (a matching `Origin` or `Referer`), or it gets 403.
+
+### Download links
+
+Android's sign-in window, which on Android 17 is the only browser that can reach a unit on its hotspot, fetches a download twice: its own request carries the session cookie, then it hands the address to a download helper that sends no cookie. So the Data export page asks for a link that passes the check once without the cookie:
+
+1. Just before it starts a download, the page sends `POST /api/v1/auth/download-link` with `{"files": …}`. tm-control answers an administrator with `/storefiles?files=…&tm_token=…`, a random one-time token kept in memory. Anyone else gets an error, and the page falls back to the plain `/storefiles?files=…` address, which still works wherever the browser downloads the file itself.
+2. The browser's own request has a session, so verify checks it as usual and leaves the link unused.
+3. The helper's request has no session. verify lets it through as the administrator only when the address is exactly `/storefiles` with `files` and `tm_token` and nothing else, on an admin location, within 600 seconds, from the address the link was made for (`X-Forwarded-For`, which the `/_auth` locations set to nginx's own `$remote_addr`), and for the same `files`. The user must still be an administrator with the same sessions, and the current license agreement must be accepted. The answer carries `X-TM-User` and `X-TM-Role` only: no Frigate secret, no Node-RED token, no cookie.
+
+The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its `next=`. nginx's access log records the token; the parameter is named `tm_token` so that the diagnostics download hides its value with every other key ending in `token`. The two download templates live in `flows.json` (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and `script/tests/test_node_red_flows.py` checks that they ask for the same link.
 
 ## Backend layout
 

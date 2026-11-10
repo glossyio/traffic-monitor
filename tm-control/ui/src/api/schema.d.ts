@@ -21,6 +21,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/download-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Link
+         * @description A link to /storefiles?files=<files> that passes the login check once without the cookie.
+         *
+         *     For browsers that hand a download to a helper without the cookie (Android's sign-in window). It works once, for
+         *     600 seconds, from this browser's address, for these files only.
+         */
+        post: operations["download_link_api_v1_auth_download_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/verify": {
         parameters: {
             query?: never;
@@ -37,6 +60,8 @@ export interface paths {
          *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
          *     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
          *     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
+         *     Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
+         *     no other secret and no cookie. A login redirect's next= leaves the link's token out.
          */
         get: operations["verify_api_v1_auth_verify_get"];
         put?: never;
@@ -1033,6 +1058,16 @@ export interface components {
             /** Free */
             free: number;
         };
+        /** DownloadLink */
+        DownloadLink: {
+            /** Url */
+            url: string;
+        };
+        /** DownloadLinkRequest */
+        DownloadLinkRequest: {
+            /** Files */
+            files: string;
+        };
         /** EulaAcceptance */
         EulaAcceptance: {
             /** Version */
@@ -1590,6 +1625,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    download_link_api_v1_auth_download_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DownloadLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -1,5 +1,5 @@
 """Who may use the device: passwords, session cookies, the Node-RED editor token, login backoff, the setup code,
-and the users, claim, EULA, and audit records in tm-control's state database.
+the users, claim, EULA, and audit records in tm-control's state database, and one-time download links.
 
 Passwords and the setup code are hashed with argon2id and compared only through argon2's verifier.
 """
@@ -430,3 +430,58 @@ class Audit:
                 "INSERT INTO audit (at, user_id, action, detail) VALUES (?, ?, ?, ?)",
                 (_timestamp(), user_id, action, detail),
             )
+
+
+# Download links
+
+DOWNLOAD_PATH = "/storefiles"  # the one path a download link opens
+DOWNLOAD_TOKEN = "tm_token"  # its query parameter. The name ends in "token" so that redact() hides its value.
+
+
+class DownloadGrant(NamedTuple):
+    uid: int
+    epoch: int  # the user's session_epoch when the link was made
+    address: str  # the browser's address when the link was made
+    files: str  # the files value the link is for, decoded
+    expires: float  # on time.monotonic()'s clock
+
+
+class DownloadGrants:
+    """One-time links that let a request without the login cookie fetch one /storefiles download, in memory.
+
+    Android's sign-in window hands a download to a helper that sends no cookie. A link works once, for the files and
+    from the address it was made for, within TTL seconds. Grants are kept under the token's SHA-256, never the token.
+    """
+
+    TTL = 600.0  # seconds a link lives: longer than the database copy that runs before a download's first byte
+    LIMIT = 32  # links kept; making one more forgets the oldest
+
+    def __init__(self):
+        self._grants: dict[str, DownloadGrant] = {}  # SHA-256 of the token -> grant, oldest first
+        self._lock = threading.Lock()
+
+    def __len__(self) -> int:
+        return len(self._grants)
+
+    @staticmethod
+    def _key(token: str) -> str:
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def issue(self, user: User, address: str, files: str, now: float) -> str:
+        token = secrets.token_urlsafe(32)
+        grant = DownloadGrant(user.id, user.session_epoch, address, files, now + self.TTL)
+        with self._lock:
+            for key in [key for key, old in self._grants.items() if now >= old.expires]:
+                del self._grants[key]
+            while len(self._grants) >= self.LIMIT:
+                del self._grants[next(iter(self._grants))]
+            self._grants[self._key(token)] = grant
+        return token
+
+    def redeem(self, token: str, address: str, files: str, now: float) -> DownloadGrant | None:
+        """The grant for token when it is current and was made for address and files. Spent whatever the answer."""
+        with self._lock:
+            grant = self._grants.pop(self._key(token), None)
+        if grant is None or now >= grant.expires or grant.address != address or grant.files != files:
+            return None
+        return grant
