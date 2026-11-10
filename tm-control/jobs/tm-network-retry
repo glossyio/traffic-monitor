@@ -19,10 +19,13 @@ One run, in order; the first step that applies ends it, with that outcome:
    Those that failed lately wait 5, then 15, then 60 minutes after each failure. None left: `nothing-to-try`, without
    a scan.
 8. One scan. The first saved network that was heard, or is hidden, is the one to join; none: `nothing-in-range`. The
-   scan failed: `scan-failed`.
+   scan failed: `scan-failed`, followed on the same line by why, such as
+   `scan-failed (iw exit 240: command failed: Device or resource busy (-16))`; the state file keeps just `scan-failed`.
 9. Join that one network (`joined`). If it fails, it waits its turn and the hotspot is brought back (`join-failed`).
-   At most one network is tried per run.
-The state file holds each failing network's name, failures, and time of the last one, and the last run. It is written
+   At most one network is tried per run. The wait counts from when the join failed, not from when the run began: the
+   attempt takes up to about a minute, and a wait counted from the start would let the first one (5 minutes, the
+   timer's period) run out before the next run.
+The state file holds each failing network's name, failures, and time of the last failure, and the last run. It is written
 under a temporary name and renamed, mode 0644; one that can't be read or makes no sense is treated as empty.
 
 Standard library only, and no tm_control imports: this runs from the root-owned copy in
@@ -200,10 +203,10 @@ def radio_kind(device):
 
 
 def heard_networks(iw, device):
-    """The names in one scan, or None when the scan failed. A hidden network is an empty name."""
-    status, out, _ = run_command([iw, "dev", device, "scan"], timeout=60)
+    """(the names in one scan, ""), or (None, why) when the scan failed. A hidden network is an empty name."""
+    status, out, error = run_command([iw, "dev", device, "scan"], timeout=60)
     if status != 0:
-        return None
+        return None, f"iw exit {status}" + (f": {error}" if error else "")
     names = set()
     for line in out.splitlines():
         if line.strip().startswith("SSID: "):
@@ -215,7 +218,7 @@ def heard_networks(iw, device):
             except UnicodeError:
                 pass
             names.add(raw)
-    return names
+    return names, ""
 
 
 def settings():
@@ -232,14 +235,14 @@ def start_hotspot(nm, hotspot):
         raise Refused(f"the hotspot could not be started (nmcli exit status {status})" + (f": {error}" if error else ""))
 
 
-def attempt(nm, device, hotspot, network, networks, now):
-    """Join `network`; on failure remember it and bring the hotspot back."""
+def attempt(nm, device, hotspot, network, networks, ended):
+    """Join `network`; on failure remember it and bring the hotspot back. `ended()` is the time, when called."""
     status, _, _ = nm.call("--wait", str(JOIN_WAIT), "connection", "up", "uuid", network["uuid"], timeout=JOIN_WAIT + 45)
     if status == 0:
         networks.pop(network["uuid"], None)
         return "joined"
     count = networks.get(network["uuid"], {}).get("failures", 0) + 1
-    networks[network["uuid"]] = {"name": network["name"], "failures": count, "last_failure": now}
+    networks[network["uuid"]] = {"name": network["name"], "failures": count, "last_failure": ended()}
     wait = float(trusted("TM_HOTSPOT_WAIT", str(RETURN_WAIT)))
     deadline = time.monotonic() + wait
     while True:
@@ -252,8 +255,8 @@ def attempt(nm, device, hotspot, network, networks, now):
     return "join-failed"
 
 
-def decide(nm, iw, config, now, networks):
-    """Steps 1 to 9. Returns the outcome; `networks` is edited in place."""
+def decide(nm, iw, config, now, networks, ended, why):
+    """Steps 1 to 9. Returns the outcome; `networks` is edited in place, and `why` (a list) gets a reason to print."""
     device, hotspot = config["device"], config["hotspot"]
     kind = radio_kind(device)
     if kind:
@@ -299,32 +302,38 @@ def decide(nm, iw, config, now, networks):
     saved = [p for p in saved if due(networks.get(p["uuid"]), now)]
     if not saved:
         return "nothing-to-try"
-    heard = heard_networks(iw, device)
+    heard, reason = heard_networks(iw, device)
     if heard is None:
+        why.append(reason)
         return "scan-failed"
     candidate = next((p for p in saved if p["ssid"] in heard or p["hidden"]), None)
     if candidate is None:
         return "nothing-in-range"
-    return attempt(nm, device, hotspot, candidate, networks, now)
+    return attempt(nm, device, hotspot, candidate, networks, ended)
 
 
 def run(now):
-    """One run of the timer; returns the outcome. Raises Refused when it must exit 1."""
+    """One run of the timer; returns (the outcome, a reason to print after it or ""). Raises Refused when it must
+    exit 1. `now` is the time the run began; a failure is stamped with `now` plus the time the run has taken since
+    (monotonic, so a test that fixes `now` gets a fixed time plus the little the fakes take)."""
     config = settings()
     networks = read_state(config["state"])
+    started, why = time.monotonic(), []
     try:
-        outcome = decide(Nmcli(trusted("NMCLI", NMCLI)), trusted("IW", IW), config, now, networks)
+        outcome = decide(Nmcli(trusted("NMCLI", NMCLI)), trusted("IW", IW), config, now, networks,
+                         lambda: now + (time.monotonic() - started), why)
     except Refused:
         write_state(config["state"], networks, now, "error")
         raise
     write_state(config["state"], networks, now, outcome)
-    return outcome
+    return outcome, why[0] if why else ""
 
 
 def main():
     try:
         stated = trusted("TM_NOW", "")
-        print(run(float(stated) if stated else time.time()))
+        outcome, why = run(float(stated) if stated else time.time())
+        print(f"{outcome} ({why})" if why else outcome)
     except Refused as error:
         print(f"refused: {error}", file=sys.stderr)
         return 1

@@ -41,8 +41,9 @@ def saved(uuid=UUID, **props):
 
 def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=(), scan=("Home",), radio="enabled",
           join=None, device_state=None, sys_net="wifi", hotspot=HOTSPOT, state_text=None, ap_fails=False,
-          iw_fail=()):
-    """Run the job once. join="fail" makes every saved network refuse to connect; sys_net is wifi, usb or none."""
+          iw_fail=(), join_delay=0):
+    """Run the job once. join="fail" makes every saved network refuse to connect, after join_delay seconds; sys_net is
+    wifi, usb or none."""
     profiles = {"Home": saved()} if profiles is None else dict(profiles)
     if hotspot is not None:
         profiles["tm-hotspot"] = dict(hotspot)
@@ -58,7 +59,8 @@ def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=()
         if sys_net == "wifi" or sys_net == "usb":
             (wlan / "wireless").mkdir()
     nm_state = {"profiles": profiles, "active": list(active), "radio": radio, "fail": ["up"] if ap_fails else [],
-                "up": {name: "fail" for name in profiles if join == "fail" and name != "tm-hotspot"}}
+                "up": {name: "fail" for name in profiles if join == "fail" and name != "tm-hotspot"},
+                "up_delay": {name: join_delay for name in profiles if name != "tm-hotspot"}}
     if device_state:
         nm_state["device_state"] = device_state
     (tmp_path / "nmcli.json").write_text(json.dumps(nm_state))
@@ -155,7 +157,7 @@ def test_a_station_list_that_cannot_be_read_is_not_an_empty_one(tmp_path):
 
 def test_a_scan_that_fails_leaves_the_hotspot_alone(tmp_path):
     result = world(tmp_path, iw_fail=("scan",))
-    assert (result.code, result.outcome) == (0, "scan-failed")
+    assert (result.code, result.outcome.split(" (")[0]) == (0, "scan-failed")
     assert ups(result) == [] and result.active == ["tm-hotspot"]
 
 
@@ -212,24 +214,42 @@ def test_only_wifi_client_profiles_that_connect_by_themselves_are_tried(tmp_path
 
 
 def test_a_failed_join_backs_off_and_the_hotspot_returns(tmp_path):
+    def stamp(result):
+        return result.state["networks"][UUID]["last_failure"]  # now plus the little the fakes took
+
     first = world(tmp_path, now=1000, join="fail")
     assert first.outcome == "join-failed" and first.state["networks"][UUID]["failures"] == 1
-    assert first.state["networks"][UUID] == {"name": "Home", "failures": 1, "last_failure": 1000.0}
+    assert first.state["networks"][UUID]["name"] == "Home" and 1000 <= stamp(first) < 1030
     assert first.log[-1][-3:] == ["connection", "up", "tm-hotspot"]
     assert first.active == ["tm-hotspot"]
-    quiet = world(tmp_path, now=1000 + 299)
+    quiet = world(tmp_path, now=stamp(first) + 299)
     assert quiet.outcome == "nothing-to-try" and quiet.iw == [["dev", "wlan0", "station", "dump"]]  # no scan
     assert ups(quiet) == []
-    second = world(tmp_path, now=1000 + 300, join="fail")
+    second = world(tmp_path, now=stamp(first) + 300, join="fail")
     assert second.outcome == "join-failed" and second.state["networks"][UUID]["failures"] == 2
-    assert world(tmp_path, now=1300 + 899).outcome == "nothing-to-try"
-    third = world(tmp_path, now=1300 + 900, join="fail")
+    assert world(tmp_path, now=stamp(second) + 899).outcome == "nothing-to-try"
+    third = world(tmp_path, now=stamp(second) + 900, join="fail")
     assert third.state["networks"][UUID]["failures"] == 3
-    assert world(tmp_path, now=2200 + 3599).outcome == "nothing-to-try"
-    fourth = world(tmp_path, now=2200 + 3600, join="fail")  # the third wait is 3600 s, and so is every later one
+    assert world(tmp_path, now=stamp(third) + 3599).outcome == "nothing-to-try"
+    fourth = world(tmp_path, now=stamp(third) + 3600, join="fail")  # the third wait is 3600 s, and so is every later one
     assert fourth.state["networks"][UUID]["failures"] == 4
-    assert world(tmp_path, now=5800 + 3599).outcome == "nothing-to-try"
-    assert world(tmp_path, now=5800 + 3600).outcome == "joined"
+    assert world(tmp_path, now=stamp(fourth) + 3599).outcome == "nothing-to-try"
+    assert world(tmp_path, now=stamp(fourth) + 3600).outcome == "joined"
+
+
+def test_the_backoff_counts_from_when_the_join_failed_not_from_when_the_run_began(tmp_path):
+    first = world(tmp_path, now=1000, join="fail", join_delay=2)  # the attempt takes the hotspot away for a while
+    stamped = first.state["networks"][UUID]["last_failure"]
+    assert 1002 <= stamped < 1030
+    quiet = world(tmp_path, now=1000 + 300)  # the next timer run: the wait since the failure is under 300 s
+    assert quiet.outcome == "nothing-to-try" and ups(quiet) == []
+    assert world(tmp_path, now=stamped + 300, join="fail").outcome == "join-failed"  # the one after tries again
+
+
+def test_a_scan_that_fails_says_why_after_the_outcome(tmp_path):
+    result = world(tmp_path, iw_fail=("scan",))
+    assert result.stdout == "scan-failed (iw exit 240: command failed: Device or resource busy (-16))\n"
+    assert result.state["last_run"]["outcome"] == "scan-failed"
 
 
 def test_a_failed_join_is_one_join_per_run(tmp_path):
@@ -242,8 +262,8 @@ def test_a_failed_join_is_one_join_per_run(tmp_path):
 
 
 def test_a_join_that_works_clears_the_backoff(tmp_path):
-    world(tmp_path, now=1000, join="fail")
-    result = world(tmp_path, now=1300)
+    failed = world(tmp_path, now=1000, join="fail")
+    result = world(tmp_path, now=failed.state["networks"][UUID]["last_failure"] + 300)
     assert result.outcome == "joined" and result.state["networks"] == {}
 
 

@@ -18,7 +18,8 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
   connection add type wifi PROP VALUE ...        connection.id names the new profile
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
   connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
-                                                 state makes it exit 4 and leave nothing active (an idle radio)
+                                                 state makes it exit 4 and leave nothing active (an idle radio);
+                                                 "up_delay": {"<name>": SECONDS} makes it sleep first
   device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION)   state 100 and the first active profile, else 30 and "--";
                                                  "device_state": N in the state overrides the number
   radio wifi                                     the state's "radio", "enabled" unless set
@@ -28,6 +29,7 @@ Any -f field that isn't listed above is read as a profile property. REF is `NAME
 import json
 import os
 import sys
+import time
 import uuid
 
 STATE, LOG = os.environ["FAKE_NMCLI_STATE"], os.environ.get("FAKE_NMCLI_LOG")
@@ -147,6 +149,7 @@ def main(argv):
         state["active"] = [new_name if n == name else n for n in state.get("active", [])]
     elif verb == "up":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
+        time.sleep(state.get("up_delay", {}).get(name, 0))
         failed = state.get("up", {}).get(name) == "fail"
         state["active"] = [] if failed else [name]
         save(state)
