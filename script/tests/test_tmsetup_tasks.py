@@ -1128,9 +1128,34 @@ def test_the_firewall_unit_is_started_with_the_services():
         t for t in load_role_yaml("tasks/start_services.yml") if "tm-hotspot-firewall.service" in str(t)
     )
     systemd = task["ansible.builtin.systemd_service"]
-    assert systemd["name"] == "tm-hotspot-firewall.service"
+    assert systemd["name"] == "{{ item }}"
+    assert "tm-hotspot-firewall.service" in task["loop"]
     assert systemd["state"] == "started"
     assert systemd["enabled"] is True
+
+
+def test_the_retry_timer_is_enabled_and_started_with_the_firewall():
+    task = next(
+        t for t in load_role_yaml("tasks/start_services.yml") if "tm-hotspot-firewall.service" in str(t)
+    )
+    assert task["loop"] == ["tm-hotspot-firewall.service", "tm-network-retry.timer"]
+    assert task["ansible.builtin.systemd_service"]["daemon_reload"] is True
+    assert task["ansible.builtin.systemd_service"]["enabled"] is True
+
+
+def test_the_retry_script_and_its_units_are_installed_by_the_wifi_tasks():
+    tasks = wifi_task_list()
+    names = [t["name"] for t in tasks]
+    script = tasks[names.index("TMSetup - WiFi Setup - Copy the Wi-Fi retry script")]["ansible.builtin.copy"]
+    assert script["src"] == "tm-control/jobs/tm-network-retry"
+    assert script["dest"] == "{{ tmsetup_libexec_dir }}/tm-network-retry"
+    assert (script["owner"], script["group"], script["mode"]) == ("root", "root", "0755")
+    units = tasks[names.index("TMSetup - WiFi Setup - Install the Wi-Fi retry units")]
+    assert units["loop"] == ["tm-network-retry.service", "tm-network-retry.timer"]
+    template = units["ansible.builtin.template"]
+    assert template["src"] == "network/{{ item }}.j2" and template["dest"] == "/etc/systemd/system/{{ item }}"
+    for item in units["loop"]:
+        assert (ROLE / "templates/network" / f"{item}.j2").is_file()
 
 
 def test_a_changed_firewall_file_reloads_rather_than_restarts():

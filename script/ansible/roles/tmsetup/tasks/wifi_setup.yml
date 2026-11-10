@@ -147,6 +147,29 @@
     group: root
     mode: '0755'
 
+# Moves the radio between a saved network and the hotspot. The timer is enabled and started with the services
+# (start_services.yml), which daemon-reloads for these two units.
+- name: TMSetup - WiFi Setup - Copy the Wi-Fi retry script
+  become: true
+  ansible.builtin.copy:
+    src: tm-control/jobs/tm-network-retry
+    dest: '{{ tmsetup_libexec_dir }}/tm-network-retry'
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: TMSetup - WiFi Setup - Install the Wi-Fi retry units
+  become: true
+  loop:
+    - tm-network-retry.service
+    - tm-network-retry.timer
+  ansible.builtin.template:
+    src: 'network/{{ item }}.j2'
+    dest: '/etc/systemd/system/{{ item }}'
+    owner: root
+    group: root
+    mode: '0644'
+
 # Prints one JSON line. It writes the hotspot password to the password file, so the output is hidden. A refusal is one
 # sentence on stderr with no password in it, which the next task shows.
 - name: TMSetup - WiFi Setup - Create or adopt the hotspot

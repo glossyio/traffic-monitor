@@ -14,7 +14,12 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
   [-t] [-s] -g PROPS connection show REF         one line per property, empty when unset; psk only with -s
   connection add type wifi PROP VALUE ...        connection.id names the new profile
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
-REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
+  connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
+                                                 state makes it exit 4 and leave nothing active (an idle radio)
+  device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION)   state 100 and the first active profile, else 30 and "--";
+                                                 "device_state": N in the state overrides the number
+  radio wifi                                     the state's "radio", "enabled" unless set
+Any -f field that isn't listed above is read as a profile property. REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
 """
 
 import json
@@ -25,7 +30,9 @@ import uuid
 STATE, LOG = os.environ["FAKE_NMCLI_STATE"], os.environ.get("FAKE_NMCLI_LOG")
 LISTED = {"UUID": "connection.uuid", "TYPE": "connection.type", "AUTOCONNECT": "connection.autoconnect",
           "TIMESTAMP": "connection.timestamp"}
-DEFAULTS = {"connection.type": "802-11-wireless", "connection.autoconnect": "yes", "connection.timestamp": "0"}
+DEFAULTS = {"connection.type": "802-11-wireless", "connection.autoconnect": "yes", "connection.timestamp": "0",
+            "connection.autoconnect-priority": "0", "802-11-wireless.mode": "infrastructure",
+            "802-11-wireless.hidden": "no"}
 
 
 def escape(value):
@@ -72,16 +79,18 @@ def main(argv):
     flags, positional, fields, index = set(), [], None, 0
     while index < len(argv):
         arg = argv[index]
-        if arg in ("-g", "-f"):
+        if arg == "--wait":  # a global option with a value; the fake never waits
+            index += 1
+        elif arg in ("-g", "-f"):
             fields, index = (arg, argv[index + 1]), index + 1
         elif arg == "--active" or (arg.startswith("-") and not positional):  # later, "-100" is a value
             flags.add(arg)
         else:
             positional.append(arg)
         index += 1
-    if positional[:1] != ["connection"] or len(positional) < 2:
-        die(2, "Error: only `connection` commands are faked.")
-    verb, rest = positional[1], positional[2:]
+    if positional[:1] not in (["connection"], ["device"], ["radio"]) or len(positional) < 2:
+        die(2, "Error: only `connection`, `device show` and `radio wifi` are faked.")
+    group, verb, rest = positional[0], positional[1], positional[2:]
     log, hide = [], False
     for arg in argv:
         log.append("***" if hide else arg)
@@ -93,6 +102,18 @@ def main(argv):
     if verb in state.get("fail", []):
         die(4, "Error: simulated failure of: " + " ".join(argv))
 
+    if group == "radio" and verb == "wifi":
+        print(state.get("radio", "enabled"))
+        return
+    if group == "device" and verb == "show":
+        active = state.get("active", [])
+        number = state.get("device_state", 100 if active else 30)
+        values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--"}
+        for key in fields[1].split(","):
+            print(f"{key}:{escape(values[key])}")
+        return
+    if group != "connection":
+        die(2, f"Error: `{group} {verb}` is not faked.")
     if verb == "show" and not rest:
         if "--active" in flags:
             names = state.get("active", [])
@@ -101,7 +122,7 @@ def main(argv):
         for name in names:
             props = state["profiles"].get(name, {})
             wanted = fields[1].split(",") if fields else ["NAME"]
-            print(":".join(escape(name if f == "NAME" else value_of(name, props, LISTED[f])) for f in wanted))
+            print(":".join(escape(name if f == "NAME" else value_of(name, props, LISTED.get(f, f))) for f in wanted))
     elif verb == "show":
         name = find(state, rest)
         props = state["profiles"][name]
@@ -117,6 +138,13 @@ def main(argv):
         props.update(changes)
         state["profiles"][new_name] = props
         state["active"] = [new_name if n == name else n for n in state.get("active", [])]
+    elif verb == "up":
+        name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
+        failed = state.get("up", {}).get(name) == "fail"
+        state["active"] = [] if failed else [name]
+        save(state)
+        if failed:
+            die(4, f"Error: Connection activation failed for '{name}'.")
     elif verb == "add":
         changes = pairs(rest)
         if changes.pop("type", None) != "wifi" or "connection.id" not in changes:

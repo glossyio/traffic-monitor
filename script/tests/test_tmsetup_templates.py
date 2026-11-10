@@ -1026,3 +1026,31 @@ def test_the_firewall_unit_loads_before_networkmanager():
 def test_every_name_on_the_hotspot_resolves_to_the_unit():
     text = render(NETWORK + "tm-hotspot-dns.conf.j2", **hotspot_vars())
     assert "address=/#/10.42.0.1" in text.splitlines()
+
+
+def retry_unit(name, **extra):
+    variables = {**hotspot_vars(), "tmsetup_hotspot_profile": "tm-hotspot", "tmsetup_libexec_dir": "/usr/local/libexec/x"}
+    return render(NETWORK + name, **variables, **extra).splitlines()
+
+
+def test_the_retry_runs_after_boot_and_every_five_minutes():
+    lines = retry_unit("tm-network-retry.timer.j2")
+    assert "OnBootSec=90s" in lines
+    assert "OnUnitActiveSec=5min" in lines
+    assert "AccuracySec=10s" in lines
+    assert "WantedBy=timers.target" in lines
+
+
+def test_the_retry_keeps_its_state_between_runs():
+    lines = retry_unit("tm-network-retry.service.j2")
+    assert "RuntimeDirectory=traffic-monitor" in lines
+    assert "RuntimeDirectoryPreserve=yes" in lines
+    assert "Type=oneshot" in lines
+    assert "StartLimitIntervalSec=0" in lines
+
+
+def test_the_retry_runs_the_root_owned_copy_with_the_system_python():
+    lines = retry_unit("tm-network-retry.service.j2")
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/x/tm-network-retry" in lines
+    assert "Environment=TM_WIFI_DEVICE=wlan0 TM_HOTSPOT_PROFILE=tm-hotspot" in lines
+    assert "After=NetworkManager.service" in lines
