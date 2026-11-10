@@ -1181,3 +1181,15 @@ def test_nothing_parses_the_helpers_output_when_it_refused():
     assert evaluate("{{ " + helper["changed_when"] + " }}", tmsetup_wifi_hotspot_register=ok) is True
     radio = wifi_tasks()[RADIO_TASK]["when"]
     assert radio[0] == "tmsetup_wifi_hotspot_register.rc == 0"
+
+
+def test_the_hotspots_dns_directory_is_created_before_the_dns_file():
+    tasks = wifi_task_list()
+    names = [t["name"] for t in tasks]
+    made = tasks[names.index("TMSetup - WiFi Setup - Create the hotspot's DNS directory")]
+    directory = made["ansible.builtin.file"]
+    assert directory["path"] == "/etc/NetworkManager/dnsmasq-shared.d"
+    assert directory["state"] == "directory"
+    assert (directory["owner"], directory["group"], directory["mode"]) == ("root", "root", "0755")
+    assert made["become"] is True
+    assert names.index(made["name"]) < names.index("TMSetup - WiFi Setup - Make every name on the hotspot resolve to this device")

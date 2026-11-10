@@ -119,6 +119,15 @@
     name: tm-hotspot-firewall.service
     state: started
 
+- name: TMSetup - WiFi Setup - Create the hotspot's DNS directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dnsmasq-shared.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: TMSetup - WiFi Setup - Make every name on the hotspot resolve to this device
   become: true
   ansible.builtin.template:
