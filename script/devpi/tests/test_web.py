@@ -668,6 +668,19 @@ def test_status_report_agrees_with_the_inventory(address, expect, admin_session)
     assert not problems, "status checks that don't match the inventory: " + "; ".join(problems)
 
 
+NETWORK_CHECKS = ["network.hotspot", "network.wifi", "network.internet", "network.wifi_country"]
+
+
+def test_the_status_report_has_the_network_checks(address, admin_session):
+    """The Network group has exactly its four checks. None is unknown on a healthy unit: a check that can't read its
+    source (NetworkManager, iw) says unknown, so this catches a sandbox or permission that stops it."""
+    checks = status_checks(address, admin_session)
+    network = {check_id: status for check_id, (status, _) in checks.items() if check_id.startswith("network.")}
+    assert sorted(network) == sorted(NETWORK_CHECKS), f"the network checks are {sorted(network)}"
+    unknown = {check_id: checks[check_id][1] for check_id, status in network.items() if status == "unknown"}
+    assert not unknown, f"network checks that are unknown: {unknown}"
+
+
 # require_admin's refusal (tm_control/modules/auth/deps.py), which the cross-site check's 403 doesn't say
 ADMIN_ONLY = "Only an admin can do this."
 VIEWER_ACTIONS = [
