@@ -1,5 +1,31 @@
 ---
 # tmsetup wifi setup tasks
+- name: TMSetup - WiFi Setup - Install the Wi-Fi tools
+  become: true
+  ansible.builtin.apt:
+    name: "{{ tmsetup_wifi_packages }}"
+    state: present
+
+- name: TMSetup - WiFi Setup - Read the Wi-Fi country
+  become: true
+  ansible.builtin.command: raspi-config nonint get_wifi_country
+  register: tmsetup_wifi_country_register
+  changed_when: false
+  failed_when: false
+
+# The country given with -w, else the one the device has, else US. The change applies at once; no reboot.
+- name: TMSetup - WiFi Setup - Set the Wi-Fi country
+  become: true
+  ansible.builtin.command: raspi-config nonint do_wifi_country {{ tmsetup_wifi_country_wanted }}
+  vars:
+    tmsetup_wifi_country_wanted: >-
+      {{ (tmsetup_wifi_country | upper) if (tmsetup_wifi_country | length > 0)
+      else ((tmsetup_wifi_country_register.stdout | trim | upper)
+      if (tmsetup_wifi_country_register.rc == 0 and (tmsetup_wifi_country_register.stdout | trim | length > 0))
+      else 'US') }}
+  when: tmsetup_wifi_country_wanted != (tmsetup_wifi_country_register.stdout | trim | upper)
+  changed_when: true
+
 - name: TMSetup - WiFi Setup - Copy wifi powersave config
   become: true
   ansible.builtin.copy:

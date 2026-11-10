@@ -27,6 +27,7 @@ _CONFIRM=false
 _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
 _MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
+_WIFI_COUNTRY=''
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy" "tm-control")
 declare -a _VALID_CUSTOM_VARS=("plate_recognizer" "mqtt_lan")
 declare -a _CUSTOM_VARS=()
@@ -55,6 +56,7 @@ printf "  %-20s%s\n" \
   "-T" "Get a list of available tags and exit" \
   "-u" "Perform system UPGRADE (apt full-upgrade) as part of installation" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
+  "-w CODE" "Set the Wi-Fi COUNTRY, a two-letter code (asked for when the device has none; default US)" \
   "-y" "Assume YES to all prompts including reboot" \
   "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)" \
   "-C BOOL1[,BOOL2]" "Set custom boolean variables (comma‑separated) prefixed with tmsetup_bool_"
@@ -202,9 +204,29 @@ _refuse_root() { # Stop if run as root: the install records who ran it, and the 
   fi
 }
 
+_ask_wifi_country() { # Ask for the Wi-Fi country when this device has none and the run touches Wi-Fi
+  local answer
+  [[ -n "${_WIFI_COUNTRY}" || "${_CONFIRM}" == true ]] && return 0
+  [[ " ${_EXTRA_ARGS} " == *" --tags "* && " ${_EXTRA_ARGS} " != *" --tags wifi "* ]] && return 0
+  iw reg get 2>/dev/null | grep -Eq '^country [A-Z]{2}:' && return 0
+  printf "A Wi-Fi hotspot needs to know which country it is in.\n"
+  while true; do
+    read -r -p "Wi-Fi country code [US]: " answer
+    if [[ -z "${answer}" ]]; then
+      return 0
+    elif [[ "${answer}" =~ ^[A-Za-z]{2}$ ]]; then
+      _WIFI_COUNTRY="${answer^^}"
+      _add_var tmsetup_wifi_country "${_WIFI_COUNTRY}"
+      return 0
+    fi
+    printf "Enter a two-letter code such as US or GB, or press Enter for US.\n"
+  done
+}
+
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
   _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  _ask_wifi_country
   # Check before anything uses sudo; once it caches a password, sudo -n would pass.
   # Without a terminal Ansible can't ask, so skip the check and let a failed run print the -K hint.
   if [[ -t 0 && " ${_EXTRA_ARGS} " != *" -K "* ]] && ! sudo -n true 2>/dev/null; then
@@ -271,7 +293,7 @@ _tmsetup_remote(){ # Installation on Remote hosts
 _refuse_root
 
 # Collect command-line options
-while getopts ":fhkKTuvya:d:g:H:l:L:o:t:z:C:" opt;
+while getopts ":fhkKTuvya:d:g:H:l:L:o:t:w:z:C:" opt;
 do
   case ${opt} in
     a) # Add customer argumnet to ansible-playbook
@@ -329,6 +351,14 @@ do
       ;;
     y) # Ignore confirmation requests
       _CONFIRM=true
+      ;;
+    w) # Set the Wi-Fi COUNTRY
+      if [[ ! "${OPTARG}" =~ ^[A-Za-z]{2}$ ]]; then
+        printf "Invalid Wi-Fi country: %s. Use a two-letter code such as US or GB.\n" "${OPTARG}"
+        exit 1
+      fi
+      _WIFI_COUNTRY="${OPTARG^^}"
+      _add_var tmsetup_wifi_country "${_WIFI_COUNTRY}"
       ;;
     z) # Set Time Zone
       _add_var tmsetup_timezone "${OPTARG}"

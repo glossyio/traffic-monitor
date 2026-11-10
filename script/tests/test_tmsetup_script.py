@@ -46,3 +46,23 @@ def test_a_normal_user_gets_past_the_root_check(tmp_path):
     result = run(["bash", str(SCRIPT), "-T"], tmp_path)
     assert result.returncode == 2 and "Valid Tags" in result.stdout
     assert "normal user" not in result.stdout
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="runs as a normal user")
+def test_a_wifi_country_must_be_two_letters(tmp_path):
+    result = run(["bash", str(SCRIPT), "-w", "USA", "-T"], tmp_path)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Invalid Wi-Fi country: USA" in result.stdout
+    assert "Valid Tags" not in result.stdout
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="runs as a normal user")
+def test_a_two_letter_wifi_country_is_accepted(tmp_path):
+    result = run(["bash", str(SCRIPT), "-w", "gb", "-T"], tmp_path)
+    assert result.returncode == 2 and "Valid Tags" in result.stdout
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="runs as a normal user")
+def test_usage_lists_the_wifi_country_option(tmp_path):
+    result = run(["bash", str(SCRIPT), "-h"], tmp_path)
+    assert "-w CODE" in result.stdout

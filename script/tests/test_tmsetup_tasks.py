@@ -1008,3 +1008,33 @@ def test_coral_usb_probe_matches_both_usb_ids(line, found):
     script = f'lsusb() {{ printf "%s\\n" "$LSUSB_LINE"; }}\n{check_exists} >/dev/null'
     result = subprocess.run(["bash", "-c", script], env={"LSUSB_LINE": line, "PATH": "/usr/bin:/bin"}, check=False)
     assert (result.returncode == 0) is found
+
+
+def wifi_tasks():
+    return {task["name"]: task for task in load_role_yaml("tasks/wifi_setup.yml")}
+
+
+def wanted_country(given, read_rc, read_stdout):
+    task = wifi_tasks()["TMSetup - WiFi Setup - Set the Wi-Fi country"]
+    return evaluate(
+        task["vars"]["tmsetup_wifi_country_wanted"],
+        tmsetup_wifi_country=given,
+        tmsetup_wifi_country_register={"rc": read_rc, "stdout": read_stdout},
+    )
+
+
+def test_a_given_country_wins_and_is_upper_cased():
+    assert wanted_country("gb", 0, "US") == "GB"
+
+
+def test_the_devices_own_country_is_kept():
+    assert wanted_country("", 0, "DE") == "DE"
+
+
+def test_a_device_without_a_country_gets_us():
+    assert wanted_country("", 1, "") == "US"
+
+
+def test_the_wifi_tools_are_installed_before_anything_uses_them():
+    names = list(wifi_tasks())
+    assert names[0] == "TMSetup - WiFi Setup - Install the Wi-Fi tools"
