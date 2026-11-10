@@ -175,6 +175,9 @@ data, an "Add a viewer" form, and the list of accounts, each viewer with a menu 
   such as "Check that this phone is still on the device's network" when the device doesn't answer.
 - Results appear next to the form that caused them and stay there, rather than in a toast that disappears.
 - Sentence case, no exclamation marks, no apologies.
+- On the unit's own hotspot, the login and setup pages open with a tonal info note (`HotspotNote.vue`): no internet,
+  and the `.local` address to open in Safari on an iPhone. The address is text, not a link, because a link would open
+  inside the phone's sign-in window.
 
 ### Principles
 

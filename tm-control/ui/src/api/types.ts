@@ -14,6 +14,7 @@ export interface SetupStatus {
   claimed: boolean
   eula: { version: string; accepted: boolean }
   theme: { font: string; colors: Record<string, string> }
+  hotspot: { local_name: string } | null // set when the page came over the unit's hotspot
 }
 
 // GET /auth/session
