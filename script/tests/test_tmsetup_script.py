@@ -102,3 +102,14 @@ def test_the_card_is_shown_only_after_a_successful_local_run():
     assert "/usr/local/bin/tm-control" in function and "( : > /dev/tty )" in function
     assert "Show the card any time with: sudo tm-control card" in function
     assert "was shown on the terminal and is not in this log" in function
+
+
+def test_a_successful_remote_run_says_how_to_show_the_card_without_showing_it():
+    text = SCRIPT.read_text()
+    remote = text[text.index("_tmsetup_remote(){"):text.index("### Start of MAIN")]
+    printed = remote.index("Show the card any time with: sudo tm-control card on the device.")
+    assert remote.index('_print_result "${_EXIT_STATUS}"') < printed
+    assert 'if [[ "${_EXIT_STATUS}" -eq 0 ]]; then' in remote[printed - 200:printed]
+    # a pointer only: the remote branch never runs the card, over ssh or otherwise
+    assert "_show_card" not in remote
+    assert not [line for line in remote.splitlines() if "tm-control card" in line and "printf" not in line]

@@ -302,6 +302,10 @@ _tmsetup_remote(){ # Installation on Remote hosts
   cd "${_START_DIR}"
   printf "\n\n"
   _print_result "${_EXIT_STATUS}"
+  # Only a pointer: a remote run never reads the card, so no secret passes through this log
+  if [[ "${_EXIT_STATUS}" -eq 0 ]]; then
+    printf "Show the card any time with: sudo tm-control card on the device.\n"
+  fi
   return ${_EXIT_STATUS}
 }
 
