@@ -101,7 +101,7 @@ def test_the_retry_timer_is_waiting(host):
 
 def test_the_wifi_country_is_set(host):
     """The regulatory domain is a real country, not the world domain (00) a radio uses with none set."""
-    output = host.check_output("iw reg get")
+    output = host.check_output("/usr/sbin/iw reg get")
     countries = re.findall(r"^country ([A-Z0-9]{2}):", output, re.MULTILINE)
     assert countries, f"iw reg get names no country: {output.strip()[:200]}"
     assert countries[0] != "00", "the Wi-Fi country is 00 (not set): run tmsetup.sh -t wifi -w <country>"

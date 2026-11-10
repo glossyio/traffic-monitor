@@ -22,6 +22,7 @@ IW = Path(__file__).resolve().parent / "fixtures" / "fake_iw.py"
 UUID = "11111111-1111-4111-8111-111111111111"
 OTHER = "22222222-2222-4222-8222-222222222222"
 THIRD = "33333333-3333-4333-8333-333333333333"
+EDGE = 1e-6  # last_failure is a float: a run "exactly" at a boundary must be a hair past it, or (s + 300) - s can come out under 300
 PHONE = "02:aa:bb:cc:dd:ee"
 HOTSPOT = {"802-11-wireless.mode": "ap", "connection.autoconnect": "yes", "connection.autoconnect-priority": "-100"}
 
@@ -225,16 +226,16 @@ def test_a_failed_join_backs_off_and_the_hotspot_returns(tmp_path):
     quiet = world(tmp_path, now=stamp(first) + 299)
     assert quiet.outcome == "nothing-to-try" and quiet.iw == [["dev", "wlan0", "station", "dump"]]  # no scan
     assert ups(quiet) == []
-    second = world(tmp_path, now=stamp(first) + 300, join="fail")
+    second = world(tmp_path, now=stamp(first) + 300 + EDGE, join="fail")
     assert second.outcome == "join-failed" and second.state["networks"][UUID]["failures"] == 2
     assert world(tmp_path, now=stamp(second) + 899).outcome == "nothing-to-try"
-    third = world(tmp_path, now=stamp(second) + 900, join="fail")
+    third = world(tmp_path, now=stamp(second) + 900 + EDGE, join="fail")
     assert third.state["networks"][UUID]["failures"] == 3
     assert world(tmp_path, now=stamp(third) + 3599).outcome == "nothing-to-try"
-    fourth = world(tmp_path, now=stamp(third) + 3600, join="fail")  # the third wait is 3600 s, and so is every later one
+    fourth = world(tmp_path, now=stamp(third) + 3600 + EDGE, join="fail")  # the third wait is 3600 s, and so is every later one
     assert fourth.state["networks"][UUID]["failures"] == 4
     assert world(tmp_path, now=stamp(fourth) + 3599).outcome == "nothing-to-try"
-    assert world(tmp_path, now=stamp(fourth) + 3600).outcome == "joined"
+    assert world(tmp_path, now=stamp(fourth) + 3600 + EDGE).outcome == "joined"
 
 
 def test_the_backoff_counts_from_when_the_join_failed_not_from_when_the_run_began(tmp_path):
@@ -243,7 +244,7 @@ def test_the_backoff_counts_from_when_the_join_failed_not_from_when_the_run_bega
     assert 1002 <= stamped < 1030
     quiet = world(tmp_path, now=1000 + 300)  # the next timer run: the wait since the failure is under 300 s
     assert quiet.outcome == "nothing-to-try" and ups(quiet) == []
-    assert world(tmp_path, now=stamped + 300, join="fail").outcome == "join-failed"  # the one after tries again
+    assert world(tmp_path, now=stamped + 300 + EDGE, join="fail").outcome == "join-failed"  # the one after tries again
 
 
 def test_a_scan_that_fails_says_why_after_the_outcome(tmp_path):
@@ -263,7 +264,7 @@ def test_a_failed_join_is_one_join_per_run(tmp_path):
 
 def test_a_join_that_works_clears_the_backoff(tmp_path):
     failed = world(tmp_path, now=1000, join="fail")
-    result = world(tmp_path, now=failed.state["networks"][UUID]["last_failure"] + 300)
+    result = world(tmp_path, now=failed.state["networks"][UUID]["last_failure"] + 300 + EDGE)
     assert result.outcome == "joined" and result.state["networks"] == {}
 
 
