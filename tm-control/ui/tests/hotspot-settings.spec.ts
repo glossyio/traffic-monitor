@@ -182,6 +182,29 @@ describe('the hotspot settings', () => {
     expect(wrapper.text()).not.toContain("The device didn't answer")
   })
 
+  it('says to rejoin when a poll of the job never gets an answer', async () => {
+    const hung = (request: Request) =>
+      new Promise<Response>((_, reject) => {
+        request.signal.addEventListener('abort', () => reject(new TypeError('The request was aborted')))
+      })
+    const { wrapper } = await open(NETWORK_STATE, { [JOB]: hung })
+    vi.useFakeTimers()
+    try {
+      await tap(wrapper, 'Change the hotspot name')
+      await typeInto(dialogField('New name'), 'TM-ROAD')
+      await clickInDialog('Change name')
+      expect(wrapper.text()).toContain('Saving. The hotspot is restarting.')
+      await vi.advanceTimersByTimeAsync(10_000)
+      await flushPromises()
+      expect(wrapper.text()).toContain(
+        'This page lost the unit, which is expected when your phone is on the hotspot. Join TM-ROAD again, then reload this page.',
+      )
+      expect(wrapper.text()).not.toContain('Saving.')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('says how to reach the unit when the page loses it after the hotspot is turned off', async () => {
     const { wrapper } = await open(NETWORK_STATE, {
       [JOB]: () => {
