@@ -319,9 +319,9 @@ class FakeNodeRed(NodeRed):
         except ConfigError:
             return  # as init-config: a file that doesn't load leaves the previous config in place
         self._deployment = config.deployment()
-        self._engine(self._deployment, config.sensors())
+        self._engine(self._deployment, config.sensors(), config.listed_sensors())
 
-    def _engine(self, place, sensors) -> None:
+    def _engine(self, place, sensors, listed) -> None:
         from tm_control.modules.location.coordinates import round_half_away
 
         places = {"none": None, "1": 1, "2": 2}[place.precision]
@@ -368,6 +368,11 @@ class FakeNodeRed(NodeRed):
                 insert(sensor, want_survey, want_bearing)
             elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
                 row.update(location(row["lat"], row["lon"], places))
+
+        if listed is not None:  # 7. a sensor the file no longer lists, on or off, ends its deployment
+            for row in self.rows:
+                if row["entryEndDateTime"] is None and (row["sensorType"], row["sensorName"]) not in listed:
+                    row["entryEndDateTime"] = now
 
     # the endpoints
 

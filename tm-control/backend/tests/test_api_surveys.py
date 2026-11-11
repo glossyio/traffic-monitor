@@ -782,3 +782,24 @@ def test_fake_nodered_follows_a_hand_edit_of_the_file(admin):
     path.write_text(path.read_text().replace("bearing: 'n'", "bearing: 'w'", 1))
     found = rows(admin, in_use)
     assert len(found) == 4 and sorted(row["bearing"] for row in found if row["ended"] is None) == ["w", "w"]
+
+
+def test_the_fake_engine_closes_a_removed_sensors_row(admin):
+    """As the flows' engine: a sensor config.yml no longer lists ends its deployment; one listed but off keeps it."""
+    in_use = first_place(admin)
+    before = {(row["sensor_type"], row["sensor_name"]): row for row in rows(admin, in_use)}
+    path = admin.app.state.config_path
+    camera = "        picam_h265:\n            enabled: true\n            camera_radar: TM_RADAR_SERIAL_PORT_00\n"
+    assert camera in path.read_text()
+    path.write_text(path.read_text().replace(camera, ""))  # leaves `cameras:` with nothing under it
+    admin.app.state.nodered.after_config_write()
+    after = {row["id"]: row for row in rows(admin, in_use)}
+    assert set(after) == {row["id"] for row in before.values()}  # no new row starts
+    assert after[before[CAMERA]["id"]]["ended"] is not None
+    assert after[before[RADAR]["id"]]["ended"] is None
+
+    off = "        TM_RADAR_SERIAL_PORT_00:\n            enabled: true\n"
+    assert off in path.read_text()
+    path.write_text(path.read_text().replace(off, "        TM_RADAR_SERIAL_PORT_00:\n            enabled: false\n"))
+    admin.app.state.nodered.after_config_write()
+    assert rows(admin, in_use) == list(after.values())

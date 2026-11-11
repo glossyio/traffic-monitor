@@ -567,7 +567,8 @@ def test_each_config_load_resets_the_status_and_reads_the_schema_version():
     assert set(catch["scope"]) == {CONFIG_FILE_IN, CONFIG_YAML, INIT_DEFAULTS}
     assert catch["wires"] == [[named(flows, "tm-internal: record config error")["id"]]]
     loaded = named(flows, "tm-internal: config loaded")
-    assert by_id[SET_CONFIG]["wires"] == [["ac8b2de05ec27001", loaded["id"]]]
+    pickers = [node_id for node_id in by_id[SET_CONFIG]["wires"][0] if by_id[node_id]["type"] == "link out"]
+    assert by_id[SET_CONFIG]["wires"] == [["ac8b2de05ec27001", loaded["id"], *pickers]] and len(pickers) == 1
 
 
 def test_radar_status_follows_the_four_serial_nodes():
@@ -1055,6 +1056,34 @@ def test_engine_skips_disabled_sensors():
 
 
 @needs_node
+def test_engine_closes_the_row_of_a_sensor_that_left_the_file():
+    gone = open_row("cameras", "main_st", "n")
+    run = engine(engine_sensors(), [camera_row(), radar_row(), gone], ENGINE_PLACE)
+    assert [c["params"]["$id"] for c in run.close] == [gone["id"]] and run.insert == []
+    assert gone["id"] in {row["id"] for row in run.payload["updatedDeployment"]}
+    assert gone["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+@pytest.mark.parametrize("sensors", [None, "broken"])
+def test_engine_closes_nothing_without_a_sensors_object(sensors):
+    assert engine(sensors, [camera_row()], ENGINE_PLACE).written() == []
+
+
+@needs_node
+def test_engine_closes_an_empty_blocks_rows_and_keeps_an_empty_entrys_row():
+    """`cameras:` with nothing under it lists no camera; `main_st:` with nothing under it is a camera that is off."""
+    radars = engine_sensors()["radars"]
+    run = engine({"cameras": None, "radars": radars}, [camera_row(), radar_row()], ENGINE_PLACE)
+    assert [c["params"]["$id"] for c in run.close] == [camera_row()["id"]] and run.insert == []
+    off = open_row("cameras", "main_st", "n")
+    run = engine({"cameras": {"picam_h265": {"enabled": True, "deployment": {"bearing": "n"}}, "main_st": None},
+                  "radars": radars}, [camera_row(), radar_row(), off], ENGINE_PLACE)
+    assert run.written() == []
+    assert [text for level, text, _ in run.logged if level == "error"] == []
+
+
+@needs_node
 @pytest.mark.parametrize("row_bearing, sensor_bearing",
                          [(None, ""), ("", ""), ("N", "n"), ("n", "N"), ("null", ""), ("undefined", None),
                           (" NULL ", ""), ("Undefined", "null")],
@@ -1117,6 +1146,60 @@ def test_engine_wiring():
     group = by_id[engine_node["g"]]
     assert set(group["nodes"]) >= {target_id for output in engine_node["wires"] for target_id in output}
     assert not {"24efdc7f1231f7f0", "bc398ad5de3bd112"} & set(group["nodes"])
+
+
+# The camera pickers on the two dashboards: each tab's change node sets the options and the selection, and its
+# dropdown shows them. A start-up inject fills them once, and each config load fills them again.
+
+PICKERS = {  # tab: (start-up inject, change node, dropdown, the options property)
+    "ui-monitoring": ("e3b795e05d7650b2", "f50a7968e032532a", "bb08a223f0aaef0f", "options"),
+    "Dashboard 2 - Monitoring": ("22bc03eebc06aa57", "2e49ae46131b1b63", "3132d36d148e80d2", "ui_update.options"),
+}
+
+
+def test_the_pickers_refill_on_every_config_load():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    [link_out] = [by_id[node_id] for node_id in by_id[SET_CONFIG]["wires"][0] if by_id[node_id]["type"] == "link out"]
+    assert link_out["z"] == tab_id(flows, "init-config") and link_out["mode"] == "link"
+    assert link_out["id"] in by_id[link_out["g"]]["nodes"]
+    links_in = [by_id[node_id] for node_id in link_out["links"]]
+    assert sorted(link_in["z"] for link_in in links_in) == sorted(tab_id(flows, tab) for tab in PICKERS)
+    for tab, (inject, change, dropdown, _) in PICKERS.items():
+        [link_in] = [node for node in links_in if node["z"] == tab_id(flows, tab)]
+        assert link_in["type"] == "link in" and link_in["links"] == [link_out["id"]]
+        assert link_in["wires"] == [[change]]
+        assert link_in["id"] in by_id[by_id[change]["g"]]["nodes"]
+        assert change in by_id[inject]["wires"][0]  # the start-up fill stays
+        assert dropdown in by_id[change]["wires"][0]
+    for node_id in [link_out["id"], *link_out["links"]]:
+        assert re.fullmatch(r"[0-9a-f]{16}", node_id)
+
+
+def test_the_pickers_keep_a_selection_that_is_still_there_and_label_from_camera_labels():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for tab, (_, change, _, options_property) in PICKERS.items():
+        rules = {rule["p"]: rule for rule in by_id[change]["rules"]}
+        assert set(rules) == {"payload", options_property}
+        assert all(rule["t"] == "set" and rule["pt"] == "msg" and rule["tot"] == "jsonata" for rule in rules.values())
+        # the selection: the tab's own, while camera_labels still lists it; else the file's first camera
+        payload = rules["payload"]["to"]
+        assert '$flowContext("camera_selection")' in payload and '$keys($globalContext("camera_labels"))' in payload
+        assert '$keys($globalContext("config.sensors.cameras"))[0]' in payload
+        # the options: one per camera_labels entry, labelled from it, valued with the key, and always a list
+        options = " ".join(rules[options_property]["to"].split())
+        assert options.startswith("[") and options.endswith("]")
+        assert '$each($globalContext("camera_labels"), function($label, $key)' in options
+        assert "config.sensors.cameras" not in options
+
+    def options_of(tab):
+        _, change, _, options_property = PICKERS[tab]
+        [rule] = [rule for rule in by_id[change]["rules"] if rule["p"] == options_property]
+        return " ".join(rule["to"].split())
+
+    assert "{ $label: $key }" in options_of("ui-monitoring")  # ui_dropdown: {<label>: <value>}
+    assert '{ "label": $label, "value": $key }' in options_of("Dashboard 2 - Monitoring")  # ui-dropdown
 
 
 # The per-survey endpoints tm-control calls on loopback, each behind its own copy of the status endpoint's token check.

@@ -56,7 +56,7 @@ The [radar](radar-payload.md) tables are described on their own page. The two ta
 
 ### deployment
 
-A row for each combination of sensor, survey, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+A row for each combination of sensor, survey, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Removing a sensor's entry from `config.yml` ends its row; disabling the sensor doesn't. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
 
 | Column | Type | Meaning |
 |---|---|---|

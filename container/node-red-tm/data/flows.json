@@ -603,7 +603,8 @@
             "af02df2daa211e5b",
             "1feaed96b954867a",
             "946c6bc353743bc4",
-            "04c77d4233fbffd3"
+            "04c77d4233fbffd3",
+            "221dbfa7ced638a7"
         ],
         "x": 14,
         "y": 79,
@@ -853,7 +854,8 @@
             "eb7053718706968b",
             "3132d36d148e80d2",
             "95215b45c821d24a",
-            "fe681b9c50c9c5e2"
+            "fe681b9c50c9c5e2",
+            "2897b873aa552231"
         ],
         "x": 134,
         "y": 199,
@@ -1273,7 +1275,8 @@
             "b0252bd49dc8e61d",
             "94136e5a6f092bb6",
             "5ffb7c9c38b8c5b0",
-            "2fa46892748adc43"
+            "2fa46892748adc43",
+            "d77e24f671590710"
         ],
         "x": 74,
         "y": 259,
@@ -2554,7 +2557,8 @@
         "wires": [
             [
                 "ac8b2de05ec27001",
-                "2b50b0bfb900ff09"
+                "2b50b0bfb900ff09",
+                "d77e24f671590710"
             ]
         ]
     },
@@ -2694,7 +2698,7 @@
         "z": "3dae026ab340962a",
         "g": "8004ba7ad5a9bd83",
         "name": "deployment engine",
-        "func": "// msg.sensors: config.yml's sensors (sensorType.sensorName.properties)\n// msg.sqlActiveDeployments: every open deployment row, newest first per sensor\n// A deployment is one sensor at one survey facing one way. It starts when the survey id or the bearing changes,\n// never when the coordinates do. The place (survey_id, lat, lon, database_precision) is per unit: the engine reads\n// it from the top-level deployment block and takes only the bearing from each sensor.\n// Outputs: 1 close deployment, 2 insert deployment, 3 rewrite deployment, 4 the deployment rows for ThingsBoard\n\nconst place = global.get(\"config.deployment\") || {};\nconst precisionPlaces = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst precision = place.database_precision in precisionPlaces ? precisionPlaces[place.database_precision] : 2;  // the default, as init config defaults\nconst deviceName = env.get(\"TM_RPI_SN\") || null;\nconst now = Date.now();\n\n// half away from zero, as SQLite's ROUND (toFixed rounds the magnitude; Math.round would round -0.5 up)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\nfunction coordinate(value, key) {\n    if (typeof value === \"number\" && Number.isFinite(value)) {\n        return value;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    if (value !== undefined && value !== null && value !== '') {\n        node.error(`Node-RED config.yml top-level deployment.${key} is not a number; storing no location`);\n    }\n    return null;\n}\n\n// lat, lon and location_precision as tmdb stores them: all three, or all NULL when either coordinate is missing\nfunction location(lat, lon, places) {\n    if (lat === null || lon === null || places === null) {\n        return { lat: null, lon: null, location_precision: null };\n    }\n    return { lat: round(lat, places), lon: round(lon, places), location_precision: places };\n}\n\n// a blank bearing ('', null, missing, or the strings 'null' and 'undefined' that releases\n// 0.6.0 to 0.7.1 stored for a blank one) is '', and bearings compare trimmed and without case\nfunction bearingOf(value) {\n    const bearing = (typeof value === \"string\") ? value.trim().toLowerCase() : '';\n    return (bearing === 'null' || bearing === 'undefined') ? '' : bearing;\n}\n\n// a bearing stored as the string 'null' or 'undefined', which a rewrite stores as ''\nfunction legacyBearing(value) {\n    return typeof value === \"string\" && value.trim() !== '' && bearingOf(value) === '';\n}\n\n// rank of a precision: NULL (nothing stored) is the coarsest\nfunction fineness(places) {\n    return places === null || places === undefined ? 0 : places;\n}\n\nconst stored = location(coordinate(place.lat, \"lat\"), coordinate(place.lon, \"lon\"), precision);\n\nconst openRows = {};\nfor (const row of msg.sqlActiveDeployments || []) {\n    const key = `${row.sensorType}.${row.sensorName}`;\n    (openRows[key] = openRows[key] || []).push({ ...row, entryEndDateTime: null });\n}\n\nconst close = [];\nconst insert = [];\nconst rewrite = [];\nconst updatedDeployment = [];\nconst currentDeployment = [];\n\nfunction closeRow(row) {\n    close.push({ params: { $ended: now, $id: row.id } });\n    updatedDeployment.push({ ...row, entryEndDateTime: now });\n}\n\nfunction insertRow(sensorType, sensorName, want) {\n    const id = now + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n    const row = {\n        id, entryStartDateTime: now, entryEndDateTime: null, ...stored, bearing: want.bearing,\n        sensorType, sensorName, deviceName, survey_id: want.survey_id,\n    };\n    insert.push({\n        params: {\n            $id: row.id, $started: row.entryStartDateTime, $lat: row.lat, $lon: row.lon, $bearing: row.bearing,\n            $sensorType: sensorType, $sensorName: sensorName, $deviceName: deviceName, $survey_id: row.survey_id,\n            $location_precision: row.location_precision,\n        }\n    });\n    return row;\n}\n\nfunction rewriteRow(row, survey_id, rowLocation) {\n    const bearing = legacyBearing(row.bearing) ? '' : row.bearing;\n    const rewritten = { ...row, survey_id, ...rowLocation, bearing };\n    rewrite.push({\n        params: {\n            $id: row.id, $survey_id: survey_id, $lat: rewritten.lat, $lon: rewritten.lon,\n            $location_precision: rewritten.location_precision, $bearing: bearing,\n        }\n    });\n    return rewritten;\n}\n\n// an open row that stays open: a precision coarser than the row's re-rounds the row's own coordinates (a finer one\n// waits for the next deployment), and a legacy bearing is stored as ''\nfunction keepRow(row) {\n    const lower = fineness(row.location_precision) > fineness(precision);\n    if (!lower && !legacyBearing(row.bearing)) {\n        return row;\n    }\n    const rowLocation = lower ? location(row.lat, row.lon, precision)\n        : { lat: row.lat, lon: row.lon, location_precision: row.location_precision };\n    return rewriteRow(row, row.survey_id, rowLocation);\n}\n\nfunction decide(sensorType, sensorName, want, open) {\n    const [row, ...older] = open;\n    // 1. one open row per sensor: close every row after the newest\n    older.forEach(closeRow);\n    // 2. no open row: start a deployment\n    if (!row) {\n        return insertRow(sensorType, sensorName, want);\n    }\n    const sameBearing = bearingOf(row.bearing) === want.bearing;\n    // 3. no survey in config.yml: keep the open row\n    if (want.survey_id === null) {\n        return keepRow(row);\n    }\n    // 4. a row from before any survey, facing the same way, belongs to this survey\n    if (row.survey_id === null && sameBearing) {\n        return rewriteRow(row, want.survey_id, stored);\n    }\n    // 5. a new survey or a new bearing: end the deployment and start another\n    if (row.survey_id !== want.survey_id || !sameBearing) {\n        closeRow(row);\n        return insertRow(sensorType, sensorName, want);\n    }\n    // 6. the same deployment\n    return keepRow(row);\n}\n\nfor (const [sensorType, sensors] of Object.entries(msg.sensors || {})) {\n    for (const [sensorName, sensor] of Object.entries(sensors)) {\n        if (sensor.enabled !== true) {\n            continue;\n        }\n        const want = {\n            survey_id: place.survey_id || null,\n            bearing: bearingOf((sensor.deployment || {}).bearing),\n        };\n        const open = (openRows[`${sensorType}.${sensorName}`] || [])\n            .sort((a, b) => b.entryStartDateTime - a.entryStartDateTime);\n        const current = decide(sensorType, sensorName, want, open);\n        currentDeployment.push(current);\n        global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, current.id);\n    }\n}\n\nglobal.set(\"tm_status.deployments\", currentDeployment);\n\nreturn [close, insert, rewrite, [{ payload: { updatedDeployment, currentDeployment } }]];\n",
+        "func": "// msg.sensors: config.yml's sensors (sensorType.sensorName.properties)\n// msg.sqlActiveDeployments: every open deployment row, newest first per sensor\n// A deployment is one sensor at one survey facing one way. It starts when the survey id or the bearing changes,\n// never when the coordinates do, and ends when the sensor leaves config.yml. The place (survey_id, lat, lon,\n// database_precision) is per unit: the engine reads it from the top-level deployment block and takes only the\n// bearing from each sensor.\n// Outputs: 1 close deployment, 2 insert deployment, 3 rewrite deployment, 4 the deployment rows for ThingsBoard\n\nconst place = global.get(\"config.deployment\") || {};\nconst precisionPlaces = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst precision = place.database_precision in precisionPlaces ? precisionPlaces[place.database_precision] : 2;  // the default, as init config defaults\nconst deviceName = env.get(\"TM_RPI_SN\") || null;\nconst now = Date.now();\n\n// half away from zero, as SQLite's ROUND (toFixed rounds the magnitude; Math.round would round -0.5 up)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\nfunction coordinate(value, key) {\n    if (typeof value === \"number\" && Number.isFinite(value)) {\n        return value;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    if (value !== undefined && value !== null && value !== '') {\n        node.error(`Node-RED config.yml top-level deployment.${key} is not a number; storing no location`);\n    }\n    return null;\n}\n\n// lat, lon and location_precision as tmdb stores them: all three, or all NULL when either coordinate is missing\nfunction location(lat, lon, places) {\n    if (lat === null || lon === null || places === null) {\n        return { lat: null, lon: null, location_precision: null };\n    }\n    return { lat: round(lat, places), lon: round(lon, places), location_precision: places };\n}\n\n// a blank bearing ('', null, missing, or the strings 'null' and 'undefined' that releases\n// 0.6.0 to 0.7.1 stored for a blank one) is '', and bearings compare trimmed and without case\nfunction bearingOf(value) {\n    const bearing = (typeof value === \"string\") ? value.trim().toLowerCase() : '';\n    return (bearing === 'null' || bearing === 'undefined') ? '' : bearing;\n}\n\n// a bearing stored as the string 'null' or 'undefined', which a rewrite stores as ''\nfunction legacyBearing(value) {\n    return typeof value === \"string\" && value.trim() !== '' && bearingOf(value) === '';\n}\n\n// rank of a precision: NULL (nothing stored) is the coarsest\nfunction fineness(places) {\n    return places === null || places === undefined ? 0 : places;\n}\n\nconst stored = location(coordinate(place.lat, \"lat\"), coordinate(place.lon, \"lon\"), precision);\n\nconst openRows = {};\nfor (const row of msg.sqlActiveDeployments || []) {\n    const key = `${row.sensorType}.${row.sensorName}`;\n    (openRows[key] = openRows[key] || []).push({ ...row, entryEndDateTime: null });\n}\n\nconst close = [];\nconst insert = [];\nconst rewrite = [];\nconst updatedDeployment = [];\nconst currentDeployment = [];\n\nfunction closeRow(row) {\n    close.push({ params: { $ended: now, $id: row.id } });\n    updatedDeployment.push({ ...row, entryEndDateTime: now });\n}\n\nfunction insertRow(sensorType, sensorName, want) {\n    const id = now + '-' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0') + '-d';\n    const row = {\n        id, entryStartDateTime: now, entryEndDateTime: null, ...stored, bearing: want.bearing,\n        sensorType, sensorName, deviceName, survey_id: want.survey_id,\n    };\n    insert.push({\n        params: {\n            $id: row.id, $started: row.entryStartDateTime, $lat: row.lat, $lon: row.lon, $bearing: row.bearing,\n            $sensorType: sensorType, $sensorName: sensorName, $deviceName: deviceName, $survey_id: row.survey_id,\n            $location_precision: row.location_precision,\n        }\n    });\n    return row;\n}\n\nfunction rewriteRow(row, survey_id, rowLocation) {\n    const bearing = legacyBearing(row.bearing) ? '' : row.bearing;\n    const rewritten = { ...row, survey_id, ...rowLocation, bearing };\n    rewrite.push({\n        params: {\n            $id: row.id, $survey_id: survey_id, $lat: rewritten.lat, $lon: rewritten.lon,\n            $location_precision: rewritten.location_precision, $bearing: bearing,\n        }\n    });\n    return rewritten;\n}\n\n// an open row that stays open: a precision coarser than the row's re-rounds the row's own coordinates (a finer one\n// waits for the next deployment), and a legacy bearing is stored as ''\nfunction keepRow(row) {\n    const lower = fineness(row.location_precision) > fineness(precision);\n    if (!lower && !legacyBearing(row.bearing)) {\n        return row;\n    }\n    const rowLocation = lower ? location(row.lat, row.lon, precision)\n        : { lat: row.lat, lon: row.lon, location_precision: row.location_precision };\n    return rewriteRow(row, row.survey_id, rowLocation);\n}\n\nfunction decide(sensorType, sensorName, want, open) {\n    const [row, ...older] = open;\n    // 1. one open row per sensor: close every row after the newest\n    older.forEach(closeRow);\n    // 2. no open row: start a deployment\n    if (!row) {\n        return insertRow(sensorType, sensorName, want);\n    }\n    const sameBearing = bearingOf(row.bearing) === want.bearing;\n    // 3. no survey in config.yml: keep the open row\n    if (want.survey_id === null) {\n        return keepRow(row);\n    }\n    // 4. a row from before any survey, facing the same way, belongs to this survey\n    if (row.survey_id === null && sameBearing) {\n        return rewriteRow(row, want.survey_id, stored);\n    }\n    // 5. a new survey or a new bearing: end the deployment and start another\n    if (row.survey_id !== want.survey_id || !sameBearing) {\n        closeRow(row);\n        return insertRow(sensorType, sensorName, want);\n    }\n    // 6. the same deployment\n    return keepRow(row);\n}\n\nfor (const [sensorType, sensors] of Object.entries(msg.sensors || {})) {\n    for (const [sensorName, sensor] of Object.entries(sensors || {})) {\n        if (!sensor || sensor.enabled !== true) {\n            continue;\n        }\n        const want = {\n            survey_id: place.survey_id || null,\n            bearing: bearingOf((sensor.deployment || {}).bearing),\n        };\n        const open = (openRows[`${sensorType}.${sensorName}`] || [])\n            .sort((a, b) => b.entryStartDateTime - a.entryStartDateTime);\n        const current = decide(sensorType, sensorName, want, open);\n        currentDeployment.push(current);\n        global.set(`config.sensors.${sensorType}.${sensorName}.deployment.id`, current.id);\n    }\n}\n\n// 7. a sensor no longer listed under its type (an entry with nothing under it, or one that is off, is still listed):\n// end its deployment. Without a sensors object nothing is closed.\nconst isMapping = (value) => value !== null && typeof value === \"object\" && !Array.isArray(value);\nif (isMapping(msg.sensors)) {\n    for (const rows of Object.values(openRows)) {\n        const listed = msg.sensors[rows[0].sensorType];\n        if (!isMapping(listed) || !Object.prototype.hasOwnProperty.call(listed, rows[0].sensorName)) {\n            rows.forEach(closeRow);\n        }\n    }\n}\n\nglobal.set(\"tm_status.deployments\", currentDeployment);\n\nreturn [close, insert, rewrite, [{ payload: { updatedDeployment, currentDeployment } }]];\n",
         "outputs": 4,
         "timeout": 0,
         "noerr": 0,
@@ -2907,6 +2911,21 @@
         ],
         "x": 865,
         "y": 340,
+        "wires": []
+    },
+    {
+        "id": "d77e24f671590710",
+        "type": "link out",
+        "z": "3dae026ab340962a",
+        "g": "4bbb9e24b5507a00",
+        "name": "init-config camera pickers link out",
+        "mode": "link",
+        "links": [
+            "221dbfa7ced638a7",
+            "2897b873aa552231"
+        ],
+        "x": 865,
+        "y": 380,
         "wires": []
     },
     {
@@ -11033,20 +11052,20 @@
         "type": "change",
         "z": "28627559bebdc324",
         "g": "2df66c6bc991dbf4",
-        "name": "set cameras, default to index 0",
+        "name": "set cameras, keep the selection or take the first",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
+                "to": "(\n    $selected := $flowContext(\"camera_selection\");\n    $selected in $keys($globalContext(\"camera_labels\")) ? $selected : $keys($globalContext(\"config.sensors.cameras\"))[0]\n)",
                 "tot": "jsonata"
             },
             {
                 "t": "set",
                 "p": "options",
                 "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))",
+                "to": "[$each($globalContext(\"camera_labels\"), function($label, $key) { { $label: $key } })]",
                 "tot": "jsonata"
             }
         ],
@@ -11061,6 +11080,23 @@
             [
                 "bb08a223f0aaef0f",
                 "59d0c8b142295eee"
+            ]
+        ]
+    },
+    {
+        "id": "221dbfa7ced638a7",
+        "type": "link in",
+        "z": "28627559bebdc324",
+        "g": "2df66c6bc991dbf4",
+        "name": "init-config camera pickers link in",
+        "links": [
+            "d77e24f671590710"
+        ],
+        "x": 425,
+        "y": 160,
+        "wires": [
+            [
+                "f50a7968e032532a"
             ]
         ]
     },
@@ -12345,20 +12381,20 @@
         "type": "change",
         "z": "0fa19dea799cc41d",
         "g": "89279ffabac66b61",
-        "name": "set cameras, default to index 0",
+        "name": "set cameras, keep the selection or take the first",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "$keys($globalContext(\"config.sensors.cameras\"))[0]",
+                "to": "(\n    $selected := $flowContext(\"camera_selection\");\n    $selected in $keys($globalContext(\"camera_labels\")) ? $selected : $keys($globalContext(\"config.sensors.cameras\"))[0]\n)",
                 "tot": "jsonata"
             },
             {
                 "t": "set",
                 "p": "ui_update.options",
                 "pt": "msg",
-                "to": "[\t   $keys(\t       $globalContext(\"config.sensors.cameras\")\t)\t]",
+                "to": "[$each($globalContext(\"camera_labels\"), function($label, $key) { { \"label\": $label, \"value\": $key } })]",
                 "tot": "jsonata"
             }
         ],
@@ -12373,6 +12409,23 @@
             [
                 "f3ebd7067c32beb0",
                 "3132d36d148e80d2"
+            ]
+        ]
+    },
+    {
+        "id": "2897b873aa552231",
+        "type": "link in",
+        "z": "0fa19dea799cc41d",
+        "g": "89279ffabac66b61",
+        "name": "init-config camera pickers link in",
+        "links": [
+            "d77e24f671590710"
+        ],
+        "x": 485,
+        "y": 280,
+        "wires": [
+            [
+                "2e49ae46131b1b63"
             ]
         ]
     },

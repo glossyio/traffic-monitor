@@ -163,6 +163,14 @@ class NodeRedConfig:
                 found.append(Bearing(sensor_type=sensor_type, sensor_name=str(name), bearing=bearing or ""))
         return found
 
+    def listed_sensors(self) -> set[tuple[str, str]] | None:
+        """(type, name) of every sensor the file lists under any type, on or off; None when `sensors` isn't a mapping,
+        and the engine then ends no deployment."""
+        sensors = self._file.data.get("sensors")
+        if not isinstance(sensors, Mapping):
+            return None
+        return {(str(sensor_type), str(name)) for sensor_type, block in sensors.items() for name in _mapping(block)}
+
     def blank_bearings(self) -> list[tuple[str, str]]:
         """(type, name) of every enabled sensor whose bearing, as the engine copies it down, is missing or empty; an
         invalid one, which sensors() also reads as "", isn't blank."""
