@@ -148,3 +148,114 @@ def test_a_failed_read_is_none_for_every_probe(nm, failure):
     else:
         nm.fail = failure
     assert network.devices() is None and network.link("eth0") is None and network.wifi_network("wlan0") is None
+
+
+LIST = ("NAME,UUID,TYPE,AUTOCONNECT,TIMESTAMP", "connection", "show")
+DETAILS = "802-11-wireless.mode,802-11-wireless.hidden,connection.autoconnect-priority,802-11-wireless.ssid"
+
+
+def saved(nm, rows, details):
+    """rows: the -t list as nmcli prints it; details: {uuid: (mode, hidden, priority, ssid)} as -g prints them."""
+    nm.answer(*LIST, out="".join(row + "\n" for row in rows))
+    for uuid, values in details.items():
+        nm.answer("-g", DETAILS, "connection", "show", "uuid", uuid, out="".join(v + "\n" for v in values))
+
+
+def test_saved_networks_come_in_the_units_order(nm):
+    saved(
+        nm,
+        [
+            "Phone:u1:802-11-wireless:yes:100",
+            "Depot:u2:802-11-wireless:yes:0",
+            "tm-hotspot:u3:802-11-wireless:yes:900",
+            "Home:u4:802-11-wireless:yes:500",
+        ],
+        {
+            "u1": ("infrastructure", "no", "0", "Phone"),
+            "u2": ("infrastructure", "yes", "2", "Depot"),
+            "u3": ("ap", "no", "0", "TM-AB12"),
+            "u4": ("infrastructure", "no", "0", "Home"),
+        },
+    )
+    found = network.saved_wifi()
+    assert [n.ssid for n in found] == ["Depot", "Home", "Phone"]  # priority 2, then newer, then older
+    assert found[0] == network.SavedWifi("u2", "Depot", "Depot", True, 2, 0, True)
+
+
+def test_the_hotspot_and_ethernet_are_not_saved_networks(nm):
+    saved(
+        nm,
+        ["tm-hotspot:u1:802-11-wireless:yes:5", "Wired connection 1:u2:802-3-ethernet:yes:6", "lo:u3:loopback:no:0"],
+        {"u1": ("ap", "no", "0", "TM-AB12")},
+    )
+    assert network.saved_wifi() == []
+
+
+def test_a_saved_name_with_a_colon_and_a_backslash_is_read_whole(nm):
+    saved(
+        nm,
+        ["Caf\\\\e\\: 2:u1:802-11-wireless:no:7"],
+        {"u1": ("infrastructure", "no", "-3", "Caf\\\\e\\: 2")},
+    )
+    [found] = network.saved_wifi()
+    assert found.ssid == "Caf\\e: 2" and found.profile == "Caf\\e: 2"
+    assert (found.autoconnect, found.priority, found.timestamp) == (False, -3, 7)
+
+
+def test_a_profile_without_a_name_of_its_own_uses_the_profiles(nm):
+    saved(nm, ["Depot:u1:802-11-wireless:yes:0"], {"u1": ("infrastructure", "no", "0", "")})
+    assert network.saved_wifi()[0].ssid == "Depot"
+
+
+def test_a_profile_that_has_never_been_used_has_timestamp_zero(nm):
+    saved(nm, ["Depot:u1:802-11-wireless:yes:"], {"u1": ("infrastructure", "no", "0", "Depot")})
+    assert network.saved_wifi()[0].timestamp == 0
+
+
+def test_a_row_that_is_not_five_fields_makes_the_read_none(nm):
+    saved(nm, ["Depot:u1:802-11-wireless:yes"], {"u1": ("infrastructure", "no", "0", "Depot")})
+    assert network.saved_wifi() is None
+
+
+def test_a_profile_whose_details_cannot_be_read_makes_the_read_none(nm):
+    saved(nm, ["Depot:u1:802-11-wireless:yes:0"], {})
+    assert network.saved_wifi() is None
+
+
+def test_the_device_reports_the_profile_it_is_on(nm):
+    nm.answer("device", "show", "wlan0", out="GENERAL.CON-UUID:1b0c-uuid\n")
+    assert network.active_uuid("wlan0") == "1b0c-uuid"
+    assert nm.calls == [["nmcli", "-t", "-f", "GENERAL.CON-UUID", "device", "show", "wlan0"]]
+
+
+@pytest.mark.parametrize("out", ["GENERAL.CON-UUID:\n", "GENERAL.CON-UUID:--\n"])
+def test_a_device_on_nothing_reads_as_false(nm, out):
+    nm.answer("device", "show", "wlan0", out=out)
+    assert network.active_uuid("wlan0") is False
+
+
+def test_a_failed_read_is_none(nm):
+    assert network.saved_wifi() is None and network.active_uuid("wlan0") is None
+
+
+def test_a_timeout_is_none(nm):
+    nm.fail = "timeout"
+    assert network.saved_wifi() is None and network.active_uuid("wlan0") is None
+
+
+def test_a_missing_nmcli_is_none(nm):
+    nm.fail = FileNotFoundError()
+    assert network.saved_wifi() is None and network.active_uuid("wlan0") is None
+
+
+def test_the_count_of_saved_networks_follows_the_list(nm):
+    saved(
+        nm,
+        ["A:u1:802-11-wireless:yes:1", "B:u2:802-11-wireless:yes:2", "tm-hotspot:u3:802-11-wireless:yes:3"],
+        {"u1": ("infrastructure", "no", "0", "A"), "u2": ("infrastructure", "no", "0", "B"), "u3": ("ap", "no", "0", "H")},
+    )
+    assert network.saved_networks() == 2
+
+
+def test_split_terse_splits_at_unescaped_colons_only():
+    assert network.split_terse("a\\:b:c\\\\:d:") == ["a:b", "c\\", "d", ""]

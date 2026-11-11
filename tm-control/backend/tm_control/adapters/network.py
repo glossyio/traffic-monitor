@@ -211,21 +211,93 @@ def signal(name: str) -> int | None:
     return None
 
 
-def saved_networks() -> int | None:
-    """How many Wi-Fi profiles are in infrastructure mode (joined to a network), the hotspot's among none."""
-    out = _nmcli("-t", "-f", "UUID,TYPE", "connection", "show")
+@dataclass(frozen=True)
+class SavedWifi:
+    uuid: str
+    profile: str  # the profile's name
+    ssid: str  # the network's name; the profile's name when the profile has none
+    autoconnect: bool
+    priority: int  # connection.autoconnect-priority
+    timestamp: int  # last use, seconds since 1970; 0 for never
+    hidden: bool
+
+
+def split_terse(line: str) -> list[str]:
+    """The unescaped fields of one nmcli -t line, split at the colons that aren't escaped."""
+    fields: list[str] = []
+    current: list[str] = []
+    escaped = False
+    for char in line:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    fields.append("".join(current))
+    return fields
+
+
+def saved_wifi() -> list[SavedWifi] | None:
+    """The Wi-Fi client (infrastructure) profiles, in the order the unit tries them: priority, higher first, then last
+    use, newer first. The hotspot (mode ap) and other kinds of profile are left out. None when any read fails or a
+    row of the list is not in the form this reads."""
+    out = _nmcli("-t", "-f", "NAME,UUID,TYPE,AUTOCONNECT,TIMESTAMP", "connection", "show")
     if out is None:
         return None
-    count = 0
+    found = []
     for line in out.splitlines():
-        uuid, _, kind = line.partition(":")
-        if unescape(kind) != WIFI:
-            continue
-        mode = _nmcli("-g", f"{WIFI}.mode", "connection", "show", "uuid", uuid)
-        if mode is None:
+        fields = split_terse(line)
+        if len(fields) != 5:
             return None
-        count += mode.strip() == "infrastructure"
-    return count
+        name, uuid, kind, autoconnect, timestamp = fields
+        if kind != WIFI:
+            continue
+        keys = f"{WIFI}.mode,{WIFI}.hidden,connection.autoconnect-priority,{WIFI}.ssid"
+        # All four belong to settings every Wi-Fi profile has, so nmcli -g leaves out none of the lines.
+        details = _nmcli("-g", keys, "connection", "show", "uuid", uuid)
+        if details is None:
+            return None
+        lines = details.split("\n")
+        mode, hidden, priority, ssid = (unescape(lines[i]) if i < len(lines) else "" for i in range(4))
+        if mode != "infrastructure":
+            continue
+        found.append(
+            SavedWifi(
+                uuid,
+                name,
+                ssid or name,
+                autoconnect == "yes",
+                int(priority) if re.fullmatch(r"-?\d+", priority) else 0,
+                int(timestamp) if timestamp.isdigit() else 0,
+                hidden == "yes",
+            )
+        )
+    found.sort(key=lambda n: (-n.priority, -n.timestamp))
+    return found
+
+
+def saved_networks() -> int | None:
+    """How many Wi-Fi profiles are in infrastructure mode (joined to a network), the hotspot's among none."""
+    found = saved_wifi()
+    return None if found is None else len(found)
+
+
+def active_uuid(name: str) -> str | None | Literal[False]:
+    """The UUID of the profile the device is on; False when nmcli answered and it is on none."""
+    out = _nmcli("-t", "-f", "GENERAL.CON-UUID", "device", "show", name)
+    if out is None:
+        return None
+    for line in out.splitlines():
+        key, _, value = line.partition(":")
+        if key == "GENERAL.CON-UUID":
+            uuid = unescape(value)
+            return uuid if uuid not in ("", "--") else False
+    return None
 
 
 def connectivity() -> str | None:

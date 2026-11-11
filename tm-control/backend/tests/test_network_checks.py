@@ -424,10 +424,11 @@ def test_no_signal_when_no_network_is_in_use(commands):
 def test_saved_networks_counts_infrastructure_profiles_only(commands):
     commands("nmcli", """
         case "$*" in
-          *"UUID,TYPE"*) printf 'u1:802-11-wireless\\nu2:802-11-wireless\\nu3:802-3-ethernet\\nu4:802-11-wireless\\n' ;;
-          *"uuid u1") echo infrastructure ;;
-          *"uuid u2") echo ap ;;
-          *"uuid u4") echo infrastructure ;;
+          *"NAME,UUID,TYPE"*)
+            printf 'A:u1:802-11-wireless:yes:1\\nH:u2:802-11-wireless:yes:2\\nWired:u3:802-3-ethernet:yes:3\\nB:u4:802-11-wireless:yes:4\\n' ;;
+          *"uuid u1") printf 'infrastructure\\nno\\n0\\nA\\n' ;;
+          *"uuid u2") printf 'ap\\nno\\n0\\nH\\n' ;;
+          *"uuid u4") printf 'infrastructure\\nno\\n0\\nB\\n' ;;
           *) exit 2 ;;
         esac
         """)
