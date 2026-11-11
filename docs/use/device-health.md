@@ -4,11 +4,12 @@ description: Use the control app's Status, Device, and Date and time pages to se
 
 # Check and fix the device
 
-Three pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, [Detection](detection.md), shows the object detection model and changes it:
+Four pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fifth, [Detection](detection.md), shows the object detection model and changes it:
 
 * **Status** checks the services, apps, settings, hardware, network, and clock, and offers a fix for what's wrong.
 * **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
 * **Date and time** compares the device's clock with your phone's or computer's and sets it.
+* **Network** shows the device's names and addresses, and lets the administrator change the hotspot. See [The Network page](wifi-hotspot.md#the-network-page).
 
 The [home page](home-page.md) shows the Status page's summary under the device's name, such as **Everything is working**. Tap it to open the Status page.
 
@@ -41,7 +42,7 @@ The checks come in groups:
 
 | Check | What it says |
 |---|---|
-| Hotspot | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (see [A hotspot you set up by hand](wifi-hotspot.md#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
+| Hotspot | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (**Set a password** opens the [Network page](wifi-hotspot.md#change-the-password); see also [A hotspot you set up by hand](wifi-hotspot.md#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
 | Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach. |
 | Internet | **Reachable**, or **Not reachable. That's normal for an offline unit.** It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem. |
 | Wi-Fi country | The country, or a warning that none is set. Rerun the installer with `-t wifi` and it asks; see [The Wi-Fi country](wifi-hotspot.md#the-wi-fi-country). |
@@ -61,7 +62,7 @@ The control app can't restart itself. If it stops, see [If the control app is do
 
 ## The Device page
 
-The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
+The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. It also lists each connected link, Ethernet or Wi-Fi, with its IP address and MAC address, and **Network details** opens the [Network page](wifi-hotspot.md#the-network-page). If the device can't read its network state, the card leaves the list out. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
 
 ### Tokens and keys
 
@@ -107,9 +108,10 @@ Moving the clock ahead by more than about 20 seconds stops Frigate's camera feed
 
 ## What viewers see
 
-Viewers see all four pages, but can't change anything:
+Viewers see all five pages, but can't change anything:
 
 * **Status**: the same checks, without the Restart and Re-scan buttons.
 * **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
 * **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](detection.md#the-detection-page).
 * **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
+* **Network**: the addresses and the hotspot's state, without the hotspot's password or any control.

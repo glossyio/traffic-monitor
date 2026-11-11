@@ -1,16 +1,16 @@
 ---
-description: Reach a Traffic Monitor at the roadside through its own Wi-Fi hotspot, find or change the hotspot's password, and learn when the hotspot is on.
+description: Reach a Traffic Monitor at the roadside through its own Wi-Fi hotspot, see the unit's network addresses, change the hotspot's name and password, hide or turn off the hotspot, and learn when the hotspot is on.
 ---
 
 # Wi-Fi and the hotspot
 
 When a Traffic Monitor's Wi-Fi isn't on a network it knows, the unit runs a hotspot of its own. The hotspot is how you reach a unit at the roadside, where there's no router. It runs whether or not the unit is also on Ethernet.
 
-The hotspot's name is `TM-` and four characters from the unit's serial number, such as `TM-4F2A`. It uses WPA2 on the 2.4 GHz band. The [Status page](device-health.md#the-status-page) shows its state.
+The hotspot's name is `TM-` and four characters from the unit's serial number, such as `TM-4F2A`, until an administrator [renames it](#rename-the-hotspot). It uses WPA2 on the 2.4 GHz band. The [Status page](device-health.md#the-status-page) shows its state.
 
 ## Join the hotspot
 
-1. Find the hotspot's name and password on the unit's card. The card is the printout that came with a pre-built unit; for a unit you installed yourself, the installer shows it at the end of its run on the device. `sudo tm-control card` on the unit prints it again, together with the setup code while the unit is [unclaimed](control-app.md#claim-the-device).
+1. Find the hotspot's name and password on the unit's card. The card is the printout that came with a pre-built unit; for a unit you installed yourself, the installer shows it at the end of its run on the device. An administrator can also show the password on the [Network page](#the-network-page), and `sudo tm-control card` on the unit prints it again, together with the setup code while the unit is [unclaimed](control-app.md#claim-the-device).
 2. On your phone, join the hotspot with that password. Your phone may say the network has no internet. Stay connected.
 3. The phone's sign-in window opens the control app by itself, on its login or setup page. If it doesn't, open `http://10.42.0.1/` in a browser. The unit's `.local` name, `http://<hostname>.local/`, also works.
 
@@ -25,6 +25,27 @@ The hotspot has no internet, and a phone on it reaches only the unit. Nothing on
 * **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. The login and setup pages show that name while the phone is on the hotspot. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
 
 Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, in November 2026.
+
+## The Network page
+
+**Network** in the [control app](control-app.md)'s menu shows how to reach the unit and what it is connected to. Everyone who is signed in sees:
+
+* **This device:** the unit's name and its `.local` name, such as `tm-ab12` and `tm-ab12.local`.
+* **Ethernet** and **Wi-Fi:** whether each is connected, and for each its MAC address, IP address, gateway, and DNS servers. The Wi-Fi line says which network the unit is on, with its signal, or that it is on its own hotspot. A unit without Ethernet has no Ethernet line, and a unit without a built-in radio says so.
+* **Internet:** whether the unit reaches the internet. An offline unit says **Not reachable**, which is normal.
+* **Hotspot:** whether it is on, its name, whether the name is hidden, and the two addresses it answers on.
+
+Every name and address has a **Copy** button. If the network service doesn't answer, the page says so and shows only the names.
+
+The [Device page](device-health.md#the-device-page) shows the same addresses in a short summary, with a link to this page.
+
+!!! tip "Find the MAC address"
+    A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Copy it from the Wi-Fi block of the Network page, and add it to the router's list.
+
+Viewers see the hotspot's state, name, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: show or change the password, rename the hotspot, hide its name, and turn it on or off.
+
+!!! info "Changes restart the hotspot"
+    A change to the hotspot's name, password, or hidden setting restarts it when it is up. Phones on it are disconnected, and each phone must rejoin by hand. When you use the Network page from a phone on the hotspot, the page stops answering when you save. Join the hotspot again, then reload the page. The page warns you before each change.
 
 ## When the hotspot runs
 
@@ -41,23 +62,34 @@ While the hotspot is up and nobody is joined to it, the unit looks for its saved
 
 The Status page's Hotspot check says which of these the unit is in, and its **Restart the hotspot** button has the unit look at its radio at once.
 
-??? note "Turn the hotspot off"
+### Turn the hotspot off
 
-    A unit with its hotspot off has no wireless way in when its Wi-Fi network is missing. To stop the hotspot from starting by itself, run `sudo nmcli connection modify tm-hotspot connection.autoconnect no`. The installer leaves that setting as you set it. To turn the hotspot on again, set it to `yes`.
+1. Sign in as an administrator and open **Network**.
+2. Under **Hotspot**, switch off **Hotspot on**.
+3. Read the warning, and choose **Turn off** if you still want to.
+
+The warning says: "With the hotspot off, this unit has no wireless way in when its Wi-Fi network is missing. You would need an Ethernet cable." The hotspot stops now and doesn't start by itself again, and phones on it are disconnected. To turn it on again, switch **Hotspot on** back on. The unit then starts the hotspot as the table above describes; a unit that is on a saved network starts it when that network is lost.
 
 ## The password
 
 The installer makes the password on the unit, at random, when it sets up the hotspot. It's twelve letters and digits in three groups, such as `ABCD-EFGH-JKLM`, and it's different on every unit. It never comes from the serial number, so knowing the name tells nobody the password.
 
-The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable only by root and the installing user's group (`tmadmin` unless you installed with `-g`). To read it, run `sudo tm-control card` on the unit. Over Ethernet or SSH works when you're locked out of the hotspot. The installer shows the card on the terminal and keeps the password out of its log; a run from another computer with `-H` prints only a reminder of the command.
+The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable only by root and the installing user's group (`tmadmin` unless you installed with `-g`). The installer shows the card on the terminal and keeps the password out of its log; a run from another computer with `-H` prints only a reminder of the command.
+
+### Show the password
+
+On the Network page, an administrator chooses **Show** next to **Password**. The page asks the unit for the password each time and forgets it again when you choose **Hide**, change anything, or leave the page. The control app records each time an administrator shows it.
+
+If you can't sign in, run `sudo tm-control card` on the unit instead. Over Ethernet or SSH works when you're locked out of the hotspot.
 
 ### Change the password
 
-1. On the unit, open the password file for editing with `sudoedit /etc/traffic-monitor/secrets/hotspot_password`. Replace its contents with one line of 8 to 63 characters.
-2. Run `bash traffic-monitor/script/tmsetup.sh -t wifi`. The installer sets the hotspot's password to the file's.
-3. Restart the hotspot, or wait for its next start. The installer never restarts a hotspot that is up, so a phone joined to it stays joined until then. To apply the password at once, reboot the unit, or run `sudo nmcli connection up tm-hotspot`. Every phone on the hotspot drops, and each rejoins with the new password.
+1. Sign in as an administrator and open **Network**.
+2. Next to **Password**, choose **Change**. A unit whose hotspot has no password offers **Set a password** here.
+3. Type the new password, 8 to 63 letters, digits, and symbols with no space at either end.
+4. Write the password down, then choose **Change password**.
 
-A screen in the control app for changing the password is planned.
+The hotspot restarts with the new password, and phones on it are disconnected. Each phone must rejoin by hand, with the new password. The page types the password in the open and asks for it only once, so you see what you write down.
 
 ### For sellers
 
@@ -75,26 +107,36 @@ A screen in the control app for changing the password is planned.
 
 `setup_code` is `null` once the unit is claimed. The command needs `sudo`, and it prints to the terminal only. Nothing stores or logs the card, so don't paste the output where others can read it.
 
+## Rename the hotspot or hide its name
+
+An administrator can change the name phones see, and hide it, on the Network page.
+
+### Rename the hotspot
+
+1. Open **Network**, and next to the hotspot's **Name**, choose **Change**.
+2. Type the new name. It takes 1 to 32 bytes, so fewer characters if it has accents or emoji, with no space at either end.
+3. Choose **Change name**.
+
+The hotspot restarts, and each phone must join the new name by hand. A printed card still shows the old name. `sudo tm-control card` shows the new one.
+
+### Hide the name
+
+1. Open **Network**, and switch on **Hide the name**.
+2. Read the warning, and choose **Hide the name**.
+
+The warning says: "The hotspot is still on and can still be found by scanning. Only its name is hidden." Hiding the name doesn't stop anyone from finding the hotspot, so it isn't a lock. A phone no longer lists the hotspot by name. On Android, add the network by hand: choose **Add network**, type the name and the password, and tick **Hidden network**. Without that, the phone never connects. Switch **Hide the name** off to show the name again.
+
 ## A hotspot you set up by hand
 
 A hotspot you made yourself in NetworkManager is kept. When a unit has no profile named `tm-hotspot`, the installer takes over your access-point profile, the one that starts by itself and was used last, renames it `tm-hotspot`, and stops any other access point from starting. Its name on air, password, band, and hidden setting stay as you set them. The installer sets the profile's address to `10.42.0.1` and its priority below your saved networks, and copies the password into the password file.
 
-A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. To set a password, run these two commands on the unit, with a password of 8 to 63 characters in place of `<password>`:
+A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. The Status page's **Set a password** link opens the Network page. There, next to **Password**, choose **Set a password** and follow the steps in [Change the password](#change-the-password). The installer then keeps the profile's password the same as the password file's. An empty file tells the installer to leave the hotspot's security alone.
 
-```bash
-sudo nmcli connection modify tm-hotspot 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.proto rsn 802-11-wireless-security.pairwise ccmp 802-11-wireless-security.group ccmp 802-11-wireless-security.psk '<password>'
-sudoedit /etc/traffic-monitor/secrets/hotspot_password
-```
-
-In the file, write the same password on one line. That keeps the card right, and the installer then keeps the profile's password the same as the file's. An empty file tells the installer to leave the hotspot's security alone. The new password applies when the hotspot next starts; see step 3 of [Change the password](#change-the-password).
-
-??? question "A hotspot with a hidden name"
-
-    If you hid your hand-made hotspot's name, a phone doesn't list it. On Android, choose **Add network**, type the name, and tick **Hidden network**.
+A hand-made hotspot with a hidden name keeps it. Manage it as in [Hide the name](#hide-the-name).
 
 ## Who can see the hotspot
 
-A hotspot on a pole is visible to anyone passing, and public Wi-Fi maps record where names are seen. The name `TM-` and four characters shows that a Traffic Monitor is nearby and doesn't say where it is. The password is what keeps people out of the control app. [Control app and login](control-app.md) explains what its login protects.
+A hotspot on a pole is visible to anyone passing, and public Wi-Fi maps record where names are seen. The name `TM-` and four characters shows that a Traffic Monitor is nearby and doesn't say where it is. [Hiding the name](#hide-the-name) makes the hotspot harder to spot in a list, but a scan still finds it. Only turning the hotspot off prevents it, with the cost described in [Turn the hotspot off](#turn-the-hotspot-off). The password is what keeps people out of the control app. [Control app and login](control-app.md) explains what its login protects.
 
 ## The Wi-Fi country
 
