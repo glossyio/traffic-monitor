@@ -649,14 +649,25 @@ def test_a_scan_that_fails_once_is_tried_again(world):
     assert world.iw_calls() == [["dev", "wlan0", "scan"]] * 2
 
 
+def test_a_scan_is_tried_again_while_iw_is_busy_and_the_time_lasts(world):
+    """iw is busy for 10 to 14 s after the hotspot restarts, then the scan works."""
+    world.iw["fail_once"] = ["scan", "scan", "scan"]
+    world.scan_timeout = "10"
+    result = world.run({"action": "scan"})
+    assert result.returncode == 0 and "heard 4 networks" in result.stdout, result.stdout + result.stderr
+    assert world.iw_calls() == [["dev", "wlan0", "scan"]] * 4
+    assert len(world.scan()["networks"]) == 4
+
+
 def test_a_scan_that_fails_or_hangs_leaves_the_old_result(world):
     world.run_dir.mkdir()
     old = world.run_dir / "network-scan.json"
     old.write_text('{"networks": []}')
     world.iw["fail"] = ["scan"]
+    world.scan_timeout = "1"  # every try fails (each takes a few ms), a try after each 0.1 s wait until the time is up
     result = world.run({"action": "scan"})
     assert result.returncode == 1 and result.stdout.strip() == "failed: scan (iw exit status 240)"
-    assert len(world.iw_calls()) == 2  # tried once more
+    assert len(world.iw_calls()) >= 3  # tried again and again
     assert old.read_text() == '{"networks": []}'
     assert sorted(path.name for path in world.run_dir.iterdir()) == ["network-scan.json", "network.lock"]
 
@@ -664,7 +675,7 @@ def test_a_scan_that_fails_or_hangs_leaves_the_old_result(world):
     world.scan_timeout = "0.5"
     result = world.run({"action": "scan"})
     assert result.returncode == 1 and result.stdout.strip() == "failed: scan (iw timed out)"
-    assert len(world.iw_calls()) == 1  # a hang is not tried again
+    assert len(world.iw_calls()) == 1  # a hang that uses up the time is not tried again
     assert old.read_text() == '{"networks": []}'
 
 

@@ -53,8 +53,9 @@ was changed.
 
 The other three actions take the same lock, then:
 - scan: refused unless the radio is built in (not a USB adapter) and switched on. Runs `iw dev <device> scan`; a
-  non-zero exit (`iw` exits 240 while NetworkManager scans, as it does in the background on a network) is tried once
-  more after SCAN_RETRY_WAIT seconds, both tries within SCAN_TIMEOUT seconds; a hang is not tried again. A failure
+  non-zero exit (`iw` exits 240 while NetworkManager scans, as it does in the background on a network, and for
+  10 to 14 s after the hotspot restarts) is tried again every SCAN_RETRY_WAIT seconds while SCAN_TIMEOUT seconds, all
+  tries together, last; a try that hangs until the time is up is not tried again. A failure
   is `failed: scan (iw exit status N)` or `(iw timed out)` and leaves the old file. Otherwise SCAN_FILE is written
   under a temporary name and renamed, 0644: {"at": <ISO time, UTC>, "monotonic": <time.monotonic()>, "networks":
   [{"ssid", "signal" (0 to 100), "security" (open, password, wpa3, enterprise, or other)}]}, strongest first, at most
@@ -118,8 +119,8 @@ LOCK_WAIT = 10  # seconds
 SCAN_FILE = "network-scan.json"
 JOIN_STATE_FILE = "network-join.json"  # the join job's state
 CONTROL_FILE = "network-join.control"  # a word for the join job: switch or cancel
-SCAN_TIMEOUT = 60  # seconds for a scan, a second try included
-SCAN_RETRY_WAIT = 5  # seconds before the second try of a scan that failed
+SCAN_TIMEOUT = 60  # seconds for a scan, all its tries together
+SCAN_RETRY_WAIT = 5  # seconds between the tries of a scan that failed (iw is busy for about 15 s after a hotspot change)
 RETURN_WAIT = 15  # seconds for NetworkManager to bring the Wi-Fi back by itself after a network is forgotten
 MAX_NETWORKS = 100  # networks kept from a scan
 MAX_ORDER = 64  # networks in one order
@@ -801,16 +802,17 @@ class Run:
             raise Refused("the Wi-Fi radio is switched off")
         self.step = "scan"
         iw, limit = trusted("IW", IW), trusted_seconds("TM_NETWORK_SCAN_TIMEOUT", SCAN_TIMEOUT)
+        wait = trusted_seconds("TM_NETWORK_SCAN_RETRY_WAIT", SCAN_RETRY_WAIT)
         started = time.monotonic()
-        try:
-            text = run_iw(iw, self.device, limit)
-        except IwFailed as error:
-            wait = trusted_seconds("TM_NETWORK_SCAN_RETRY_WAIT", SCAN_RETRY_WAIT)
-            left = limit - (time.monotonic() - started) - wait
-            if error.timed_out or left <= 0:  # a hang isn't tried again, nor is a try with no time left
-                raise
-            time.sleep(wait)
-            text = run_iw(iw, self.device, left)
+        while True:
+            try:
+                text = run_iw(iw, self.device, limit - (time.monotonic() - started))
+                break
+            except IwFailed as error:
+                # a try that hung used up the time; a busy iw is tried again while the time lasts
+                if error.timed_out or limit - (time.monotonic() - started) - wait <= 0:
+                    raise
+                time.sleep(wait)
         networks = parse_scan(text)
         write_scan(trusted("TM_NETWORK_RUN_DIR", RUN_DIR), networks)
         print(f"heard {plural(len(networks), 'network')}")
