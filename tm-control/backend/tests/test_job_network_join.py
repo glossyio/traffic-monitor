@@ -896,6 +896,32 @@ def test_a_switch_that_fails_brings_back_the_hotspot_and_starts_the_wait(world):
     assert result.stdout.strip().splitlines()[-1] == "the switch failed (nmcli exit status 4)"
 
 
+def test_a_failed_switch_off_the_profile_it_replaced_brings_back_the_hotspot(world):
+    old = world.saved("HomeNet 1", **{"802-11-wireless.ssid": "HomeNet"})  # the fake keys profiles by their id
+    world.nmcli["active"] = ["HomeNet 1"]  # before is the profile the new password replaces
+    world.up_fails("HomeNet", after=1)
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["before"] == "HomeNet 1" and world.state()["stage"] == "switch_failed"
+    assert "HomeNet 1" not in world.profiles() and ["connection", "delete", "uuid", old] in world.log()
+    assert world.active() == ["tm-hotspot"]
+    assert world.log()[-1] == ["--wait", "45", "connection", "up", "id", "tm-hotspot"]
+
+
+def test_a_cancel_written_during_a_test_that_fails_is_gone_when_the_run_ends(world):
+    world.nmcli["up_delay"] = {"HomeNet": 1}
+    world.up_fails("HomeNet")
+    job = world.start(NEW)
+    try:
+        assert wait_for(lambda: world.state()["stage"] == "testing" and world.calls("up") == 1)
+        world.control("cancel")
+    finally:
+        result = world.finish(job)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "not_joined")
+    assert not (world.run_dir / "network-join.control").exists()
+
+
 def test_a_switch_whose_up_fails_while_networkmanager_joined_by_itself_counts(world):
     world.up_fails("HomeNet", "fail-started", after=1)
     result = world.run(NEW)
