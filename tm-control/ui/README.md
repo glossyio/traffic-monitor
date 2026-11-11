@@ -65,7 +65,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
   (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
   (`clipboard.ts`, the diagnostics and the label lists; `CopyButton.vue`, an icon button that copies one value), and
   saving a file (`download.ts`, the diagnostics and the model packages and files).
-- The `network` module is the Network page (`NetworkPage.vue`) and `summary.ts`, the words for the unit's links and
+- The `network` module is the Network page (`NetworkPage.vue`), the hotspot's settings for admins
+  (`HotspotSettings.vue`, its name-or-password dialog `HotspotField.vue`, and `rules.ts`, the name and password rules),
+  `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
   internet that the Device page's card reuses.
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
@@ -594,6 +596,58 @@ buttons.
   or, for a deleted model, above the other models' cards. An API refusal shows its message there, Frigate's
   own words included.
 
+#### The hotspot's settings (admins)
+
+```text
+| Hotspot                     (h6) |
+| (o-) Hotspot on                  |  switch; off asks first
+| Name                             |
+| TM-AB12 [copy]          [Change] |
+| Password                         |
+| ••••••••          [Show] [Change]|  Show asks the device, Hide forgets
+| (-o) Hide the name               |  switch; asks first
+| Address                          |
+| http://10.42.0.1/                |
+| http://tm-ab12.local/            |
+| (i) Saved. The hotspot restarted.|  the job's result, kept after it
+| A hotspot on a pole is visible ...|
++----------------------------------+
+```
+
+- Every change is `POST /network/hotspot`, which starts a root job that restarts the hotspot, and the page follows
+  the job. One change at a time: every control is disabled while a job runs, and an alert says what is happening.
+- The password is fetched from the device (`GET /network/hotspot/password`) each time Show is tapped, and dropped on
+  Hide or when anything changes. The row shows dots otherwise. A hotspot without a password says "None. Anyone nearby
+  can join." and offers "Set a password" in place of Show and Change.
+- The new name and password are typed into a dialog (`HotspotField.vue`). The field shows what is typed, and there is
+  no second field to type it again: a hidden field typed twice protects against a typo the person can't see, but on
+  a phone at the roadside the person is about to write the password down and give it to every phone, so seeing it
+  once is the better check. The dialog itself is the confirmation: it says to write the password down and that every
+  phone must rejoin, and its button names the action ("Change name", "Change password", "Set password"). The button
+  stays disabled until the rules pass, and the rule's message appears under the field.
+- The rules are the API's, repeated in `rules.ts` so a bad value is refused before the device is asked, with the
+  API's words: a name is 1 to 32 bytes of UTF-8 (counted with `TextEncoder`, so accents and emoji count more than
+  one) with no control character and no space at either end, and a password is 8 to 63 printable ASCII characters
+  with no space at either end. The API checks again and its 422 message would show in the page's alert.
+- The warnings come before the change, in the dialog the change goes through. A name or password change warns only
+  while the hotspot is up ("The hotspot restarts, and phones on it are disconnected. Each phone must rejoin by
+  hand."). Turning off, hiding, and showing the name again ask in a confirm dialog; turning on does not ask. Turning
+  off says the unit has no wireless way in without its Wi-Fi network and needs an Ethernet cable. Hiding says the
+  hotspot can still be found by scanning and that Android needs the network added by hand with Hidden network ticked.
+  When the page was opened over the hotspot (`session.status.hotspot`), every warning that applies ends "You're on
+  the hotspot now, so this page stops answering when you save." A long warning is split into paragraphs
+  (`ConfirmDialog` and `HotspotField` start a paragraph at each line break).
+- Losing the unit is expected. The restart often disconnects the phone the admin is using, so once the device has
+  accepted the change, a request that fails to reach it while the job runs is not an error: the page says "This page
+  lost the unit, which is expected when your phone is on the hotspot. Join <name> again, then reload this page." (with
+  the new name), or after turning off, "The hotspot is off. Reach the unit on its Wi-Fi network or by Ethernet." Any
+  other failure (the device refusing the change, a failed job) is an error with the device's words.
+- A failed job shows its log lines, as the Device page's secrets do. A line ending "the settings are saved" adds "The
+  settings were saved, but the hotspot didn't restart." above it, because the change is then in place and only the
+  restart failed; the page loads the state again either way.
+- Under the settings, one paragraph says why: a hotspot on a pole is visible to anyone passing and public Wi-Fi maps
+  record where names are seen; hiding the name reduces that and only turning the hotspot off prevents it.
+
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer, and through the
@@ -927,11 +981,63 @@ another device, so every one has a Copy button. The Device page carries a short 
 - A unit without Ethernet shows no Ethernet row. A unit without a built-in radio says "No built-in Wi-Fi radio".
   When NetworkManager didn't answer, both would be wrong (they only mean "none found"), so the page shows the names
   and the warning, and nothing else.
-- Viewers and admins see the same page for now: the hotspot is read-only, with no password and no control. The next
-  change replaces the Hotspot section with its controls for admins; a viewer keeps this one.
+- A viewer sees the hotspot read-only (state, name, whether the name is hidden, the addresses) with "An administrator
+  can change the hotspot here.", and never a password or a control. An admin sees the settings below instead.
 - The Device page appends one line per connected link ("Ethernet", "Wi-Fi") to its card and a "Network details" link
   to this page. If the network state can't be read, the card is the same as before: the summary is an addition, never
   something the page waits for or fails on.
+
+#### The hotspot's settings (admins)
+
+```text
+| Hotspot                     (h6) |
+| (o-) Hotspot on                  |  switch; off asks first
+| Name                             |
+| TM-AB12 [copy]          [Change] |
+| Password                         |
+| ••••••••          [Show] [Change]|  Show asks the device, Hide forgets
+| (-o) Hide the name               |  switch; asks first
+| Address                          |
+| http://10.42.0.1/                |
+| http://tm-ab12.local/            |
+| (i) Saved. The hotspot restarted.|  the job's result, kept after it
+| A hotspot on a pole is visible ...|
++----------------------------------+
+```
+
+- Every change is `POST /network/hotspot`, which starts a root job that restarts the hotspot, and the page follows
+  the job. One change at a time: every control is disabled while a job runs, and an alert says what is happening.
+- The password is fetched from the device (`GET /network/hotspot/password`) each time Show is tapped, and dropped on
+  Hide or when anything changes. The row shows dots otherwise. A hotspot without a password says "None. Anyone nearby
+  can join." and offers "Set a password" in place of Show and Change.
+- The new name and password are typed into a dialog (`HotspotField.vue`). The field shows what is typed, and there is
+  no second field to type it again: a hidden field typed twice protects against a typo the person can't see, but on
+  a phone at the roadside the person is about to write the password down and give it to every phone, so seeing it
+  once is the better check. The dialog itself is the confirmation: it says to write the password down and that every
+  phone must rejoin, and its button names the action ("Change name", "Change password", "Set password"). The button
+  stays disabled until the rules pass, and the rule's message appears under the field.
+- The rules are the API's, repeated in `rules.ts` so a bad value is refused before the device is asked, with the
+  API's words: a name is 1 to 32 bytes of UTF-8 (counted with `TextEncoder`, so accents and emoji count more than
+  one) with no control character and no space at either end, and a password is 8 to 63 printable ASCII characters
+  with no space at either end. The API checks again and its 422 message would show in the page's alert.
+- The warnings come before the change, in the dialog the change goes through. A name or password change warns only
+  while the hotspot is up ("The hotspot restarts, and phones on it are disconnected. Each phone must rejoin by
+  hand."). Turning off, hiding, and showing the name again ask in a confirm dialog; turning on does not ask. Turning
+  off says the unit has no wireless way in without its Wi-Fi network and needs an Ethernet cable. Hiding says the
+  hotspot can still be found by scanning and that Android needs the network added by hand with Hidden network ticked.
+  When the page was opened over the hotspot (`session.status.hotspot`), every warning that applies ends "You're on
+  the hotspot now, so this page stops answering when you save." A long warning is split into paragraphs
+  (`ConfirmDialog` and `HotspotField` start a paragraph at each line break).
+- Losing the unit is expected. The restart often disconnects the phone the admin is using, so once the device has
+  accepted the change, a request that fails to reach it while the job runs is not an error: the page says "This page
+  lost the unit, which is expected when your phone is on the hotspot. Join <name> again, then reload this page." (with
+  the new name), or after turning off, "The hotspot is off. Reach the unit on its Wi-Fi network or by Ethernet." Any
+  other failure (the device refusing the change, a failed job) is an error with the device's words.
+- A failed job shows its log lines, as the Device page's secrets do. A line ending "the settings are saved" adds "The
+  settings were saved, but the hotspot didn't restart." above it, because the change is then in place and only the
+  restart failed; the page loads the state again either way.
+- Under the settings, one paragraph says why: a hotspot on a pole is visible to anyone passing and public Wi-Fi maps
+  record where names are seen; hiding the name reduces that and only turning the hotspot off prevents it.
 
 #### What the screenshot review changed
 
@@ -949,6 +1055,16 @@ after a tap on Copy that worked and one the browser refused.
 - Looked at and kept: the Wi-Fi value on the Device card breaks after a "·" at 375 px, so the MAC address sits on its
   own line. It is one address per line, not a cut in the middle of one.
 
+The hotspot's settings were checked at 375 px: the page, Show, each dialog (name, a name over 32 bytes, password,
+hide, turn off), the same dialogs with the page opened over the hotspot, the lost-unit message, and after turning off.
+
+- The hide dialog was one block of six lines. `ConfirmDialog` now starts a paragraph at each line break, so the
+  restart warning, the hiding sentences, and the "you're on the hotspot" sentence read apart.
+- Change, Show, and Hide were the small default text buttons, a hard target on a phone; they are large (44 px) now.
+- Looked at and kept: the lost-unit message is an info alert, not an error, and the name above it is still the old one
+  because the page can't ask the device any more.
+- Looked at and kept: a rule's message wraps and hyphenates under the field at 375 px; it stays readable.
+
 #### Defaults rejected
 
 - A table of links and addresses: its columns don't fit 375 px, and there are at most two links.
@@ -956,5 +1072,9 @@ after a tap on Copy that worked and one the browser refused.
   a cable or a hotspot but not both.
 - Showing the hotspot's address as links: inside a phone's sign-in window a link opens in that window, so the address
   is plain text (as `HotspotNote` does).
+- A second "type it again" field for the password: see above; the dialog shows the value and asks the person to write
+  it down instead.
+- Dots with a reveal toggle inside the dialog's field, as the entered secrets use: those are values the device keeps and
+  never shows back, but this password is one the person must read and hand to every phone.
 - A refresh timer: an address changes when the unit changes network, and the person has just done that; the page loads
   when opened, and "Try again" reloads it.

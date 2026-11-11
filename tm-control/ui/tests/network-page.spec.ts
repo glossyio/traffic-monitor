@@ -125,18 +125,20 @@ describe('the Network page', () => {
     for (const part of ['TM-AB12', 'Name hidden', 'http://10.42.0.1/', 'http://tm-ab12.local/']) {
       expect(text).toContain(part)
     }
+    expect(text).toContain('An administrator can change the hotspot here.')
     expect(text).not.toMatch(/password/i)
     const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label') ?? b.text().trim())
     expect(labels.filter((label) => !label.startsWith('Copy '))).toEqual([])
     expect(wrapper.findAll('input')).toEqual([])
   })
 
-  it('shows an admin the same read-only hotspot for now', async () => {
-    signedIn(ADMIN, { [NETWORK]: networkState({ hotspot: { ...NETWORK_STATE.hotspot!, enabled: false, hidden: true } }) })
+  it('gives an admin the hotspot controls where a viewer has the read-only facts', async () => {
+    signedIn(ADMIN, { [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
-    expect(wrapper.text()).toMatch(/State\s*Off/)
-    expect(wrapper.text()).toMatch(/Name hidden\s*Yes/)
-    expect(wrapper.findAll('input')).toEqual([])
+    expect(wrapper.text()).toContain('Hotspot on')
+    expect(wrapper.text()).toContain('Hide the name')
+    expect(wrapper.text()).not.toContain('An administrator can change the hotspot here.')
+    expect(wrapper.text()).not.toMatch(/Name hidden\s/)
   })
 
   it("warns that the network state couldn't be read when NetworkManager didn't answer", async () => {

@@ -1,13 +1,16 @@
 <!--
   The Network page (GET /network), for everyone signed in: this device's names, its Ethernet and Wi-Fi links with
-  their hardware and IP addresses, the internet, and the hotspot, read-only. Every name and address has a Copy button.
-  The hotspot's password is never part of this answer.
+  their hardware and IP addresses, the internet, and the hotspot. Every name and address has a Copy button. The
+  hotspot is read-only for a viewer; an admin gets its settings (HotspotSettings). The hotspot's password is never
+  part of this answer.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
-import CopyButton from '../../components/CopyButton.vue'
+import { useSession } from '../../stores/session'
+import FactRow from './FactRow.vue'
+import HotspotSettings from './HotspotSettings.vue'
 import { internetLine, wifiLine } from './summary'
 
 type NetworkState = components['schemas']['NetworkState']
@@ -23,6 +26,7 @@ interface Block extends Fact {
   details: Fact[]
 }
 
+const session = useSession()
 const state = ref<NetworkState | null>(null)
 const loadError = ref('')
 
@@ -113,25 +117,17 @@ const hotspotFacts = computed<Fact[]>(() => {
 
       <section>
         <h2 class="text-h6 mb-4">This device</h2>
-        <div v-for="fact in names" :key="fact.label" class="mb-4">
-          <div class="text-body-2 text-secondary">{{ fact.label }}</div>
-          <div class="d-flex flex-wrap align-center">
-            <span class="text-body-1 text-break">{{ fact.value }}</span>
-            <CopyButton v-if="fact.copy" :text="fact.value" :label="fact.copy" />
-          </div>
-        </div>
+        <FactRow v-for="fact in names" :key="fact.label" v-bind="fact" class="mb-4" />
 
         <div v-for="block in blocks" :key="block.label" class="mb-4">
-          <div class="text-body-2 text-secondary">{{ block.label }}</div>
-          <div class="text-body-1 text-break">{{ block.value }}</div>
+          <FactRow :label="block.label" :value="block.value" />
           <div v-if="block.details.length" class="border-s-md ps-3 mt-2">
-            <div v-for="(fact, index) in block.details" :key="`${fact.label}${index}`" class="mb-2">
-              <div class="text-body-2 text-secondary">{{ fact.label }}</div>
-              <div class="d-flex flex-wrap align-center">
-                <span class="text-body-1 text-break">{{ fact.value }}</span>
-                <CopyButton v-if="fact.copy" :text="fact.value" :label="fact.copy" />
-              </div>
-            </div>
+            <FactRow
+              v-for="(fact, index) in block.details"
+              :key="`${fact.label}${index}`"
+              v-bind="fact"
+              class="mb-2"
+            />
           </div>
         </div>
       </section>
@@ -139,19 +135,21 @@ const hotspotFacts = computed<Fact[]>(() => {
       <section v-if="state.readable" class="mt-10">
         <h2 class="text-h6 mb-4">Hotspot</h2>
         <p v-if="!state.hotspot" class="text-body-1">The hotspot isn't set up on this unit.</p>
+        <HotspotSettings
+          v-else-if="session.isAdmin"
+          :hotspot="state.hotspot"
+          :local-name="state.local_name"
+          :on-hotspot="!!session.status?.hotspot"
+          @changed="load"
+        />
         <template v-else>
-          <div v-for="fact in hotspotFacts" :key="fact.label" class="mb-4">
-            <div class="text-body-2 text-secondary">{{ fact.label }}</div>
-            <div class="d-flex flex-wrap align-center">
-              <span class="text-body-1 text-break">{{ fact.value }}</span>
-              <CopyButton v-if="fact.copy" :text="fact.value" :label="fact.copy" />
-            </div>
-          </div>
+          <FactRow v-for="fact in hotspotFacts" :key="fact.label" v-bind="fact" class="mb-4" />
           <div class="mb-4">
             <div class="text-body-2 text-secondary">Address</div>
             <div class="text-body-1 text-break">http://{{ state.hotspot.address }}/</div>
             <div class="text-body-1 text-break">http://{{ state.local_name }}/</div>
           </div>
+          <p class="text-body-2 text-secondary">An administrator can change the hotspot here.</p>
         </template>
       </section>
     </template>
