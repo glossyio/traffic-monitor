@@ -14,6 +14,7 @@ import importlib.util
 import json
 import os
 import pwd
+import select
 import signal
 import socket
 import struct
@@ -1020,11 +1021,12 @@ def test_only_a_204_means_the_internet_is_reachable():
 
 
 class Servers:
-    """A local DNS server that drops the first `drop` questions and answers the rest with 127.0.0.1, and a web
-    server that answers every request with `status`."""
+    """A local DNS server that drops the first `drop` questions, answers the next `refuse` at once with a server
+    failure, and answers the rest with 127.0.0.1 (`times` holds when each question came), and a web server that
+    answers every request with `status`."""
 
-    def __init__(self, drop=1, status=b"HTTP/1.1 204 No Content"):
-        self.questions = 0
+    def __init__(self, drop=1, status=b"HTTP/1.1 204 No Content", refuse=0):
+        self.questions, self.times, self.refuse = 0, [], refuse
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.bind(("127.0.0.1", 0))
         self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1042,9 +1044,13 @@ class Servers:
             except OSError:
                 return
             self.questions += 1
+            self.times.append(time.monotonic())
             if self.questions <= self.drop:
                 continue
             question = packet[12:]
+            if self.questions <= self.drop + self.refuse:
+                self.udp.sendto(packet[:2] + struct.pack("!HHHHH", 0x8182, 1, 0, 0, 0) + question, peer)
+                continue
             header = packet[:2] + struct.pack("!HHHHH", 0x8180, 1, 1, 0, 0)
             answer = b"\xc0\x0c" + struct.pack("!HHIH", 1, 1, 60, 4) + bytes([127, 0, 0, 1])
             self.udp.sendto(header + question + answer, peer)
@@ -1088,14 +1094,57 @@ def test_the_probe_says_sign_in_page_or_not_reachable():
                           http_port=servers.tcp.getsockname()[1]) == "sign_in_page"
     finally:
         servers.close()
-    servers = Servers(drop=2)
+    assert join.probe(None, []) == "not_reachable" and join.probe(None, ["not an address"]) == "not_reachable"
+
+
+def test_the_probe_pauses_between_questions_and_asks_three_at_most():
+    """The bench: right after a join the first DNS question fails at once, and the next ones work."""
+    join = load_job()
+    assert (join.DNS_QUESTIONS, join.DNS_RETRY_WAIT) == (3, 1)
+    servers = Servers(drop=0, refuse=2)
     try:
         assert join.probe(None, ["127.0.0.1"], dns_port=servers.udp.getsockname()[1],
-                          http_port=servers.tcp.getsockname()[1]) == "not_reachable"
-        assert servers.questions == 2
+                          http_port=servers.tcp.getsockname()[1]) == "reachable"
+        assert servers.questions == 3
+        assert all(later - earlier >= 0.9 for earlier, later in zip(servers.times, servers.times[1:]))
     finally:
         servers.close()
-    assert join.probe(None, []) == "not_reachable" and join.probe(None, ["not an address"]) == "not_reachable"
+
+
+def test_a_dns_server_that_never_answers_is_not_reachable_within_the_probes_time():
+    join = load_job()
+    servers = Servers(drop=99)
+    try:
+        started = time.monotonic()
+        assert join.probe(None, ["127.0.0.1"], dns_port=servers.udp.getsockname()[1],
+                          http_port=servers.tcp.getsockname()[1]) == "not_reachable"
+        assert time.monotonic() - started < join.PROBE_TIMEOUT + 0.5
+        assert servers.questions == 3
+    finally:
+        servers.close()
+
+
+@pytest.mark.parametrize("dns, asked", [(["192.0.2.1"], ["192.0.2.1"] * 3),
+                                        (["192.0.2.1", "192.0.2.2", "192.0.2.3"],
+                                         ["192.0.2.1", "192.0.2.2", "192.0.2.1"])])
+def test_the_questions_alternate_between_the_first_two_servers(monkeypatch, dns, asked):
+    join = load_job()
+    seen = []
+    monkeypatch.setattr(join, "DNS_RETRY_WAIT", 0.01)
+    monkeypatch.setattr(join, "_ask", lambda device, server, port, deadline: seen.append(server))
+    assert join.probe(None, dns) == "not_reachable" and seen == asked
+
+
+def test_each_line_is_written_as_it_happens(world):
+    world.nmcli["up_delay"] = {"HomeNet": 30}
+    job = world.start(NEW)
+    try:
+        assert wait_for(lambda: world.calls("up") == 1)
+        ready, _, _ = select.select([job.stdout], [], [], 5)
+        assert ready and job.stdout.readline() == "made the checkpoint\n"
+    finally:
+        os.killpg(job.pid, signal.SIGKILL)
+        job.communicate(timeout=10)
 
 
 def test_the_rules_are_the_same_as_tm_controls(world):

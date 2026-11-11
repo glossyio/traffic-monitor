@@ -139,6 +139,8 @@ COUNTDOWN = 300  # seconds from a passed test to the switch
 PROBE_HOST = "connectivity-check.ubuntu.com"
 PROBE_TIMEOUT = 10  # seconds for the whole probe
 DNS_WAIT = 2  # seconds for one DNS question
+DNS_QUESTIONS = 3  # DNS questions at most, one after another
+DNS_RETRY_WAIT = 1  # seconds between them: the first can fail at once, right after the join (seen on the bench)
 HTTP_WAIT = 3  # seconds to connect, and again to read the answer
 STATE_FILE = "network-join.json"
 RETRY_FILE = "network-retry.json"
@@ -655,10 +657,12 @@ def _first_line(device, address, port, deadline):
 def probe(device, dns_servers, dns_port=53, http_port=80):
     """Whether the network the device is on reaches the internet: `reachable`, `sign_in_page`, or `not_reachable`.
 
-    Both sockets are bound to the device. One DNS question to the network's first DNS server for PROBE_HOST, and when
-    it gets no usable answer one more, to the second server if there is one and else the same one (DNS_WAIT seconds
-    each); then a GET to port 80 of the address it got (HTTP_WAIT seconds to connect and again to read). 204 is
-    `reachable`, any other answer `sign_in_page`; no address, no answer, an error, or PROBE_TIMEOUT seconds in all is
+    Both sockets are bound to the device. Up to DNS_QUESTIONS DNS questions for PROBE_HOST, DNS_WAIT seconds each,
+    until one gets a usable answer: to the network's first DNS server, then the second if there is one (else the
+    first again), alternating. Before each question after the first the probe pauses DNS_RETRY_WAIT seconds, since
+    right after a join the first question can fail at once and the next ones work. Then a GET to port 80 of the
+    address it got (HTTP_WAIT seconds to connect and again to read). 204 is `reachable`, any other answer
+    `sign_in_page`; no address, no answer, an error, or PROBE_TIMEOUT seconds in all (the pauses included) is
     `not_reachable`. The ports and a device of None (no binding) are for the tests only."""
     deadline = time.monotonic() + PROBE_TIMEOUT
     try:
@@ -670,9 +674,11 @@ def probe(device, dns_servers, dns_port=53, http_port=80):
                 continue
         if not servers:
             return "not_reachable"
-        address = None
-        for server in (servers[0], servers[1] if len(servers) > 1 else servers[0]):
-            address = _ask(device, server, dns_port, deadline)
+        servers, address = servers[:2], None
+        for number in range(DNS_QUESTIONS):
+            if number:
+                time.sleep(_left(deadline, DNS_RETRY_WAIT))  # past the deadline: TimeoutError, so not_reachable
+            address = _ask(device, servers[number % len(servers)], dns_port, deadline)
             if address:
                 break
         if not address:
@@ -1064,6 +1070,7 @@ def main(argv):
     directory, request_name = os.path.split(argv[1] if len(argv) > 1 else REQUEST)
     nm = Nmcli(trusted("NMCLI", NMCLI))
     step = "check the request"
+    sys.stdout.reconfigure(line_buffering=True)  # each step reaches the journal as it happens, not at the exit
     signal.signal(signal.SIGTERM, stop)
     try:
         owner_uid, device, hotspot = read_manifest(manifest_path())
