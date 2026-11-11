@@ -101,6 +101,28 @@ describe('the hotspot settings', () => {
     expect(posts(api)).toEqual([{ name: 'TM-ROAD' }])
   })
 
+  it('keeps the name dialog button disabled while the name is the one the hotspot has', async () => {
+    const { api, wrapper } = await open()
+    await tap(wrapper, 'Change the hotspot name')
+    expect(dialogField('New name').value).toBe(NETWORK_STATE.hotspot!.name)
+    expect(dialogButtons('Change name')[0].disabled).toBe(true)
+    await typeInto(dialogField('New name'), 'TM-ROAD')
+    expect(dialogButtons('Change name')[0].disabled).toBe(false)
+    await typeInto(dialogField('New name'), NETWORK_STATE.hotspot!.name)
+    expect(dialogButtons('Change name')[0].disabled).toBe(true)
+    expect(posts(api)).toEqual([])
+  })
+
+  it('does not claim a restart when the job found nothing to change', async () => {
+    const { api, wrapper } = await open(NETWORK_STATE, { [JOB]: json(200, job('succeeded', ['nothing to change'])) })
+    await tap(wrapper, 'Change the hotspot password')
+    await typeInto(dialogField('New password'), 'placeholder-pass-4')
+    await clickInDialog('Change password')
+    expect(posts(api)).toEqual([{ password: 'placeholder-pass-4' }])
+    expect(wrapper.text()).toContain('Nothing changed. The hotspot already has these settings.')
+    expect(wrapper.text()).not.toContain('Saved. The hotspot restarted.')
+  })
+
   it('refuses a name over 32 bytes and a password under 8 characters before asking the device', async () => {
     const { api, wrapper } = await open()
     await tap(wrapper, 'Change the hotspot name')

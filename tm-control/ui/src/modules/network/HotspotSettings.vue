@@ -80,6 +80,7 @@ onBeforeUnmount(() => {
 })
 
 const saved = (job: Job) => job.log.some((line) => line.endsWith('the settings are saved'))
+const nothingToChange = (job: Job) => job.log.some((line) => line.endsWith('nothing to change'))
 
 // What the page says when it loses the unit while the job runs
 function lostText(kind: Kind, name: string): string {
@@ -88,9 +89,10 @@ function lostText(kind: Kind, name: string): string {
   return `This page lost the unit, which is expected when your phone is on the hotspot. Join ${name} again, then reload this page.`
 }
 
-function doneText(kind: Kind): string {
+function doneText(kind: Kind, job: Job): string {
   if (kind === 'off') return 'The hotspot is off.'
   if (kind === 'on') return 'The hotspot is on.'
+  if (nothingToChange(job)) return 'Nothing changed. The hotspot already has these settings.'
   return props.hotspot.active ? 'Saved. The hotspot restarted.' : 'Saved. The change applies when the hotspot next starts.'
 }
 
@@ -119,7 +121,7 @@ async function apply(kind: Kind, body: HotspotChange) {
         text: "The device hasn't reported whether the change was made. Reload this page in a minute to check.",
       }
     } else if (job.status === 'succeeded') {
-      notice.value = { type: 'success', text: doneText(kind) }
+      notice.value = { type: 'success', text: doneText(kind, job) }
       emit('changed')
     } else {
       const text = saved(job) ? "The settings were saved, but the hotspot didn't restart." : "The change wasn't made."

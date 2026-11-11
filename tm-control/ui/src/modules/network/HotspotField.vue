@@ -1,7 +1,7 @@
 <!--
   A dialog with one text field, for a new hotspot name or password. The field shows what is typed, and there is no
   second field to type it again: the dialog is the confirmation, so it shows the value and the warning, and its
-  button names the action ("Change password"). The button stays disabled until `rule` passes; the rule's message
+  button names the action ("Change password"). The button stays disabled until `rule` passes and the value differs from `initial`; the rule's message
   shows under the field once something is typed. `warning` may hold several paragraphs, split by a line break.
   Emits `save` with the value and closes.
 -->
@@ -26,10 +26,11 @@ watch(open, (isOpen) => {
 
 const verdict = computed(() => props.rule(value.value))
 const valid = computed(() => verdict.value === true)
+const unchanged = computed(() => props.initial !== undefined && value.value === props.initial)
 const paragraphs = computed(() => props.warning.split('\n').filter(Boolean))
 
 function save() {
-  if (!valid.value) return
+  if (!valid.value || unchanged.value) return
   emit('save', value.value)
   open.value = false
 }
@@ -56,7 +57,7 @@ function save() {
         <v-card-actions class="px-4 pb-4">
           <v-spacer />
           <v-btn variant="text" @click="open = false">Cancel</v-btn>
-          <v-btn type="submit" color="primary" variant="flat" :disabled="!valid">{{ confirmText }}</v-btn>
+          <v-btn type="submit" color="primary" variant="flat" :disabled="!valid || unchanged">{{ confirmText }}</v-btn>
         </v-card-actions>
       </v-form>
     </v-card>
