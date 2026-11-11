@@ -57,7 +57,7 @@ Each read goes into the `plate_recognizer` table, keyed by the event it belongs 
 | `event_id` | TEXT, primary key | The `id` of the [event](../data-and-payloads/events-payload.md) |
 | `filename` | TEXT | The snapshot that was read |
 | `timestamp` | TEXT | The event's `frame_time`, when Frigate took the best frame of the car |
-| `camera_id` | TEXT | Always `picam_h264`, whichever camera the event came from |
+| `camera_id` | TEXT | The camera's name in `config.yml`, the key under `sensors.cameras`. Rows written before this release say `picam_h264`, whichever camera the event came from |
 | `processing_time` | REAL | Milliseconds the read took |
 | `plate_type` | TEXT | Plate category, if the reader reports one |
 | `plate_score` | REAL | Confidence that a plate was found, 0 to 1 |

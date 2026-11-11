@@ -100,5 +100,6 @@ Only needed with the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `url` | URL | none | The add-on's address inside the device, `http://plate-recognizer:8080`. |
+| `regions` | list of text | `us`, `us-or`, `us-wa` | The region codes Plate Recognizer may match plates to, for example `[gb]`. A value that isn't a list of text, or an empty list, means the default. |
 
 The API token and license key aren't in this file. Set them on the control app's [Device page](../use/device-health.md#tokens-and-keys); plates aren't read until they're set.

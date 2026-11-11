@@ -176,8 +176,8 @@ RADAR_NAMES = sorted(SERIAL_IN.values())
 TOKEN = "placeholder-internal-token"
 
 # Runs function nodes the way Node-RED does: each node's On Start code once, then its body with msg, env, global,
-# and node. Global context is one object for all the steps, read and written by dotted keys like Node-RED's memory
-# store, so a test can run several nodes in turn.
+# flow, and node. Global context is one object for all the steps, read and written by dotted keys like Node-RED's
+# memory store, so a test can run several nodes in turn. Flow context is a plain object read and written by key.
 HARNESS = r"""
 const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const store = input.global;
@@ -193,6 +193,11 @@ const global = {
         target[parts[parts.length - 1]] = value;
     },
 };
+const flowStore = input.flow;
+const flow = {
+    get: (key) => flowStore[key],
+    set: (key, value) => { flowStore[key] = value; },
+};
 const env = { get: (name) => input.env[name] };
 const started = new Set();
 const results = [];
@@ -202,21 +207,22 @@ for (const step of input.steps) {
     const log = (level) => (text, msg) => logged.push([level, String(text), msg !== undefined]);
     const node = { error: log("error"), warn: log("warn"), log: log("log"), status: () => {} };
     if (step.initialize && !started.has(step.id)) {
-        new Function("env", "global", "node", step.initialize)(env, global, node);
+        new Function("env", "global", "flow", "node", step.initialize)(env, global, flow, node);
     }
     started.add(step.id);
-    const result = new Function("msg", "env", "global", "node", step.func)(step.msg, env, global, node);
+    const result = new Function("msg", "env", "global", "flow", "node", step.func)(step.msg, env, global, flow, node);
     results.push({ result: result === undefined ? null : result, logged });
 }
-console.log(JSON.stringify({ results, global: store }));
+console.log(JSON.stringify({ results, global: store, flow: flowStore }));
 """
 
 
-def run_functions(steps, env=None, context=None):
+def run_functions(steps, env=None, context=None, flow=None):
     """Run (node, msg) steps under node; returns each step's return value and log, and the global context after."""
     payload = {
         "env": env or {},
         "global": context or {},
+        "flow": flow or {},
         "steps": [{"id": node["id"], "func": node["func"], "initialize": node.get("initialize", ""), "msg": msg}
                   for node, msg in steps],
     }
@@ -1648,3 +1654,117 @@ def test_a_new_config_load_warns_again(camera, warning):
     second, _ = append_events([camera, camera], context)
     for steps in (first, second):
         assert [text for step in steps for level, text, _ in step["logged"] if level == "warn"] == [warning]
+
+
+# What leaves the device and what the Frigate API is asked, by key. Plate Recognizer is sent the camera's name in
+# config.yml and the regions the admin set (issue #249), ThingsBoard's copy of the config has no Frigate names,
+# and the node that asks Frigate for its daily summary maps the key back to the name Frigate uses.
+
+PR_FORMAT = "ce5360091646c733"  # plate-recognizer: format http request
+PR_ROW = "f76c2b5b2b99096a"  # plate-recognizer: write params for plate_recognizer insert
+TB_CONFIG = "9941048ea93dc79c"  # thingsboard: format init-config client-side attributes
+SUMMARY = "eb140f61419c6a08"  # ui-monitoring: structure frigate api/summary
+DEFAULT_REGIONS = ["us", "us-or", "us-wa"]
+
+
+def plate_request(regions=MISSING, camera="camera_1_3fa9c2"):
+    plate_recognizer = {"url": "http://plate-recognizer:8080"}
+    if regions is not MISSING:
+        plate_recognizer["regions"] = regions
+    msg = {"frigate_event": {"frame_time": 1761800000.5, "camera": camera}, "frigate_event_api_thumbnail": "thumbnail"}
+    [step] = run_functions([(node_by_id(PR_FORMAT), msg)],
+                           env={"TM_PLATE_RECOGNIZER_TOKEN": "pr-placeholder-0002"},
+                           context={"config": {"addons": {"plate_recognizer": plate_recognizer}}})["results"]
+    return step["result"]["payload"]
+
+
+@needs_node
+def test_plate_recognizer_is_sent_the_cameras_key_and_the_configured_regions():
+    payload = plate_request(regions=["gb"])
+    assert payload["camera_id"] == {"value": "camera_1_3fa9c2"}
+    assert json.loads(payload["regions"]["value"]) == ["gb"]
+
+
+@needs_node
+@pytest.mark.parametrize("regions", [MISSING, None, [], "us", [1, 2]],
+                         ids=["missing", "null", "empty", "a-string", "not-strings"])
+def test_plate_recognizer_regions_default(regions):
+    assert json.loads(plate_request(regions=regions)["regions"]["value"]) == DEFAULT_REGIONS
+
+
+@needs_node
+def test_the_plate_row_stores_the_cameras_key():
+    msg = {"frigate_event": {"id": "1.0-abc", "camera": "camera_1_3fa9c2"},
+           "payload": {"filename": "x.jpg", "camera_id": "something-else", "results": []}}
+    [step] = run_functions([(node_by_id(PR_ROW), msg)])["results"]
+    assert step["result"]["payload"]["camera_id"] == "camera_1_3fa9c2"
+    assert step["result"]["params"]["$camera_id"] == "camera_1_3fa9c2"
+
+
+@needs_node
+def test_config_tm_has_no_frigate_camera_and_leaves_the_config_alone():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
+        "main_st": {"enabled": False},
+    })
+    func = node_by_id(TB_CONFIG)["func"]
+    # The node runs on the live object that becomes global.config, so it must not edit it: run it here on a message
+    # whose payload the script keeps a reference to, and read the original afterwards.
+    harness = (
+        "const config = JSON.parse(process.argv[1]); const msg = { payload: config };"
+        "const result = new Function('msg', process.argv[2])(msg);"
+        "console.log(JSON.stringify({ sent: result.payload, original: config }));"
+    )
+    result = subprocess.run(["node", "-e", harness, json.dumps(config), func], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    run = json.loads(result.stdout)
+    sent = run["sent"]
+    assert "oak_ave_wide" not in json.dumps(sent) and "frigate_camera" not in json.dumps(sent)
+    assert sent["config_tm"]["sensors"]["cameras"]["camera_1_3fa9c2"]["enabled"] is True
+    assert sent["config_tm"]["sensors"]["cameras"]["main_st"] == {"enabled": False}
+    assert run["original"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+
+
+def summary_rows():
+    today = "2026-11-10"
+    return [
+        {"camera": "oak_ave_wide", "day": today, "label": "car", "count": 4},
+        {"camera": "oak_ave_tele", "day": today, "label": "car", "count": 100},
+        {"camera": "oak_ave_wide", "day": today, "label": "bicycle", "count": 1},
+    ]
+
+
+@needs_node
+def test_the_frigate_summary_chart_follows_the_selected_cameras_key():
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})],
+                        context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2",
+                                                     "oak_ave_tele": "camera_2_b07e11"}},
+                        flow={"camera_selection": "camera_1_3fa9c2"})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == ["car", "bicycle"]
+    assert [[point["y"] for point in series] for series in chart["data"]] == [[4], [1]]
+
+
+@needs_node
+def test_the_frigate_summary_chart_is_empty_without_the_map():
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})], flow={"camera_selection": "camera_1_3fa9c2"})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == [] and chart["data"] == []
+
+
+def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
+    """Nodes that call Frigate's API (frigate:5000): config/raw, config/save, version, events/summary, and the
+    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
+    by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
+    (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
+    camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
+    frigate_cameras."""
+    flows = json.loads(FLOWS.read_text())
+    calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
+    assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
+    selects = [node["id"] for node in flows
+               if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
+    assert selects == [SUMMARY]
+    assert 'global.get("frigate_cameras")' in node_by_id(SUMMARY)["func"]
