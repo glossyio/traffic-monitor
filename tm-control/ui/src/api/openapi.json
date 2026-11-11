@@ -1633,6 +1633,132 @@
         }
       }
     },
+    "/api/v1/network/wifi": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Wifi",
+        "operationId": "get_wifi_api_v1_network_wifi_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WifiNetworks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/scan": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Scan Wifi",
+        "description": "Start a scan (Refresh). A radio known to be missing or off is refused before any job; one that can't be read\nis left to the job.",
+        "operationId": "scan_wifi_api_v1_network_wifi_scan_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/forget": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Forget Wifi",
+        "operationId": "forget_wifi_api_v1_network_wifi_forget_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/order": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Order Wifi",
+        "description": "Set the order the unit tries its saved networks in. It must name exactly the ones that join by themselves.",
+        "operationId": "order_wifi_api_v1_network_wifi_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -2308,6 +2434,20 @@
         ],
         "title": "Fix",
         "description": "What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read."
+      },
+      "ForgetRequest": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid"
+        ],
+        "title": "ForgetRequest"
       },
       "Group": {
         "properties": {
@@ -3044,6 +3184,46 @@
         ],
         "title": "ModelsState"
       },
+      "Nearby": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "signal": {
+            "type": "integer",
+            "title": "Signal"
+          },
+          "security": {
+            "type": "string",
+            "enum": [
+              "password",
+              "wpa3",
+              "enterprise",
+              "open",
+              "other"
+            ],
+            "title": "Security"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "signal",
+          "security",
+          "saved",
+          "in_use"
+        ],
+        "title": "Nearby"
+      },
       "NetworkState": {
         "properties": {
           "hostname": {
@@ -3167,6 +3347,23 @@
           "available"
         ],
         "title": "Ntp"
+      },
+      "OrderRequest": {
+        "properties": {
+          "uuids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Uuids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuids"
+        ],
+        "title": "OrderRequest"
       },
       "PasswordChange": {
         "properties": {
@@ -3412,6 +3609,56 @@
           "source"
         ],
         "title": "RunningOut"
+      },
+      "Saved": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "title": "Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          },
+          "automatic": {
+            "type": "boolean",
+            "title": "Automatic"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "in_range": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Range"
+          },
+          "could_not_join": {
+            "type": "boolean",
+            "title": "Could Not Join"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "name",
+          "in_use",
+          "automatic",
+          "hidden",
+          "in_range",
+          "could_not_join"
+        ],
+        "title": "Saved"
       },
       "SecretState": {
         "properties": {
@@ -4342,6 +4589,57 @@
           "signal"
         ],
         "title": "Wifi"
+      },
+      "WifiNetworks": {
+        "properties": {
+          "readable": {
+            "type": "boolean",
+            "title": "Readable"
+          },
+          "radio": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off",
+              "none"
+            ],
+            "title": "Radio"
+          },
+          "saved": {
+            "items": {
+              "$ref": "#/components/schemas/Saved"
+            },
+            "type": "array",
+            "title": "Saved"
+          },
+          "nearby": {
+            "items": {
+              "$ref": "#/components/schemas/Nearby"
+            },
+            "type": "array",
+            "title": "Nearby"
+          },
+          "scanned_seconds_ago": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scanned Seconds Ago"
+          }
+        },
+        "type": "object",
+        "required": [
+          "readable",
+          "radio",
+          "saved",
+          "nearby",
+          "scanned_seconds_ago"
+        ],
+        "title": "WifiNetworks"
       }
     }
   }

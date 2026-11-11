@@ -63,6 +63,7 @@ def settings(tmp_path):
         fake=True,
         eula_path=Path(tm_control.__file__).parent / "modules" / "setup" / "EULA.md",
         setup_code_file=tmp_path / "etc" / "setup-code",
+        network_run_dir=tmp_path / "network-run",
     )
 
 

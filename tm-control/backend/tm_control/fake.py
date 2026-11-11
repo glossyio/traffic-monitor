@@ -242,9 +242,37 @@ class FakeNetwork:
             "address": "10.42.0.1",
         }
         self.password: str | None = "ABCD-EFGH-JKLM"
+        self.saved: list[dict] = [
+            {
+                "uuid": "11111111-1111-4111-8111-111111111111", "name": "Home", "in_use": False, "automatic": True,
+                "hidden": False, "in_range": True, "could_not_join": False,
+            },
+            {
+                "uuid": "22222222-2222-4222-8222-222222222222", "name": "Depot", "in_use": False, "automatic": True,
+                "hidden": False, "in_range": False, "could_not_join": False,
+            },
+        ]
+        self.nearby: list[dict] = [
+            {"name": "Home", "signal": 82, "security": "password"},
+            {"name": "Cafe", "signal": 64, "security": "password"},
+            {"name": "Guest", "signal": 41, "security": "open"},
+            {"name": "Office", "signal": 30, "security": "password"},
+            {"name": "Neighbour", "signal": 18, "security": "wpa3"},
+        ]
+        self.scanned: float | None = None  # time.monotonic() of the last scan
 
     def apply(self, change: dict) -> None:
-        """Set what a hotspot job request names: enabled, name, hidden, and password."""
+        """Set what a job request names: for the hotspot, enabled, name, hidden, and password; for the saved Wi-Fi
+        networks, an `action` of scan, forget, or order."""
+        action = change.get("action")
+        if action == "scan":
+            self.scanned = time.monotonic()
+        elif action == "forget":
+            self.saved = [n for n in self.saved if n["uuid"] != change["uuid"]]
+        elif action == "order":
+            rank = {uuid: i for i, uuid in enumerate(change["uuids"])}
+            automatic = sorted((n for n in self.saved if n["uuid"] in rank), key=lambda n: rank[n["uuid"]])
+            self.saved = automatic + [n for n in self.saved if n["uuid"] not in rank]
         if "enabled" in change:
             self.hotspot["enabled"] = self.hotspot["active"] = change["enabled"]
         if "name" in change:

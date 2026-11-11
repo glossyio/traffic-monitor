@@ -1,9 +1,9 @@
-"""The Network page's routes: GET /network for any signed-in user, and for admins the hotspot's password and a change
-to the hotspot.
+"""The Network page's routes: GET /network and GET /network/wifi for any signed-in user, and for admins the hotspot's
+password, a change to the hotspot, and Refresh, Forget, and the order of the saved Wi-Fi networks.
 
-A change is only checked here. POST /network/hotspot starts the `network` root job with the fields that were sent; the
-UI polls GET /jobs/{id} for the outcome. No password is logged, audited, or answered, except by GET
-/network/hotspot/password.
+A change is only checked here. POST /network/hotspot, /network/wifi/scan, /network/wifi/forget, and /network/wifi/order
+start the `network` root job with the request; the UI polls GET /jobs/{id} for the outcome. No password is logged,
+audited, or answered, except by GET /network/hotspot/password.
 """
 
 import re
@@ -18,6 +18,7 @@ from tm_control.core.errors import ApiError
 from tm_control.core.secrets import read_hotspot_password
 from tm_control.modules.auth.deps import current_user, require_admin
 from tm_control.modules.network.state import NetworkState, read_state
+from tm_control.modules.network.wifi import WifiNetworks, choices, read_wifi
 from tm_control.modules.system.router import hostname
 
 router = APIRouter(prefix="/network", tags=["network"])
@@ -30,6 +31,9 @@ NAME_MESSAGE = "A hotspot name is 1 to 32 characters (fewer with accents or emoj
 PASSWORD_MESSAGE = "A hotspot password is 8 to 63 letters, digits, and symbols, with no space at either end."
 NOTHING_MESSAGE = "Nothing to change."
 NO_HOTSPOT_MESSAGE = "The hotspot isn't set up. Run the installer again (tmsetup.sh -t wifi)."
+NO_RADIO_MESSAGE = "This unit has no built-in Wi-Fi radio."
+RADIO_OFF_MESSAGE = "The Wi-Fi radio is switched off. Turn the hotspot on to switch it on."
+STALE_ORDER_MESSAGE = "The saved networks changed. Reload the page."
 
 
 class HotspotChange(BaseModel):
@@ -45,6 +49,14 @@ class HotspotPassword(BaseModel):
 
 class JobStarted(BaseModel):
     id: str
+
+
+class ForgetRequest(BaseModel):
+    uuid: str = Field(max_length=64)
+
+
+class OrderRequest(BaseModel):
+    uuids: list[str] = Field(max_length=64)
 
 
 def _valid_name(name: str) -> bool:
@@ -95,3 +107,52 @@ def change_hotspot(body: HotspotChange, request: Request, admin: User = Depends(
     if app_state.fake_network is not None:
         app_state.fake_network.apply(job_request)
     return JobStarted(id=job.id)
+
+
+@router.get("/wifi", response_model=WifiNetworks)
+def get_wifi(request: Request, user: User = Depends(current_user)) -> WifiNetworks:
+    return read_wifi(request.app.state)
+
+
+def _start(app_state, admin: User, job_request: dict) -> JobStarted:
+    job = app_state.jobs.start("network", job_request, admin.id)
+    if app_state.fake_network is not None:
+        app_state.fake_network.apply(job_request)
+    return JobStarted(id=job.id)
+
+
+@router.post("/wifi/scan", status_code=202, response_model=JobStarted)
+def scan_wifi(request: Request, admin: User = Depends(require_admin)) -> JobStarted:
+    """Start a scan (Refresh). A radio known to be missing or off is refused before any job; one that can't be read
+    is left to the job."""
+    app_state = request.app.state
+    if app_state.fake_network is None:
+        info = app_state.manifest.network
+        if network.radio_kind(info.wifi_device) != "builtin":
+            raise ApiError(409, "no_radio", NO_RADIO_MESSAGE)
+        if network.radio_enabled() is False:
+            raise ApiError(409, "radio_off", RADIO_OFF_MESSAGE)
+    return _start(app_state, admin, {"action": "scan"})
+
+
+@router.post("/wifi/forget", status_code=202, response_model=JobStarted)
+def forget_wifi(body: ForgetRequest, request: Request, admin: User = Depends(require_admin)) -> JobStarted:
+    app_state = request.app.state
+    names = {uuid: name for uuid, name, _ in choices(app_state) or []}
+    if body.uuid not in names:
+        raise ApiError(404, "not_found", "That network isn't saved.")
+    started = _start(app_state, admin, {"action": "forget", "uuid": body.uuid})
+    Audit(app_state.state).record(admin.id, "network.wifi_forget", detail=names[body.uuid])
+    return started
+
+
+@router.post("/wifi/order", status_code=202, response_model=JobStarted)
+def order_wifi(body: OrderRequest, request: Request, admin: User = Depends(require_admin)) -> JobStarted:
+    """Set the order the unit tries its saved networks in. It must name exactly the ones that join by themselves."""
+    app_state = request.app.state
+    automatic = {uuid for uuid, _, joins in choices(app_state) or [] if joins}
+    if len(set(body.uuids)) != len(body.uuids) or set(body.uuids) != automatic or not automatic:
+        raise ApiError(409, "stale_order", STALE_ORDER_MESSAGE)
+    started = _start(app_state, admin, {"action": "order", "uuids": body.uuids})
+    Audit(app_state.state).record(admin.id, "network.wifi_order")
+    return started
