@@ -13,6 +13,7 @@ import {
   networkState,
   signedIn,
 } from './fake-api'
+import { flushPromises } from '@vue/test-utils'
 import { click, clickInDialog, dialogField, mountApp, typeInto } from './mount'
 
 type Job = components['schemas']['Job']
@@ -229,6 +230,7 @@ const START = 'POST /api/v1/network/wifi/join'
 const SCAN = 'POST /api/v1/network/wifi/scan'
 const CHANGE = 'POST /api/v1/network/hotspot'
 const JOB = 'GET /api/v1/jobs/job1'
+const JOIN_FINISHED = joinState({ stage: 'failed', joined: false, reason: 'not_joined', seconds_left: null })
 const LOCKED_BY_JOIN = 'Finish or cancel the Wi-Fi join first.'
 const LOCKED_BY_JOB = 'Wait for the Wi-Fi change to finish.'
 
@@ -416,5 +418,91 @@ describe('joining a network from the Network page', () => {
     expect(loads()).toBe(before + 2)
     expect(wrapper.text()).toContain('The unit is on Neighbour.')
     expect(wrapper.text()).not.toContain(LOCKED_BY_JOIN)
+  })
+
+  it('reloads quietly on a stage change: a failed reload keeps the sections and shows no error', async () => {
+    vi.useFakeTimers()
+    let answer: JoinState = JOIN_COUNTDOWN
+    let down = false
+    const refusal = () => (down ? apiError(500, 'error', 'The device answered with an error.') : undefined)
+    const { wrapper } = await openAdmin({
+      [JOIN]: () => json(200, answer),
+      [NETWORK]: () => refusal() ?? json(200, NETWORK_STATE),
+      [WIFI]: () => refusal() ?? json(200, WIFI_NETWORKS),
+    })
+    down = true
+    answer = joinState({ stage: 'joined', seconds_left: null })
+    await vi.advanceTimersByTimeAsync(2_000)
+    const text = wrapper.text()
+    expect(text).toContain('The unit is on Neighbour.') // the stage did change
+    expect(text).not.toContain('The device answered with an error.')
+    expect(text).not.toContain('Try again')
+    expect(text).toContain('This device')
+    expect(text).toContain('HomeNet')
+  })
+
+  it("ignores a load's late failure once a newer load has succeeded", async () => {
+    let network = 0
+    let gone = false
+    let hang: (response: Response) => void = () => {}
+    const { wrapper } = await openAdmin({
+      [SCAN]: json(202, { id: 'job1' }),
+      [JOB]: json(200, { ...job('succeeded'), finished_at: '2026-11-11T12:00:30+00:00' }),
+      'POST /api/v1/network/wifi/join/cancel': () => {
+        gone = true
+        return json(202, { id: 'job1' })
+      },
+      [JOIN]: () => json(200, gone ? null : JOIN_FINISHED),
+      [NETWORK]: () => {
+        network += 1
+        if (network === 2) return new Promise<Response>((resolve) => (hang = resolve)) // the scan's reload hangs
+        return json(200, network === 1 ? NETWORK_STATE : networkState({ hostname: 'tm-new' }))
+      },
+    })
+    await click(wrapper, 'Refresh') // a loud reload, which hangs
+    expect(network).toBe(2)
+    await click(wrapper, 'Dismiss') // the join goes away: a stage change, so a quiet reload, which works
+    expect(network).toBe(3)
+    expect(wrapper.text()).toContain('tm-new')
+    hang(apiError(500, 'error', 'The device answered with an error.')) // the first one fails, much too late
+    await flushPromises()
+    expect(wrapper.text()).toContain('tm-new')
+    expect(wrapper.text()).not.toContain('The device answered with an error.')
+    expect(wrapper.text()).not.toContain('Try again')
+  })
+
+  it('keeps showing the failure of a first load, and Try again loads it', async () => {
+    let loads = 0
+    signedIn(ADMIN, {
+      [JOIN]: json(200, null),
+      [WIFI]: WIFI_NETWORKS,
+      [NETWORK]: () => (++loads === 1 ? apiError(500, 'error', 'The device answered with an error.') : json(200, NETWORK_STATE)),
+    })
+    const { wrapper } = await mountApp('/network')
+    expect(wrapper.text()).toContain('The device answered with an error.')
+    await click(wrapper, 'Try again')
+    expect(wrapper.text()).not.toContain('The device answered with an error.')
+    expect(wrapper.text()).toContain('This device')
+  })
+
+  it('does not reload when the join starts testing, and reloads when it moves on', async () => {
+    vi.useFakeTimers()
+    let answer: JoinState | null = null
+    const { api, wrapper } = await openAdmin({
+      [START]: json(202, { id: 'job1' }),
+      [JOIN]: () => json(200, answer),
+    })
+    const loads = () =>
+      api.sent.filter((r) => r.method === 'GET' && (r.path === '/api/v1/network' || r.path === '/api/v1/network/wifi')).length
+    const before = loads()
+    await joinNeighbour(wrapper)
+    answer = joinState({ stage: 'testing', address: null, internet: null, seconds_left: null })
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(wrapper.text()).toContain('Testing Neighbour.')
+    expect(loads()).toBe(before)
+    answer = JOIN_COUNTDOWN
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(wrapper.text()).toContain('Neighbour works')
+    expect(loads()).toBe(before + 2)
   })
 })

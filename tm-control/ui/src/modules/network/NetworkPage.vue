@@ -41,12 +41,20 @@ const session = useSession()
 const state = ref<NetworkState | null>(null)
 const loadError = ref('')
 
-async function load() {
-  loadError.value = ''
+// Each load counts itself, so the answer of one that a newer load has overtaken (a request that hung while the unit
+// went away and failed much later) is dropped, whether it worked or not. A quiet load keeps what the page has when it
+// fails and says nothing: it is the page asking again on its own, not the person, and the join card says what is going on.
+let loads = 0
+async function load(quiet = false) {
+  const mine = ++loads
+  if (!quiet) loadError.value = ''
   try {
     const { data } = await api.GET('/api/v1/network')
+    if (mine !== loads) return
     state.value = data as NetworkState
+    loadError.value = ''
   } catch (error) {
+    if (mine !== loads || quiet) return
     loadError.value = messageOf(error)
   }
 }
@@ -55,17 +63,23 @@ async function load() {
 const wifi = ref<Wifi | null>(null)
 const wifiError = ref('')
 
-async function loadWifi() {
-  wifiError.value = ''
+let wifiLoads = 0
+async function loadWifi(quiet = false) {
+  const mine = ++wifiLoads
+  if (!quiet) wifiError.value = ''
   try {
     const { data } = await api.GET('/api/v1/network/wifi')
+    if (mine !== wifiLoads) return
     wifi.value = data as Wifi
+    wifiError.value = ''
   } catch (error) {
+    if (mine !== wifiLoads || quiet) return
     wifiError.value = messageOf(error)
   }
 }
 
 const loadAll = () => Promise.all([load(), loadWifi()])
+const loadQuietly = () => Promise.all([load(true), loadWifi(true)])
 
 // The join, and the lock it puts on the sections. `running` is what each section says about a job it started.
 const { join, lost, refresh: refreshJoin, stop: stopJoin } = useJoin()
@@ -154,10 +168,13 @@ async function startJoin(password: string | null) {
 let stopWatching = () => {}
 onMounted(async () => {
   await Promise.all([loadAll(), refreshJoin()])
-  // Once the first answers are in, a change of stage means the unit's network or hotspot may have changed
+  // Once the first answers are in, a change of stage means the unit's network or hotspot may have changed, except
+  // on the way into the test, when nothing has yet. The reload is quiet: right after a test the link may still be flaky.
   stopWatching = watch(
     () => join.value?.stage,
-    () => void loadAll(),
+    (stage) => {
+      if (stage !== 'testing') void loadQuietly()
+    },
   )
 })
 onBeforeUnmount(() => {
@@ -272,7 +289,7 @@ const hotspotFacts = computed<Fact[]>(() => {
         <v-alert v-if="wifiError" type="error">
           {{ wifiError }}
           <template #append>
-            <v-btn variant="text" @click="loadWifi">Try again</v-btn>
+            <v-btn variant="text" @click="loadWifi()">Try again</v-btn>
           </template>
         </v-alert>
         <v-progress-linear v-else-if="!wifi" indeterminate color="primary" />
