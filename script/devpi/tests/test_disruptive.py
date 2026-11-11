@@ -10,6 +10,7 @@ import hashlib
 import io
 import json
 import re
+import secrets
 import shlex
 import time
 import zipfile
@@ -940,3 +941,108 @@ def test_the_hotspot_name_changes_through_the_job_and_back(host, address, tm_log
     with host.sudo():
         restored = host.check_output(read_ssid)
     assert restored == original, f"after putting the name back, {HOTSPOT_PROFILE}'s ssid isn't the original: {restored!r}"
+
+
+WIFI_DEVICE = role_vars()["tmsetup_wifi_device"]
+SCAN_JOB_SECONDS = 120
+ORDER_JOB_SECONDS = 60
+SCAN_FRESH_SECONDS = 30
+
+
+def wifi_networks(address, cookie):
+    """GET /network/wifi parsed, or None when it doesn't answer 200 with an object."""
+    answer = request_from_this_machine(address, f"{API}/network/wifi", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    return found if isinstance(found, dict) else None
+
+
+def start_wifi_job(address, cookie, path, body, seconds):
+    """POST a /network/wifi change and wait for the network job. Fails with what went wrong. None of the bodies this
+    module sends has a password."""
+    answer = request_from_this_machine(address, f"{API}/network/wifi/{path}", "POST", cookie, body)
+    started = answer.json() if answer.status == 202 else None
+    job_id = started.get("id") if isinstance(started, dict) else None
+    assert job_id, f"POST {API}/network/wifi/{path} answered {answer.status}"
+    status, log = wait_for_job(address, cookie, job_id, seconds)
+    assert status == "succeeded", f"the {path} job is {status} after {seconds} s; its log ends {log}"
+
+
+def test_a_scan_lists_nearby_networks(host, address, tm_login):
+    """An admin's Refresh runs the network job, and the page then shows a scan from the last 30 seconds. What the scan
+    hears depends on where the bench is, so only its age and the lists' shape are checked. Skips on a unit with no
+    built-in Wi-Fi radio, or with it switched off."""
+    if host.run(f"cat /sys/class/net/{WIFI_DEVICE}/address").rc != 0:
+        pytest.skip(f"the unit has no {WIFI_DEVICE}")
+    cookie = session(address, *tm_login)
+    before = wifi_networks(address, cookie)
+    assert before is not None, f"GET {API}/network/wifi didn't answer 200 with an object"
+    if before.get("radio") != "on":
+        pytest.skip(f"the Wi-Fi radio is {before.get('radio')}")
+    start_wifi_job(address, cookie, "scan", {}, SCAN_JOB_SECONDS)
+    after = wifi_networks(address, cookie)
+    assert after is not None, f"GET {API}/network/wifi after the scan didn't answer 200 with an object"
+    age = after.get("scanned_seconds_ago")
+    assert isinstance(age, int) and age < SCAN_FRESH_SECONDS, f"scanned_seconds_ago after a scan is {age!r}"
+    assert isinstance(after.get("nearby"), list), "GET /network/wifi has no nearby list after a scan"
+
+
+def profile_priority(host, uuid):
+    """connection.autoconnect-priority of a profile as nmcli prints it, or None when it can't be read."""
+    result = host.run(f"sudo nmcli -g connection.autoconnect-priority connection show uuid {shlex.quote(uuid)}")
+    return result.stdout.strip() if result.rc == 0 else None
+
+
+def add_throwaway_profile(host, name, password):
+    """Add a client profile that is kept only in NetworkManager's memory (save no) and return its uuid. The name and the
+    password are placeholders made in the test. The command line holds the password, so nothing here prints it or the
+    command: a failure says only the exit status."""
+    result = host.run(
+        f"sudo nmcli connection add save no type wifi ifname {WIFI_DEVICE} "
+        f"con-name {shlex.quote(name)} ssid {shlex.quote(name)} wifi-sec.key-mgmt wpa-psk "
+        f"wifi-sec.psk {shlex.quote(password)} connection.autoconnect yes")
+    code, output = result.rc, result.stdout
+    del result
+    found = re.search(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", output)
+    assert code == 0 and found, f"adding the throwaway profile exited {code}"
+    return found.group(0)
+
+
+def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, address, tm_login):
+    """A client profile made over SSH with a placeholder name and password (saved nowhere on disk) is put first in
+    the order through the network job, which gives it the highest priority; Forget then removes it. The other saved
+    networks' priorities are put back as they were, and the profile is deleted at the end even when a check fails.
+    The radio is never asked to join. Skips on a unit with no built-in Wi-Fi radio."""
+    if host.run(f"cat /sys/class/net/{WIFI_DEVICE}/address").rc != 0:
+        pytest.skip(f"the unit has no {WIFI_DEVICE}")
+    cookie = session(address, *tm_login)
+    name = f"tmdev-placeholder-{secrets.token_hex(3)}"
+    password = Redacted(secrets.token_urlsafe(12), "throwaway password")  # made here, never a real network's
+    state = wifi_networks(address, cookie)
+    assert state is not None and state.get("readable"), f"GET {API}/network/wifi isn't readable before the test"
+    others = [(entry["uuid"], entry["name"]) for entry in state["saved"] if entry["automatic"]]
+    original = {uuid: profile_priority(host, uuid) for uuid, _ in others}
+    assert None not in original.values(), "couldn't read a saved network's priority before the test"
+    uuid = None
+    try:
+        uuid = add_throwaway_profile(host, name, password)
+        listed = wifi_networks(address, cookie)
+        assert listed is not None and uuid in [entry["uuid"] for entry in listed["saved"]], (
+            f"GET {API}/network/wifi doesn't list the throwaway profile")
+        order = [uuid, *[other for other, _ in others]]
+        start_wifi_job(address, cookie, "order", {"uuids": order}, ORDER_JOB_SECONDS)
+        assert profile_priority(host, uuid) == str(len(order)), (
+            f"after the order, the throwaway profile's priority isn't {len(order)} (the first of {len(order)})")
+        start_wifi_job(address, cookie, "forget", {"uuid": uuid}, ORDER_JOB_SECONDS)
+        gone = host.run(f"sudo nmcli -g connection.uuid connection show uuid {uuid}")
+        assert gone.rc != 0, "after Forget, NetworkManager still has the throwaway profile"
+        after = wifi_networks(address, cookie)
+        assert after is not None and uuid not in [entry["uuid"] for entry in after["saved"]], (
+            f"GET {API}/network/wifi still lists the throwaway profile after Forget")
+    finally:
+        if uuid is not None:
+            host.run(f"sudo nmcli connection delete uuid {shlex.quote(uuid)}")
+        else:  # the add may have worked without its uuid being read
+            host.run(f"sudo nmcli connection delete id {shlex.quote(name)}")
+        for other, priority in original.items():
+            host.run(f"sudo nmcli connection modify uuid {shlex.quote(other)} "
+                     f"connection.autoconnect-priority {shlex.quote(priority)}")
