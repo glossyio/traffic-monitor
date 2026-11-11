@@ -39,7 +39,9 @@ One run, in order:
 5. Refuse unless the radio is built in (never a USB adapter) and switched on. The profile the device is on is
    `before` (none: the radio is idle). For a uuid, the profile must be a Wi-Fi client (infrastructure mode) and not
    `before`; the name is read from it. A refusal from here on also writes the state as `failed`, reason `error`.
-6. Scan with `iw` (SCAN_TIMEOUT seconds). The scan worked and didn't hear the name: state `failed`, reason
+6. Scan with `iw dev <device> scan flush` (SCAN_TIMEOUT seconds). `flush` empties the kernel's cache of what it has
+   heard first: a plain scan keeps listing a network for about 30 s after it left the air, and the hotspot would be
+   taken away to test a network that is gone. The scan worked and didn't hear the name: state `failed`, reason
    `not_in_range`, `the network isn't in range`, exit 0, and the radio was never touched. A saved hidden network isn't
    scanned for (it can't be told from one out of range). A scan that fails or hangs is printed and the run goes on.
 7. The state becomes `testing`. The checkpoint: GetDeviceByIpIface, then CheckpointCreate on that device with a
@@ -490,9 +492,9 @@ def builtin_radio(device):
 
 
 def heard_names(iw, device):
-    """The names in one scan, with the bytes iw writes as \\xNN decoded as tm-network-retry does. A failure is
-    CommandFailed."""
-    status, out = run_command([iw, "dev", device, "scan"], timeout=SCAN_TIMEOUT)
+    """The names in one scan (after a flush of the kernel's cache, so a network that just left the air isn't listed),
+    with the bytes iw writes as \\xNN decoded as tm-network-retry does. A failure is CommandFailed."""
+    status, out = run_command([iw, "dev", device, "scan", "flush"], timeout=SCAN_TIMEOUT)
     if status != 0:
         raise CommandFailed(why("iw", status))
     names = set()

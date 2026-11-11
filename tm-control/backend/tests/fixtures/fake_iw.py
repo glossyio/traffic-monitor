@@ -4,7 +4,7 @@
 State is a JSON file named by FAKE_IW_STATE: {"stations": ["<mac>", ...], "scan": ["<ssid>", ...], "fail": ["<verb>", ...]}.
 Each call's argv is appended to the file named by FAKE_IW_LOG as one JSON list. Answers, in iw's layout:
   dev DEV station dump    one "Station <mac> (on DEV)" paragraph per station
-  dev DEV scan            one "BSS ..." paragraph with an "SSID: <name>" line per network; a hidden one has an empty name.
+  dev DEV scan [flush]    one "BSS ..." paragraph with an "SSID: <name>" line per network; a hidden one has an empty name.
                           A "scan_text" in the state is printed instead, as the scan's whole output
 A verb in "fail" exits 240 (iw's busy) with a message on stderr. A verb in "fail_once" does the same for the first call
 only (the entry is removed from the state file). A verb in "hang" sleeps for a minute before it answers.
@@ -39,9 +39,9 @@ if verb in state.get("fail", []):
 if verb == "station" and argv[3:] == ["dump"]:
     for mac in state.get("stations", []):
         print(f"Station {mac} (on {device})\n\tinactive time:\t120 ms\n\tsignal:  \t-52 dBm")
-elif verb == "scan" and len(argv) == 3 and "scan_text" in state:
+elif verb == "scan" and argv[3:] in ([], ["flush"]) and "scan_text" in state:
     print(state["scan_text"], end="")
-elif verb == "scan" and len(argv) == 3:
+elif verb == "scan" and argv[3:] in ([], ["flush"]):
     for index, ssid in enumerate(state.get("scan", [])):
         print(f"BSS 02:00:00:00:00:{index:02x}(on {device})\n\tfreq: 2437\n\tSSID: {ssid}")
 else:

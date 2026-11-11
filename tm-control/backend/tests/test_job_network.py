@@ -567,7 +567,7 @@ def test_a_scan_writes_what_it_heard_strongest_first(world):
     assert [n["signal"] for n in scan["networks"]] == [96, 68, 60, 40]
     assert scan["networks"][0] == {"ssid": "placeholder-1", "signal": 96, "security": "password"}  # -52 dBm
     assert isinstance(scan["monotonic"], float) and scan["at"].endswith("+00:00")
-    assert world.iw_calls() == [["dev", "wlan0", "scan"]]
+    assert world.iw_calls() == [["dev", "wlan0", "scan", "flush"]]  # the kernel's cache of what it heard is flushed
     assert (world.run_dir / "network-scan.json").stat().st_mode & 0o777 == 0o644
     assert sorted(path.name for path in world.run_dir.iterdir()) == ["network-scan.json", "network.lock"]
     assert "placeholder" not in result.stdout + result.stderr  # a heard name is data, never printed
@@ -646,7 +646,7 @@ def test_a_scan_that_fails_once_is_tried_again(world):
     world.iw["fail_once"] = ["scan"]
     result = world.run({"action": "scan"})
     assert result.returncode == 0 and "heard 4 networks" in result.stdout, result.stdout + result.stderr
-    assert world.iw_calls() == [["dev", "wlan0", "scan"]] * 2
+    assert world.iw_calls() == [["dev", "wlan0", "scan", "flush"]] * 2
 
 
 def test_a_scan_is_tried_again_while_iw_is_busy_and_the_time_lasts(world):
@@ -655,7 +655,7 @@ def test_a_scan_is_tried_again_while_iw_is_busy_and_the_time_lasts(world):
     world.scan_timeout = "10"
     result = world.run({"action": "scan"})
     assert result.returncode == 0 and "heard 4 networks" in result.stdout, result.stdout + result.stderr
-    assert world.iw_calls() == [["dev", "wlan0", "scan"]] * 4
+    assert world.iw_calls() == [["dev", "wlan0", "scan", "flush"]] * 4
     assert len(world.scan()["networks"]) == 4
 
 

@@ -353,6 +353,13 @@ def test_a_network_that_is_not_heard_is_never_tested(world):
     assert world.calls("up") == 0 and world.active() == ["tm-hotspot"]
 
 
+def test_the_scan_flushes_the_kernels_cache_first(world):
+    """A plain scan lists a network for about 30 s after it left the air; the hotspot must not be taken for it."""
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.iw_calls() == [["dev", "wlan0", "scan", "flush"]]
+
+
 def test_a_scan_that_fails_does_not_stop_the_test(world):
     world.iw["fail"] = ["scan"]
     result = world.run(NEW)
