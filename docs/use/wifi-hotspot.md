@@ -43,14 +43,14 @@ The [Device page](device-health.md#the-device-page) shows the same addresses in 
 !!! tip "Find the MAC address"
     A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Copy it from the Wi-Fi block of the Network page, and add it to the router's list.
 
-Viewers see the lists of networks, the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: put the unit on a Wi-Fi network, change the saved networks, show or change the hotspot's password, rename the hotspot, hide its name, and turn it on or off.
+Viewers see the lists of networks, a join's progress card (read only, with no buttons), the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: put the unit on a Wi-Fi network, change the saved networks, show or change the hotspot's password, rename the hotspot, hide its name, and turn it on or off.
 
 !!! info "Changes restart the hotspot"
     A change to the hotspot's name, password, or hidden setting restarts it when it is up. Phones on it are disconnected, and each phone must rejoin by hand. When you use the Network page from a phone on the hotspot, the page stops answering when you save. Join the hotspot again, then reload the page. The page warns you before a change that restarts the hotspot, before you turn the hotspot off, and before you hide its name. Turning the hotspot on doesn't ask.
 
 ## Put the unit on a Wi-Fi network
 
-An administrator can put the unit on a Wi-Fi network from the Network page, without a cable or a keyboard. The unit tests the network first, and only switches to it once the test has passed and a countdown has ended.
+An administrator can put the unit on a Wi-Fi network from the Network page, without a cable or a keyboard. The unit tests the network first, and switches to it only once the test has passed and the countdown has ended or you choose **Switch now**.
 
 1. Open **Network**. Under **Wi-Fi networks**, choose **Refresh** to have the unit look for networks. It takes about 4 seconds, and a phone on the hotspot pauses for a few seconds while the unit looks. **Nearby networks** lists what it heard, strongest first, and says how long ago it looked.
 2. Choose **Join** next to the network, and read what the dialog says will happen. It shows the unit's Wi-Fi MAC address too.
@@ -60,7 +60,7 @@ The unit doesn't save the network or its password at this point. Until the switc
 
 ### The test
 
-A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the test ends, the page refuses every other Wi-Fi change.
+A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the join ends (the test, the countdown, and the switch), the unit refuses every other Wi-Fi or hotspot change. Choose **Cancel** or **Switch now** to free it.
 
 The test asks the network for an address, then makes one DNS question and one request to `connectivity-check.ubuntu.com` to see whether the internet is reachable. The unit comes back to where it was either way. To test a network the unit has saved already, choose **Join** and keep its saved password, or enter a new one.
 
@@ -97,7 +97,7 @@ The card says why, and the unit is back where it was. Nothing is saved for a new
 | **The unit was busy with its Wi-Fi** | Another Wi-Fi change was under way. Try again in a minute. |
 | **The test couldn't run** | The unit couldn't prepare to come back, so it left its radio alone, or it hit an error it didn't expect. It is back where it was. |
 | **The test of `<name>` was interrupted** | The test stopped partway, for example because the unit lost power. The unit goes back to where it was within a minute and a half. |
-| **The test passed, but the unit couldn't join `<name>` when the countdown ended** | The unit is back where it was. The network stays saved, and the unit tries it again by itself after a wait of 5, 15, then 60 minutes. |
+| **The test passed, but the unit couldn't join `<name>` when the countdown ended** | The unit is back where it was. The network stays saved, and the unit tries it again by itself, after a wait that grows to about an hour. See [When the hotspot runs](#when-the-hotspot-runs). |
 
 A saved network that fails is kept, because the cause may be temporary. A new network that fails is not saved.
 
@@ -113,7 +113,7 @@ Each network shows whether it is **Joined**, **In range**, or **Not in range**, 
 
 ### Couldn't join
 
-A saved network that the unit failed to join shows **Couldn't join**. The unit tries again by itself, after a wait of 5, 15, then 60 minutes; [When the hotspot runs](#when-the-hotspot-runs) gives the times a person sees. Joining the network by hand from the page, with the right password, tests it again at once.
+A saved network that the unit failed to join shows **Couldn't join**. The unit tries again by itself, about 10 minutes after the failure, then about 20, then about 65 minutes after each further one; [When the hotspot runs](#when-the-hotspot-runs) has the details. Joining the network by hand from the page, with the right password, tests it again at once.
 
 ## When the hotspot runs
 
@@ -220,7 +220,7 @@ The change applies at once, with no reboot. The Status page warns while no count
 
 ## Limits
 
-* The page can't join an open network, a hidden network (a saved hidden network included), a WPA3-only network, or a network that asks for a user name as well as a password (an enterprise network). It lists them and says why. A network that offers both WPA2 and WPA3 is joined as WPA2. The page doesn't complete a sign-in page, it only reports one.
-* One test or countdown runs at a time, and the page joins over IPv4 only.
+* The page can't join an open network, a hidden network (a saved hidden network included), a WPA3-only network, or a network that asks for a user name as well as a password (an enterprise network). It lists open, WPA3-only, enterprise, and other kinds with the reason, such as "Open networks can't be joined." or "This kind of network can't be joined." A hidden network is never listed by a scan, and a saved hidden network shows a **Hidden** mark and has no **Join**. A network that offers both WPA2 and WPA3 is joined as WPA2. The page doesn't complete a sign-in page, it only reports one.
+* One join (the test, the countdown, and the switch) runs at a time, and the page joins over IPv4 only.
 * A network the unit is also connected to that uses `10.42.0.x` addresses clashes with the hotspot's fixed address. Give that network another range.
 * The hotspot runs on the built-in radio, `wlan0`. If a USB Wi-Fi adapter takes that name, the hotspot stays off, and the Status page says so. Unplug the adapter and reboot.
