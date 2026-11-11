@@ -1202,6 +1202,30 @@ def test_the_pickers_keep_a_selection_that_is_still_there_and_label_from_camera_
     assert '{ "label": $label, "value": $key }' in options_of("Dashboard 2 - Monitoring")  # ui-dropdown
 
 
+RADAR_PICKERS = {  # tab: (radar change node, radar dropdown)
+    "ui-monitoring": ("59d0c8b142295eee", "62c9240d45e9c8d6"),
+    "Dashboard 2 - Monitoring": ("f3ebd7067c32beb0", "95215b45c821d24a"),
+}
+
+
+def test_the_radar_pickers_keep_a_selection_that_is_still_there():
+    """Only the camera change node feeds a tab's radar change node (at start-up and on each config load; a viewer's
+    camera choice doesn't), so a radar the file still lists stays selected, else the camera's camera_radar."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for tab, (radar_change, radar_dropdown) in RADAR_PICKERS.items():
+        camera_change = PICKERS[tab][1]
+        feeds = {node["id"] for node in flows if any(radar_change in output for output in node.get("wires", []))}
+        assert feeds == {camera_change}
+        assert sorted(by_id[camera_change]["wires"][0]) == sorted([PICKERS[tab][2], radar_change])
+        assert radar_dropdown in by_id[radar_change]["wires"][0]
+        [payload] = [rule for rule in by_id[radar_change]["rules"] if rule["p"] == "payload"]
+        assert (payload["t"], payload["pt"], payload["tot"]) == ("set", "msg", "jsonata")
+        assert '$flowContext("radar_selection")' in payload["to"]
+        assert '$keys($globalContext("config.sensors.radars"))' in payload["to"]
+        assert '$globalContext("config.sensors.cameras." & payload & ".camera_radar")' in payload["to"]
+
+
 # The per-survey endpoints tm-control calls on loopback, each behind its own copy of the status endpoint's token check.
 
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"

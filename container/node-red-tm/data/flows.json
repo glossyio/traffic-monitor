@@ -11017,13 +11017,13 @@
         "type": "change",
         "z": "28627559bebdc324",
         "g": "2df66c6bc991dbf4",
-        "name": "set radars, default to camera_radar",
+        "name": "set radars, keep the selection or take camera_radar",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
+                "to": "(\n    $selected := $flowContext(\"radar_selection\");\n    $selected in $keys($globalContext(\"config.sensors.radars\")) ? $selected : $globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")\n)",
                 "tot": "jsonata"
             },
             {
@@ -12434,13 +12434,13 @@
         "type": "change",
         "z": "0fa19dea799cc41d",
         "g": "89279ffabac66b61",
-        "name": "set radars, default to camera_radar",
+        "name": "set radars, keep the selection or take camera_radar",
         "rules": [
             {
                 "t": "set",
                 "p": "payload",
                 "pt": "msg",
-                "to": "$globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")",
+                "to": "(\n    $selected := $flowContext(\"radar_selection\");\n    $selected in $keys($globalContext(\"config.sensors.radars\")) ? $selected : $globalContext(\"config.sensors.cameras.\" & payload & \".camera_radar\")\n)",
                 "tot": "jsonata"
             },
             {
