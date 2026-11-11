@@ -3,8 +3,8 @@
 fixtures/run_job.py runs it with a non-root euid, so the stand-ins (NMCLI, TM_SYS_NET, the test's manifest, secrets
 directory, and lock) are used even when the suite runs as root. The `world` fixture builds a unit: a manifest naming
 the test's own user, a 0700 jobs directory, a 0750 secrets directory holding the hotspot password file, a fake
-/sys/class/net with a built-in radio, and the fake nmcli's hotspot profile, up. All names and passwords are
-placeholders.
+/sys/class/net with a built-in radio, a run directory, a fake iw (fixtures/fake_iw.py) that hears the recorded scan
+in fixtures/iw_scan.txt, and the fake nmcli's hotspot profile, up. All names and passwords are placeholders.
 """
 
 import fcntl
@@ -15,6 +15,7 @@ import os
 import pwd
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,10 @@ from tm_control.modules.network.router import NAME_MAX_BYTES, NAME_PATTERN, PASS
 JOB = Path(__file__).resolve().parents[2] / "jobs" / "tm-job-network"
 RUNNER = Path(__file__).resolve().parent / "fixtures" / "run_job.py"
 NMCLI = Path(__file__).resolve().parent / "fixtures" / "fake_nmcli.py"
+IW = Path(__file__).resolve().parent / "fixtures" / "fake_iw.py"
+IW_SCAN = Path(__file__).resolve().parent / "fixtures" / "iw_scan.txt"
 FIXTURE_MANIFEST = Path(__file__).resolve().parent / "fixtures" / "manifest.json"
+UUID_A = "11111111-1111-4111-8111-111111111111"
 OLD_PASSWORD = "placeholder-pass-1"
 NEW_PASSWORD = "placeholder-pass-2"
 HOTSPOT = {
@@ -57,9 +61,14 @@ class World:
         self.manifest = tmp_path / "manifest.json"
         me = pwd.getpwuid(os.getuid()).pw_name
         self.manifest.write_text(json.dumps({**json.loads(FIXTURE_MANIFEST.read_text()), "codeowner": me}))
-        self.lock = tmp_path / "run" / "network.lock"
+        self.run_dir = tmp_path / "run"
+        self.lock = self.run_dir / "network.lock"
         self.nmcli = NMCLI
         self.lock_wait = "10"
+        self.return_wait = "0.2"
+        self.scan_retry_wait = "0.1"
+        self.scan_timeout = None
+        self.iw = {"scan_text": IW_SCAN.read_text(), "fail": [], "fail_once": [], "hang": []}
         self.state = {"profiles": {"tm-hotspot": dict(HOTSPOT)}, "active": ["tm-hotspot"], "radio": "enabled",
                       "fail": []}
         self.radio("built-in")
@@ -78,6 +87,16 @@ class World:
     def fail(self, verb):
         self.state["fail"].append(verb)
 
+    def saved(self, name, **props):
+        """A saved Wi-Fi network (infrastructure, autoconnect on, priority 0); returns its uuid. The keywords are
+        autoconnect, priority, mode, and type (connection.type)."""
+        names = {"autoconnect": "connection.autoconnect", "priority": "connection.autoconnect-priority",
+                 "mode": "802-11-wireless.mode", "type": "connection.type"}
+        value = str(uuid.uuid5(uuid.NAMESPACE_DNS, name))
+        self.state["profiles"][name] = {"802-11-wireless.ssid": name, "connection.uuid": value,
+                                        **{names[key]: str(item) for key, item in props.items()}}
+        return value
+
     def write_request(self, body):
         path = self.jobs / "network.json"
         path.write_text(body if isinstance(body, str) else json.dumps(body))
@@ -89,6 +108,8 @@ class World:
             request = self.write_request(body)
         (self.tmp / "nmcli.json").write_text(json.dumps(self.state))
         (self.tmp / "nmcli.log").unlink(missing_ok=True)
+        (self.tmp / "iw.json").write_text(json.dumps(self.iw))
+        (self.tmp / "iw.log").unlink(missing_ok=True)
         env = {
             "PATH": os.environ["PATH"],
             "NMCLI": str(self.nmcli),
@@ -99,6 +120,13 @@ class World:
             "TM_NETWORK_LOCK_WAIT": self.lock_wait,
             "FAKE_NMCLI_STATE": str(self.tmp / "nmcli.json"),
             "FAKE_NMCLI_LOG": str(self.tmp / "nmcli.log"),
+            "IW": str(IW),
+            "FAKE_IW_STATE": str(self.tmp / "iw.json"),
+            "FAKE_IW_LOG": str(self.tmp / "iw.log"),
+            "TM_NETWORK_RUN_DIR": str(self.run_dir),
+            "TM_NETWORK_RETURN_WAIT": self.return_wait,
+            "TM_NETWORK_SCAN_RETRY_WAIT": self.scan_retry_wait,
+            **({"TM_NETWORK_SCAN_TIMEOUT": self.scan_timeout} if self.scan_timeout else {}),
         }
         self.request = request
         return subprocess.run([sys.executable, "-I", str(RUNNER), str(JOB), str(request)], env=env,
@@ -110,6 +138,13 @@ class World:
 
     def calls(self, verb):
         return sum(1 for call in self.log() if verb in call)
+
+    def iw_calls(self):
+        path = self.tmp / "iw.log"
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def scan(self):
+        return json.loads((self.run_dir / "network-scan.json").read_text())
 
     def modifies(self):
         return [call for call in self.log() if "modify" in call]
@@ -479,3 +514,290 @@ def test_the_scrubber_hides_the_longer_password_first_and_escaped_forms():
     nm.hide("abc12345", "abc12345678", "pa:ss\\word")
     text = nm.scrub("abc12345678 then pa\\:ss\\\\word then pa:ss\\word")
     assert "abc" not in text and "678" not in text and "ss" not in text
+
+
+# The scan, forget, and order actions.
+
+
+def scan_block(ssid="placeholder-x", signal="-65.00 dBm", capability="ESS Privacy (0x1031)", suites=None,
+               section="RSN"):
+    """One BSS block in iw's layout. `suites` is the text after `Authentication suites:`; None leaves the section out.
+    `ssid` None leaves out the SSID line, as this iw does for a hidden network."""
+    lines = ["BSS 02:00:00:00:00:99(on wlan0)", "\tfreq: 2412.0", f"\tcapability: {capability}", f"\tsignal: {signal}"]
+    if ssid is not None:
+        lines.append(f"\tSSID: {ssid}")
+    if suites is not None:
+        lines += [f"\t{section}:\t * Version: 1", "\t\t * Group cipher: CCMP",
+                  f"\t\t * Authentication suites: {suites}", "\t\t * Capabilities: 1-PTKSA-RC (0x0000)"]
+    return "\n".join(lines) + "\n"
+
+
+def test_a_scan_writes_what_it_heard_strongest_first(world):
+    result = world.run({"action": "scan"})
+    # the fixture's hidden network is left out
+    assert result.returncode == 0 and "heard 4 networks" in result.stdout, result.stdout + result.stderr
+    scan = world.scan()
+    assert [n["security"] for n in scan["networks"]] == ["password", "password", "enterprise", "open"]
+    assert [n["signal"] for n in scan["networks"]] == [96, 68, 60, 40]
+    assert scan["networks"][0] == {"ssid": "placeholder-1", "signal": 96, "security": "password"}  # -52 dBm
+    assert isinstance(scan["monotonic"], float) and scan["at"].endswith("+00:00")
+    assert world.iw_calls() == [["dev", "wlan0", "scan"]]
+    assert (world.run_dir / "network-scan.json").stat().st_mode & 0o777 == 0o644
+    assert sorted(path.name for path in world.run_dir.iterdir()) == ["network-scan.json", "network.lock"]
+    assert "placeholder" not in result.stdout + result.stderr  # a heard name is data, never printed
+
+
+def test_a_scan_reads_names_with_escapes_whole():
+    # iw writes a byte it can't print as \xNN (a backslash as \x5c); a colon and a space at the end are the name's
+    text = scan_block(ssid="Caf\\xc3\\xa9: 2\\x5c ", suites="PSK")
+    assert load_job().parse_scan(text) == [{"ssid": "Caf\u00e9: 2\\ ", "signal": 70, "security": "password"}]
+
+
+def test_a_name_that_is_empty_or_only_nul_bytes_or_missing_is_left_out():
+    job = load_job()
+    text = (scan_block(ssid="") + scan_block(ssid="\\x00\\x00\\x00") + scan_block(ssid=None, suites="PSK")
+            + scan_block(ssid="placeholder-1"))
+    assert [n["ssid"] for n in job.parse_scan(text)] == ["placeholder-1"]
+    assert job.parse_scan("") == [] and job.parse_scan("not a scan\n") == []
+
+
+def test_a_mixed_wpa2_wpa3_network_counts_as_a_password_network():
+    assert load_job().parse_scan(scan_block(suites="PSK SAE"))[0]["security"] == "password"
+    assert load_job().parse_scan(scan_block(suites="FT/PSK", section="WPA"))[0]["security"] == "password"
+
+
+def test_a_wpa3_only_network_is_wpa3_and_wep_is_other():
+    job = load_job()
+    assert job.parse_scan(scan_block(suites="SAE"))[0]["security"] == "wpa3"
+    assert job.parse_scan(scan_block(suites="IEEE 802.1X"))[0]["security"] == "enterprise"
+    assert job.parse_scan(scan_block(suites="OWE"))[0]["security"] == "other"
+    wep = scan_block(capability="ESS Privacy (0x0011)")  # Privacy and no suites
+    assert job.parse_scan(wep)[0]["security"] == "other"
+    assert job.parse_scan(scan_block(capability="ESS (0x0001)"))[0]["security"] == "open"
+
+
+def test_a_suite_outside_rsn_and_wpa_is_not_a_security_suite():
+    text = scan_block(capability="ESS (0x0001)") + "\tWPS:\t * Version: 1.0\n\t\t * Authentication suites: PSK\n"
+    # a suite under WPS is no suite, and nothing says Privacy
+    assert load_job().parse_scan(text)[0]["security"] == "open"
+
+
+def test_the_signal_becomes_a_number_from_0_to_100():
+    job = load_job()
+    for dbm, number in (("-52.00 dBm", 96), ("-30.00 dBm", 100), ("-10.00 dBm", 100), ("-100.00 dBm", 0),
+                        ("-120.00 dBm", 0), ("-67.50 dBm", 64)):
+        assert job.parse_scan(scan_block(signal=dbm))[0]["signal"] == number
+    assert job.parse_scan(scan_block(signal="unknown"))[0]["signal"] == 0
+
+
+def test_one_name_on_several_access_points_counts_once_with_its_best_signal():
+    job = load_job()
+    text = (scan_block(ssid="placeholder-1", signal="-80.00 dBm", suites="SAE")
+            + scan_block(ssid="placeholder-1", signal="-60.00 dBm", suites="SAE")
+            + scan_block(ssid="placeholder-1", signal="-70.00 dBm", suites="PSK"))
+    assert job.parse_scan(text) == [{"ssid": "placeholder-1", "signal": 80, "security": "password"}]
+    text = (scan_block(ssid="placeholder-1", signal="-80.00 dBm", suites="SAE")
+            + scan_block(ssid="placeholder-1", signal="-60.00 dBm", suites="SAE"))
+    assert job.parse_scan(text) == [{"ssid": "placeholder-1", "signal": 80, "security": "wpa3"}]
+
+
+def test_a_scan_keeps_at_most_100_networks(world):
+    world.iw["scan_text"] = "".join(
+        scan_block(ssid=f"placeholder-{i}", signal=f"-{40 + i % 50}.00 dBm") for i in range(130))
+    result = world.run({"action": "scan"})
+    assert result.returncode == 0 and "heard 100 networks" in result.stdout, result.stdout + result.stderr
+    signals = [n["signal"] for n in world.scan()["networks"]]
+    assert len(signals) == 100 and signals == sorted(signals, reverse=True)
+
+
+def test_a_scan_with_one_network_says_so(world):
+    world.iw["scan_text"] = scan_block(ssid="placeholder-1")
+    result = world.run({"action": "scan"})
+    assert result.stdout.strip() == "heard 1 network"
+
+
+def test_a_scan_that_fails_once_is_tried_again(world):
+    world.iw["fail_once"] = ["scan"]
+    result = world.run({"action": "scan"})
+    assert result.returncode == 0 and "heard 4 networks" in result.stdout, result.stdout + result.stderr
+    assert world.iw_calls() == [["dev", "wlan0", "scan"]] * 2
+
+
+def test_a_scan_that_fails_or_hangs_leaves_the_old_result(world):
+    world.run_dir.mkdir()
+    old = world.run_dir / "network-scan.json"
+    old.write_text('{"networks": []}')
+    world.iw["fail"] = ["scan"]
+    result = world.run({"action": "scan"})
+    assert result.returncode == 1 and result.stdout.strip() == "failed: scan (iw exit status 240)"
+    assert len(world.iw_calls()) == 2  # tried once more
+    assert old.read_text() == '{"networks": []}'
+    assert sorted(path.name for path in world.run_dir.iterdir()) == ["network-scan.json", "network.lock"]
+
+    world.iw = {**world.iw, "fail": [], "hang": ["scan"]}
+    world.scan_timeout = "0.5"
+    result = world.run({"action": "scan"})
+    assert result.returncode == 1 and result.stdout.strip() == "failed: scan (iw timed out)"
+    assert len(world.iw_calls()) == 1  # a hang is not tried again
+    assert old.read_text() == '{"networks": []}'
+
+
+def test_the_retry_shares_the_time_limit_of_the_first_try(world):
+    world.iw["fail"] = ["scan"]
+    world.scan_timeout = "0.05"  # shorter than the wait before the second try
+    result = world.run({"action": "scan"})
+    assert result.returncode == 1 and result.stdout.strip() == "failed: scan (iw exit status 240)"
+    assert len(world.iw_calls()) == 1
+
+
+def test_no_scan_on_a_radio_that_is_off_or_a_usb_adapter(world):
+    world.state["radio"] = "disabled"
+    result = world.run({"action": "scan"})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: the Wi-Fi radio is switched off"
+    assert world.iw_calls() == [] and not (world.run_dir / "network-scan.json").exists()
+
+    world.state["radio"] = "enabled"
+    world.radio("usb")
+    result = world.run({"action": "scan"})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: the unit has no built-in Wi-Fi radio"
+    assert world.iw_calls() == [] and world.log() == []
+
+
+def test_forgetting_a_saved_network_deletes_its_profile(world):
+    home = world.saved("Home")
+    result = world.run({"action": "forget", "uuid": home})
+    assert result.returncode == 0 and result.stdout.strip() == "forgot the network", result.stdout + result.stderr
+    assert world.calls("delete") == 1 and ["connection", "delete", "uuid", home] in world.log()
+    assert list(world.nm()["profiles"]) == ["tm-hotspot"] and world.nm()["active"] == ["tm-hotspot"]
+    assert world.calls("up") == 0 and world.calls("down") == 0 and world.calls("modify") == 0
+    assert "Home" not in result.stdout + result.stderr
+
+
+def test_forgetting_the_network_in_use_starts_the_hotspot(world):
+    home = world.saved("Home")
+    world.state["active"] = ["Home"]
+    result = world.run({"action": "forget", "uuid": home})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines() == ["forgot the network", "started the hotspot"]
+    assert world.calls("delete") == 1 and world.calls("up") == 1
+    assert ["--wait", "30", "connection", "up", "id", "tm-hotspot"] in world.log()
+    assert world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_forgetting_the_network_in_use_with_the_hotspot_off_leaves_the_radio_idle(world):
+    home = world.saved("Home")
+    world.state["active"] = ["Home"]
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    result = world.run({"action": "forget", "uuid": home})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines() == ["forgot the network", "the hotspot is off, so the Wi-Fi is idle"]
+    assert world.calls("up") == 0 and world.nm()["active"] == []
+
+
+def test_forgetting_another_network_while_on_a_network_leaves_the_device_alone(world):
+    home, work = world.saved("Home"), world.saved("Work")
+    world.state["active"] = ["Home"]
+    result = world.run({"action": "forget", "uuid": work})
+    assert result.returncode == 0 and result.stdout.strip() == "forgot the network"
+    assert world.calls("up") == 0 and world.nm()["active"] == ["Home"] and home
+
+
+def test_a_failed_start_of_the_hotspot_after_forgetting_says_the_network_is_gone(world):
+    home = world.saved("Home")
+    world.state["active"] = ["Home"]
+    world.state["up"] = {"tm-hotspot": "fail"}
+    result = world.run({"action": "forget", "uuid": home})
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == (
+        "failed: start the hotspot (nmcli exit status 4); the network is forgotten")
+    assert "Home" not in world.nm()["profiles"]
+
+
+@pytest.mark.parametrize("target", ["tm-hotspot", "Wired connection 1"])
+def test_only_a_wifi_client_profile_can_be_forgotten(world, target):
+    if target != "tm-hotspot":
+        world.state["profiles"][target] = {"connection.type": "802-3-ethernet"}
+    value = str(uuid.uuid5(uuid.NAMESPACE_DNS, target))
+    result = world.run({"action": "forget", "uuid": value})
+    assert result.returncode == 1
+    assert result.stdout.strip() == "refused: only a saved Wi-Fi network can be forgotten"
+    assert world.calls("delete") == 0 and target in world.nm()["profiles"]
+
+
+def test_a_network_that_is_already_gone_is_refused(world):
+    result = world.run({"action": "forget", "uuid": UUID_A})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: that network isn't saved any more"
+    assert world.calls("delete") == 0 and UUID_A not in result.stdout
+
+
+def test_an_order_numbers_the_networks_from_the_count_down_to_one(world):
+    a, b, c = world.saved("A"), world.saved("B"), world.saved("C")
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect-priority"] = "-100"
+    result = world.run({"action": "order", "uuids": [c, a, b]})
+    assert result.returncode == 0 and result.stdout.strip() == "ordered 3 networks", result.stdout + result.stderr
+    profiles = world.nm()["profiles"]
+    assert [profiles[name]["connection.autoconnect-priority"] for name in ("C", "A", "B")] == ["3", "2", "1"]
+    assert profiles["tm-hotspot"]["connection.autoconnect-priority"] == "-100"
+    assert world.calls("modify") == 3 and world.calls("up") == 0
+
+
+def test_an_order_changes_only_the_profiles_that_differ(world):
+    a, b, c = world.saved("A", priority=3), world.saved("B", priority=2), world.saved("C", priority=7)
+    result = world.run({"action": "order", "uuids": [a, c, b]})  # A stays 3; C 2; B 1
+    assert result.returncode == 0 and result.stdout.strip() == "ordered 3 networks"
+    assert len(world.modifies()) == 2
+    profiles = world.nm()["profiles"]
+    assert [profiles[name]["connection.autoconnect-priority"] for name in ("A", "C", "B")] == ["3", "2", "1"]
+    world.state = world.nm()  # the next run starts from where this one ended
+    result = world.run({"action": "order", "uuids": [a, c, b]})
+    assert result.stdout.strip() == "nothing to change" and world.modifies() == []
+
+
+def test_an_order_leaves_out_the_networks_that_do_not_start_by_themselves(world):
+    a, b = world.saved("A"), world.saved("B", autoconnect="no")
+    result = world.run({"action": "order", "uuids": [a]})
+    assert result.returncode == 0 and result.stdout.strip() == "ordered 1 network"
+    assert world.nm()["profiles"]["A"]["connection.autoconnect-priority"] == "1"
+    result = world.run({"action": "order", "uuids": [a, b]})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: the saved networks changed; reload the page"
+
+
+def test_an_order_that_misses_a_saved_network_is_refused(world):
+    a, b = world.saved("A"), world.saved("B")
+    for uuids in ([a], [a, b, UUID_A], [a, UUID_A]):
+        result = world.run({"action": "order", "uuids": uuids})
+        assert result.returncode == 1
+        assert result.stdout.strip() == "refused: the saved networks changed; reload the page"
+        assert world.modifies() == []
+
+
+@pytest.mark.parametrize("request_", [
+    {"action": "scan", "extra": 1}, {"action": "forget"}, {"action": "forget", "uuid": "tm-hotspot"},
+    {"action": "forget", "uuid": UUID_A, "name": "x"},
+    {"action": "forget", "uuid": "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"},
+    {"action": "forget", "uuid": 5}, {"action": "order", "uuids": []},
+    {"action": "order", "uuids": [UUID_A, UUID_A]}, {"action": "order", "uuids": "all"},
+    {"action": "order", "uuids": [UUID_A, 5]}, {"action": "order", "uuids": [UUID_A], "extra": 1},
+    {"action": "order", "uuids": [str(uuid.UUID(int=i, version=4)) for i in range(65)]},
+    {"action": "join"}, {"action": ["scan"]}])
+def test_a_request_outside_its_actions_form_is_refused(world, request_):
+    result = world.run(request_)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert len(result.stdout.strip().splitlines()) == 1
+    assert world.log() == [] and world.iw_calls() == [] and not world.request.exists()
+    for value in request_.values():
+        if isinstance(value, str) and value not in ("scan", "forget", "order", "join") and len(value) >= 4:
+            assert value not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("request_", [{"action": "scan"}, {"action": "forget", "uuid": UUID_A},
+                                      {"action": "order", "uuids": [UUID_A]}])
+def test_each_new_action_waits_for_the_lock(world, request_):
+    world.lock.parent.mkdir()
+    world.lock_wait = "0.2"
+    with open(world.lock, "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        result = world.run(request_)
+    assert result.returncode == 1
+    assert result.stdout.strip() == "refused: the unit is trying a saved network right now; try again in a minute"
+    assert world.log() == [] and world.iw_calls() == [] and not world.request.exists()
