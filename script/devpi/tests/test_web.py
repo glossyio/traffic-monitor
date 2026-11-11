@@ -756,6 +756,40 @@ def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, 
     assert refusal == (403, ADMIN_ONLY), f"{method} {path} with a viewer session (status, message)"
 
 
+def test_the_network_page_reports_the_radios_own_address(host, address, admin_session):
+    """GET /network gives the Wi-Fi radio's hardware address as the device has it (upper case, colons), and its body
+    holds no password: only GET /network/hotspot/password does. Skips on a unit with no built-in Wi-Fi radio."""
+    device = role_vars()["tmsetup_wifi_device"]
+    radio = host.run(f"cat /sys/class/net/{device}/address")
+    if radio.rc != 0:
+        pytest.skip(f"the unit has no {device}")
+    answer = request_from_this_machine(address, f"{API}/network", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/network answered HTTP {answer.status}"
+    wifi = state.get("wifi") or {}
+    assert wifi.get("mac") == radio.stdout.strip().upper(), f"GET {API}/network: wifi.mac isn't {device}'s address"
+    assert not any("password" in key.lower() for key in json_keys(state)), (
+        f"GET {API}/network has a key that names a password: {sorted(set(json_keys(state)))}")
+
+
+def json_keys(value):
+    """Every object key anywhere in parsed JSON."""
+    if isinstance(value, dict):
+        for key, inner in value.items():
+            yield str(key)
+            yield from json_keys(inner)
+    elif isinstance(value, list):
+        for inner in value:
+            yield from json_keys(inner)
+
+
+def test_a_viewer_cannot_read_the_hotspot_password(address, viewer_session):
+    """The hotspot's password is for admins: a viewer gets require_admin's 403, and the answer holds no password."""
+    answer = request_from_this_machine(address, f"{API}/network/hotspot/password", cookie=viewer_session)
+    assert admin_refusal(answer) == (403, ADMIN_ONLY), f"GET {API}/network/hotspot/password with a viewer session"
+    assert "password" not in (answer.json() or {}), "a viewer's refusal has a password key"
+
+
 @pytest.mark.parametrize("path", ["/nr/tm-internal/status", "/nr/tm-internal", "/nr/TM-Internal/status"])
 def test_tm_internal_is_hidden_behind_the_proxy(address, admin_session, path):
     """Node-RED's internal status endpoint is for tm-control on the Pi only: nginx itself answers 404 for it, even to

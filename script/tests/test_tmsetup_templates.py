@@ -851,7 +851,7 @@ def test_tm_control_runtime_directory_is_removed_when_it_stops():
     assert not any(line.startswith("RuntimeDirectoryPreserve=") for line in tm_control_unit())
 
 
-JOBS = ["system-password", "set-secret"]
+JOBS = ["system-password", "set-secret", "network"]
 
 
 def tm_job_unit(job):
@@ -878,6 +878,20 @@ def test_job_unit_never_hits_a_start_limit(job):
     """A start refused by the start limit would leave the job queued in tm-control."""
     lines = tm_job_unit(job).splitlines()
     assert "StartLimitIntervalSec=0" in lines[lines.index("[Unit]"):lines.index("[Service]")]
+
+
+def test_network_unit_names_the_secrets_dir_and_waits_for_networkmanager():
+    lines = tm_job_unit("network").splitlines()
+    assert "Environment=TM_CONTROL_SECRETS_DIR=/etc/traffic-monitor/secrets" in lines
+    assert "After=NetworkManager.service" in lines[lines.index("[Unit]"):lines.index("[Service]")]
+
+
+def test_the_network_job_shares_the_retry_units_runtime_directory():
+    """The job and tm-network-retry take one lock in /run/traffic-monitor; systemd must keep the directory between runs."""
+    retry = retry_unit("tm-network-retry.service.j2")
+    for lines in (tm_job_unit("network").splitlines(), retry):
+        assert "RuntimeDirectory=traffic-monitor" in lines
+        assert "RuntimeDirectoryPreserve=yes" in lines
 
 
 def test_set_secret_unit_names_the_secrets_dir():
@@ -911,6 +925,7 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert 'action.id === "org.freedesktop.systemd1.manage-units"' in rules
     assert '"tm-job-system-password.service"' in rules
     assert '"tm-job-set-secret.service"' in rules
+    assert '"tm-job-network.service"' in rules
     assert '["start", "stop", "restart"]' in rules
     assert rules.count("polkit.Result.YES") == 2
     # The code-owner test comes first, so neither YES is reached for anyone else
@@ -932,7 +947,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
         "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
-        "tm-network-retry.service",
+        "tm-job-network.service", "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS
