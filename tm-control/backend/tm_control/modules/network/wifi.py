@@ -5,6 +5,9 @@ Read only, and never a password. The scan is root's network job's file (network-
 retry's (network-retry.json), both in settings.network_run_dir. A file that is missing, unreadable, or not in its form
 reads as "none", never as an error, and NetworkManager's sentences are never read: a saved network is what `saved_wifi`
 returns and the one in use is the profile's UUID.
+
+The join is root's network-join job's state file (network-join.json, in the same directory), read the same way. A stage
+that is still going while the job's unit is not running reads as `interrupted`.
 """
 
 import json
@@ -15,12 +18,24 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from tm_control.adapters import network
+from tm_control.adapters import network, systemd
+from tm_control.core.errors import ApiError
 
 Security = Literal["password", "wpa3", "enterprise", "open", "other"]
 SECURITIES = ("password", "wpa3", "enterprise", "open", "other")
 SCAN_FILE = "network-scan.json"
 RETRY_FILE = "network-retry.json"
+JOIN_FILE = "network-join.json"
+JOIN_UNIT = "tm-job-network-join.service"
+PENDING = ("testing", "countdown", "switching")
+FINAL = ("joined", "failed", "cancelled", "switch_failed")
+REASONS = ("not_in_range", "not_joined", "no_address", "busy", "error")
+INTERNETS = ("reachable", "not_reachable", "sign_in_page")
+REFUSALS = {
+    "testing": "The unit is testing {}. Wait for the result.",
+    "countdown": "The unit is about to join {}. Switch now or cancel first.",
+    "switching": "The unit is joining {} now.",
+}
 
 
 class Saved(BaseModel):
@@ -41,12 +56,28 @@ class Nearby(BaseModel):
     in_use: bool
 
 
+class JoinState(BaseModel):
+    stage: Literal[
+        "testing", "countdown", "switching", "joined", "failed", "cancelled", "switch_failed", "interrupted"
+    ]
+    network: str  # the name under test (empty for a run refused before it read a saved profile's name)
+    saved: bool  # a saved network was tested, so a failure or Cancel deleted nothing
+    before: str | None  # the profile the radio was on; None for an idle radio
+    joined: bool | None  # the test's outcome; None while testing
+    reason: Literal["not_in_range", "not_joined", "no_address", "busy", "error"] | None
+    address: str | None
+    internet: Literal["reachable", "not_reachable", "sign_in_page"] | None
+    seconds_left: int | None  # only in "countdown": the seconds to the switch, from the monotonic clock
+    finished_at: str | None
+
+
 class WifiNetworks(BaseModel):
     readable: bool  # False: NetworkManager didn't answer
     radio: Literal["on", "off", "none"]  # none: no built-in radio
     saved: list[Saved]  # the ordered ones first, then those that don't join by themselves
     nearby: list[Nearby]  # strongest first
     scanned_seconds_ago: int | None  # None: no scan since the unit started
+    join: JoinState | None  # None: no join to show
 
 
 def _number(value) -> bool:
@@ -137,6 +168,7 @@ def _fake(app_state) -> WifiNetworks:
         saved=_ordered(saved),
         nearby=_nearby([{"ssid": n["name"], **n} for n in fake.nearby], saved),
         scanned_seconds_ago=None if fake.scanned is None else max(0, int(time.monotonic() - fake.scanned)),
+        join=read_join(app_state),
     )
 
 
@@ -150,7 +182,9 @@ def read_wifi(app_state) -> WifiNetworks:
         radio = "off" if network.radio_enabled() is False else "on"
     found = network.saved_wifi()
     if found is None:
-        return WifiNetworks(readable=False, radio=radio, saved=[], nearby=[], scanned_seconds_ago=None)
+        return WifiNetworks(
+            readable=False, radio=radio, saved=[], nearby=[], scanned_seconds_ago=None, join=read_join(app_state)
+        )
     run_dir = app_state.settings.network_run_dir
     scan = read_scan(run_dir)
     heard = None if scan is None else {entry["ssid"] for entry in scan[0]}
@@ -170,11 +204,93 @@ def read_wifi(app_state) -> WifiNetworks:
     ]
     saved = _ordered(saved)
     if scan is None:
-        return WifiNetworks(readable=True, radio=radio, saved=saved, nearby=[], scanned_seconds_ago=None)
+        return WifiNetworks(
+            readable=True, radio=radio, saved=saved, nearby=[], scanned_seconds_ago=None, join=read_join(app_state)
+        )
     return WifiNetworks(
         readable=True,
         radio=radio,
         saved=saved,
         nearby=_nearby(scan[0], saved),
         scanned_seconds_ago=max(0, int(time.monotonic() - scan[1])),
+        join=read_join(app_state),
     )
+
+
+def _text(value) -> bool:
+    return value is None or isinstance(value, str)
+
+
+def _join_file(raw) -> dict | None:
+    """The state file's content when it is in its form (see the top of tm-job-network-join), else None."""
+    if not isinstance(raw, dict):
+        return None
+    stage = raw.get("stage")
+    due = raw.get("switch_monotonic")
+    if (
+        stage not in PENDING + FINAL
+        or not isinstance(raw.get("ssid"), str)
+        or not _text(raw.get("uuid"))
+        or not isinstance(raw.get("saved"), bool)
+        or not _text(raw.get("before"))
+        or not (raw.get("joined") is None or isinstance(raw["joined"], bool))
+        or not (raw.get("reason") is None or raw["reason"] in REASONS)
+        or not _text(raw.get("address"))
+        or not (raw.get("internet") is None or raw["internet"] in INTERNETS)
+        or not (due is None or _number(due))
+        or not _text(raw.get("finished_at"))
+        or (stage == "countdown" and due is None)
+    ):
+        return None
+    return raw
+
+
+def _join(raw, unit_running: bool) -> JoinState | None:
+    found = _join_file(raw)
+    if found is None:
+        return None
+    stage = found["stage"]
+    seconds_left = None
+    if stage in PENDING and not unit_running:
+        stage = "interrupted"
+    elif stage == "countdown":
+        seconds_left = max(0, math.ceil(found["switch_monotonic"] - time.monotonic()))
+    return JoinState(
+        stage=stage,
+        network=found["ssid"],
+        saved=found["saved"],
+        before=found["before"],
+        joined=found["joined"],
+        reason=found["reason"],
+        address=found["address"],
+        internet=found["internet"],
+        seconds_left=seconds_left,
+        finished_at=found["finished_at"],
+    )
+
+
+def _running() -> bool:
+    """False when the join job's unit is inactive or failed; a unit that can't be read is taken to be running."""
+    try:
+        return systemd.show_unit(JOIN_UNIT, ["ActiveState"]).get("ActiveState") not in ("inactive", "failed")
+    except RuntimeError:
+        return True
+
+
+def read_join(app_state) -> JoinState | None:
+    """The join to show: None without a usable state file. One file read, and one unit read while a stage is going."""
+    if app_state.fake_network is not None:
+        raw = app_state.fake_network.read_join()
+    else:
+        raw = _json(app_state.settings.network_run_dir / JOIN_FILE)
+    found = _join_file(raw)
+    if found is None:
+        return None
+    return _join(found, found["stage"] not in PENDING or app_state.fake_network is not None or _running())
+
+
+def refuse_while_joining(app_state) -> None:
+    """409 join_pending while a join is testing, counting down, or switching: no other network change may start."""
+    join = read_join(app_state)
+    if join is not None and join.stage in PENDING:
+        raise ApiError(409, "join_pending", REFUSALS[join.stage].format(join.network))

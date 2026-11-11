@@ -89,10 +89,14 @@ def test_the_network_module_comes_after_hardware_and_serves_the_state():
         "/network",
         "/network/hotspot/password",
         "/network/hotspot",
+        "/network/join",
         "/network/wifi",
         "/network/wifi/scan",
         "/network/wifi/forget",
         "/network/wifi/order",
+        "/network/wifi/join",
+        "/network/wifi/join/switch",
+        "/network/wifi/join/cancel",
     ]
 
 

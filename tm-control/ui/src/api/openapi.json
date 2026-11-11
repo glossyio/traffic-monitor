@@ -1633,6 +1633,36 @@
         }
       }
     },
+    "/api/v1/network/join": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Join",
+        "description": "The join to show, from the job's state file and its unit; runs no nmcli.",
+        "operationId": "get_join_api_v1_network_join_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/JoinState"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Join Api V1 Network Join Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/network/wifi": {
       "get": {
         "tags": [
@@ -1752,6 +1782,92 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Join Wifi",
+        "description": "Start the join job: test the network, then count down to the switch. Everything that can be known now is\nchecked first, in this order, so a refusal starts no job. The password goes to the job and nowhere else.",
+        "operationId": "join_wifi_api_v1_network_wifi_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join/switch": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Switch Join",
+        "description": "End the countdown early: the join switches at once.",
+        "operationId": "switch_join_api_v1_network_wifi_join_switch_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join/cancel": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Cancel Join",
+        "description": "Cancel a test or a countdown, or dismiss what a finished or interrupted join left. Not while it switches.",
+        "operationId": "cancel_join_api_v1_network_wifi_join_cancel_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
                 }
               }
             }
@@ -2795,6 +2911,161 @@
           "id"
         ],
         "title": "JobStarted"
+      },
+      "JoinRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Name"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "JoinRequest"
+      },
+      "JoinState": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "testing",
+              "countdown",
+              "switching",
+              "joined",
+              "failed",
+              "cancelled",
+              "switch_failed",
+              "interrupted"
+            ],
+            "title": "Stage"
+          },
+          "network": {
+            "type": "string",
+            "title": "Network"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "joined": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_in_range",
+                  "not_joined",
+                  "no_address",
+                  "busy",
+                  "error"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "internet": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "reachable",
+                  "not_reachable",
+                  "sign_in_page"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internet"
+          },
+          "seconds_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Left"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "network",
+          "saved",
+          "before",
+          "joined",
+          "reason",
+          "address",
+          "internet",
+          "seconds_left",
+          "finished_at"
+        ],
+        "title": "JoinState"
       },
       "LabelsOut": {
         "properties": {
@@ -4629,6 +4900,16 @@
               }
             ],
             "title": "Scanned Seconds Ago"
+          },
+          "join": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JoinState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4637,7 +4918,8 @@
           "radio",
           "saved",
           "nearby",
-          "scanned_seconds_ago"
+          "scanned_seconds_ago",
+          "join"
         ],
         "title": "WifiNetworks"
       }

@@ -1096,3 +1096,39 @@ def test_the_probe_says_sign_in_page_or_not_reachable():
     finally:
         servers.close()
     assert join.probe(None, []) == "not_reachable" and join.probe(None, ["not an address"]) == "not_reachable"
+
+
+def test_the_rules_are_the_same_as_tm_controls(world):
+    from tm_control.modules.network.router import NAME_MAX_BYTES, NETWORK_NAME_PATTERN, NETWORK_PASSWORD_PATTERN
+
+    job = load_job()
+    assert NETWORK_NAME_PATTERN == job.NETWORK_NAME_PATTERN
+    assert NETWORK_PASSWORD_PATTERN == job.NETWORK_PASSWORD_PATTERN
+    assert NAME_MAX_BYTES == job.NAME_MAX_BYTES
+
+
+def test_the_state_file_is_one_tm_control_can_read(world):
+    from types import SimpleNamespace
+
+    from tm_control.modules.network.wifi import read_join
+
+    world.hear(["HomeNet"])
+    assert world.run(NEW).returncode == 0
+    app_state = SimpleNamespace(settings=SimpleNamespace(network_run_dir=world.run_dir), fake_network=None)
+    state = read_join(app_state)
+    assert state is not None and state.stage == "joined" and state.network == "HomeNet"
+    assert state.joined is True and state.address == "192.168.1.57" and state.internet == "reachable"
+    assert state.seconds_left is None and state.finished_at is not None
+
+
+def test_a_state_file_with_a_reason_the_job_gives_is_one_tm_control_can_read(world):
+    from types import SimpleNamespace
+
+    from tm_control.modules.network.wifi import read_join
+
+    world.up_fails("HomeNet", "timeout")
+    world.nmcli["device_states"] = {"HomeNet": 70}
+    assert world.run(NEW).returncode == 0
+    app_state = SimpleNamespace(settings=SimpleNamespace(network_run_dir=world.run_dir), fake_network=None)
+    state = read_join(app_state)
+    assert state is not None and (state.stage, state.joined, state.reason) == ("failed", False, "no_address")

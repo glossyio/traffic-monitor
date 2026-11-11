@@ -113,10 +113,16 @@ def _fake_state(app_state, hostname: str) -> NetworkState:
     """Fake mode: Ethernet connected, and the Wi-Fi on the hotspot while it is up."""
     hotspot = HotspotState(**app_state.fake_network.hotspot)
     mac = "00:00:5E:00:53:02"
+    joined = next((n for n in app_state.fake_network.saved if n["in_use"]), None)
     if hotspot.active:
         wifi = Wifi(
             connected=True, mac=mac, addresses=[hotspot.address], gateway=None, dns=[], mode="hotspot",
             network=None, signal=None,
+        )
+    elif joined is not None:
+        wifi = Wifi(
+            connected=True, mac=mac, addresses=["192.168.1.80"], gateway="192.168.1.1", dns=["192.168.1.1"],
+            mode="network", network=joined["name"], signal=70,
         )
     else:
         wifi = Wifi(

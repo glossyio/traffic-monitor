@@ -209,6 +209,7 @@ export const WIFI_NETWORKS: WifiNetworks = {
     { name: 'NewerRouter', signal: 30, security: 'wpa3', saved: false, in_use: false },
   ],
   scanned_seconds_ago: 90,
+  join: null,
 }
 
 export function wifiNetworks(changes: Partial<WifiNetworks>): WifiNetworks {
