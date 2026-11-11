@@ -21,6 +21,7 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
                                                  state makes it exit 4 and leave nothing active (an idle radio), and
                                                  "up": {"<name>": "fail-started"} makes it exit 4 with the profile the
                                                  only active one (NetworkManager started it by itself meanwhile);
+                                                 "fail-once" is "fail" for this call only (the entry is removed);
                                                  "up_delay": {"<name>": SECONDS} makes it sleep first
   connection down REF                            removes the profile from "active"
   device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION)   state 100 and the first active profile, else 30 and "--";
@@ -161,9 +162,11 @@ def main(argv):
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         time.sleep(state.get("up_delay", {}).get(name, 0))
         outcome = state.get("up", {}).get(name)
-        state["active"] = [] if outcome == "fail" else [name]
+        if outcome == "fail-once":
+            del state["up"][name]
+        state["active"] = [] if outcome in ("fail", "fail-once") else [name]
         save(state)
-        if outcome in ("fail", "fail-started"):
+        if outcome in ("fail", "fail-once", "fail-started"):
             die(4, f"Error: Connection activation failed for '{name}'.")
     elif verb == "down":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])

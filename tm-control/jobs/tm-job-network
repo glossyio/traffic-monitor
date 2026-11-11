@@ -25,28 +25,32 @@ One run, in order:
    the timer never moves the radio in the middle of a change. Still held: refused.
 4. Read the profile: autoconnect, name, hidden, key management, and, when the request has a password, the
    profile's (nmcli -s). No profile: refused.
-5. Work out what differs. A password differs when it isn't the profile's or the profile isn't WPA2 personal
-   (wpa-psk); it then sets the five WPA2 properties. Nothing differs: `nothing to change`.
+5. Work out what differs. A password differs when it isn't the password file's, or isn't the profile's, or the
+   profile isn't WPA2 personal (wpa-psk); it then sets the five WPA2 properties. Nothing differs: `nothing to change`.
 6. A new password goes to the password file first, the old content kept in memory: the file is the source of truth.
 7. One `nmcli connection modify` with every change. If it fails, the old password file is put back.
 8. Then the first of these that applies: turned off, the hotspot is taken down if it is up; the name, password, or
-   hidden setting changed and the hotspot is up, it restarts (`connection up` on the active profile applies them);
+   hidden setting changed on the profile and the hotspot is up, it restarts (`connection up` on the active profile
+   applies them; a failed restart is tried once more, and counts when the device ends up on the hotspot);
    turned on, on the built-in radio only (never a USB adapter), the radio is switched on if it is off and the
    hotspot started if the radio is idle; a failed start still counts when NetworkManager brought the hotspot up by
    itself within UP_WAIT seconds, as it does when autoconnect is switched on while the radio is idle. Otherwise the
    change waits for the hotspot's next start.
 It prints one line per thing done and exits 0, or exits 1 with `refused: <sentence>` or
-`failed: <step> (<error>)`, ending `; the settings are saved` once the profile was changed.
+`failed: <step> (<error type>)`, such as `(nmcli exit status 4)`, ending `; the settings are saved` once the profile
+was changed.
 
-No password is ever printed: every password the job learns (the request's, the file's, the profile's) is hidden from
-anything it prints, nmcli's error text included, and an unexpected error prints only its kind. The request is deleted
+No password is ever printed: nmcli's error text is never quoted (it can carry the command line), an unexpected error
+prints only its kind, and every password the job learns (the request's, the file's, the profile's) is still scrubbed
+from each line it prints. The request is deleted
 whatever happens, unless the jobs directory itself can't be trusted: when the manifest can't be read (so the code
 owner who must own the directory is unknown), or the directory fails its owner and mode checks, the request is left
 where it is, and tm-control clears a request no job is waiting for.
 
 Standard library only, and no tm_control imports: this runs from the root-owned copy in
-/usr/local/libexec/traffic-monitor/. Tests pass the request path as argv[1] and set TM_CONTROL_MANIFEST,
-TM_CONTROL_SECRETS_DIR, NMCLI, TM_SYS_NET, TM_NETWORK_LOCK, and TM_NETWORK_LOCK_WAIT, each ignored when running as
+/usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST and TM_CONTROL_SECRETS_DIR name the manifest and the
+secrets directory, as for tm-job-set-secret: its root-owned unit sets both. Tests pass the request path as argv[1], set
+those two, and set NMCLI, TM_SYS_NET, TM_NETWORK_LOCK, and TM_NETWORK_LOCK_WAIT, which are ignored when running as
 root. Run as anyone but root (tests only), the secrets directory may be that user's instead of root's.
 """
 
@@ -97,6 +101,16 @@ class NmcliFailed(Exception):
 def trusted(name, default):
     """The setting `name` from the environment, but only when not root: root always uses the installed values."""
     return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def manifest_path():
+    """The manifest, from TM_CONTROL_MANIFEST (which the unit sets) or MANIFEST."""
+    return os.environ.get("TM_CONTROL_MANIFEST") or MANIFEST
+
+
+def secrets_dir_path():
+    """The secrets directory, from TM_CONTROL_SECRETS_DIR (which the unit sets) or SECRETS_DIR."""
+    return os.environ.get("TM_CONTROL_SECRETS_DIR") or SECRETS_DIR
 
 
 def read_manifest(path):
@@ -240,7 +254,7 @@ def split_terse(line):
 
 
 class Nmcli:
-    """Runs nmcli and keeps every password it was told about out of what this script says."""
+    """Runs nmcli. Every password it was told about is scrubbed from what this script prints."""
 
     def __init__(self, binary):
         self.binary = binary
@@ -272,9 +286,8 @@ class Nmcli:
             )
         except subprocess.TimeoutExpired:
             raise NmcliFailed(f"nmcli timed out after {timeout} s") from None
-        if result.returncode != 0:
-            lines = result.stderr.decode("utf-8", errors="replace").strip().splitlines()
-            self.last_error = f"nmcli exit status {result.returncode}" + (f": {self.scrub(lines[0])}" if lines else "")
+        if result.returncode != 0:  # its stderr is never quoted: it can carry the command line
+            self.last_error = f"nmcli exit status {result.returncode}"
         return result.returncode, result.stdout.decode("utf-8", errors="replace")
 
     def run(self, *args, timeout=60):
@@ -329,22 +342,31 @@ def read_profile(nm, profile, with_password):
     return current
 
 
-def differences(change, current):
-    """The (property, value) pairs that make the profile what the change asks for, and the fields that differ."""
-    pairs, fields = [], []
+def differences(change, current, stored):
+    """(the (property, value) pairs that make the profile what the change asks for, the fields that differ, whether
+    the name, password, or hidden setting changes on the profile). `stored` is the password file's text or None.
+
+    A password the profile already has but the file doesn't is written to the file and set again on the profile,
+    which changes nothing there, so it alone restarts nothing."""
+    pairs, fields, on_air = [], [], False
     if "enabled" in change and change["enabled"] != current["enabled"]:
         pairs.append(("connection.autoconnect", "yes" if change["enabled"] else "no"))
         fields.append("enabled")
     if "name" in change and change["name"] != current["name"]:
         pairs.append((f"{WIFI}.ssid", change["name"]))
         fields.append("name")
+        on_air = True
     if "hidden" in change and change["hidden"] != current["hidden"]:
         pairs.append((f"{WIFI}.hidden", "yes" if change["hidden"] else "no"))
         fields.append("hidden")
-    if "password" in change and (change["password"] != current["password"] or current["key_mgmt"] != "wpa-psk"):
-        pairs += [*WPA2, (f"{SECURITY}.psk", change["password"])]
-        fields.append("password")
-    return pairs, fields
+        on_air = True
+    if "password" in change:
+        profile_differs = change["password"] != current["password"] or current["key_mgmt"] != "wpa-psk"
+        if profile_differs or change["password"] != stored:
+            pairs += [*WPA2, (f"{SECURITY}.psk", change["password"])]
+            fields.append("password")
+            on_air = on_air or profile_differs
+    return pairs, fields, on_air
 
 
 def open_secrets_dir(path):
@@ -451,17 +473,20 @@ class Run:
     def apply(self, change):
         nm = self.nm
         current = read_profile(nm, self.profile, "password" in change)
-        pairs, fields = differences(change, current)
+        old = stored = None
+        if "password" in change:
+            self.step = "read the password file"
+            self.secrets_fd = open_secrets_dir(secrets_dir_path())
+            old = read_password_file(self.secrets_fd)
+            stored = old.decode("utf-8", errors="replace").rstrip("\r\n") if old is not None else None
+            nm.hide(stored)
+        pairs, fields, on_air = differences(change, current, stored)
         if not pairs:
             print("nothing to change")
             return
 
-        old = None
         if "password" in fields:
             self.step = "write the password file"
-            self.secrets_fd = open_secrets_dir(trusted("TM_CONTROL_SECRETS_DIR", SECRETS_DIR))
-            old = read_password_file(self.secrets_fd)
-            nm.hide(old.decode("utf-8", errors="replace").rstrip("\r\n") if old else None)
             write_password_file(self.secrets_fd, change["password"].encode())
             print("wrote the password file")
 
@@ -487,14 +512,28 @@ class Run:
                 self.step = "take the hotspot down"
                 nm.run("connection", "down", "id", self.profile, timeout=UP_WAIT + 30)
             print("turned the hotspot off")
-        elif up and {"name", "password", "hidden"} & set(fields):
-            self.step = "restart the hotspot"
-            nm.run("--wait", str(UP_WAIT), "connection", "up", "id", self.profile, timeout=UP_WAIT + 30)
-            print("restarted the hotspot")
+        elif up and on_air:
+            self.restart()
         elif change.get("enabled") is True and "enabled" in fields and builtin_radio(self.device):
             self.turn_on()
         else:
             print("saved; the change applies when the hotspot next starts")
+
+    def restart(self):
+        """`connection up` on the active profile, tried once more when it fails, so the radio isn't left on nothing.
+        The second failure still counts when the device ends up on the hotspot."""
+        nm = self.nm
+        self.step = "restart the hotspot"
+        up = ("--wait", str(UP_WAIT), "connection", "up", "id", self.profile)
+        status, _ = nm.call(*up, timeout=UP_WAIT + 30)
+        if status != 0:
+            print("the restart failed; trying once more")
+            status, _ = nm.call(*up, timeout=UP_WAIT + 30)
+            if status != 0:
+                error = nm.last_error
+                if nm.device(self.device) != (CONNECTED, self.profile):
+                    raise NmcliFailed(error)
+        print("restarted the hotspot")
 
     def turn_on(self):
         """Switch the radio on if it is off, and start the hotspot if the radio is idle."""
@@ -528,7 +567,7 @@ def main(argv):
     run = None
     step = "check the request"
     try:
-        owner_uid, device, profile = read_manifest(trusted("TM_CONTROL_MANIFEST", MANIFEST))
+        owner_uid, device, profile = read_manifest(manifest_path())
         jobs_fd = open_jobs_dir(directory or ".", owner_uid)
         change = check(read_request(jobs_fd, request_name, owner_uid))
         nm.hide(change.get("password"))

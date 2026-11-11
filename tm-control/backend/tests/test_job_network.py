@@ -209,7 +209,7 @@ def test_a_profile_that_will_not_change_puts_the_old_password_back(world):
     result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
     assert result.returncode == 1 and world.password_file() == OLD_PASSWORD
     assert "placeholder-pass" not in result.stdout + result.stderr  # the fake's error quotes the argv
-    assert result.stdout.strip().splitlines()[-1].startswith("failed: change the profile")
+    assert result.stdout.strip().splitlines()[-1] == "failed: change the profile (nmcli exit status 4)"
     assert "the settings are saved" not in result.stdout
     assert world.profile()["802-11-wireless-security.psk"] == OLD_PASSWORD
     assert world.calls("up") == 0
@@ -220,9 +220,46 @@ def test_a_restart_that_fails_says_the_settings_are_saved(world):
     world.state["up"] = {"tm-hotspot": "fail"}
     result = world.run({"action": "hotspot", "name": "TM-ROAD"})
     assert result.returncode == 1
-    assert result.stdout.strip().splitlines()[-1].startswith("failed: restart the hotspot")
-    assert result.stdout.strip().endswith("; the settings are saved")
+    assert result.stdout.strip().splitlines()[-1] == (
+        "failed: restart the hotspot (nmcli exit status 4); the settings are saved")
+    assert "TM-ROAD" not in result.stdout + result.stderr  # nmcli's error text, which quotes the name, isn't printed
     assert world.profile()["802-11-wireless.ssid"] == "TM-ROAD"
+    assert world.calls("up") == 2
+
+
+def test_a_restart_that_fails_once_is_tried_again(world):
+    world.state["up"] = {"tm-hotspot": "fail-once"}
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.calls("up") == 2 and world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_a_restart_that_fails_twice_still_counts_when_the_hotspot_is_up(world):
+    world.state["up"] = {"tm-hotspot": "fail-started"}
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.calls("up") == 2
+
+
+def test_a_hidden_only_change_restarts_a_hotspot_that_is_up(world):
+    result = world.run({"action": "hotspot", "hidden": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.profile()["802-11-wireless.hidden"] == "yes"
+    assert world.calls("modify") == 1 and world.calls("up") == 1
+
+
+def test_a_password_the_profile_has_but_the_file_lacks_is_written_to_the_file(world):
+    """The file is the source of truth: it gets the password, and the profile, which already has it, isn't restarted."""
+    world.state["profiles"]["tm-hotspot"]["802-11-wireless-security.psk"] = NEW_PASSWORD
+    result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.password_file() == NEW_PASSWORD
+    assert world.calls("modify") == 1 and world.calls("up") == 0
+    assert world.profile()["802-11-wireless-security.psk"] == NEW_PASSWORD
+    assert "placeholder-pass" not in result.stdout + result.stderr
 
 
 def test_turning_it_off_stops_it_starting_and_takes_it_down(world):
@@ -410,6 +447,23 @@ def load_job():
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
     return module
+
+
+def test_as_root_the_unit_names_the_manifest_and_secrets_but_not_the_test_settings(monkeypatch):
+    job = load_job()
+    monkeypatch.setattr(os, "geteuid", lambda: 0)
+    for name in ("TM_CONTROL_MANIFEST", "TM_CONTROL_SECRETS_DIR", "NMCLI", "TM_SYS_NET", "TM_NETWORK_LOCK",
+                 "TM_NETWORK_LOCK_WAIT"):
+        monkeypatch.setenv(name, "/elsewhere")
+    assert job.manifest_path() == "/elsewhere" and job.secrets_dir_path() == "/elsewhere"
+    assert job.trusted("NMCLI", job.NMCLI) == "/usr/bin/nmcli"
+    assert job.trusted("TM_SYS_NET", job.SYS_NET) == "/sys/class/net"
+    assert job.trusted("TM_NETWORK_LOCK", job.LOCK) == "/run/traffic-monitor/network.lock"
+    assert job.trusted("TM_NETWORK_LOCK_WAIT", str(job.LOCK_WAIT)) == "10"
+    monkeypatch.delenv("TM_CONTROL_MANIFEST")
+    monkeypatch.delenv("TM_CONTROL_SECRETS_DIR")
+    assert job.manifest_path() == "/etc/traffic-monitor/manifest.json"
+    assert job.secrets_dir_path() == "/etc/traffic-monitor/secrets"
 
 
 def test_the_rules_are_the_same_as_tm_controls():
