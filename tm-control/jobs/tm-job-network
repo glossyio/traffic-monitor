@@ -95,7 +95,7 @@ class Refused(Exception):
 
 
 class NmcliFailed(Exception):
-    """nmcli exited with an error. The message is the exit status and nmcli's first line, already scrubbed."""
+    """nmcli failed or timed out. The message has a fixed form (exit status, timeout); nmcli's output is never quoted."""
 
 
 def trusted(name, default):
