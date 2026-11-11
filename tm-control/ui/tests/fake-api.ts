@@ -215,3 +215,23 @@ export const WIFI_NETWORKS: WifiNetworks = {
 export function wifiNetworks(changes: Partial<WifiNetworks>): WifiNetworks {
   return { ...WIFI_NETWORKS, ...changes }
 }
+
+// GET /network/join: a join whose test passed, 3 minutes 12 seconds before the unit switches. The unit was on its
+// hotspot (profile tm-hotspot) when it started.
+type JoinState = components['schemas']['JoinState']
+export const JOIN_COUNTDOWN: JoinState = {
+  stage: 'countdown',
+  network: 'Neighbour',
+  saved: false,
+  before: 'tm-hotspot',
+  joined: true,
+  reason: null,
+  address: '192.168.1.80',
+  internet: 'reachable',
+  seconds_left: 192,
+  finished_at: null,
+}
+
+export function joinState(changes: Partial<JoinState>): JoinState {
+  return { ...JOIN_COUNTDOWN, ...changes }
+}

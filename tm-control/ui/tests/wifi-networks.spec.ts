@@ -419,4 +419,34 @@ describe('the Wi-Fi networks section', () => {
     expect(wrapper.text()).toContain("The Wi-Fi networks couldn't be read, because the network service didn't answer.")
     expect(wrapper.text()).not.toContain('This unit has no built-in Wi-Fi radio.')
   })
+
+  it('offers Join on a password network and not on the one in use or on an open one', async () => {
+    const nearby: Nearby[] = [
+      { name: 'HomeNet', signal: 82, security: 'password', saved: true, in_use: true },
+      { name: 'CafeGuest', signal: 64, security: 'open', saved: false, in_use: false },
+      { name: 'OfficeCorp', signal: 55, security: 'enterprise', saved: false, in_use: false },
+      { name: 'Neighbour', signal: 41, security: 'password', saved: false, in_use: false },
+      { name: 'Depot', signal: 40, security: 'password', saved: true, in_use: false },
+      { name: 'NewerRouter', signal: 30, security: 'wpa3', saved: false, in_use: false },
+    ]
+    const { wrapper } = await open(wifiNetworks({ nearby }))
+    expect(labels(wrapper).filter((label) => label.startsWith('Join '))).toEqual(['Join Neighbour', 'Join Depot'])
+    expect(wrapper.findAll('button').filter((b) => b.text().trim() === 'Join')).toHaveLength(2)
+  })
+
+  it('offers no Join to a viewer', async () => {
+    const { wrapper } = await open(WIFI_NETWORKS, {}, VIEWER)
+    expect(labels(wrapper).filter((label) => label.startsWith('Join '))).toEqual([])
+  })
+
+  it('asks the page to join the network that was tapped, and is disabled while locked', async () => {
+    const wrapper = mountAlone(WifiNetworksSection, sectionProps)
+    await tap(wrapper, 'Join Neighbour')
+    expect(wrapper.emitted('join')).toEqual([[WIFI_NETWORKS.nearby[3]]])
+
+    document.body.replaceChildren()
+    const locked = mountAlone(WifiNetworksSection, { ...sectionProps, locked: true })
+    expect(locked.find('button[aria-label="Join Neighbour"]').attributes('disabled')).toBeDefined()
+  })
+
 })

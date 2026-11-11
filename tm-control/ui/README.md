@@ -1041,6 +1041,70 @@ be read. Everyone sees the two lists; only an admin gets Refresh, Forget, and Mo
 - With the radio switched off, the section says so and shows nothing else (the lists would be stale). Without a radio,
   it says only that. When the unit couldn't read the networks, it says that.
 
+#### Joining a network (admins)
+
+An admin taps **Join** on a nearby network that needs a password and isn't in use (never on an open, enterprise, or
+WPA3-only one, which the unit can't join, and never for a viewer). The unit tests the network, and if the test passes
+it counts down 5 minutes and then switches to it. The page is usually open on a phone in Android's sign-in window while
+the unit's hotspot goes away for the test, so the words matter more than the layout.
+
+```text
+| Join HomeNet                     |   dialog
+| The unit tests HomeNet first.    |
+| Its hotspot is away for up to a  |
+| minute, then comes back with the |
+| result. A phone on the hotspot   |
+| must rejoin TM-AB12 by hand ...  |
+| You're on the hotspot now, so    |   only over the hotspot
+| this page stops answering ...    |
+| The unit's Wi-Fi MAC address     |
+| 2C:CF:67:00:AB:12         [copy] |
+| A network that only admits ...   |
+| Password for HomeNet             |   or "Uses the saved password."
+| [____________________]           |   shows what is typed
+|        [Cancel] [Test and join]  |
+
+| Network                     (h5) |
+| +------------------------------+ |   the result card, above This device
+| | HomeNet works                | |
+| | The unit's address there: .. | |
+| | Wi-Fi MAC address: ..        | |
+| | Or open: http://tm-ab12.local/ |
+| | Internet: reachable          | |
+| | Joining HomeNet in 4:58      | |
+| | [Cancel]       [Switch now]  | |
+| | When the unit joins HomeNet, | |
+| | its hotspot stops. Join ...  | |
+| +------------------------------+ |
+| This device                 (h6) |
+```
+
+- The card (`JoinCard.vue`) sits above "This device" whenever the unit has a join to show, in every stage from the
+  test to a result nobody has dismissed. It is the page's one place for the join, so the sections below say only that
+  they are locked. A viewer sees the same card with no buttons; an admin gets Switch now and Cancel during the
+  countdown, and Dismiss on a result.
+- The phone's view changes while the join runs, so the card says what to do next at each stage, not only what
+  happened. While the unit tests, the card says so; if the page can't reach the unit (the usual case over the
+  hotspot) it says that is expected and names the hotspot to rejoin. The page keeps asking (`useJoin()` in `join.ts`)
+  every 2 seconds for as long as a join is pending, whether or not the last request worked, and the first answer
+  that does arrive shows the result. A request that fails is not an error here, so the card never shows one for it.
+- The countdown is the device's number, counted down by the page between answers so the clock moves every second
+  though the page asks every 2. At 390 px it reads as one column: the address and the MAC address each on a line,
+  then the clock, then Cancel and Switch now side by side, then the sentence about the hotspot. The times are
+  `m:ss`, never seconds.
+- The address, the MAC address, and the `.local` name are plain text; Copy is beside the address. The `.local` name is
+  not a link: inside a phone's sign-in window a link opens in that window, as `HotspotNote` explains.
+- After Join is sent and before the unit reports a join, the card says it is testing. If the unit reports none within
+  15 seconds while the page can still reach it, the page says "The test didn't start. Try again." and drops the card.
+- One thing happens at a time across the whole page. While the join is pending, and while a scan, forget, reorder, or
+  hotspot change runs, every control in the Wi-Fi networks and Hotspot sections is disabled. The section that started a
+  job keeps its own "working" line; the other is disabled and says why ("Finish or cancel the Wi-Fi join first." for
+  a join, "Wait for the Wi-Fi change to finish." for the other section's job). `NetworkPage` ORs the sections' reports
+  (`busy`) with the pending join.
+- The home page shows one line (`JoinBanner.vue`) to an admin while a join exists, with a "See it" link: the admin may
+  not have the Network page open when the countdown ends. It asks once when the home page loads and shows nothing when
+  it can't read the answer.
+
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer, and at 375 px with a joined
@@ -1084,8 +1148,41 @@ hide, turn off), the same dialogs with the page opened over the hotspot, the los
   because the page can't ask the device any more.
 - Looked at and kept: a rule's message wraps and hyphenates under the field at 375 px; it stays readable.
 
+The join was checked in fake mode at 390 px (and the countdown at 1280 px), as an admin and as a viewer: the Wi-Fi
+section with Join, the dialog for a network not saved, a saved one, one with a too-short password, one opened over the
+hotspot, and one while the unit is on a network; the testing card, the countdown, switching, joined, cancelled, and the
+failures the fake can reach (a wrong password, a network that gave no address); the sections locked by a join; and the
+home page's banner. Cards the fake can't reach (not in range, busy, could not run, switch failed, interrupted, the sign-in
+page network, the page that lost the unit, a very long name) were checked with the page's answer replaced.
+
+- The dialog's three or four sentences about what happens were one block of text. They are paragraphs now (the test, what
+  a phone must do, the switch), so a person can find the part about their phone.
+- The countdown card had the icon in a left column, which left the MAC address line too narrow at 390 px: it broke after
+  "Wi-Fi MAC address:". The icon sits beside the title now and the lines under it use the card's whole width.
+- Copy dropped under the unit's address on its own line. The address and its Copy button stay together now
+  (`text-no-wrap`), so the pair moves to the next line as one.
+- The sentence that says the hotspot stops and to join the network too was small and grey, as a footnote. It is the
+  instruction a phone on the hotspot needs, so it is in the card's normal text.
+- The lines of the countdown touched each other, in particular the sign-in page sentence under "Or open". They have a line
+  of space between them.
+- The Wi-Fi section's controls were greyed out with no reason beside them, and the join card is a screen above them.
+  The section says why, in the same words as the hotspot's.
+- "See it" on the home page was a small text button next to the line it belongs to, a hard target on a phone. It is
+  large (44 px).
+- Looked at and kept: with the fake, a join reaches `joined` within the 2-second poll, so "The unit is joining ... now" is
+  seen only with a stubbed answer, and the card then shows both addresses where the fake has them.
+- Looked at and kept: a very long network name wraps in the title, the clock line, and both sentences about the hotspot
+  without pushing a button off the screen.
+- Looked at and kept: the same card, with no buttons, for a viewer; the viewer's countdown still moves every second.
+
 #### Defaults rejected
 
+- A progress bar for the countdown: the clock is the information, and a bar needs the start time, which the page doesn't
+  have after a reload.
+- A link on the `.local` name or the unit's address in the card: inside a phone's sign-in window it would open in that
+  window, which can't reach the new network.
+- A Cancel button while the unit tests: the test runs for a minute at most, with the radio away from the page that
+  would press it.
 - A table of links and addresses: its columns don't fit 375 px, and there are at most two links.
 - A chip or colored dot for connected or not: the words say it, and "Not connected" isn't an error on a unit that has
   a cable or a hotspot but not both.

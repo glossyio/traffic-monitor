@@ -3,20 +3,29 @@
   their hardware and IP addresses, the internet, the saved and nearby Wi-Fi networks (WifiNetworks, from its own
   answer, GET /network/wifi), and the hotspot. Every name and address has a Copy button. The networks and the hotspot
   are read-only for a viewer; an admin gets their controls. The hotspot's password is never part of this answer.
+
+  A Wi-Fi join (GET /network/join, kept by useJoin) has its card above "This device" for as long as the unit has one to
+  show. While one is pending, and while either section runs a job of its own, both sections are locked. The page owns
+  the Join dialog and sends the request, because it is also what follows the join: after a request is accepted, the
+  card says the unit is testing until the unit reports the join itself, and says so if it never does.
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { useSession } from '../../stores/session'
 import FactRow from './FactRow.vue'
 import HotspotSettings from './HotspotSettings.vue'
+import JoinCard from './JoinCard.vue'
+import JoinDialog from './JoinDialog.vue'
 import WifiNetworks from './WifiNetworks.vue'
+import { HOTSPOT_PROFILE, JOIN_POLL_MS, type JoinState, pending, useJoin } from './join'
 import { internetLine, wifiLine } from './summary'
 
 type NetworkState = components['schemas']['NetworkState']
 type Link = components['schemas']['Link']
 type Wifi = components['schemas']['WifiNetworks']
+type Nearby = components['schemas']['Nearby']
 
 interface Fact {
   label: string
@@ -58,7 +67,104 @@ async function loadWifi() {
 
 const loadAll = () => Promise.all([load(), loadWifi()])
 
-onMounted(loadAll)
+// The join, and the lock it puts on the sections. `running` is what each section says about a job it started.
+const { join, lost, refresh: refreshJoin, stop: stopJoin } = useJoin()
+const running = reactive({ wifi: false, hotspot: false })
+
+// A join the page has just asked for, until the unit reports it. The device may still say the join before it (a
+// result nobody dismissed) for a moment, so a join counts as the new one when it differs from that.
+const START_WAIT_MS = 15_000
+const starting = ref<{ name: string; saved: boolean; stale: string } | null>(null)
+const joinNotice = ref<{ type: 'warning' | 'error'; text: string } | null>(null)
+let startedAt = 0
+let startTick: ReturnType<typeof setInterval> | undefined
+let startLimit: ReturnType<typeof setTimeout> | undefined
+
+const keyOf = (state: JoinState | null) => (state ? `${state.stage}|${state.network}|${state.finished_at}` : '')
+const reported = computed(() => !!join.value && (!starting.value || keyOf(join.value) !== starting.value.stale))
+
+const shown = computed<JoinState | null>(() => {
+  if (!starting.value || reported.value) return join.value
+  return {
+    stage: 'testing',
+    network: starting.value.name,
+    saved: starting.value.saved,
+    before: state.value?.wifi?.mode === 'hotspot' ? HOTSPOT_PROFILE : null,
+    joined: null,
+    reason: null,
+    address: null,
+    internet: null,
+    seconds_left: null,
+    finished_at: null,
+  }
+})
+const joinPending = computed(() => pending(shown.value))
+const jobRunning = computed(() => running.wifi || running.hotspot)
+const locked = computed(() => joinPending.value || jobRunning.value)
+const lockedByJob = computed(() => jobRunning.value && !joinPending.value)
+
+function endStart() {
+  clearInterval(startTick)
+  clearTimeout(startLimit)
+  starting.value = null
+}
+
+// Asks the device whether the join began; gives up when it says there is none and the page can reach it, which
+// is not the case while the test itself has taken the unit away
+async function checkStart() {
+  await refreshJoin()
+  if (!starting.value) return
+  if (reported.value) endStart()
+  else if (Date.now() - startedAt >= START_WAIT_MS && !lost.value) {
+    endStart()
+    joinNotice.value = { type: 'warning', text: "The test didn't start. Try again." }
+  }
+}
+
+function begin(network: Nearby) {
+  endStart()
+  startedAt = Date.now()
+  starting.value = { name: network.name, saved: network.saved, stale: keyOf(join.value) }
+  startTick = setInterval(() => void checkStart(), JOIN_POLL_MS)
+  startLimit = setTimeout(() => void checkStart(), START_WAIT_MS)
+}
+
+const joinTarget = ref<Nearby | null>(null)
+const joinOpen = ref(false)
+
+function ask(network: Nearby) {
+  joinTarget.value = network
+  joinOpen.value = true
+}
+
+// The password is typed in the dialog, which sends nothing itself; null uses the saved one
+async function startJoin(password: string | null) {
+  const network = joinTarget.value
+  if (!network) return
+  joinNotice.value = null
+  try {
+    await api.POST('/api/v1/network/wifi/join', { body: { name: network.name, password } })
+    begin(network)
+  } catch (error) {
+    joinNotice.value = { type: 'error', text: messageOf(error) }
+    void loadAll() // a refusal usually means the page's list is out of date
+  }
+}
+
+let stopWatching = () => {}
+onMounted(async () => {
+  await Promise.all([loadAll(), refreshJoin()])
+  // Once the first answers are in, a change of stage means the unit's network or hotspot may have changed
+  stopWatching = watch(
+    () => join.value?.stage,
+    () => void loadAll(),
+  )
+})
+onBeforeUnmount(() => {
+  stopWatching()
+  stopJoin()
+  endStart()
+})
 
 // A link's hardware address, addresses, gateway, and DNS servers, each with its Copy button
 function details(name: string, link: Link): Fact[] {
@@ -133,6 +239,17 @@ const hotspotFacts = computed<Fact[]>(() => {
         </template>
       </v-alert>
 
+      <JoinCard
+        v-if="shown"
+        :join="shown"
+        :lost="lost"
+        :local-name="state.local_name"
+        :mac="state.wifi?.mac ?? null"
+        :hotspot="state.hotspot"
+        :admin="session.isAdmin"
+        @changed="refreshJoin"
+      />
+
       <section>
         <h2 class="text-h6 mb-4">This device</h2>
         <FactRow v-for="fact in names" :key="fact.label" v-bind="fact" class="mb-4" />
@@ -164,9 +281,13 @@ const hotspotFacts = computed<Fact[]>(() => {
           :wifi="wifi"
           :hotspot="state.hotspot"
           :admin="session.isAdmin"
-          :locked="false"
+          :locked="locked"
+          :locked-by-job="lockedByJob"
           @changed="loadAll"
+          @join="ask"
+          @busy="(on: boolean) => (running.wifi = on)"
         />
+        <v-alert v-if="joinNotice" :type="joinNotice.type" class="mt-4">{{ joinNotice.text }}</v-alert>
       </section>
 
       <section v-if="state.readable" class="mt-10">
@@ -177,7 +298,10 @@ const hotspotFacts = computed<Fact[]>(() => {
           :hotspot="state.hotspot"
           :local-name="state.local_name"
           :on-hotspot="!!session.status?.hotspot"
+          :locked="locked"
+          :locked-by-job="lockedByJob"
           @changed="loadAll"
+          @busy="(on: boolean) => (running.hotspot = on)"
         />
         <template v-else>
           <FactRow v-for="fact in hotspotFacts" :key="fact.label" v-bind="fact" class="mb-4" />
@@ -190,5 +314,16 @@ const hotspotFacts = computed<Fact[]>(() => {
         </template>
       </section>
     </template>
+
+    <JoinDialog
+      v-if="joinTarget && state?.wifi"
+      v-model="joinOpen"
+      :network="joinTarget"
+      :mac="state.wifi.mac"
+      :wifi="state.wifi"
+      :hotspot="state.hotspot"
+      :on-hotspot="!!session.status?.hotspot"
+      @join="startJoin"
+    />
   </div>
 </template>

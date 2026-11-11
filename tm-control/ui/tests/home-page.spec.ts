@@ -1,6 +1,6 @@
 // The home page's device card carries the Status page's verdict, as a link to it.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { VIEWER, counts, report, signedIn } from './fake-api'
+import { ADMIN, JOIN_COUNTDOWN, VIEWER, counts, joinState, json, report, signedIn } from './fake-api'
 import { mountApp } from './mount'
 
 const DEVICE = { hostname: 'tm-fake', serial: '0000000012345678', tm_version: '0.8.0', time: '2026-10-28T14:32:00-07:00', apps: [] }
@@ -20,5 +20,43 @@ describe('the home page', () => {
     const { wrapper } = await mountApp('/')
     expect(wrapper.text()).toContain('tm-fake')
     expect(wrapper.find('main a[href="/status"]').exists()).toBe(false)
+  })
+
+  it('shows the banner on the home page while a join waits, with a link to the Network page', async () => {
+    signedIn(ADMIN, { 'GET /api/v1/system/device': DEVICE, 'GET /api/v1/network/join': JOIN_COUNTDOWN })
+    const { wrapper } = await mountApp('/')
+    const alert = wrapper.find('[role="alert"]')
+    expect(alert.text()).toContain('Neighbour works. The unit joins it in 3:12.')
+    expect(alert.find('a[href="/network"]').text()).toBe('See it')
+    const page = wrapper.find('main').html()
+    expect(page.indexOf('Neighbour works')).toBeLessThan(page.indexOf('tm-fake'))
+  })
+
+  it('says how a finished join ended', async () => {
+    const failed = joinState({ stage: 'failed', joined: false, reason: 'not_joined', seconds_left: null })
+    signedIn(ADMIN, { 'GET /api/v1/system/device': DEVICE, 'GET /api/v1/network/join': failed })
+    const { wrapper } = await mountApp('/')
+    expect(wrapper.find('[role="alert"]').text()).toContain("The unit couldn't join Neighbour.")
+  })
+
+  it('shows no banner to a viewer and none without a join', async () => {
+    const viewer = signedIn(VIEWER, { 'GET /api/v1/system/device': DEVICE, 'GET /api/v1/network/join': JOIN_COUNTDOWN })
+    let { wrapper } = await mountApp('/')
+    expect(wrapper.text()).toContain('tm-fake')
+    expect(wrapper.text()).not.toContain('Neighbour')
+    expect(viewer.sent.filter((r) => r.path === '/api/v1/network/join')).toEqual([])
+
+    document.body.replaceChildren()
+    signedIn(ADMIN, { 'GET /api/v1/system/device': DEVICE, 'GET /api/v1/network/join': json(200, null) })
+    ;({ wrapper } = await mountApp('/'))
+    expect(wrapper.text()).toContain('tm-fake')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('still shows the home page when the join state cannot be read', async () => {
+    signedIn(ADMIN, { 'GET /api/v1/system/device': DEVICE })
+    const { wrapper } = await mountApp('/')
+    expect(wrapper.text()).toContain('tm-fake')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 })

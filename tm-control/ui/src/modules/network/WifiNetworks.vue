@@ -1,14 +1,17 @@
 <!--
   The Wi-Fi networks section of the Network page (GET /network/wifi): the networks the unit has saved, in the order it
   tries them, and the ones it heard the last time it looked. Everyone sees the lists. An admin can Refresh (a scan),
-  Forget a saved network, and move the ones the unit joins by itself up or down. Each of those is a root job that the
+  Forget a saved network, and move the ones the unit joins by itself up or down, and Join a nearby network that needs
+  a password and isn't in use (the page owns the dialog, so this only emits `join`). Each job is a root job that the
   page follows, and one runs at a time: every control is disabled while one does, and while the parent says a join is
-  pending (`locked`). Forgetting the network the unit is on moves it onto its hotspot, so that asks first, and a page
-  that loses the unit afterwards says why. Emits `changed` once a job is over, so the page loads the state again.
+  pending or the hotspot section runs a job (`locked`, which also says why). Forgetting the network the unit is on
+  moves it onto its hotspot, so that asks first, and a page that loses the unit afterwards says why. Emits `changed`
+  once a job is over, so the page loads the state again, and `busy` when a job it started begins and ends, so the page
+  can lock the other section too.
 -->
 <script setup lang="ts">
 import { mdiArrowDown, mdiArrowUp, mdiLock, mdiRefresh } from '@mdi/js'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
@@ -20,14 +23,21 @@ type HotspotState = components['schemas']['HotspotState']
 type Saved = components['schemas']['Saved']
 type Nearby = components['schemas']['Nearby']
 
-const props = defineProps<{ wifi: WifiNetworks; hotspot: HotspotState | null; admin: boolean; locked: boolean }>()
-const emit = defineEmits<{ changed: []; join: [network: Nearby] }>()
+const props = defineProps<{
+  wifi: WifiNetworks
+  hotspot: HotspotState | null
+  admin: boolean
+  locked: boolean // a join is pending or the hotspot section runs a job: nothing here may change
+  lockedByJob?: boolean // ...and it is only the hotspot section's job, not the join
+}>()
+const emit = defineEmits<{ changed: []; join: [network: Nearby]; busy: [running: boolean] }>()
 
 type Kind = 'scan' | 'order' | 'forget'
 const running = ref<Kind | null>(null)
 const forgetting = ref('') // the name, while a forget runs
 const busy = computed(() => running.value !== null)
 const disabled = computed(() => busy.value || props.locked)
+watch(busy, (running) => emit('busy', running))
 
 interface Notice {
   type: 'success' | 'info' | 'warning' | 'error'
@@ -141,6 +151,9 @@ function forget() {
   void run('forget', () => api.POST('/api/v1/network/wifi/forget', { body: { uuid: network.uuid } }), lostText)
 }
 
+// A hidden saved network is never listed, so it can't be joined from here
+const canJoin = (network: Nearby) => network.security === 'password' && !network.in_use
+
 const age = computed(() =>
   !props.admin && props.wifi.scanned_seconds_ago === null ? 'Not looked yet.' : scanAge(props.wifi.scanned_seconds_ago),
 )
@@ -157,6 +170,9 @@ const age = computed(() =>
     </p>
 
     <template v-else>
+      <v-alert v-if="admin && locked && !busy" type="info" class="mb-4">
+        {{ lockedByJob ? 'Wait for the Wi-Fi change to finish.' : 'Finish or cancel the Wi-Fi join first.' }}
+      </v-alert>
       <h3 class="text-subtitle-1 font-weight-medium mb-1">Saved networks</h3>
       <p v-if="wifi.saved.length" class="text-body-2 text-secondary">The unit joins the first of these it finds.</p>
       <p v-else class="text-body-1">No saved networks. The unit is on its hotspot whenever it is running.</p>
@@ -249,6 +265,18 @@ const age = computed(() =>
             <p v-if="whyNot(network.security)" class="text-body-2 text-secondary mt-1">
               {{ whyNot(network.security) }}
             </p>
+            <v-btn
+              v-if="admin && canJoin(network)"
+              variant="text"
+              color="primary"
+              size="large"
+              class="ms-n4"
+              :aria-label="`Join ${network.name}`"
+              :disabled="disabled"
+              @click="emit('join', network)"
+            >
+              Join
+            </v-btn>
           </div>
         </div>
       </div>
