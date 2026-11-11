@@ -16,6 +16,7 @@ import time
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -992,39 +993,39 @@ def profile_priority(host, uuid):
     return result.stdout.strip() if result.rc == 0 else None
 
 
-def add_throwaway_profile(host, name, password):
-    """Add a client profile that is kept only in NetworkManager's memory (save no) and return its uuid. The name and the
-    password are placeholders made in the test. The command line holds the password, so nothing here prints it or the
-    command: a failure says only the exit status."""
+def add_throwaway_profile(host, uuid, name):
+    """Add a client profile with this uuid, kept only in NetworkManager's memory (save no), and fail on a bad exit
+    status. The test makes the uuid and the placeholder name. The profile has no password: its key management is
+    WPA-PSK with the secret flag "not saved", so the command line (which sudo writes to the journal) holds none. The
+    test never joins it."""
     result = host.run(
         f"sudo nmcli connection add save no type wifi ifname {WIFI_DEVICE} "
-        f"con-name {shlex.quote(name)} ssid {shlex.quote(name)} wifi-sec.key-mgmt wpa-psk "
-        f"wifi-sec.psk {shlex.quote(password)} connection.autoconnect yes")
-    code, output = result.rc, result.stdout
+        f"con-name {shlex.quote(name)} ssid {shlex.quote(name)} connection.uuid {uuid} "
+        "wifi-sec.key-mgmt wpa-psk 802-11-wireless-security.psk-flags 2 connection.autoconnect yes")
+    code = result.rc
     del result
-    found = re.search(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", output)
-    assert code == 0 and found, f"adding the throwaway profile exited {code}"
-    return found.group(0)
+    assert code == 0, f"adding the throwaway profile exited {code}"
 
 
 def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, address, tm_login):
-    """A client profile made over SSH with a placeholder name and password (saved nowhere on disk) is put first in
-    the order through the network job, which gives it the highest priority; Forget then removes it. The other saved
-    networks' priorities are put back as they were, and the profile is deleted at the end even when a check fails.
-    The radio is never asked to join. Skips on a unit with no built-in Wi-Fi radio."""
+    """A client profile made over SSH with a placeholder name and no password is put first in the order through the
+    network job, which gives it the highest priority; Forget then removes it. The profile starts in NetworkManager's
+    memory only, but the order step makes NetworkManager save it to disk until the test deletes it, and a run killed
+    between the order and the delete leaves a placeholder-named profile behind. The other saved networks' priorities
+    are put back as they were, and the profile is deleted at the end even when a check fails. The radio is never asked
+    to join. Skips on a unit with no built-in Wi-Fi radio."""
     if host.run(f"cat /sys/class/net/{WIFI_DEVICE}/address").rc != 0:
         pytest.skip(f"the unit has no {WIFI_DEVICE}")
     cookie = session(address, *tm_login)
     name = f"tmdev-placeholder-{secrets.token_hex(3)}"
-    password = Redacted(secrets.token_urlsafe(12), "throwaway password")  # made here, never a real network's
     state = wifi_networks(address, cookie)
     assert state is not None and state.get("readable"), f"GET {API}/network/wifi isn't readable before the test"
     others = [(entry["uuid"], entry["name"]) for entry in state["saved"] if entry["automatic"]]
     original = {uuid: profile_priority(host, uuid) for uuid, _ in others}
     assert None not in original.values(), "couldn't read a saved network's priority before the test"
-    uuid = None
+    uuid = str(uuid4())  # set before the add, so the cleanup deletes it even after a failed add
     try:
-        uuid = add_throwaway_profile(host, name, password)
+        add_throwaway_profile(host, uuid, name)
         listed = wifi_networks(address, cookie)
         assert listed is not None and uuid in [entry["uuid"] for entry in listed["saved"]], (
             f"GET {API}/network/wifi doesn't list the throwaway profile")
@@ -1039,10 +1040,7 @@ def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, add
         assert after is not None and uuid not in [entry["uuid"] for entry in after["saved"]], (
             f"GET {API}/network/wifi still lists the throwaway profile after Forget")
     finally:
-        if uuid is not None:
-            host.run(f"sudo nmcli connection delete uuid {shlex.quote(uuid)}")
-        else:  # the add may have worked without its uuid being read
-            host.run(f"sudo nmcli connection delete id {shlex.quote(name)}")
+        host.run(f"sudo nmcli connection delete uuid {uuid}")
         for other, priority in original.items():
             host.run(f"sudo nmcli connection modify uuid {shlex.quote(other)} "
                      f"connection.autoconnect-priority {shlex.quote(priority)}")
