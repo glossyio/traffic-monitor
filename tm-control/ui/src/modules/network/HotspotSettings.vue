@@ -57,16 +57,23 @@ const notice = ref<Notice | null>(null)
 // The password, only while it is shown: undefined while hidden, '' when the device has none
 const revealed = ref<string | undefined>(undefined)
 const asking = ref(false)
-watch(() => props.hotspot, () => (revealed.value = undefined)) // a new state may mean a new password
+// Counts the times the password was dropped, so a Show that was still asking when it was dropped is discarded
+let shown = 0
+function forget() {
+  shown += 1
+  revealed.value = undefined
+}
+watch(() => props.hotspot, forget) // a new state may mean a new password
 
 async function show() {
   asking.value = true
   notice.value = null
+  const mine = shown
   try {
     const { data } = await api.GET('/api/v1/network/hotspot/password')
-    revealed.value = (data as components['schemas']['HotspotPassword']).password ?? ''
+    if (mine === shown) revealed.value = (data as components['schemas']['HotspotPassword']).password ?? ''
   } catch (error) {
-    notice.value = { type: 'error', text: messageOf(error) }
+    if (mine === shown) notice.value = { type: 'error', text: messageOf(error) }
   } finally {
     asking.value = false
   }
@@ -105,7 +112,7 @@ const working = computed(() => {
 async function apply(kind: Kind, body: HotspotChange) {
   if (running.value) return
   notice.value = null
-  revealed.value = undefined
+  forget()
   running.value = kind
   const mayLoseTheUnit = props.hotspot.active || kind === 'on'
   const name = body.name ?? props.hotspot.name
@@ -242,7 +249,7 @@ function confirmed() {
             color="primary"
             size="large"
             aria-label="Hide the hotspot password"
-            @click="revealed = undefined"
+            @click="forget"
           >
             Hide
           </v-btn>

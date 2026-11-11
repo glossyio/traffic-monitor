@@ -91,6 +91,27 @@ describe('the hotspot settings', () => {
     expect(wrapper.text()).toContain('placeholder-pass-2')
   })
 
+  it('drops a password that arrives after a change has started', async () => {
+    let answer = () => {}
+    const late = new Promise<void>((resolve) => (answer = resolve))
+    const { wrapper } = await open(NETWORK_STATE, {
+      [PASSWORD]: async () => {
+        await late
+        return json(200, { password: 'placeholder-pass-old' })
+      },
+    })
+    await tap(wrapper, 'Show the hotspot password')
+    await tap(wrapper, 'Change the hotspot name')
+    await typeInto(dialogField('New name'), 'TM-ROAD')
+    await clickInDialog('Change name')
+    answer()
+    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Saved. The hotspot restarted.'))
+    expect(wrapper.text()).not.toContain('placeholder-pass-old')
+    expect(wrapper.find('button[aria-label="Copy hotspot password"]').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="Show the hotspot password"]').exists()).toBe(true)
+  })
+
   it('changes the name after a warning that phones must rejoin', async () => {
     const { api, wrapper } = await open()
     await tap(wrapper, 'Change the hotspot name')
