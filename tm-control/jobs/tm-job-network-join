@@ -1,0 +1,942 @@
+#!/usr/bin/python3
+"""Test a Wi-Fi network under a NetworkManager checkpoint, come back, and record the result.
+
+tm-job-network-join.service runs this as root (`python -EP`), after tm-control writes the request
+/run/tm-control/jobs/network-join.json, a JSON object of one of these forms:
+- {"ssid": "<name>", "password": "<password>"}: a new network, or a new password for a saved one;
+- {"uuid": "<uuid>"}: a saved Wi-Fi network, with the password saved in its profile.
+tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so the request is treated as
+hostile:
+- the jobs directory is opened without following a symlink and must belong to the code owner and be writable by no
+  one else; the request is opened and deleted relative to it, so its path can't be swapped mid-way;
+- the request must be a small regular file of the code owner's with one link, holding a JSON object of exactly one of
+  the forms above and nothing else. The name must match NETWORK_NAME_PATTERN and be at most NAME_MAX_BYTES bytes in
+  UTF-8, the password NETWORK_PASSWORD_PATTERN, both as a whole (tm-control's own rules, which a test keeps the same;
+  spaces at the ends are allowed, because another network's name is what it is), and a uuid UUID_PATTERN;
+- the request is deleted as soon as it is read, so the password is on /run for a moment, not for the whole run;
+- every value goes to nmcli as one argument of an argv list, never through a shell.
+Trusted: the install manifest (root's), the profiles NetworkManager holds, the lock file, and the run directory in
+/run/traffic-monitor with the state and retry files in it (root's). Not trusted: what `iw` prints, which is other
+people's network names heard from the air, so it is only compared with the name under test and never printed. No line
+this prints holds the network's name, the password, an address, or any text of nmcli's, iw's, or busctl's (their
+sentences can carry a command line): only fixed sentences, exit statuses, and error type names. The password is also
+scrubbed from each line, in case.
+
+One run, in order:
+1. Read the manifest (the code owner, the Wi-Fi device, and the hotspot profile's name); open the jobs directory and
+   read the request; delete it.
+2. Check the request. A refusal names the rule, never a value, and writes no state.
+3. Take the lock that tm-job-network and tm-network-retry take (flock on LOCK, tried every half second for LOCK_WAIT
+   seconds) and hold it to the end. Still held: the state becomes `failed` with reason `busy` (unless the state file
+   names a stage that isn't final: an earlier run that died, which step 4 of a later run must still clean up), the run
+   prints `the Wi-Fi is busy` and exits 0.
+4. Clear what an earlier run left. A checkpoint NetworkManager still holds (the `Checkpoints` property) is rolled
+   back, as NetworkManager would at its timeout, since a second checkpoint can't be made while one is pending; the run
+   then waits for the radio to come back as in step 11. A state file whose stage isn't final names a profile under
+   test, which is deleted unless it is a saved network. A control file is removed.
+5. Refuse unless the radio is built in (never a USB adapter) and switched on. The profile the device is on is
+   `before` (none: the radio is idle). For a uuid, the profile must be a Wi-Fi client (infrastructure mode) and not
+   `before`; the name is read from it. A refusal from here on also writes the state as `failed`, reason `error`.
+6. Scan with `iw` (SCAN_TIMEOUT seconds). The scan worked and didn't hear the name: state `failed`, reason
+   `not_in_range`, `the network isn't in range`, exit 0, and the radio was never touched. A saved hidden network isn't
+   scanned for (it can't be told from one out of range). A scan that fails or hangs is printed and the run goes on.
+7. The state becomes `testing`. The checkpoint: GetDeviceByIpIface, then CheckpointCreate on that device with a
+   CHECKPOINT_TIMEOUT-second rollback timeout. If either fails, the run ends there (`failed`, `error`, exit 1) and the
+   radio was never touched.
+8. For a name, the profile under test is added in memory (`save no`, so a password that fails never reaches the
+   microSD card), with autoconnect off and the radio's own MAC address.
+9. `nmcli --wait JOIN_WAIT connection up` on it (the call gets 75 s). Exit 0 is joined.
+10. Joined: the device's first IPv4 address and its DNS servers, then the internet probe (see `probe`).
+11. Come back, always once the checkpoint exists: CheckpointRollback, then the device is read every half second until
+    it is on `before` at state 100 (or, for an idle radio, on no profile), for RETURN_WAIT seconds; after that,
+    `connection up` on `before`. When the rollback call itself fails, the wait is CHECKPOINT_TIMEOUT seconds, when
+    NetworkManager rolls back by itself. `back where it was`.
+12. Not joined: nmcli exit status 3 (its wait ran out) with the device on the profile under test at state 70, read
+    right after: reason `no_address`; any other failure: `not_joined`. The profile is deleted unless it is a saved
+    network; a saved one gets a failure on record in RETRY_FILE (its count plus one, the time now; the rest of the
+    file kept), so the retry waits before trying it. State `failed`, `the test failed (nmcli exit status N)`, exit 0.
+13. Joined: a saved network's failure on record is dropped. State `countdown` with joined true, the address, and the
+    probe's verdict. `the test passed`, exit 0.
+Anything unexpected after step 7 still runs step 11, then deletes a new profile and writes `failed`, reason `error`.
+
+If this script dies in the middle of a test (killed, out of memory, a bug), the checkpoint is what restores the radio:
+NetworkManager rolls it back by itself CHECKPOINT_TIMEOUT seconds after it was made. The state file then still says
+`testing`, and the next run's step 4 deletes the profile it left.
+
+It prints one line per step and exits 0 when the run reached a result, or exits 1 with `refused: <sentence>` or
+`failed: <step> (<error type>)`, such as `(busctl exit status 1)`.
+
+The state file, STATE_FILE in the run directory (0644, written under a temporary name and renamed at each change of
+stage), is what tm-control reads: {"stage", "ssid", "uuid" (the profile under test, or null before there is one),
+"saved", "before" (a profile's name, or null for an idle radio), "joined", "reason", "address", "internet",
+"switch_monotonic", "finished_at" (ISO time, UTC, in a final stage)}. It never holds the password. Stages: `testing`,
+`countdown`, `switching`, `joined`, `failed`, `cancelled`, `switch_failed`; reasons: `not_in_range`, `not_joined`,
+`no_address`, `busy`, `error`.
+
+Standard library only, and no tm_control imports: this runs from the root-owned copy in
+/usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST names the manifest, as for the other jobs: its root-owned
+unit sets it. Tests pass the request path as argv[1], set that, and set NMCLI, IW, BUSCTL, TM_SYS_NET,
+TM_NETWORK_RUN_DIR, TM_NETWORK_LOCK, TM_NETWORK_LOCK_WAIT, TM_JOIN_RETURN_WAIT, TM_JOIN_CHECKPOINT_WAIT (the wait
+after a failed rollback), and TM_JOIN_PROBE (a fixed verdict in place of the probe's sockets), which are ignored when
+running as root.
+"""
+
+import datetime
+import fcntl
+import ipaddress
+import json
+import os
+import pwd
+import re
+import secrets
+import socket
+import stat
+import struct
+import subprocess
+import sys
+import time
+import uuid as uuidlib
+
+REQUEST = "/run/tm-control/jobs/network-join.json"
+MANIFEST = "/etc/traffic-monitor/manifest.json"
+NMCLI = "/usr/bin/nmcli"
+IW = "/usr/sbin/iw"
+BUSCTL = "/usr/bin/busctl"
+SYS_NET = "/sys/class/net"
+RUN_DIR = "/run/traffic-monitor"
+LOCK = "/run/traffic-monitor/network.lock"
+LOCK_WAIT = 10  # seconds
+SCAN_TIMEOUT = 60  # seconds
+JOIN_WAIT = 45  # nmcli --wait for the test's join; a network that gives no address takes all of it
+UP_TIMEOUT = 75  # seconds for the `connection up` call itself
+CHECKPOINT_TIMEOUT = 90  # seconds after CheckpointCreate until NetworkManager rolls back by itself
+RETURN_WAIT = 15  # seconds for the radio to be back where it was after the rollback
+PROBE_HOST = "connectivity-check.ubuntu.com"
+PROBE_TIMEOUT = 10  # seconds for the whole probe
+DNS_WAIT = 2  # seconds for one DNS question
+HTTP_WAIT = 3  # seconds to connect, and again to read the answer
+STATE_FILE = "network-join.json"
+RETRY_FILE = "network-retry.json"
+CONTROL_FILE = "network-join.control"
+MAX_REQUEST = 4096  # bytes
+UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+# tm-control's rules (modules/network/router.py); a test keeps the two the same.
+NAME_MAX_BYTES = 32
+NETWORK_NAME_PATTERN = r"[^\x00-\x1f\x7f]+"  # no control characters; spaces at the ends are the network's
+NETWORK_PASSWORD_PATTERN = r"[\x20-\x7e]{8,63}"  # 8 to 63 printable ASCII, spaces included
+
+WIFI = "802-11-wireless"
+SECURITY = "802-11-wireless-security"
+NM = ("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager", "org.freedesktop.NetworkManager")
+NM_PATH = r"/org/freedesktop/NetworkManager/[A-Za-z0-9_/]+"
+CONNECTED = 100  # NetworkManager's device states
+NO_ADDRESS = 70  # IP_CONFIG: let in, waiting for an address
+FINAL = ("joined", "failed", "cancelled", "switch_failed")
+VERDICTS = ("reachable", "sign_in_page", "not_reachable")
+
+
+class Refused(Exception):
+    """The request can't be carried out. The message says why and never holds a value from the request."""
+
+
+class CommandFailed(Exception):
+    """nmcli, iw, or busctl failed or timed out. The message has a fixed form; their output is never quoted."""
+
+
+def trusted(name, default):
+    """The setting `name` from the environment, but only when not root: root always uses the installed values."""
+    return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def trusted_seconds(name, default):
+    """The number of seconds in the environment variable `name` (not root only), else `default`."""
+    try:
+        return float(trusted(name, str(default)))
+    except ValueError:
+        return float(default)
+
+
+def manifest_path():
+    """The manifest, from TM_CONTROL_MANIFEST (which the unit sets) or MANIFEST."""
+    return os.environ.get("TM_CONTROL_MANIFEST") or MANIFEST
+
+
+def read_manifest(path):
+    """The code owner's uid, the Wi-Fi device, and the hotspot profile's name, from the install manifest."""
+    try:
+        with open(path, "rb") as file:
+            manifest = json.load(file)
+    except (OSError, ValueError):
+        raise Refused(f"the manifest {path} can't be read") from None
+    if not isinstance(manifest, dict):
+        raise Refused(f"the manifest {path} is not a JSON object")
+    try:
+        owner_uid = pwd.getpwnam(manifest.get("codeowner")).pw_uid
+    except (KeyError, TypeError):
+        raise Refused(f"the manifest {path} names no code owner that exists here") from None
+    network = manifest.get("network", {})
+    if not isinstance(network, dict):
+        raise Refused(f"the manifest {path} has a network entry that is not a JSON object")
+    device, profile = network.get("wifi_device", "wlan0"), network.get("hotspot_profile", "tm-hotspot")
+    if not isinstance(device, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", device):
+        raise Refused(f"the manifest {path} names no usable Wi-Fi device")
+    if not isinstance(profile, str) or not profile or profile.startswith("-") or "\x00" in profile:
+        raise Refused(f"the manifest {path} names no usable hotspot profile")
+    return owner_uid, device, profile
+
+
+def open_jobs_dir(path, owner_uid):
+    """A descriptor for the jobs directory, which must be the code owner's and writable by no one else."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError as error:
+        raise Refused(f"the jobs directory can't be opened ({error.strerror})") from None
+    info = os.fstat(fd)
+    if info.st_uid != owner_uid or info.st_mode & 0o022:
+        os.close(fd)
+        raise Refused("the jobs directory is not tm-control's own")
+    return fd
+
+
+def read_request(dir_fd, name, owner_uid):
+    """The request's JSON object, read without following a symlink and only from a small regular file."""
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=dir_fd)
+    except FileNotFoundError:
+        raise Refused("there is no request") from None
+    except OSError as error:
+        raise Refused(f"the request can't be opened ({error.strerror})") from None
+    with os.fdopen(fd, "rb") as file:
+        info = os.fstat(file.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != owner_uid:
+            raise Refused("the request is not a plain file of tm-control's")
+        data = file.read(MAX_REQUEST + 1)
+    if len(data) > MAX_REQUEST:
+        raise Refused(f"the request is larger than {MAX_REQUEST} bytes")
+    try:
+        request = json.loads(data)
+    except ValueError:
+        raise Refused("the request is not JSON") from None
+    if not isinstance(request, dict):
+        raise Refused("the request is not a JSON object")
+    return request
+
+
+def delete_request(dir_fd, name):
+    try:
+        os.unlink(name, dir_fd=dir_fd)
+    except FileNotFoundError:
+        pass
+    except OSError as error:
+        print(f"the request could not be deleted ({error.strerror})")
+
+
+def take_request(directory, name, owner_uid):
+    """The request, which is deleted once read (or once found unreadable) from a jobs directory that can be trusted."""
+    dir_fd = open_jobs_dir(directory, owner_uid)
+    try:
+        return read_request(dir_fd, name, owner_uid)
+    finally:
+        delete_request(dir_fd, name)
+        os.close(dir_fd)
+
+
+def valid_name(name):
+    if not isinstance(name, str) or re.fullmatch(NETWORK_NAME_PATTERN, name) is None:
+        return False
+    try:
+        return len(name.encode("utf-8")) <= NAME_MAX_BYTES
+    except UnicodeEncodeError:  # a lone surrogate, which JSON can carry
+        return False
+
+
+def check(request):
+    """The request once it passes every rule: {"ssid", "password"} or {"uuid"}. No value is quoted in a refusal."""
+    if set(request) == {"uuid"}:
+        if not isinstance(request["uuid"], str) or re.fullmatch(UUID_PATTERN, request["uuid"]) is None:
+            raise Refused("a saved network is named by its uuid, in lowercase")
+        return request
+    if set(request) != {"ssid", "password"}:
+        raise Refused("the request must have a name and a password, or a uuid, and nothing else")
+    if not valid_name(request["ssid"]):
+        raise Refused(f"the name must be 1 to {NAME_MAX_BYTES} bytes, with no control characters")
+    if not isinstance(request["password"], str) or re.fullmatch(NETWORK_PASSWORD_PATTERN, request["password"]) is None:
+        raise Refused("the password must be 8 to 63 printable ASCII characters")
+    return request
+
+
+def take_lock(path, wait):
+    """A descriptor holding flock(LOCK_EX) on path, or None after trying every half second for `wait` seconds.
+
+    The lock's directory is made when missing (0755). Closing the descriptor, or the end of the process, frees it."""
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, mode=0o755, exist_ok=True)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                os.close(fd)
+                return None
+            time.sleep(min(0.5, remaining))
+
+
+def unescape(value):
+    """A value as nmcli -t and -g print it: a backslash escapes the character after it (`:` and `\\`)."""
+    out, escaped = [], False
+    for char in value:
+        if char == "\\" and not escaped:
+            escaped = True
+        else:
+            out.append(char)
+            escaped = False
+    return "".join(out)
+
+
+def split_terse(line):
+    """The unescaped fields of one nmcli -t line, split at the colons that aren't escaped."""
+    fields, current, escaped = [], [], False
+    for char in line:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    fields.append("".join(current))
+    return fields
+
+
+def run_command(argv, timeout):
+    """(exit status, stdout) of a command, or (None, "") when it outlived timeout. Its stderr is never read."""
+    try:
+        result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                                env={**os.environ, "LC_ALL": "C.UTF-8"}, timeout=timeout, check=False)
+    except subprocess.TimeoutExpired:
+        return None, ""
+    return result.returncode, result.stdout.decode("utf-8", errors="replace")
+
+
+def why(tool, status):
+    """A failure's fixed text: `nmcli exit status 4`, `iw timed out`."""
+    return f"{tool} timed out" if status is None else f"{tool} exit status {status}"
+
+
+class Nmcli:
+    """Runs nmcli. The password it was told about is scrubbed from what this script prints."""
+
+    def __init__(self, binary):
+        self.binary = binary
+        self.hidden = set()
+
+    def hide(self, *values):
+        """Hide each value, and the form nmcli's terse output escapes it to."""
+        for value in values:
+            if value:
+                self.hidden.add(value)
+                self.hidden.add(value.replace("\\", "\\\\").replace(":", "\\:"))
+
+    def scrub(self, text):
+        for value in sorted(self.hidden, key=len, reverse=True):  # the longest first, so no part of one is left
+            text = text.replace(value, "[hidden]")
+        return text
+
+    def call(self, *args, timeout=60):
+        """(exit status or None for a timeout, stdout)."""
+        return run_command([self.binary, *args], timeout)
+
+    def run(self, *args, timeout=60):
+        status, out = self.call(*args, timeout=timeout)
+        if status != 0:
+            raise CommandFailed(why("nmcli", status))
+        return out
+
+    def get_uuid(self, uuid, prop):
+        """One property of the profile with that uuid, unescaped; None when there is no such profile."""
+        status, out = self.call("-g", prop, "connection", "show", "uuid", uuid)
+        if status == 10:  # nmcli: the connection doesn't exist
+            return None
+        if status != 0:
+            raise CommandFailed(why("nmcli", status))
+        lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
+        if len(lines) > 1:
+            raise CommandFailed("nmcli answered with an unexpected number of lines")
+        return unescape(lines[0]) if lines else ""
+
+    def device(self, device):
+        """(state number, the name of its profile or None, that profile's uuid or None) for the device."""
+        values = {}
+        out = self.run("-t", "-f", "GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-UUID", "device", "show", device)
+        for line in out.splitlines():
+            key, value = split_terse(line)[:2] if ":" in line else (line, "")
+            values[key] = value
+        state = re.match(r"\d+", values.get("GENERAL.STATE", ""))
+        connection = values.get("GENERAL.CONNECTION", "")
+        profile_uuid = values.get("GENERAL.CON-UUID", "")
+        return (int(state.group()) if state else 0, None if connection in ("", "--") else connection,
+                profile_uuid if re.fullmatch(UUID_PATTERN, profile_uuid) else None)
+
+    def ip4(self, device):
+        """(the device's first IPv4 address or None, its IPv4 DNS servers)."""
+        address, servers = None, []
+        for line in self.run("-t", "-f", "IP4.ADDRESS,IP4.DNS", "device", "show", device).splitlines():
+            fields = split_terse(line)
+            if len(fields) != 2:
+                continue
+            try:
+                if fields[0] == "IP4.ADDRESS[1]":
+                    address = str(ipaddress.IPv4Interface(fields[1]).ip)
+                elif re.fullmatch(r"IP4\.DNS\[\d+\]", fields[0]):
+                    servers.append(str(ipaddress.IPv4Address(fields[1])))
+            except ValueError:
+                continue
+        return address, servers
+
+
+class Busctl:
+    """NetworkManager's D-Bus calls through busctl. A non-zero exit is a failure; busctl's stderr is never read."""
+
+    def __init__(self, binary):
+        self.binary = binary
+
+    def answer(self, *args):
+        status, out = run_command([self.binary, "--system", "--json=short", *args], timeout=30)
+        if status != 0:
+            raise CommandFailed(why("busctl", status))
+        try:
+            return json.loads(out)["data"]
+        except (ValueError, KeyError, TypeError):
+            raise CommandFailed("busctl answered in a form this script doesn't know") from None
+
+    def call(self, method, signature, *args):
+        """The one object path a NetworkManager method answers with."""
+        data = self.answer("call", *NM, method, signature, *args)
+        if not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], str) or \
+                not re.fullmatch(NM_PATH, data[0]):
+            raise CommandFailed("busctl answered in a form this script doesn't know")
+        return data[0]
+
+    def device(self, device):
+        return self.call("GetDeviceByIpIface", "s", device)
+
+    def checkpoint(self, device_path):
+        return self.call("CheckpointCreate", "aouu", "1", device_path, str(CHECKPOINT_TIMEOUT), "0")
+
+    def rollback(self, checkpoint):
+        self.answer("call", *NM, "CheckpointRollback", "o", checkpoint)
+
+    def checkpoints(self):
+        """The checkpoints NetworkManager holds now."""
+        data = self.answer("get-property", *NM, "Checkpoints")
+        if not isinstance(data, list) or \
+                not all(isinstance(path, str) and re.fullmatch(NM_PATH, path) for path in data):
+            raise CommandFailed("busctl answered in a form this script doesn't know")
+        return data
+
+
+def builtin_radio(device):
+    """Whether the device is a Wi-Fi radio that is part of the unit, not a USB adapter (nor no radio at all)."""
+    base = os.path.join(trusted("TM_SYS_NET", SYS_NET), device)
+    if not os.path.isdir(os.path.join(base, "wireless")):
+        return False
+    return not os.path.realpath(os.path.join(base, "device", "subsystem")).endswith("/usb")
+
+
+def heard_names(iw, device):
+    """The names in one scan, with the bytes iw writes as \\xNN decoded as tm-network-retry does. A failure is
+    CommandFailed."""
+    status, out = run_command([iw, "dev", device, "scan"], timeout=SCAN_TIMEOUT)
+    if status != 0:
+        raise CommandFailed(why("iw", status))
+    names = set()
+    for line in out.splitlines():
+        if line.strip().startswith("SSID: "):
+            raw = re.sub(r"\\x([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), line.strip()[len("SSID: "):])
+            try:
+                raw = raw.encode("latin-1").decode("utf-8")
+            except UnicodeError:
+                pass
+            names.add(raw)
+    return names
+
+
+def write_file(directory, name, document):
+    """A JSON file in the run directory, written under a temporary name and renamed, 0644."""
+    os.makedirs(directory, mode=0o755, exist_ok=True)
+    final = os.path.join(directory, name)
+    temporary = os.path.join(directory, f".{name}.{os.getpid()}.tmp")
+    try:
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            os.fchmod(file.fileno(), 0o644)
+            json.dump(document, file)
+        os.rename(temporary, final)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
+
+
+def read_file(directory, name):
+    """A JSON object from the run directory, or None when it is missing or not one."""
+    try:
+        with open(os.path.join(directory, name), encoding="utf-8") as file:
+            document = json.load(file)
+    except (OSError, ValueError):
+        return None
+    return document if isinstance(document, dict) else None
+
+
+def note_failure(directory, uuid, name):
+    """One more failure on record for a saved network in RETRY_FILE; the rest of the file stays as it was."""
+    document = read_file(directory, RETRY_FILE) or {}
+    networks = document.get("networks") if isinstance(document.get("networks"), dict) else {}
+    entry = networks.get(uuid) if isinstance(networks.get(uuid), dict) else {}
+    count = entry.get("failures")
+    count = count if isinstance(count, int) and not isinstance(count, bool) and count >= 1 else 0
+    networks[uuid] = {"name": name, "failures": count + 1, "last_failure": time.time()}
+    write_file(directory, RETRY_FILE, {**document, "networks": networks})
+
+
+def drop_failure(directory, uuid):
+    """Forget a saved network's failures on record, when it has any."""
+    document = read_file(directory, RETRY_FILE)
+    if document and isinstance(document.get("networks"), dict) and uuid in document["networks"]:
+        del document["networks"][uuid]
+        write_file(directory, RETRY_FILE, document)
+
+
+def dns_question(name, ident):
+    """One DNS question (recursion desired) for the A record of name."""
+    labels = b"".join(bytes([len(label)]) + label for label in (part.encode("ascii") for part in name.split(".")))
+    return struct.pack("!HHHHHH", ident, 0x0100, 1, 0, 0, 0) + labels + b"\x00" + struct.pack("!HH", 1, 1)
+
+
+def _skip_name(packet, offset):
+    """The offset just past a name in a DNS packet, which may end in a pointer."""
+    for _ in range(128):
+        length = packet[offset]
+        if length == 0:
+            return offset + 1
+        if length & 0xC0 == 0xC0:
+            return offset + 2
+        if length & 0xC0:
+            raise ValueError("not a label")
+        offset += 1 + length
+    raise ValueError("a name too long")
+
+
+def dns_address(packet, ident):
+    """The first A record of a DNS answer with that id, as text; None for anything else."""
+    try:
+        got, flags, questions, answers = struct.unpack("!HHHH", packet[:8])
+        if got != ident or not flags & 0x8000 or flags & 0x000F:
+            return None
+        offset = 12
+        for _ in range(questions):
+            offset = _skip_name(packet, offset) + 4
+        for _ in range(answers):
+            offset = _skip_name(packet, offset)
+            kind, klass, _, length = struct.unpack("!HHIH", packet[offset:offset + 10])
+            offset += 10
+            data = packet[offset:offset + length]
+            if len(data) != length:
+                return None
+            if kind == 1 and klass == 1 and length == 4:
+                return str(ipaddress.IPv4Address(data))
+            offset += length
+    except (IndexError, ValueError, struct.error):
+        return None
+    return None
+
+
+def http_verdict(first_line):
+    """`reachable` for an answer whose status is 204, `sign_in_page` for any other answer."""
+    parts = first_line.split()
+    return "reachable" if len(parts) >= 2 and parts[0].startswith(b"HTTP/") and parts[1] == b"204" else "sign_in_page"
+
+
+def _bound(kind, device):
+    """A socket bound to the device (SO_BINDTODEVICE), so it goes out over the Wi-Fi even with Ethernet up."""
+    sock = socket.socket(socket.AF_INET, kind)
+    if device:
+        sock.setsockopt(socket.SOL_SOCKET, getattr(socket, "SO_BINDTODEVICE", 25), device.encode())
+    return sock
+
+
+def _left(deadline, most):
+    left = min(most, deadline - time.monotonic())
+    if left <= 0:
+        raise TimeoutError("the probe ran out of time")
+    return left
+
+
+def _ask(device, server, port, deadline):
+    """The address one DNS question to server gets, or None (no answer within DNS_WAIT, or no A record)."""
+    ident = secrets.randbelow(65536)
+    until = time.monotonic() + _left(deadline, DNS_WAIT)
+    try:
+        with _bound(socket.SOCK_DGRAM, device) as sock:
+            sock.connect((server, port))
+            sock.send(dns_question(PROBE_HOST, ident))
+            while True:
+                sock.settimeout(_left(until, DNS_WAIT))
+                packet = sock.recv(1500)
+                if packet[:2] == struct.pack("!H", ident):
+                    return dns_address(packet, ident)
+    except OSError:  # a timeout included
+        return None
+
+
+def _first_line(device, address, port, deadline):
+    """The first line of the answer to a GET of PROBE_HOST's / from address, or b"" when none came."""
+    with _bound(socket.SOCK_STREAM, device) as sock:
+        sock.settimeout(_left(deadline, HTTP_WAIT))
+        sock.connect((address, port))
+        sock.sendall(f"GET / HTTP/1.1\r\nHost: {PROBE_HOST}\r\nConnection: close\r\n\r\n".encode())
+        until = time.monotonic() + _left(deadline, HTTP_WAIT)
+        data = b""
+        while b"\n" not in data and len(data) < 4096:
+            sock.settimeout(_left(until, HTTP_WAIT))
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+        return data.split(b"\n", 1)[0].rstrip(b"\r") if b"\n" in data else b""
+
+
+def probe(device, dns_servers, dns_port=53, http_port=80):
+    """Whether the network the device is on reaches the internet: `reachable`, `sign_in_page`, or `not_reachable`.
+
+    Both sockets are bound to the device. One DNS question to the network's first DNS server for PROBE_HOST, and when
+    it gets no usable answer one more, to the second server if there is one and else the same one (DNS_WAIT seconds
+    each); then a GET to port 80 of the address it got (HTTP_WAIT seconds to connect and again to read). 204 is
+    `reachable`, any other answer `sign_in_page`; no address, no answer, an error, or PROBE_TIMEOUT seconds in all is
+    `not_reachable`. The ports and a device of None (no binding) are for the tests only."""
+    deadline = time.monotonic() + PROBE_TIMEOUT
+    try:
+        servers = []
+        for server in dns_servers:
+            try:
+                servers.append(str(ipaddress.IPv4Address(server)))
+            except ValueError:
+                continue
+        if not servers:
+            return "not_reachable"
+        address = None
+        for server in (servers[0], servers[1] if len(servers) > 1 else servers[0]):
+            address = _ask(device, server, dns_port, deadline)
+            if address:
+                break
+        if not address:
+            return "not_reachable"
+        line = _first_line(device, address, http_port, deadline)
+        return http_verdict(line) if line else "not_reachable"
+    except Exception:  # an error of any kind is no answer
+        return "not_reachable"
+
+
+def now_iso():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+class Join:
+    """One run's steps after the request passed its checks. `step` names what is under way, for a failure line."""
+
+    def __init__(self, nm, device, hotspot, request):
+        self.nm, self.device, self.hotspot = nm, device, hotspot
+        self.run_dir = trusted("TM_NETWORK_RUN_DIR", RUN_DIR)
+        self.busctl = Busctl(trusted("BUSCTL", BUSCTL))
+        self.password = request.get("password")
+        self.saved = "uuid" in request
+        self.profile_name = None  # a saved network's profile name, which the retry's file records
+        self.hidden = False
+        self.before_uuid = None
+        self.checkpoint = None
+        self.back = False
+        self.step = "take the lock"
+        self.state = {"stage": None, "ssid": request.get("ssid", ""), "uuid": request.get("uuid"),
+                      "saved": self.saved, "before": None, "joined": None, "reason": None, "address": None,
+                      "internet": None, "switch_monotonic": None, "finished_at": None}
+
+    def save(self, stage, **changes):
+        self.state.update(stage=stage, **changes)
+        if stage in FINAL:
+            self.state["finished_at"] = now_iso()
+        write_file(self.run_dir, STATE_FILE, self.state)
+
+    def run(self):
+        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), trusted_seconds("TM_NETWORK_LOCK_WAIT", LOCK_WAIT))
+        if lock_fd is None:
+            self.busy()
+            return 0
+        try:
+            return self.locked()
+        finally:
+            os.close(lock_fd)
+
+    def busy(self):
+        """The lock stayed held. A state file of a run that isn't finished is kept for a later run's step 4."""
+        old = read_file(self.run_dir, STATE_FILE)
+        if old is None or old.get("stage") in FINAL:
+            if self.saved:
+                try:
+                    self.state["ssid"] = self.nm.get_uuid(self.state["uuid"], f"{WIFI}.ssid") or ""
+                except CommandFailed:
+                    pass
+            self.save("failed", reason="busy")
+        print("the Wi-Fi is busy")
+
+    def locked(self):
+        try:
+            self.clear_earlier()
+            self.check_radio()
+            if not self.in_range():
+                self.save("failed", reason="not_in_range")
+                print("the network isn't in range")
+                return 0
+            return self.test()
+        except Refused as error:
+            self.fail()
+            print(self.nm.scrub(f"refused: {error}"))
+        except CommandFailed as error:
+            self.fail()
+            print(self.nm.scrub(f"failed: {self.step} ({error})"))
+        except Exception as error:  # a message could quote the request, so print only the kind of error
+            self.fail()
+            print(f"failed: {self.step} ({type(error).__name__})")
+        return 1
+
+    def fail(self):
+        """After a refusal or an error: a new profile goes, and the state says `error`."""
+        if self.checkpoint is not None and not self.saved:
+            self.delete(self.state["uuid"])
+        try:
+            self.save("failed", reason="error")
+        except Exception as error:
+            print(f"the state could not be written ({type(error).__name__})")
+
+    def delete(self, uuid):
+        """Delete a profile; one that is already gone is fine. Prints a failure, never raises."""
+        status, _ = self.nm.call("connection", "delete", "uuid", uuid)
+        if status not in (0, 10):
+            print(f"the network under test could not be deleted ({why('nmcli', status)})")
+        return status == 0
+
+    def clear_earlier(self):
+        """Step 4: a checkpoint still pending, a profile a dead run left, and a control file."""
+        self.step = "clear what an earlier run left"
+        old = read_file(self.run_dir, STATE_FILE)
+        if old is not None and old.get("stage") in FINAL:
+            old = None
+        try:
+            pending = self.busctl.checkpoints()
+        except CommandFailed as error:
+            print(f"the checkpoints could not be read ({error})")
+            pending = []
+        rolled = False
+        for path in pending:
+            try:
+                self.busctl.rollback(path)
+                rolled = True
+            except CommandFailed as error:
+                print(f"the rollback of what an earlier run left failed ({error})")
+        if rolled:
+            print("rolled back what an earlier run left")
+            if old is not None and (old.get("before") is None or isinstance(old.get("before"), str)):
+                self.come_back_to(old.get("before"), None, trusted_seconds("TM_JOIN_RETURN_WAIT", RETURN_WAIT))
+            else:
+                self.wait_until(lambda state, _name, _uuid: state == CONNECTED,
+                                trusted_seconds("TM_JOIN_RETURN_WAIT", RETURN_WAIT))
+        if old is not None and old.get("saved") is False and isinstance(old.get("uuid"), str) \
+                and re.fullmatch(UUID_PATTERN, old["uuid"]):
+            if self.delete(old["uuid"]):
+                print("deleted the network an earlier run left")
+        try:
+            os.unlink(os.path.join(self.run_dir, CONTROL_FILE))
+        except FileNotFoundError:
+            pass
+
+    def check_radio(self):
+        """Step 5: a built-in radio that is on, what it is on now, and for a uuid a saved Wi-Fi network."""
+        nm = self.nm
+        self.step = "check the radio"
+        if not builtin_radio(self.device):
+            raise Refused("the unit has no built-in Wi-Fi radio")
+        if nm.run("radio", "wifi").strip() != "enabled":
+            raise Refused("the Wi-Fi radio is switched off")
+        _, self.state["before"], self.before_uuid = nm.device(self.device)
+        if self.before_uuid is None:
+            self.state["before"] = None
+        if not self.saved:
+            return
+        self.step = "read the network"
+        uuid = self.state["uuid"]
+        kind = nm.get_uuid(uuid, "connection.type")
+        if kind is None:
+            raise Refused("that network isn't saved any more")
+        if kind != WIFI or nm.get_uuid(uuid, f"{WIFI}.mode") != "infrastructure":
+            raise Refused("only a saved Wi-Fi network can be tested")
+        self.state["ssid"] = nm.get_uuid(uuid, f"{WIFI}.ssid") or ""
+        self.profile_name = nm.get_uuid(uuid, "connection.id") or ""
+        self.hidden = nm.get_uuid(uuid, f"{WIFI}.hidden") == "yes"
+        if uuid == self.before_uuid:
+            raise Refused("the unit is already on that network")
+
+    def in_range(self):
+        """Step 6: False only when a scan worked and didn't hear the network."""
+        if self.hidden:
+            return True
+        self.step = "scan"
+        try:
+            return self.state["ssid"] in heard_names(trusted("IW", IW), self.device)
+        except CommandFailed as error:
+            print(f"the scan failed ({error})")
+            return True
+
+    def test(self):
+        """Steps 7 to 13."""
+        if not self.saved:
+            self.state["uuid"] = str(uuidlib.uuid4())
+        self.save("testing")
+        self.step = "make the checkpoint"
+        self.checkpoint = self.busctl.checkpoint(self.busctl.device(self.device))
+        print("made the checkpoint")
+        try:
+            status, reason = self.trial()
+        except BaseException:
+            if not self.back:
+                step = self.step
+                try:
+                    self.come_back()
+                except CommandFailed as error:
+                    print(f"could not come back ({error})")
+                except Exception as error:
+                    print(f"could not come back ({type(error).__name__})")
+                self.step = step
+            raise
+        self.come_back()
+        self.step = "record the result"
+        if status == 0:
+            if self.saved:
+                drop_failure(self.run_dir, self.state["uuid"])
+            self.save("countdown", joined=True)
+            print("the test passed")
+            return 0
+        if self.saved:
+            note_failure(self.run_dir, self.state["uuid"], self.profile_name)
+        else:
+            self.delete(self.state["uuid"])
+        self.save("failed", joined=False, reason=reason)
+        print(f"the test failed ({why('nmcli', status)})")
+        return 0
+
+    def trial(self):
+        """Steps 8 to 10: (nmcli's exit status, None or the reason the test failed)."""
+        nm, uuid = self.nm, self.state["uuid"]
+        if not self.saved:
+            self.step = "add the network"
+            ssid = self.state["ssid"]
+            nm.run("connection", "add", "save", "no", "type", "wifi", "connection.id", ssid, "connection.uuid", uuid,
+                   "connection.interface-name", self.device, "connection.autoconnect", "no", f"{WIFI}.ssid", ssid,
+                   f"{WIFI}.cloned-mac-address", "permanent", f"{SECURITY}.key-mgmt", "wpa-psk", f"{SECURITY}.psk",
+                   self.password)
+        self.step = "test the network"
+        status, _ = nm.call("--wait", str(JOIN_WAIT), "connection", "up", "uuid", uuid, timeout=UP_TIMEOUT)
+        if status != 0:
+            reason = "not_joined"
+            if status == 3:
+                try:
+                    state, _, on = nm.device(self.device)
+                    if on == uuid and state == NO_ADDRESS:
+                        reason = "no_address"
+                except CommandFailed:
+                    pass
+            return status, reason
+        print("joined the network")
+        self.step = "read the address"
+        address, servers = nm.ip4(self.device)
+        self.step = "probe the internet"
+        verdict = trusted("TM_JOIN_PROBE", "")
+        if verdict not in VERDICTS:
+            verdict = probe(self.device, servers)
+        self.state.update(address=address, internet=verdict)
+        print({"reachable": "the internet is reachable", "sign_in_page": "the network shows a sign-in page",
+               "not_reachable": "the internet is not reachable"}[verdict])
+        return 0, None
+
+    def come_back(self):
+        """Step 11: the rollback, and the radio back where it was."""
+        self.step = "come back"
+        self.back = True
+        wait = trusted_seconds("TM_JOIN_RETURN_WAIT", RETURN_WAIT)
+        try:
+            self.busctl.rollback(self.checkpoint)
+        except CommandFailed as error:
+            print(f"the rollback failed ({error})")
+            wait = trusted_seconds("TM_JOIN_CHECKPOINT_WAIT", CHECKPOINT_TIMEOUT)
+        if not self.come_back_to(self.state["before"], self.before_uuid, wait):
+            raise CommandFailed("the Wi-Fi did not come back")
+        print("back where it was")
+
+    def come_back_to(self, name, uuid, wait):
+        """Wait up to `wait` seconds for the device to be on the profile (by uuid, else by name) at state 100, or on
+        no profile when name is None; then `connection up` on it. Whether it is there in the end."""
+        if name is None:
+            return self.wait_until(lambda _state, on, _uuid: on is None, wait)
+
+        def there(state, on, on_uuid):
+            return state == CONNECTED and (on_uuid == uuid if uuid else on == name)
+
+        if self.wait_until(there, wait):
+            return True
+        ref = ("uuid", uuid) if uuid else ("id", name)
+        status, _ = self.nm.call("--wait", str(JOIN_WAIT), "connection", "up", *ref, timeout=UP_TIMEOUT)
+        return status == 0 or self.wait_until(there, 0)
+
+    def wait_until(self, condition, wait):
+        """Read the device every half second until condition(state, profile, uuid) holds, for `wait` seconds."""
+        deadline = time.monotonic() + wait
+        while True:
+            try:
+                if condition(*self.nm.device(self.device)):
+                    return True
+            except CommandFailed:
+                pass
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(0.5, remaining))
+
+
+def main(argv):
+    directory, request_name = os.path.split(argv[1] if len(argv) > 1 else REQUEST)
+    nm = Nmcli(trusted("NMCLI", NMCLI))
+    step = "check the request"
+    try:
+        owner_uid, device, hotspot = read_manifest(manifest_path())
+        request = check(take_request(directory or ".", request_name, owner_uid))
+        nm.hide(request.get("password"))
+        step = "take the lock"
+        return Join(nm, device, hotspot, request).run()
+    except Refused as error:
+        print(nm.scrub(f"refused: {error}"))
+    except Exception as error:  # a message could quote the request, so print only the kind of error
+        print(f"failed: {step} ({type(error).__name__})")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

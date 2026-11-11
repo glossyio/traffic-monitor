@@ -25,11 +25,16 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
                                                  "up": {"<name>": "fail-started"} makes it exit 4 with the profile the
                                                  only active one (NetworkManager started it by itself meanwhile);
                                                  "fail-once" is "fail" for this call only (the entry is removed);
-                                                 "up_delay": {"<name>": SECONDS} makes it sleep first
+                                                 "timeout" exits 3 (nmcli's wait ran out) with the profile the only
+                                                 active one; "up_delay": {"<name>": SECONDS} makes it sleep first
   connection down REF                            removes the profile from "active"
   device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-UUID)   state 100 and the first active profile
-                                                 (and its uuid), else 30, "--" and ""; "device_state": N in the state
-                                                 overrides the number
+                                                 (and its uuid), else 30, "--" and ""; "device_states": {"<name>": N}
+                                                 gives the number while that profile is the first active one, and
+                                                 "device_state": N in the state overrides both
+  device show DEV  (-t -f IP4.ADDRESS,IP4.DNS)   IP4.ADDRESS[1] and IP4.DNS[1..n] of the first active profile, from
+                                                 the state's "ip4": {"<name>": {"address": "192.168.1.57/24",
+                                                 "dns": ["192.168.1.1"]}}; no lines for a profile not listed there
   radio wifi                                     the state's "radio", "enabled" unless set
   radio wifi on|off                              sets the state's "radio" to "enabled" or "disabled"
 Any -f field that isn't listed above is read as a profile property. REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
@@ -127,11 +132,19 @@ def main(argv):
         return
     if group == "device" and verb == "show":
         active = state.get("active", [])
-        number = state.get("device_state", 100 if active else 30)
+        number = state.get("device_state", state.get("device_states", {}).get(active[0], 100) if active else 30)
         values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--",
                   "GENERAL.CON-UUID": state["profiles"].get(active[0], {}).get("connection.uuid", "") if active else ""}
+        ip4 = state.get("ip4", {}).get(active[0], {}) if active else {}
         for key in fields[1].split(","):
-            print(f"{key}:{escape(values[key])}")
+            if key == "IP4.ADDRESS":
+                if ip4.get("address"):
+                    print(f"IP4.ADDRESS[1]:{escape(ip4['address'])}")
+            elif key == "IP4.DNS":
+                for index, server in enumerate(ip4.get("dns", []), start=1):
+                    print(f"IP4.DNS[{index}]:{escape(server)}")
+            else:
+                print(f"{key}:{escape(values[key])}")
         return
     if group != "connection":
         die(2, f"Error: `{group} {verb}` is not faked.")
@@ -174,6 +187,8 @@ def main(argv):
         save(state)
         if outcome in ("fail", "fail-once", "fail-started"):
             die(4, f"Error: Connection activation failed for '{name}'.")
+        if outcome == "timeout":
+            die(3, f"Error: Timeout expired while activating '{name}'.")
     elif verb == "down":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         state["active"] = [n for n in state.get("active", []) if n != name]
