@@ -1491,3 +1491,160 @@ def test_survey_usage_counts_rows_without_a_survey():
     assert sql.endswith("GROUP BY survey_id")
     answer = named(json.loads(FLOWS.read_text()), "tm-internal: answer survey usage")
     assert "no survey" in answer["func"]
+
+
+# capture-events' "append config" maps Frigate's camera name to the sensors.cameras key, from the map "init config
+# defaults" builds on each load. Frigate's name stays on the device: it is never in a log line, and every node after
+# "append config" sees the key.
+
+APPEND_CONFIG = "8eaa1d06a29a5d2b"  # append config, deployment properties
+UNLISTED_WARNING = ("An event from a Frigate camera that config.yml doesn't list was dropped. "
+                    "Open the control app's Cameras page.")
+
+
+def node_by_id(node_id):
+    [node] = [node for node in json.loads(FLOWS.read_text()) if node["id"] == node_id]
+    return node
+
+
+def config_with_cameras(cameras):
+    config = new_device_config()
+    config["sensors"]["cameras"] = cameras
+    return config
+
+
+def load_config(config, context=None):
+    """Run init config defaults on config; returns its step and the global context with global.config set, as
+    "set global.config" does after a load."""
+    run = run_functions([(node_by_id(INIT_DEFAULTS), {"payload": config})], context=context)
+    [step] = run["results"]
+    return step, {**run["global"], "config": step["result"]["payload"]}
+
+
+def frigate_event(camera):
+    return {"frigate_event": {"camera": camera, "id": "1.0-abc"}, "payload": {}}
+
+
+def append_events(cameras, context):
+    """Run append config on one event per camera, in one run; returns the steps and the global context after."""
+    append = node_by_id(APPEND_CONFIG)
+    run = run_functions([(append, frigate_event(camera)) for camera in cameras], context=context)
+    return run["results"], run["global"]
+
+
+def append_config(config, camera, context=None):
+    _, context = load_config(config, context)
+    [step], context = append_events([camera], context)
+    return step, context
+
+
+@needs_node
+def test_init_defaults_maps_frigate_names_to_keys():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide"},
+        "picam_h265": {},
+        "main_st": {"frigate_camera": ""},
+    })
+    step, context = load_config(config)
+    assert context["frigate_cameras"] == {"oak_ave_wide": "camera_1_3fa9c2", "picam_h265": "picam_h265",
+                                          "main_st": "main_st"}
+    assert context["camera_labels"] == {"camera_1_3fa9c2": "camera_1_3fa9c2 (oak_ave_wide)",
+                                        "picam_h265": "picam_h265", "main_st": "main_st"}
+    assert context["tm_warned"] == {}
+    assert "frigate_cameras" not in step["result"]["payload"] and "camera_labels" not in step["result"]["payload"]
+    assert step["logged"] == []
+
+
+@needs_node
+def test_a_duplicate_frigate_camera_is_a_config_error_that_names_only_keys():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
+        "camera_2_b07e11": {"frigate_camera": "oak_ave_wide", "enabled": True},
+    })
+    step, context = load_config(config)
+    assert context["frigate_cameras"] == {"oak_ave_wide": "camera_1_3fa9c2"}
+    [(level, text, with_msg)] = [entry for entry in step["logged"] if "same Frigate camera" in entry[1]]
+    assert (level, with_msg) == ("error", True) and "oak_ave_wide" not in text
+    assert "camera_1_3fa9c2" in text and "camera_2_b07e11" in text
+    assert all("oak_ave_wide" not in text for _, text, _ in step["logged"])
+
+
+@needs_node
+def test_append_config_records_the_key_not_frigates_name():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_00"},
+    })
+    step, _ = append_config(config, "oak_ave_wide")
+    assert step["result"]["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert step["result"]["enabled"] is True and step["result"]["radarEnabled"] is True
+    assert step["result"]["frigate_event"]["radarName"] == "TM_RADAR_SERIAL_PORT_00"
+    assert "oak_ave_wide" not in json.dumps(step["result"])
+    assert step["logged"] == []
+
+
+@needs_node
+def test_an_event_from_an_unlisted_camera_is_dropped_without_throwing():
+    """Issue #54."""
+    step, _ = append_config(new_device_config(), "oak_ave_tele")
+    assert step["result"] is None
+
+
+@needs_node
+def test_unknown_camera_warns_once_per_config_load():
+    """Review Focus 4: a busy road on an unlisted camera logs one warning per config load, and it names no camera."""
+    _, context = load_config(new_device_config())
+    steps, _ = append_events(["oak_ave_tele", "main_st", "oak_ave_tele"], context)
+    assert [step["result"] for step in steps] == [None, None, None]
+    all_logged = [entry for step in steps for entry in step["logged"]]
+    assert [text for level, text, _ in all_logged if level == "warn"] == [UNLISTED_WARNING]
+
+
+@needs_node
+def test_a_missing_radar_is_treated_like_a_disabled_one():
+    """Issue #255: the event is recorded, with no radar."""
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_03"},
+    })
+    step, _ = append_config(config, "oak_ave_wide")
+    assert step["result"]["enabled"] is True and step["result"]["radarEnabled"] is False
+    assert "radarName" not in step["result"]["frigate_event"]
+    assert [level for level, text, _ in step["logged"] if "TM_RADAR_SERIAL_PORT_03" in text] == ["warn"]
+    assert all("oak_ave_wide" not in text for _, text, _ in step["logged"])
+
+
+@needs_node
+def test_append_config_survives_an_empty_entry():
+    """Review Focus 2: an entry with nothing under it is a camera that is off; "camera enabled?" drops its events."""
+    step, _ = append_config(config_with_cameras({"main_st": None}), "main_st")
+    assert step["result"] is not None and step["result"].get("enabled") is not True
+    assert step["result"]["frigate_event"]["camera"] == "main_st"
+
+
+@needs_node
+@pytest.mark.parametrize("cameras", [None, {}], ids=["block-empty", "no-entries"])
+def test_init_defaults_survives_a_cameras_block_with_no_entries(cameras):
+    step, context = load_config(config_with_cameras(cameras))
+    assert step["logged"] == []
+    assert (context["frigate_cameras"], context["camera_labels"]) == ({}, {})
+
+
+@needs_node
+@pytest.mark.parametrize("camera, warning", [
+    ("oak_ave_tele", UNLISTED_WARNING),
+    ("oak_ave_wide", "Camera camera_1_3fa9c2 is paired with radar TM_RADAR_SERIAL_PORT_03, which isn't in config.yml; "
+                     "recording its events without a radar."),
+], ids=["unlisted", "missing-radar"])
+def test_a_new_config_load_warns_again(camera, warning):
+    """Each warning is logged once per name per config load: a second load resets tm_warned."""
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_03"},
+    })
+    _, context = load_config(config)
+    first, context = append_events([camera, camera], context)
+    _, context = load_config(config, context)
+    second, _ = append_events([camera, camera], context)
+    for steps in (first, second):
+        assert [text for step in steps for level, text, _ in step["logged"] if level == "warn"] == [warning]

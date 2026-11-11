@@ -9,7 +9,7 @@ An event is one object that Frigate detected and tracked until it left the frame
 ## How an event is made
 
 1. Frigate publishes a message on the device's MQTT topic `frigate/events` for each tracked object. When the object leaves the frame, the message has `type: "end"` and holds everything Frigate knows about it.
-2. The Traffic Monitor keeps the `end` message if the camera is enabled in [config.yml](../configuration/node-red-config.md#sensorscameras) and the object moved.
+2. The Traffic Monitor keeps the `end` message if the camera has an enabled entry in [config.yml](../configuration/node-red-config.md#sensorscameras) and the object moved. From here on, the camera goes by its entry's name.
 3. If the object entered any zone and the camera has an enabled radar, it works out the direction and the speed, as described below, and adds `radar` to `provenance` when a speed was found.
 4. It writes the row, publishes today's counts on `tm/events`, and uploads the event to ThingsBoard if that is on. See [MQTT and ThingsBoard](integrations.md).
 
@@ -37,7 +37,7 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | Column | Type | Meaning | Values |
 |---|---|---|---|
 | `id` | TEXT, primary key | Frigate's event id | Unix time in seconds, a hyphen, and six random characters, such as `1721144705.617111-fg3luy` |
-| `camera` | TEXT | *Frigate.* The camera's name | As named in Frigate, `picam_h265` by default |
+| `camera` | TEXT | The camera's name in [config.yml](../configuration/node-red-config.md#sensorscameras), which can differ from its name in Frigate | The name of the camera's entry under `sensors.cameras`, `picam_h265` by default |
 | `label` | TEXT | *Frigate.* The object type | One of Frigate's [object labels](https://docs.frigate.video/configuration/objects) |
 | `sub_label` | TEXT | *Frigate.* A label added by another process, such as a recognized face | Usually empty |
 | `top_score` | REAL | *Frigate.* The highest detection score while the object was tracked | 0 to 1 |
