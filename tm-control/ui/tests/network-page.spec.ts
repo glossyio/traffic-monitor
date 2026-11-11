@@ -1,9 +1,10 @@
 // The Network page: this device's names, links, and internet, and the hotspot read-only.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ADMIN, NETWORK_STATE, VIEWER, apiError, json, networkState, signedIn } from './fake-api'
+import { ADMIN, NETWORK_STATE, VIEWER, WIFI_NETWORKS, apiError, json, networkState, signedIn } from './fake-api'
 import { click, mountApp } from './mount'
 
 const NETWORK = 'GET /api/v1/network'
+const WIFI = 'GET /api/v1/network/wifi'
 
 const JOINED = {
   ...NETWORK_STATE.wifi!,
@@ -28,9 +29,9 @@ describe('the Network page', () => {
   })
 
   it('shows this device: its names, each link with its MAC and addresses, and the internet line', async () => {
-    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
-    expect(wrapper.findAll('h2').map((h) => h.text().trim())).toEqual(['This device', 'Hotspot'])
+    expect(wrapper.findAll('h2').map((h) => h.text().trim())).toEqual(['This device', 'Wi-Fi networks', 'Hotspot'])
     const text = wrapper.text()
     for (const part of [
       'tm-ab12',
@@ -63,14 +64,14 @@ describe('the Network page', () => {
   })
 
   it('says "On its hotspot (TM-AB12)" with the hotspot address when the radio runs the hotspot', async () => {
-    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).toContain('On its hotspot (TM-AB12)')
     expect(wrapper.text()).toContain('10.42.0.1')
   })
 
   it('shows the joined network with its signal, gateway, and DNS servers', async () => {
-    signedIn(VIEWER, { [NETWORK]: networkState({ wifi: JOINED }) })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: networkState({ wifi: JOINED }) })
     const { wrapper } = await mountApp('/network')
     const text = wrapper.text()
     for (const part of ['HomeNet, signal 72%', '192.168.1.60', '9.9.9.9']) expect(text).toContain(part)
@@ -79,20 +80,20 @@ describe('the Network page', () => {
   })
 
   it('leaves Ethernet out on a unit without it, and says "No built-in Wi-Fi radio" without one', async () => {
-    signedIn(VIEWER, { [NETWORK]: networkState({ ethernet: null }) })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: networkState({ ethernet: null }) })
     let { wrapper } = await mountApp('/network')
     expect(wrapper.text()).not.toContain('Ethernet')
     expect(wrapper.text()).not.toContain('No built-in Wi-Fi radio')
 
     document.body.replaceChildren()
-    signedIn(VIEWER, { [NETWORK]: networkState({ wifi: null, hotspot: null }) })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: networkState({ wifi: null, hotspot: null }) })
     ;({ wrapper } = await mountApp('/network'))
     expect(wrapper.text()).toContain('No built-in Wi-Fi radio')
     expect(wrapper.text()).toContain('Ethernet')
   })
 
   it('copies a MAC address when its Copy button is tapped', async () => {
-    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const copied: string[] = []
     Object.defineProperty(document, 'execCommand', {
       value: vi.fn((command: string) => {
@@ -110,7 +111,7 @@ describe('the Network page', () => {
   })
 
   it('says it could not copy, and shows nothing wrong when the browser agrees', async () => {
-    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     Object.defineProperty(document, 'execCommand', { value: vi.fn(() => false), configurable: true })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).not.toContain('Select the text to copy it.')
@@ -119,9 +120,10 @@ describe('the Network page', () => {
   })
 
   it('shows a viewer the hotspot read-only, with no password row and no controls', async () => {
-    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
-    const text = wrapper.text()
+    const section = wrapper.findAll('section').find((s) => s.find('h2').text() === 'Hotspot')!
+    const text = section.text()
     for (const part of ['TM-AB12', 'Name hidden', 'http://10.42.0.1/', 'http://tm-ab12.local/']) {
       expect(text).toContain(part)
     }
@@ -133,7 +135,7 @@ describe('the Network page', () => {
   })
 
   it('gives an admin the hotspot controls where a viewer has the read-only facts', async () => {
-    signedIn(ADMIN, { [NETWORK]: NETWORK_STATE })
+    signedIn(ADMIN, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).toContain('Hotspot on')
     expect(wrapper.text()).toContain('Hide the name')
@@ -143,7 +145,7 @@ describe('the Network page', () => {
 
   it("warns that the network state couldn't be read when NetworkManager didn't answer", async () => {
     const unread = networkState({ readable: false, ethernet: null, wifi: null, internet: 'unknown', hotspot: null })
-    signedIn(VIEWER, { [NETWORK]: unread })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: unread })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).toContain("The network state couldn't be read")
     expect(wrapper.text()).toContain('tm-ab12.local') // the names are still true
@@ -168,8 +170,40 @@ describe('the Network page', () => {
     expect(wrapper.text()).not.toContain('The device answered with an error.')
   })
 
+  it('puts Wi-Fi networks between This device and Hotspot', async () => {
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
+    const { wrapper } = await mountApp('/network')
+    const sections = wrapper.findAll('section')
+    expect(sections.map((s) => s.find('h2').text())).toEqual(['This device', 'Wi-Fi networks', 'Hotspot'])
+    expect(sections[1].text()).toContain('HomeNet')
+  })
+
+  it('leaves Wi-Fi networks out when the network state could not be read', async () => {
+    const unread = networkState({ readable: false, ethernet: null, wifi: null, internet: 'unknown', hotspot: null })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: unread })
+    const { wrapper } = await mountApp('/network')
+    expect(wrapper.text()).not.toContain('Wi-Fi networks')
+  })
+
+  it('says why the networks are missing, with Try again, when only they fail to load', async () => {
+    let loads = 0
+    signedIn(VIEWER, {
+      [NETWORK]: NETWORK_STATE,
+      [WIFI]: () => {
+        loads += 1
+        return loads === 1 ? apiError(500, 'error', 'The device answered with an error.') : json(200, WIFI_NETWORKS)
+      },
+    })
+    const { wrapper } = await mountApp('/network')
+    expect(wrapper.text()).toContain('This device')
+    expect(wrapper.text()).toContain('The device answered with an error.')
+    await click(wrapper, 'Try again')
+    expect(wrapper.text()).toContain('HomeNet')
+    expect(wrapper.text()).not.toContain('The device answered with an error.')
+  })
+
   it("says the hotspot isn't set up on a unit without one", async () => {
-    signedIn(VIEWER, { [NETWORK]: networkState({ hotspot: null }) })
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: networkState({ hotspot: null }) })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).toContain("The hotspot isn't set up on this unit.")
   })

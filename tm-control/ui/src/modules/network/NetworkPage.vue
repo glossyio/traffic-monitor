@@ -1,8 +1,8 @@
 <!--
   The Network page (GET /network), for everyone signed in: this device's names, its Ethernet and Wi-Fi links with
-  their hardware and IP addresses, the internet, and the hotspot. Every name and address has a Copy button. The
-  hotspot is read-only for a viewer; an admin gets its settings (HotspotSettings). The hotspot's password is never
-  part of this answer.
+  their hardware and IP addresses, the internet, the saved and nearby Wi-Fi networks (WifiNetworks, from its own
+  answer, GET /network/wifi), and the hotspot. Every name and address has a Copy button. The networks and the hotspot
+  are read-only for a viewer; an admin gets their controls. The hotspot's password is never part of this answer.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
@@ -11,10 +11,12 @@ import type { components } from '../../api/schema'
 import { useSession } from '../../stores/session'
 import FactRow from './FactRow.vue'
 import HotspotSettings from './HotspotSettings.vue'
+import WifiNetworks from './WifiNetworks.vue'
 import { internetLine, wifiLine } from './summary'
 
 type NetworkState = components['schemas']['NetworkState']
 type Link = components['schemas']['Link']
+type Wifi = components['schemas']['WifiNetworks']
 
 interface Fact {
   label: string
@@ -40,7 +42,23 @@ async function load() {
   }
 }
 
-onMounted(load)
+// The saved and nearby Wi-Fi networks. A failure here shows in its own section; it never hides the rest of the page.
+const wifi = ref<Wifi | null>(null)
+const wifiError = ref('')
+
+async function loadWifi() {
+  wifiError.value = ''
+  try {
+    const { data } = await api.GET('/api/v1/network/wifi')
+    wifi.value = data as Wifi
+  } catch (error) {
+    wifiError.value = messageOf(error)
+  }
+}
+
+const loadAll = () => Promise.all([load(), loadWifi()])
+
+onMounted(loadAll)
 
 // A link's hardware address, addresses, gateway, and DNS servers, each with its Copy button
 function details(name: string, link: Link): Fact[] {
@@ -102,7 +120,7 @@ const hotspotFacts = computed<Fact[]>(() => {
     <v-alert v-if="loadError" type="error" class="mb-6">
       {{ loadError }}
       <template #append>
-        <v-btn variant="text" @click="load">Try again</v-btn>
+        <v-btn variant="text" @click="loadAll">Try again</v-btn>
       </template>
     </v-alert>
     <v-progress-linear v-else-if="!state" indeterminate color="primary" />
@@ -111,7 +129,7 @@ const hotspotFacts = computed<Fact[]>(() => {
       <v-alert v-if="!state.readable" type="warning" class="mb-6">
         The network state couldn't be read, because the network service didn't answer. The names below are still right.
         <template #append>
-          <v-btn variant="text" @click="load">Try again</v-btn>
+          <v-btn variant="text" @click="loadAll">Try again</v-btn>
         </template>
       </v-alert>
 
@@ -133,6 +151,25 @@ const hotspotFacts = computed<Fact[]>(() => {
       </section>
 
       <section v-if="state.readable" class="mt-10">
+        <h2 class="text-h6 mb-4">Wi-Fi networks</h2>
+        <v-alert v-if="wifiError" type="error">
+          {{ wifiError }}
+          <template #append>
+            <v-btn variant="text" @click="loadWifi">Try again</v-btn>
+          </template>
+        </v-alert>
+        <v-progress-linear v-else-if="!wifi" indeterminate color="primary" />
+        <WifiNetworks
+          v-else
+          :wifi="wifi"
+          :hotspot="state.hotspot"
+          :admin="session.isAdmin"
+          :locked="false"
+          @changed="loadAll"
+        />
+      </section>
+
+      <section v-if="state.readable" class="mt-10">
         <h2 class="text-h6 mb-4">Hotspot</h2>
         <p v-if="!state.hotspot" class="text-body-1">The hotspot isn't set up on this unit.</p>
         <HotspotSettings
@@ -140,7 +177,7 @@ const hotspotFacts = computed<Fact[]>(() => {
           :hotspot="state.hotspot"
           :local-name="state.local_name"
           :on-hotspot="!!session.status?.hotspot"
-          @changed="load"
+          @changed="loadAll"
         />
         <template v-else>
           <FactRow v-for="fact in hotspotFacts" :key="fact.label" v-bind="fact" class="mb-4" />

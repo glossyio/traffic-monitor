@@ -3,7 +3,7 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
-import { ADMIN, NETWORK_STATE, json, networkState, signedIn, status } from './fake-api'
+import { ADMIN, NETWORK_STATE, WIFI_NETWORKS, json, networkState, signedIn, status } from './fake-api'
 import { clickInDialog, dialogButtons, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type Job = components['schemas']['Job']
@@ -40,6 +40,7 @@ function job(status: Job['status'], log: string[] = []): Job {
 async function open(state = NETWORK_STATE, answers: Record<string, unknown> = {}, onHotspot = false) {
   const api = signedIn(ADMIN, {
     [NETWORK]: state,
+    'GET /api/v1/network/wifi': WIFI_NETWORKS,
     [CHANGE]: json(202, { id: 'job1' }),
     [JOB]: json(200, job('succeeded')),
     ...(onHotspot ? { 'GET /api/v1/setup/status': status(true, true, { local_name: 'tm-ab12.local' }) } : {}),

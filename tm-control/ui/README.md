@@ -987,6 +987,60 @@ another device, so every one has a Copy button. The Device page carries a short 
 - Under the settings, one paragraph says why: a hotspot on a pole is visible to anyone passing and public Wi-Fi maps
   record where names are seen; hiding the name reduces that and only turning the hotspot off prevents it.
 
+#### The Wi-Fi networks section
+
+Between "This device" and "Hotspot" (`WifiNetworks.vue`, from `GET /network/wifi`), shown when the network state could
+be read. Everyone sees the two lists; only an admin gets Refresh, Forget, and Move up / Move down.
+
+```text
+| Wi-Fi networks              (h6) |
+| Saved networks                   |
+| The unit joins the first of      |
+| these it finds.                  |
+| HomeNet                          |
+| [Joined] [Hidden]                |
+| Forget  [down]                   |
+| ---------------------------------|
+| Depot                            |
+| [Not in range] [Couldn't join]   |
+| The unit couldn't join this ...  |
+| Forget  [up]                     |
+| Nearby networks       [Refresh]  |
+| Looked 1 minute ago              |
+| (wifi4) HomeNet (lock) [Saved]   |
+| (wifi3) CafeGuest                |
+| Open networks can't be joined.   |
++----------------------------------+
+```
+
+- A saved row is a list item with the name on the first line, its marks (chips) under it, and its buttons under
+  those, on one line: Forget first, then the Move buttons. The buttons sit on their own line at every width, as the
+  hotspot's Change and Show do, so a long name wraps (`text-break`) instead of pushing them off a phone's screen, and
+  the row has the same shape at 375 px and 1366 px. Forget comes first so it stays where the eye lands after the
+  name, in the same place on every row, whichever Move buttons the row has. The marks are "Joined" (in use), "In range" or
+  "Not in range" (nothing when the unit can't tell), "Couldn't join", "Hidden", and "Not joined by itself". The
+  "Couldn't join" tip is a line of text under the chips, not a tooltip: a tooltip needs a hover, and the phone at
+  the roadside has none.
+- Move up and Move down exist only for networks the unit joins by itself, because only those have a place in the
+  order: none above the first, none below the last. A tap sends every such network's uuid in the new order (`moved()`
+  in `networks.ts`), so the unit never has to guess which ones the page meant; a list that changed meanwhile comes back
+  as 409 `stale_order` and its message is shown. Networks that aren't automatic come last and have only Forget.
+- A nearby row is the signal (an icon by quarter, with the percentage as its label), the name with a lock after it for
+  networks that need a password, and the marks "Joined" and "Saved". A network the unit can't join, by kind, has the reason under
+  its name (`whyNot()`). The list is the strongest first, as the API sends it.
+- Refresh starts a scan (a root job; the unit's hotspot pauses for a few seconds) and the page follows it. The line
+  above the list says when the unit last looked ("Looked 3 minutes ago"), and the unit looks only when asked, so the
+  page never shows a list as newer than it is.
+- One job runs at a time. While a scan, a forget, or a reorder runs, every control in the section is disabled, and so
+  is every control when the parent says a join is pending (`locked`). A failed job shows its log lines, as the
+  hotspot's does, and the page loads both answers again whatever the outcome.
+- Forgetting asks first. For the network in use the question says where the unit goes: onto its hotspot when that is
+  on (with the hotspot's name), or nowhere when it is off, which is the warning about the Ethernet cable. After
+  forgetting the network in use, a page that loses the unit says the unit left the network and how to reach it on the
+  hotspot; for any other network, a lost request is an ordinary error.
+- With the radio switched off, the section says so and shows nothing else (the lists would be stale). Without a radio,
+  it says only that. When the unit couldn't read the networks, it says that.
+
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer, and at 375 px with a joined
@@ -1002,6 +1056,23 @@ after a tap on Copy that worked and one the browser refused.
 - Looked at and kept: an IPv6 address and a long network name fit at 375 px without pushing Copy off the screen.
 - Looked at and kept: the Wi-Fi value on the Device card breaks after a "·" at 375 px, so the MAC address sits on its
   own line. It is one address per line, not a cut in the middle of one.
+
+The Wi-Fi networks section was checked in fake mode at 390 px and 1280 px wide, as an admin and as a viewer, and at 390
+px with the page's answer replaced by a busy one (a joined network with a very long name, one that couldn't be joined,
+a hidden one, one that isn't automatic, a long enterprise network), with the radio off, and with the Forget question
+open for a network not in use and for the one in use.
+
+- Forget and Refresh were the default text buttons, which pad their label, so "Forget" started 20 px right of the
+  network's name and "Refresh" ended 20 px short of the column's edge. They are pulled back by their padding (`ms-n4`
+  and `me-n4`) so the label lines up with the text above it.
+- Forget was on the right edge, with the Move buttons on the left. At 1280 px that put it the whole width of the
+  column from the name it belongs to, and its place moved with the row. It is now first in the row, next to the Move buttons.
+- The lock sat at the right end of the row when a name wrapped, away from the name it belongs to. It is part of the
+  name's line now and follows its last word.
+- Looked at and kept: the viewer's rows have no buttons and no empty line where they would be, so its list is shorter
+  than the admin's.
+- Looked at and kept: a very long network name wraps at 390 px in the saved row, the nearby row, and the Forget
+  question's title, without pushing a button off the screen.
 
 The hotspot's settings were checked at 375 px: the page, Show, each dialog (name, a name over 32 bytes, password,
 hide, turn off), the same dialogs with the page opened over the hotspot, the lost-unit message, and after turning off.
