@@ -42,10 +42,10 @@ The [Device page](device-health.md#the-device-page) shows the same addresses in 
 !!! tip "Find the MAC address"
     A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Copy it from the Wi-Fi block of the Network page, and add it to the router's list.
 
-Viewers see the hotspot's state, name, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: show or change the password, rename the hotspot, hide its name, and turn it on or off.
+Viewers see the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: show or change the password, rename the hotspot, hide its name, and turn it on or off.
 
 !!! info "Changes restart the hotspot"
-    A change to the hotspot's name, password, or hidden setting restarts it when it is up. Phones on it are disconnected, and each phone must rejoin by hand. When you use the Network page from a phone on the hotspot, the page stops answering when you save. Join the hotspot again, then reload the page. The page warns you before each change.
+    A change to the hotspot's name, password, or hidden setting restarts it when it is up. Phones on it are disconnected, and each phone must rejoin by hand. When you use the Network page from a phone on the hotspot, the page stops answering when you save. Join the hotspot again, then reload the page. The page warns you before a change that restarts the hotspot, before you turn the hotspot off, and before you hide its name. Turning the hotspot on doesn't ask.
 
 ## When the hotspot runs
 
@@ -87,7 +87,7 @@ If you can't sign in, run `sudo tm-control card` on the unit instead. Over Ether
 1. Sign in as an administrator and open **Network**.
 2. Next to **Password**, choose **Change**. A unit whose hotspot has no password offers **Set a password** here.
 3. Type the new password, 8 to 63 letters, digits, and symbols with no space at either end.
-4. Write the password down, then choose **Change password**.
+4. Write the password down, then choose **Change password**, or **Set password** on a unit that has none.
 
 The hotspot restarts with the new password, and phones on it are disconnected. Each phone must rejoin by hand, with the new password. The page types the password in the open and asks for it only once, so you see what you write down.
 
