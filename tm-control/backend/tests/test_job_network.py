@@ -4,7 +4,8 @@ fixtures/run_job.py runs it with a non-root euid, so the stand-ins (NMCLI, TM_SY
 directory, and lock) are used even when the suite runs as root. The `world` fixture builds a unit: a manifest naming
 the test's own user, a 0700 jobs directory, a 0750 secrets directory holding the hotspot password file, a fake
 /sys/class/net with a built-in radio, a run directory, a fake iw (fixtures/fake_iw.py) that hears the recorded scan
-in fixtures/iw_scan.txt, and the fake nmcli's hotspot profile, up. All names and passwords are placeholders.
+in fixtures/iw_scan.txt, the fake busctl (fixtures/fake_busctl.py) with no checkpoint, and the fake nmcli's hotspot
+profile, up. All names and passwords are placeholders.
 """
 
 import fcntl
@@ -15,6 +16,7 @@ import os
 import pwd
 import subprocess
 import sys
+import time
 import uuid
 from pathlib import Path
 
@@ -26,6 +28,7 @@ JOB = Path(__file__).resolve().parents[2] / "jobs" / "tm-job-network"
 RUNNER = Path(__file__).resolve().parent / "fixtures" / "run_job.py"
 NMCLI = Path(__file__).resolve().parent / "fixtures" / "fake_nmcli.py"
 IW = Path(__file__).resolve().parent / "fixtures" / "fake_iw.py"
+BUSCTL = Path(__file__).resolve().parent / "fixtures" / "fake_busctl.py"
 IW_SCAN = Path(__file__).resolve().parent / "fixtures" / "iw_scan.txt"
 FIXTURE_MANIFEST = Path(__file__).resolve().parent / "fixtures" / "manifest.json"
 UUID_A = "11111111-1111-4111-8111-111111111111"
@@ -71,6 +74,7 @@ class World:
         self.iw = {"scan_text": IW_SCAN.read_text(), "fail": [], "fail_once": [], "hang": []}
         self.state = {"profiles": {"tm-hotspot": dict(HOTSPOT)}, "active": ["tm-hotspot"], "radio": "enabled",
                       "fail": []}
+        self.busctl = {"checkpoints": {}, "fail": []}
         self.radio("built-in")
 
     def radio(self, kind):
@@ -110,6 +114,8 @@ class World:
         (self.tmp / "nmcli.log").unlink(missing_ok=True)
         (self.tmp / "iw.json").write_text(json.dumps(self.iw))
         (self.tmp / "iw.log").unlink(missing_ok=True)
+        (self.tmp / "busctl.json").write_text(json.dumps(self.busctl))
+        (self.tmp / "busctl.log").unlink(missing_ok=True)
         env = {
             "PATH": os.environ["PATH"],
             "NMCLI": str(self.nmcli),
@@ -123,6 +129,9 @@ class World:
             "IW": str(IW),
             "FAKE_IW_STATE": str(self.tmp / "iw.json"),
             "FAKE_IW_LOG": str(self.tmp / "iw.log"),
+            "BUSCTL": str(BUSCTL),
+            "FAKE_BUSCTL_STATE": str(self.tmp / "busctl.json"),
+            "FAKE_BUSCTL_LOG": str(self.tmp / "busctl.log"),
             "TM_NETWORK_RUN_DIR": str(self.run_dir),
             "TM_NETWORK_RETURN_WAIT": self.return_wait,
             "TM_NETWORK_SCAN_RETRY_WAIT": self.scan_retry_wait,
@@ -145,6 +154,23 @@ class World:
 
     def scan(self):
         return json.loads((self.run_dir / "network-scan.json").read_text())
+
+    def join_state(self, stage, **changes):
+        """A join job's state file at `stage` (a new network, HomeNet, from the hotspot)."""
+        self.run_dir.mkdir(exist_ok=True)
+        state = {"stage": stage, "ssid": "HomeNet", "uuid": UUID_A, "saved": False, "before": "tm-hotspot",
+                 "joined": None, "reason": None, "address": None, "internet": None, "switch_monotonic": None,
+                 "finished_at": None, **changes}
+        (self.run_dir / "network-join.json").write_text(json.dumps(state))
+
+    def control(self):
+        path = self.run_dir / "network-join.control"
+        return path.read_text() if path.exists() else None
+
+    def busctl_calls(self):
+        path = self.tmp / "busctl.log"
+        lines = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+        return [call[6] for call in lines if call[2] == "call"]
 
     def modifies(self):
         return [call for call in self.log() if "modify" in call]
@@ -779,14 +805,18 @@ def test_an_order_that_misses_a_saved_network_is_refused(world):
     {"action": "order", "uuids": [UUID_A, UUID_A]}, {"action": "order", "uuids": "all"},
     {"action": "order", "uuids": [UUID_A, 5]}, {"action": "order", "uuids": [UUID_A], "extra": 1},
     {"action": "order", "uuids": [str(uuid.UUID(int=i, version=4)) for i in range(65)]},
-    {"action": "join"}, {"action": ["scan"]}])
+    {"action": "join"}, {"action": ["scan"]}, {"action": "cancel", "uuid": UUID_A},
+    {"action": "switch-now", "now": True}])
 def test_a_request_outside_its_actions_form_is_refused(world, request_):
+    world.join_state("countdown")
     result = world.run(request_)
     assert result.returncode == 1 and result.stdout.startswith("refused: ")
     assert len(result.stdout.strip().splitlines()) == 1
     assert world.log() == [] and world.iw_calls() == [] and not world.request.exists()
+    assert world.control() is None and (world.run_dir / "network-join.json").exists()
     for value in request_.values():
-        if isinstance(value, str) and value not in ("scan", "forget", "order", "join") and len(value) >= 4:
+        if isinstance(value, str) and value not in ("scan", "forget", "order", "join", "cancel",
+                                                    "switch-now") and len(value) >= 4:
             assert value not in result.stdout + result.stderr
 
 
@@ -801,3 +831,119 @@ def test_each_new_action_waits_for_the_lock(world, request_):
     assert result.returncode == 1
     assert result.stdout.strip() == "refused: the unit is trying a saved network right now; try again in a minute"
     assert world.log() == [] and world.iw_calls() == [] and not world.request.exists()
+
+
+# Switch now and Cancel, for the join job (tm-job-network-join).
+
+def test_switch_now_writes_the_control_file_during_a_countdown(world):
+    world.join_state("countdown", joined=True, switch_monotonic=1000.0)
+    result = world.run({"action": "switch-now"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "asked the join to switch now"
+    assert world.control() == "switch"
+    assert (world.run_dir / "network-join.control").stat().st_mode & 0o777 == 0o644
+    assert world.log() == [] and not world.request.exists()
+
+
+@pytest.mark.parametrize("stage", [None, "testing", "joined", "cancelled", "switching"])
+def test_switch_now_without_a_countdown_is_refused(world, stage):
+    if stage:
+        world.join_state(stage)
+    result = world.run({"action": "switch-now"})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: there is no countdown to end"
+    assert world.control() is None
+
+
+@pytest.mark.parametrize("stage", ["testing", "countdown", "switching"])
+def test_cancel_during_a_join_writes_the_control_file(world, stage):
+    world.join_state(stage)
+    with open(world.lock, "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        result = world.run({"action": "cancel"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "asked the join to cancel"
+    assert world.control() == "cancel" and (world.run_dir / "network-join.json").exists()
+    assert world.log() == [] and world.busctl_calls() == []
+
+
+@pytest.mark.parametrize("held", [False, True])
+def test_cancel_on_a_finished_join_clears_the_result(world, held):
+    world.saved("HomeNet")
+    world.join_state("failed", uuid=world.state["profiles"]["HomeNet"]["connection.uuid"], reason="not_joined")
+    (world.run_dir / "network-join.control").write_text("cancel")
+    lock = open(world.lock, "w")
+    if held:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+    try:
+        result = world.run({"action": "cancel"})
+    finally:
+        lock.close()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "cleared the result"
+    assert not (world.run_dir / "network-join.json").exists() and world.control() is None
+    assert world.calls("delete") == 0 and "HomeNet" in world.nm()["profiles"]
+
+
+def test_cancel_after_a_join_that_died_deletes_what_it_left(world):
+    dead = world.saved("HomeNet", autoconnect="no")
+    world.join_state("testing", uuid=dead)
+    (world.run_dir / "network-join.control").write_text("switch")
+    result = world.run({"action": "cancel"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "cleared the result"
+    assert ["connection", "delete", "uuid", dead] in world.log() and "HomeNet" not in world.nm()["profiles"]
+    assert not (world.run_dir / "network-join.json").exists() and world.control() is None
+    with open(world.lock) as file:
+        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def test_cancel_after_a_join_that_died_keeps_a_saved_network(world):
+    home = world.saved("HomeNet")
+    world.join_state("switching", uuid=home, saved=True)
+    result = world.run({"action": "cancel"})
+    assert result.returncode == 0 and result.stdout.strip() == "cleared the result"
+    assert world.calls("delete") == 0 and "HomeNet" in world.nm()["profiles"]
+
+
+def test_cancel_after_a_join_that_died_mid_test_rolls_back_its_checkpoint_first(world):
+    dead = world.saved("HomeNet", autoconnect="no")
+    world.state["active"] = ["HomeNet"]  # the radio is still on the network under test
+    world.busctl = {"checkpoints": {"/org/freedesktop/NetworkManager/Checkpoint/4": {"active": ["tm-hotspot"]}},
+                    "next": 5, "fail": []}
+    world.join_state("testing", uuid=dead)
+    result = world.run({"action": "cancel"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines() == ["rolled back what the join left", "cleared the result"]
+    assert world.busctl_calls() == ["CheckpointRollback"]
+    assert world.nm()["active"] == ["tm-hotspot"] and "HomeNet" not in world.nm()["profiles"]
+    assert not (world.run_dir / "network-join.json").exists()
+
+
+def test_a_failed_rollback_on_cancel_is_printed_and_the_clean_up_goes_on(world):
+    dead = world.saved("HomeNet", autoconnect="no")
+    world.busctl = {"checkpoints": {"/org/freedesktop/NetworkManager/Checkpoint/4": {"active": ["tm-hotspot"]}},
+                    "next": 5, "fail": ["CheckpointRollback"]}
+    world.join_state("testing", uuid=dead)
+    result = world.run({"action": "cancel"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines() == ["the rollback failed (busctl exit status 1)", "cleared the result"]
+    assert "HomeNet" not in world.nm()["profiles"] and not (world.run_dir / "network-join.json").exists()
+
+
+def test_cancel_with_nothing_to_cancel_is_refused(world):
+    result = world.run({"action": "cancel"})
+    assert result.returncode == 1 and result.stdout.strip() == "refused: there is nothing to cancel"
+    assert world.log() == []
+
+
+@pytest.mark.parametrize("action", ["switch-now", "cancel"])
+def test_neither_control_waits_for_the_lock(world, action):
+    world.join_state("countdown")
+    world.lock_wait = "10"
+    started = time.monotonic()
+    with open(world.lock, "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        result = world.run({"action": action})
+    assert time.monotonic() - started < 1
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.control() == ("switch" if action == "switch-now" else "cancel")

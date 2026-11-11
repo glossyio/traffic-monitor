@@ -4,7 +4,8 @@ fixtures/run_job.py runs it with a non-root euid, so the stand-ins (NMCLI, IW, B
 run directory, and lock) are used even when the suite runs as root. The `world` fixture builds a unit: a manifest
 naming the test's own user, a 0700 jobs directory, a fake /sys/class/net with a built-in radio, the fake nmcli's
 hotspot profile, up, a fake iw that hears HomeNet, the fake busctl with no checkpoint, and an address and a DNS server
-for HomeNet. TM_JOIN_PROBE stands in for the internet probe. All names and passwords are placeholders.
+for HomeNet. TM_JOIN_PROBE stands in for the internet probe. The countdown after a passed test is 1 s unless a test
+says otherwise, so a run that passes goes on to the switch. All names and passwords are placeholders.
 """
 
 import fcntl
@@ -63,6 +64,7 @@ class World:
         self.lock_wait = "10"
         self.return_wait = "0.3"
         self.checkpoint_wait = "0.5"
+        self.countdown = "1"
         self.probe = "reachable"
         self.iw = {"scan": ["HomeNet"], "fail": [], "hang": []}
         self.nmcli = {"profiles": {"tm-hotspot": dict(HOTSPOT)}, "active": ["tm-hotspot"], "radio": "enabled",
@@ -84,8 +86,11 @@ class World:
     def hear(self, names):
         self.iw["scan"] = list(names)
 
-    def up_fails(self, name, how="fail"):
+    def up_fails(self, name, how="fail", after=None):
+        """`connection up` on the profile fails as `how` says; with `after`, only once it has worked that often."""
         self.nmcli.setdefault("up", {})[name] = how
+        if after is not None:
+            self.nmcli.setdefault("up_then_fail", {})[name] = after
 
     def busctl_fails(self, method):
         self.busctl["fail"].append(method)
@@ -120,6 +125,7 @@ class World:
             "TM_NETWORK_LOCK_WAIT": self.lock_wait,
             "TM_JOIN_RETURN_WAIT": self.return_wait,
             "TM_JOIN_CHECKPOINT_WAIT": self.checkpoint_wait,
+            "TM_JOIN_COUNTDOWN": self.countdown,
             "TM_JOIN_PROBE": self.probe,
             "FAKE_NMCLI_STATE": str(self.tmp / "nmcli.json"),
             "FAKE_NMCLI_LOG": str(self.tmp / "nmcli.log"),
@@ -139,6 +145,22 @@ class World:
         argv, env = self.prepare(body)
         return subprocess.Popen(argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                                 start_new_session=True)
+
+    def counting(self, body, countdown="30"):
+        """The job started with a long countdown, once it is counting down."""
+        self.countdown = countdown
+        job = self.start(body)
+        if not wait_for(lambda: self.state()["stage"] == "countdown"):
+            os.killpg(job.pid, signal.SIGKILL)
+            pytest.fail("the job never started counting down: " + "".join(job.communicate(timeout=10)))
+        return job
+
+    def control(self, word):
+        (self.run_dir / "network-join.control").write_text(word)
+
+    def finish(self, job):
+        stdout, stderr = job.communicate(timeout=30)
+        return subprocess.CompletedProcess(job.args, job.returncode, stdout, stderr)
 
     def keep(self):
         """The next run starts from the fakes' state as this one left it."""
@@ -177,6 +199,9 @@ class World:
     def profile(self, name):
         return self.nm()["profiles"][name]
 
+    def uuid(self, name):
+        return self.profile(name)["connection.uuid"]
+
     def unsaved(self):
         return self.nm().get("unsaved", [])
 
@@ -194,6 +219,9 @@ class World:
 
     def adds(self):
         return [call for call in self.log() if "add" in call]
+
+    def modifies(self):
+        return [call for call in self.log() if "modify" in call]
 
 
 @pytest.fixture
@@ -226,18 +254,24 @@ def test_the_job_is_executable():
 
 
 def test_a_test_that_passes_reports_the_address_and_comes_back(world):
-    result = world.run(NEW)
-    state = world.state()
+    job = world.counting(NEW)
+    try:
+        state = world.state()
+        assert (state["stage"], state["joined"], state["address"], state["internet"]) == (
+            "countdown", True, "192.168.1.57", "reachable")
+        assert world.active() == ["tm-hotspot"] and world.busctl_calls() == [
+            "GetDeviceByIpIface", "CheckpointCreate", "CheckpointRollback"]
+        assert (state["ssid"], state["saved"], state["before"], state["reason"]) == (
+            "HomeNet", False, "tm-hotspot", None)
+        assert state["uuid"] == world.uuid("HomeNet")
+        assert isinstance(state["switch_monotonic"], float) and state["finished_at"] is None
+        assert world.state_path().stat().st_mode & 0o777 == 0o644
+    finally:
+        world.control("switch")
+        result = world.finish(job)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert (state["stage"], state["joined"], state["address"], state["internet"]) == (
-        "countdown", True, "192.168.1.57", "reachable")
-    assert world.active() == ["tm-hotspot"] and world.busctl_calls() == [
-        "GetDeviceByIpIface", "CheckpointCreate", "CheckpointRollback"]
-    assert (state["ssid"], state["saved"], state["before"], state["reason"]) == ("HomeNet", False, "tm-hotspot", None)
-    assert state["uuid"] == world.profile("HomeNet")["connection.uuid"]
-    assert state["switch_monotonic"] is None and state["finished_at"] is None
-    assert result.stdout.strip().splitlines()[-2:] == ["back where it was", "the test passed"]
-    assert world.state_path().stat().st_mode & 0o777 == 0o644
+    assert result.stdout.strip().splitlines()[-4:] == ["back where it was", "the test passed", "counting down",
+                                                      "switched"]
     assert sorted(path.name for path in world.run_dir.iterdir()) == ["network-join.json", "network.lock"]
     assert "HomeNet" not in result.stdout + result.stderr and "192.168" not in result.stdout + result.stderr
 
@@ -255,7 +289,13 @@ def test_the_checkpoint_calls_are_exactly_these(world):
 
 
 def test_the_profile_under_test_is_in_memory_with_autoconnect_off_and_the_built_in_mac(world):
-    result = world.run(NEW)
+    job = world.counting(NEW)
+    try:
+        assert "HomeNet" in world.unsaved() and world.profile("HomeNet")["connection.autoconnect"] == "no"
+        assert world.profile("HomeNet")["802-11-wireless-security.psk"] == PASSWORD
+    finally:
+        world.control("cancel")
+        result = world.finish(job)
     assert result.returncode == 0, result.stdout + result.stderr
     [add] = world.adds()
     assert add[:4] == ["connection", "add", "save", "no"]
@@ -265,8 +305,6 @@ def test_the_profile_under_test_is_in_memory_with_autoconnect_off_and_the_built_
         "connection.interface-name": "wlan0", "connection.autoconnect": "no", "802-11-wireless.ssid": "HomeNet",
         "802-11-wireless.cloned-mac-address": "permanent", "802-11-wireless-security.key-mgmt": "wpa-psk",
         "802-11-wireless-security.psk": "***"}
-    assert "HomeNet" in world.unsaved()
-    assert world.profile("HomeNet")["802-11-wireless-security.psk"] == PASSWORD
     assert ["--wait", "45", "connection", "up", "uuid", world.state()["uuid"]] in world.log()
 
 
@@ -319,7 +357,7 @@ def test_a_scan_that_fails_does_not_stop_the_test(world):
     result = world.run(NEW)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "the scan failed (iw exit status 240)" in result.stdout.splitlines()
-    assert world.state()["stage"] == "countdown" and world.calls("up") == 1
+    assert world.state()["stage"] == "joined" and world.calls("up") == 2
 
 
 def test_a_join_that_fails_deletes_the_profile_and_comes_back(world):
@@ -357,26 +395,42 @@ def test_a_timeout_on_another_state_is_not_joined(world):
 def test_a_test_from_a_saved_network_returns_to_it(world):
     world.saved("Depot")
     world.nmcli["active"] = ["Depot"]
-    result = world.run(NEW)
-    assert result.returncode == 0, result.stdout + result.stderr
+    job = world.counting(NEW)
     assert world.state()["before"] == "Depot" and world.active() == ["Depot"]
-    assert world.calls("up") == 1
+    world.control("cancel")
+    result = world.finish(job)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.active() == ["Depot"] and world.calls("up") == 1
 
 
 def test_a_radio_that_does_not_come_back_is_brought_back(world):
     world.busctl_fails("CheckpointRollback")
-    result = world.run(NEW)
+    job = world.counting(NEW)
+    world.control("cancel")
+    result = world.finish(job)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "the rollback failed (busctl exit status 1)" in result.stdout.splitlines()
     ups = [call for call in world.log() if "up" in call]
     assert ups[-1] == ["--wait", "45", "connection", "up", "uuid", uuid_of("tm-hotspot")] and len(ups) == 2
-    assert world.active() == ["tm-hotspot"] and world.state()["stage"] == "countdown"
+    assert world.active() == ["tm-hotspot"] and world.state()["stage"] == "cancelled"
     assert "back where it was" in result.stdout.splitlines()
+
+
+def test_a_radio_that_still_does_not_come_back_is_an_error(world):
+    world.nmcli["device_state"] = 30  # the device reads as disconnected whatever the rollback did
+    world.up_fails("tm-hotspot")
+    result = world.run(NEW)
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == "failed: come back (the Wi-Fi did not come back)"
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")
+    assert "HomeNet" not in world.profiles() and world.calls("modify") == 0
 
 
 def test_an_idle_radio_is_left_idle(world):
     world.nmcli["active"] = []
-    result = world.run(NEW)
+    job = world.counting(NEW)
+    world.control("cancel")
+    result = world.finish(job)
     assert result.returncode == 0, result.stdout + result.stderr
     assert world.state()["before"] is None and world.active() == [] and world.calls("up") == 1
 
@@ -400,14 +454,36 @@ def test_an_add_that_fails_still_comes_back_and_ends_as_an_error(world):
     assert world.active() == ["tm-hotspot"]
 
 
+def test_an_address_that_cannot_be_read_still_comes_back_and_ends_as_an_error(world):
+    world.nmcli["fail_fields"] = ["IP4.ADDRESS"]
+    result = world.run(NEW)
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == "failed: read the address (nmcli exit status 4)"
+    assert world.busctl_calls() == ["GetDeviceByIpIface", "CheckpointCreate", "CheckpointRollback"]
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")
+    assert world.active() == ["tm-hotspot"] and "HomeNet" not in world.profiles()
+
+
+def test_a_retry_file_that_cannot_be_written_ends_as_an_error_after_coming_back(world):
+    home = world.saved("HomeNet")
+    world.up_fails("HomeNet")
+    (world.run_dir / "network-retry.json").mkdir(parents=True)  # a rename onto a directory fails
+    result = world.run({"uuid": home})
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == "failed: record the result (IsADirectoryError)"
+    assert "back where it was" in result.stdout.splitlines()
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")
+    assert world.active() == ["tm-hotspot"] and "HomeNet" in world.profiles()
+
+
 def test_a_saved_network_is_tested_with_its_own_profile(world):
     home = world.saved("HomeNet")
     result = world.run({"uuid": home})
     assert result.returncode == 0, result.stdout + result.stderr
     assert world.calls("add") == 0 and ["--wait", "45", "connection", "up", "uuid", home] in world.log()
     state = world.state()
-    assert (state["stage"], state["ssid"], state["uuid"], state["saved"]) == ("countdown", "HomeNet", home, True)
-    assert "HomeNet" in world.profiles() and world.active() == ["tm-hotspot"]
+    assert (state["stage"], state["ssid"], state["uuid"], state["saved"]) == ("joined", "HomeNet", home, True)
+    assert "HomeNet" in world.profiles() and world.active() == ["HomeNet"]
 
 
 def test_a_saved_network_that_fails_is_kept_and_gets_a_failure_on_record(world):
@@ -459,7 +535,7 @@ def test_a_hidden_saved_network_is_tested_without_being_heard(world):
     world.hear([])
     result = world.run({"uuid": home})
     assert result.returncode == 0, result.stdout + result.stderr
-    assert world.state()["stage"] == "countdown" and world.calls("up") == 1
+    assert world.state()["stage"] == "joined" and world.calls("up") == 2
 
 
 def test_a_saved_network_that_is_not_heard_is_never_tested(world):
@@ -541,10 +617,10 @@ def test_a_run_killed_mid_test_is_cleaned_up_by_the_next_run(world):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "rolled back what an earlier run left" in result.stdout.splitlines()
     assert "HomeNet" not in world.profiles() and world.state()["ssid"] == "Office"
-    assert world.state()["stage"] == "countdown" and world.state()["before"] == "tm-hotspot"
+    assert world.state()["stage"] == "joined" and world.state()["before"] == "tm-hotspot"
     assert world.busctl_calls() == ["CheckpointRollback", "GetDeviceByIpIface", "CheckpointCreate",
                                     "CheckpointRollback"]
-    assert world.active() == ["tm-hotspot"]
+    assert world.active() == ["Office"]
 
 
 def test_a_checkpoint_a_dead_run_left_is_rolled_back_first(world):
@@ -571,7 +647,7 @@ def test_a_checkpoint_a_dead_run_left_is_rolled_back_first(world):
     assert ["connection", "delete", "uuid", dead_uuid] in world.log()
     assert world.log().index(["connection", "delete", "uuid", dead_uuid]) < world.log().index(world.adds()[0])
     state = world.state()
-    assert state["stage"] == "countdown" and state["uuid"] != dead_uuid and state["before"] == "tm-hotspot"
+    assert state["stage"] == "joined" and state["uuid"] != dead_uuid and state["before"] == "tm-hotspot"
     assert not (world.run_dir / "network-join.control").exists()
 
 
@@ -665,7 +741,7 @@ def test_a_name_with_spaces_at_its_ends_and_a_colon_is_one_argument(world):
     pairs = dict(zip(add[4::2], add[5::2]))
     assert pairs["connection.id"] == " Home:Net " and pairs["802-11-wireless.ssid"] == " Home:Net "
     assert world.profile(" Home:Net ")["802-11-wireless-security.psk"] == " placeholder pass "
-    assert world.state()["ssid"] == " Home:Net " and world.state()["stage"] == "countdown"
+    assert world.state()["ssid"] == " Home:Net " and world.state()["stage"] == "joined"
     assert "Home" not in result.stdout + result.stderr
 
 
@@ -679,19 +755,213 @@ def test_as_root_the_test_settings_are_ignored(monkeypatch):
     job = load_job()
     monkeypatch.setattr(os, "geteuid", lambda: 0)
     for name in ("NMCLI", "IW", "BUSCTL", "TM_SYS_NET", "TM_NETWORK_RUN_DIR", "TM_NETWORK_LOCK",
-                 "TM_NETWORK_LOCK_WAIT", "TM_JOIN_RETURN_WAIT", "TM_JOIN_CHECKPOINT_WAIT", "TM_JOIN_PROBE"):
+                 "TM_NETWORK_LOCK_WAIT", "TM_JOIN_RETURN_WAIT", "TM_JOIN_CHECKPOINT_WAIT", "TM_JOIN_COUNTDOWN",
+                 "TM_JOIN_PROBE"):
         monkeypatch.setenv(name, "/elsewhere")
     assert job.trusted("BUSCTL", job.BUSCTL) == "/usr/bin/busctl"
     assert job.trusted("TM_NETWORK_RUN_DIR", job.RUN_DIR) == "/run/traffic-monitor"
     assert job.trusted("TM_JOIN_PROBE", "") == ""
     assert job.trusted_seconds("TM_JOIN_RETURN_WAIT", job.RETURN_WAIT) == 15
+    monkeypatch.setenv("TM_JOIN_COUNTDOWN", "1")
+    assert job.trusted_seconds("TM_JOIN_COUNTDOWN", job.COUNTDOWN) == 300
 
 
 def test_the_fixed_values():
     job = load_job()
     assert (job.JOIN_WAIT, job.CHECKPOINT_TIMEOUT, job.RETURN_WAIT, job.PROBE_TIMEOUT) == (45, 90, 15, 10)
     assert (job.STATE_FILE, job.RETRY_FILE, job.NAME_MAX_BYTES) == ("network-join.json", "network-retry.json", 32)
+    assert (job.COUNTDOWN, job.CONTROL_FILE) == (300, "network-join.control")
     assert job.REQUEST == "/run/tm-control/jobs/network-join.json"
+
+
+# The countdown and the switch.
+
+def test_the_countdown_ends_in_a_switch(world):
+    result = world.run({"ssid": "HomeNet", "password": "placeholder-pass-1"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "joined" and world.active() == ["HomeNet"]
+    profile = world.profile("HomeNet")
+    assert profile["connection.autoconnect"] == "yes" and "HomeNet" not in world.unsaved()
+    state = world.state()
+    assert (state["joined"], state["address"], state["saved"]) == (True, "192.168.1.57", True)
+    assert state["finished_at"].endswith("+00:00")
+    assert world.log()[-3:-1] == [
+        ["connection", "modify", "uuid", state["uuid"], "connection.autoconnect", "yes",
+         "connection.autoconnect-priority", "1"],
+        ["--wait", "45", "connection", "up", "uuid", state["uuid"]]]
+    assert result.stdout.strip().splitlines()[-2:] == ["counting down", "switched"]
+
+
+def test_the_deadline_is_on_the_monotonic_clock(world):
+    job = world.counting(NEW)
+    try:
+        deadline = world.state()["switch_monotonic"]
+        assert abs(deadline - (time.monotonic() + 30)) < 1
+        assert world.active() == ["tm-hotspot"] and world.calls("modify") == 0
+    finally:
+        world.control("cancel")
+        world.finish(job)
+
+
+def test_a_new_network_goes_above_every_saved_one(world):
+    world.saved("Depot", **{"connection.autoconnect-priority": "0"})
+    world.saved("Office", **{"connection.autoconnect-priority": "3"})
+    world.saved("Spare", **{"connection.autoconnect-priority": "9", "connection.autoconnect": "no"})
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.profile("HomeNet")["connection.autoconnect-priority"] == "4"
+    assert world.profile("Office")["connection.autoconnect-priority"] == "3"  # the others are left as they are
+    assert world.profile("tm-hotspot")["connection.autoconnect-priority"] == "-100"
+
+
+def test_switch_now_ends_the_countdown_early(world):
+    job = world.counting(NEW)
+    started = time.monotonic()
+    world.control("switch")
+    result = world.finish(job)
+    assert time.monotonic() - started < 3
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "joined" and world.active() == ["HomeNet"]
+    assert not (world.run_dir / "network-join.control").exists()
+
+
+def test_cancel_deletes_the_profile_and_leaves_the_hotspot(world):
+    job = world.counting(NEW)
+    started = time.monotonic()
+    world.control("cancel")
+    result = world.finish(job)
+    assert time.monotonic() - started < 3
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "cancelled" and world.state()["finished_at"].endswith("+00:00")
+    assert "HomeNet" not in world.profiles() and world.active() == ["tm-hotspot"]
+    assert world.calls("modify") == 0
+    assert result.stdout.strip().splitlines()[-1] == "cancelled"
+    assert not (world.run_dir / "network-join.control").exists()
+
+
+def test_cancel_keeps_a_saved_network(world):
+    home = world.saved("HomeNet", **{"connection.autoconnect-priority": "2"})
+    job = world.counting({"uuid": home})
+    world.control("cancel")
+    result = world.finish(job)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "cancelled" and world.calls("delete") == 0
+    assert world.profile("HomeNet")["connection.autoconnect-priority"] == "2"
+    assert world.active() == ["tm-hotspot"]
+
+
+def test_a_cancel_that_arrived_during_the_test_is_honoured_when_the_hotspot_is_back(world):
+    world.nmcli["up_delay"] = {"HomeNet": 1}
+    world.countdown = "30"
+    job = world.start(NEW)
+    try:
+        assert wait_for(lambda: world.state()["stage"] == "testing" and world.calls("up") == 1)
+        world.control("cancel")
+    finally:
+        result = world.finish(job)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "cancelled" and "HomeNet" not in world.profiles()
+    assert world.calls("modify") == 0 and world.active() == ["tm-hotspot"]
+
+
+def test_a_new_password_replaces_the_saved_profile_at_the_switch(world):
+    old = world.saved("HomeNet 1", **{"802-11-wireless.ssid": "HomeNet"})
+    other = world.saved("Depot")
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert ["connection", "delete", "uuid", old] in world.log()
+    assert world.log().index(world.modifies()[0]) < world.log().index(["connection", "delete", "uuid", old])
+    assert "HomeNet 1" not in world.profiles() and other in [world.uuid(name) for name in world.profiles()]
+    assert world.state()["stage"] == "joined" and world.active() == ["HomeNet"]
+
+
+def test_a_saved_network_is_not_deleted_as_its_own_duplicate(world):
+    home = world.saved("HomeNet")
+    result = world.run({"uuid": home})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.calls("delete") == 0 and world.state()["stage"] == "joined"
+
+
+def test_a_switch_that_fails_brings_back_the_hotspot_and_starts_the_wait(world):
+    world.up_fails("HomeNet", after=1)  # "up_then_fail": the test's up works, the switch's fails
+    before = time.time()
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "switch_failed" and world.active() == ["tm-hotspot"]
+    assert world.profile("HomeNet")["connection.autoconnect"] == "yes"  # still saved
+    assert "HomeNet" not in world.unsaved()
+    entry = world.retry_state()["networks"][world.uuid("HomeNet")]
+    assert (entry["name"], entry["failures"]) == ("HomeNet", 1) and before <= entry["last_failure"] <= time.time()
+    assert world.log()[-1] == ["--wait", "45", "connection", "up", "uuid", uuid_of("tm-hotspot")]
+    assert result.stdout.strip().splitlines()[-1] == "the switch failed (nmcli exit status 4)"
+
+
+def test_a_switch_whose_up_fails_while_networkmanager_joined_by_itself_counts(world):
+    world.up_fails("HomeNet", "fail-started", after=1)
+    result = world.run(NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.state()["stage"] == "joined" and world.active() == ["HomeNet"]
+    assert not world.retry_path().exists()
+
+
+def test_the_lock_is_held_through_the_countdown(world):
+    job = world.counting(NEW)
+    try:
+        with open(world.lock) as file, pytest.raises(BlockingIOError):
+            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        world.control("cancel")
+        world.finish(job)
+
+
+def test_a_run_killed_while_switching_leaves_a_saved_profile_the_next_run_keeps(world):
+    world.nmcli["up_delay"] = {"HomeNet": 2}
+    world.countdown = "0.2"
+    job = world.start(NEW)
+    try:
+        assert wait_for(lambda: world.state()["stage"] == "switching" and world.calls("up") == 2)
+    finally:
+        os.killpg(job.pid, signal.SIGKILL)
+        job.communicate(timeout=10)
+    assert world.state()["saved"] is True
+    assert "HomeNet" not in world.unsaved() and world.profile("HomeNet")["connection.autoconnect"] == "yes"
+    world.keep()
+    world.nmcli["up_delay"] = {}
+    world.hear(["HomeNet", "Office"])
+    world.nmcli["ip4"]["Office"] = {"address": "192.168.2.20/24", "dns": ["192.168.2.1"]}
+    result = world.run({"ssid": "Office", "password": "placeholder-pass-2"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "HomeNet" in world.profiles() and world.calls("delete") == 0
+
+
+def test_a_stop_during_the_test_comes_back_at_once(world):
+    world.nmcli["up_delay"] = {"HomeNet": 30}
+    job = world.start(NEW)
+    try:
+        assert wait_for(lambda: world.state()["stage"] == "testing" and world.calls("up") == 1)
+    finally:
+        started = time.monotonic()
+        job.send_signal(signal.SIGTERM)
+        result = world.finish(job)
+    assert time.monotonic() - started < 5
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == "failed: test the network (stopped)"
+    assert "back where it was" in result.stdout.splitlines()
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")
+    assert world.busctl_calls()[-1] == "CheckpointRollback"
+    assert "HomeNet" not in world.profiles() and world.active() == ["tm-hotspot"]
+
+
+def test_a_stop_during_the_countdown_ends_like_a_cancel(world):
+    job = world.counting(NEW)
+    started = time.monotonic()
+    job.send_signal(signal.SIGTERM)
+    result = world.finish(job)
+    assert time.monotonic() - started < 3
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-2:] == ["stopped during the countdown", "cancelled"]
+    assert world.state()["stage"] == "cancelled" and "HomeNet" not in world.profiles()
+    assert world.active() == ["tm-hotspot"] and world.calls("modify") == 0
 
 
 # The internet probe.

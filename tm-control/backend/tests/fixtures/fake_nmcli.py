@@ -26,7 +26,9 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
                                                  only active one (NetworkManager started it by itself meanwhile);
                                                  "fail-once" is "fail" for this call only (the entry is removed);
                                                  "timeout" exits 3 (nmcli's wait ran out) with the profile the only
-                                                 active one; "up_delay": {"<name>": SECONDS} makes it sleep first
+                                                 active one; "up_delay": {"<name>": SECONDS} makes it sleep first;
+                                                 "up_then_fail": {"<name>": N} lets `up` on that profile work N times
+                                                 and then fail as its "up" entry says, or else like "fail"
   connection down REF                            removes the profile from "active"
   device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-UUID)   state 100 and the first active profile
                                                  (and its uuid), else 30, "--" and ""; "device_states": {"<name>": N}
@@ -35,7 +37,9 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
   device show DEV  (-t -f IP4.ADDRESS,IP4.DNS)   IP4.ADDRESS[1] and IP4.DNS[1..n] of the first active profile, from
                                                  the state's "ip4": {"<name>": {"address": "192.168.1.57/24",
                                                  "dns": ["192.168.1.1"]}}; no lines for a profile not listed there
-  radio wifi                                     the state's "radio", "enabled" unless set
+                                                 Either form exits 4 when it asks for a field listed in the state's
+                                                 "fail_fields"
+  radio wifi                                    the state's "radio", "enabled" unless set
   radio wifi on|off                              sets the state's "radio" to "enabled" or "disabled"
 Any -f field that isn't listed above is read as a profile property. REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
 """
@@ -131,6 +135,8 @@ def main(argv):
             print(state.get("radio", "enabled"))
         return
     if group == "device" and verb == "show":
+        if set(fields[1].split(",")) & set(state.get("fail_fields", [])):
+            die(4, "Error: simulated failure of: " + " ".join(argv))
         active = state.get("active", [])
         number = state.get("device_state", state.get("device_states", {}).get(active[0], 100) if active else 30)
         values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--",
@@ -181,6 +187,10 @@ def main(argv):
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         time.sleep(state.get("up_delay", {}).get(name, 0))
         outcome = state.get("up", {}).get(name)
+        works = state.get("up_then_fail", {}).get(name)
+        if works is not None:
+            state["up_then_fail"][name] = max(works - 1, 0)
+            outcome = None if works > 0 else outcome or "fail"
         if outcome == "fail-once":
             del state["up"][name]
         state["active"] = [] if outcome in ("fail", "fail-once") else [name]

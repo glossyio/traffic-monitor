@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Test a Wi-Fi network under a NetworkManager checkpoint, come back, and record the result.
+"""Test a Wi-Fi network under a NetworkManager checkpoint, come back, count down, and switch to it.
 
 tm-job-network-join.service runs this as root (`python -EP`), after tm-control writes the request
 /run/tm-control/jobs/network-join.json, a JSON object of one of these forms:
@@ -20,7 +20,9 @@ Trusted: the install manifest (root's), the profiles NetworkManager holds, the l
 people's network names heard from the air, so it is only compared with the name under test and never printed. No line
 this prints holds the network's name, the password, an address, or any text of nmcli's, iw's, or busctl's (their
 sentences can carry a command line): only fixed sentences, exit statuses, and error type names. The password is also
-scrubbed from each line, in case.
+scrubbed from each line, in case. Nor trusted: the DNS and web answers the probe gets, which come from the network
+under test. They only pick an address to connect to over the socket bound to the Wi-Fi, and only the status code of
+the answer's first line is read.
 
 One run, in order:
 1. Read the manifest (the code owner, the Wi-Fi device, and the hotspot profile's name); open the jobs directory and
@@ -55,13 +57,34 @@ One run, in order:
     right after: reason `no_address`; any other failure: `not_joined`. The profile is deleted unless it is a saved
     network; a saved one gets a failure on record in RETRY_FILE (its count plus one, the time now; the rest of the
     file kept), so the retry waits before trying it. State `failed`, `the test failed (nmcli exit status N)`, exit 0.
-13. Joined: a saved network's failure on record is dropped. State `countdown` with joined true, the address, and the
-    probe's verdict. `the test passed`, exit 0.
-Anything unexpected after step 7 still runs step 11, then deletes a new profile and writes `failed`, reason `error`.
+13. Joined: a saved network's failure on record is dropped. State `countdown` with joined true, the address, the
+    probe's verdict, and `switch_monotonic`, the time.monotonic() COUNTDOWN seconds on, when the switch is due.
+    `the test passed`, `counting down`.
+14. The countdown, still holding the lock: CONTROL_FILE in the run directory (one word, which tm-job-network's
+    switch-now and cancel write) is read every second until then; one written during the test counts too, and it is
+    removed once read. `cancel`: the profile is deleted unless it is a saved network, state `cancelled`, `cancelled`,
+    exit 0. `switch`: the switch starts at once.
+15. The switch. State `switching`, with saved true from here on: the `modify` saves a profile that was only in
+    memory, so step 4 of a later run must keep it. `connection modify` sets autoconnect on and the priority to 1 plus
+    the highest among the other Wi-Fi client profiles that start by themselves (at least 1). For a new network, every
+    other Wi-Fi client profile with its name is deleted (a new password replaces the old profile). Then
+    `nmcli --wait JOIN_WAIT connection up` on it.
+16. The device reads every half second for up to RETURN_WAIT seconds, until it is at state 100 on any profile. Joined
+    is exit 0, or that profile: NetworkManager may start a profile by itself the moment its autoconnect goes on, and
+    fail the `up` that follows. State `joined` with the address read again, `switched`, exit 0.
+17. Not joined: when the device was on nothing at state 100 in all that time, `connection up` on `before`, or on the
+    hotspot when that fails (`before` may be the old profile step 15 deleted). The network stays saved; a failure goes
+    on record as in step 12, so the retry waits before trying it. State `switch_failed`,
+    `the switch failed (nmcli exit status N)`, exit 0.
+Anything unexpected after step 7 still runs step 11, then deletes a new profile and writes `failed`, reason `error`;
+during the switch it first sees the radio on something as in step 17, and the profile is kept.
 
-If this script dies in the middle of a test (killed, out of memory, a bug), the checkpoint is what restores the radio:
-NetworkManager rolls it back by itself CHECKPOINT_TIMEOUT seconds after it was made. The state file then still says
-`testing`, and the next run's step 4 deletes the profile it left.
+SIGTERM (`systemctl stop`, or the unit's start timeout) unwinds the run once, as an error would: during the test it
+comes back at once and ends `failed`, reason `error` (`failed: <step> (stopped)`); during the countdown it ends as a
+cancel does, after `stopped during the countdown`. If this script dies in the middle of a test (killed, out of memory,
+a bug), the checkpoint is what restores the radio: NetworkManager rolls it back by itself CHECKPOINT_TIMEOUT seconds
+after it was made. The state file then still says `testing` (or `countdown`), and the next run's step 4 deletes the
+profile it left; one that died while `switching` left a saved profile, which is kept.
 
 It prints one line per step and exits 0 when the run reached a result, or exits 1 with `refused: <sentence>` or
 `failed: <step> (<error type>)`, such as `(busctl exit status 1)`.
@@ -77,8 +100,8 @@ Standard library only, and no tm_control imports: this runs from the root-owned 
 /usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST names the manifest, as for the other jobs: its root-owned
 unit sets it. Tests pass the request path as argv[1], set that, and set NMCLI, IW, BUSCTL, TM_SYS_NET,
 TM_NETWORK_RUN_DIR, TM_NETWORK_LOCK, TM_NETWORK_LOCK_WAIT, TM_JOIN_RETURN_WAIT, TM_JOIN_CHECKPOINT_WAIT (the wait
-after a failed rollback), and TM_JOIN_PROBE (a fixed verdict in place of the probe's sockets), which are ignored when
-running as root.
+after a failed rollback), TM_JOIN_COUNTDOWN, and TM_JOIN_PROBE (a fixed verdict in place of the probe's sockets),
+which are ignored when running as root.
 """
 
 import datetime
@@ -89,6 +112,7 @@ import os
 import pwd
 import re
 import secrets
+import signal
 import socket
 import stat
 import struct
@@ -111,6 +135,7 @@ JOIN_WAIT = 45  # nmcli --wait for the test's join; a network that gives no addr
 UP_TIMEOUT = 75  # seconds for the `connection up` call itself
 CHECKPOINT_TIMEOUT = 90  # seconds after CheckpointCreate until NetworkManager rolls back by itself
 RETURN_WAIT = 15  # seconds for the radio to be back where it was after the rollback
+COUNTDOWN = 300  # seconds from a passed test to the switch
 PROBE_HOST = "connectivity-check.ubuntu.com"
 PROBE_TIMEOUT = 10  # seconds for the whole probe
 DNS_WAIT = 2  # seconds for one DNS question
@@ -136,8 +161,18 @@ FINAL = ("joined", "failed", "cancelled", "switch_failed")
 VERDICTS = ("reachable", "sign_in_page", "not_reachable")
 
 
+STOPPING = []  # holds True once SIGTERM came
+
+
 class Refused(Exception):
     """The request can't be carried out. The message says why and never holds a value from the request."""
+
+
+def stop(_signum, _frame):
+    """SIGTERM: unwind the run, as an error would, the first time only, so a second one can't cut the clean-up short."""
+    if not STOPPING:
+        STOPPING.append(True)
+        raise SystemExit(1)
 
 
 class CommandFailed(Exception):
@@ -714,14 +749,17 @@ class Join:
         except CommandFailed as error:
             self.fail()
             print(self.nm.scrub(f"failed: {self.step} ({error})"))
+        except SystemExit:  # SIGTERM
+            self.fail()
+            print(f"failed: {self.step} (stopped)")
         except Exception as error:  # a message could quote the request, so print only the kind of error
             self.fail()
             print(f"failed: {self.step} ({type(error).__name__})")
         return 1
 
     def fail(self):
-        """After a refusal or an error: a new profile goes, and the state says `error`."""
-        if self.checkpoint is not None and not self.saved:
+        """After a refusal or an error: a profile that isn't saved goes, and the state says `error`."""
+        if self.checkpoint is not None and not self.state["saved"]:
             self.delete(self.state["uuid"])
         try:
             self.save("failed", reason="error")
@@ -764,10 +802,21 @@ class Join:
                 and re.fullmatch(UUID_PATTERN, old["uuid"]):
             if self.delete(old["uuid"]):
                 print("deleted the network an earlier run left")
+        self.remove_control()
+
+    def remove_control(self):
         try:
             os.unlink(os.path.join(self.run_dir, CONTROL_FILE))
         except FileNotFoundError:
             pass
+
+    def read_control(self):
+        """The control file's word, or None."""
+        try:
+            with open(os.path.join(self.run_dir, CONTROL_FILE), encoding="utf-8") as file:
+                return file.read(16).strip()
+        except (OSError, ValueError):
+            return None
 
     def check_radio(self):
         """Step 5: a built-in radio that is on, what it is on now, and for a uuid a saved Wi-Fi network."""
@@ -807,7 +856,7 @@ class Join:
             return True
 
     def test(self):
-        """Steps 7 to 13."""
+        """Steps 7 to 17."""
         if not self.saved:
             self.state["uuid"] = str(uuidlib.uuid4())
         self.save("testing")
@@ -832,9 +881,10 @@ class Join:
         if status == 0:
             if self.saved:
                 drop_failure(self.run_dir, self.state["uuid"])
-            self.save("countdown", joined=True)
+            countdown = trusted_seconds("TM_JOIN_COUNTDOWN", COUNTDOWN)
+            self.save("countdown", joined=True, switch_monotonic=time.monotonic() + countdown)
             print("the test passed")
-            return 0
+            return self.switch() if self.count_down() else 0
         if self.saved:
             note_failure(self.run_dir, self.state["uuid"], self.profile_name)
         else:
@@ -877,6 +927,91 @@ class Join:
                "not_reachable": "the internet is not reachable"}[verdict])
         return 0, None
 
+    def count_down(self):
+        """Step 14: True when the switch is due, False once cancelled."""
+        self.step = "count down"
+        print("counting down")
+        try:
+            while True:
+                word = self.read_control()
+                if word == "cancel":
+                    break
+                left = self.state["switch_monotonic"] - time.monotonic()
+                if word == "switch" or left <= 0:
+                    self.remove_control()
+                    return True
+                time.sleep(min(1, left))
+        except SystemExit:  # SIGTERM
+            print("stopped during the countdown")
+        self.remove_control()
+        if not self.state["saved"]:
+            self.delete(self.state["uuid"])
+        self.save("cancelled")
+        print("cancelled")
+        return False
+
+    def switch(self):
+        """Steps 15 to 17."""
+        nm, uuid = self.nm, self.state["uuid"]
+        self.step = "switch"
+        self.save("switching", saved=True)
+        try:
+            top, same_name = self.others()
+            nm.run("connection", "modify", "uuid", uuid, "connection.autoconnect", "yes",
+                   "connection.autoconnect-priority", str(top))
+            if not self.saved:
+                for other in same_name:
+                    self.delete(other)
+            status, _ = nm.call("--wait", str(JOIN_WAIT), "connection", "up", "uuid", uuid, timeout=UP_TIMEOUT)
+            if status != 0:
+                reading = self.settle()
+                if reading is None or reading[2] != uuid:
+                    note_failure(self.run_dir, uuid, self.profile_name if self.saved else self.state["ssid"])
+                    self.save("switch_failed")
+                    print(f"the switch failed ({why('nmcli', status)})")
+                    return 0
+            try:
+                address = nm.ip4(self.device)[0]
+            except CommandFailed:
+                address = None
+            self.save("joined", address=address)
+        except BaseException:
+            self.settle()
+            raise
+        print("switched")
+        return 0
+
+    def others(self):
+        """(1 plus the highest priority among the other Wi-Fi client profiles that start by themselves, at least 1;
+        the uuids of the other Wi-Fi client profiles with this network's name)."""
+        top, same_name = 0, []
+        for line in self.nm.run("-t", "-f", "UUID,TYPE,AUTOCONNECT", "connection", "show").splitlines():
+            fields = split_terse(line)
+            if len(fields) != 3 or fields[1] != WIFI or fields[0] == self.state["uuid"] or \
+                    not re.fullmatch(UUID_PATTERN, fields[0]):
+                continue
+            mode, priority, ssid = (self.nm.run("-g", f"{WIFI}.mode,connection.autoconnect-priority,{WIFI}.ssid",
+                                                "connection", "show", "uuid", fields[0]).split("\n") + ["", ""])[:3]
+            if mode != "infrastructure":
+                continue
+            if fields[2] == "yes" and re.fullmatch(r"-?\d+", priority):
+                top = max(top, int(priority))
+            if unescape(ssid) == self.state["ssid"]:
+                same_name.append(fields[0])
+        return top + 1, same_name
+
+    def settle(self):
+        """The radio on something (step 17): the reading once the device is at state 100 on any profile within
+        RETURN_WAIT seconds; else None, after `connection up` on `before`, or on the hotspot when that fails."""
+        reading = self.wait_until(lambda state, _name, _uuid: state == CONNECTED,
+                                  trusted_seconds("TM_JOIN_RETURN_WAIT", RETURN_WAIT))
+        if reading is None and self.before_uuid is not None:
+            up = ("--wait", str(JOIN_WAIT), "connection", "up")
+            status, _ = self.nm.call(*up, "uuid", self.before_uuid, timeout=UP_TIMEOUT)
+            if status != 0:
+                self.nm.call(*up, "id", self.hotspot, timeout=UP_TIMEOUT)
+        return reading
+
     def come_back(self):
         """Step 11: the rollback, and the radio back where it was."""
         self.step = "come back"
@@ -904,20 +1039,22 @@ class Join:
             return True
         ref = ("uuid", uuid) if uuid else ("id", name)
         status, _ = self.nm.call("--wait", str(JOIN_WAIT), "connection", "up", *ref, timeout=UP_TIMEOUT)
-        return status == 0 or self.wait_until(there, 0)
+        return status == 0 or self.wait_until(there, 0) is not None
 
     def wait_until(self, condition, wait):
-        """Read the device every half second until condition(state, profile, uuid) holds, for `wait` seconds."""
+        """Read the device every half second until condition(state, profile, uuid) holds, for `wait` seconds: that
+        reading, or None."""
         deadline = time.monotonic() + wait
         while True:
             try:
-                if condition(*self.nm.device(self.device)):
-                    return True
+                reading = self.nm.device(self.device)
+                if condition(*reading):
+                    return reading
             except CommandFailed:
                 pass
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                return False
+                return None
             time.sleep(min(0.5, remaining))
 
 
@@ -925,6 +1062,7 @@ def main(argv):
     directory, request_name = os.path.split(argv[1] if len(argv) > 1 else REQUEST)
     nm = Nmcli(trusted("NMCLI", NMCLI))
     step = "check the request"
+    signal.signal(signal.SIGTERM, stop)
     try:
         owner_uid, device, hotspot = read_manifest(manifest_path())
         request = check(take_request(directory or ".", request_name, owner_uid))

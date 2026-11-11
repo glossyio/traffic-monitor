@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-"""Change the Wi-Fi hotspot's settings, scan for networks, forget a saved one, and set the order of the saved ones.
+"""Change the Wi-Fi hotspot's settings, scan for networks, forget a saved one, set the order of the saved ones, and
+end or cancel the countdown of a Wi-Fi join.
 
 tm-job-network.service runs this as root (`python -EP`), after tm-control writes the request
 /run/tm-control/jobs/network.json, a JSON object of one of these forms:
@@ -7,7 +8,9 @@ tm-job-network.service runs this as root (`python -EP`), after tm-control writes
   hotspot on or off and change its name, its password, and whether its name is hidden;
 - {"action": "scan"}: scan with `iw` and write the networks heard to SCAN_FILE in the run directory;
 - {"action": "forget", "uuid": "<uuid>"}: delete one saved Wi-Fi network (a Wi-Fi client profile);
-- {"action": "order", "uuids": ["<uuid>", ...]}: set the order the unit tries the saved networks in, first to last.
+- {"action": "order", "uuids": ["<uuid>", ...]}: set the order the unit tries the saved networks in, first to last;
+- {"action": "switch-now"} and {"action": "cancel"}: control tm-job-network-join, the job that tests a network and
+  switches to it after a countdown.
 tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so the request is treated as
 hostile:
 - the jobs directory is opened without following a symlink and must belong to the code owner and be writable by no
@@ -62,6 +65,20 @@ The other three actions take the same lock, then:
 - order: the uuids must be exactly the Wi-Fi client profiles that start by themselves. The first gets
   connection.autoconnect-priority N (N is how many), the last 1; only profiles whose value differs are changed.
 
+The join's two controls never wait for the lock, which the join job holds through its whole run. They read its state
+file, JOIN_STATE_FILE in the run directory, and write a word to CONTROL_FILE beside it (under a temporary name and
+renamed, 0644), which the join job reads every second:
+- switch-now: when the stage is `countdown`, writes `switch` (`asked the join to switch now`); otherwise refused.
+- cancel: no state file is refused. Otherwise the lock is tried once, without waiting, and the first that applies:
+  the lock is held and the stage isn't final, so a join is running: writes `cancel` (`asked the join to cancel`). The
+  stage is final: removes the state file and any control file (`cleared the result`). The lock is free and the stage
+  isn't final, so the join died: holding the lock, rolls back any checkpoint NetworkManager still holds (busctl; the
+  Checkpoints property, then CheckpointRollback on each), waits up to RETURN_WAIT seconds for the device to be
+  connected, deletes the profile under test unless it is a saved network, then removes the state file and any
+  control file (`cleared the result`). A rollback that fails is printed and the clean-up goes on.
+  When the retry timer happens to hold the lock while a dead join's state is cancelled, the first case applies and
+  nobody reads the control file; the next cancel, or the next join, clears it.
+
 No password is ever printed: nmcli's error text is never quoted (it can carry the command line), an unexpected error
 prints only its kind, and every password the job learns (the request's, the file's, the profile's) is still scrubbed
 from each line it prints. The request is deleted
@@ -72,7 +89,7 @@ where it is, and tm-control clears a request no job is waiting for.
 Standard library only, and no tm_control imports: this runs from the root-owned copy in
 /usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST and TM_CONTROL_SECRETS_DIR name the manifest and the
 secrets directory, as for tm-job-set-secret: its root-owned unit sets both. Tests pass the request path as argv[1], set
-those two, and set NMCLI, IW, TM_SYS_NET, TM_NETWORK_LOCK, TM_NETWORK_LOCK_WAIT, TM_NETWORK_RUN_DIR,
+those two, and set NMCLI, IW, BUSCTL, TM_SYS_NET, TM_NETWORK_LOCK, TM_NETWORK_LOCK_WAIT, TM_NETWORK_RUN_DIR,
 TM_NETWORK_RETURN_WAIT, TM_NETWORK_SCAN_RETRY_WAIT, and TM_NETWORK_SCAN_TIMEOUT, which are ignored when running as
 root. Run as anyone but root (tests only), the secrets directory may be that user's instead of root's.
 """
@@ -93,11 +110,14 @@ MANIFEST = "/etc/traffic-monitor/manifest.json"
 SECRETS_DIR = "/etc/traffic-monitor/secrets"
 NMCLI = "/usr/bin/nmcli"
 IW = "/usr/sbin/iw"
+BUSCTL = "/usr/bin/busctl"
 SYS_NET = "/sys/class/net"
 RUN_DIR = "/run/traffic-monitor"
 LOCK = "/run/traffic-monitor/network.lock"
 LOCK_WAIT = 10  # seconds
 SCAN_FILE = "network-scan.json"
+JOIN_STATE_FILE = "network-join.json"  # the join job's state
+CONTROL_FILE = "network-join.control"  # a word for the join job: switch or cancel
 SCAN_TIMEOUT = 60  # seconds for a scan, a second try included
 SCAN_RETRY_WAIT = 5  # seconds before the second try of a scan that failed
 RETURN_WAIT = 15  # seconds for NetworkManager to bring the Wi-Fi back by itself after a network is forgotten
@@ -108,7 +128,8 @@ PASSWORD_FILE = "hotspot_password"
 MAX_REQUEST = 4096  # bytes
 MAX_PASSWORD_FILE = 1024  # bytes
 FIELDS = ("enabled", "name", "password", "hidden")
-ACTIONS = ("hotspot", "scan", "forget", "order")
+ACTIONS = ("hotspot", "scan", "forget", "order", "switch-now", "cancel")
+FINAL = ("joined", "failed", "cancelled", "switch_failed")  # the join's stages that end it
 UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
 # tm-control's rules (modules/network/router.py); a test keeps the two the same.
@@ -120,6 +141,8 @@ WIFI = "802-11-wireless"
 SECURITY = "802-11-wireless-security"
 WPA2 = [(f"{SECURITY}.key-mgmt", "wpa-psk"), (f"{SECURITY}.proto", "rsn"), (f"{SECURITY}.pairwise", "ccmp"),
         (f"{SECURITY}.group", "ccmp")]
+NM = ("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager", "org.freedesktop.NetworkManager")
+NM_PATH = r"/org/freedesktop/NetworkManager/[A-Za-z0-9_/]+"
 CONNECTED = 100  # NetworkManager's device states
 JOINING = range(40, 100)
 
@@ -130,6 +153,10 @@ class Refused(Exception):
 
 class NmcliFailed(Exception):
     """nmcli failed or timed out. The message has a fixed form (exit status, timeout); nmcli's output is never quoted."""
+
+
+class BusctlFailed(NmcliFailed):
+    """busctl failed or timed out. The message has a fixed form; busctl's output is never quoted."""
 
 
 class IwFailed(NmcliFailed):
@@ -244,9 +271,9 @@ def check(request):
     if action not in ACTIONS:
         raise Refused(f"the action must be {', '.join(ACTIONS[:-1])}, or {ACTIONS[-1]}")
     values = {key: value for key, value in request.items() if key != "action"}
-    if action == "scan":
+    if action in ("scan", "switch-now", "cancel"):
         if values:
-            raise Refused("a scan request has the action and nothing else")
+            raise Refused(f"a {action} request has the action and nothing else")
     elif action == "forget":
         if set(values) != {"uuid"} or not valid_uuid(values["uuid"]):
             raise Refused("a forget request has the action and a uuid, and nothing else")
@@ -502,17 +529,22 @@ def run_iw(iw, device, timeout):
 
 
 def write_scan(directory, networks):
-    """SCAN_FILE in the run directory, written under a temporary name and renamed, 0644."""
-    os.makedirs(directory, mode=0o755, exist_ok=True)
+    """SCAN_FILE in the run directory."""
     document = {"at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
                 "monotonic": time.monotonic(), "networks": networks}
-    final = os.path.join(directory, SCAN_FILE)
-    temporary = os.path.join(directory, f".{SCAN_FILE}.{os.getpid()}.tmp")
+    write_run_file(directory, SCAN_FILE, json.dumps(document))
+
+
+def write_run_file(directory, name, text):
+    """A file in the run directory, written under a temporary name and renamed, 0644."""
+    os.makedirs(directory, mode=0o755, exist_ok=True)
+    final = os.path.join(directory, name)
+    temporary = os.path.join(directory, f".{name}.{os.getpid()}.tmp")
     try:
         fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
         with os.fdopen(fd, "w", encoding="utf-8") as file:
             os.fchmod(file.fileno(), 0o644)
-            json.dump(document, file)
+            file.write(text)
         os.rename(temporary, final)
     except BaseException:
         try:
@@ -520,6 +552,47 @@ def write_scan(directory, networks):
         except OSError:
             pass
         raise
+
+
+def read_join_state(directory):
+    """The join job's state, a JSON object, or None when there is none or it is not one."""
+    try:
+        with open(os.path.join(directory, JOIN_STATE_FILE), encoding="utf-8") as file:
+            state = json.load(file)
+    except (OSError, ValueError):
+        return None
+    return state if isinstance(state, dict) else None
+
+
+def remove_run_file(directory, name):
+    try:
+        os.unlink(os.path.join(directory, name))
+    except FileNotFoundError:
+        pass
+
+
+def busctl(*args):
+    """The `data` of busctl's `--json=short` answer. A failure is BusctlFailed; busctl's stderr is never read."""
+    try:
+        result = subprocess.run([trusted("BUSCTL", BUSCTL), "--system", "--json=short", *args], stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                                env={**os.environ, "LC_ALL": "C.UTF-8"}, timeout=30, check=False)
+    except subprocess.TimeoutExpired:
+        raise BusctlFailed("busctl timed out") from None
+    if result.returncode != 0:
+        raise BusctlFailed(f"busctl exit status {result.returncode}")
+    try:
+        return json.loads(result.stdout)["data"]
+    except (ValueError, KeyError, TypeError):
+        raise BusctlFailed("busctl answered in a form this script doesn't know") from None
+
+
+def checkpoints():
+    """The checkpoints NetworkManager holds now."""
+    data = busctl("get-property", *NM, "Checkpoints")
+    if not isinstance(data, list) or not all(isinstance(path, str) and re.fullmatch(NM_PATH, path) for path in data):
+        raise BusctlFailed("busctl answered in a form this script doesn't know")
+    return data
 
 
 def plural(count, word):
@@ -799,6 +872,66 @@ class Run:
                 changed += 1
         print(f"ordered {plural(len(uuids), 'network')}" if changed else "nothing to change")
 
+    def switch_now(self):
+        """Ask the join job to end its countdown now."""
+        self.step = "switch now"
+        run_dir = trusted("TM_NETWORK_RUN_DIR", RUN_DIR)
+        state = read_join_state(run_dir)
+        if state is None or state.get("stage") != "countdown":
+            raise Refused("there is no countdown to end")
+        write_run_file(run_dir, CONTROL_FILE, "switch")
+        print("asked the join to switch now")
+
+    def cancel(self):
+        """Ask a running join to cancel, or clear what a finished or dead one left. The lock is tried once."""
+        self.step = "cancel"
+        run_dir = trusted("TM_NETWORK_RUN_DIR", RUN_DIR)
+        try:
+            lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), 0)
+        except Refused:
+            lock_fd = None
+        try:
+            state = read_join_state(run_dir)
+            if state is None:
+                raise Refused("there is nothing to cancel")
+            final = state.get("stage") in FINAL
+            if lock_fd is None and not final:
+                write_run_file(run_dir, CONTROL_FILE, "cancel")
+                print("asked the join to cancel")
+                return
+            if not final:
+                self.clear_dead_join(state)
+            remove_run_file(run_dir, JOIN_STATE_FILE)
+            remove_run_file(run_dir, CONTROL_FILE)
+            print("cleared the result")
+        finally:
+            if lock_fd is not None:
+                os.close(lock_fd)
+
+    def clear_dead_join(self, state):
+        """A join that died: roll back a checkpoint it left, wait for the radio, and delete its profile unless saved."""
+        try:
+            pending = checkpoints()
+        except BusctlFailed as error:
+            print(f"the checkpoints could not be read ({error})")
+            pending = []
+        rolled = False
+        for path in pending:
+            try:
+                busctl("call", *NM, "CheckpointRollback", "o", path)
+                rolled = True
+            except BusctlFailed as error:
+                print(f"the rollback failed ({error})")
+        if rolled:
+            print("rolled back what the join left")
+            deadline = time.monotonic() + trusted_seconds("TM_NETWORK_RETURN_WAIT", RETURN_WAIT)
+            while self.nm.device(self.device)[0] != CONNECTED and time.monotonic() < deadline:
+                time.sleep(0.5)
+        if state.get("saved") is False and valid_uuid(state.get("uuid")):
+            status, _ = self.nm.call("connection", "delete", "uuid", state["uuid"])
+            if status not in (0, 10):
+                raise NmcliFailed(self.nm.last_error)
+
     def restart(self):
         """`connection up` on the active profile, tried once more when it fails, so the radio isn't left on nothing.
         The second failure still counts when the device ends up on the hotspot."""
@@ -856,12 +989,15 @@ def main(argv):
         jobs_fd = open_jobs_dir(directory or ".", owner_uid)
         action, values = check(read_request(jobs_fd, request_name, owner_uid))
         nm.hide(values.get("password"))
+        if action in ("switch-now", "cancel"):  # never wait for the lock, which a join holds through its run
+            run = Run(nm, device, profile)
+            if action == "switch-now":
+                run.switch_now()
+            else:
+                run.cancel()
+            return 0
         step = "take the lock"
-        try:
-            wait = float(trusted("TM_NETWORK_LOCK_WAIT", str(LOCK_WAIT)))
-        except ValueError:
-            wait = LOCK_WAIT
-        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), wait)
+        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), trusted_seconds("TM_NETWORK_LOCK_WAIT", LOCK_WAIT))
         run = Run(nm, device, profile)
         if action == "hotspot":
             run.hotspot(values)
