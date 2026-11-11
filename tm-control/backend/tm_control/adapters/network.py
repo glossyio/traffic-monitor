@@ -57,6 +57,11 @@ def radio_kind(device: str, sys_net: Path = Path("/sys/class/net")) -> RadioKind
     return "usb" if subsystem.name == "usb" else "builtin"
 
 
+def physical(name: str, sys_net: Path = Path("/sys/class/net")) -> bool:
+    """Whether real hardware is behind the network device (a virtual one, such as a container's veth, has none)."""
+    return (sys_net / name / "device").exists()
+
+
 def radio_enabled() -> bool | None:
     out = _nmcli("radio", "wifi")
     if out is None:
@@ -91,6 +96,7 @@ class Hotspot:
     autoconnect: bool
     ssid: str
     key_mgmt: str  # "" when the profile has no security
+    hidden: bool  # the name is not broadcast
 
 
 def hotspot(profile: str) -> Hotspot | None | Literal[False]:
@@ -98,7 +104,8 @@ def hotspot(profile: str) -> Hotspot | None | Literal[False]:
     # One call per property: nmcli -g leaves out the lines of a setting the profile doesn't have (an open profile has
     # no 802-11-wireless-security), so with several properties in one call the values could not be told apart.
     values = []
-    for key in ("connection.autoconnect", f"{WIFI}.ssid", f"{WIFI}-security.key-mgmt"):
+    keys = ("connection.autoconnect", f"{WIFI}.ssid", f"{WIFI}-security.key-mgmt", f"{WIFI}.hidden")
+    for key in keys:
         answer = _run(["nmcli", "-g", key, "connection", "show", profile])
         if answer is None:
             return None
@@ -108,8 +115,88 @@ def hotspot(profile: str) -> Hotspot | None | Literal[False]:
         if status != 0:
             return None
         values.append(unescape(out.split("\n")[0]))
-    autoconnect, ssid, key_mgmt = values
-    return Hotspot(autoconnect == "yes", ssid, key_mgmt)
+    autoconnect, ssid, key_mgmt, hidden = values
+    return Hotspot(autoconnect == "yes", ssid, key_mgmt, hidden == "yes")
+
+
+def devices() -> list[tuple[str, str]] | None:
+    """(name, type) of every network device NetworkManager knows, in its order: ("eth0", "ethernet")."""
+    out = _nmcli("-t", "-f", "DEVICE,TYPE", "device", "status")
+    if out is None:
+        return None
+    found = []
+    for line in out.splitlines():
+        name, _, kind = line.partition(":")
+        if name:
+            found.append((unescape(name), unescape(kind)))
+    return found
+
+
+@dataclass(frozen=True)
+class Link:
+    state: int  # NetworkManager's device state, as Device.state
+    connection: str | None  # the active profile's name
+    mac: str | None  # upper case, colons
+    addresses: tuple[str, ...]  # IPv4, without the prefix length
+    gateway: str | None
+    dns: tuple[str, ...]
+
+
+def _value(text: str) -> str | None:
+    """A field's text unescaped, or None for what nmcli prints for nothing (empty, or `--` in older versions)."""
+    value = unescape(text)
+    return None if value in ("", "--") else value
+
+
+def link(name: str) -> Link | None:
+    fields = "GENERAL.HWADDR,GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS"
+    out = _nmcli("-t", "-f", fields, "device", "show", name)
+    if out is None:
+        return None
+    single: dict[str, str | None] = {}
+    addresses: list[str] = []
+    dns: list[str] = []
+    for line in out.splitlines():
+        key, _, text = line.partition(":")
+        key = re.sub(r"\[\d+\]$", "", key)
+        value = _value(text)
+        if value is None:
+            continue
+        if key == "IP4.ADDRESS":
+            addresses.append(value.partition("/")[0])
+        elif key == "IP4.DNS":
+            dns.append(value)
+        else:
+            single[key] = value
+    state = re.match(r"\d+", single.get("GENERAL.STATE") or "")
+    if state is None:
+        return None
+    mac = single.get("GENERAL.HWADDR")
+    return Link(
+        int(state.group()),
+        single.get("GENERAL.CONNECTION"),
+        mac.upper() if mac else None,
+        tuple(addresses),
+        single.get("IP4.GATEWAY"),
+        tuple(dns),
+    )
+
+
+def wifi_network(name: str) -> tuple[str, int | None] | None | Literal[False]:
+    """(SSID, signal in percent) of the network the device is on; False when nmcli answered and it is on none.
+
+    Meaningful only when a saved network is joined: on the hotspot, the list shows the hotspot itself as in use.
+    """
+    out = _nmcli("-t", "-f", "IN-USE,SIGNAL,SSID", "device", "wifi", "list", "ifname", name, "--rescan", "no")
+    if out is None:
+        return None
+    for line in out.splitlines():
+        in_use, _, rest = line.partition(":")
+        if in_use != "*":
+            continue
+        strength, _, ssid = rest.partition(":")  # the SSID may hold colons of its own
+        return unescape(ssid), int(strength) if strength.strip().isdigit() else None
+    return False
 
 
 def signal(name: str) -> int | None:

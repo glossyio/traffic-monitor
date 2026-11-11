@@ -21,7 +21,7 @@ from tm_control.modules.network.checks import FIREWALL_UNIT, GROUP, RESTART_HOTS
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 ON = Device(100, "tm-hotspot")
-PROFILE = Hotspot(True, "TM-AB12", "wpa-psk")
+PROFILE = Hotspot(True, "TM-AB12", "wpa-psk", False)
 SET_A_PASSWORD = Fix(kind="hint", text="See Wi-Fi and the hotspot in the docs to set one.")
 SET_THE_COUNTRY = Fix(kind="hint", text="Run the installer again (tmsetup.sh -t wifi); it asks for the country.")
 
@@ -143,7 +143,7 @@ def test_no_hotspot_profile_asks_for_the_installer(net):
 
 
 def test_a_hotspot_turned_off_by_choice_is_ok(net):
-    net.hotspot = Hotspot(False, "TM-AB12", "wpa-psk")
+    net.hotspot = Hotspot(False, "TM-AB12", "wpa-psk", False)
     net.device = Device(30, None)
     assert check(net, "network.hotspot") == (
         "ok", "Off by choice. This unit has no wireless way in when its Wi-Fi network is missing.", None
@@ -158,14 +158,14 @@ def test_a_radio_switched_off_asks_for_the_installer(net):
 
 
 def test_a_hotspot_with_no_password_is_an_error(net):
-    net.hotspot = Hotspot(True, "TM-AB12", "")
+    net.hotspot = Hotspot(True, "TM-AB12", "", False)
     assert check(net, "network.hotspot") == (
         "error", "On as TM-AB12, with no password: anyone nearby can join it.", SET_A_PASSWORD
     )
 
 
 def test_a_hotspot_secured_with_something_else_warns(net):
-    net.hotspot = Hotspot(True, "TM-AB12", "sae")
+    net.hotspot = Hotspot(True, "TM-AB12", "sae", False)
     assert check(net, "network.hotspot") == ("warn", "On as TM-AB12, secured with sae rather than WPA2.", None)
 
 
@@ -368,10 +368,11 @@ def test_the_hotspot_profile_is_read_by_property(commands):
           connection.autoconnect) echo yes ;;
           802-11-wireless.ssid) echo TM-AB12 ;;
           802-11-wireless-security.key-mgmt) echo wpa-psk ;;
+          802-11-wireless.hidden) echo no ;;
           *) exit 2 ;;
         esac
         """)
-    assert network.hotspot("tm-hotspot") == Hotspot(True, "TM-AB12", "wpa-psk")
+    assert network.hotspot("tm-hotspot") == Hotspot(True, "TM-AB12", "wpa-psk", False)
 
 
 def test_a_hotspot_with_no_security_has_an_empty_key_management(commands):
@@ -382,7 +383,7 @@ def test_a_hotspot_with_no_security_has_an_empty_key_management(commands):
           802-11-wireless.ssid) echo TM-AB12 ;;
         esac
         """)
-    assert network.hotspot("tm-hotspot") == Hotspot(False, "TM-AB12", "")
+    assert network.hotspot("tm-hotspot") == Hotspot(False, "TM-AB12", "", False)
 
 
 def test_a_profile_missing_a_whole_setting_in_the_middle_keeps_the_values_apart(commands):
@@ -393,7 +394,7 @@ def test_a_profile_missing_a_whole_setting_in_the_middle_keeps_the_values_apart(
           802-11-wireless-security.key-mgmt) echo wpa-psk ;;
         esac
         """)
-    assert network.hotspot("tm-hotspot") == Hotspot(True, "", "wpa-psk")
+    assert network.hotspot("tm-hotspot") == Hotspot(True, "", "wpa-psk", False)
 
 
 def test_nmcli_is_never_asked_for_secrets(commands, tmp_path):
