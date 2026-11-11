@@ -8151,7 +8151,7 @@
         "z": "f7932be9acc7391c",
         "g": "f034ca2ecdf9a2f6",
         "name": "format init-config client-side attributes",
-        "func": "// A copy goes to ThingsBoard: Frigate's camera names stay on the device, and global.config keeps them\nconst copy = structuredClone(msg.payload);\nfor (const camera of Object.values(copy?.sensors?.cameras ?? {})) {\n    if (camera && typeof camera === \"object\") {\n        delete camera.frigate_camera;\n    }\n}\n\nconst newPayload = {\n    config_tm: copy\n}\n\nmsg.payload = newPayload;\nreturn msg;",
+        "func": "// A copy goes to ThingsBoard: Frigate's camera names stay on the device, and global.config keeps them\nconst copy = JSON.parse(JSON.stringify(msg.payload));\nfor (const camera of Object.values(copy?.sensors?.cameras ?? {})) {\n    if (camera && typeof camera === \"object\") {\n        delete camera.frigate_camera;\n    }\n}\n\nconst newPayload = {\n    config_tm: copy\n}\n\nmsg.payload = newPayload;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,

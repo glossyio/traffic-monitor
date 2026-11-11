@@ -175,10 +175,15 @@ SERIAL_IN = {
 RADAR_NAMES = sorted(SERIAL_IN.values())
 TOKEN = "placeholder-internal-token"
 
-# Runs function nodes the way Node-RED does: each node's On Start code once, then its body with msg, env, global,
-# flow, and node. Global context is one object for all the steps, read and written by dotted keys like Node-RED's
+# Runs function nodes the way Node-RED 5.0.8 does: each node's On Start code once, then its body with msg, env,
+# global, flow, and node. The code runs in a vm context that holds only the names the function node's sandbox has
+# (10-function.js: console, util, Buffer, URL, URLSearchParams, Date, RED, context, flow, global, env, the timer
+# functions, promisify), so a host-only global such as structuredClone or fetch is a ReferenceError here too, as it
+# is on the device. Global context is one object for all the steps, read and written by dotted keys like Node-RED's
 # memory store, so a test can run several nodes in turn. Flow context is a plain object read and written by key.
 HARNESS = r"""
+const vm = require("vm");
+const util = require("util");
 const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const store = input.global;
 const global = {
@@ -199,6 +204,11 @@ const flow = {
     set: (key, value) => { flowStore[key] = value; },
 };
 const env = { get: (name) => input.env[name] };
+const sandbox = {
+    console, util, Buffer, URL, URLSearchParams, Date, RED: { util: {} }, context: {}, flow, global, env,
+    setTimeout, clearTimeout, setInterval, clearInterval, promisify: util.promisify,
+};
+const context = vm.createContext(sandbox);
 const started = new Set();
 const results = [];
 for (const step of input.steps) {
@@ -207,10 +217,10 @@ for (const step of input.steps) {
     const log = (level) => (text, msg) => logged.push([level, String(text), msg !== undefined]);
     const node = { error: log("error"), warn: log("warn"), log: log("log"), status: () => {} };
     if (step.initialize && !started.has(step.id)) {
-        new Function("env", "global", "flow", "node", step.initialize)(env, global, flow, node);
+        new vm.Script("(function(node) {" + step.initialize + "\n})").runInContext(context)(node);
     }
     started.add(step.id);
-    const result = new Function("msg", "env", "global", "flow", "node", step.func)(step.msg, env, global, flow, node);
+    const result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
     results.push({ result: result === undefined ? null : result, logged });
 }
 console.log(JSON.stringify({ results, global: store, flow: flowStore }));
@@ -1707,22 +1717,23 @@ def test_config_tm_has_no_frigate_camera_and_leaves_the_config_alone():
         "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
         "main_st": {"enabled": False},
     })
-    func = node_by_id(TB_CONFIG)["func"]
-    # The node runs on the live object that becomes global.config, so it must not edit it: run it here on a message
-    # whose payload the script keeps a reference to, and read the original afterwards.
-    harness = (
-        "const config = JSON.parse(process.argv[1]); const msg = { payload: config };"
-        "const result = new Function('msg', process.argv[2])(msg);"
-        "console.log(JSON.stringify({ sent: result.payload, original: config }));"
-    )
-    result = subprocess.run(["node", "-e", harness, json.dumps(config), func], capture_output=True, text=True)
-    assert result.returncode == 0, result.stderr
-    run = json.loads(result.stdout)
-    sent = run["sent"]
+    # The node is given the object that is global.config, so the global context shows whether it was edited.
+    node = {**node_by_id(TB_CONFIG), "func": 'msg.payload = global.get("config");\n' + node_by_id(TB_CONFIG)["func"]}
+    run = run_functions([(node, {})], context={"config": config})
+    [step] = run["results"]
+    sent = step["result"]["payload"]
     assert "oak_ave_wide" not in json.dumps(sent) and "frigate_camera" not in json.dumps(sent)
     assert sent["config_tm"]["sensors"]["cameras"]["camera_1_3fa9c2"]["enabled"] is True
     assert sent["config_tm"]["sensors"]["cameras"]["main_st"] == {"enabled": False}
-    assert run["original"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+    assert run["global"]["config"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+
+
+@needs_node
+def test_flow_tests_run_in_the_function_nodes_sandbox():
+    """Node-RED's function nodes don't have structuredClone (or fetch): the harness must not either."""
+    node = {"id": "sandbox", "func": "return { payload: typeof structuredClone + ' ' + typeof fetch + ' ' + typeof JSON };"}
+    [step] = run_functions([(node, {})])["results"]
+    assert step["result"]["payload"] == "undefined undefined object"
 
 
 def summary_rows():
