@@ -143,6 +143,7 @@ async function apply(kind: Kind, body: HotspotChange) {
   } finally {
     following = null
     running.value = null
+    resetSwitches()
   }
 }
 
@@ -175,6 +176,20 @@ const asks = computed(() => ({
   },
 }))
 
+// What the two switches show. A tap changes the browser's checkbox at once, whatever the page then decides, so
+// the switches keep their own value and go back to the device's whenever a question is declined or a job ends;
+// otherwise the next tap would only flip the checkbox back, and say nothing.
+const enabledSwitch = ref(props.hotspot.enabled)
+const hiddenSwitch = ref(props.hotspot.hidden)
+function resetSwitches() {
+  enabledSwitch.value = props.hotspot.enabled
+  hiddenSwitch.value = props.hotspot.hidden
+}
+watch(() => [props.hotspot.enabled, props.hotspot.hidden], resetSwitches)
+watch(askOpen, (isOpen) => {
+  if (!isOpen) resetSwitches()
+})
+
 function toggleEnabled(on: boolean | null) {
   if (on) {
     void apply('on', { enabled: true })
@@ -202,7 +217,7 @@ function confirmed() {
       label="Hotspot on"
       color="primary"
       hide-details
-      :model-value="hotspot.enabled"
+      v-model="enabledSwitch"
       :disabled="busy"
       class="mb-2"
       @update:model-value="toggleEnabled"
@@ -282,7 +297,7 @@ function confirmed() {
       label="Hide the name"
       color="primary"
       hide-details
-      :model-value="hotspot.hidden"
+      v-model="hiddenSwitch"
       :disabled="busy"
       class="mb-4"
       @update:model-value="toggleHidden"

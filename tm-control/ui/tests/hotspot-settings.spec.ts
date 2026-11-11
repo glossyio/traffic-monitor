@@ -192,6 +192,42 @@ describe('the hotspot settings', () => {
     expect(posts(api)).toEqual([{ enabled: false }])
   })
 
+  it.each([
+    ['Hotspot on', TURN_OFF, 'Turn off', { enabled: false }, true],
+    ['Hide the name', HIDING, 'Hide the name', { hidden: true }, false],
+  ])('after Cancel on "%s", shows the real state and asks again on the next tap', async (label, words, confirm, body, shown) => {
+    const { api, wrapper } = await open()
+    const input = field(wrapper, label)
+    expect(input.element.checked).toBe(shown)
+
+    await input.trigger('click')
+    await flushPromises()
+    expect(dialogText()).toContain(words)
+    await clickInDialog('Cancel')
+    expect(posts(api)).toEqual([])
+    expect(input.element.checked).toBe(shown)
+
+    await input.trigger('click')
+    await flushPromises()
+    expect(dialogText()).toContain(words)
+    await clickInDialog(confirm)
+    expect(posts(api)).toEqual([body])
+  })
+
+  it('shows the real state and asks again after a turn-off the device refused', async () => {
+    const refusal = job('failed', ['refused: the unit is trying a saved network right now; try again in a minute'])
+    const { wrapper } = await open(NETWORK_STATE, { [JOB]: json(200, refusal) })
+    const input = field(wrapper, 'Hotspot on')
+    await input.trigger('click')
+    await flushPromises()
+    await clickInDialog('Turn off')
+    await vi.waitFor(() => expect(wrapper.text()).toContain("The change wasn't made."))
+    expect(input.element.checked).toBe(true)
+    await input.trigger('click')
+    await flushPromises()
+    expect(dialogText()).toContain(TURN_OFF)
+  })
+
   it('turns the hotspot on without asking', async () => {
     const off = networkState({ hotspot: hotspot({ enabled: false, active: false }) })
     const { api, wrapper } = await open(off)
