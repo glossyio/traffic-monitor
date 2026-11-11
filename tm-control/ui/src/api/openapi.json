@@ -1570,6 +1570,69 @@
         }
       }
     },
+    "/api/v1/network/hotspot/password": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Hotspot Password",
+        "operationId": "get_hotspot_password_api_v1_network_hotspot_password_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotspotPassword"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/hotspot": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Change Hotspot",
+        "description": "Start the job that applies the change to the hotspot. A value that breaks its rule is refused before any job.",
+        "operationId": "change_hotspot_api_v1_network_hotspot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotspotChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -2285,6 +2348,78 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HotspotChange": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "hidden": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hidden"
+          }
+        },
+        "type": "object",
+        "title": "HotspotChange"
+      },
+      "HotspotPassword": {
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "HotspotPassword"
+      },
       "HotspotState": {
         "properties": {
           "enabled": {
@@ -2507,6 +2642,19 @@
           "log"
         ],
         "title": "Job"
+      },
+      "JobStarted": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "JobStarted"
       },
       "LabelsOut": {
         "properties": {

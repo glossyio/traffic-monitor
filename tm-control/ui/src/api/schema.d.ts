@@ -824,6 +824,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/network/hotspot/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hotspot Password */
+        get: operations["get_hotspot_password_api_v1_network_hotspot_password_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/hotspot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Hotspot
+         * @description Start the job that applies the change to the hotspot. A value that breaks its rule is refused before any job.
+         */
+        post: operations["change_hotspot_api_v1_network_hotspot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/device": {
         parameters: {
             query?: never;
@@ -1130,6 +1167,22 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HotspotChange */
+        HotspotChange: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Password */
+            password?: string | null;
+            /** Hidden */
+            hidden?: boolean | null;
+        };
+        /** HotspotPassword */
+        HotspotPassword: {
+            /** Password */
+            password: string | null;
+        };
         /** HotspotState */
         HotspotState: {
             /** Enabled */
@@ -1204,6 +1257,11 @@ export interface components {
             finished_at: string | null;
             /** Log */
             log: string[];
+        };
+        /** JobStarted */
+        JobStarted: {
+            /** Id */
+            id: string;
         };
         /** LabelsOut */
         LabelsOut: {
@@ -2935,6 +2993,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NetworkState"];
+                };
+            };
+        };
+    };
+    get_hotspot_password_api_v1_network_hotspot_password_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotspotPassword"];
+                };
+            };
+        };
+    };
+    change_hotspot_api_v1_network_hotspot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotspotChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

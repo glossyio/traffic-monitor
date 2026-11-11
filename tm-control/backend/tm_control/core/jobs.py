@@ -41,7 +41,7 @@ from tm_control.core.state import State
 
 log = logging.getLogger(__name__)
 
-JOB_NAMES = {"system-password", "set-secret"}
+JOB_NAMES = {"system-password", "set-secret", "network"}
 LOG_LIMIT = 200  # journal lines per job
 
 Status = Literal["queued", "running", "succeeded", "failed"]

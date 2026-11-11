@@ -4,12 +4,19 @@ Fake mode answers from fake.FakeNetwork; the device cases run against adapter fu
 names and addresses only.
 """
 
+import sqlite3
+
 import pytest
 
 from tm_control.adapters import network
 from tm_control.adapters.network import Hotspot, Link
 
 URL = "/api/v1/network"
+PASSWORD_URL = URL + "/hotspot/password"
+HOTSPOT_URL = URL + "/hotspot"
+ORIGIN = {"Origin": "http://tm-test.local"}
+NO_HOTSPOT = "The hotspot isn't set up. Run the installer again (tmsetup.sh -t wifi)."
+PASSWORD = "placeholder-pass-1"
 ADMIN, ADMIN_PASSWORD = "admin", "correct horse 1"
 VIEWER, VIEWER_PASSWORD = "viewer", "viewer pass 1"
 ETH = Link(100, "Wired connection 1", "B8:27:EB:00:00:01", ("192.168.1.57",), "192.168.1.1", ("192.168.1.1",))
@@ -239,3 +246,148 @@ def test_a_hotspot_that_is_not_set_up(device_client, login, links, answer):
     links.hotspot = answer
     body = read(device_client, login)
     assert body["hotspot"] is None and body["wifi"]["mode"] == "network"
+
+
+# The hotspot password and the change request
+
+
+def add_viewer(client):
+    from tm_control.core.auth import Users
+
+    Users(client.app.state.state).create(VIEWER, VIEWER_PASSWORD, "viewer")
+
+
+def audit_rows(client, settings):
+    con = sqlite3.connect(settings.state_dir / "state.sqlite")
+    try:
+        return con.execute("SELECT action, detail FROM audit ORDER BY id").fetchall(), "\n".join(con.iterdump())
+    finally:
+        con.close()
+
+
+def change(client, body):
+    return client.post(HOTSPOT_URL, json=body, headers=ORIGIN)
+
+
+def test_only_an_admin_reads_the_hotspot_password(claimed_client, login, settings):
+    assert claimed_client.get(PASSWORD_URL).status_code == 401
+    add_viewer(claimed_client)
+    login(claimed_client, VIEWER, VIEWER_PASSWORD)
+    assert claimed_client.get(PASSWORD_URL).status_code == 403
+    assert audit_rows(claimed_client, settings)[0] == []
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    r = claimed_client.get(PASSWORD_URL)
+    assert r.status_code == 200 and r.json() == {"password": "ABCD-EFGH-JKLM"}
+    assert r.headers["cache-control"] == "no-store"
+    assert audit_rows(claimed_client, settings)[0] == [("network.hotspot_password_shown", None)]
+
+
+def test_a_missing_password_file_reads_as_null_and_an_empty_one_as_empty(device_client, login, settings):
+    login(device_client, ADMIN, ADMIN_PASSWORD)
+    assert device_client.get(PASSWORD_URL).json() == {"password": None}
+    path = settings.secrets_dir / "hotspot_password"
+    path.write_text("")
+    assert device_client.get(PASSWORD_URL).json() == {"password": ""}
+    path.write_text(PASSWORD + "\n")
+    assert device_client.get(PASSWORD_URL).json() == {"password": PASSWORD}
+
+
+def test_a_change_starts_the_network_job_with_only_what_was_sent(claimed_client, login):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    r = change(claimed_client, {"name": "TM-ROAD"})
+    assert r.status_code == 202 and r.json()["id"]
+    assert claimed_client.app.state.jobs.last_request == {"action": "hotspot", "name": "TM-ROAD"}
+    change(claimed_client, {"enabled": False, "hidden": True, "password": PASSWORD})
+    assert claimed_client.app.state.jobs.last_request == {
+        "action": "hotspot", "enabled": False, "hidden": True, "password": PASSWORD,
+    }
+
+
+def test_a_viewer_cannot_change_the_hotspot(claimed_client, login):
+    add_viewer(claimed_client)
+    login(claimed_client, VIEWER, VIEWER_PASSWORD)
+    assert change(claimed_client, {"name": "TM-ROAD"}).status_code == 403
+    assert claimed_client.app.state.jobs.last_request is None
+
+
+def test_a_change_needs_a_login_and_an_origin(claimed_client, login):
+    assert change(claimed_client, {"name": "TM-ROAD"}).status_code == 401
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    assert claimed_client.post(HOTSPOT_URL, json={"name": "TM-ROAD"}).status_code == 403
+    assert claimed_client.app.state.jobs.last_request is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {}, {"name": ""}, {"name": " TM"}, {"name": "a" * 33}, {"name": "TM\n1"}, {"name": "TM "},
+        {"password": "short12"}, {"password": "x" * 64}, {"password": "pässwörd1"},
+        {"password": " leading-space"}, {"password": "trailing-space "}, {"name": "a" * 129},
+        {"enabled": "maybe"},
+    ],
+)
+def test_a_change_is_refused_before_any_job(claimed_client, login, body):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    r = change(claimed_client, body)
+    assert r.status_code == 422 and r.json()["error"]["code"] == "validation"
+    assert claimed_client.app.state.jobs.last_request is None
+
+
+def test_a_refusal_says_the_rule_and_never_the_value(claimed_client, login):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    messages = {
+        "nothing": change(claimed_client, {}).json()["error"]["message"],
+        "name": change(claimed_client, {"name": "a" * 33}).json()["error"]["message"],
+        "password": change(claimed_client, {"password": "short12"}).json()["error"]["message"],
+    }
+    assert messages["nothing"] == "Nothing to change."
+    assert messages["name"] == (
+        "A hotspot name is 1 to 32 characters (fewer with accents or emoji), with no space at either end."
+    )
+    assert messages["password"] == (
+        "A hotspot password is 8 to 63 letters, digits, and symbols, with no space at either end."
+    )
+    assert "short12" not in messages["password"]
+
+
+def test_a_name_is_counted_in_bytes(claimed_client, login):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    euro = "\u20ac"  # three bytes in UTF-8
+    assert change(claimed_client, {"name": euro * 11}).status_code == 422
+    assert change(claimed_client, {"name": euro * 10 + "ab"}).status_code == 202
+
+
+def test_the_audit_names_what_changed_and_never_the_password(claimed_client, login, settings):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    assert change(claimed_client, {"password": PASSWORD, "name": "TM-ROAD"}).status_code == 202
+    rows, dump = audit_rows(claimed_client, settings)
+    assert ("network.hotspot", "name, password") in rows
+    assert PASSWORD not in dump
+
+
+def test_no_hotspot_profile_is_a_409(device_client, login, links):
+    login(device_client, ADMIN, ADMIN_PASSWORD)
+    links.hotspot = False
+    r = change(device_client, {"name": "TM-ROAD"})
+    assert r.status_code == 409 and r.json()["error"]["code"] == "no_hotspot"
+    assert r.json()["error"]["message"] == NO_HOTSPOT
+    assert not (device_client.app.state.settings.runtime_dir / "jobs" / "network.json").exists()
+
+
+def test_a_change_to_an_unreadable_networkmanager_still_starts_the_job(device_client, login, links):
+    login(device_client, ADMIN, ADMIN_PASSWORD)
+    links.hotspot = None
+    started = []
+    device_client.app.state.jobs.start = lambda name, request, user_id: started.append((name, request)) or type(
+        "Job", (), {"id": "job-1"}
+    )()
+    r = change(device_client, {"hidden": True})
+    assert r.status_code == 202 and started == [("network", {"action": "hotspot", "hidden": True})]
+
+
+def test_fake_mode_shows_the_change(claimed_client, login):
+    login(claimed_client, ADMIN, ADMIN_PASSWORD)
+    assert change(claimed_client, {"name": "TM-ROAD", "password": PASSWORD, "hidden": True}).status_code == 202
+    body = claimed_client.get(URL).json()
+    assert (body["hotspot"]["name"], body["hotspot"]["hidden"]) == ("TM-ROAD", True)
+    assert claimed_client.get(PASSWORD_URL).json() == {"password": PASSWORD}

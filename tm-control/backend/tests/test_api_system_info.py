@@ -777,3 +777,20 @@ def test_openapi_declares_the_system_models(client):
         "hostname", "serial", "model", "os", "kernel", "uptime_seconds", "memory", "disks", "tm", "components",
         "soc_temperature_c", "throttled",
     }
+
+
+def test_the_hotspot_password_is_redacted_from_diagnostics(device_client, login, host):
+    (device_client.app.state.settings.secrets_dir / "hotspot_password").write_text("placeholder-pass-1\n")
+    host.journal = lambda unit, lines: ["joined with placeholder-pass-1 ok"]
+    login(device_client, *ADMIN)
+    r = diagnostics(device_client)
+    assert r.status_code == 200
+    assert "placeholder-pass-1" not in r.text and "joined with <redacted> ok" in r.text
+
+
+def test_an_empty_hotspot_password_file_redacts_nothing(device_client, login, host):
+    (device_client.app.state.settings.secrets_dir / "hotspot_password").write_text("")
+    host.journal = lambda unit, lines: ["a plain line"]
+    login(device_client, *ADMIN)
+    r = diagnostics(device_client)
+    assert r.status_code == 200 and "a plain line" in r.text
