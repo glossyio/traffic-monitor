@@ -80,12 +80,12 @@ def check(net, check_id):
     return found.status, found.detail, found.fix
 
 
-def test_the_network_module_comes_after_hardware_and_has_no_routes():
+def test_the_network_module_comes_after_hardware_and_serves_the_state():
     ids = [m.id for m in MODULES]
     assert ids[ids.index("hardware") + 1] == "network"
     (module,) = [m for m in MODULES if m.id == "network"]
     assert [g.id for g in module.check_groups] == ["network"]
-    assert module.router.routes == []
+    assert [r.path for r in module.router.routes] == ["/network"]
 
 
 def test_the_group_has_the_four_checks_in_order(net):

@@ -1549,6 +1549,27 @@
         }
       }
     },
+    "/api/v1/network": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Network",
+        "operationId": "get_network_api_v1_network_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -2264,6 +2285,49 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HotspotState": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "security": {
+            "type": "string",
+            "enum": [
+              "wpa2",
+              "none",
+              "other"
+            ],
+            "title": "Security"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "active",
+          "name",
+          "hidden",
+          "security",
+          "address"
+        ],
+        "title": "HotspotState"
+      },
       "ImportIn": {
         "properties": {
           "csv": {
@@ -2491,6 +2555,59 @@
           "tracked"
         ],
         "title": "LabelsOut"
+      },
+      "Link": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "addresses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Addresses"
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway"
+          },
+          "dns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connected",
+          "mac",
+          "addresses",
+          "gateway",
+          "dns"
+        ],
+        "title": "Link"
       },
       "LocationCorrection": {
         "properties": {
@@ -2778,6 +2895,73 @@
           "labels"
         ],
         "title": "ModelsState"
+      },
+      "NetworkState": {
+        "properties": {
+          "hostname": {
+            "type": "string",
+            "title": "Hostname"
+          },
+          "local_name": {
+            "type": "string",
+            "title": "Local Name"
+          },
+          "readable": {
+            "type": "boolean",
+            "title": "Readable"
+          },
+          "ethernet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Link"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Wifi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "internet": {
+            "type": "string",
+            "enum": [
+              "reachable",
+              "not_reachable",
+              "sign_in_page",
+              "unknown"
+            ],
+            "title": "Internet"
+          },
+          "hotspot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "hostname",
+          "local_name",
+          "readable",
+          "ethernet",
+          "wifi",
+          "internet",
+          "hotspot"
+        ],
+        "title": "NetworkState"
       },
       "NewPassword": {
         "properties": {
@@ -3921,6 +4105,95 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "Wifi": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "addresses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Addresses"
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway"
+          },
+          "dns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dns"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "network",
+              "hotspot",
+              "joining",
+              "idle",
+              "off"
+            ],
+            "title": "Mode"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connected",
+          "mac",
+          "addresses",
+          "gateway",
+          "dns",
+          "mode",
+          "network",
+          "signal"
+        ],
+        "title": "Wifi"
       }
     }
   }
