@@ -65,7 +65,8 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
   neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
   confirm first (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which POSTs. A refused
-  action shows the API's message above the list, and a 409 loads the list again. Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it again.
+  Every write answers with the whole new state, which replaces the page's, so there is no second request.
   The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
   each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
   names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows

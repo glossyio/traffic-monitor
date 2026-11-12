@@ -114,6 +114,11 @@ describe('pointChoices', () => {
     expect(pointChoices(other, [gone, second, fresh, other])).toEqual([gone, second])
   })
 
+  it("doesn't offer an entry whose Frigate camera is only off: that is a second camera, not a rename", () => {
+    const off = cameraRow({ name: 'camera_5_dd33ee', in_frigate: 'off' })
+    expect(pointChoices(fresh, [off, fresh])).toEqual([])
+  })
+
   it("offers nothing for an entry's own row", () => {
     expect(pointChoices(wide, [gone, wide])).toEqual([])
   })

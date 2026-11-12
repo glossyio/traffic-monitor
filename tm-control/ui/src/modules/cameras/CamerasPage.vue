@@ -6,7 +6,7 @@
   While Frigate isn't answering, or is in safe mode, its cameras can't be compared: a line says so, the settings stay
   editable. The actions that need the comparison (Point at this, Add as new, Use a neutral name, Remove) are offered
   only while `state.frigate` is "ok"; each confirms first, except Add as new, which opens CameraEdit. A refused action
-  shows the API's message above the list, and a 409 loads the list again.
+  shows the API's message above the list, and a 409 or 404 loads the list again.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
@@ -85,7 +85,12 @@ function frigateLine(row: Row) {
 // An action that sends a request needs Frigate's cameras to compare, so it is offered only while Frigate answers
 const compared = computed(() => state.value?.frigate === 'ok')
 
-// Run one request, show its answer as the page's state, and say why it failed otherwise; a 409 loads the list again
+// Whether a refusal means the page's list is out of date: the file or Frigate changed (409), or the camera is gone (404)
+function stale(error: unknown) {
+  return error instanceof ApiError && (error.status === 409 || error.status === 404)
+}
+
+// Run one request, show its answer as the page's state, and say why it failed otherwise; a stale list is loaded again
 async function perform(send: () => Promise<{ data?: unknown }>) {
   notice.value = ''
   try {
@@ -94,7 +99,7 @@ async function perform(send: () => Promise<{ data?: unknown }>) {
     return true
   } catch (error) {
     notice.value = messageOf(error)
-    if (error instanceof ApiError && error.status === 409) await load()
+    if (stale(error)) await load()
     return false
   }
 }
@@ -196,8 +201,9 @@ async function save(settings: CameraSettings) {
     } else {
       saveError.value = message
     }
-    // The file or Frigate changed under the dialog: load again; a camera that has gone leaves the dialog and says so
-    if (error instanceof ApiError && error.status === 409) {
+    // The file or Frigate changed under the dialog, or the camera is gone: load again; a camera that has gone leaves
+    // the dialog and says so
+    if (stale(error)) {
       await load()
       if (!editRow.value) {
         editOpen.value = false

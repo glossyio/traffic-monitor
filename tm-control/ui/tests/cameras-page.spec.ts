@@ -303,6 +303,17 @@ describe('Cameras page', () => {
       expect(api.sent.filter((request) => request.method === 'GET' && request.path === '/api/v1/cameras')).toHaveLength(2)
     })
 
+    it('shows the message and loads the list again when an action finds its camera gone', async () => {
+      const missing = apiError(404, 'not_found', 'There is no such camera.')
+      const { api, wrapper } = await openPage(camerasState({ rows: [GONE] }), {
+        'DELETE /api/v1/cameras/camera_1_3fa9c2': missing,
+      })
+      await press(wrapper, 'Remove')
+      await clickInDialog('Remove')
+      expect(wrapper.text()).toContain('There is no such camera.')
+      expect(api.sent.filter((request) => request.method === 'GET' && request.path === '/api/v1/cameras')).toHaveLength(2)
+    })
+
     it('shows the API message for an action that fails some other way', async () => {
       const failed = apiError(500, 'oops', 'It failed.')
       const { wrapper } = await openPage(camerasState({ rows: [GONE] }), { 'DELETE /api/v1/cameras/camera_1_3fa9c2': failed })
