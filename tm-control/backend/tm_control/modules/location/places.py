@@ -156,6 +156,16 @@ class Places:
                 new = Bearing(sensor_type=sensor_type, sensor_name=sensor_name, bearing=bearing)
                 _insert_bearings(con, survey_id, [new])
 
+    def rename_sensor(self, sensor_type: str, old: str, new: str) -> None:
+        """Move every place's bearing for a sensor to its new name, keeping each row's place in the order. A place
+        that already has a bearing under the new name keeps that one, and its row under the old name goes."""
+        with _writing(self.state) as con:
+            con.execute(
+                "UPDATE OR IGNORE survey_bearings SET sensor_name = ? WHERE sensor_type = ? AND sensor_name = ?",
+                (new, sensor_type, old),
+            )
+            con.execute("DELETE FROM survey_bearings WHERE sensor_type = ? AND sensor_name = ?", (sensor_type, old))
+
     def record_correction(
         self,
         survey_id: str,
