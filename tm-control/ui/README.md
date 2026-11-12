@@ -1145,8 +1145,9 @@ the unit's hotspot goes away for the test, so the words matter more than the lay
   a join, "Wait for the Wi-Fi change to finish." for the other section's job). `NetworkPage` ORs the sections' reports
   (`busy`) with the pending join.
 - The home page shows one line (`JoinBanner.vue`) to an admin while a join exists, with a "See it" link: the admin may
-  not have the Network page open when the countdown ends. It asks once when the home page loads and shows nothing when
-  it can't read the answer.
+  not have the Network page open when the countdown ends. It asks when the home page loads and keeps asking while a join is
+  pending (the same `useJoin` as the Network page, so the time moves and the line changes when the join ends). It
+  shows nothing when it can't read the first answer.
 
 #### What the screenshot review changed
 

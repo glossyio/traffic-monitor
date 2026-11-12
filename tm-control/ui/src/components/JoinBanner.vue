@@ -1,26 +1,20 @@
 <!--
   A line on the home page, for an admin, while the unit has a Wi-Fi join to show (a test, a countdown to the switch, or
   a result nobody has dismissed), with a link to the Network page, where it is handled. An admin who started a join may
-  not have that page open when the countdown ends. It asks once when the home page loads, and shows nothing for a
-  viewer, for no join, or when the answer can't be read: the home page works without it.
+  not have that page open when the countdown ends. It asks when the home page loads and keeps asking while the join is
+  pending (useJoin), so the time moves and the line follows the join to its end. It shows nothing for a viewer, for no
+  join, or when the first answer can't be read: the home page works without it.
 -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { api } from '../api/client'
-import { type JoinState, bannerLine, pending } from '../modules/network/join'
+import { onMounted } from 'vue'
+import { type JoinState, bannerLine, pending, useJoin } from '../modules/network/join'
 import { useSession } from '../stores/session'
 
 const session = useSession()
-const join = ref<JoinState | null>(null)
+const { join, refresh } = useJoin()
 
-onMounted(async () => {
-  if (!session.isAdmin) return
-  try {
-    const { data } = await api.GET('/api/v1/network/join')
-    join.value = (data ?? null) as JoinState | null
-  } catch {
-    join.value = null
-  }
+onMounted(() => {
+  if (session.isAdmin) void refresh()
 })
 
 const look = (state: JoinState): 'info' | 'success' | 'warning' =>
