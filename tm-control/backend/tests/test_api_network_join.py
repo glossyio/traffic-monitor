@@ -509,6 +509,23 @@ def test_a_viewer_cannot_join_switch_or_cancel(claimed_client, login, path):
     assert claimed_client.app.state.jobs.last_request is None
 
 
+@pytest.mark.parametrize(
+    "path, body",
+    [
+        ("wifi/scan", {}),
+        ("wifi/forget", {"uuid": UUID_B}),
+        ("wifi/order", {"uuids": [UUID_A, UUID_B]}),
+        ("wifi/join", {"name": "Cafe", "password": PASSWORD}),
+        ("wifi/join/switch", {}),
+        ("wifi/join/cancel", {}),
+    ],
+)
+def test_a_signed_out_browser_cannot_change_the_wifi_networks_or_a_join(claimed_client, path, body):
+    r = claimed_client.post(f"{URL}/{path}", json=body, headers=ORIGIN)
+    assert r.status_code == 401
+    assert claimed_client.app.state.jobs.last_request is None
+
+
 # Fake mode
 
 
