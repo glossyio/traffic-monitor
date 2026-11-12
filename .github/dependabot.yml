@@ -73,6 +73,7 @@ updates:
   # so test an update on a bench Pi before merging it.
   - package-ecosystem: npm
     directory: /container/node-red-tm/data
+    versioning-strategy: increase-if-necessary
     target-branch: dev
     schedule:
       interval: monthly

@@ -5,8 +5,8 @@
 #   - ui: tm-control's UI build (with its type check) and Vitest tests, on the
 #     Node version the device builds it with
 #   - dependency-review (pull requests only): fails when the pull request adds
-#     or changes a dependency to a version with a known high or critical
-#     vulnerability
+#     or changes a runtime dependency to a version with a known high or
+#     critical vulnerability
 # Device tests (script/devpi/tests) need a bench Pi and don't run here.
 name: Tests
 
@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.ref }}
+  group: tests-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   # A new push to a pull request replaces its running checks; every push to
   # dev is checked.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -34,7 +34,9 @@ jobs:
           persist-credentials: false
       - name: Read the device's Node version
         id: node
-        run: echo "version=$(grep -oP '^tmsetup_node_image:.*:\K[0-9.]+' script/ansible/roles/tmsetup/vars/main.yml)" >> "$GITHUB_OUTPUT"
+        run: |
+          v=$(grep -oP '^tmsetup_node_image:.*/node:\K[0-9]+\.[0-9]+\.[0-9]+' script/ansible/roles/tmsetup/vars/main.yml)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
       # The Raspberry Pi OS release the device runs (Debian 13) has Python 3.13.
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -74,7 +76,9 @@ jobs:
       - name: Read the device's Node version
         id: node
         working-directory: .
-        run: echo "version=$(grep -oP '^tmsetup_node_image:.*:\K[0-9.]+' script/ansible/roles/tmsetup/vars/main.yml)" >> "$GITHUB_OUTPUT"
+        run: |
+          v=$(grep -oP '^tmsetup_node_image:.*/node:\K[0-9]+\.[0-9]+\.[0-9]+' script/ansible/roles/tmsetup/vars/main.yml)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ steps.node.outputs.version }}
