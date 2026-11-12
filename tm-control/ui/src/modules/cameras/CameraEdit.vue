@@ -6,7 +6,7 @@
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { radarChoices, type RadarOut, type Row } from './rows'
+import { radarChoices, type CameraRadar, type CameraRow } from './rows'
 
 export interface CameraSettings {
   enabled: boolean
@@ -16,8 +16,8 @@ export interface CameraSettings {
 
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{
-  row: Row
-  radars: RadarOut[]
+  row: CameraRow
+  radars: CameraRadar[]
   plates: boolean // the Plate Recognizer add-on is installed
   adding: boolean
   saving?: boolean

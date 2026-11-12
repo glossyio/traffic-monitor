@@ -2,7 +2,7 @@
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import CameraEdit from '../src/modules/cameras/CameraEdit.vue'
-import { RADARS, cameraRow, type RadarOut } from './fake-api'
+import { RADARS, cameraRow, type CameraRadar } from './fake-api'
 import { clickInDialog, dialogField, dialogText, mountAlone } from './mount'
 
 function mountEdit(props: Record<string, unknown> = {}) {
@@ -74,7 +74,7 @@ describe('CameraEdit', () => {
   })
 
   it("shows each radar's state in the drop-down and can't choose one config.yml doesn't set up", async () => {
-    const radars: RadarOut[] = [
+    const radars: CameraRadar[] = [
       { name: 'R_ON', in_config: true, enabled: true, port_open: true },
       { name: 'R_OFF', in_config: true, enabled: false, port_open: true },
       { name: 'R_CLOSED', in_config: true, enabled: true, port_open: false },

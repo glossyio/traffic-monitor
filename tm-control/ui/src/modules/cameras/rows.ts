@@ -2,14 +2,14 @@
 // page's later actions can ask the same questions.
 import type { components } from '../../api/schema'
 
-export type Row = components['schemas']['Row']
-export type RadarOut = components['schemas']['RadarOut']
+export type CameraRow = components['schemas']['CameraRow']
+export type CameraRadar = components['schemas']['CameraRadar']
 
 // 'unknown' is a row while Frigate can't be compared (down or in safe mode): the page shows its settings and
 // nothing about Frigate's side.
 export type RowState = 'in-step' | 'off' | 'new' | 'gone' | 'duplicate' | 'unknown'
 
-export function rowState(row: Row): RowState {
+export function rowState(row: CameraRow): RowState {
   if (row.name === null) return 'new'
   if (row.duplicate_of !== null) return 'duplicate'
   if (row.in_frigate === 'unknown') return 'unknown'
@@ -19,7 +19,7 @@ export function rowState(row: Row): RowState {
 }
 
 // Which of the four zones the flows read Frigate lacks for this camera; nothing for a camera Frigate doesn't have
-export function zonesText(row: Row): string {
+export function zonesText(row: CameraRow): string {
   if (row.zones_missing === null) return ''
   if (row.zones_missing.length === 0) return 'Zones: all four'
   return `Missing in Frigate: ${row.zones_missing.join(', ')}`
@@ -27,7 +27,7 @@ export function zonesText(row: Row): string {
 
 // For a new row: the entries whose Frigate camera is gone, which it could be a rename of. The API allows pointing any
 // entry whose camera is absent, so an entry that repeats another is included.
-export function pointChoices(row: Row, rows: Row[]): Row[] {
+export function pointChoices(row: CameraRow, rows: CameraRow[]): CameraRow[] {
   if (rowState(row) !== 'new') return []
   return rows.filter((other) => other.name !== null && other.in_frigate === 'absent')
 }
@@ -42,7 +42,7 @@ export interface RadarChoice {
 // The Radar drop-down: No radar, then each of the unit's radars with its state. A radar with no entry under
 // sensors.radars can't be chosen, because pairing with it would record no speed. The camera's current radar, if it is
 // none of the unit's radars, is listed as missing so the field shows what the file says.
-export function radarChoices(row: Row, radars: RadarOut[]): RadarChoice[] {
+export function radarChoices(row: CameraRow, radars: CameraRadar[]): RadarChoice[] {
   const choices: RadarChoice[] = [{ title: 'No radar', value: null }]
   for (const radar of radars) {
     const choice: RadarChoice = { title: radar.name, value: radar.name }

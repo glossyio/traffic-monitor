@@ -17,7 +17,7 @@ from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
 from tm_control.modules.cameras.names import is_neutral, new_name
-from tm_control.modules.cameras.state import CamerasState, RadarOut, Row, compare, frigate_now
+from tm_control.modules.cameras.state import CameraRadar, CameraRow, CamerasState, compare, frigate_now
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
@@ -41,7 +41,7 @@ def cameras_state(request: Request) -> CamerasState:
     radars = []
     for name in env_radar_names(app_state.manifest):
         port_open = probes.mapping(ports.get(name)).get("port_open")
-        radars.append(RadarOut(
+        radars.append(CameraRadar(
             name=name,
             in_config=name in in_config,
             enabled=in_config.get(name, False),
@@ -97,7 +97,7 @@ def _not_found() -> ApiError:
     return ApiError(404, "not_found", "There is no such camera.")
 
 
-def _compared(app_state, config: NodeRedConfig) -> list[Row]:
+def _compared(app_state, config: NodeRedConfig) -> list[CameraRow]:
     """The page's rows against Frigate now; 409 frigate_unavailable while Frigate gives no cameras to compare."""
     cameras = frigate_now(app_state)[1]
     if cameras is None:
@@ -110,14 +110,14 @@ def _exists(config: NodeRedConfig, name: str) -> None:
         raise _not_found()
 
 
-def _entry(rows: list[Row], name: str) -> Row:
+def _entry(rows: list[CameraRow], name: str) -> CameraRow:
     for row in rows:
         if row.name == name:
             return row
     raise _not_found()
 
 
-def _unpointed(rows: list[Row], frigate_camera: str) -> bool:
+def _unpointed(rows: list[CameraRow], frigate_camera: str) -> bool:
     """Whether Frigate has this camera and no entry points at it."""
     return any(row.name is None and row.frigate_camera == frigate_camera for row in rows)
 

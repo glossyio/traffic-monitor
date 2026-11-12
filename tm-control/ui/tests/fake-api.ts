@@ -161,9 +161,9 @@ export function timeResult(changes: Partial<TimeResult>): TimeResult {
 }
 
 // GET /cameras: the Cameras page's state. The rows and radars use the API's own types (schema.d.ts).
-export type CameraRow = components['schemas']['Row']
+export type CameraRow = components['schemas']['CameraRow']
 export type CamerasState = components['schemas']['CamerasState']
-export type RadarOut = components['schemas']['RadarOut']
+export type CameraRadar = components['schemas']['CameraRadar']
 
 // An entry that is in step with Frigate: neutral key, all four zones, recording, no radar
 export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
@@ -186,7 +186,7 @@ export function newRow(frigate_camera = 'oak_ave_tele', changes: Partial<CameraR
   return cameraRow({ name: null, frigate_camera, neutral: null, enabled: null, zones_missing: [], ...changes })
 }
 
-export const RADARS: RadarOut[] = [
+export const RADARS: CameraRadar[] = [
   { name: 'TM_RADAR_SERIAL_PORT_00', in_config: true, enabled: true, port_open: true },
   { name: 'TM_RADAR_SERIAL_PORT_01', in_config: true, enabled: false, port_open: false },
 ]

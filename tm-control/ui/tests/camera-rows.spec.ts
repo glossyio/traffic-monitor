@@ -1,7 +1,7 @@
 // What a camera's row says and the radar choices: pure functions of the API's rows.
 import { describe, expect, it } from 'vitest'
 import { pointChoices, radarChoices, rowState, zonesText } from '../src/modules/cameras/rows'
-import { RADARS, cameraRow, newRow, type RadarOut } from './fake-api'
+import { RADARS, cameraRow, newRow, type CameraRadar } from './fake-api'
 
 describe('rowState', () => {
   it('says in step for an entry whose Frigate camera is on', () => {
@@ -55,7 +55,7 @@ describe('radarChoices', () => {
   })
 
   it("marks a radar that's off in config.yml and one whose port is closed, and leaves both choosable", () => {
-    const radars: RadarOut[] = [
+    const radars: CameraRadar[] = [
       { name: 'R0', in_config: true, enabled: false, port_open: true },
       { name: 'R1', in_config: true, enabled: true, port_open: false },
       { name: 'R2', in_config: true, enabled: true, port_open: null },
@@ -69,12 +69,12 @@ describe('radarChoices', () => {
   })
 
   it('joins both marks for a radar that is off and has no open port', () => {
-    const radars: RadarOut[] = [{ name: 'R0', in_config: true, enabled: false, port_open: false }]
+    const radars: CameraRadar[] = [{ name: 'R0', in_config: true, enabled: false, port_open: false }]
     expect(radarChoices(cameraRow(), radars)[1].subtitle).toBe('off in config.yml, port closed')
   })
 
   it("can't choose a radar that config.yml doesn't set up", () => {
-    const radars: RadarOut[] = [{ name: 'R0', in_config: false, enabled: false, port_open: null }]
+    const radars: CameraRadar[] = [{ name: 'R0', in_config: false, enabled: false, port_open: null }]
     expect(radarChoices(cameraRow(), radars)[1]).toMatchObject({
       value: 'R0',
       subtitle: 'not set up in config.yml',

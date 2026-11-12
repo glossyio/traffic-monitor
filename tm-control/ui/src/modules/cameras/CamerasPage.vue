@@ -14,7 +14,7 @@ import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import CameraEdit, { type CameraSettings } from './CameraEdit.vue'
-import { pointChoices, rowState, zonesText, type Row } from './rows'
+import { pointChoices, rowState, zonesText, type CameraRow } from './rows'
 
 type CamerasState = components['schemas']['CamerasState']
 
@@ -43,21 +43,21 @@ async function load() {
 
 onMounted(load)
 
-function keyOf(row: Row) {
+function keyOf(row: CameraRow) {
   return row.name ?? row.frigate_camera
 }
 
 // Frigate's name goes beside the bold key when the two differ; a Frigate camera with no entry is its own bold name
-function frigateName(row: Row) {
+function frigateName(row: CameraRow) {
   return row.name !== null && row.name !== row.frigate_camera ? row.frigate_camera : ''
 }
 
-function chipOf(row: Row) {
+function chipOf(row: CameraRow) {
   return rowState(row) === 'off' ? OFF_CHIP : undefined
 }
 
 // What is out of step on a row, in words; empty for a row that is in step
-function sentence(row: Row) {
+function sentence(row: CameraRow) {
   switch (rowState(row)) {
     case 'new':
       return `${row.frigate_camera} is new in Frigate and isn't recorded.`
@@ -71,14 +71,14 @@ function sentence(row: Row) {
 }
 
 // A row's settings in words, for entries only
-function settings(row: Row) {
+function settings(row: CameraRow) {
   const words = [`Record events: ${row.enabled ? 'on' : 'off'}`, `Radar: ${row.camera_radar ?? 'none'}`]
   if (state.value?.plates) words.push(`Plates: ${row.plate_recognizer ? 'on' : 'off'}`)
   return words
 }
 
 // Whether the row says anything about Frigate's side
-function frigateLine(row: Row) {
+function frigateLine(row: CameraRow) {
   return rowState(row) === 'unknown' ? '' : zonesText(row)
 }
 
@@ -173,7 +173,7 @@ const saving = ref(false)
 const saveError = ref('')
 const radarError = ref('')
 
-function openEdit(row: Row) {
+function openEdit(row: CameraRow) {
   editing.value = row.name === null ? { frigate: row.frigate_camera } : { name: row.name }
   saveError.value = ''
   radarError.value = ''

@@ -18,7 +18,7 @@ from tm_control.modules.cameras.names import is_neutral
 from tm_control.modules.location.config import CameraEntry
 
 
-class Row(BaseModel):
+class CameraRow(BaseModel):
     name: str | None  # the sensors.cameras key; None for a Frigate camera no entry points at
     frigate_camera: str
     in_frigate: Literal["on", "off", "absent", "unknown"]  # "unknown" while Frigate is down or in safe mode
@@ -30,7 +30,7 @@ class Row(BaseModel):
     zones_missing: list[str] | None  # of ZONES; None when the camera isn't in Frigate
 
 
-class RadarOut(BaseModel):
+class CameraRadar(BaseModel):
     name: str
     in_config: bool  # has an entry under sensors.radars
     enabled: bool
@@ -40,8 +40,8 @@ class RadarOut(BaseModel):
 class CamerasState(BaseModel):
     frigate: Literal["ok", "down", "safe_mode"]
     plates: bool  # the Plate Recognizer add-on is installed
-    rows: list[Row]
-    radars: list[RadarOut]  # the unit's radars, in the order of node-red-tm.env
+    rows: list[CameraRow]
+    radars: list[CameraRadar]  # the unit's radars, in the order of node-red-tm.env
 
 
 def _zones_missing(camera: dict) -> list[str]:
@@ -55,7 +55,7 @@ def _in_frigate(camera: dict | None) -> Literal["on", "off", "absent"]:
     return "off" if camera.get("enabled") is False else "on"
 
 
-def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None) -> list[Row]:
+def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None) -> list[CameraRow]:
     """A row for each entry in file order, then one for each Frigate camera that no entry points at, in Frigate's
     order. frigate_cameras is Frigate's config `cameras` by name, or None when Frigate gave none to compare."""
     known = frigate_cameras is not None
@@ -63,7 +63,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
     rows, first_for = [], {}
     for entry in entries:
         camera = cameras.get(entry.frigate_camera)
-        rows.append(Row(
+        rows.append(CameraRow(
             name=entry.name,
             frigate_camera=entry.frigate_camera,
             in_frigate=_in_frigate(camera) if known else "unknown",
@@ -77,7 +77,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
         first_for.setdefault(entry.frigate_camera, entry.name)
     for name, camera in cameras.items():
         if name not in first_for:
-            rows.append(Row(
+            rows.append(CameraRow(
                 name=None,
                 frigate_camera=name,
                 in_frigate=_in_frigate(camera),

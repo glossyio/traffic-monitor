@@ -2098,6 +2098,152 @@
         ],
         "title": "CameraPoint"
       },
+      "CameraRadar": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "in_config": {
+            "type": "boolean",
+            "title": "In Config"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "port_open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "in_config",
+          "enabled",
+          "port_open"
+        ],
+        "title": "CameraRadar"
+      },
+      "CameraRow": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "frigate_camera": {
+            "type": "string",
+            "title": "Frigate Camera"
+          },
+          "in_frigate": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off",
+              "absent",
+              "unknown"
+            ],
+            "title": "In Frigate"
+          },
+          "neutral": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neutral"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "camera_radar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Radar"
+          },
+          "plate_recognizer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plate Recognizer"
+          },
+          "zones_missing": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "frigate_camera",
+          "in_frigate",
+          "neutral",
+          "duplicate_of",
+          "enabled",
+          "camera_radar",
+          "plate_recognizer",
+          "zones_missing"
+        ],
+        "title": "CameraRow"
+      },
       "CameraSettings": {
         "properties": {
           "enabled": {
@@ -2151,14 +2297,14 @@
           },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/Row"
+              "$ref": "#/components/schemas/CameraRow"
             },
             "type": "array",
             "title": "Rows"
           },
           "radars": {
             "items": {
-              "$ref": "#/components/schemas/RadarOut"
+              "$ref": "#/components/schemas/CameraRadar"
             },
             "type": "array",
             "title": "Radars"
@@ -3291,41 +3437,6 @@
         ],
         "title": "PrecisionIn"
       },
-      "RadarOut": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "in_config": {
-            "type": "boolean",
-            "title": "In Config"
-          },
-          "enabled": {
-            "type": "boolean",
-            "title": "Enabled"
-          },
-          "port_open": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Port Open"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "in_config",
-          "enabled",
-          "port_open"
-        ],
-        "title": "RadarOut"
-      },
       "Report": {
         "properties": {
           "generated_at": {
@@ -3375,117 +3486,6 @@
           "unit"
         ],
         "title": "RestartQueued"
-      },
-      "Row": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "frigate_camera": {
-            "type": "string",
-            "title": "Frigate Camera"
-          },
-          "in_frigate": {
-            "type": "string",
-            "enum": [
-              "on",
-              "off",
-              "absent",
-              "unknown"
-            ],
-            "title": "In Frigate"
-          },
-          "neutral": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Neutral"
-          },
-          "duplicate_of": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duplicate Of"
-          },
-          "enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Enabled"
-          },
-          "camera_radar": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Camera Radar"
-          },
-          "plate_recognizer": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Plate Recognizer"
-          },
-          "zones_missing": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Zones Missing"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "frigate_camera",
-          "in_frigate",
-          "neutral",
-          "duplicate_of",
-          "enabled",
-          "camera_radar",
-          "plate_recognizer",
-          "zones_missing"
-        ],
-        "title": "Row"
       },
       "RunningOut": {
         "properties": {
