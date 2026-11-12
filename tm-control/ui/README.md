@@ -56,13 +56,16 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
   form's check.
 - The `cameras` module is the Cameras page (`CamerasPage.vue`), its settings dialog (`CameraEdit.vue`), and `rows.ts`,
-  which holds the rules the page asks of a row (`rowState`, `zonesText`, `radarChoices`) so the actions that come
-  later ask the same questions. Design notes: the page is a bordered `v-list`, one row per camera, in the Location
+  which holds the rules the page asks of a row (`rowState`, `zonesText`, `radarChoices`, `pointChoices`) so the page and
+  its actions ask the same questions. Design notes: the page is a bordered `v-list`, one row per camera, in the Location
   page's conventions (load, error, and 409-reload; one `v-dialog`; no custom CSS), with the key in bold because it is
   the name saved with the data, and Frigate's name beside it in the secondary color because it stays on the device.
-  A chip carries only the states that need a word (Off in Frigate, Not in Frigate, Not recorded, a repeated Frigate
-  camera); an entry in step has none, and while Frigate can't be compared a row shows its settings and nothing about
-  Frigate. Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  Only Off in Frigate is a chip; a new, gone, or repeated camera says so in a sentence under its settings, which
+  names the entry or Frigate camera involved. An entry in step has neither, and while Frigate can't be compared a row
+  shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
+  neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
+  confirm first (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which POSTs. A refused
+  action shows the API's message above the list, and a 409 loads the list again. Every write answers with the whole new state, which replaces the page's, so there is no second request.
   The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
   each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
   names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows

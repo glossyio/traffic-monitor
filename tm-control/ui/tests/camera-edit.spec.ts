@@ -100,7 +100,9 @@ describe('CameraEdit', () => {
     const unset = cameraRow({ enabled: null, plate_recognizer: null })
     const wrapper = mountEdit({ row: unset, adding: true })
     await flushPromises()
-    await clickInDialog('Save')
+    expect(dialogText()).toContain('Add oak_ave_wide')
+    expect(dialogText()).not.toContain('Settings for')
+    await clickInDialog('Add')
     expect(emitted(wrapper, 'save')[0]).toEqual([{ enabled: true, camera_radar: null, plate_recognizer: false }])
   })
 

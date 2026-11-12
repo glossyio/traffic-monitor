@@ -2,8 +2,8 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import CameraEdit from '../src/modules/cameras/CameraEdit.vue'
-import { ADMIN, apiError, camerasState, cameraRow, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogButtons, dialogText, mountApp } from './mount'
+import { ADMIN, apiError, camerasState, cameraRow, json, newRow, signedIn } from './fake-api'
+import { click, clickInDialog, dialogButtons, dialogField, dialogText, mountApp } from './mount'
 
 const CAMERAS = 'GET /api/v1/cameras'
 
@@ -74,21 +74,13 @@ describe('Cameras page', () => {
         ],
       }),
     )
-    expect(wrapper.text()).toContain('Not in Frigate')
-    expect(wrapper.text()).toContain('Same Frigate camera as camera_1_3fa9c2')
+    expect(wrapper.text()).toContain('Frigate no longer has oak_ave_wide.')
+    expect(wrapper.text()).toContain('camera_1_3fa9c2 already records this Frigate camera.')
   })
 
   it('lists a Frigate camera that no entry points at as not recorded, without an Edit button', async () => {
-    const unpointed = cameraRow({
-      name: null,
-      frigate_camera: 'oak_ave_tele',
-      neutral: null,
-      enabled: null,
-      zones_missing: [],
-    })
-    const { wrapper } = await openPage(camerasState({ rows: [WIDE, unpointed] }))
-    expect(wrapper.text()).toContain('oak_ave_tele')
-    expect(wrapper.text()).toContain('Not recorded')
+    const { wrapper } = await openPage(camerasState({ rows: [WIDE, newRow()] }))
+    expect(wrapper.text()).toContain("oak_ave_tele is new in Frigate and isn't recorded.")
     expect(wrapper.findAll('button').filter((b) => b.text() === 'Edit')).toHaveLength(1)
   })
 
@@ -163,5 +155,188 @@ describe('Cameras page', () => {
     await clickInDialog('Save')
     expect(dialogText()).toContain('config.yml changed while you were editing')
     expect(api.sent.filter((request) => request.method === 'GET' && request.path === '/api/v1/cameras')).toHaveLength(2)
+  })
+
+  describe('actions', () => {
+    const GONE = cameraRow({ in_frigate: 'absent', zones_missing: null })
+    const FRESH = newRow()
+    const POINT = 'POST /api/v1/cameras/camera_1_3fa9c2/frigate-camera'
+    const NEUTRAL = 'POST /api/v1/cameras/main_st/neutral-name'
+
+    function buttonTexts(wrapper: VueWrapper) {
+      return wrapper.findAll('button').map((b) => b.text())
+    }
+
+    async function press(wrapper: VueWrapper, text: string) {
+      const found = wrapper.findAll('button').filter((b) => b.text() === text)
+      expect(found, `one button reading "${text}"`).toHaveLength(1)
+      await found[0].trigger('click')
+      await flushPromises()
+    }
+
+    it('offers a new row one Point button for each entry whose Frigate camera is gone, and Add as new', async () => {
+      const { wrapper } = await openPage(camerasState({ rows: [GONE, FRESH] }))
+      expect(buttonTexts(wrapper)).toEqual(['Edit', 'Remove', 'Point camera_1_3fa9c2 at this', 'Add as new'])
+    })
+
+    it('offers each of two new rows both gone entries', async () => {
+      const goneToo = cameraRow({ name: 'camera_2_9d41e0', frigate_camera: 'main_st', in_frigate: 'absent' })
+      const { wrapper } = await openPage(camerasState({ rows: [GONE, goneToo, FRESH, newRow('oak_ave_new')] }))
+      const points = buttonTexts(wrapper).filter((text) => text.startsWith('Point'))
+      expect(points).toEqual([
+        'Point camera_1_3fa9c2 at this',
+        'Point camera_2_9d41e0 at this',
+        'Point camera_1_3fa9c2 at this',
+        'Point camera_2_9d41e0 at this',
+      ])
+    })
+
+    it('has only Add as new for a new row when no entry is gone', async () => {
+      const { wrapper } = await openPage(camerasState({ rows: [WIDE, FRESH] }))
+      expect(buttonTexts(wrapper)).toEqual(['Edit', 'Add as new'])
+    })
+
+    it('confirms a point, posts the new Frigate camera, and shows the answer', async () => {
+      const answer = camerasState({ rows: [{ ...WIDE, frigate_camera: 'oak_ave_tele' }] })
+      const { api, wrapper } = await openPage(camerasState({ rows: [GONE, FRESH] }), { [POINT]: answer })
+      await press(wrapper, 'Point camera_1_3fa9c2 at this')
+      expect(dialogText()).toContain('Point camera_1_3fa9c2 at oak_ave_tele?')
+      expect(dialogText()).toContain(
+        'Events from oak_ave_tele will be recorded as camera_1_3fa9c2, with the same settings. ' +
+          'Nothing already recorded changes.',
+      )
+      expect(api.sent.some((request) => request.method === 'POST')).toBe(false)
+      await clickInDialog('Point')
+      expect(api.sent.find((request) => request.method === 'POST')!.body).toEqual({ to: 'oak_ave_tele' })
+      expect(names(wrapper)).toEqual(['camera_1_3fa9c2'])
+      expect(wrapper.text()).toContain('Frigate: oak_ave_tele')
+    })
+
+    it('sends nothing when a confirm is cancelled', async () => {
+      const { api, wrapper } = await openPage(camerasState({ rows: [GONE, FRESH] }))
+      await press(wrapper, 'Point camera_1_3fa9c2 at this')
+      await clickInDialog('Cancel')
+      expect(api.sent.some((request) => request.method === 'POST')).toBe(false)
+    })
+
+    it('opens the add dialog with record on, no radar, and plates off, and posts on Add', async () => {
+      const answer = camerasState({ rows: [WIDE, TELE] })
+      const { api, wrapper } = await openPage(camerasState({ plates: true, rows: [WIDE, FRESH] }), {
+        'POST /api/v1/cameras': answer,
+      })
+      await press(wrapper, 'Add as new')
+      expect(dialogText()).toContain('Add oak_ave_tele')
+      expect(dialogButtons('Add')).toHaveLength(1)
+      expect(dialogButtons('Save')).toHaveLength(0)
+      expect(dialogField('Record events').checked).toBe(true)
+      expect(dialogField('Send plates to Plate Recognizer').checked).toBe(false)
+      expect(document.querySelector('.v-dialog .v-select .v-select__selection')?.textContent?.trim()).toBe('No radar')
+      await clickInDialog('Add')
+      expect(api.sent.find((request) => request.method === 'POST')!.body).toEqual({
+        frigate_camera: 'oak_ave_tele',
+        enabled: true,
+        camera_radar: null,
+        plate_recognizer: false,
+      })
+      expect(names(wrapper)).toEqual(['camera_1_3fa9c2', 'camera_2_9d41e0'])
+      expect(wrapper.findComponent(CameraEdit).exists()).toBe(false)
+    })
+
+    it('offers a name that is not a neutral name a neutral one, after a confirm', async () => {
+      const hand = cameraRow({ name: 'main_st', frigate_camera: 'main_st', neutral: false })
+      const answer = camerasState({ rows: [cameraRow({ name: 'camera_1_3fa9c2', frigate_camera: 'main_st' })] })
+      const { api, wrapper } = await openPage(camerasState({ rows: [hand, WIDE] }), { [NEUTRAL]: answer })
+      expect(buttonTexts(wrapper).filter((text) => text === 'Use a neutral name')).toHaveLength(1)
+      await press(wrapper, 'Use a neutral name')
+      expect(dialogText()).toContain(
+        'New records will be saved under a name like camera_1_3fa9c2 instead of main_st. ' +
+          'Records already saved keep the name main_st, and the dashboards\' charts start again under the new name. ' +
+          'A new deployment starts for this camera.',
+      )
+      await clickInDialog('Use a neutral name')
+      const post = api.sent.find((request) => request.method === 'POST')!
+      expect(post.path).toBe('/api/v1/cameras/main_st/neutral-name')
+      expect(post.body).toBeNull()
+      expect(names(wrapper)).toEqual(['camera_1_3fa9c2'])
+    })
+
+    it.each([
+      ['gone', GONE, 'Frigate no longer has oak_ave_wide.'],
+      [
+        'duplicate',
+        cameraRow({ name: 'camera_2_9d41e0', duplicate_of: 'camera_1_3fa9c2' }),
+        'camera_1_3fa9c2 already records this Frigate camera.',
+      ],
+    ])('removes a %s entry after a confirm, in the error color', async (_kind, row, words) => {
+      const answer = camerasState({ rows: [WIDE] })
+      const { api, wrapper } = await openPage(camerasState({ rows: [row] }), {
+        [`DELETE /api/v1/cameras/${row.name}`]: answer,
+      })
+      expect(wrapper.text()).toContain(words)
+      await press(wrapper, 'Remove')
+      expect(dialogText()).toContain(`Remove ${row.name}?`)
+      expect(dialogText()).toContain('Its settings are removed from config.yml. Records already saved are kept.')
+      expect(dialogButtons('Remove')[0].classList).toContain('bg-error')
+      await clickInDialog('Remove')
+      expect(api.sent.some((request) => request.method === 'DELETE')).toBe(true)
+      expect(names(wrapper)).toEqual(['camera_1_3fa9c2'])
+    })
+
+    it('uses the primary color for the confirms that are not a removal', async () => {
+      const { wrapper } = await openPage(camerasState({ rows: [GONE, FRESH] }))
+      await press(wrapper, 'Point camera_1_3fa9c2 at this')
+      expect(dialogButtons('Point')[0].classList).toContain('bg-primary')
+      expect(dialogButtons('Point')[0].classList).not.toContain('bg-error')
+    })
+
+    it('offers no Remove for an entry that is in step, and no neutral name for a neutral one', async () => {
+      const { wrapper } = await openPage(camerasState({ rows: [WIDE, TELE] }))
+      expect(buttonTexts(wrapper)).toEqual(['Edit', 'Edit'])
+    })
+
+    it('shows the API message and loads the list again when an action finds Frigate or the file changed', async () => {
+      const refused = apiError(409, 'cameras_changed', 'The cameras changed. Check the list and try again.')
+      const { api, wrapper } = await openPage(camerasState({ rows: [GONE, FRESH] }), { [POINT]: refused })
+      await press(wrapper, 'Point camera_1_3fa9c2 at this')
+      await clickInDialog('Point')
+      expect(wrapper.text()).toContain('The cameras changed. Check the list and try again.')
+      expect(api.sent.filter((request) => request.method === 'GET' && request.path === '/api/v1/cameras')).toHaveLength(2)
+    })
+
+    it('shows the API message for an action that fails some other way', async () => {
+      const failed = apiError(500, 'oops', 'It failed.')
+      const { wrapper } = await openPage(camerasState({ rows: [GONE] }), { 'DELETE /api/v1/cameras/camera_1_3fa9c2': failed })
+      await press(wrapper, 'Remove')
+      await clickInDialog('Remove')
+      expect(wrapper.text()).toContain('It failed.')
+    })
+
+    it('closes the add dialog and says why when the Frigate camera was taken meanwhile', async () => {
+      const refused = apiError(409, 'cameras_changed', 'Another entry already records that camera.')
+      const before = camerasState({ rows: [WIDE, FRESH] })
+      const after = camerasState({ rows: [WIDE, TELE] })
+      let loads = 0
+      const { api, wrapper } = await openPage(before, {
+        [CAMERAS]: () => json(200, loads++ === 0 ? before : after),
+        'POST /api/v1/cameras': refused,
+      })
+      await press(wrapper, 'Add as new')
+      await clickInDialog('Add')
+      expect(dialogButtons('Add')).toHaveLength(0)
+      expect(wrapper.text()).toContain('Another entry already records that camera.')
+      expect(names(wrapper)).toEqual(['camera_1_3fa9c2', 'camera_2_9d41e0'])
+      expect(api.sent.filter((request) => request.method === 'GET' && request.path === '/api/v1/cameras')).toHaveLength(2)
+    })
+
+    it('offers no Point, Add, Remove, or neutral name while Frigate is down or in safe mode', async () => {
+      const rows = [
+        cameraRow({ name: 'main_st', frigate_camera: 'main_st', neutral: false, in_frigate: 'unknown', zones_missing: null }),
+        newRow(),
+      ]
+      for (const frigate of ['down', 'safe_mode'] as const) {
+        const { wrapper } = await openPage(camerasState({ frigate, rows }))
+        expect(buttonTexts(wrapper)).toEqual(['Edit'])
+      }
+    })
   })
 })

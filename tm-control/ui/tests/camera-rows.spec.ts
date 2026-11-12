@@ -1,7 +1,7 @@
 // What a camera's row says and the radar choices: pure functions of the API's rows.
 import { describe, expect, it } from 'vitest'
-import { radarChoices, rowState, zonesText } from '../src/modules/cameras/rows'
-import { RADARS, cameraRow, type RadarOut } from './fake-api'
+import { pointChoices, radarChoices, rowState, zonesText } from '../src/modules/cameras/rows'
+import { RADARS, cameraRow, newRow, type RadarOut } from './fake-api'
 
 describe('rowState', () => {
   it('says in step for an entry whose Frigate camera is on', () => {
@@ -94,5 +94,31 @@ describe('radarChoices', () => {
   it('adds nothing for a current radar that is listed', () => {
     const choices = radarChoices(cameraRow({ camera_radar: 'TM_RADAR_SERIAL_PORT_00' }), RADARS)
     expect(choices).toHaveLength(RADARS.length + 1)
+  })
+})
+
+describe('pointChoices', () => {
+  const gone = cameraRow({ in_frigate: 'absent', zones_missing: null })
+  const wide = cameraRow({ name: 'camera_2_aa00bb', frigate_camera: 'oak_ave_wide' })
+  const duplicate = cameraRow({ name: 'camera_3_bb11cc', duplicate_of: 'camera_2_aa00bb', in_frigate: 'absent' })
+  const fresh = newRow()
+
+  it('offers a new row each entry whose Frigate camera is gone', () => {
+    expect(pointChoices(fresh, [wide, gone, fresh])).toEqual([gone])
+  })
+
+  it('offers both entries to each of two new rows', () => {
+    const second = cameraRow({ name: 'camera_4_cc22dd', frigate_camera: 'main_st', in_frigate: 'absent' })
+    const other = newRow('oak_ave_new')
+    expect(pointChoices(fresh, [gone, second, fresh, other])).toEqual([gone, second])
+    expect(pointChoices(other, [gone, second, fresh, other])).toEqual([gone, second])
+  })
+
+  it("offers nothing for an entry's own row", () => {
+    expect(pointChoices(wide, [gone, wide])).toEqual([])
+  })
+
+  it("offers an entry that repeats another when its Frigate camera is gone, as the API allows", () => {
+    expect(pointChoices(fresh, [duplicate, fresh])).toEqual([duplicate])
   })
 })

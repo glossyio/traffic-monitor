@@ -181,6 +181,11 @@ export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
   }
 }
 
+// A Frigate camera that no entry points at
+export function newRow(frigate_camera = 'oak_ave_tele', changes: Partial<CameraRow> = {}): CameraRow {
+  return cameraRow({ name: null, frigate_camera, neutral: null, enabled: null, zones_missing: [], ...changes })
+}
+
 export const RADARS: RadarOut[] = [
   { name: 'TM_RADAR_SERIAL_PORT_00', in_config: true, enabled: true, port_open: true },
   { name: 'TM_RADAR_SERIAL_PORT_01', in_config: true, enabled: false, port_open: false },

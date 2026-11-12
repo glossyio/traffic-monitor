@@ -25,6 +25,13 @@ export function zonesText(row: Row): string {
   return `Missing in Frigate: ${row.zones_missing.join(', ')}`
 }
 
+// For a new row: the entries whose Frigate camera is gone, which it could be a rename of. The API allows pointing any
+// entry whose camera is absent, so an entry that repeats another is included.
+export function pointChoices(row: Row, rows: Row[]): Row[] {
+  if (rowState(row) !== 'new') return []
+  return rows.filter((other) => other.name !== null && other.in_frigate === 'absent')
+}
+
 export interface RadarChoice {
   title: string
   value: string | null

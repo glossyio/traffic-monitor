@@ -61,7 +61,9 @@ function cancel() {
   open.value = false
 }
 
-const title = computed(() => `Settings for ${props.row.name ?? props.row.frigate_camera}`)
+const title = computed(() =>
+  props.adding ? `Add ${props.row.frigate_camera}` : `Settings for ${props.row.name ?? props.row.frigate_camera}`,
+)
 </script>
 
 <template>
@@ -92,7 +94,9 @@ const title = computed(() => `Settings for ${props.row.name ?? props.row.frigate
         <v-card-actions class="px-4 pb-4">
           <v-spacer />
           <v-btn variant="text" min-height="44" :disabled="saving" @click="cancel">Cancel</v-btn>
-          <v-btn type="submit" color="primary" variant="flat" min-height="44" :loading="saving">Save</v-btn>
+          <v-btn type="submit" color="primary" variant="flat" min-height="44" :loading="saving">{{
+            adding ? 'Add' : 'Save'
+          }}</v-btn>
         </v-card-actions>
       </v-form>
     </v-card>
