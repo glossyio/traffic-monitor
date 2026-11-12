@@ -128,8 +128,8 @@ nav:
       - Control app and login: use/control-app.md
       - Check and fix the device: use/device-health.md
       - Choose the detection model: use/detection.md
-      - Places and location: use/location.md
       - Cameras: use/cameras.md
+      - Places and location: use/location.md
       - Dashboards:
           - Monitoring: ui/monitoring.md
           - Movements: ui/movements.md
