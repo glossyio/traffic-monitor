@@ -233,6 +233,16 @@ describe('the join card', () => {
     expect(wrapper.find('[role="alert"].v-alert--variant-flat, .v-alert[type="error"]').exists()).toBe(false)
   })
 
+  it('says the unit goes back by itself when a test that started from a Wi-Fi network loses the page', () => {
+    const testing = joinState({ stage: 'testing', before: 'Home', address: null, internet: null, seconds_left: null })
+    const text = card({ join: testing, lost: true }).text()
+    expect(text).toContain(
+      'This page lost the unit, which is expected during the test if you reach it over Wi-Fi. When the test ends the unit goes back to where it was, and this page then shows the result.',
+    )
+    expect(text).not.toContain('TM-AB12')
+    expect(text).not.toContain('join it again')
+  })
+
   it('says why a test failed, with the MAC address for a network that lists its devices', () => {
     const failed = joinState({ stage: 'failed', joined: false, reason: 'not_joined', address: null, internet: null, seconds_left: null })
     const text = card({ join: failed }).text()

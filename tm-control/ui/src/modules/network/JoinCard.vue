@@ -66,9 +66,10 @@ const mark = computed(() => MARKS[stage.value])
 
 const wasOnHotspot = computed(() => props.join.before === HOTSPOT_PROFILE)
 
-const lostText = computed(
-  () =>
-    `This page lost the unit, which is expected during the test. When ${props.hotspot?.name ?? 'the hotspot'} reappears, join it again. This page then shows the result.`,
+const lostText = computed(() =>
+  wasOnHotspot.value
+    ? `This page lost the unit, which is expected during the test. When ${props.hotspot?.name ?? 'the hotspot'} reappears, join it again. This page then shows the result.`
+    : 'This page lost the unit, which is expected during the test if you reach it over Wi-Fi. When the test ends the unit goes back to where it was, and this page then shows the result.',
 )
 
 const addresses = computed(() => {

@@ -1125,8 +1125,9 @@ the unit's hotspot goes away for the test, so the words matter more than the lay
   countdown, and Dismiss on a result.
 - The phone's view changes while the join runs, so the card says what to do next at each stage, not only what
   happened. While the unit tests, the card says so; if the page can't reach the unit (the usual case over the
-  hotspot) it says that is expected and names the hotspot to rejoin. The page keeps asking (`useJoin()` in `join.ts`)
-  every 2 seconds for as long as a join is pending, whether or not the last request worked, and the first answer
+  hotspot) it says that is expected and names the hotspot to rejoin. If the unit was on a Wi-Fi network instead
+  (`join.before` is that network's profile), the hotspot never appears, so the card says the unit goes back to where it
+  was by itself. The page keeps asking (`useJoin()` in `join.ts`) every 2 seconds for as long as a join is pending, whether or not the last request worked, and the first answer
   that does arrive shows the result. A request that fails is not an error here, so the card never shows one for it.
 - The countdown is the device's number, counted down by the page between answers so the clock moves every second
   though the page asks every 2. At 390 px it reads as one column: the address and the MAC address each on a line,
