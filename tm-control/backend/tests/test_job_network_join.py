@@ -931,6 +931,28 @@ def test_a_switch_that_fails_brings_back_the_hotspot_and_starts_the_wait(world):
     assert result.stdout.strip().splitlines()[-1] == "the switch failed (nmcli exit status 4)"
 
 
+def test_a_switch_that_fails_before_the_profile_is_saved_deletes_a_new_network(world):
+    """A full or read-only card: the profile under test exists only in memory, and a reboot would lose it."""
+    world.nmcli["fail"].append("modify")
+    result = world.run(NEW)
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1].startswith("failed: switch (")
+    state = world.state()
+    assert (state["stage"], state["reason"], state["saved"]) == ("failed", "error", False)
+    assert ["connection", "delete", "uuid", state["uuid"]] in world.log() and "HomeNet" not in world.profiles()
+    assert world.active() == ["tm-hotspot"]
+
+
+def test_a_switch_that_fails_before_the_modify_keeps_a_saved_network(world):
+    home = world.saved("HomeNet")
+    world.nmcli["fail"].append("modify")
+    result = world.run({"uuid": home})
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1].startswith("failed: switch (")
+    assert (world.state()["stage"], world.state()["saved"]) == ("failed", True)
+    assert "HomeNet" in world.profiles() and world.calls("delete") == 0
+
+
 def test_a_failed_switch_off_the_profile_it_replaced_brings_back_the_hotspot(world):
     old = world.saved("HomeNet 1", **{"802-11-wireless.ssid": "HomeNet"})  # the fake keys profiles by their id
     world.nmcli["active"] = ["HomeNet 1"]  # before is the profile the new password replaces

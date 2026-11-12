@@ -69,9 +69,10 @@ One run, in order:
     removed once read, and whenever a run that got the lock ends. `cancel`: the profile is deleted unless it is a
     saved network, state `cancelled`, `cancelled`, exit 0. `switch`: the switch starts at once.
 15. The switch. State `switching`, with saved true from here on: the `modify` saves a profile that was only in
-    memory, so step 4 of a later run must keep it. `connection modify` sets autoconnect on and the priority to 1 plus
-    the highest among the other Wi-Fi client profiles that start by themselves (at least 1). For a new network, every
-    other Wi-Fi client profile with its name is deleted (a new password replaces the old profile). Then
+    memory, so step 4 of a later run must keep it. A failure before the `modify` returned leaves a new network's
+    profile deleted and saved false. `connection modify` sets autoconnect on and the priority to 1 plus the highest
+    among the other Wi-Fi client profiles that start by themselves (at least 1). For a new network, every other Wi-Fi
+    client profile with its name is deleted (a new password replaces the old profile). Then
     `nmcli --wait JOIN_WAIT connection up` on it.
 16. The device reads every half second for up to RETURN_WAIT seconds, until it is at state 100 on any profile. Joined
     is exit 0, or that profile: NetworkManager may start a profile by itself the moment its autoconnect goes on, and
@@ -81,7 +82,8 @@ One run, in order:
     on record as in step 12, so the retry waits before trying it. State `switch_failed`,
     `the switch failed (nmcli exit status N)`, exit 0.
 Anything unexpected after step 7 still runs step 11, then deletes a new profile and writes `failed`, reason `error`;
-during the switch it first sees the radio on something as in step 17, and the profile is kept.
+during the switch it first sees the radio on something as in step 17, and the profile is kept once the `modify`
+returned.
 
 SIGTERM (`systemctl stop`, or the unit's start timeout) unwinds the run once, as an error would: during the test it
 comes back at once and ends `failed`, reason `error` (`failed: <step> (stopped)`); during the countdown it ends as a
@@ -969,10 +971,12 @@ class Join:
         nm, uuid = self.nm, self.state["uuid"]
         self.step = "switch"
         self.save("switching", saved=True)
+        modified = False
         try:
             top, same_name = self.others()
             nm.run("connection", "modify", "uuid", uuid, "connection.autoconnect", "yes",
                    "connection.autoconnect-priority", str(top))
+            modified = True
             if not self.saved:
                 for other in same_name:
                     self.delete(other)
@@ -990,6 +994,8 @@ class Join:
                 address = None
             self.save("joined", address=address)
         except BaseException:
+            if not modified:  # the profile is still only in memory: fail() deletes a new network's
+                self.state["saved"] = self.saved
             self.settle()
             raise
         print("switched")
