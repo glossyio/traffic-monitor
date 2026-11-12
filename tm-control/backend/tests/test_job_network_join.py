@@ -659,11 +659,38 @@ def test_a_checkpoint_a_dead_run_left_is_rolled_back_first(world):
     assert not (world.run_dir / "network-join.control").exists()
 
 
+@pytest.mark.parametrize("earlier", ["no state file", "a finished run"])
+def test_a_checkpoint_that_is_not_a_dead_runs_is_left_alone(world, earlier):
+    """Another program (Cockpit's networking page) can hold a checkpoint for a few seconds; it isn't ours to undo."""
+    path = "/org/freedesktop/NetworkManager/Checkpoint/6"
+    world.busctl = {"checkpoints": {path: {"active": ["tm-hotspot"]}}, "next": 7, "fail": []}
+    if earlier == "a finished run":
+        world.run_dir.mkdir()
+        world.state_path().write_text(json.dumps({
+            "stage": "joined", "ssid": "Depot", "uuid": UUID_A, "saved": True, "before": "tm-hotspot",
+            "joined": True, "reason": None, "address": "192.168.1.60", "internet": "reachable",
+            "switch_monotonic": None, "finished_at": "2026-11-11T00:00:00+00:00"}))
+    result = world.run(NEW)
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1].startswith("failed: make the checkpoint (")
+    assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")
+    assert "CheckpointRollback" not in world.busctl_calls()
+    assert not any(call[2] == "get-property" for call in world.busctl_log())
+    assert list(json.loads((world.tmp / "busctl.json").read_text())["checkpoints"]) == [path]
+    assert world.calls("add") == 0 and world.calls("up") == 0
+
+
 def test_a_rollback_of_what_an_earlier_run_left_that_fails_stops_at_the_checkpoint(world):
     world.busctl = {"checkpoints": {"/org/freedesktop/NetworkManager/Checkpoint/6": {"active": ["tm-hotspot"]}},
                     "next": 7, "fail": ["CheckpointRollback"]}
+    world.run_dir.mkdir()
+    world.state_path().write_text(json.dumps({
+        "stage": "testing", "ssid": "Other", "uuid": UUID_A, "saved": False, "before": "tm-hotspot",
+        "joined": None, "reason": None, "address": None, "internet": None, "switch_monotonic": None,
+        "finished_at": None}))
     result = world.run(NEW)
     assert result.returncode == 1
+    assert "the rollback of what an earlier run left failed (busctl exit status 1)" in result.stdout.splitlines()
     assert result.stdout.strip().splitlines()[-1] == "failed: make the checkpoint (busctl exit status 1)"
     assert world.calls("up") == 0 and world.calls("add") == 0
     assert (world.state()["stage"], world.state()["reason"]) == ("failed", "error")

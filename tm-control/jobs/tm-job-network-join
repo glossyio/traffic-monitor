@@ -32,10 +32,12 @@ One run, in order:
    seconds) and hold it to the end. Still held: the state becomes `failed` with reason `busy` (unless the state file
    names a stage that isn't final: an earlier run that died, which step 4 of a later run must still clean up), the run
    prints `the Wi-Fi is busy` and exits 0.
-4. Clear what an earlier run left. A checkpoint NetworkManager still holds (the `Checkpoints` property) is rolled
-   back, as NetworkManager would at its timeout, since a second checkpoint can't be made while one is pending; the run
-   then waits for the radio to come back as in step 11. A state file whose stage isn't final names a profile under
-   test, which is deleted unless it is a saved network. A control file is removed.
+4. Clear what an earlier run left. When the state file names a stage that isn't final (a run that died mid-test), a
+   checkpoint NetworkManager still holds (the `Checkpoints` property) is rolled back, as NetworkManager would at its
+   timeout, since a second checkpoint can't be made while one is pending; the run then waits for the radio to come
+   back as in step 11. Otherwise a pending checkpoint is another program's (Cockpit's networking page makes one around
+   each change) and is left alone: step 7 then fails, and nothing is changed. The state file's profile under test is
+   deleted unless it is a saved network. A control file is removed.
 5. Refuse unless the radio is built in (never a USB adapter) and switched on. The profile the device is on is
    `before` (none: the radio is idle). For a uuid, the profile must be a Wi-Fi client (infrastructure mode) and not
    `before`; the name is read from it. A refusal from here on also writes the state as `failed`, reason `error`.
@@ -784,16 +786,18 @@ class Join:
         return status == 0
 
     def clear_earlier(self):
-        """Step 4: a checkpoint still pending, a profile a dead run left, and a control file."""
+        """Step 4: a checkpoint still pending and a profile a dead run left (only when the state file names a stage
+        that isn't final; a checkpoint another program holds is left alone), and a control file."""
         self.step = "clear what an earlier run left"
         old = read_file(self.run_dir, STATE_FILE)
         if old is not None and old.get("stage") in FINAL:
             old = None
-        try:
-            pending = self.busctl.checkpoints()
-        except CommandFailed as error:
-            print(f"the checkpoints could not be read ({error})")
-            pending = []
+        pending = []
+        if old is not None:
+            try:
+                pending = self.busctl.checkpoints()
+            except CommandFailed as error:
+                print(f"the checkpoints could not be read ({error})")
         rolled = False
         for path in pending:
             try:
