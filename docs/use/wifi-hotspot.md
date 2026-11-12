@@ -60,7 +60,7 @@ The unit doesn't save the network or its password at this point. Until the switc
 
 ### The test
 
-A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the join ends (the test, the countdown, and the switch), the unit refuses every other Wi-Fi or hotspot change. Choose **Cancel** or **Switch now** to free it.
+A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the join ends (the test, the countdown, and the switch), the unit refuses every other Wi-Fi or hotspot change. Once the test has passed, choose **Cancel** or **Switch now** to free it.
 
 The test asks the network for an address, then makes one DNS question and one request to `connectivity-check.ubuntu.com` to see whether the internet is reachable. The unit comes back to where it was either way. To test a network the unit has saved already, choose **Join** and keep its saved password, or enter a new one.
 
@@ -97,7 +97,7 @@ The card says why, and the unit is back where it was. Nothing is saved for a new
 | **The unit was busy with its Wi-Fi** | Another Wi-Fi change was under way. Try again in a minute. |
 | **The test couldn't run** | The unit couldn't prepare to come back, so it left its radio alone, or it hit an error it didn't expect. It is back where it was. |
 | **The test of `<name>` was interrupted** | The test stopped partway, for example because the unit lost power. The unit goes back to where it was within a minute and a half. |
-| **The test passed, but the unit couldn't join `<name>` when the countdown ended** | The unit is back where it was. The network stays saved, and the unit tries it again by itself, after a wait that grows to about an hour. See [When the hotspot runs](#when-the-hotspot-runs). |
+| **The test passed, but the unit couldn't join `<name>` when the countdown ended** | The unit is back where it was. If the network went away during the countdown, the switch waits for it, and the hotspot is away for up to about a minute before it comes back. The network stays saved, and the unit tries it again by itself, after a wait that grows to about an hour. See [When the hotspot runs](#when-the-hotspot-runs). |
 
 A saved network that fails is kept, because the cause may be temporary. A new network that fails is not saved.
 
