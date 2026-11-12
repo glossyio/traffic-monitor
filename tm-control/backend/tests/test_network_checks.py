@@ -22,7 +22,7 @@ from tm_control.modules.network.checks import FIREWALL_UNIT, GROUP, RESTART_HOTS
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 ON = Device(100, "tm-hotspot")
 PROFILE = Hotspot(True, "TM-AB12", "wpa-psk", False)
-SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network")
+SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network#hotspot")
 SET_THE_COUNTRY = Fix(kind="hint", text="Run the installer again (tmsetup.sh -t wifi); it asks for the country.")
 
 

@@ -966,7 +966,10 @@ never folds. The join card stays above all of them, also never folded: it carrie
   again. This device has nothing of that kind, so it opens only when asked. A join's lock message is not news: the card
   above it says what is happening, so the panels stay folded under a join.
 - An anchor in the address opens its panel and scrolls to it: `#this-device`, `#hotspot` (and `#wifi-networks`, which
-  only scrolls). No page linked to an anchor before; the Device page and the join banner link to `/network`.
+  only scrolls), below the app bar (`scroll-margin-top`, as on the Device and Detection pages). The Status page's "Set a
+  password" fix for a hotspot with no password links to `/network#hotspot` (`SET_A_PASSWORD` in
+  `modules/network/checks.py`), so an admin lands on the open panel with the password row. The Device page and the join
+  banner link to plain `/network`.
 - The summary is two short lines at most: the unit's `.local` name, then the addresses in use (the cable's when it is
   connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". A unit without a hotspot has no
   panel, only the sentence that says so.

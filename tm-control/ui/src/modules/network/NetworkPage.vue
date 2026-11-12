@@ -319,7 +319,7 @@ const hotspotFacts = computed<Fact[]>(() => {
 
       <v-row align="start">
         <v-col cols="12" md="6">
-          <CollapsePanel id="this-device" v-model="deviceOpen" title="This device">
+          <CollapsePanel id="this-device" v-model="deviceOpen" title="This device" class="anchored">
             <template #summary>
               <div class="text-body-1 text-break">{{ state.local_name }}</div>
               <div v-if="addresses.length" class="text-body-2 text-secondary text-break">{{ addresses.join(', ') }}</div>
@@ -341,7 +341,7 @@ const hotspotFacts = computed<Fact[]>(() => {
         </v-col>
 
         <v-col v-if="state.readable" cols="12" md="6">
-          <section v-if="!state.hotspot" id="hotspot">
+          <section v-if="!state.hotspot" id="hotspot" class="anchored">
             <h2 class="text-h6 mb-4">Hotspot</h2>
             <p class="text-body-1">The hotspot isn't set up on this unit.</p>
           </section>
@@ -349,6 +349,7 @@ const hotspotFacts = computed<Fact[]>(() => {
             v-else
             id="hotspot"
             v-model="hotspotOpen"
+            class="anchored"
             title="Hotspot"
             :warning="hotspotNeedsAttention ? 'Needs attention' : undefined"
           >
@@ -379,7 +380,7 @@ const hotspotFacts = computed<Fact[]>(() => {
         </v-col>
       </v-row>
 
-      <section v-if="state.readable" id="wifi-networks" class="mt-6">
+      <section v-if="state.readable" id="wifi-networks" class="anchored mt-6">
         <h2 class="text-h6 mb-4">Wi-Fi networks</h2>
         <v-alert v-if="wifiError" type="error">
           {{ wifiError }}
@@ -415,3 +416,10 @@ const hotspotFacts = computed<Fact[]>(() => {
     />
   </div>
 </template>
+
+<style scoped>
+/* Clear the app bar when the page scrolls to an anchored section */
+.anchored {
+  scroll-margin-top: 80px;
+}
+</style>
