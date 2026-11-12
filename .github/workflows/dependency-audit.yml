@@ -9,7 +9,9 @@
 #     lockfile) with Node-RED at the device's version (npm audit, high or
 #     critical). The image keeps the copies of Node-RED's own dependencies that
 #     the upstream image was built with, so its tree can differ (#299).
-# Each check runs even when an earlier one fails, and any finding fails the run.
+# Each check is its own job, so each shows its own pass or fail on the run and
+# the commit, and one failing doesn't stop the others. Any finding fails the
+# run.
 #
 # Runs on pushes to dev that change a dependency list, weekly, and by hand.
 # GitHub runs the weekly schedule only from the default branch's copy of this
@@ -35,7 +37,24 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  python:
+    name: tm-control's Python packages
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Scheduled runs start on main; check dev instead.
+          ref: ${{ github.event_name == 'schedule' && 'dev' || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: pip install pip-audit==2.10.1
+      - name: Audit
+        run: pip-audit --progress-spinner off -r tm-control/backend/requirements.txt
+
+  ui:
+    name: tm-control's UI packages
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,25 +67,31 @@ jobs:
         run: |
           v=$(grep -oP '^tmsetup_node_image:.*/node:\K[0-9]+\.[0-9]+\.[0-9]+' script/ansible/roles/tmsetup/vars/main.yml)
           echo "version=$v" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.13"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ steps.node.outputs.version }}
-      - run: pip install pip-audit==2.10.1
-
-      - name: tm-control's Python packages
-        if: ${{ !cancelled() }}
-        run: pip-audit --progress-spinner off -r tm-control/backend/requirements.txt
-
-      - name: tm-control's UI packages
-        if: ${{ !cancelled() }}
+      - name: Audit
         working-directory: tm-control/ui
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Node-RED's packages
-        if: ${{ !cancelled() }}
+  node-red:
+    name: Node-RED's packages
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Scheduled runs start on main; check dev instead.
+          ref: ${{ github.event_name == 'schedule' && 'dev' || github.ref }}
+          persist-credentials: false
+      - name: Read the device's Node version
+        id: node
+        run: |
+          v=$(grep -oP '^tmsetup_node_image:.*/node:\K[0-9]+\.[0-9]+\.[0-9]+' script/ansible/roles/tmsetup/vars/main.yml)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+      - name: Resolve and audit
         run: |
           v=$(grep -oP "^tmsetup_node_red_tm_version: *'?\K[0-9]+\.[0-9]+\.[0-9]+" script/ansible/roles/tmsetup/vars/main.yml)
           dir="$RUNNER_TEMP/node-red-tm"
