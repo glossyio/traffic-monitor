@@ -3,8 +3,10 @@
 #   - tm-control's Python packages, with the versions pip picks for their
 #     dependencies (pip-audit; any known vulnerability, since its advisory
 #     source doesn't rate severity)
-#   - tm-control's UI packages that end up in the built site; test and build
-#     tools are left out (npm audit --omit=dev, high or critical)
+#   - tm-control's UI packages (npm audit --omit=dev, high or critical). This
+#     leaves out only what the lockfile marks dev, so it still covers packages
+#     it marks devOptional (vite, esbuild, rollup, sass and others), which the
+#     build uses but the built site doesn't contain.
 #   - Node-RED's packages, resolved fresh from package.json (there's no
 #     lockfile) with Node-RED at the device's version (npm audit, high or
 #     critical). The image keeps the copies of Node-RED's own dependencies that

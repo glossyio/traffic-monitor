@@ -87,9 +87,10 @@ def test_frigate_waits_for_the_decoder_device_unit():
     lines = frigate_unit()
     assert f"Wants={DEVICE_UNIT}" in lines
     assert f"After={DEVICE_UNIT}" in lines
-    if shutil.which("systemd-escape"):
-        escaped = subprocess.run(["systemd-escape", "-p", "--suffix=device", SYMLINK], capture_output=True, text=True)
-        assert escaped.stdout.strip() == DEVICE_UNIT
+    if not shutil.which("systemd-escape"):
+        missing_tool("needs systemd-escape")
+    escaped = subprocess.run(["systemd-escape", "-p", "--suffix=device", SYMLINK], capture_output=True, text=True)
+    assert escaped.stdout.strip() == DEVICE_UNIT
 
 
 def test_quadlet_turns_the_symlink_into_a_device_flag(tmp_path):

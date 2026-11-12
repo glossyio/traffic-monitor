@@ -39,6 +39,10 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
     sh -c 'npm ci && npm run build && npm test'
 ```
 
+Regenerate `package-lock.json` with npm 11 (`npx -y npm@11 install --package-lock-only`), not with the npm in
+the device's Node image. Its npm 10.9.9 crashes while resolving Vitest 4.1.x. `npm ci` with that npm 10 installs
+from an existing lockfile without trouble, so the image still builds and tests the UI.
+
 ## How the code is laid out
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
