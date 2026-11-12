@@ -46,6 +46,16 @@ describe('router', () => {
     expect(await landing('/time')).toBe('/time')
   })
 
+  it('keeps a viewer off the Cameras page', async () => {
+    device(true, VIEWER)
+    expect(await landing('/cameras')).toBe('/')
+  })
+
+  it('lets an admin open the Cameras page', async () => {
+    device(true, ADMIN)
+    expect(await landing('/cameras')).toBe('/cameras')
+  })
+
   it('has no page under /system, which nginx sends to Cockpit', () => {
     device(true, ADMIN)
     const paths = createAppRouter(createMemoryHistory()).getRoutes().map((route) => route.path)

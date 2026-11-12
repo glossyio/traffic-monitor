@@ -43,7 +43,7 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
-  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users` and `/location` to admins only.
+  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
 - `src/stores/session.ts` is the only store: the setup status and the logged-in user.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
@@ -55,6 +55,20 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
   form's check.
+- The `cameras` module is the Cameras page (`CamerasPage.vue`), its settings dialog (`CameraEdit.vue`), and `rows.ts`,
+  which holds the rules the page asks of a row (`rowState`, `zonesText`, `radarChoices`) so the actions that come
+  later ask the same questions. Design notes: the page is a bordered `v-list`, one row per camera, in the Location
+  page's conventions (load, error, and 409-reload; one `v-dialog`; no custom CSS), with the key in bold because it is
+  the name saved with the data, and Frigate's name beside it in the secondary color because it stays on the device.
+  A chip carries only the states that need a word (Off in Frigate, Not in Frigate, Not recorded, a repeated Frigate
+  camera); an entry in step has none, and while Frigate can't be compared a row shows its settings and nothing about
+  Frigate. Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
+  each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
+  names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows
+  nothing for a `null` value, so the dialog holds "No radar" as an empty string and turns it back into `null` on Save.
+  The plates switch is there only when the add-on is installed; otherwise Save sends `null` and leaves the file's value
+  alone. A 422 for the radar shows under the field, every other failure inside the dialog.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
