@@ -1,9 +1,9 @@
-"""Recovery: the stack comes back after a restart and after a reboot; the login fails closed and can be reset; the
-control app's restart, time, and reboot actions work.
+"""Recovery: the stack comes back after a restart, a reboot, and a reset with no shutdown; the login fails closed and
+can be reset; the control app's restart, time, and reboot actions work.
 
-These stop services, reboot the Pi, change its clock or time zone, or reset the unit's tm-control accounts, so they
-run only with tmdev.py test --disruptive. Ask the person first. Two of them reboot the Pi: test_reboot_recovers and
-test_reboot_from_the_control_app.
+These stop services, reboot or reset the Pi, change its clock or time zone, or reset the unit's tm-control accounts, so
+they run only with tmdev.py test --disruptive. Ask the person first. Two of them reboot the Pi, test_reboot_recovers
+and test_reboot_from_the_control_app, and test_stack_recovers_after_an_unclean_reset resets it without shutting down.
 """
 
 import hashlib
@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, detector_name, entered_secret_states,
-                          find_hevc_decoder, frigate_host_devices, pi_now, request_from_this_machine,
+                          find_hevc_decoder, frigate_host_devices, pi_now, podman_events, request_from_this_machine,
                           require_pii_free, role_vars, session, status_checks, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
@@ -66,6 +66,36 @@ def test_restart_recovers(host):
 def test_reboot_recovers(host):
     host.ansible("reboot", f"reboot_timeout={REBOOT_TIMEOUT_SECONDS}", become=True, check=False)
     wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
+
+
+# Through PID 1, a moment later, so the SSH command returns before the Pi goes down without closing the connection.
+UNCLEAN_RESET = "systemd-run --on-active=2 /bin/sh -c 'sync; echo b > /proc/sysrq-trigger'"
+
+
+def unclean_reset(host):
+    """Reset the Pi with no shutdown, as a power loss does, and wait until it boots again."""
+    before = boot_id(host)
+    assert before, "couldn't read the Pi's boot id"
+    with host.sudo():
+        host.check_output(UNCLEAN_RESET)
+    deadline = time.monotonic() + REBOOT_TIMEOUT_SECONDS
+    while boot_id(host) in (before, None):
+        assert time.monotonic() < deadline, (
+            f"the Pi didn't reset and come back within {REBOOT_TIMEOUT_SECONDS // 60} minutes")
+        time.sleep(10)
+
+
+def test_stack_recovers_after_an_unclean_reset(host):
+    """A reset with no shutdown leaves the pod's containers in Podman's state, as a power loss does. The next boot's
+    refresh removes them, which is where Podman 5.4.2 can crash (#268). The sync keeps the test about Podman's
+    leftovers, not about what the SD card loses."""
+    unclean_reset(host)
+    wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
+    refreshes = podman_events(host, "refresh")
+    assert len(refreshes) == 1, refreshes
+    removed = [entry for entry in podman_events(host, "remove") if entry["_PID"] == refreshes[0]["_PID"]]
+    assert removed, "the refresh removed no containers, so the reset wasn't unclean"
+    assert " build " not in f"{refreshes[0]['_CMDLINE']} ", refreshes[0]
 
 
 # Media numbers are handed out lowest-free, so unbinding the decoder and the ISP back end (which holds two)

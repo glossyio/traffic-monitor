@@ -5,8 +5,8 @@ import re
 import shlex
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, request_from_this_machine, require_pii_free, role_vars, session,
-                          tm_login_or_none)
+from devpi_checks import (API, RESTARTING_UNITS, podman_events, request_from_this_machine, require_pii_free,
+                          role_vars, session, tm_login_or_none)
 
 CORE_UNITS = [
     "go2rtc_server.service",
@@ -33,6 +33,25 @@ def test_image_builds_succeeded(host):
     results = {unit: host.check_output(f"systemctl show -p Result --value {unit}") for unit in units}
     failed = {unit: result for unit, result in results.items() if result != "success"}
     assert not failed, f"image builds that didn't succeed: {failed}"
+
+
+def test_build_units_run_the_throwaway_podman_command_first(host):
+    listing = host.check_output("systemctl list-units --all --plain --no-legend '*-build.service'")
+    units = [line.split()[0] for line in listing.splitlines() if line.strip()]
+    assert units, "no *-build.service units found"
+    command = role_vars()["tmsetup_podman_refresh_command"]
+    shown = {unit: host.check_output(f"systemctl show -p ExecStartPre {unit}") for unit in units}
+    missing = [unit for unit, line in shown.items() if f"argv[]={command} ; ignore_errors=yes" not in line]
+    assert not missing, f"build units without 'ExecStartPre=-{command}': {missing}"
+
+
+def test_no_image_build_did_the_boots_podman_refresh(host):
+    """Only the Podman command that does a boot's state refresh can crash as in #268, so it must never be a build."""
+    refreshes = podman_events(host, "refresh")
+    if not refreshes:
+        pytest.skip("this boot's Podman refresh is no longer in the journal")
+    builds = [entry["_SYSTEMD_UNIT"] for entry in refreshes if " build " in f"{entry['_CMDLINE']} "]
+    assert not builds, f"this boot's Podman refresh ran in an image build: {builds}"
 
 
 @pytest.mark.parametrize("unit", RESTARTING_UNITS)

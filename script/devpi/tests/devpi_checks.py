@@ -161,6 +161,21 @@ def pi_now(host):
     return float(host.check_output("date +%s"))
 
 
+PODMAN_EVENT_FIELDS = ("_CMDLINE", "_SYSTEMD_UNIT", "_PID")
+
+
+def podman_events(host, event):
+    """This boot's journal entries for one Podman event, such as refresh or remove, oldest first. Each is a dict
+    with the Podman command (_CMDLINE), the unit it ran in (_SYSTEMD_UNIT), and its process id (_PID); a field the
+    entry doesn't have is an empty string. No entries gives [], whatever journalctl exits with."""
+    command = (f"journalctl -b -q --no-pager -o json --output-fields={','.join(PODMAN_EVENT_FIELDS)} "
+               f"PODMAN_EVENT={shlex.quote(event)}")
+    with host.sudo():
+        output = host.run(command).stdout
+    entries = [json.loads(line) for line in output.splitlines() if line.strip()]
+    return [{field: entry.get(field, "") for field in PODMAN_EVENT_FIELDS} for entry in entries]
+
+
 def db_query(host, codedir, sql):
     """Run one read-only query on the Pi's tmdb.sqlite and return the rows.
 
