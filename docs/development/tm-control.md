@@ -4,7 +4,7 @@ description: How the control app (tm-control) is built: its backend modules, the
 
 # tm-control
 
-`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Detection, and Location pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Choose the detection model](../use/detection.md), and [Places and location](../use/location.md) describe it from the operator's side. This page is for changing it.
+`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Detection, Cameras, and Location pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Choose the detection model](../use/detection.md), [Cameras](../use/cameras.md), and [Places and location](../use/location.md) describe it from the operator's side. This page is for changing it.
 
 It has three parts, all in the repository's [`tm-control/`](https://github.com/glossyio/traffic-monitor/tree/main/tm-control) folder:
 
@@ -82,7 +82,7 @@ tm-control/backend/tm_control/
                  systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time, detection, location
+                 hardware, secrets, system, time, detection, cameras, location
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
@@ -198,6 +198,30 @@ The module calls six Node-RED endpoints, besides `/tm-internal/status`, on `127.
 
 `tm-control migrate --node-red-config`, run by the installer, also brings `deployment:` up to date: it adds `database_precision: '2'` where it's missing, and removes `lat` and `lon` from a sensor's own `deployment:` block. The Location check (`location` in `modules/apps/contracts.py`) checks the same keys at run time.
 
+### The Cameras module
+
+The `cameras` module serves the [Cameras page](../use/cameras.md). It's for admins only, like the Location page, because it's a settings page: every route under `/api/v1/cameras` takes `require_admin`. It owns the `sensors.cameras` entries in Node-RED's `config.yml` and writes nothing else: not Frigate's config, and not `tmdb.sqlite`.
+
+An entry's key is the camera's neutral name, the one the flows record and share. Its optional `frigate_camera` is Frigate's name for it, and without one the key is Frigate's name too, so installs that never used the page need no migration. `names.py` makes the keys, `camera_<N>_<6 hex>`, from `secrets.token_hex(3)` and redraws a token a neutral name in the file already ends with. The module never logs, audits, or puts in an error message Frigate's name: audit rows carry the neutral name.
+
+| Route | What it does |
+|---|---|
+| `GET /cameras` | Whether Frigate answers or is in safe mode, the rows, the unit's radars with their state, and whether the Plate Recognizer add-on is installed |
+| `POST /cameras` | Adds an entry under a new neutral name for a Frigate camera that no entry points at |
+| `PUT /cameras/{name}` | Sets `enabled`, `camera_radar` (a radar of the unit that has an entry under `sensors.radars`, or null), and `plate_recognizer` |
+| `POST /cameras/{name}/frigate-camera` | Points the entry at another Frigate camera: the rename |
+| `POST /cameras/{name}/neutral-name` | Re-keys an entry to a new neutral name, keeping its position, comments, and sub-keys, and renames its `survey_bearings` rows in every place, the file first |
+| `DELETE /cameras/{name}` | Removes an entry whose Frigate camera is gone, or that repeats another entry's |
+
+The rules:
+
+* `state.py::compare` is the one comparison of Frigate's cameras, read unfiltered from its running config (`enabled: false` is Off), with the file's entries. It gives a row for each entry in file order, then one for each Frigate camera that no entry points at, and it's what the page and the `config.cameras` and `config.zones` checks use, so they can't disagree. When Frigate doesn't answer or is in safe mode, every entry is `unknown`, never `absent`. The page, the checks, and the diagnostics all read the entries through `camera_entries()` in `modules/location/config.py`.
+* Every write holds `app.state.reconcile_lock`, loads `config.yml` through `NodeRedConfig`, compares against Frigate again, and refuses with 409 `cameras_changed` when the rows no longer match what the admin confirmed, or `config_changed` when the file changed. Except `PUT`, they need Frigate to answer, and refuse with 409 `frigate_unavailable` otherwise.
+* `NodeRedConfig`'s camera methods (`add_camera`, `set_camera`, `point_camera`, `rename_camera`, `remove_camera`) edit through `RoundTripFile`, as the deployment edits do, so comments, order, and quoting stay.
+* Copy diagnostics replaces every Frigate camera name that differs from its entry's key, and every Frigate camera no entry points at, with `redact_words` (whole words, longest first), the way it replaces a secret. It reads the names from the file, Frigate, and the `config.yml` backups beside the file. `check_groups` text may name Frigate's cameras, because the Status page is behind the login.
+
+Node-RED gets the mapping from "init config defaults" (the `init-config` tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: `frigate_cameras`, a map from Frigate's name to the key; `camera_labels`, each key's label for the dashboard pickers, `<key> (<Frigate's name>)` when the two differ; and `tm_warned`, which is reset on every load so a warning is logged once per name per load. They're their own globals, not part of `global.config`, because `config_tm` uploads the config. "append config" looks each event's camera up in `frigate_cameras` and sets it to the key before anything reads it, so the `events` row, `tm/event` and `tm/events`, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a `camera_radar` that names no radar records the event without one.
+
 ### What the sandbox allows
 
 `tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and two config directories under the code directory (`ReadWritePaths`): Frigate's, `frigate/config`, for the models the Detection page manages, and Node-RED's, `node-red-tm/config`, for the `config.yml` the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:
@@ -210,7 +234,7 @@ The module calls six Node-RED endpoints, besides `/tm-internal/status`, on `127.
 
 ## Run it on a laptop
 
-Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from `tests/fixtures/status_fake.json`, whose groups show every status and kind of fix, and a fake Node-RED for the Location page. Its state goes in `./.tm-control-fake/`. From the repository root, in the dev environment from [Contributing](contributing.md):
+Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from `tests/fixtures/status_fake.json`, whose groups show every status and kind of fix, a fake Node-RED for the Location page, and a fake Frigate with a second camera, `oak_ave_tele`, that no entry in the seeded `config.yml` points at, so the Cameras page's actions work. Its state goes in `./.tm-control-fake/`. From the repository root, in the dev environment from [Contributing](contributing.md):
 
 ```bash
 TM_CONTROL_FAKE=1 PYTHONPATH=tm-control/backend python -m tm_control fake-reset   # an unclaimed device; prints its setup code

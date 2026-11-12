@@ -41,6 +41,7 @@ sudo podman ps                                  # running containers
 | Edit `node-red-tm.env` | `sudo systemctl restart node-red-tm.service`. The container reads the file only when it starts. |
 | Edit `frigate.env` | `sudo systemctl restart frigate.service`. |
 | Change the MQTT broker login in `node-red-tm.env` | `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. A restart isn't enough; [Env file settings](../configuration/environment.md#node-red-tmenv) explains why. |
+| Rename a camera in Frigate | Choose **Save & Restart** in Frigate's config editor, then point the camera's entry at the new name on the [Cameras page](cameras.md#after-renaming-a-camera-in-frigate). |
 | Change Frigate's config in its UI | Choose **Save & Restart** in Frigate's config editor, or restart `frigate.service`. |
 | Plug in a radar | Rerun the installer for Node-RED so the radar is passed to the container: `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
 | Add or change an AI accelerator | Rerun the installer with `-t detectors -t frigate`, then update Frigate's detector settings. See [Add an accelerator later](../reference/tmsetup.md#add-an-accelerator-later). |

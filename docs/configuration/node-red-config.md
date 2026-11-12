@@ -62,9 +62,9 @@ On a device upgraded from a release that recorded coordinates, the update leaves
 
 ## sensors.cameras
 
-One entry per camera. The entry's name is the camera's name in the database and in everything the device shares. `frigate_camera` says which Frigate camera the entry is; without it, the entry's name is also the camera's name in Frigate. The default camera is `picam_h265`. Events from a Frigate camera that no entry points at, or from a disabled camera, aren't recorded. If two entries point at the same Frigate camera, the first one in the file is used and the other is logged as an error.
+One entry per camera. The control app's [Cameras page](../use/cameras.md) edits them. The entry's name is the camera's name in the database and in everything the device shares. `frigate_camera` says which Frigate camera the entry is; without it, the entry's name is also the camera's name in Frigate. The default camera is `picam_h265`. Events from a Frigate camera that no entry points at, or from a disabled camera, aren't recorded. If two entries point at the same Frigate camera, the first one in the file is used and the other is logged as an error.
 
-To rename a camera in Frigate, rename it in Frigate's config and choose **Save & Restart**. Frigate uses a new camera name only after it restarts, so **Save** alone changes nothing yet. Then open the control app's Cameras page and point the camera's entry at the new name. The entry keeps its name, so the camera's data carries on under the same name. Until the entry points at the new name, that camera's events aren't recorded, and the Status page's **Cameras in config.yml** check shows an error.
+To rename a camera in Frigate, rename it in Frigate's config and choose **Save & Restart**. Frigate uses a new camera name only after it restarts, so **Save** alone changes nothing yet. Then open the control app's [Cameras page](../use/cameras.md#after-renaming-a-camera-in-frigate) and point the camera's entry at the new name. The entry keeps its name, so the camera's data carries on under the same name. Until the entry points at the new name, that camera's events aren't recorded, and the Status page's **Cameras in config.yml** check shows an error.
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|

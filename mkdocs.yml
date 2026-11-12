@@ -129,6 +129,7 @@ nav:
       - Check and fix the device: use/device-health.md
       - Choose the detection model: use/detection.md
       - Places and location: use/location.md
+      - Cameras: use/cameras.md
       - Dashboards:
           - Monitoring: ui/monitoring.md
           - Movements: ui/movements.md

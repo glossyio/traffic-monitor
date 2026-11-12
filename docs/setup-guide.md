@@ -61,13 +61,13 @@ The location is optional. If the device stays in one place and you never share i
 
 To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the bearings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
 
-Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`. Connect over SSH and open the settings file:
+Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open **Cameras** in the control app, choose **Edit** on the camera, and set **Radar** to **No radar**. The camera's other settings are there too, and [Cameras](use/cameras.md) explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:
 
 ```bash
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml
 ```
 
-The camera and radar, as installed:
+The camera and radar, as installed. A device without a radar needs `enabled: false` under `TM_RADAR_SERIAL_PORT_00`:
 
 ```yaml
 sensors:
@@ -93,6 +93,6 @@ Open **Dashboard** from the home page and choose **Monitoring** in the sidebar. 
     Work down the list:
 
     1. **Frigate shows no boxes around moving objects.** Detection is off (step 2), or the camera is off: in the configuration editor, `cameras: picam_h265:` needs `enabled: true`. If the live view is black, open **Camera feeds** from the home page to check that the camera itself streams.
-    2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera is off in the Traffic Monitor's settings: `sensors: cameras: picam_h265:` needs `enabled: true`, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.
+    2. **Frigate detects objects, but the dashboard stays at zero.** The objects aren't passing through `zone_capture` (step 3), or the camera isn't recorded: on the control app's [Cameras page](use/cameras.md), the camera needs **Record events** on, and Frigate's camera must have an entry, or the page shows it as new in Frigate. If your edits in the settings file don't take effect, check it for a YAML error.
     3. **Counts but no speeds.** The radar must be `enabled: true` and named in the camera's `camera_radar`, `zone_radar` must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`.
     4. **Still nothing.** Look at the logs in [System administration](use/system-admin.md), then ask in the [chat](help-and-faq/where-can-i-get-support.md).

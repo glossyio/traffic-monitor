@@ -42,12 +42,12 @@ A check that isn't passing offers one of these:
 
 * **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 * **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
-* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](detection.md#frigate-plus), or **Open the Location page** for the Location check, or **Open the Cameras page** for the camera, zone, and radar-pairing checks.
+* **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](detection.md#frigate-plus), or **Open the Location page** for the Location check, or **Open the Cameras page** (see [Cameras](cameras.md)) for the camera, zone, and radar-pairing checks.
 * **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](../reference/tmsetup.md)).
 
 ### The camera checks
 
-The **Cameras in config.yml** check compares Frigate's cameras with the entries under `sensors.cameras` in `config.yml`. An entry points at the Frigate camera named by its `frigate_camera` setting, or, when it has none, at the camera with the same name as the entry. The Cameras page in the control app keeps the two in step; each problem below links to it.
+The **Cameras in config.yml** check compares Frigate's cameras with the entries under `sensors.cameras` in `config.yml`. An entry points at the Frigate camera named by its `frigate_camera` setting, or, when it has none, at the camera with the same name as the entry. The control app's [Cameras page](cameras.md) keeps the two in step; each problem below links to it.
 
 | Result | Meaning |
 |---|---|
@@ -82,11 +82,11 @@ When you ask for help, send the diagnostics with your question. It's a text file
 * **Download diagnostics** saves the file.
 * **Copy** puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.
 
-The camera names replaced are Frigate's cameras that have a different name in `config.yml`, Frigate's cameras that no entry in `config.yml` points at, and the names found in the copies of `config.yml` that the control app saves beside it each time you change it on the Cameras page (the last ten). A short name is replaced only when it stands alone as a word, so `front` is replaced in "front camera" but not in "frontage". Three limits:
+The camera names replaced are Frigate's cameras that have a different name in `config.yml`, Frigate's cameras that no entry in `config.yml` points at, and the names found in the copies of `config.yml` that the control app saves beside it each time you change it on the [Cameras page](cameras.md) (the last ten). A short name is replaced only when it stands alone as a word, so `front` is replaced in "front camera" but not in "frontage". Three limits:
 
 * If you renamed a camera by editing `config.yml` by hand, there is no saved copy with the old name. The old name can then appear in log lines from before the change, until they scroll out of the logs.
 * A short, everyday name such as `front` is replaced wherever that word appears in the file. That errs on the side of hiding too much.
-* On a device whose `config.yml` still names a camera by the name you gave it in Frigate, that name is the one the device records, so it isn't replaced. Switch the camera to a neutral name on the Cameras page first.
+* On a device whose `config.yml` still names a camera by the name you gave it in Frigate, that name is the one the device records, so it isn't replaced. [Switch the camera to a neutral name](cameras.md#use-a-neutral-name) first.
 
 ### Reboot or shut down
 
