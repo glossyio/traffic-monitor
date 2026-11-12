@@ -64,7 +64,7 @@ The unit doesn't save the network or its password at this point. Until the switc
 
 A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the join ends (the test, the countdown, and the switch), the unit refuses every other Wi-Fi or hotspot change. Once the test has passed, choose **Cancel** or **Switch now** to free it.
 
-The test asks the network for an address, then makes one DNS question and one request to `connectivity-check.ubuntu.com` to see whether the internet is reachable. The unit comes back to where it was either way. To test a network the unit has saved already, choose **Join** and keep its saved password, or enter a new one.
+The test asks the network for an address, then asks the network's DNS server for the address of `connectivity-check.ubuntu.com` (up to three times, a second apart, because the first question right after joining can fail) and makes one request to it, to see whether the internet is reachable. The unit comes back to where it was either way. To test a network the unit has saved already, choose **Join** and keep its saved password, or enter a new one.
 
 A card at the top of the Network page shows the test as it runs. Administrators also see a line with a **See it** link on the [home page](home-page.md), so you can find the result from there.
 
@@ -82,7 +82,7 @@ Below that, a countdown starts at 5 minutes: **Joining `<name>` in 4:32**. Use t
 * **Cancel** ends it, and the unit stays where it is. Nothing is saved.
 * If you do nothing, the unit joins when the countdown ends.
 
-When the unit joins, the network is saved and the unit uses it. If the unit was on the hotspot, the hotspot stops. A phone on the hotspot loses it, so join the network yourself and open one of the addresses from the card. The result stays on the page until you choose **Dismiss**.
+When the unit joins, the network is saved and the unit uses it. If the unit was on the hotspot, the hotspot stops. A phone on the hotspot loses it, so join the network yourself and open one of the addresses from the card. On an Android 17 phone a browser may not open a device on the phone's own Wi-Fi network; see [the Android 17 entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) if the address doesn't open. The result stays on the page until you choose **Dismiss**.
 
 !!! info "A network with a sign-in page"
     Some networks, such as a hotel's or a cafe's, give the unit an address but make a device open a web page before it reaches the internet. The unit can't complete that page. The card says "Joined, but this network needs a sign-in page, so the unit has no internet there." The unit can still join the network and be reached on it, and you can switch to it if you want that.

@@ -29,7 +29,7 @@ When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](../use/
 
 A request that reaches the device on the hotspot's address with any other name, such as the one a phone's connection test uses, gets a redirect to `http://10.42.0.1/`. A request for `10.42.0.1` or for the device's own name is answered as usual.
 
-Whenever the device has a network, NetworkManager asks `connectivity-check.ubuntu.com` every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer. When an administrator [tests a Wi-Fi network](../use/wifi-hotspot.md#put-the-unit-on-a-wi-fi-network) from the Network page, the device makes one DNS question and one request to `connectivity-check.ubuntu.com` through that network, to report whether the internet is reachable there.
+Whenever the device has a network, NetworkManager asks `connectivity-check.ubuntu.com` every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer. When an administrator [tests a Wi-Fi network](../use/wifi-hotspot.md#put-the-unit-on-a-wi-fi-network) from the Network page, the device asks that network's DNS server for the address of `connectivity-check.ubuntu.com` (up to three times, a second apart) and makes one request to it through that network, to report whether the internet is reachable there.
 
 ## Camera stream login
 
