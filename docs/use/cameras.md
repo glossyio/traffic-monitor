@@ -44,7 +44,7 @@ Choose **Edit** on a camera, and **Save**.
 | Setting | What it does |
 |---|---|
 | **Record events** | Off stops recording this camera's events. Frigate keeps running either way. |
-| **Radar** | The radar that supplies this camera's speeds and, when the zones give none, its direction. **No radar** records the camera with neither. One radar can serve several cameras. |
+| **Radar** | The radar that supplies this camera's speeds. The camera's direction needs an enabled radar too, whether it comes from the zones' order or from the radar. **No radar** records the camera's events with no speed and no direction. One radar can serve several cameras. |
 | **Send plates to Plate Recognizer** | Shown only when the add-on is installed. See [Plate Recognizer](../add-ons/plate-recognizer.md). |
 
 The drop-down lists the radars the device was installed with, each with its state:
