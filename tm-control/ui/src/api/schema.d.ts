@@ -713,6 +713,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cameras */
+        get: operations["list_cameras_api_v1_cameras_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -947,6 +964,20 @@ export interface components {
             bearing: string;
             /** Reason */
             reason?: string | null;
+        };
+        /** CamerasState */
+        CamerasState: {
+            /**
+             * Frigate
+             * @enum {string}
+             */
+            frigate: "ok" | "down" | "safe_mode";
+            /** Plates */
+            plates: boolean;
+            /** Rows */
+            rows: components["schemas"]["Row"][];
+            /** Radars */
+            radars: components["schemas"]["RadarOut"][];
         };
         /** Check */
         Check: {
@@ -1295,6 +1326,17 @@ export interface components {
              */
             round_stored: boolean;
         };
+        /** RadarOut */
+        RadarOut: {
+            /** Name */
+            name: string;
+            /** In Config */
+            in_config: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Port Open */
+            port_open: boolean | null;
+        };
         /** Report */
         Report: {
             /** Generated At */
@@ -1310,6 +1352,30 @@ export interface components {
         RestartQueued: {
             /** Unit */
             unit: string;
+        };
+        /** Row */
+        Row: {
+            /** Name */
+            name: string | null;
+            /** Frigate Camera */
+            frigate_camera: string;
+            /**
+             * In Frigate
+             * @enum {string}
+             */
+            in_frigate: "on" | "off" | "absent" | "unknown";
+            /** Neutral */
+            neutral: boolean | null;
+            /** Duplicate Of */
+            duplicate_of: string | null;
+            /** Enabled */
+            enabled: boolean | null;
+            /** Camera Radar */
+            camera_radar: string | null;
+            /** Plate Recognizer */
+            plate_recognizer: boolean | null;
+            /** Zones Missing */
+            zones_missing: string[] | null;
         };
         /** RunningOut */
         RunningOut: {
@@ -2668,6 +2734,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cameras_api_v1_cameras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
                 };
             };
         };

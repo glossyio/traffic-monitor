@@ -119,8 +119,9 @@ def use_model(settings: Settings, name: str) -> None:
 
 
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
-    """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, and
-    a config.yml that is missing. Nothing outside the fake directory is read."""
+    """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, a
+    second camera (oak_ave_tele, a copy of the first), and a config.yml that is missing. Nothing outside the fake
+    directory is read."""
     config = json.loads((FAKE_FIXTURES / "frigate_api_config.json").read_text())
     try:
         name = running_model_file(settings).read_text().strip()
@@ -132,6 +133,8 @@ def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
         model["path"] = f"/config/model_cache/{name}"
     else:
         model.pop("path", None)
+    first = next(iter(config["cameras"].values()))  # a camera that no config.yml entry points at, for the Cameras page
+    config["cameras"]["oak_ave_tele"] = copy.deepcopy(first) | {"name": "oak_ave_tele"}
     return copy.deepcopy(config), ConfigRead(None, "missing")
 
 
