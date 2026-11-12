@@ -6,3 +6,7 @@ SetWorkingDirectory={{ tmsetup_codedir }}/plate-recognizer
 File=Containerfile
 Pull=newer
 ImageTag=localhost/plate-recognizer-tm:latest
+
+[Service]
+# Takes Podman's first-command crash after a power loss, so the build doesn't (#268). "-" ignores its result.
+ExecStartPre=-{{ tmsetup_podman_refresh_command }}

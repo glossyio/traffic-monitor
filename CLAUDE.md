@@ -93,7 +93,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - The role's `templates/container` and `files/container` are symlinks to the top-level `container/`, and `files/utils` points to `utils/`. So `src: container/...` in a task means the top-level directory; edit files there.
 - Each `container/<svc>/` follows one pattern:
   - `Containerfile.j2` defines the image, which is built on the device.
-  - `<svc>.build.j2` and `<svc>.container.j2` are Quadlet units, rendered into `/etc/containers/systemd/`.
+  - `<svc>.build.j2` and `<svc>.container.j2` are Quadlet units, rendered into `/etc/containers/systemd/`. Each `.build.j2` carries `ExecStartPre=-{{ tmsetup_podman_refresh_command }}`, because the boot's first Podman command can crash after a power loss (#268) and a crashed build leaves its container stopped; build units get no `Restart=`, since a build that keeps failing would then block the installer.
   - `*.env.j2` and `config/config.yml.j2` hold user-editable settings.
 
   Other rendered files land in `{{ tmsetup_codedir }}/<svc>/` (default `/opt/traffic-monitor`). When adding a component, copy `revproxy`, the newest complete example. That means a task file, an import in `tasks/main.yml` with its tag, a `Restart <svc>.service` handler, and the tag added to the `start_services.yml` import and to `_VALID_TAGS`.

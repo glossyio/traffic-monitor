@@ -6,3 +6,7 @@ SetWorkingDirectory={{ tmsetup_codedir }}/revproxy
 File=Containerfile
 Pull=newer
 ImageTag={{ tmsetup_revproxy_image }}
+
+[Service]
+# Takes Podman's first-command crash after a power loss, so the build doesn't (#268). "-" ignores its result.
+ExecStartPre=-{{ tmsetup_podman_refresh_command }}
