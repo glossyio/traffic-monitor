@@ -63,7 +63,8 @@ The other three actions take the same lock, then:
   MAX_NETWORKS. A network with no name is left out. Prints `heard N networks`.
 - forget: the profile must be a Wi-Fi client (type 802-11-wireless, mode infrastructure), else refused, and it must
   exist. Deletes it by uuid. When the device was on it and the hotspot starts by itself, waits RETURN_WAIT seconds for
-  the device to reach a connected state on anything and starts the hotspot if it didn't.
+  the device to reach a connected state on another profile (right after the delete it can still read connected on the
+  deleted one) and starts the hotspot if it didn't.
 - order: the uuids must be exactly the Wi-Fi client profiles that start by themselves. The first gets
   connection.autoconnect-priority N (N is how many), the last 1; only profiles whose value differs are changed.
 
@@ -842,7 +843,9 @@ class Run:
         self.step = "start the hotspot"
         wait = trusted_seconds("TM_NETWORK_RETURN_WAIT", RETURN_WAIT)
         deadline = time.monotonic() + wait
-        while nm.device(self.device)[0] != CONNECTED:  # NetworkManager brings the hotspot up by itself, mostly
+        # NetworkManager brings the hotspot up by itself, mostly. Right after the delete the device can still read
+        # connected on the deleted profile, so the wait ends only on another one.
+        while nm.device(self.device)[0] != CONNECTED or nm.device_uuid(self.device) == uuid:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 nm.run("--wait", str(UP_WAIT), "connection", "up", "id", self.profile, timeout=UP_WAIT + 30)

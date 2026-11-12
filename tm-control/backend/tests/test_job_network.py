@@ -721,6 +721,18 @@ def test_forgetting_the_network_in_use_starts_the_hotspot(world):
     assert world.nm()["active"] == ["tm-hotspot"]
 
 
+def test_forgetting_the_network_in_use_waits_for_the_radio_to_leave_it(world):
+    """Right after the delete the device can still read connected on the profile that was just deleted."""
+    home = world.saved("Home")
+    world.state["active"] = ["Home"]
+    world.state["linger"] = ["Home"]
+    result = world.run({"action": "forget", "uuid": home})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines() == ["forgot the network", "started the hotspot"]
+    assert ["--wait", "30", "connection", "up", "id", "tm-hotspot"] in world.log()
+    assert world.nm()["active"] == ["tm-hotspot"]
+
+
 def test_forgetting_the_network_in_use_with_the_hotspot_off_leaves_the_radio_idle(world):
     home = world.saved("Home")
     world.state["active"] = ["Home"]

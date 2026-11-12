@@ -18,7 +18,9 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
   connection add type wifi PROP VALUE ...        connection.id names the new profile; a connection.uuid it is given is
                                                  kept; `save no` lists the profile under the state's "unsaved" (a
                                                  `modify` takes it off that list)
-  connection delete REF                          removes the profile, and from "active" and "unsaved"
+  connection delete REF                          removes the profile, and from "active" and "unsaved"; a name listed
+                                                 under the state's "linger" stays active, its uuid kept for `device
+                                                 show` (the device still reads connected on the deleted profile)
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
   connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
                                                  state makes it exit 4 and leave nothing active (an idle radio), and
@@ -140,7 +142,8 @@ def main(argv):
         active = state.get("active", [])
         number = state.get("device_state", state.get("device_states", {}).get(active[0], 100) if active else 30)
         values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--",
-                  "GENERAL.CON-UUID": state["profiles"].get(active[0], {}).get("connection.uuid", "") if active else ""}
+                  "GENERAL.CON-UUID": (state["profiles"].get(active[0], {}).get("connection.uuid")
+                                       or state.get("lingering", {}).get(active[0], "")) if active else ""}
         ip4 = state.get("ip4", {}).get(active[0], {}) if active else {}
         for key in fields[1].split(","):
             if key == "IP4.ADDRESS":
@@ -204,8 +207,11 @@ def main(argv):
         state["active"] = [n for n in state.get("active", []) if n != name]
     elif verb == "delete":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
-        del state["profiles"][name]
-        state["active"] = [n for n in state.get("active", []) if n != name]
+        gone = state["profiles"].pop(name)
+        if name in state.get("linger", []):
+            state.setdefault("lingering", {})[name] = gone["connection.uuid"]
+        else:
+            state["active"] = [n for n in state.get("active", []) if n != name]
         state["unsaved"] = [n for n in state.get("unsaved", []) if n != name]
     elif verb == "add":
         changes = pairs(rest)
