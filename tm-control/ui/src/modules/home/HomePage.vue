@@ -1,6 +1,7 @@
 <!--
   The home page: a line about a Wi-Fi join in progress, for an admin, then the device card, with the Status page's
-  verdict as a link to it, then a tile for each app the device has. Viewers get only the apps everyone may use; the API leaves the admin-only ones out for them.
+  verdict as a link to it, then a tile for each app the device has. Viewers get only the apps everyone may use; the
+  API leaves the admin-only ones out for them.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'

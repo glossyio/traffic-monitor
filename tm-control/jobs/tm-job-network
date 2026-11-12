@@ -52,13 +52,13 @@ It prints one line per thing done and exits 0, or exits 1 with `refused: <senten
 was changed.
 
 The other three actions take the same lock, then:
-- scan: refused unless the radio is built in (not a USB adapter) and switched on. Runs `iw dev <device> scan flush`, which empties the kernel's cache first (a plain
-  scan keeps listing a network for about 30 s after it left the air). A non-zero exit (`iw` exits 240 while
-  NetworkManager scans, as it does in the background on a network, and for 10 to 14 s after the hotspot restarts) is
-  tried again every SCAN_RETRY_WAIT seconds while SCAN_TIMEOUT seconds, all tries together, last; a try that hangs
-  until the time is up is not tried again. A failure
-  is `failed: scan (iw exit status N)` or `(iw timed out)` and leaves the old file. Otherwise SCAN_FILE is written
-  under a temporary name and renamed, 0644: {"at": <ISO time, UTC>, "monotonic": <time.monotonic()>, "networks":
+- scan: refused unless the radio is built in (not a USB adapter) and switched on. Runs `iw dev <device> scan flush`,
+  which empties the kernel's cache first (a plain scan keeps listing a network for about 30 s after it left the air).
+  A non-zero exit (`iw` exits 240 while NetworkManager scans, as it does in the background on a network, and for 10 to
+  14 s after the hotspot restarts) is tried again every SCAN_RETRY_WAIT seconds while SCAN_TIMEOUT seconds, all tries
+  together, last; a try that hangs until the time is up is not tried again. A failure is `failed: scan (iw exit
+  status N)` or `(iw timed out)` and leaves the old file. Otherwise SCAN_FILE is written under a temporary name and
+  renamed, 0644: {"at": <ISO time, UTC>, "monotonic": <time.monotonic()>, "networks":
   [{"ssid", "signal" (0 to 100), "security" (open, password, wpa3, enterprise, or other)}]}, strongest first, at most
   MAX_NETWORKS. A network with no name is left out. Prints `heard N networks`.
 - forget: the profile must be a Wi-Fi client (type 802-11-wireless, mode infrastructure), else refused, and it must
@@ -519,7 +519,8 @@ def decode_name(raw):
 
 
 def run_iw(iw, device, timeout):
-    """iw's scan output for the device, after a flush of the kernel's cache. A non-zero exit or a timeout is IwFailed, with a fixed message."""
+    """iw's scan output for the device, after a flush of the kernel's cache. A non-zero exit or a timeout is
+    IwFailed, with a fixed message."""
     try:
         result = subprocess.run([iw, "dev", device, "scan", "flush"], capture_output=True, stdin=subprocess.DEVNULL,
                                 env={**os.environ, "LC_ALL": "C.UTF-8"}, timeout=timeout, check=False)

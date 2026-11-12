@@ -64,8 +64,8 @@ One run, in order:
     `the test passed`, `counting down`.
 14. The countdown, still holding the lock: CONTROL_FILE in the run directory (one word, which tm-job-network's
     switch-now and cancel write) is read every second until then; one written during the test counts too, and it is
-    removed once read, and whenever a run that got the lock ends. `cancel`: the profile is deleted unless it is a saved network, state `cancelled`, `cancelled`,
-    exit 0. `switch`: the switch starts at once.
+    removed once read, and whenever a run that got the lock ends. `cancel`: the profile is deleted unless it is a
+    saved network, state `cancelled`, `cancelled`, exit 0. `switch`: the switch starts at once.
 15. The switch. State `switching`, with saved true from here on: the `modify` saves a profile that was only in
     memory, so step 4 of a later run must keep it. `connection modify` sets autoconnect on and the priority to 1 plus
     the highest among the other Wi-Fi client profiles that start by themselves (at least 1). For a new network, every

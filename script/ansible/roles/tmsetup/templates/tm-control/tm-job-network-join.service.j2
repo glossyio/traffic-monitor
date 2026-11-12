@@ -1,8 +1,8 @@
 # /etc/systemd/system/tm-job-network-join.service, installed by tmsetup.sh (tm-control tag)
 # A static root job, never enabled: tm-control starts it through polkit
 # (/etc/polkit-1/rules.d/50-traffic-monitor.rules) after writing the request /run/tm-control/jobs/network-join.json.
-# The script makes a NetworkManager checkpoint, switches the radio from the hotspot to the chosen network, counts down,
-# and keeps the join or rolls back. A run killed mid-test (a stop that outlasts TimeoutStopSec, a power cut) is undone
+# The script tests the chosen network under a NetworkManager checkpoint, rolls back to where the radio was, counts
+# down, and then switches to the network. A run killed mid-test (a stop that outlasts TimeoutStopSec, a power cut) is undone
 # by NetworkManager's checkpoint, which rolls back by itself when its timeout ends. It takes the lock in
 # /run/traffic-monitor that tm-network-retry takes too, and RuntimeDirectoryPreserve keeps that directory between runs,
 # as in the retry unit.
