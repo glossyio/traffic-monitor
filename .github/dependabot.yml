@@ -1,7 +1,20 @@
-# Keeps the docs build's pinned versions current: the GitHub Actions in
-# .github/workflows/ and the Python packages in docs-site/requirements.txt.
-# Updates arrive as one grouped pull request per ecosystem each month,
-# against dev, and skip releases younger than two weeks.
+# Keeps pinned versions current with monthly pull requests against dev:
+#   - the GitHub Actions in .github/workflows/
+#   - the docs build's Python packages (docs-site/requirements.txt)
+#   - tm-control's Python packages (tm-control/backend/requirements.txt)
+#   - tm-control's UI packages (tm-control/ui/package-lock.json)
+#   - Node-RED's add-on nodes (container/node-red-tm/data/package.json)
+# Each ecosystem's minor and patch updates come as one grouped pull request.
+# For the UI and Node-RED, each major update gets its own pull request.
+# Updates skip releases younger than two weeks.
+#
+# Dependabot reads this file only from the default branch (main), so a change
+# here takes effect at the next release.
+#
+# Not covered: the images and tools pinned in
+# script/ansible/roles/tmsetup/vars/main.yml (Frigate, Node-RED, nginx, Node,
+# go2rtc, Hailo). Dependabot can't read Ansible variables or the Jinja
+# Containerfile templates that use them.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -29,3 +42,43 @@ updates:
       # Material for MkDocs requires MkDocs 1.x. MkDocs 2 drops plugin support.
       - dependency-name: mkdocs
         update-types: ["version-update:semver-major"]
+
+  # Installed on the device. Test an update on a bench Pi before merging it.
+  - package-ecosystem: pip
+    directory: /tm-control/backend
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      tm-control-backend:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /tm-control/ui
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      tm-control-ui:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # No lockfile, so Dependabot moves a range only when a release falls outside
+  # it. "node-red" is "*", so it never moves; Node-RED itself is updated with
+  # tmsetup_node_red_tm_version. The flows depend on how these nodes behave,
+  # so test an update on a bench Pi before merging it.
+  - package-ecosystem: npm
+    directory: /container/node-red-tm/data
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    groups:
+      node-red-nodes:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
