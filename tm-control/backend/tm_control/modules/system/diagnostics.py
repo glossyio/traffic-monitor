@@ -4,7 +4,7 @@ time state, the status report, the services, the manifest, and the last lines of
 The whole text is redacted before it leaves the device: every device secret's value, every secret-looking value in
 the apps' .env files (the broker password can show up inside a URL in a log line), the entered secrets' values
 (Node-RED's journal can show the ThingsBoard token as the MQTT username), and the value after any password-,
-token-, or secret-style key.
+token-, or secret-style key. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
 """
 
 import json
@@ -16,9 +16,13 @@ from urllib.parse import quote
 
 from tm_control import fake
 from tm_control.adapters import sysinfo, systemd
-from tm_control.adapters.redact import redact
+from tm_control.adapters.redact import redact, redact_words
+from tm_control.adapters.yamlfile import read_config
 from tm_control.core.checks import Report
 from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret
+from tm_control.modules.cameras.names import is_neutral
+from tm_control.modules.cameras.state import compare, frigate_now
+from tm_control.modules.location.config import camera_entries
 from tm_control.modules.services.units import read_units, service, units_for
 from tm_control.modules.system.info import SystemInfo
 
@@ -61,6 +65,36 @@ def secret_values(app_state) -> list[str]:
     if not app_state.settings.fake:
         values += env_secret_values(Path(app_state.manifest.codedir))
     return values
+
+
+def camera_names(app_state) -> set[str]:
+    """Frigate's names for the cameras, which stay on the device: each that differs from its entry's key, each Frigate
+    camera that no entry points at, and, from the config.yml backups beside the file (a save from the control app makes
+    one), each frigate_camera value and each key that is neither a neutral name nor a key of the file now. So a
+    Frigate log line from before a rename made on the Cameras page is covered. A file that can't be read is skipped."""
+    names = set()
+    path = Path(app_state.config_path)
+    read = read_config(path)
+    current = camera_entries(read.data) if read.data is not None else []
+    names.update(entry.frigate_camera for entry in current if entry.frigate_camera != entry.name)
+    cameras = frigate_now(app_state)[1]
+    if cameras is not None:
+        names.update(row.frigate_camera for row in compare(current, cameras) if row.name is None)
+    keys = {entry.name for entry in current}
+    try:
+        backups = sorted(path.parent.glob(f"{path.name}.*.bak"))
+    except OSError:
+        backups = []
+    for backup in backups:
+        old = read_config(backup)
+        if old.data is None:
+            continue
+        for entry in camera_entries(old.data):
+            if entry.frigate_camera != entry.name:
+                names.add(entry.frigate_camera)
+            if not is_neutral(entry.name) and entry.name not in keys:
+                names.add(entry.name)
+    return names
 
 
 def _lines(lines: list[str] | None, what: str) -> str:
@@ -114,6 +148,7 @@ def build(app_state, info: SystemInfo, hostname: str, now: datetime) -> str:
         f"Device: {hostname}",
         f"Generated: {now.isoformat(timespec='seconds')}",
         "Passwords, tokens, and other secrets in this text are replaced with <redacted>.",
+        "Camera names from Frigate are replaced too.",
     ]
     text = "\n".join(header) + "\n" + "".join(f"\n== {title} ==\n{body}\n" for title, body in sections)
-    return redact(text, secret_values(app_state))
+    return redact_words(redact(text, secret_values(app_state)), camera_names(app_state))

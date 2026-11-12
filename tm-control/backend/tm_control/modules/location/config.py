@@ -130,6 +130,23 @@ class CameraEntry:
     plate_recognizer: bool  # plate_recognizer is True
 
 
+def camera_entries(data: Mapping) -> list[CameraEntry]:
+    """Every sensors.cameras entry of a parsed config.yml, in file order. An entry that isn't a mapping (`main_st:` with
+    nothing under it) reads as the defaults: Frigate's name is the key, and it is off."""
+    found = []
+    for name, entry in _mapping(_mapping(data.get("sensors")).get("cameras")).items():
+        entry = _mapping(entry)
+        field, radar = entry.get("frigate_camera"), entry.get("camera_radar")
+        found.append(CameraEntry(
+            name=str(name),
+            frigate_camera=str(field) if isinstance(field, str) and field != "" else str(name),
+            enabled=entry.get("enabled") is True,
+            camera_radar=str(radar) if isinstance(radar, str) and radar != "" else None,
+            plate_recognizer=entry.get("plate_recognizer") is True,
+        ))
+    return found
+
+
 # Comments and blank lines, as ruamel keeps them. The text after a mapping's last line (a blank line, the comment above
 # the next key) is stored in the trailing comment of the deepest last scalar inside it, after that scalar's own end of
 # line. The helpers below move that text when an edit changes which scalar is last.
@@ -299,20 +316,7 @@ class NodeRedConfig:
         return {(str(sensor_type), str(name)) for sensor_type, block in sensors.items() for name in _mapping(block)}
 
     def cameras(self) -> list[CameraEntry]:
-        """Every sensors.cameras entry, in file order. An entry that isn't a mapping (`main_st:` with nothing under it)
-        reads as the defaults: Frigate's name is the key, and it is off."""
-        found = []
-        for name, entry in _mapping(_mapping(self._file.data.get("sensors")).get("cameras")).items():
-            entry = _mapping(entry)
-            field, radar = entry.get("frigate_camera"), entry.get("camera_radar")
-            found.append(CameraEntry(
-                name=str(name),
-                frigate_camera=str(field) if isinstance(field, str) and field != "" else str(name),
-                enabled=entry.get("enabled") is True,
-                camera_radar=str(radar) if isinstance(radar, str) and radar != "" else None,
-                plate_recognizer=entry.get("plate_recognizer") is True,
-            ))
-        return found
+        return camera_entries(self._file.data)
 
     def radars(self) -> dict[str, bool]:
         """Each sensors.radars entry's name, and whether it is on."""

@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from ruamel.yaml import YAML
 
-from tm_control.adapters import command, sysinfo, systemd
+from tm_control.adapters import command, frigate, sysinfo, systemd
 from tm_control.adapters.command import CommandResult
 from tm_control.adapters.redact import redact
 from tm_control.core.secrets import DEVICE_SECRETS, ENTERED_SECRETS, GENERATED_SECRETS, NAMES
@@ -577,6 +577,45 @@ def test_diagnostics_redacts_an_entered_secret(device_client, login, host):
     text = diagnostics(device_client).text
     assert "pr-placeholder-345" not in text
     assert "plate read with <redacted> refused" in text
+
+
+def test_diagnostics_replace_frigates_camera_names(device_client, login, host, tmp_path, monkeypatch):
+    """Frigate's name for a camera stays on the device: replaced where it differs from the entry's key, for a Frigate
+    camera no entry points at, and for the names a backup of config.yml holds (a rename made on the Cameras page)."""
+    config_dir = tmp_path / "nr"
+    config_dir.mkdir()
+    config = config_dir / "config.yml"
+    config.write_text(
+        "sensors:\n  cameras:\n    camera_1_3fa9c2:\n      frigate_camera: oak_ave_wide\n      enabled: true\n"
+        "    picam_h265:\n      enabled: true\n"
+    )
+    (config_dir / "config.yml.20261110T101500Z.bak").write_text(
+        "sensors:\n  cameras:\n    camera_1_3fa9c2:\n      frigate_camera: main_st\n      enabled: true\n"
+        "    old_street:\n      enabled: true\n    picam_h265:\n      enabled: true\n"
+    )
+    (config_dir / "config.yml.20261111T000000Z.bak").write_text("sensors: [unclosed\n")
+    device_client.app.state.config_path = config
+    monkeypatch.setattr(frigate, "config", lambda: {"cameras": {
+        "oak_ave_wide": {"enabled": True}, "oak_ave_tele": {"enabled": False}, "picam_h265": {"enabled": True},
+    }})
+    host.journal = lambda unit, lines: [
+        "stream oak_ave_wide, oak_ave_tele, main_st, old_street, picam_h265 and camera_1_3fa9c2 started",
+        "oak_ave_wide_2 isn't oak_ave_wide",
+    ]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert "Camera names from Frigate are replaced too." in text
+    for name in ("oak_ave_wide", "oak_ave_tele", "main_st", "old_street"):
+        assert re.search(rf"(?<![A-Za-z0-9_]){name}(?![A-Za-z0-9_])", text) is None, name
+    assert "stream <redacted>, <redacted>, <redacted>, <redacted>, picam_h265 and camera_1_3fa9c2 started" in text
+    assert "oak_ave_wide_2 isn't <redacted>" in text  # a longer name isn't touched
+
+
+def test_diagnostics_replace_no_name_when_the_config_is_unreadable_and_frigate_is_down(device_client, login, host):
+    host.journal = lambda unit, lines: ["picam_h265 stays"]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert "picam_h265 stays" in text
 
 
 def test_diagnostics_skips_an_empty_entered_secret(device_client, login, host):

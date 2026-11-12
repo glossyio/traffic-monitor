@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from tm_control import fake
+from tm_control.adapters import frigate
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import ZONES
 from tm_control.modules.cameras.names import is_neutral
@@ -87,3 +89,14 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
                 zones_missing=_zones_missing(camera),
             ))
     return rows
+
+
+def frigate_now(app_state) -> tuple[Literal["ok", "down", "safe_mode"], dict | None]:
+    """("ok", Frigate's cameras) when Frigate answers with a usable config, else ("down" or "safe_mode", None)."""
+    settings = app_state.settings
+    config = fake.frigate_answer(settings)[0] if settings.fake else frigate.config()
+    if config is None:
+        return "down", None
+    if probes.frigate_safe_mode(config):
+        return "safe_mode", None
+    return "ok", probes.mapping(config.get("cameras"))

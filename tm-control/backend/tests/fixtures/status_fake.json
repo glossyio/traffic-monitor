@@ -117,8 +117,13 @@
                 {
                     "id": "config.cameras",
                     "title": "Cameras in config.yml",
-                    "status": "unknown",
-                    "detail": "Frigate isn't answering, so its cameras can't be compared with config.yml."
+                    "status": "error",
+                    "detail": "Events from Frigate's camera oak_ave_tele are not recorded: no entry under sensors.cameras points at it. Add it, or point an entry at it.",
+                    "fix": {
+                        "kind": "link",
+                        "text": "Open the Cameras page",
+                        "href": "/cameras"
+                    }
                 },
                 {
                     "id": "config.zones",

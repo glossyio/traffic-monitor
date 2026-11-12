@@ -10,8 +10,6 @@ carry the sensors.cameras key only.
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
-from tm_control import fake
-from tm_control.adapters import frigate
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
@@ -19,23 +17,12 @@ from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
 from tm_control.modules.cameras.names import is_neutral, new_name
-from tm_control.modules.cameras.state import CamerasState, RadarOut, Row, compare
+from tm_control.modules.cameras.state import CamerasState, RadarOut, Row, compare, frigate_now
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
-
-
-def _frigate_cameras(app_state) -> tuple[str, dict | None]:
-    """("ok", Frigate's cameras) when Frigate answers with a usable config, else ("down" or "safe_mode", None)."""
-    settings = app_state.settings
-    config = fake.frigate_answer(settings)[0] if settings.fake else frigate.config()
-    if config is None:
-        return "down", None
-    if probes.frigate_safe_mode(config):
-        return "safe_mode", None
-    return "ok", probes.mapping(config.get("cameras"))
 
 
 def _port_states(app_state) -> dict:
@@ -49,7 +36,7 @@ def _port_states(app_state) -> dict:
 def cameras_state(request: Request) -> CamerasState:
     app_state = request.app.state
     config = load_config(app_state)
-    state, cameras = _frigate_cameras(app_state)
+    state, cameras = frigate_now(app_state)
     in_config, ports = config.radars(), _port_states(app_state)
     radars = []
     for name in env_radar_names(app_state.manifest):
@@ -112,7 +99,7 @@ def _not_found() -> ApiError:
 
 def _compared(app_state, config: NodeRedConfig) -> list[Row]:
     """The page's rows against Frigate now; 409 frigate_unavailable while Frigate gives no cameras to compare."""
-    cameras = _frigate_cameras(app_state)[1]
+    cameras = frigate_now(app_state)[1]
     if cameras is None:
         raise _unavailable()
     return compare(config.cameras(), cameras)
