@@ -75,6 +75,7 @@ const title = computed(() => `Settings for ${props.row.name ?? props.row.frigate
             v-model="radar"
             label="Radar"
             :items="items"
+            item-props
             :error-messages="radarError ? [radarError] : []"
             variant="outlined"
             class="mt-4"
