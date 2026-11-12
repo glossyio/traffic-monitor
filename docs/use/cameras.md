@@ -50,7 +50,7 @@ Choose **Edit** on a camera, and **Save**.
 The drop-down lists the radars the device was installed with, each with its state:
 
 * **off in config.yml**: the radar's entry has `enabled: false`, so it reads nothing.
-* **port closed**: the radar is turned on, but Node-RED hasn't opened its serial port, for example because it was plugged in after the install. See [First-time setup](../setup-guide.md#5-check-the-counts).
+* **port closed**: Node-RED hasn't opened the radar's serial port, for example because the radar was plugged in after the install. A radar that is off in `config.yml` shows both marks. See [First-time setup](../setup-guide.md#5-check-the-counts).
 * **not set up in config.yml**: the radar has no entry under `sensors.radars`, so it can't be chosen. Pairing a camera with it would record no speeds.
 * **missing**: the camera's current radar isn't one of the device's radars. Choose another, or **No radar**.
 
@@ -66,7 +66,7 @@ When you rename a camera in Frigate, the Traffic Monitor doesn't know the new na
 
 ![The confirmation for Point camera_1_3fa9c2 at oak_ave_tele, saying that events from oak_ave_tele will be recorded as camera_1_3fa9c2 with the same settings and nothing already recorded changes](../assets/images/cameras-point.png){ width="300" }
 
-The entry keeps its name and settings, so the camera's records carry on under the same name, in the same deployment, with nothing changed in the database. If two cameras were renamed together, each new row offers a button for each entry whose camera is gone; choose the right pair. An entry whose camera is only turned **Off** in Frigate isn't offered, because that camera still exists.
+The entry keeps its name and settings, so the camera's records carry on under the same name, in the same deployment, with nothing changed in the database. If two cameras were renamed together, each new row offers a button for each entry whose camera is gone. To choose the right pair, look at the entries' rows: each shows Frigate's old name for its camera and its radar. An entry whose camera is only turned **Off** in Frigate isn't offered, because that camera still exists.
 
 Until you point the entry at the new name, the Status page's **Cameras in config.yml** check is a problem.
 
