@@ -1,0 +1,93 @@
+# Runs the off-device checks from CONTRIBUTING.md on every pull request and on
+# each push to dev:
+#   - python: the pytest suites (schema, installer, tm-control) and the
+#     Ansible, Jinja, flows.json, and tmsetup.sh syntax checks
+#   - ui: tm-control's UI build (with its type check) and Vitest tests, on the
+#     Node version the device builds it with
+#   - dependency-review (pull requests only): fails when the pull request adds
+#     or changes a dependency to a version with a known high or critical
+#     vulnerability
+# Device tests (script/devpi/tests) need a bench Pi and don't run here.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  # A new push to a pull request replaces its running checks; every push to
+  # dev is checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the device's Node version
+        id: node
+        run: echo "version=$(grep -oP '^tmsetup_node_image:.*:\K[0-9.]+' script/ansible/roles/tmsetup/vars/main.yml)" >> "$GITHUB_OUTPUT"
+      # The Raspberry Pi OS release the device runs (Debian 13) has Python 3.13.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            script/requirements
+            script/requirements-dev
+            tm-control/backend/requirements.txt
+      # The flows and settings.js tests run JavaScript with node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+      - run: pip install -r script/requirements-dev
+
+      - name: Tests
+        run: python -m pytest -rs container/node-red-tm/schema/tests script/tests tm-control/backend/tests
+      - name: Ansible syntax
+        working-directory: script/ansible
+        run: ansible-playbook -i localhost setup.yml --syntax-check </dev/null
+      - name: Jinja templates parse
+        run: python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files '*.j2')
+      - name: flows.json is valid JSON
+        run: python -m json.tool container/node-red-tm/data/flows.json >/dev/null
+      - name: tmsetup.sh syntax
+        run: bash -n script/tmsetup.sh
+
+  ui:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: tm-control/ui
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the device's Node version
+        id: node
+        working-directory: .
+        run: echo "version=$(grep -oP '^tmsetup_node_image:.*:\K[0-9.]+' script/ansible/roles/tmsetup/vars/main.yml)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: npm
+          cache-dependency-path: tm-control/ui/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high

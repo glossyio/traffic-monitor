@@ -14,7 +14,7 @@ Important resources (many coming soon):
 
 ## Testing
 
-The only CI checks are the docs build and GitHub's CodeQL scanning, and most of the project is tested by installing it on a Raspberry Pi. The database schema, the installer's templates and tasks, and the control app (`tm-control`) have automated tests that run on any machine with Python 3.11 or newer. Set up the dev environment once, from the repo root:
+Most of the project is tested by installing it on a Raspberry Pi. The database schema, the installer's templates and tasks, and the control app (`tm-control`) have automated tests that run on any machine with Python 3.11 or newer. Every pull request runs them on GitHub, along with the control app's web page tests and a check that the pull request doesn't add a dependency with a known high or critical vulnerability. You can run the same tests yourself before you push. Set up the dev environment once, from the repo root:
 
     python3 -m venv .venv
     .venv/bin/pip install -r script/requirements-dev
