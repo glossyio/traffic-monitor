@@ -355,7 +355,8 @@ describe('the Wi-Fi networks section', () => {
     expect(wrapper.text()).toContain('Alpha')
     expect(wrapper.text()).toContain('CafeGuest')
     expect(wrapper.text()).toContain('Looked 1 minute ago')
-    expect(labels(wrapper).filter((l) => !l.startsWith('Copy '))).toEqual([])
+    // the two panels' own toggles are not controls of the section
+    expect(labels(wrapper).filter((l) => !l.startsWith('Copy ') && !['This device', 'Hotspot'].includes(l))).toEqual([])
   })
 
   it('shows a viewer that nothing was looked for without telling them to tap a button they do not have', async () => {

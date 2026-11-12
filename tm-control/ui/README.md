@@ -935,6 +935,43 @@ another device, so every one has a Copy button. The Device page carries a short 
   to this page. If the network state can't be read, the card is the same as before: the summary is an addition, never
   something the page waits for or fails on.
 
+#### The page's layout: one screen
+
+On a laptop the page has to fit one screen, and the part people come for is the Wi-Fi networks and a join, not the
+unit's addresses or the hotspot's settings. So This device and Hotspot are folded panels (`CollapsePanel.vue`) side by
+side in one `v-row`, each in a `md="6"` column (one column below `md`), and Wi-Fi networks is full width below them and
+never folds. The join card stays above all of them, also never folded: it carries the countdown and its buttons.
+
+```text
+| Network                     (h5) |
+| [join card, when there is a join]|
+| +-----------------+ +----------+ |  md and up: two columns
+| | This device   v | | Hotspot v| |  folded: a summary under the title
+| | tm-ab12.local   | | TM-AB12  | |  This device: the .local name and the addresses in use
+| | 192.168.1.57, ..| |          | |  Hotspot: its name, or "Hotspot off"
+| +-----------------+ +----------+ |
+| Wi-Fi networks              (h6) |
+```
+
+- Both panels start folded on every visit and nothing is remembered between visits: a remembered "open" would hide the
+  summary the next person expects, and a stale choice is worse than one more tap.
+- The panel's heading is the page's `h2`, and the button that folds it is inside the heading, as in the accordion
+  pattern. `v-expansion-panel`'s title is a button with no heading around it, which would take "This device" and
+  "Hotspot" out of a screen reader's list of headings, so the panel is a small component of its own made of `v-card`,
+  `v-btn`, and `v-expand-transition`. Its content stays mounted while folded: a job started in the panel and its notice
+  go on, and the page can open the panel when they have news.
+- A folded panel never hides something that needs attention. The Hotspot panel opens itself when a change it made starts,
+  and again when that change ends with a failure, an unreported result, or a refusal, so the device's words are on screen;
+  a folded panel that holds such words shows a warning mark ("Needs attention") beside its title. The person can fold it
+  again. This device has nothing of that kind, so it opens only when asked. A join's lock message is not news: the card
+  above it says what is happening, so the panels stay folded under a join.
+- An anchor in the address opens its panel and scrolls to it: `#this-device`, `#hotspot` (and `#wifi-networks`, which
+  only scrolls). No page linked to an anchor before; the Device page and the join banner link to `/network`.
+- The summary is two short lines at most: the unit's `.local` name, then the addresses in use (the cable's when it is
+  connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". A unit without a hotspot has no
+  panel, only the sentence that says so.
+- Viewers get the same panels, with the read-only facts inside and no control but the heading's own button.
+
 #### The hotspot's settings (admins)
 
 ```text
@@ -989,7 +1026,7 @@ another device, so every one has a Copy button. The Device page carries a short 
 
 #### The Wi-Fi networks section
 
-Between "This device" and "Hotspot" (`WifiNetworks.vue`, from `GET /network/wifi`), shown when the network state could
+Below "This device" and "Hotspot" (`WifiNetworks.vue`, from `GET /network/wifi`), shown when the network state could
 be read. Everyone sees the two lists; only an admin gets Refresh, Forget, and Move up / Move down.
 
 ```text

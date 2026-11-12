@@ -4,18 +4,26 @@
   answer, GET /network/wifi), and the hotspot. Every name and address has a Copy button. The networks and the hotspot
   are read-only for a viewer; an admin gets their controls. The hotspot's password is never part of this answer.
 
+  One screen on a laptop: This device and Hotspot are folded panels side by side (one column on a phone), each with a
+  short summary, and Wi-Fi networks, which people come here for, is open below them. Both panels start folded on every
+  visit. The Hotspot panel opens itself when a change it made is running, has failed, or was refused, so the words that
+  say so are never hidden, and a folded panel with such words shows a warning mark. An anchor in the address
+  (#this-device, #hotspot) opens its panel and scrolls to it.
+
   A Wi-Fi join (GET /network/join, kept by useJoin) has its card above "This device" for as long as the unit has one to
   show. While one is pending, and while either section runs a job of its own, both sections are locked. The page owns
   the Join dialog and sends the request, because it is also what follows the join: after a request is accepted, the
   card says the unit is testing until the unit reports the join itself, and says so if it never does.
 -->
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { useSession } from '../../stores/session'
+import CollapsePanel from './CollapsePanel.vue'
 import FactRow from './FactRow.vue'
-import HotspotSettings from './HotspotSettings.vue'
+import HotspotSettings, { type Notice } from './HotspotSettings.vue'
 import JoinCard from './JoinCard.vue'
 import JoinDialog from './JoinDialog.vue'
 import WifiNetworks from './WifiNetworks.vue'
@@ -165,9 +173,40 @@ async function startJoin(password: string | null) {
   }
 }
 
+// The two panels, folded on every visit. The page opens one when an anchor in the address names it, and the Hotspot
+// panel when a change it made is running, failed, or was refused.
+const route = useRoute()
+const deviceOpen = ref(false)
+const hotspotOpen = ref(false)
+const hotspotNotice = ref<Notice | null>(null)
+const hotspotNeedsAttention = computed(
+  () => hotspotNotice.value?.type === 'warning' || hotspotNotice.value?.type === 'error',
+)
+
+function hotspotBusy(on: boolean) {
+  running.hotspot = on
+  if (on) hotspotOpen.value = true
+}
+
+function hotspotSays(notice: Notice | null) {
+  hotspotNotice.value = notice
+  if (notice) hotspotOpen.value = true
+}
+
+async function goToAnchor() {
+  const id = route.hash.slice(1)
+  if (id === 'this-device') deviceOpen.value = true
+  else if (id === 'hotspot') hotspotOpen.value = true
+  else if (id !== 'wifi-networks') return
+  await nextTick()
+  document.getElementById(id)?.scrollIntoView?.()
+}
+watch(() => route.hash, goToAnchor)
+
 let stopWatching = () => {}
 onMounted(async () => {
   await Promise.all([loadAll(), refreshJoin()])
+  void goToAnchor()
   // Once the first answers are in, a change of stage means the unit's network or hotspot may have changed, except
   // on the way into the test, when nothing has yet. The reload is quiet: right after a test the link may still be flaky.
   stopWatching = watch(
@@ -225,6 +264,17 @@ const blocks = computed<Block[]>(() => {
   return found
 })
 
+// The addresses the unit has now, for the folded panel: the cable's when it is connected, the Wi-Fi's when it has one
+const addresses = computed(() => {
+  const current = state.value
+  if (!current?.readable) return []
+  const found: string[] = []
+  const { ethernet, wifi } = current
+  if (ethernet?.connected && ethernet.addresses[0]) found.push(ethernet.addresses[0])
+  if (wifi?.connected && wifi.addresses[0]) found.push(wifi.addresses[0])
+  return found
+})
+
 const hotspotFacts = computed<Fact[]>(() => {
   const hotspot = state.value?.hotspot
   if (!hotspot) return []
@@ -267,24 +317,69 @@ const hotspotFacts = computed<Fact[]>(() => {
         @changed="refreshJoin"
       />
 
-      <section>
-        <h2 class="text-h6 mb-4">This device</h2>
-        <FactRow v-for="fact in names" :key="fact.label" v-bind="fact" class="mb-4" />
+      <v-row align="start">
+        <v-col cols="12" md="6">
+          <CollapsePanel id="this-device" v-model="deviceOpen" title="This device">
+            <template #summary>
+              <div class="text-body-1 text-break">{{ state.local_name }}</div>
+              <div v-if="addresses.length" class="text-body-2 text-secondary text-break">{{ addresses.join(', ') }}</div>
+            </template>
+            <FactRow v-for="fact in names" :key="fact.label" v-bind="fact" class="mb-4" />
 
-        <div v-for="block in blocks" :key="block.label" class="mb-4">
-          <FactRow :label="block.label" :value="block.value" />
-          <div v-if="block.details.length" class="border-s-md ps-3 mt-2">
-            <FactRow
-              v-for="(fact, index) in block.details"
-              :key="`${fact.label}${index}`"
-              v-bind="fact"
-              class="mb-2"
+            <div v-for="block in blocks" :key="block.label" class="mb-4">
+              <FactRow :label="block.label" :value="block.value" />
+              <div v-if="block.details.length" class="border-s-md ps-3 mt-2">
+                <FactRow
+                  v-for="(fact, index) in block.details"
+                  :key="`${fact.label}${index}`"
+                  v-bind="fact"
+                  class="mb-2"
+                />
+              </div>
+            </div>
+          </CollapsePanel>
+        </v-col>
+
+        <v-col v-if="state.readable" cols="12" md="6">
+          <section v-if="!state.hotspot" id="hotspot">
+            <h2 class="text-h6 mb-4">Hotspot</h2>
+            <p class="text-body-1">The hotspot isn't set up on this unit.</p>
+          </section>
+          <CollapsePanel
+            v-else
+            id="hotspot"
+            v-model="hotspotOpen"
+            title="Hotspot"
+            :warning="hotspotNeedsAttention ? 'Needs attention' : undefined"
+          >
+            <template #summary>
+              <div class="text-body-1 text-break">{{ state.hotspot.enabled ? state.hotspot.name : 'Hotspot off' }}</div>
+            </template>
+            <HotspotSettings
+              v-if="session.isAdmin"
+              :hotspot="state.hotspot"
+              :local-name="state.local_name"
+              :on-hotspot="!!session.status?.hotspot"
+              :locked="locked"
+              :locked-by-job="lockedByJob"
+              @changed="loadAll"
+              @busy="hotspotBusy"
+              @notice="hotspotSays"
             />
-          </div>
-        </div>
-      </section>
+            <template v-else>
+              <FactRow v-for="fact in hotspotFacts" :key="fact.label" v-bind="fact" class="mb-4" />
+              <div class="mb-4">
+                <div class="text-body-2 text-secondary">Address</div>
+                <div class="text-body-1 text-break">http://{{ state.hotspot.address }}/</div>
+                <div class="text-body-1 text-break">http://{{ state.local_name }}/</div>
+              </div>
+              <p class="text-body-2 text-secondary">An administrator can change the hotspot here.</p>
+            </template>
+          </CollapsePanel>
+        </v-col>
+      </v-row>
 
-      <section v-if="state.readable" class="mt-10">
+      <section v-if="state.readable" id="wifi-networks" class="mt-6">
         <h2 class="text-h6 mb-4">Wi-Fi networks</h2>
         <v-alert v-if="wifiError" type="error">
           {{ wifiError }}
@@ -305,30 +400,6 @@ const hotspotFacts = computed<Fact[]>(() => {
           @busy="(on: boolean) => (running.wifi = on)"
         />
         <v-alert v-if="joinNotice" :type="joinNotice.type" class="mt-4">{{ joinNotice.text }}</v-alert>
-      </section>
-
-      <section v-if="state.readable" class="mt-10">
-        <h2 class="text-h6 mb-4">Hotspot</h2>
-        <p v-if="!state.hotspot" class="text-body-1">The hotspot isn't set up on this unit.</p>
-        <HotspotSettings
-          v-else-if="session.isAdmin"
-          :hotspot="state.hotspot"
-          :local-name="state.local_name"
-          :on-hotspot="!!session.status?.hotspot"
-          :locked="locked"
-          :locked-by-job="lockedByJob"
-          @changed="loadAll"
-          @busy="(on: boolean) => (running.hotspot = on)"
-        />
-        <template v-else>
-          <FactRow v-for="fact in hotspotFacts" :key="fact.label" v-bind="fact" class="mb-4" />
-          <div class="mb-4">
-            <div class="text-body-2 text-secondary">Address</div>
-            <div class="text-body-1 text-break">http://{{ state.hotspot.address }}/</div>
-            <div class="text-body-1 text-break">http://{{ state.local_name }}/</div>
-          </div>
-          <p class="text-body-2 text-secondary">An administrator can change the hotspot here.</p>
-        </template>
       </section>
     </template>
 

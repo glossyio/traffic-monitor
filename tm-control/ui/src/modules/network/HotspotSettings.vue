@@ -30,7 +30,7 @@ const props = defineProps<{
   locked: boolean // a join is pending or another section runs a job: nothing here may change
   lockedByJob?: boolean // ...and it is only another section's job, not the join
 }>()
-const emit = defineEmits<{ changed: []; busy: [running: boolean] }>()
+const emit = defineEmits<{ changed: []; busy: [running: boolean]; notice: [notice: Notice | null] }>()
 
 // The words for the warnings. The turn-off and hiding sentences are the design's.
 const RESTART = 'The hotspot restarts, and phones on it are disconnected. Each phone must rejoin by hand.'
@@ -57,12 +57,13 @@ const busy = computed(() => running.value !== null)
 const disabled = computed(() => busy.value || props.locked)
 watch(busy, (running) => emit('busy', running))
 
-interface Notice {
+export interface Notice {
   type: 'success' | 'info' | 'warning' | 'error'
   text: string
   log?: string[]
 }
 const notice = ref<Notice | null>(null)
+watch(notice, (now) => emit('notice', now)) // so the page can open this section when there is something to read
 
 // The password, only while it is shown: undefined while hidden, '' when the device has none
 const revealed = ref<string | undefined>(undefined)

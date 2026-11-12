@@ -47,7 +47,7 @@ describe('the Network page', () => {
   it('shows this device: its names, each link with its MAC and addresses, and the internet line', async () => {
     signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
-    expect(wrapper.findAll('h2').map((h) => h.text().trim())).toEqual(['This device', 'Wi-Fi networks', 'Hotspot'])
+    expect(wrapper.findAll('h2').map((h) => h.text().trim())).toEqual(['This device', 'Hotspot', 'Wi-Fi networks'])
     const text = wrapper.text()
     for (const part of [
       'tm-ab12',
@@ -145,7 +145,10 @@ describe('the Network page', () => {
     }
     expect(text).toContain('An administrator can change the hotspot here.')
     expect(text).not.toMatch(/password/i)
-    const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label') ?? b.text().trim())
+    const labels = wrapper
+      .findAll('button')
+      .filter((b) => b.attributes('aria-expanded') === undefined) // the panels' own toggles
+      .map((b) => b.attributes('aria-label') ?? b.text().trim())
     expect(labels.filter((label) => !label.startsWith('Copy '))).toEqual([])
     expect(wrapper.findAll('input')).toEqual([])
   })
@@ -186,12 +189,12 @@ describe('the Network page', () => {
     expect(wrapper.text()).not.toContain('The device answered with an error.')
   })
 
-  it('puts Wi-Fi networks between This device and Hotspot', async () => {
+  it('puts Wi-Fi networks below This device and Hotspot, which share the first row', async () => {
     signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, [NETWORK]: NETWORK_STATE })
     const { wrapper } = await mountApp('/network')
     const sections = wrapper.findAll('section')
-    expect(sections.map((s) => s.find('h2').text())).toEqual(['This device', 'Wi-Fi networks', 'Hotspot'])
-    expect(sections[1].text()).toContain('HomeNet')
+    expect(sections.map((s) => s.find('h2').text())).toEqual(['This device', 'Hotspot', 'Wi-Fi networks'])
+    expect(sections[2].text()).toContain('HomeNet')
   })
 
   it('leaves Wi-Fi networks out when the network state could not be read', async () => {
@@ -246,9 +249,14 @@ const disabled = (wrapper: { find: (selector: string) => { attributes: (name: st
 
 // An admin on the Network page, with the join the device reports (a function answers each ask)
 async function openAdmin(answers: Record<string, unknown> = {}) {
-  const api = signedIn(ADMIN, { [NETWORK]: NETWORK_STATE, [WIFI]: WIFI_NETWORKS, [JOIN]: json(200, null), ...answers })
-  const { wrapper } = await mountApp('/network')
+  const { api, wrapper } = await openAdminAt('/network', answers)
   return { api, wrapper }
+}
+
+async function openAdminAt(path = '/network', answers: Record<string, unknown> = {}) {
+  const api = signedIn(ADMIN, { [NETWORK]: NETWORK_STATE, [WIFI]: WIFI_NETWORKS, [JOIN]: json(200, null), ...answers })
+  const { wrapper, router } = await mountApp(path)
+  return { api, wrapper, router }
 }
 
 const posts = (api: { sent: { method: string; path: string; body: unknown }[] }) =>
@@ -299,7 +307,10 @@ describe('joining a network from the Network page', () => {
     signedIn(VIEWER, { [NETWORK]: NETWORK_STATE, [WIFI]: WIFI_NETWORKS, [JOIN]: JOIN_COUNTDOWN })
     const { wrapper } = await mountApp('/network')
     expect(wrapper.text()).toContain('Joining Neighbour in 3:12')
-    const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label') ?? b.text().trim())
+    const labels = wrapper
+      .findAll('button')
+      .filter((b) => b.attributes('aria-expanded') === undefined) // the panels' own toggles
+      .map((b) => b.attributes('aria-label') ?? b.text().trim())
     expect(labels.filter((label) => !label.startsWith('Copy '))).toEqual([])
   })
 
@@ -504,5 +515,172 @@ describe('joining a network from the Network page', () => {
     await vi.advanceTimersByTimeAsync(2_000)
     expect(wrapper.text()).toContain('Neighbour works')
     expect(loads()).toBe(before + 2)
+  })
+})
+
+// The page's layout: This device and Hotspot are panels that start collapsed, with a short summary, and open by
+// themselves when they have something to say. Wi-Fi networks and the join card never collapse.
+const toggle = (wrapper: { find: (selector: string) => { attributes: (name: string) => string | undefined; trigger: (event: string) => Promise<void> } }, id: string) =>
+  wrapper.find(`#${id} button[aria-expanded]`)
+const isOpen = (wrapper: Parameters<typeof toggle>[0], id: string) => toggle(wrapper, id).attributes('aria-expanded') === 'true'
+const body = (wrapper: { find: (selector: string) => { element: Element } }, id: string) =>
+  wrapper.find(`#${id}-body`).element as HTMLElement
+const WARNING = '[aria-label="Needs attention"]'
+
+describe('the Network page layout', () => {
+  beforeEach(() => document.body.replaceChildren())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('starts with This device and Hotspot collapsed, each with its summary', async () => {
+    const { wrapper } = await openAdmin()
+    for (const id of ['this-device', 'hotspot']) {
+      expect(isOpen(wrapper, id), id).toBe(false)
+      expect(body(wrapper, id).style.display, id).toBe('none')
+    }
+    const device = wrapper.find('#this-device-summary').text()
+    for (const part of ['tm-ab12.local', '192.168.1.57', '10.42.0.1']) expect(device).toContain(part)
+    expect(wrapper.find('#this-device h2').text()).toBe('This device')
+    expect(wrapper.find('#hotspot h2').text()).toBe('Hotspot')
+    expect(wrapper.find('#hotspot-summary').text()).toBe('TM-AB12')
+  })
+
+  it('summarises the addresses in use: the Wi-Fi one on a network, none for a link that is down', async () => {
+    const down = { ...NETWORK_STATE.ethernet!, connected: false, addresses: [] }
+    const { wrapper } = await openAdmin({ [NETWORK]: networkState({ ethernet: down, wifi: JOINED }) })
+    const device = wrapper.find('#this-device-summary').text()
+    expect(device).toContain('tm-ab12.local')
+    expect(device).toContain('192.168.1.60')
+    expect(device).not.toContain('10.42.0.1')
+    expect(device).not.toContain('192.168.1.57')
+  })
+
+  it('says "Hotspot off" in the Hotspot summary when the hotspot is off', async () => {
+    const off = { ...NETWORK_STATE.hotspot!, enabled: false, active: false }
+    const { wrapper } = await openAdmin({ [NETWORK]: networkState({ hotspot: off }) })
+    expect(wrapper.find('#hotspot-summary').text()).toBe('Hotspot off')
+  })
+
+  it('shows the details when a panel is expanded, and the summary only while it is collapsed', async () => {
+    const { wrapper } = await openAdmin()
+    await toggle(wrapper, 'this-device').trigger('click')
+    expect(isOpen(wrapper, 'this-device')).toBe(true)
+    expect(body(wrapper, 'this-device').style.display).not.toBe('none')
+    expect(wrapper.find('#this-device-body').text()).toContain('2C:CF:67:00:AB:11')
+    expect(wrapper.find('#this-device-body').text()).toContain('Internet')
+    expect(wrapper.find('#this-device-summary').exists()).toBe(false)
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+
+    await toggle(wrapper, 'hotspot').trigger('click')
+    expect(wrapper.find('#hotspot-body').text()).toContain('Hide the name')
+    await toggle(wrapper, 'hotspot').trigger('click')
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+  })
+
+  it('puts the two panels in one row, each in a half-width column, and leaves Wi-Fi networks and the card out of it', async () => {
+    const { wrapper } = await openAdmin({ [JOIN]: JOIN_COUNTDOWN })
+    const row = wrapper.find('#this-device').element.closest('.v-row')!
+    expect(row.contains(wrapper.find('#hotspot').element)).toBe(true)
+    for (const id of ['this-device', 'hotspot']) {
+      const column = wrapper.find(`#${id}`).element.parentElement!
+      expect(column.classList.contains('v-col-md-6'), id).toBe(true)
+      expect(column.classList.contains('v-col-12'), id).toBe(true)
+    }
+    expect(row.contains(wrapper.find('#wifi-networks').element)).toBe(false)
+    expect(row.textContent).not.toContain('Neighbour works')
+  })
+
+  it('never collapses Wi-Fi networks or the join card', async () => {
+    const { wrapper } = await openAdmin({ [JOIN]: JOIN_COUNTDOWN })
+    expect(wrapper.find('#wifi-networks').exists()).toBe(true)
+    expect(wrapper.find('#wifi-networks [aria-expanded]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Neighbour works')
+    const card = wrapper.findAll('.v-card').find((c) => c.text().includes('Neighbour works'))!
+    expect(card.find('[aria-expanded]').exists()).toBe(false)
+    expect(wrapper.findAll('h2').map((h) => h.text().trim())).toEqual(
+      expect.arrayContaining(['This device', 'Hotspot', 'Wi-Fi networks']),
+    )
+  })
+
+  it('gives a viewer the same panels, with no controls in them', async () => {
+    signedIn(VIEWER, { [NETWORK]: NETWORK_STATE, [WIFI]: WIFI_NETWORKS, [JOIN]: json(200, null) })
+    const { wrapper } = await mountApp('/network')
+    expect(isOpen(wrapper, 'this-device')).toBe(false)
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+    expect(wrapper.find('#hotspot-summary').text()).toBe('TM-AB12')
+    const controls = wrapper
+      .findAll('button')
+      .filter((b) => !b.attributes('aria-label')?.startsWith('Copy ') && b.attributes('aria-expanded') === undefined)
+    expect(controls).toEqual([])
+  })
+
+  it.each([
+    ['#hotspot', 'hotspot', 'this-device'],
+    ['#this-device', 'this-device', 'hotspot'],
+  ])('opens the panel an anchor in the address names (%s)', async (hash, opened, other) => {
+    signedIn(ADMIN, { [NETWORK]: NETWORK_STATE, [WIFI]: WIFI_NETWORKS, [JOIN]: json(200, null) })
+    const { wrapper } = await mountApp(`/network${hash}`)
+    expect(isOpen(wrapper, opened)).toBe(true)
+    expect(isOpen(wrapper, other)).toBe(false)
+  })
+
+  it('opens the panel when the anchor changes while the page is open', async () => {
+    const { wrapper, router } = await openAdminAt()
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+    await router.push('/network#hotspot')
+    await flushPromises()
+    expect(isOpen(wrapper, 'hotspot')).toBe(true)
+  })
+
+  it('opens the Hotspot panel by itself when its change fails, and marks it while collapsed', async () => {
+    let status: Job['status'] = 'running'
+    const { wrapper } = await openAdmin({
+      [CHANGE]: json(202, { id: 'job1' }),
+      [JOB]: () => json(200, job(status)),
+    })
+    await toggle(wrapper, 'hotspot').trigger('click')
+    await wrapper.find('button[aria-label="Change the hotspot name"]').trigger('click')
+    await typeInto(dialogField('New name'), 'TM-ROAD')
+    await clickInDialog('Change name')
+    await toggle(wrapper, 'hotspot').trigger('click') // collapsed while the job runs
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+    expect(wrapper.find(`#hotspot ${WARNING}`).exists()).toBe(false)
+
+    status = 'failed'
+    await vi.waitFor(() => expect(isOpen(wrapper, 'hotspot')).toBe(true), { timeout: 4000 })
+    expect(wrapper.find('#hotspot-body').text()).toContain("The change wasn't made.")
+    expect(wrapper.find(`#hotspot ${WARNING}`).exists()).toBe(false) // open: nothing to mark
+
+    await toggle(wrapper, 'hotspot').trigger('click') // the person can close it again
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+    expect(wrapper.find(`#hotspot ${WARNING}`).exists()).toBe(true)
+  })
+
+  it('opens the Hotspot panel by itself when the device refuses its change', async () => {
+    let refuse: () => void = () => {}
+    const { wrapper } = await openAdmin({
+      [CHANGE]: () =>
+        new Promise<Response>((resolve) => {
+          refuse = () => resolve(apiError(409, 'join_pending', 'The unit is joining Neighbour now.'))
+        }),
+    })
+    await toggle(wrapper, 'hotspot').trigger('click')
+    await wrapper.find('button[aria-label="Change the hotspot name"]').trigger('click')
+    await typeInto(dialogField('New name'), 'TM-ROAD')
+    await clickInDialog('Change name')
+    await toggle(wrapper, 'hotspot').trigger('click')
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+
+    refuse()
+    await vi.waitFor(() => expect(isOpen(wrapper, 'hotspot')).toBe(true))
+    expect(wrapper.find('#hotspot-body').text()).toContain('The unit is joining Neighbour now.')
+  })
+
+  it('leaves the panels collapsed while a join locks them', async () => {
+    const { wrapper } = await openAdmin({ [JOIN]: JOIN_COUNTDOWN })
+    expect(isOpen(wrapper, 'hotspot')).toBe(false)
+    expect(wrapper.find('#hotspot-body').text()).toContain(LOCKED_BY_JOIN)
   })
 })
