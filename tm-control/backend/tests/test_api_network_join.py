@@ -227,6 +227,31 @@ def test_the_wifi_answer_carries_the_join(device_client, login, links, run_dir):
     assert body["join"] == device_client.get(f"{URL}/join").json()
 
 
+def test_the_network_under_test_is_not_a_saved_network(device_client, login, links, run_dir):
+    """The join job adds its profile in memory, so NetworkManager lists it; it is not saved until the switch."""
+    tested = "33333333-3333-4333-8333-333333333333"
+    links.saved.append(saved(tested, "Cafe", autoconnect=False))
+    write_scan(run_dir)
+    due = time.monotonic() + 200
+    write_join(run_dir, stage="countdown", ssid="Cafe", uuid=tested, saved=False, switch_monotonic=due)
+    login(device_client, ADMIN, ADMIN_PASSWORD)
+    body = device_client.get(f"{URL}/wifi").json()
+    assert [n["name"] for n in body["saved"]] == ["Home", "Depot"]
+    assert [n["saved"] for n in body["nearby"] if n["name"] == "Cafe"] == [False]
+
+
+@pytest.mark.parametrize("state", [{"stage": "switching", "saved": True}, {"stage": "joined", "saved": True}])
+def test_the_network_is_a_saved_network_once_the_join_saves_it(device_client, login, links, run_dir, state):
+    tested = "33333333-3333-4333-8333-333333333333"
+    links.saved.append(saved(tested, "Cafe", autoconnect=False))
+    write_scan(run_dir)
+    write_join(run_dir, ssid="Cafe", uuid=tested, switch_monotonic=None, **state)
+    login(device_client, ADMIN, ADMIN_PASSWORD)
+    body = device_client.get(f"{URL}/wifi").json()
+    assert [n["name"] for n in body["saved"]] == ["Home", "Depot", "Cafe"]
+    assert [n["saved"] for n in body["nearby"] if n["name"] == "Cafe"] == [True]
+
+
 # Starting a join
 
 

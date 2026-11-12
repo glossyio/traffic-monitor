@@ -7,7 +7,8 @@ reads as "none", never as an error, and NetworkManager's sentences are never rea
 returns and the one in use is the profile's UUID.
 
 The join is root's network-join job's state file (network-join.json, in the same directory), read the same way. A stage
-that is still going while the job's unit is not running reads as `interrupted`.
+that is still going while the job's unit is not running reads as `interrupted`. The profile a join is testing (the
+state file's uuid while its `saved` is false) is not a saved network, though NetworkManager lists it.
 """
 
 import json
@@ -181,6 +182,10 @@ def read_wifi(app_state) -> WifiNetworks:
     else:
         radio = "off" if network.radio_enabled() is False else "on"
     found = network.saved_wifi()
+    if found is not None:
+        state = _join_file(_json(app_state.settings.network_run_dir / JOIN_FILE))
+        if state is not None and state["saved"] is False and state["uuid"]:
+            found = [n for n in found if n.uuid != state["uuid"]]
     if found is None:
         return WifiNetworks(
             readable=False, radio=radio, saved=[], nearby=[], scanned_seconds_ago=None, join=read_join(app_state)
