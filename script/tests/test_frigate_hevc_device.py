@@ -1,5 +1,6 @@
 """The HEVC decoder reaches Frigate by a stable udev symlink, whatever /dev/media number it has (#231)."""
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -102,6 +103,7 @@ def test_quadlet_turns_the_symlink_into_a_device_flag(tmp_path):
     result = subprocess.run([QUADLET, "-dryrun"], env={"QUADLET_UNIT_DIRS": str(units), "PATH": "/usr/bin:/bin"},
                             capture_output=True, text=True)
     exec_start = next(line for line in result.stdout.splitlines() if line.startswith("ExecStart="))
-    assert f" --device {SYMLINK} " in exec_start
+    # Podman 5 writes "--device /dev/x"; Podman 4 (Ubuntu 24.04, the CI runner) writes "--device=/dev/x".
+    assert re.search(rf" --device[= ]{re.escape(SYMLINK)} ", exec_start), exec_start
     assert f"After={DEVICE_UNIT}" in result.stdout.splitlines()
     assert "error" not in result.stderr.lower(), result.stderr
