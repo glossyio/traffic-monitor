@@ -723,7 +723,75 @@ export interface paths {
         /** List Cameras */
         get: operations["list_cameras_api_v1_cameras_get"];
         put?: never;
+        /**
+         * Add Camera
+         * @description Add an entry under a new neutral name for a Frigate camera that no entry points at.
+         */
+        post: operations["add_camera_api_v1_cameras_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Camera
+         * @description Set an entry's record, radar, and plates settings. Frigate isn't asked: these don't depend on it.
+         */
+        put: operations["set_camera_api_v1_cameras__name__put"];
         post?: never;
+        /**
+         * Remove Camera
+         * @description Remove an entry whose Frigate camera is gone, or that duplicates an earlier entry's.
+         */
+        delete: operations["remove_camera_api_v1_cameras__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/frigate-camera": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Point Camera
+         * @description Point an entry whose Frigate camera is gone at a Frigate camera no entry points at. Nothing else changes.
+         */
+        post: operations["point_camera_api_v1_cameras__name__frigate_camera_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/neutral-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Neutral Name
+         * @description Re-key an entry to a new neutral name, and move its bearings in every place to the new name.
+         */
+        post: operations["neutral_name_api_v1_cameras__name__neutral_name_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -964,6 +1032,31 @@ export interface components {
             bearing: string;
             /** Reason */
             reason?: string | null;
+        };
+        /** CameraAdd */
+        CameraAdd: {
+            /** Frigate Camera */
+            frigate_camera: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Camera Radar */
+            camera_radar?: string | null;
+            /** Plate Recognizer */
+            plate_recognizer?: boolean | null;
+        };
+        /** CameraPoint */
+        CameraPoint: {
+            /** To */
+            to: string;
+        };
+        /** CameraSettings */
+        CameraSettings: {
+            /** Enabled */
+            enabled: boolean;
+            /** Camera Radar */
+            camera_radar?: string | null;
+            /** Plate Recognizer */
+            plate_recognizer?: boolean | null;
         };
         /** CamerasState */
         CamerasState: {
@@ -2754,6 +2847,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+        };
+    };
+    add_camera_api_v1_cameras_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_camera_api_v1_cameras__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_camera_api_v1_cameras__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    point_camera_api_v1_cameras__name__frigate_camera_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraPoint"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    neutral_name_api_v1_cameras__name__neutral_name_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

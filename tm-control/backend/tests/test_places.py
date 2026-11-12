@@ -163,3 +163,9 @@ def test_rename_sensor_moves_every_places_bearing(places, state):
     assert places.get("00000003-si").bearings == [taken, BEARINGS[1]]  # already had the new name: that row stays
     places.rename_sensor("cameras", "oak_ave_wide", "camera_2_b07e11")  # nothing under the old name: nothing changes
     assert places.get("00000002-si").bearings == [renamed, BEARINGS[1]]
+
+
+def test_rename_sensor_to_the_same_name_changes_nothing(places):
+    _create(places, "00000001-si", "used", now=100, bearings=BEARINGS)
+    places.rename_sensor("cameras", "picam_h265", "picam_h265")
+    assert places.get("00000001-si").bearings == BEARINGS

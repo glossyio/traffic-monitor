@@ -159,6 +159,8 @@ class Places:
     def rename_sensor(self, sensor_type: str, old: str, new: str) -> None:
         """Move every place's bearing for a sensor to its new name, keeping each row's place in the order. A place
         that already has a bearing under the new name keeps that one, and its row under the old name goes."""
+        if old == new:
+            return
         with _writing(self.state) as con:
             con.execute(
                 "UPDATE OR IGNORE survey_bearings SET sensor_name = ? WHERE sensor_type = ? AND sensor_name = ?",
