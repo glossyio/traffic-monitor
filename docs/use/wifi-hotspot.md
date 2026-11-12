@@ -36,12 +36,14 @@ Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, i
 * **Wi-Fi networks:** the networks the unit has saved and the ones it heard the last time it looked. See [Put the unit on a Wi-Fi network](#put-the-unit-on-a-wi-fi-network) and [Saved networks](#saved-networks).
 * **Hotspot:** whether it is on, its name, whether the name is hidden, and the two addresses it answers on.
 
+**This device** and **Hotspot** sit side by side on a wide screen, above **Wi-Fi networks**, and are folded each time you open the page. Folded, **This device** shows the `.local` name and the addresses in use, and **Hotspot** shows its name, or **Hotspot off**. Select a heading to open it. A panel opens by itself when something in it needs your attention, such as a hotspot change that fails or is refused, and a folded one then shows a warning mark.
+
 Every name and address has a **Copy** button. If the network service doesn't answer, the page says so and shows only the names.
 
 The [Device page](device-health.md#the-device-page) shows the same addresses in a short summary, with a link to this page.
 
 !!! tip "Find the MAC address"
-    A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Copy it from the Wi-Fi block of the Network page, and add it to the router's list.
+    A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Open **This device** on the Network page, copy the address from the Wi-Fi block, and add it to the router's list.
 
 Viewers see the lists of networks, a join's progress card (read only, with no buttons), the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: put the unit on a Wi-Fi network, change the saved networks, show or change the hotspot's password, rename the hotspot, hide its name, and turn it on or off.
 
@@ -148,7 +150,7 @@ The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable o
 
 ### Show the password
 
-On the Network page, an administrator chooses **Show** next to **Password**. The page asks the unit for the password each time and forgets it again when you choose **Hide**, change anything, or leave the page. The control app records each time an administrator shows it.
+On the Network page, an administrator opens **Hotspot** and chooses **Show** next to **Password**. The page asks the unit for the password each time and forgets it again when you choose **Hide**, change anything, or leave the page. The control app records each time an administrator shows it.
 
 If you can't sign in, run `sudo tm-control card` on the unit instead. Over Ethernet or SSH works when you're locked out of the hotspot.
 
