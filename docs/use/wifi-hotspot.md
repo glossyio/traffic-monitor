@@ -33,8 +33,8 @@ Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, i
 * **This device:** the unit's name and its `.local` name, such as `tm-ab12` and `tm-ab12.local`.
 * **Ethernet** and **Wi-Fi:** whether each is connected, and for each its MAC address, IP address, gateway, and DNS servers. The Wi-Fi line says which network the unit is on, with its signal, or that it is on its own hotspot. A unit without Ethernet has no Ethernet line, and a unit without a built-in radio says so.
 * **Internet:** whether the unit reaches the internet. An offline unit says **Not reachable**, which is normal.
-* **Wi-Fi networks:** the networks the unit has saved and the ones it heard the last time it looked. See [Put the unit on a Wi-Fi network](#put-the-unit-on-a-wi-fi-network) and [Saved networks](#saved-networks).
 * **Hotspot:** whether it is on, its name, whether the name is hidden, and the two addresses it answers on.
+* **Wi-Fi networks:** the networks the unit has saved and the ones it heard the last time it looked. See [Put the unit on a Wi-Fi network](#put-the-unit-on-a-wi-fi-network) and [Saved networks](#saved-networks).
 
 **This device** and **Hotspot** sit side by side on a wide screen, above **Wi-Fi networks**, and are folded each time you open the page. Folded, **This device** shows the `.local` name and the addresses in use, and **Hotspot** shows its name, or **Hotspot off**. Select a heading to open it. A panel opens by itself when something in it needs your attention, such as a hotspot change that fails or is refused, and a folded one then shows a warning mark.
 
@@ -156,7 +156,7 @@ If you can't sign in, run `sudo tm-control card` on the unit instead. Over Ether
 
 ### Change the password
 
-1. Sign in as an administrator and open **Network**.
+1. Sign in as an administrator and open **Network**, then open **Hotspot**.
 2. Next to **Password**, choose **Change**. A unit whose hotspot has no password offers **Set a password** here.
 3. Type the new password, 8 to 63 letters, digits, and symbols with no space at either end.
 4. Write the password down, then choose **Change password**, or **Set password** on a unit that has none.
@@ -181,11 +181,11 @@ The hotspot restarts with the new password, and phones on it are disconnected. E
 
 ## Rename the hotspot or hide its name
 
-An administrator can change the name phones see, and hide it, on the Network page.
+An administrator can change the name phones see, and hide it, in the **Hotspot** panel of the Network page.
 
 ### Rename the hotspot
 
-1. Open **Network**, and next to the hotspot's **Name**, choose **Change**.
+1. Open **Network**, open **Hotspot**, and next to its **Name**, choose **Change**.
 2. Type the new name. It takes 1 to 32 bytes, so fewer characters if it has accents or emoji, with no space at either end.
 3. Choose **Change name**.
 
@@ -193,7 +193,7 @@ The hotspot restarts, and each phone must join the new name by hand. A printed c
 
 ### Hide the name
 
-1. Open **Network**, and switch on **Hide the name**.
+1. Open **Network**, open **Hotspot**, and switch on **Hide the name**.
 2. Read the warning, and choose **Hide the name**.
 
 The warning says: "The hotspot is still on and can still be found by scanning. Only its name is hidden." Hiding the name doesn't stop anyone from finding the hotspot, so it isn't a lock. A phone no longer lists the hotspot by name. On Android, add the network by hand: choose **Add network**, type the name and the password, and tick **Hidden network**. Without that, the phone never connects. Switch **Hide the name** off to show the name again.
@@ -202,7 +202,7 @@ The warning says: "The hotspot is still on and can still be found by scanning. O
 
 A hotspot you made yourself in NetworkManager is kept. When a unit has no profile named `tm-hotspot`, the installer takes over your access-point profile, the one that starts by itself and was used last, renames it `tm-hotspot`, and stops any other access point from starting. Its name on air, password, band, and hidden setting stay as you set them. The installer sets the profile's address to `10.42.0.1` and its priority below your saved networks, and copies the password into the password file.
 
-A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. The Status page's **Set a password** link opens the Network page. There, next to **Password**, choose **Set a password** and follow the steps in [Change the password](#change-the-password). The installer then keeps the profile's password the same as the password file's. An empty file tells the installer to leave the hotspot's security alone.
+A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. The Status page's **Set a password** link opens the Network page with **Hotspot** open. There, next to **Password**, choose **Set a password** and follow the steps in [Change the password](#change-the-password). The installer then keeps the profile's password the same as the password file's. An empty file tells the installer to leave the hotspot's security alone.
 
 A hand-made hotspot with a hidden name keeps it. Manage it as in [Hide the name](#hide-the-name).
 
