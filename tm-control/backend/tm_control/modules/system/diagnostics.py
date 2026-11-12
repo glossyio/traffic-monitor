@@ -5,6 +5,8 @@ The whole text is redacted before it leaves the device: every device secret's va
 the apps' .env files (the broker password can show up inside a URL in a log line), the entered secrets' values
 (Node-RED's journal can show the ThingsBoard token as the MQTT username), and the value after any password-,
 token-, or secret-style key. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
+The names come from config.yml, Frigate's running config, Frigate's own config file (so a stopped Frigate hides
+none), and the config.yml backups.
 """
 
 import json
@@ -15,11 +17,12 @@ from pathlib import Path
 from urllib.parse import quote
 
 from tm_control import fake
-from tm_control.adapters import sysinfo, systemd
+from tm_control.adapters import frigate, sysinfo, systemd
 from tm_control.adapters.redact import redact, redact_words
 from tm_control.adapters.yamlfile import read_config
 from tm_control.core.checks import Report
 from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret
+from tm_control.modules.apps import probes
 from tm_control.modules.cameras.names import is_neutral
 from tm_control.modules.cameras.state import compare, frigate_now
 from tm_control.modules.location.config import camera_entries
@@ -68,10 +71,12 @@ def secret_values(app_state) -> list[str]:
 
 
 def camera_names(app_state) -> set[str]:
-    """Frigate's names for the cameras, which stay on the device: each that differs from its entry's key, each Frigate
-    camera that no entry points at, and, from the config.yml backups beside the file (a save from the control app makes
-    one), each frigate_camera value and each key that is neither a neutral name nor a key of the file now. So a
-    Frigate log line from before a rename made on the Cameras page is covered. A file that can't be read is skipped."""
+    """Frigate's names for the cameras, which stay on the device: each that differs from its entry's key; each Frigate
+    camera that no entry points at, whether Frigate's running config or Frigate's config file names it (the file still
+    does while Frigate is down or in safe mode, and after a Save that wasn't followed by a restart); and, from the
+    config.yml backups beside the file (a save from the control app makes one), each frigate_camera value and each key
+    that is neither a neutral name nor a key of the file now. So a Frigate log line from before a rename made on the
+    Cameras page is covered. A file that can't be read, or isn't valid YAML, is skipped."""
     names = set()
     path = Path(app_state.config_path)
     read = read_config(path)
@@ -80,6 +85,10 @@ def camera_names(app_state) -> set[str]:
     cameras = frigate_now(app_state)[1]
     if cameras is not None:
         names.update(row.frigate_camera for row in compare(current, cameras) if row.name is None)
+    in_file = frigate.config_file(app_state.manifest.codedir)
+    if isinstance(in_file.data, dict):
+        file_cameras = probes.mapping(in_file.data.get("cameras"))
+        names.update(row.frigate_camera for row in compare(current, file_cameras) if row.name is None)
     keys = {entry.name for entry in current}
     try:
         backups = sorted(path.parent.glob(f"{path.name}.*.bak"))

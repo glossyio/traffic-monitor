@@ -611,6 +611,62 @@ def test_diagnostics_replace_frigates_camera_names(device_client, login, host, t
     assert "oak_ave_wide_2 isn't <redacted>" in text  # a longer name isn't touched
 
 
+def frigate_file(host, text):
+    """Frigate's config file where the host keeps it, which is what Frigate reads when it starts."""
+    path = Path(host.codedir) / "frigate" / "config" / "config.yml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def entry_config(device_client, tmp_path):
+    """A config.yml with one entry that points at oak_ave_wide, and picam_h265 with its own entry."""
+    config = tmp_path / "config.yml"
+    config.write_text(
+        "sensors:\n  cameras:\n    camera_1_3fa9c2:\n      frigate_camera: oak_ave_wide\n      enabled: true\n"
+        "    picam_h265:\n      enabled: true\n"
+    )
+    device_client.app.state.config_path = config
+
+
+@pytest.mark.parametrize("running", [None, {"safe_mode": True, "cameras": {}}], ids=["down", "safe_mode"])
+def test_diagnostics_replace_the_names_in_frigates_file_while_frigate_is_not_running(
+    device_client, login, host, tmp_path, monkeypatch, running
+):
+    """A camera renamed in Frigate whose Save & Restart didn't bring Frigate back: its journal lines and errors name
+    the new camera, and no entry points at it yet."""
+    entry_config(device_client, tmp_path)
+    frigate_file(host, "cameras:\n  main_st:\n    enabled: true\n  picam_h265:\n    enabled: true\n")
+    monkeypatch.setattr(frigate, "config", lambda: running)
+    host.journal = lambda unit, lines: ["frigate.video ERROR: main_st: no frames; oak_ave_wide gone; picam_h265 ok"]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert "frigate.video ERROR: <redacted>: no frames; <redacted> gone; picam_h265 ok" in text
+
+
+def test_diagnostics_replace_a_name_that_frigates_file_has_and_its_running_config_lacks(
+    device_client, login, host, tmp_path, monkeypatch
+):
+    """After Save without Restart the file names a camera that Frigate's running config doesn't have yet."""
+    entry_config(device_client, tmp_path)
+    frigate_file(host, "cameras:\n  oak_ave_wide:\n    enabled: true\n  main_st:\n    enabled: true\n")
+    monkeypatch.setattr(frigate, "config", lambda: {"cameras": {"oak_ave_wide": {"enabled": True}}})
+    host.journal = lambda unit, lines: ["main_st and oak_ave_wide and picam_h265"]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert "<redacted> and <redacted> and picam_h265" in text
+
+
+def test_diagnostics_skip_a_frigate_file_that_is_not_valid_yaml(device_client, login, host, tmp_path, monkeypatch):
+    entry_config(device_client, tmp_path)
+    frigate_file(host, "cameras: [unclosed\n")
+    monkeypatch.setattr(frigate, "config", lambda: None)
+    host.journal = lambda unit, lines: ["oak_ave_wide and picam_h265"]
+    login(device_client, *ADMIN)
+    r = diagnostics(device_client)
+    assert r.status_code == 200
+    assert "<redacted> and picam_h265" in r.text  # the entry's own Frigate name is still known
+
+
 def test_diagnostics_replace_no_name_when_the_config_is_unreadable_and_frigate_is_down(device_client, login, host):
     host.journal = lambda unit, lines: ["picam_h265 stays"]
     login(device_client, *ADMIN)

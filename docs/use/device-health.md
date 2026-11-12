@@ -82,11 +82,12 @@ When you ask for help, send the diagnostics with your question. It's a text file
 * **Download diagnostics** saves the file.
 * **Copy** puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.
 
-The camera names replaced are Frigate's cameras that have a different name in `config.yml`, Frigate's cameras that no entry in `config.yml` points at, and the names found in the copies of `config.yml` that the control app saves beside it each time you change it on the [Cameras page](cameras.md) (the last ten). A short name is replaced only when it stands alone as a word, so `front` is replaced in "front camera" but not in "frontage". Three limits:
+The camera names replaced are Frigate's cameras that have a different name in `config.yml`, Frigate's cameras that no entry in `config.yml` points at (read from Frigate and from Frigate's own configuration file, so they are covered while Frigate isn't running), and the names found in the copies of `config.yml` that the control app saves beside it. It saves one each time it changes `config.yml`, from the [Cameras page](cameras.md) or the [Location page](location.md), and keeps the last ten. A short name is replaced only when it stands alone as a word, so `front` is replaced in "front camera" but not in "frontage". Four limits:
 
 * If you renamed a camera by editing `config.yml` by hand, there is no saved copy with the old name. The old name can then appear in log lines from before the change, until they scroll out of the logs.
 * A short, everyday name such as `front` is replaced wherever that word appears in the file. That errs on the side of hiding too much.
 * On a device whose `config.yml` still names a camera by the name you gave it in Frigate, that name is the one the device records, so it isn't replaced. [Switch the camera to a neutral name](cameras.md#use-a-neutral-name) first.
+* When Frigate isn't answering and its configuration file can't be read (a YAML mistake in it, for example), a camera that has no entry in `config.yml` yet can't be recognized, so its name can appear in the log lines.
 
 ### Reboot or shut down
 
