@@ -268,6 +268,16 @@ describe('the join card', () => {
     expect(unknown.text()).toContain("add the unit's Wi-Fi MAC address to its list. Nothing was saved.")
   })
 
+  it('lets the line about a refused copy wrap, outside the no-wrap MAC address', async () => {
+    const failed = joinState({ stage: 'failed', joined: false, reason: 'not_joined', address: null, internet: null, seconds_left: null })
+    Object.defineProperty(document, 'execCommand', { value: vi.fn(() => false), configurable: true })
+    const wrapper = card({ join: failed })
+    await wrapper.find('button[aria-label="Copy Wi-Fi MAC address"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Select the text to copy it.'))
+    const line = wrapper.findAll('span').find((span) => span.text() === 'Select the text to copy it.')!
+    expect(line.element.closest('.text-no-wrap')).toBeNull()
+  })
+
   it('says the network gave no address', () => {
     const failed = joinState({ stage: 'failed', joined: false, reason: 'no_address', address: null, internet: null, seconds_left: null })
     let text = card({ join: failed }).text()

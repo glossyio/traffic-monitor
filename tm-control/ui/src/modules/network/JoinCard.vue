@@ -167,7 +167,7 @@ const finished = computed(() => ['joined', 'failed', 'cancelled', 'switch_failed
         </div>
         <div v-if="join.address" class="mb-2">
           The unit's address there:
-          <span class="text-no-wrap">{{ join.address }}<CopyButton :text="join.address" :label="`the unit's address on ${name}`" /></span>
+          <span class="text-no-wrap">{{ join.address }}</span><CopyButton :text="join.address" :label="`the unit's address on ${name}`" />
         </div>
         <div v-if="mac" class="mb-2">Wi-Fi MAC address: {{ mac }}</div>
         <div class="mb-2">Or open: http://{{ localName }}/</div>
@@ -197,7 +197,7 @@ const finished = computed(() => ['joined', 'failed', 'cancelled', 'switch_failed
         <span role="img" :aria-label="mark.label"><v-icon :icon="mark.icon" :color="mark.color" size="28" /></span>
         <div class="flex-grow-1">
           <p v-if="notJoined">
-            {{ notJoinedHead }}<span v-if="mac" class="text-no-wrap">{{ mac }},<span class="d-inline-flex my-n3 align-middle"><CopyButton :text="mac" label="Wi-Fi MAC address" /></span></span>{{ notJoinedTail }}
+            {{ notJoinedHead }}<template v-if="mac"><span class="text-no-wrap">{{ mac }},</span><span class="d-inline-flex my-n3 align-middle"><CopyButton :text="mac" label="Wi-Fi MAC address" /></span></template>{{ notJoinedTail }}
           </p>
           <p v-else>{{ text }}</p>
           <v-progress-linear v-if="stage === 'testing'" indeterminate color="primary" class="mt-3" />
