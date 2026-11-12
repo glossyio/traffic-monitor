@@ -1,5 +1,6 @@
 """Each image build unit first runs a throwaway Podman command, which takes the boot's state refresh (#268)."""
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -8,11 +9,24 @@ from tmsetup_render import REPO, load_role_yaml, render
 
 REFRESH = "/usr/bin/podman network exists podman"
 BUILD_UNITS = sorted(path.relative_to(REPO).as_posix() for path in (REPO / "container").glob("*/*.build.j2"))
-QUADLET = next((p for p in ("/usr/libexec/podman/quadlet", "/usr/lib/podman/quadlet") if Path(p).exists()), None)
+QUADLET_PATHS = ("/usr/libexec/podman/quadlet", "/usr/lib/podman/quadlet")
+QUADLET_BUILD_UNITS = (5, 2)  # the first Podman whose Quadlet reads .build files
 
 
 def build_unit(template):
     return render(template, **dict(load_role_yaml("vars/main.yml"), tmsetup_codedir="/opt/traffic-monitor"))
+
+
+def quadlet_for_build_units(paths=QUADLET_PATHS):
+    """The Quadlet generator's path, or a skip when this machine has none or has one too old to read .build files."""
+    quadlet = next((path for path in paths if Path(path).exists()), None)
+    if quadlet is None:
+        pytest.skip("no Quadlet generator on this machine (install podman)")
+    version = subprocess.run([quadlet, "-version"], capture_output=True, text=True).stdout.strip()
+    numbers = tuple(int(part) for part in re.findall(r"\d+", version)[:2])
+    if numbers < QUADLET_BUILD_UNITS:
+        pytest.skip(f"Quadlet {version or '(no version)'} ignores .build files; they need Podman 5.2 or later")
+    return quadlet
 
 
 def service_lines(text):
@@ -44,12 +58,20 @@ def test_build_unit_runs_the_throwaway_command_first_and_nothing_else(template):
     assert service_lines(build_unit(template)) == [f"ExecStartPre=-{REFRESH}"]
 
 
+def test_a_quadlet_older_than_build_units_is_a_skip(tmp_path):
+    """Quadlet reads .build files from Podman 5.2 on; an older one, such as Ubuntu 24.04's 4.9, ignores them."""
+    old = tmp_path / "quadlet"
+    old.write_text("#!/bin/sh\necho 4.9.3\n")
+    old.chmod(0o755)
+    with pytest.raises(pytest.skip.Exception, match="4.9.3"):
+        quadlet_for_build_units([str(old)])
+
+
 def test_quadlet_keeps_the_line_in_every_build_service(tmp_path):
-    if QUADLET is None:
-        pytest.skip("no Quadlet generator on this machine (install podman)")
+    quadlet = quadlet_for_build_units()
     for template in BUILD_UNITS:
         (tmp_path / Path(template).name.removesuffix(".j2")).write_text(build_unit(template))
-    result = subprocess.run([QUADLET, "-dryrun"], env={"QUADLET_UNIT_DIRS": str(tmp_path), "PATH": "/usr/bin:/bin"},
+    result = subprocess.run([quadlet, "-dryrun"], env={"QUADLET_UNIT_DIRS": str(tmp_path), "PATH": "/usr/bin:/bin"},
                             capture_output=True, text=True)
     services = result.stdout.split("---")[1:]  # name, body, name, body, ...
     bodies = dict(zip(services[::2], services[1::2]))
