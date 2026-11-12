@@ -1092,7 +1092,9 @@ the unit's hotspot goes away for the test, so the words matter more than the lay
   though the page asks every 2. At 390 px it reads as one column: the address and the MAC address each on a line,
   then the clock, then Cancel and Switch now side by side, then the sentence about the hotspot. The times are
   `m:ss`, never seconds.
-- The address, the MAC address, and the `.local` name are plain text; Copy is beside the address. The `.local` name is
+- The address, the MAC address, and the `.local` name are plain text; Copy is beside the address, and beside the MAC
+  address in the "couldn't join" sentence, where the person has to type it into a router's list (a viewer gets Copy too: it
+  changes nothing). The `.local` name is
   not a link: inside a phone's sign-in window a link opens in that window, as `HotspotNote` explains.
 - After Join is sent and before the unit reports a join, the card says it is testing. If the unit reports none within
   15 seconds while the page can still reach it, the page says "The test didn't start. Try again." and drops the card.

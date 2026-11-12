@@ -4,9 +4,9 @@
   on the unit's own hotspot, which goes away for the test, so each stage says what to do next as well as what
   happened, and a page that has lost the unit (`lost`) says that is expected rather than showing an error. The times
   come from the device (the page counts the seconds between its answers, see `useJoin`). An admin gets Switch now and
-  Cancel during the countdown and Dismiss on a result; a viewer sees the same words and no buttons. The addresses are
-  plain text: inside a phone's sign-in window a link would open in that window. Emits `changed` after a button was
-  pressed, so the page asks again.
+  Cancel during the countdown and Dismiss on a result; a viewer sees the same words and no buttons but Copy, which
+  changes nothing. The addresses are plain text: inside a phone's sign-in window a link would open in that window.
+  Emits `changed` after a button was pressed, so the page asks again.
 -->
 <script setup lang="ts">
 import {
@@ -89,6 +89,14 @@ const internet = computed(() => {
   }
 })
 
+// The sentence, in two pieces with the MAC address (and its Copy button) between them when the unit knows it
+const notJoinedHead = computed(
+  () =>
+    `The unit couldn't join ${name.value}. The usual cause is a wrong password. If the network only admits listed devices, add the unit's Wi-Fi MAC address${props.mac ? ', ' : ' '}`,
+)
+const notJoinedTail = computed(() => `${props.mac ? ' ' : ''}to its list. ${kept.value}`)
+const notJoined = computed(() => stage.value === 'failed' && props.join.reason === 'not_joined')
+
 const kept = computed(() => (props.join.saved ? 'The saved network is kept.' : 'Nothing was saved.'))
 
 // The one paragraph for every stage that has just a sentence or two to say
@@ -114,7 +122,7 @@ const text = computed(() => {
         case 'not_in_range':
           return `${n} isn't in range right now, so nothing was tried.`
         case 'not_joined':
-          return `The unit couldn't join ${n}. The usual cause is a wrong password. If the network only admits listed devices, add the unit's Wi-Fi MAC address${props.mac ? `, ${props.mac},` : ''} to its list. ${kept.value}`
+          return '' // written in the template, where the MAC address has its Copy button
         case 'no_address':
           return `${n} let the unit in but gave it no address. ${kept.value}`
         case 'busy':
@@ -188,7 +196,10 @@ const finished = computed(() => ['joined', 'failed', 'cancelled', 'switch_failed
       <div v-else class="d-flex ga-3">
         <span role="img" :aria-label="mark.label"><v-icon :icon="mark.icon" :color="mark.color" size="28" /></span>
         <div class="flex-grow-1">
-          <p>{{ text }}</p>
+          <p v-if="notJoined">
+            {{ notJoinedHead }}<span v-if="mac" class="text-no-wrap">{{ mac }},<span class="d-inline-flex my-n3 align-middle"><CopyButton :text="mac" label="Wi-Fi MAC address" /></span></span>{{ notJoinedTail }}
+          </p>
+          <p v-else>{{ text }}</p>
           <v-progress-linear v-if="stage === 'testing'" indeterminate color="primary" class="mt-3" />
           <p v-if="stage === 'testing' && lost" class="mt-3">{{ lostText }}</p>
           <v-btn

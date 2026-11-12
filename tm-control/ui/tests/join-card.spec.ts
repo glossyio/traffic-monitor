@@ -141,6 +141,7 @@ describe('the join card', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    Reflect.deleteProperty(document, 'execCommand')
   })
 
   it('shows the address, the MAC address, the .local name, and the internet line after a test that passed', () => {
@@ -239,6 +240,32 @@ describe('the join card', () => {
       `The unit couldn't join Neighbour. The usual cause is a wrong password. If the network only admits listed devices, add the unit's Wi-Fi MAC address, ${MAC}, to its list.`,
     )
     expect(text).toContain('Nothing was saved.')
+  })
+
+  it('has a Copy button on the MAC address of a failed test, for a viewer too, and none without one', async () => {
+    const failed = joinState({ stage: 'failed', joined: false, reason: 'not_joined', address: null, internet: null, seconds_left: null })
+    const copied: string[] = []
+    Object.defineProperty(document, 'execCommand', {
+      value: vi.fn((command: string) => {
+        const area = document.activeElement as HTMLTextAreaElement
+        if (command === 'copy') copied.push(area.value.slice(area.selectionStart, area.selectionEnd))
+        return true
+      }),
+      configurable: true,
+    })
+    vi.spyOn(HTMLTextAreaElement.prototype, 'select').mockImplementation(() => {})
+    const copy = 'button[aria-label="Copy Wi-Fi MAC address"]'
+
+    const wrapper = card({ join: failed, admin: false })
+    expect(wrapper.findAll(copy)).toHaveLength(1)
+    await wrapper.find(copy).trigger('click')
+    await vi.waitFor(() => expect(copied).toEqual([MAC]))
+    expect(wrapper.text()).toContain(`add the unit's Wi-Fi MAC address, ${MAC}, to its list. Nothing was saved.`)
+
+    document.body.replaceChildren()
+    const unknown = card({ join: failed, mac: null })
+    expect(unknown.find(copy).exists()).toBe(false)
+    expect(unknown.text()).toContain("add the unit's Wi-Fi MAC address to its list. Nothing was saved.")
   })
 
   it('says the network gave no address', () => {
