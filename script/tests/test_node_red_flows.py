@@ -1644,20 +1644,26 @@ def load_config(config, context=None):
     return step, {**run["global"], "config": step["result"]["payload"]}
 
 
-def frigate_event(camera):
-    return {"frigate_event": {"camera": camera, "id": "1.0-abc"}, "payload": {}}
+def frigate_event(camera, payload=None):
+    return {"frigate_event": {"camera": camera, "id": "1.0-abc"}, "payload": {} if payload is None else payload}
 
 
-def append_events(cameras, context):
+def frigate_payload(camera, **parts):
+    """msg.payload as Frigate sends an end message: the event's state before and after, each with the camera."""
+    return {"type": "end", "before": {"camera": camera, "id": "1.0-abc"}, "after": {"camera": camera, "id": "1.0-abc"},
+            **parts}
+
+
+def append_events(cameras, context, payload=None):
     """Run append config on one event per camera, in one run; returns the steps and the global context after."""
     append = node_by_id(APPEND_CONFIG)
-    run = run_functions([(append, frigate_event(camera)) for camera in cameras], context=context)
+    run = run_functions([(append, frigate_event(camera, payload)) for camera in cameras], context=context)
     return run["results"], run["global"]
 
 
-def append_config(config, camera, context=None):
+def append_config(config, camera, context=None, payload=None):
     _, context = load_config(config, context)
-    [step], context = append_events([camera], context)
+    [step], context = append_events([camera], context, payload)
     return step, context
 
 
@@ -1703,6 +1709,33 @@ def test_append_config_records_the_key_not_frigates_name():
     assert step["result"]["enabled"] is True and step["result"]["radarEnabled"] is True
     assert step["result"]["frigate_event"]["radarName"] == "TM_RADAR_SERIAL_PORT_00"
     assert "oak_ave_wide" not in json.dumps(step["result"])
+    assert step["logged"] == []
+
+
+@needs_node
+def test_append_config_puts_the_key_on_the_whole_frigate_message():
+    """msg.payload.before and .after carried Frigate's name on, and "match radar speed to event" keeps
+    the whole payload. In the live flow frigate_event is the same object as payload.after; here they are separate."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    step, _ = append_config(config, "oak_ave_wide", payload=frigate_payload("oak_ave_wide"))
+    result = step["result"]
+    assert "oak_ave_wide" not in json.dumps(result)
+    assert result["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["before"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["after"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["after"]["id"] == "1.0-abc" and set(result["payload"]) == {"type", "before", "after"}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    {}, {"type": "end", "before": None, "after": None}, {"type": "end", "before": None, "after": {"id": "1.0-abc"}},
+    {"type": "end", "before": "x", "after": []},
+], ids=["no-before-after", "null", "after-without-camera", "not-objects"])
+def test_append_config_survives_a_payload_without_before_and_after(payload):
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    step, _ = append_config(config, "oak_ave_wide", payload=payload)
+    assert step["result"]["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert step["result"]["payload"] == payload  # nothing added, nothing removed
     assert step["logged"] == []
 
 
@@ -1771,6 +1804,8 @@ def test_a_new_config_load_warns_again(camera, warning):
     second, _ = append_events([camera, camera], context)
     for steps in (first, second):
         assert [text for step in steps for level, text, _ in step["logged"] if level == "warn"] == [warning]
+    assert all(name not in text for step in second for _, text, _ in step["logged"]
+               for name in ("oak_ave_wide", "oak_ave_tele"))
 
 
 # What leaves the device and what the Frigate API is asked, by key. Plate Recognizer is sent the camera's name in
