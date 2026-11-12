@@ -1,14 +1,13 @@
 """Render the reverse proxy's whole config with the role's variables and run nginx -t on it in the pinned image.
 
 The same check tmsetup runs on the device before it deploys the config, so a named location in the wrong context or
-a duplicate location fails here first. Skipped without Podman.
+a duplicate location fails here first. Skipped without Podman or the image (a failure in CI: required_tools.py).
 """
 
 import re
-import shutil
 import subprocess
 
-import pytest
+from required_tools import missing_tool, needs
 from tmsetup_render import load_role_yaml, render
 
 ROLE_VARS = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
@@ -35,11 +34,11 @@ def have_image(image):
         return False
 
 
-@pytest.mark.skipif(shutil.which("podman") is None, reason="needs Podman")
+@needs("podman", "needs Podman")
 def test_rendered_config_passes_nginx_t(tmp_path):
     image = f"docker.io/library/nginx:{ROLE_VARS['tmsetup_nginx_version']}"
     if not have_image(image):
-        pytest.skip(f"{image} is neither cached nor pullable")
+        missing_tool(f"{image} is neither cached nor pullable")
     render_config(tmp_path)
     volumes = [arg for mount in ROLE_VARS["tmsetup_revproxy_config_mounts"]
                for arg in ("-v", f"{tmp_path / mount['path']}:{mount['target']}:ro,Z")]

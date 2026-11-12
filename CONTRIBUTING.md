@@ -23,6 +23,8 @@ Then run the tests:
 
     .venv/bin/python -m pytest container/node-red-tm/schema/tests script/tests tm-control/backend/tests
 
+Some tests need a tool your machine may not have, such as Podman, Node.js, or git, and skip without it; `pytest -rs` lists the skips and why. On GitHub the same tests fail instead, so a check that didn't run can't pass there unnoticed. To run them that way yourself, set `TM_TESTS_REQUIRE_TOOLS=1`.
+
 The control app's web pages have their own tests, run with npm; see [tm-control/ui/README.md](tm-control/ui/README.md).
 
 Add new development tools to `script/requirements-dev` so everyone uses the same environment. Help us extend testing to the rest of the project!

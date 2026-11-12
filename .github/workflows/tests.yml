@@ -53,6 +53,10 @@ jobs:
       - run: pip install -r script/requirements-dev
 
       - name: Tests
+        # A test that needs a missing tool (Podman, node, git, ...) fails here
+        # instead of skipping (script/tests/required_tools.py).
+        env:
+          TM_TESTS_REQUIRE_TOOLS: "1"
         run: python -m pytest -rs container/node-red-tm/schema/tests script/tests tm-control/backend/tests
       - name: Ansible syntax
         working-directory: script/ansible
