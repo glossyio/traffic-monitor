@@ -40,12 +40,13 @@ class Fetch:
 
 
 class Fetches:
-    """The one download a device follows at a time, and how the last one ended. One per app; every method takes one
-    lock."""
+    """The one download a device follows at a time, and how the last one ended; and the gate that lets one model
+    change reach Frigate at a time, a use's save or a download's start. One per app; every method takes one lock."""
 
     def __init__(self):
         self._lock = threading.Lock()
         self._current: Fetch | None = None
+        self._using = False  # a use is between its checks and its save's end
 
     def current(self) -> Fetch | None:
         with self._lock:
@@ -55,10 +56,27 @@ class Fetches:
         with self._lock:
             return self._current is not None and self._current.state == "downloading"
 
-    def start(self, model_id: str) -> bool:
-        """Record a new download; False, and nothing changes, while one is downloading."""
+    def begin_use(self) -> Literal["downloading", "changing"] | None:
+        """Take the gate for a use, without waiting: None when it's taken, or why not. end_use gives it back."""
         with self._lock:
             if self._current is not None and self._current.state == "downloading":
+                return "downloading"
+            if self._using:
+                return "changing"
+            self._using = True
+            return None
+
+    def end_use(self) -> None:
+        with self._lock:
+            self._using = False
+
+    def start(self, model_id: str, holding_use: bool = False) -> bool:
+        """Record a new download; False, and nothing changes, while one is downloading or a use is in flight. A caller
+        that holds the gate itself (begin_use) says so with holding_use, and starts the download before it lets go."""
+        with self._lock:
+            if self._current is not None and self._current.state == "downloading":
+                return False
+            if self._using and not holding_use:
                 return False
             self._current = Fetch(model_id, "downloading", None)
             return True

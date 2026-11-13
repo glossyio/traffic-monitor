@@ -17,8 +17,9 @@ Using a Frigate+ model by its ID (POST /models/plus/{id}/use) is Use when the de
 needs the Frigate+ API key and a Frigate that answers: config.yml goes to Frigate's config API with `path: plus://<id>`,
 and Frigate downloads the model while it validates, which takes minutes. The route answers at once and a thread follows
 the save (fetch.py); once Frigate has saved, the use is audited and frigate.service restarted. Nothing is written to
-config.yml on disk for a model the device hasn't. While the download runs, every use is refused, and GET /models
-carries its record for admins: downloading, then saved, refused, or failed, until the next use. Fake mode downloads
+config.yml on disk for a model the device hasn't. One model change reaches Frigate at a time: a use is refused while
+another is being applied or the download runs (Fetches' gate, taken without waiting), and GET /models carries the
+download's record for admins: downloading, then saved, refused, or failed, until the next use. Fake mode downloads
 one ID (fake.FAKE_FETCHABLE_ID) after a few seconds and refuses any other; nothing is sent anywhere.
 """
 
@@ -27,7 +28,8 @@ import logging
 import os
 import stat
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 from typing import Annotated, BinaryIO, Literal
@@ -536,6 +538,7 @@ RESTARTING = "Frigate is restarting; try again in a minute."
 DEFAULT_UNKNOWN = "Frigate's detector type can't be determined, so its default model can't be chosen."
 INSTALLER_MISSING = "The installer's model file isn't on the device."
 DOWNLOADING = "Frigate is downloading a model; wait for it to finish."
+CHANGING = "Another model change is being applied; try again in a moment."
 BAD_ID = "A Frigate+ model ID is 32 characters, each 0-9 or a-f."
 NO_KEY = "Set the Frigate+ API key first."
 FRIGATE_DOWN = "Frigate isn't answering, and it has to be running to download a model."
@@ -551,10 +554,21 @@ def _use_refusal(error: UseError) -> ApiError:
     return ApiError(error.status, error.code, error.message)
 
 
-def _not_downloading(request: Request) -> None:
-    """Refuse while Frigate downloads a Frigate+ model: its save is still running, and another would race it."""
-    if request.app.state.fetches.downloading():
+@contextmanager
+def _one_change(request: Request) -> Iterator[None]:
+    """Hold the gate that lets one model change reach Frigate at a time, or refuse at once: while Frigate downloads a
+    Frigate+ model its save is still running, and while another use is applied its save may be; Frigate's save takes no
+    lock, and a use's restart would cut a download short."""
+    fetches: Fetches = request.app.state.fetches
+    refusal = fetches.begin_use()
+    if refusal == "downloading":
         raise ApiError(409, "downloading", DOWNLOADING)
+    if refusal == "changing":
+        raise ApiError(409, "changing", CHANGING)
+    try:
+        yield
+    finally:
+        fetches.end_use()
 
 
 def _not_restarting(settings: Settings) -> None:
@@ -602,7 +616,7 @@ def _installer_file_there(cache: Path, name: str) -> bool:
 
 
 def _use_default(request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
-    _not_downloading(request)
+    """Use's work for the default; the caller holds the gate (_one_change)."""
     settings, manifest, codedir = _state(request)
     _not_restarting(settings)
     detector = detector_type(*_frigate(request))
@@ -619,7 +633,8 @@ def _use_default(request: Request, background: BackgroundTasks, admin: User) -> 
 def use_default(request: Request, background: BackgroundTasks, admin: User = Depends(require_admin)):
     """Put back what the installer gives this device: its Coral model for an edgetpu detector, and otherwise no
     `model:` section, so Frigate runs its own default. Declared before /{name}/use, so `default` names no model."""
-    return _use_default(request, background, admin)
+    with _one_change(request):
+        return _use_default(request, background, admin)
 
 
 @router.post("/{name}/use", status_code=202, response_model=UseQueued)
@@ -627,14 +642,15 @@ def use_model(name: str, request: Request, background: BackgroundTasks, admin: U
     """Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
     A default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The
     running model may be used again: Frigate just restarts."""
-    _not_downloading(request)
-    if not valid_name(name):
-        raise _refusal(UploadError(422, upload.BAD_NAME))
-    return _use_named(name, request, background, admin)
+    with _one_change(request):
+        if not valid_name(name):
+            raise _refusal(UploadError(422, upload.BAD_NAME))
+        return _use_named(name, request, background, admin)
 
 
 def _use_named(name: str, request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
-    """Use's work for a valid name: the default for a default's file, or the model in model_cache, checked first."""
+    """Use's work for a valid name: the default for a default's file, or the model in model_cache, checked first. The
+    caller holds the gate (_one_change)."""
     settings, manifest, codedir = _state(request)
     installer = installer_default(manifest, codedir)
     detector = detector_type(*_frigate(request))
@@ -687,7 +703,13 @@ def use_plus_model(
     has saved."""
     if not PLUS_ID.fullmatch(model_id):
         raise ApiError(422, "bad_id", BAD_ID)
-    _not_downloading(request)
+    with _one_change(request):
+        return _use_plus(model_id, request, background, admin)
+
+
+def _use_plus(model_id: str, request: Request, background: BackgroundTasks, admin: User) -> PlusUseQueued:
+    """The route's work for a valid ID, under the gate: the download starts before the gate is let go, so no use can
+    come between, and from then on the record's downloading refuses every use."""
     settings, manifest, codedir = _state(request)
     _not_restarting(settings)
     installer = installer_default(manifest, codedir)
@@ -716,7 +738,7 @@ def use_plus_model(
         except UseError as error:
             raise _use_refusal(error) from None
         follow = partial(fetch.wait, fetches, new_text, on_saved)
-    if not fetches.start(model_id):
+    if not fetches.start(model_id, holding_use=True):
         raise ApiError(409, "downloading", DOWNLOADING)
     fetch.spawn(follow)
     return PlusUseQueued(name=model_id, started="download", restarts=[])

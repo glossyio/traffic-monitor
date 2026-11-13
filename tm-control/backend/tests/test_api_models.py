@@ -1228,6 +1228,7 @@ def test_a_use_is_refused_on_a_device_whose_detector_sets_a_model(
 
 NEW_ID = "f" * 32
 DOWNLOADING = "Frigate is downloading a model; wait for it to finish."
+CHANGING = "Another model change is being applied; try again in a moment."
 
 
 def plus_use(client, model_id):
@@ -1369,6 +1370,90 @@ def test_every_use_is_409_while_a_download_runs(device_client, login, plus_devic
         assert (r.status_code, r.json()["error"]["code"], message(r)) == (409, "downloading", DOWNLOADING)
     assert api.posts == [] and systemctl.restarts() == [] and use_rows(device_client.app.state.settings) == []
     assert models_of(device_client)["fetch"] == {"model_id": NEW_ID, "state": "downloading", "message": None}
+
+
+def test_every_change_is_409_while_another_is_applied(device_client, login, plus_device, systemctl, frigate_api):
+    write_pair(plus_device.parent / "model_cache", "mine.tflite")
+    (plus_device.parent / "model_cache" / INSTALLER_FILE).write_bytes(bytes(1024))
+    api = frigate_api(PLUS_CONFIG)
+    fetches = device_client.app.state.fetches
+    assert fetches.begin_use() is None  # a use whose save is in flight
+    login(device_client, *ADMIN)
+    for r in (use(device_client, "mine.tflite"), use(device_client, "default"), plus_use(device_client, PLUS_ID),
+              plus_use(device_client, NEW_ID)):
+        assert (r.status_code, r.json()["error"]["code"], message(r)) == (409, "changing", CHANGING)
+    assert api.posts == [] and fetches.current() is None and systemctl.restarts() == []
+    fetches.end_use()
+    assert use(device_client, "mine.tflite").status_code == 202
+
+
+def test_a_change_arriving_during_a_uses_save_is_refused(
+        device_client, login, plus_device, systemctl, frigate_api, monkeypatch):
+    from tm_control.adapters import httpjson
+
+    write_pair(plus_device.parent / "model_cache", "mine.tflite")
+    api = frigate_api(PLUS_CONFIG)
+    saving = api.post
+    during = []
+
+    def post(url, body, content_type, headers=None, timeout=None):
+        if not during:  # the Use's save, still in flight: another change arrives
+            during.append(plus_use(device_client, NEW_ID))
+            during.append(use(device_client, "mine.tflite"))
+        return saving(url, body, content_type, headers=headers, timeout=timeout)
+
+    monkeypatch.setattr(httpjson, "post", post)
+    login(device_client, *ADMIN)
+    assert use(device_client, "mine.tflite").status_code == 202
+    assert [(r.status_code, r.json()["error"]["code"]) for r in during] == [(409, "changing"), (409, "changing")]
+    assert len(api.posts) == 1 and device_client.app.state.fetches.current() is None
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+
+
+def test_a_failed_change_lets_the_next_one_through(device_client, login, plus_device, systemctl, frigate_api):
+    cache = plus_device.parent / "model_cache"
+    write_pair(cache, "mine.tflite")
+    write_pair(cache, "h.tflite", supportedDetectors=["hailo8l"])
+    (cache / INSTALLER_FILE).write_bytes(bytes(1024))
+    refusal = FRIGATE_HEADER_LINES + "Line 3: model -> input_tensor - Input should be 'nchw'\n"
+    frigate_api(PLUS_CONFIG, save=(400, {"success": False, "message": refusal}))
+    login(device_client, *ADMIN)
+    assert use(device_client, "mine.tflite").json()["error"]["code"] == "frigate_refused"
+    assert use(device_client, "h.tflite").json()["error"]["code"] == "wrong_detector"
+    assert use(device_client, "default").json()["error"]["code"] == "frigate_refused"
+    assert use(device_client, "nothing.tflite").status_code == 404
+    assert use(device_client, "a.json").status_code == 422
+    set_key(device_client, "")
+    assert plus_use(device_client, NEW_ID).json()["error"]["code"] == "no_key"
+    frigate_api(None)
+    assert use(device_client, "h.tflite").json()["error"]["code"] == "wrong_detector"
+    assert device_client.app.state.fetches.begin_use() is None
+
+
+def test_a_use_by_id_on_the_device_lets_the_next_change_through(
+        device_client, login, plus_device, systemctl, frigate_api):
+    write_pair(plus_device.parent / "model_cache", PLUS_ID, id=PLUS_ID)
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    assert plus_use(device_client, PLUS_ID).json()["started"] == "restart"
+    assert use(device_client, PLUS_ID).status_code == 202
+    assert device_client.app.state.fetches.begin_use() is None
+
+
+def test_a_download_lets_the_gate_go_once_it_has_started(
+        device_client, login, plus_device, systemctl, frigate_api, monkeypatch):
+    from tm_control.modules.detection import fetch
+
+    started = []
+    monkeypatch.setattr(fetch, "spawn", started.append)  # the download's thread hasn't run yet
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    assert plus_use(device_client, NEW_ID).json()["started"] == "download"
+    assert len(started) == 1
+    fetches = device_client.app.state.fetches
+    assert fetches.downloading() and fetches.begin_use() == "downloading"
+    r = use(device_client, PLUS_ID)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "downloading")
 
 
 def test_uploads_and_deletes_stay_open_while_a_download_runs(seeded, settings, login):
