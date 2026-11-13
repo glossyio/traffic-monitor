@@ -1260,7 +1260,7 @@ describe("the Detection page's actions", () => {
       })
       const { wrapper } = await mountApp('/detection')
       await ask(wrapper, NEW_ID)
-      await clickInDialog('Download and use')
+      await clickInDialog('Use')
       expect(wrapper.text()).not.toContain(LINE)
       expect(wrapper.find('#frigate-plus').text()).toContain('Frigate is restarting.')
       expect(field(wrapper, 'Model ID').element.value).toBe('')
@@ -1268,6 +1268,46 @@ describe("the Detection page's actions", () => {
       expect(wrapper.find('#frigate-plus').text()).toContain('Frigate is restarting.')
       await vi.advanceTimersByTimeAsync(3000)
       expect(wrapper.find('#frigate-plus').text()).toContain('Frigate runs Downloaded yolov9.')
+    })
+
+    it("confirms a complete model on the device with Use's own confirmation, and still posts to the ID route", async () => {
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: WITH_IT,
+        [USE_ID]: json(202, { name: NEW_ID, started: 'restart', restarts: ['frigate.service'] }),
+      })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, `plus://${NEW_ID}`)
+      expect(dialogText()).toContain('Use Downloaded yolov9?')
+      expect(dialogText()).toContain("Frigate restarts, which takes about a minute. Traffic isn't counted while it does.")
+      expect(dialogText()).not.toContain('Frigate downloads')
+      expect(dialogText()).not.toContain(NEW_ID)
+      expect(dialogButtons('Download and use')).toHaveLength(0)
+      expect(api.sent.some((r) => r.method === 'POST')).toBe(false)
+      await clickInDialog('Use')
+      expect(api.sent.filter((r) => r.method === 'POST').map((r) => r.path)).toEqual([`/api/v1/models/plus/${NEW_ID}/use`])
+    })
+
+    it('keeps the download confirmation for an ID that is not on the device', async () => {
+      signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: MODELS })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, NEW_ID)
+      expect(dialogText()).toContain(`Download and use ${NEW_ID}?`)
+      expect(dialogText()).toContain('Frigate downloads the model, then restarts.')
+      expect(dialogButtons('Download and use')).toHaveLength(1)
+    })
+
+    it('keeps the download confirmation for an ID whose model on the device is incomplete', async () => {
+      const incomplete: ModelsState = {
+        ...WITH_IT,
+        models: WITH_IT.models.map((model) => (model.name === NEW_ID ? { ...model, complete: false } : model)),
+      }
+      signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: incomplete })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, NEW_ID)
+      expect(dialogText()).toContain(`Download and use ${NEW_ID}?`)
+      expect(dialogText()).toContain('Frigate downloads the model, then restarts.')
+      expect(dialogButtons('Download and use')).toHaveLength(1)
     })
 
     it("shows Frigate's reason under the form when the fetch is refused, and reloads the list", async () => {

@@ -268,7 +268,8 @@ const FILLS_IN = 'fills in what Frigate needs to know about it.'
 const CONFIRM = {
   use: { verb: 'Use', text: "Frigate restarts, which takes about a minute. Traffic isn't counted while it does." },
   delete: { verb: 'Delete', text: "Both of its files are removed from the device. This can't be undone." },
-  // The ID form's: its title is the ID, which the confirmation names
+  // The ID form's: its title is the ID, which the confirmation names. An ID of a model the device has, with both its
+  // files, is confirmed as a use instead (`asked` in `askToUsePlus`; the request is the same)
   plus: {
     verb: 'Download and use',
     text:
@@ -290,6 +291,22 @@ const CONFIRM = {
 }
 type Action = keyof typeof CONFIRM
 const confirming = ref<{ action: Action; title: string; model: ModelOut | null } | null>(null)
+
+// The ID form's confirmation: a model on the device with both its files is a Use, so the page confirms it as one, with
+// the model's title, and the server takes the short path. Any other ID, or models not loaded yet, is a download.
+function askToUsePlus(id: string) {
+  const model = state.value?.models.find((m) => m.name === id && m.complete) ?? null
+  confirming.value = { action: 'plus', title: id, model }
+}
+
+// What the dialog shows: the action's own words, but a plus action with a model is Use's, titled by the model
+const shown = computed(() => {
+  if (!confirming.value) return null
+  const { action, title, model } = confirming.value
+  const same = action === 'plus' && model
+  const words = CONFIRM[same ? 'use' : action]
+  return { ...words, title: same ? titleOf(model) : title }
+})
 const confirmOpen = computed({
   get: () => confirming.value !== null,
   set: (open: boolean) => {
@@ -577,7 +594,7 @@ function openUpload() {
               :disabled="working"
               :downloading="state?.fetch?.state === 'downloading'"
               :result="result?.at === PLUS ? result : null"
-              @use="(id) => (confirming = { action: 'plus', title: id, model: null })"
+              @use="askToUsePlus"
             />
           </v-expansion-panel-text>
         </v-expansion-panel>
@@ -617,10 +634,10 @@ function openUpload() {
     </v-dialog>
     <ConfirmDialog
       v-model="confirmOpen"
-      :title="confirming ? `${CONFIRM[confirming.action].verb} ${confirming.title}?` : ''"
-      :text="confirming ? CONFIRM[confirming.action].text : ''"
-      :confirm-text="confirming ? CONFIRM[confirming.action].verb : ''"
-      :confirm-color="confirming && CONFIRM[confirming.action].verb === 'Download' ? 'primary' : undefined"
+      :title="shown ? `${shown.verb} ${shown.title}?` : ''"
+      :text="shown?.text ?? ''"
+      :confirm-text="shown?.verb ?? ''"
+      :confirm-color="shown?.verb === 'Download' ? 'primary' : undefined"
       @confirm="confirmed"
     />
   </div>

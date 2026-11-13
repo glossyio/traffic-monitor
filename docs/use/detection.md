@@ -119,7 +119,7 @@ The panel titled **Use a model by its ID** is for a model you've trained and hav
 3. Frigate downloads the model while it checks the configuration with the model in it. This can take a few minutes, and the device waits up to 10 minutes. The panel says that Frigate is downloading, and every other action on the page is off meanwhile. You can leave the page: the device keeps following the download, and when you open the page again it shows the download while it runs, or why it failed.
 4. When Frigate has saved the configuration, the device restarts Frigate, which takes about a minute. The page then says when Frigate runs the model, as it does after [Use](#use-a-model). Traffic isn't counted while Frigate restarts.
 
-If the device already has the model's two files, there's nothing to download: the box does what **Use** on the model's card does.
+If the device already has the model's two files, there's nothing to download: the box does what **Use** on the model's card does, and the confirmation is Use's too: it names the model and the button reads **Use**.
 
 A download ends in one of these ways:
 
