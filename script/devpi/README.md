@@ -190,6 +190,9 @@ Two login checks leave something behind:
 - **The reset-admin test** (`--disruptive`, `pii_free` units with `tm_control_login`) deletes every control app account on the Pi, including viewers that people made, and ends every browser session. It then re-creates only the inventory's administrator, so everyone else has to be added again.
 - **The login backoff test** makes six wrong logins. The control app remembers the failures against your machine's address for 15 minutes, unless a successful login from it clears them sooner. Meanwhile, one more wrong password from your machine makes you wait a few seconds. Without `tm_control_login`, a second run within those 15 minutes skips the test, because it can't clear the count first.
 
+**The unclean reset test** (`--disruptive`) resets the Pi without shutting it down, after a `sync`, as a power loss
+would. It checks that every app comes back and that no image build did the boot's Podman refresh (#268).
+
 The control app's actions in `test_disruptive.py` put back what they change, but you'll notice them while they run:
 - **The time zone test** sets the Pi to another zone and back, through the control app. Each change restarts the pod and nginx, so the apps are down for a minute or two, twice.
 - **The clock test** (`pii_free` units) turns NTP off, sets the clock 2 minutes ahead and then back, and turns NTP on again. A Pi without a time source can end up a second or two off.
@@ -198,8 +201,6 @@ The control app's actions in `test_disruptive.py` put back what they change, but
 - **The model test** (`pii_free` units) uploads a 16-byte placeholder model and its sidecar through the control app, downloads the package, and deletes the model again. It never chooses the placeholder, which would stop Frigate. It leaves the model folder as it was, and skips when a placeholder from an earlier run is still listed.
 - **The schema test** (`pii_free` units) stops Node-RED, sets the schema version of `tmdb.sqlite` to 0, and starts Node-RED once without its migration, through a drop-in in `/run`. Then it stops Node-RED, puts the version and the unit back, and starts it again.
 - **The reboot test** reboots the Pi from the control app, like `test_reboot_recovers` does with `reboot`.
-- **The reset test** resets the Pi without shutting it down, after a `sync`, as a power loss would, and checks that
-  every app comes back and that no image build did the boot's Podman refresh (#268).
 
 If one of these runs is cut off before it puts things back, for example by killing it or pressing Ctrl-C twice, set the
 Pi back yourself:

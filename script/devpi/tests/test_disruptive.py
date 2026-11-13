@@ -68,8 +68,10 @@ def test_reboot_recovers(host):
     wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
 
 
-# Through PID 1, a moment later, so the SSH command returns before the Pi goes down without closing the connection.
-UNCLEAN_RESET = "systemd-run --on-active=2 /bin/sh -c 'sync; echo b > /proc/sysrq-trigger'"
+# Through PID 1, 2 seconds later, so the SSH command returns before the Pi goes down without closing the connection.
+# A transient timer may fire up to a minute late unless its accuracy is set.
+UNCLEAN_RESET = ("systemd-run --on-active=2 --timer-property=AccuracySec=100ms "
+                 "/bin/sh -c 'sync; echo b > /proc/sysrq-trigger'")
 
 
 def unclean_reset(host):
@@ -95,6 +97,7 @@ def test_stack_recovers_after_an_unclean_reset(host):
     assert len(refreshes) == 1, refreshes
     removed = [entry for entry in podman_events(host, "remove") if entry["_PID"] == refreshes[0]["_PID"]]
     assert removed, "the refresh removed no containers, so the reset wasn't unclean"
+    assert refreshes[0]["_CMDLINE"], f"the journal doesn't say which command did the refresh: {refreshes[0]}"
     assert " build " not in f"{refreshes[0]['_CMDLINE']} ", refreshes[0]
 
 

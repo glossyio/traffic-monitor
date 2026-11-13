@@ -51,7 +51,10 @@ def test_no_image_build_did_the_boots_podman_refresh(host):
     if not refreshes:
         pytest.skip("this boot's Podman refresh is no longer in the journal")
     builds = [entry["_SYSTEMD_UNIT"] for entry in refreshes if " build " in f"{entry['_CMDLINE']} "]
-    assert not builds, f"this boot's Podman refresh ran in an image build: {builds}"
+    assert not builds, (f"this boot's Podman refresh ran in an image build: {builds}. If this boot started before "
+                        "the build units got their ExecStartPre line, reboot once and run the test again.")
+    if not all(entry["_CMDLINE"] for entry in refreshes):
+        pytest.skip(f"the journal doesn't say which command did this boot's Podman refresh: {refreshes}")
 
 
 @pytest.mark.parametrize("unit", RESTARTING_UNITS)

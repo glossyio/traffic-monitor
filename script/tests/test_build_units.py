@@ -29,6 +29,12 @@ def quadlet_for_build_units(paths=QUADLET_PATHS):
     return quadlet
 
 
+def dry_run_services(stdout):
+    """Quadlet -dryrun's output as {service name: unit text}. Each unit follows a line ---<name>---."""
+    parts = re.split(r"^---(.+)---\n", stdout, flags=re.MULTILINE)[1:]  # name, body, name, body, ...
+    return dict(zip(parts[::2], parts[1::2]))
+
+
 def service_lines(text):
     """The [Service] section's lines, without comments and blank lines."""
     lines = []
@@ -58,6 +64,13 @@ def test_build_unit_runs_the_throwaway_command_first_and_nothing_else(template):
     assert service_lines(build_unit(template)) == [f"ExecStartPre=-{REFRESH}"]
 
 
+@pytest.mark.parametrize("template", BUILD_UNITS)
+def test_build_unit_sets_no_restart_or_start_limit_in_any_section(template):
+    """StartLimit* lives in [Unit], which the [Service] check above doesn't read."""
+    keys = [line for line in build_unit(template).splitlines() if line.startswith(("Restart", "StartLimit"))]
+    assert keys == []
+
+
 def test_a_quadlet_older_than_build_units_is_a_skip(tmp_path):
     """Quadlet reads .build files from Podman 5.2 on; an older one, such as Ubuntu 24.04's 4.9, ignores them."""
     old = tmp_path / "quadlet"
@@ -67,14 +80,19 @@ def test_a_quadlet_older_than_build_units_is_a_skip(tmp_path):
         quadlet_for_build_units([str(old)])
 
 
+def test_dry_run_services_splits_only_on_header_lines():
+    stdout = "---a-build.service---\n[Unit]\nDescription=a --- b\n---b-build.service---\n[Unit]\n"
+    assert dry_run_services(stdout) == {"a-build.service": "[Unit]\nDescription=a --- b\n",
+                                        "b-build.service": "[Unit]\n"}
+
+
 def test_quadlet_keeps_the_line_in_every_build_service(tmp_path):
     quadlet = quadlet_for_build_units()
     for template in BUILD_UNITS:
         (tmp_path / Path(template).name.removesuffix(".j2")).write_text(build_unit(template))
     result = subprocess.run([quadlet, "-dryrun"], env={"QUADLET_UNIT_DIRS": str(tmp_path), "PATH": "/usr/bin:/bin"},
                             capture_output=True, text=True)
-    services = result.stdout.split("---")[1:]  # name, body, name, body, ...
-    bodies = dict(zip(services[::2], services[1::2]))
+    bodies = dry_run_services(result.stdout)
     assert len(bodies) == len(BUILD_UNITS), result.stderr
     for name, body in bodies.items():
         lines = body.splitlines()
