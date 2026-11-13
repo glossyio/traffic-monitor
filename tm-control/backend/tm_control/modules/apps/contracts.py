@@ -89,8 +89,12 @@ def cameras_in_config(context: Context) -> list[Check]:
                           f"only {row.duplicate_of}, the first, is used. Remove {row.name} or point it at another "
                           "camera.")
         elif row.in_frigate == "on" and not row.enabled:
-            warnings.append(f"Events from {label} are not recorded: it isn't enabled in config.yml. Turn recording on "
-                            "if you want them.")
+            if row.detect is not False:  # with detection off too, nothing is detected, so nothing is dropped
+                warnings.append(f"Events from {label} are not recorded: Database capture is off for it in config.yml. "
+                                "Turn it on if you want them.")
+        elif row.in_frigate == "on" and row.detect is False:
+            warnings.append(f"Events from {label} are not recorded: Frigate's detection is off for it. Turn Frigate "
+                            "detection on if you want them.")
         elif row.in_frigate == "on":
             recorded.append(label)
         elif row.enabled:

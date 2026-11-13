@@ -70,9 +70,14 @@ function sentence(row: CameraRow) {
   }
 }
 
-// A row's settings in words, for entries only
+// A row's two switches in words, Frigate's and the database's, then an entry's radar and plates. Frigate's is left out
+// while it can't be read (Frigate down, or the camera gone); a Frigate camera with no entry isn't captured.
 function settings(row: CameraRow) {
-  const words = [`Record events: ${row.enabled ? 'on' : 'off'}`, `Radar: ${row.camera_radar ?? 'none'}`]
+  const words = []
+  if (row.detect !== null) words.push(`Frigate detection: ${row.detect ? 'on' : 'off'}`)
+  words.push(`Database capture: ${row.enabled ? 'on' : 'off'}`)
+  if (row.name === null) return words
+  words.push(`Radar: ${row.camera_radar ?? 'none'}`)
   if (state.value?.plates) words.push(`Plates: ${row.plate_recognizer ? 'on' : 'off'}`)
   return words
 }
@@ -180,7 +185,7 @@ function openEdit(row: CameraRow) {
   editOpen.value = true
 }
 
-async function save(settings: CameraSettings) {
+async function save(settings: CameraSettings, detect: boolean | null) {
   const target = editing.value
   if (target === null) return
   saving.value = true
@@ -192,6 +197,14 @@ async function save(settings: CameraSettings) {
         ? await api.PUT('/api/v1/cameras/{name}', { params: { path: { name: target.name } }, body: settings })
         : await api.POST('/api/v1/cameras', { body: { frigate_camera: target.frigate, ...settings } })
     state.value = data as CamerasState
+    // Frigate's switch after config.yml's settings: a refusal leaves those saved, and the dialog says why
+    if (detect !== null && 'name' in target) {
+      const { data: detected } = await api.PUT('/api/v1/cameras/{name}/frigate-detection', {
+        params: { path: { name: target.name } },
+        body: { enabled: detect },
+      })
+      state.value = detected as CamerasState
+    }
     editOpen.value = false
   } catch (error) {
     const message = messageOf(error)
@@ -233,7 +246,9 @@ async function save(settings: CameraSettings) {
         Frigate owns each camera: its name, streams, and zones. This page sets what the Traffic Monitor does with it.
         The name in bold is the one saved with the data. Frigate's name stays on this device.
       </p>
-      <p class="text-body-1 mb-4"><a href="/frigate/">Open Frigate</a> to change a camera's name, streams, or zones.</p>
+      <p class="text-body-1 mb-4">
+        <a href="/frigate/">Open Frigate</a> to add a camera or change a camera's name, streams, or zones.
+      </p>
 
       <v-alert v-if="UNAVAILABLE[state.frigate]" type="warning" class="mb-4">{{ UNAVAILABLE[state.frigate] }}</v-alert>
       <v-alert v-if="notice" type="warning" closable class="mb-4" @click:close="notice = ''">{{ notice }}</v-alert>
@@ -249,7 +264,7 @@ async function save(settings: CameraSettings) {
                 {{ chipOf(row)?.text }}
               </v-chip>
             </div>
-            <div v-if="row.name !== null" class="d-flex flex-wrap text-body-2 mt-1">
+            <div class="d-flex flex-wrap text-body-2 mt-1">
               <span v-for="words in settings(row)" :key="words" class="me-4">{{ words }}</span>
             </div>
             <div v-if="sentence(row)" class="text-body-2 mt-1">{{ sentence(row) }}</div>
@@ -311,6 +326,7 @@ async function save(settings: CameraSettings) {
         :row="editRow"
         :radars="state.radars"
         :plates="state.plates"
+        :frigate="compared"
         :adding="editRow.name === null"
         :saving="saving"
         :error="saveError"

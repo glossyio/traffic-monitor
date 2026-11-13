@@ -31,10 +31,10 @@ def test_an_entry_whose_camera_is_gone_is_absent():
 
 
 def test_a_frigate_camera_no_entry_points_at_is_a_row_without_a_name():
-    frigate = {"main_st": {}, "oak_ave_tele": {"enabled": True}, "oak_ave_wide": {"enabled": False}}
+    frigate = {"main_st": {}, "oak_ave_tele": {"enabled": True}}
     rows = compare([entry("main_st")], frigate)
     assert [(r.name, r.frigate_camera, r.in_frigate) for r in rows] == [
-        ("main_st", "main_st", "on"), (None, "oak_ave_tele", "on"), (None, "oak_ave_wide", "off"),
+        ("main_st", "main_st", "on"), (None, "oak_ave_tele", "on"),
     ]
     unpointed = rows[1]
     assert (unpointed.neutral, unpointed.duplicate_of, unpointed.enabled) == (None, None, None)
@@ -74,3 +74,27 @@ def test_frigate_with_no_cameras_is_absent_not_unknown():
 def test_a_duplicate_is_still_found_while_frigate_is_down():
     rows = compare([entry("a_1", "oak_ave_wide"), entry("b_2", "oak_ave_wide")], None)
     assert [r.duplicate_of for r in rows] == [None, "a_1"]
+
+
+def test_a_frigate_camera_that_is_off_and_that_no_entry_points_at_is_left_out():
+    rows = compare([entry("main_st")], {"main_st": {}, "oak_ave_wide": {"enabled": False}})
+    assert [r.frigate_camera for r in rows] == ["main_st"]
+
+
+def test_detect_is_whether_frigate_detects_objects_on_the_camera_now():
+    frigate = {
+        "a": {"enabled": True, "detect": {"enabled": True}},
+        "b": {"enabled": True, "detect": {"enabled": False}},
+        "c": {"enabled": False, "detect": {"enabled": True}},  # a camera that is off detects nothing
+        "d": {"enabled": True},  # no detect section to read
+        "e": {"enabled": True, "detect": {"enabled": True}},  # no entry points at it
+    }
+    rows = compare([entry(n) for n in "abcd"] + [entry("gone_1", "gone")], frigate)
+    assert [(r.frigate_camera, r.detect) for r in rows] == [
+        ("a", True), ("b", False), ("c", False), ("d", None), ("gone", None), ("e", True),
+    ]
+
+
+def test_detect_is_unknown_while_frigate_gives_no_cameras():
+    [row] = compare([entry("main_st")], None)
+    assert row.detect is None

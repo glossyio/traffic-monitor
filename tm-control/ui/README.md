@@ -60,7 +60,9 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   its actions ask the same questions. Design notes: the page is a bordered `v-list`, one row per camera, in the Location
   page's conventions (load, error, and 409-reload; one `v-dialog`; no custom CSS), with the key in bold because it is
   the name saved with the data, and Frigate's name beside it in the secondary color because it stays on the device.
-  Only Off in Frigate is a chip; a new, gone, or repeated camera says so in a sentence under its settings, which
+  Each row's first words are its two switches, Frigate detection and Database capture, because an event is recorded
+  only when both are on; `CameraEdit` sets Frigate's with its own request after the settings' `PUT`, and only when it
+  changed. Only Off in Frigate is a chip; a new, gone, or repeated camera says so in a sentence under its settings, which
   names the entry or Frigate camera involved. An entry in step has neither, and while Frigate can't be compared a row
   shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
   neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove

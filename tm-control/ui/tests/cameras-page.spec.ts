@@ -21,6 +21,11 @@ async function openPage(state = camerasState({ rows: [WIDE, TELE] }), extra: Rec
   return { api, wrapper }
 }
 
+// The page's camera rows, not the menu's items
+function rowItems(wrapper: VueWrapper) {
+  return wrapper.findAll('.v-list.border .v-list-item')
+}
+
 function names(wrapper: VueWrapper) {
   return wrapper.findAll('.v-list .font-weight-bold').map((node) => node.text())
 }
@@ -40,7 +45,8 @@ describe('Cameras page', () => {
       'Frigate owns each camera: its name, streams, and zones. This page sets what the Traffic Monitor does with it. ' +
         "The name in bold is the one saved with the data. Frigate's name stays on this device.",
     )
-    expect(wrapper.find('a[href="/frigate/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/frigate/"]').text()).toBe('Open Frigate')
+    expect(wrapper.text()).toContain("Open Frigate to add a camera or change a camera's name, streams, or zones.")
   })
 
   it("shows each camera's settings and zones", async () => {
@@ -50,7 +56,18 @@ describe('Cameras page', () => {
     expect(text).toContain('Missing in Frigate: zone_near, zone_far')
     expect(text).toContain('Radar: TM_RADAR_SERIAL_PORT_00')
     expect(text).toContain('Radar: none')
-    expect(text).toContain('Record events: on')
+    expect(text).toContain('Frigate detection: on')
+    expect(text).toContain('Database capture: on')
+  })
+
+  it("says when Frigate's detection or the database capture is off", async () => {
+    const rows = [cameraRow({ detect: false }), cameraRow({ name: 'camera_2_9d41e0', enabled: false })]
+    const { wrapper } = await openPage(camerasState({ rows }))
+    const lines = rowItems(wrapper).map((item) => item.text())
+    expect(lines[0]).toContain('Frigate detection: off')
+    expect(lines[0]).toContain('Database capture: on')
+    expect(lines[1]).toContain('Frigate detection: on')
+    expect(lines[1]).toContain('Database capture: off')
   })
 
   it('shows the plates setting only when the add-on is installed', async () => {
@@ -81,6 +98,10 @@ describe('Cameras page', () => {
   it('lists a Frigate camera that no entry points at as not recorded, without an Edit button', async () => {
     const { wrapper } = await openPage(camerasState({ rows: [WIDE, newRow()] }))
     expect(wrapper.text()).toContain("oak_ave_tele is new in Frigate and isn't recorded.")
+    const fresh = rowItems(wrapper)[1].text()
+    expect(fresh).toContain('Frigate detection: on')
+    expect(fresh).toContain('Database capture: off')
+    expect(fresh).not.toContain('Radar')
     expect(wrapper.findAll('button').filter((b) => b.text() === 'Edit')).toHaveLength(1)
   })
 
@@ -91,11 +112,12 @@ describe('Cameras page', () => {
       'Frigate is in safe mode, with no cameras; see the Status page. You can still change a camera\'s settings.',
     ],
   ] as const)('explains Frigate being %s and keeps the settings editable', async (frigate, words) => {
-    const unknown = cameraRow({ in_frigate: 'unknown', zones_missing: null })
+    const unknown = cameraRow({ in_frigate: 'unknown', detect: null, zones_missing: null })
     const { wrapper } = await openPage(camerasState({ frigate, rows: [unknown] }))
     expect(wrapper.find('.v-alert').text()).toContain(words)
     expect(wrapper.text()).not.toContain('Zones')
     expect(wrapper.text()).not.toContain('Off in Frigate')
+    expect(wrapper.text()).not.toContain('Frigate detection')
     const buttons = wrapper.findAll('button').map((b) => b.text())
     expect(buttons).toContain('Edit')
     expect(buttons.filter((text) => text !== 'Edit')).toEqual([])
@@ -117,15 +139,52 @@ describe('Cameras page', () => {
     await flushPromises()
     expect(dialogText()).toContain('Settings for camera_1_3fa9c2')
     expect(dialogButtons('Save')).toHaveLength(1)
-    // Switch Record events off, then Save
-    const toggle = document.querySelector<HTMLInputElement>('.v-dialog input[type="checkbox"]')!
-    toggle.click()
+    // Switch Database capture off, then Save
+    dialogField('Database capture').click()
     await flushPromises()
     await clickInDialog('Save')
     const put = api.sent.find((request) => request.method === 'PUT')!
     expect(put.body).toEqual({ enabled: false, camera_radar: null, plate_recognizer: null })
     expect(wrapper.findComponent(CameraEdit).props('open')).toBe(false)
-    expect(wrapper.text()).toContain('Record events: off')
+    expect(wrapper.text()).toContain('Database capture: off')
+    expect(api.sent.some((request) => request.path.endsWith('/frigate-detection'))).toBe(false)
+  })
+
+  it("sets Frigate's detection after the settings when it was switched, and shows the state it answers", async () => {
+    const detected = camerasState({ rows: [{ ...WIDE, detect: false }, TELE] })
+    const { api, wrapper } = await openPage(undefined, {
+      'PUT /api/v1/cameras/camera_1_3fa9c2': camerasState({ rows: [WIDE, TELE] }),
+      'PUT /api/v1/cameras/camera_1_3fa9c2/frigate-detection': detected,
+    })
+    await wrapper.findAll('button').filter((b) => b.text() === 'Edit')[0].trigger('click')
+    await flushPromises()
+    dialogField('Frigate detection').click()
+    await flushPromises()
+    await clickInDialog('Save')
+    const puts = api.sent.filter((request) => request.method === 'PUT')
+    expect(puts.map((request) => request.path)).toEqual([
+      '/api/v1/cameras/camera_1_3fa9c2',
+      '/api/v1/cameras/camera_1_3fa9c2/frigate-detection',
+    ])
+    expect(puts[1].body).toEqual({ enabled: false })
+    expect(wrapper.findComponent(CameraEdit).props('open')).toBe(false)
+    expect(rowItems(wrapper)[0].text()).toContain('Frigate detection: off')
+  })
+
+  it("keeps the dialog open with Frigate's refusal when the detection switch fails", async () => {
+    const { wrapper } = await openPage(undefined, {
+      'PUT /api/v1/cameras/camera_1_3fa9c2': camerasState({ rows: [WIDE, TELE] }),
+      'PUT /api/v1/cameras/camera_1_3fa9c2/frigate-detection': apiError(
+        502, 'frigate_error', "Frigate didn't take the change. Try again, or use Frigate's own switch.",
+      ),
+    })
+    await wrapper.findAll('button').filter((b) => b.text() === 'Edit')[0].trigger('click')
+    await flushPromises()
+    dialogField('Frigate detection').click()
+    await flushPromises()
+    await clickInDialog('Save')
+    expect(wrapper.findComponent(CameraEdit).props('open')).toBe(true)
+    expect(dialogText()).toContain("Frigate didn't take the change.")
   })
 
   it('shows a refused radar under the Radar field and keeps the dialog open', async () => {
@@ -228,7 +287,7 @@ describe('Cameras page', () => {
       expect(dialogText()).toContain('Add oak_ave_tele')
       expect(dialogButtons('Add')).toHaveLength(1)
       expect(dialogButtons('Save')).toHaveLength(0)
-      expect(dialogField('Record events').checked).toBe(true)
+      expect(dialogField('Database capture').checked).toBe(true)
       expect(dialogField('Send plates to Plate Recognizer').checked).toBe(false)
       expect(document.querySelector('.v-dialog .v-select .v-select__selection')?.textContent?.trim()).toBe('No radar')
       await clickInDialog('Add')

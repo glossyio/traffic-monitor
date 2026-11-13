@@ -24,7 +24,7 @@ from tm_control.core.checks import Report
 from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret
 from tm_control.modules.apps import probes
 from tm_control.modules.cameras.names import is_neutral
-from tm_control.modules.cameras.state import compare, frigate_now
+from tm_control.modules.cameras.state import frigate_now
 from tm_control.modules.location.config import camera_entries
 from tm_control.modules.services.units import read_units, service, units_for
 from tm_control.modules.system.info import SystemInfo
@@ -72,9 +72,9 @@ def secret_values(app_state) -> list[str]:
 
 def camera_names(app_state) -> set[str]:
     """Frigate's names for the cameras, which stay on the device: each that differs from its entry's key; each Frigate
-    camera that no entry points at, whether Frigate's running config or Frigate's config file names it (the file still
-    does while Frigate is down or in safe mode, and after a Save that wasn't followed by a restart); and, from the
-    config.yml backups beside the file (a save from the control app makes one), each frigate_camera value and each key
+    camera that no entry points at, off or on, whether Frigate's running config or Frigate's config file names it (the
+    file still does while Frigate is down or in safe mode, and after a Save that wasn't followed by a restart); and,
+    from the config.yml backups beside the file (a save from the control app makes one), each frigate_camera value and each key
     that is neither a neutral name nor a key of the file now. So a Frigate log line from before a rename made on the
     Cameras page is covered. A file that can't be read, or isn't valid YAML, is skipped."""
     names = set()
@@ -82,13 +82,14 @@ def camera_names(app_state) -> set[str]:
     read = read_config(path)
     current = camera_entries(read.data) if read.data is not None else []
     names.update(entry.frigate_camera for entry in current if entry.frigate_camera != entry.name)
+    pointed = {entry.frigate_camera for entry in current}
+    # Not the Cameras page's rows: those leave out a camera that is off, and its name must be replaced too
     cameras = frigate_now(app_state)[1]
     if cameras is not None:
-        names.update(row.frigate_camera for row in compare(current, cameras) if row.name is None)
+        names.update(str(name) for name in cameras if str(name) not in pointed)
     in_file = frigate.config_file(app_state.manifest.codedir)
     if isinstance(in_file.data, dict):
-        file_cameras = probes.mapping(in_file.data.get("cameras"))
-        names.update(row.frigate_camera for row in compare(current, file_cameras) if row.name is None)
+        names.update(str(name) for name in probes.mapping(in_file.data.get("cameras")) if str(name) not in pointed)
     keys = {entry.name for entry in current}
     try:
         backups = sorted(path.parent.glob(f"{path.name}.*.bak"))

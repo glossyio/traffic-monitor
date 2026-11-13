@@ -21,17 +21,19 @@ A device that has only `picam_h265`, as the installer sets it up, keeps working 
 
 ## The Cameras page
 
-**Cameras** is in the control app's menu, after **Detection**. At the top, the page says that Frigate owns each camera's name, streams, and zones, and links to Frigate for changing them. Then comes one row for each entry in `config.yml`, followed by one for each Frigate camera that no entry is paired with.
+**Cameras** is in the control app's menu, after **Detection**. At the top, the page says that Frigate owns each camera's name, streams, and zones, and links to Frigate for adding a camera or changing them. Then comes one row for each entry in `config.yml`, followed by one for each Frigate camera that no entry is paired with. A Frigate camera that is turned off there and that no entry is paired with isn't listed: it sends no events. Turn it on in Frigate, and it appears.
 
 ![The Cameras page on a phone: a camera whose Frigate camera is gone, with Edit and Remove; a camera that is in step, with Edit and Use a neutral name; and a new Frigate camera, with Point and Add as new](../assets/images/cameras-page.png){ width="300" }
 
 An entry's row shows its name in bold, and Frigate's name beside it when the two differ. Under them are its settings and what Frigate has:
 
-* **Record events**, **Radar**, and, when the Plate Recognizer add-on is installed, **Plates**.
+* **Frigate detection**: whether Frigate detects objects on the camera now. A camera turned off in Frigate detects nothing, so it reads off.
+* **Database capture**: whether the Traffic Monitor saves the camera's events in its database and sends them on. An event is recorded only when both are on.
+* **Radar**, and, when the Plate Recognizer add-on is installed, **Plates**.
 * **Zones: all four**, or **Missing in Frigate** and the zones the [flows expect](../setup-guide.md#3-adjust-the-zones) that the camera lacks.
 * **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
-A row that's out of step says why: **Frigate no longer has** a camera, a camera **is new in Frigate and isn't recorded**, or another entry **already records this Frigate camera**. When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.
+A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**. A row that's out of step says why: **Frigate no longer has** a camera, a camera **is new in Frigate and isn't recorded**, or another entry **already records this Frigate camera**. When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.
 
 The Status page's [camera checks](device-health.md#the-camera-checks) report the same problems and link here.
 
@@ -39,11 +41,12 @@ The Status page's [camera checks](device-health.md#the-camera-checks) report the
 
 Choose **Edit** on a camera, and **Save**.
 
-![The settings dialog on a phone, with a switch for Record events and a Radar drop-down](../assets/images/cameras-settings.png){ width="300" }
+![The settings dialog on a phone, with switches for Frigate detection and Database capture, and a Radar drop-down](../assets/images/cameras-settings.png){ width="300" }
 
 | Setting | What it does |
 |---|---|
-| **Record events** | Off stops recording this camera's events. Frigate keeps running either way. |
+| **Frigate detection** | Frigate's own detection switch for this camera, the same one as in Frigate's live view. It changes when you save, without restarting Frigate, and Frigate keeps it after a restart. Off, Frigate stops detecting objects on the camera, so there are no events to record; it keeps streaming, and recording video if you set it to. Shown only while Frigate answers and the camera is on there. |
+| **Database capture** | Off, the Traffic Monitor drops this camera's events: nothing is saved in the database or sent on. Frigate keeps detecting either way. |
 | **Radar** | The radar that supplies this camera's speeds. The camera's direction needs an enabled radar too, whether it comes from the zones' order or from the radar. **No radar** records the camera's events with no speed and no direction. One radar can serve several cameras. |
 | **Send plates to Plate Recognizer** | Shown only when the add-on is installed. See [Plate Recognizer](../add-ons/plate-recognizer.md). |
 
@@ -72,7 +75,7 @@ Until you point the entry at the new name, the Status page's **Cameras in config
 
 ## Add a camera
 
-A Frigate camera that no entry is paired with isn't recorded. On its row, choose **Add as new**. The page gives it a name, and opens its settings with **Record events** on, **No radar**, and plates off. Choose the radar, and **Add**.
+A Frigate camera that no entry is paired with isn't recorded. On its row, choose **Add as new**. The page gives it a name, and opens its settings with **Database capture** on, **No radar**, and plates off. Choose the radar, and **Add**.
 
 ## Use a neutral name
 

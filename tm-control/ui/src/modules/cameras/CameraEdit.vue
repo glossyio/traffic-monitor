@@ -1,8 +1,10 @@
 <!--
-  The dialog for one camera's settings (PUT /cameras/{name}): whether to record its events, which radar it is paired
-  with, and, when the Plate Recognizer add-on is installed, whether its events go there. The page does the saving: the
-  dialog emits `save` with the values, and shows the `error` and `radarError` the page passes back. The form starts over
-  from the row each time it opens; a camera being `adding` starts with record on, no radar, and no plates.
+  The dialog for one camera's settings (PUT /cameras/{name}): whether its events are saved in the database (Database
+  capture), which radar it is paired with, and, when the Plate Recognizer add-on is installed, whether its events go
+  there. Above them, for an entry whose camera Frigate runs, Frigate's own detection switch (PUT
+  /cameras/{name}/frigate-detection). The page does the saving: the dialog emits `save` with the settings and the
+  detection to set, null when it didn't change, and shows the `error` and `radarError` the page passes back. The form
+  starts over from the row each time it opens; a camera being `adding` starts with capture on, no radar, and no plates.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
@@ -19,12 +21,13 @@ const props = defineProps<{
   row: CameraRow
   radars: CameraRadar[]
   plates: boolean // the Plate Recognizer add-on is installed
+  frigate: boolean // Frigate answers, so its detection switch can be set
   adding: boolean
   saving?: boolean
   error?: string // a failed save, from the page
   radarError?: string // the API refused the radar, from the page
 }>()
-const emit = defineEmits<{ save: [settings: CameraSettings]; cancel: [] }>()
+const emit = defineEmits<{ save: [settings: CameraSettings, detect: boolean | null]; cancel: [] }>()
 
 // Vuetify's drop-down shows nothing for a null value, so "No radar" is the empty string in the field
 const NO_RADAR = ''
@@ -32,6 +35,12 @@ const NO_RADAR = ''
 const enabled = ref(true)
 const radar = ref(NO_RADAR)
 const sendPlates = ref(false)
+const detect = ref(true)
+
+// Frigate's switch is offered for an entry whose camera Frigate runs; one that is off there can't detect
+const showDetect = computed(
+  () => !props.adding && props.frigate && props.row.in_frigate === 'on' && props.row.detect !== null,
+)
 
 watch(
   [open, () => props.row],
@@ -40,6 +49,7 @@ watch(
     enabled.value = props.adding ? true : (props.row.enabled ?? true)
     radar.value = props.adding ? NO_RADAR : (props.row.camera_radar ?? NO_RADAR)
     sendPlates.value = props.adding ? false : (props.row.plate_recognizer ?? false)
+    detect.value = props.row.detect ?? true
   },
   { immediate: true },
 )
@@ -49,11 +59,15 @@ const items = computed(() =>
 )
 
 function save() {
-  emit('save', {
-    enabled: enabled.value,
-    camera_radar: radar.value === NO_RADAR ? null : radar.value,
-    plate_recognizer: props.plates ? sendPlates.value : null,
-  })
+  emit(
+    'save',
+    {
+      enabled: enabled.value,
+      camera_radar: radar.value === NO_RADAR ? null : radar.value,
+      plate_recognizer: props.plates ? sendPlates.value : null,
+    },
+    showDetect.value && detect.value !== props.row.detect ? detect.value : null,
+  )
 }
 
 function cancel() {
@@ -72,7 +86,16 @@ const title = computed(() =>
       <v-card-title class="text-h6 text-wrap pt-4">{{ title }}</v-card-title>
       <v-form @submit.prevent="save">
         <v-card-text>
-          <v-switch v-model="enabled" label="Record events" color="primary" hide-details />
+          <v-switch
+            v-if="showDetect"
+            v-model="detect"
+            label="Frigate detection"
+            color="primary"
+            hint="Changes Frigate's own switch for this camera, at once."
+            persistent-hint
+            class="mb-2"
+          />
+          <v-switch v-model="enabled" label="Database capture" color="primary" hide-details />
           <v-select
             v-model="radar"
             label="Radar"

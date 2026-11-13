@@ -1649,6 +1649,59 @@
         }
       }
     },
+    "/api/v1/cameras/{name}/frigate-detection": {
+      "put": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Set Detection",
+        "description": "Turn Frigate's object detection on or off for an entry's camera, with Frigate's live switch (no restart; Frigate\nkeeps it). config.yml isn't changed.",
+        "operationId": "set_detection_api_v1_cameras__name__frigate_detection_put",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraDetection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -2083,6 +2136,19 @@
         ],
         "title": "CameraAdd"
       },
+      "CameraDetection": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "CameraDetection"
+      },
       "CameraPoint": {
         "properties": {
           "to": {
@@ -2160,6 +2226,17 @@
             ],
             "title": "In Frigate"
           },
+          "detect": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detect"
+          },
           "neutral": {
             "anyOf": [
               {
@@ -2235,6 +2312,7 @@
           "name",
           "frigate_camera",
           "in_frigate",
+          "detect",
           "neutral",
           "duplicate_of",
           "enabled",

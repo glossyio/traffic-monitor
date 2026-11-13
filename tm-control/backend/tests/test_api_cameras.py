@@ -63,6 +63,7 @@ def test_get_lists_the_seeded_camera_and_the_fake_frigates_new_one(admin):
     assert (first["name"], first["frigate_camera"], first["in_frigate"]) == ("picam_h265", "picam_h265", "on")
     assert (first["neutral"], first["enabled"], first["camera_radar"]) == (False, True, "TM_RADAR_SERIAL_PORT_00")
     assert first["zones_missing"] == [] and first["duplicate_of"] is None and first["plate_recognizer"] is False
+    assert first["detect"] is True and second["detect"] is True
     assert (second["name"], second["frigate_camera"], second["in_frigate"]) == (None, "oak_ave_tele", "on")
     assert second["neutral"] is None and second["enabled"] is None
 
@@ -170,6 +171,10 @@ def all_rows(client, name):
 def add(client, **body):
     body = {"frigate_camera": "oak_ave_tele", "enabled": True, "camera_radar": None, "plate_recognizer": None} | body
     return client.post("/api/v1/cameras", json=body, headers=ORIGIN)
+
+
+def detection(client, name, enabled):
+    return client.put(f"/api/v1/cameras/{name}/frigate-detection", json={"enabled": enabled}, headers=ORIGIN)
 
 
 def error_code(response) -> str:
@@ -403,6 +408,7 @@ def test_a_changed_file_is_a_409_and_nothing_is_written(admin, monkeypatch):
 def test_every_write_is_audited_with_the_key_only(admin, token, monkeypatch):
     assert add(admin).status_code == 200
     assert admin.put("/api/v1/cameras/picam_h265", json={"enabled": False}, headers=ORIGIN).status_code == 200
+    assert detection(admin, "picam_h265", False).status_code == 200
     rekey(admin, "picam_h265", "main_st")
     assert admin.post("/api/v1/cameras/main_st/frigate-camera", json={"to": "picam_h265"},
                       headers=ORIGIN).status_code == 200
@@ -414,6 +420,7 @@ def test_every_write_is_audited_with_the_key_only(admin, token, monkeypatch):
     assert audit_rows(admin) == [
         ("camera.add", NEUTRAL),
         ("camera.update", "picam_h265"),
+        ("camera.detection", "picam_h265"),
         ("camera.point", "main_st"),
         ("camera.neutral_name", "camera_2_b07e11"),
         ("camera.remove", NEUTRAL),
@@ -427,6 +434,7 @@ def test_no_frigate_name_in_any_log_line_or_audit_row(admin, caplog, token):
     assert admin.post("/api/v1/cameras/main_st/frigate-camera", json={"to": "picam_h265"},
                       headers=ORIGIN).status_code == 200
     assert admin.post("/api/v1/cameras/main_st/neutral-name", headers=JSON_HEADERS).status_code == 200
+    assert detection(admin, NEUTRAL, False).status_code == 200
     r = admin.post("/api/v1/cameras/main_st/frigate-camera", json={"to": "oak_ave_tele"}, headers=ORIGIN)
     assert r.status_code == 404 and "oak_ave_tele" not in r.text
     assert add(admin, frigate_camera="oak_ave_tele").status_code == 409
@@ -451,6 +459,73 @@ def test_a_viewer_is_refused_every_write(claimed_client, login):
         claimed_client.post("/api/v1/cameras/picam_h265/frigate-camera", json={"to": "oak_ave_tele"}, headers=ORIGIN),
         claimed_client.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS),
         claimed_client.delete("/api/v1/cameras/picam_h265", headers=JSON_HEADERS),
+        claimed_client.put("/api/v1/cameras/picam_h265/frigate-detection", json={"enabled": False}, headers=ORIGIN),
     ]
-    assert [r.status_code for r in calls] == [403] * 5
+    assert [r.status_code for r in calls] == [403] * 6
     assert claimed_client.app.state.config_path.read_text() == before
+
+
+# Frigate's detection switch, and Frigate cameras that are off
+
+
+def with_camera(monkeypatch, client, name, **fields):
+    config = fake.frigate_answer(client.app.state.settings)[0]
+    config["cameras"][name] = dict(config["cameras"]["picam_h265"]) | fields
+    frigate_says(monkeypatch, config)
+
+
+def test_a_frigate_camera_that_is_off_and_unpaired_is_not_listed_and_cant_be_added(admin, monkeypatch, token):
+    with_camera(monkeypatch, admin, "main_st", enabled=False)
+    assert [row["frigate_camera"] for row in cameras(admin)["rows"]] == ["picam_h265", "oak_ave_tele"]
+    r = add(admin, frigate_camera="main_st")
+    assert r.status_code == 409 and error_code(r) == "cameras_changed"
+
+
+def test_detection_switches_frigates_live_switch_and_leaves_config_yml_alone(admin):
+    before = admin.app.state.config_path.read_text()
+    r = detection(admin, "picam_h265", False)
+    assert r.status_code == 200, r.text
+    assert r.json()["rows"][0]["detect"] is False  # the answer is the page's whole new state
+    assert cameras(admin)["rows"][0]["detect"] is False
+    assert detection(admin, "picam_h265", True).json()["rows"][0]["detect"] is True
+    assert admin.app.state.config_path.read_text() == before and backups(admin) == []
+    assert audit_rows(admin) == [("camera.detection", "picam_h265"), ("camera.detection", "picam_h265")]
+
+
+def test_detection_asks_frigate_by_its_own_name(admin, monkeypatch, token):
+    asked = []
+    monkeypatch.setattr(fake, "set_frigate_detect", lambda settings, camera, on: asked.append((camera, on)) or True)
+    assert add(admin).status_code == 200
+    assert detection(admin, NEUTRAL, False).status_code == 200
+    assert asked == [("oak_ave_tele", False)]
+
+
+def test_detection_needs_frigate(admin, monkeypatch):
+    frigate_says(monkeypatch, None)
+    r = detection(admin, "picam_h265", False)
+    assert r.status_code == 409 and error_code(r) == "frigate_unavailable"
+
+
+def test_detection_of_a_camera_frigate_lost_is_refused(admin, monkeypatch):
+    rekey(admin, "picam_h265", "main_st")
+    r = detection(admin, "main_st", False)
+    assert r.status_code == 409 and error_code(r) == "cameras_changed"
+
+
+def test_detection_of_a_camera_that_is_off_in_frigate_is_refused(admin, monkeypatch):
+    with_camera(monkeypatch, admin, "picam_h265", enabled=False)
+    r = detection(admin, "picam_h265", True)
+    assert r.status_code == 409 and error_code(r) == "camera_off"
+    assert "picam_h265" not in r.json()["error"]["message"]
+
+
+def test_a_refusal_from_frigate_is_a_502_and_not_audited(admin, monkeypatch):
+    monkeypatch.setattr(fake, "set_frigate_detect", lambda settings, camera, on: False)
+    r = detection(admin, "picam_h265", False)
+    assert r.status_code == 502 and error_code(r) == "frigate_error"
+    assert "picam_h265" not in r.text
+    assert audit_rows(admin) == []
+
+
+def test_detection_of_an_unknown_entry_is_a_404(admin):
+    assert detection(admin, "nope", False).status_code == 404

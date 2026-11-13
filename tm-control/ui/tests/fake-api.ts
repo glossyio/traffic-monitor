@@ -171,6 +171,7 @@ export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
     name: 'camera_1_3fa9c2',
     frigate_camera: 'oak_ave_wide',
     in_frigate: 'on',
+    detect: true,
     neutral: true,
     duplicate_of: null,
     enabled: true,

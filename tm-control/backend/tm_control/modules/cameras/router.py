@@ -3,13 +3,16 @@ unit's radars. cameras_state is also what every write answers with, so the page 
 
 Each write holds app.state.reconcile_lock, reads config.yml and Frigate's cameras again, refuses with 409
 cameras_changed when they no longer match what the admin confirmed, edits config.yml, then (for a re-key) the places
-store, and records an audit row. Frigate's camera name is never logged, audited, or put in an error message: audit rows
+store, and records an audit row. The one write that goes to Frigate instead, its detection switch, holds the same
+lock and leaves config.yml alone. Frigate's camera name is never logged, audited, or put in an error message: audit rows
 carry the sensors.cameras key only.
 """
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
+from tm_control import fake
+from tm_control.adapters import frigate
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
@@ -80,6 +83,10 @@ class CameraSettings(BaseModel):
 
 class CameraPoint(BaseModel):
     to: str = Field(min_length=1, max_length=NAME_MAX)
+
+
+class CameraDetection(BaseModel):
+    enabled: bool
 
 
 def _changed() -> ApiError:
@@ -212,6 +219,34 @@ def neutral_name(name: str, request: Request, admin: User = Depends(require_admi
         _save(app_state, config)
         Places(app_state.state).rename_sensor("cameras", name, new)  # config.yml first, the store second
     Audit(app_state.state).record(admin.id, "camera.neutral_name", new)
+    return cameras_state(request)
+
+
+@router.put("/{name}/frigate-detection", response_model=CamerasState)
+def set_detection(
+    name: str, body: CameraDetection, request: Request, admin: User = Depends(require_admin)
+) -> CamerasState:
+    """Turn Frigate's object detection on or off for an entry's camera, with Frigate's live switch (no restart; Frigate
+    keeps it). config.yml isn't changed."""
+    app_state = request.app.state
+    settings = app_state.settings
+    with app_state.reconcile_lock:
+        config = load_config(app_state)
+        _exists(config, name)
+        row = _entry(_compared(app_state, config), name)
+        if row.in_frigate == "absent":
+            raise _changed()
+        if row.in_frigate == "off":
+            raise ApiError(409, "camera_off", "This camera is turned off in Frigate. Turn it on in Frigate first.")
+        if settings.fake:
+            taken = fake.set_frigate_detect(settings, row.frigate_camera, body.enabled)
+        else:
+            taken = frigate.set_detect(row.frigate_camera, body.enabled)
+        if not taken:
+            raise ApiError(
+                502, "frigate_error", "Frigate didn't take the change. Try again, or use Frigate's own switch."
+            )
+    Audit(app_state.state).record(admin.id, "camera.detection", name)
     return cameras_state(request)
 
 

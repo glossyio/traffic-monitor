@@ -8,6 +8,7 @@ Each API function returns None when Frigate doesn't answer, times out, or answer
 import json
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 from tm_control.adapters import httpjson
 from tm_control.adapters.yamlfile import ConfigRead, read_config
@@ -26,14 +27,20 @@ def version() -> str | None:
     return text if VERSION.fullmatch(text) else None
 
 
-def _object(path: str) -> dict | None:
-    status, body = httpjson.get_json(f"{BASE}/{path}")
+# Frigate's nginx keeps each GET under /api/ for 5 seconds, and serves the old answer while it fetches a new one; this
+# header makes it ask Frigate now
+FRESH = {"X-Cache-Bypass": "1"}
+
+
+def _object(path: str, headers: dict[str, str] | None = None) -> dict | None:
+    status, body = httpjson.get_json(f"{BASE}/{path}", headers)
     return body if status == 200 and isinstance(body, dict) else None
 
 
 def config() -> dict | None:
-    """The config Frigate runs with, resolved: cameras.<name>.enabled, .ffmpeg.inputs[].path, .zones, detectors."""
-    return _object("config")
+    """The config Frigate runs with, resolved: cameras.<name>.enabled, .detect.enabled, .ffmpeg.inputs[].path, .zones,
+    detectors. Read past Frigate's API cache, so a switch set a moment ago (set_detect, or Frigate's live view) shows."""
+    return _object("config", FRESH)
 
 
 def stats() -> dict | None:
@@ -59,6 +66,21 @@ def save_config(text: str) -> tuple[int | None, str | None]:
         answer = None
     message = answer.get("message") if isinstance(answer, dict) else None
     return status, message if isinstance(message, str) else None
+
+
+def set_detect(camera: str, on: bool) -> bool:
+    """Turn object detection on or off for one camera, as the switch in Frigate's live view does: at once, with no
+    restart, and Frigate keeps the setting across restarts (in .runtime_state.json beside its config). Turning it on
+    also turns on motion detection. Whether Frigate took it."""
+    status, body = httpjson.post(
+        f"{BASE}/camera/{quote(camera, safe='')}/set/detect", json.dumps({"value": "ON" if on else "OFF"}).encode(),
+        "application/json", method="PUT",
+    )
+    try:
+        answer = json.loads(body) if body is not None else None
+    except (ValueError, RecursionError):
+        answer = None
+    return status == 200 and isinstance(answer, dict) and answer.get("success") is True
 
 
 def config_file(codedir) -> ConfigRead:

@@ -798,6 +798,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras/{name}/frigate-detection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Detection
+         * @description Turn Frigate's object detection on or off for an entry's camera, with Frigate's live switch (no restart; Frigate
+         *     keeps it). config.yml isn't changed.
+         */
+        put: operations["set_detection_api_v1_cameras__name__frigate_detection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -1044,6 +1065,11 @@ export interface components {
             /** Plate Recognizer */
             plate_recognizer?: boolean | null;
         };
+        /** CameraDetection */
+        CameraDetection: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** CameraPoint */
         CameraPoint: {
             /** To */
@@ -1071,6 +1097,8 @@ export interface components {
              * @enum {string}
              */
             in_frigate: "on" | "off" | "absent" | "unknown";
+            /** Detect */
+            detect: boolean | null;
             /** Neutral */
             neutral: boolean | null;
             /** Duplicate Of */
@@ -2995,6 +3023,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_detection_api_v1_cameras__name__frigate_detection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraDetection"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

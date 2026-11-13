@@ -87,7 +87,27 @@ def test_record_off_is_a_warning_not_an_error(apps):
     check = config_group(apps)["config.cameras"]
     assert check.status == "warn"
     assert check.fix == contracts.CAMERAS_LINK
-    assert "events from picam_h265 are not recorded" in check.detail.lower()
+    assert check.detail == (
+        "Events from picam_h265 are not recorded: Database capture is off for it in config.yml. Turn it on if you "
+        "want them."
+    )
+
+
+def test_detection_off_in_frigate_is_a_warning_with_the_link(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["detect"].update(enabled=False))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
+    assert check.detail == (
+        "Events from picam_h265 are not recorded: Frigate's detection is off for it. Turn Frigate detection on if "
+        "you want them."
+    )
+
+
+def test_detection_off_doesnt_matter_while_database_capture_is_off(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["detect"].update(enabled=False))
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(enabled=False))
+    assert config_group(apps)["config.cameras"].status == "ok"  # nothing is detected, so nothing is dropped
 
 
 def test_a_renamed_camera_is_an_error_with_the_link(apps):

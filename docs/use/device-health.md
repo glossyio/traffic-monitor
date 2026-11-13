@@ -52,7 +52,7 @@ The **Cameras in config.yml** check compares Frigate's cameras with the entries 
 | Result | Meaning |
 |---|---|
 | Problem | A camera that is on in Frigate has no entry pointing at it, so its events aren't recorded. Or two entries point at the same Frigate camera, and only the first is used. |
-| Warning | An entry is enabled, but Frigate doesn't have that camera, or has it turned off. Or an entry's recording is off while its camera is on in Frigate, which is fine if you turned it off on purpose. |
+| Warning | An entry is enabled, but Frigate doesn't have that camera, or has it turned off. Or a camera's events are dropped on one side: its **Database capture** is off while Frigate detects objects on it, or Frigate's detection is off while its **Database capture** is on. Either is fine if you turned it off on purpose. |
 | Passed | Every camera that is on in Frigate has an enabled entry. |
 | Couldn't run | Frigate isn't answering or is in safe mode, so it has no cameras to compare, or `config.yml` can't be read. |
 

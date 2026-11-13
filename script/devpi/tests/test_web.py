@@ -671,8 +671,8 @@ def test_status_report_agrees_with_the_inventory(address, expect, admin_session)
 def test_cameras_page_agrees_with_the_status_check(address, admin_session):
     """The Cameras page and the config.cameras check come from the same comparison, so they agree: Frigate answers, and
     while the check is ok, no enabled Frigate camera lacks an entry, no entry is a duplicate, and no enabled entry
-    points at a camera Frigate doesn't have enabled. A failure names keys and Frigate's camera names, as the page does
-    behind the login."""
+    points at a camera Frigate doesn't have enabled or doesn't detect objects on. A failure names keys and Frigate's
+    camera names, as the page does behind the login."""
     answer = request_from_this_machine(address, f"{API}/cameras", cookie=admin_session)
     state = answer.json() if answer.status == 200 else None
     assert isinstance(state, dict), f"GET {API}/cameras with the admin session answered HTTP {answer.status}"
@@ -685,6 +685,8 @@ def test_cameras_page_agrees_with_the_status_check(address, admin_session):
     problems += [f"{row['name']} duplicates {row['duplicate_of']}" for row in state["rows"] if row["duplicate_of"]]
     problems += [f"{row['name']} is enabled but {row['in_frigate']} in Frigate" for row in state["rows"]
                  if row["name"] is not None and row["enabled"] and row["in_frigate"] != "on"]
+    problems += [f"{row['name']} is enabled but Frigate's detection is off" for row in state["rows"]
+                 if row["name"] is not None and row["enabled"] and row.get("detect") is False]
     assert not problems, "config.cameras is ok, but the Cameras page shows: " + "; ".join(problems)
 
 
@@ -703,13 +705,17 @@ VIEWER_ACTIONS = [
     ("POST", f"{API}/cameras/picam_h265/frigate-camera", 403),
     ("POST", f"{API}/cameras/picam_h265/neutral-name", 403),
     ("DELETE", f"{API}/cameras/picam_h265", 403),
+    ("PUT", f"{API}/cameras/picam_h265/frigate-detection", 403),
     ("GET", f"{API}/status", 200),
     ("GET", f"{API}/services", 200),
     ("GET", f"{API}/system/info", 200),
     ("GET", f"{API}/time", 200),
 ]
 # Actions that would change the unit even with an empty body: sent only after the guard below
-GUARDED_ACTIONS = {f"{API}/system/reboot", f"{API}/system/power-off", f"{API}/cameras/picam_h265/neutral-name"}
+GUARDED_ACTIONS = {
+    f"{API}/system/reboot", f"{API}/system/power-off", f"{API}/cameras/picam_h265/neutral-name",
+    f"{API}/cameras/picam_h265/frigate-detection",
+}
 
 
 def admin_refusal(answer):
@@ -726,9 +732,9 @@ def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, 
     anything runs. Each write sends an empty change, so POST /time would change nothing even if it were let through,
     and DELETE /cameras/picam_h265 is refused for a camera Frigate has.
 
-    A viewer's reboot, power-off, or neutral name is sent only after a harmless action, a re-scan, was refused as
-    admin-only: if require_admin ever let viewers through, the Pi would reboot, power off until someone power-cycles
-    it, or re-key its camera.
+    A viewer's reboot, power-off, neutral name, or Frigate detection switch is sent only after a harmless action, a
+    re-scan, was refused as admin-only: if require_admin ever let viewers through, the Pi would reboot, power off until
+    someone power-cycles it, re-key its camera, or switch Frigate's detection.
     """
     if path in GUARDED_ACTIONS:
         guard = admin_refusal(request_from_this_machine(address, f"{API}/status/rescan", "POST", viewer_session, {}))
