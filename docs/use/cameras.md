@@ -73,14 +73,14 @@ Radar settings themselves, such as turning a radar off, stay in [`config.yml`](.
 When you rename a camera in Frigate, the Traffic Monitor doesn't know the new name belongs to the same camera, and records nothing from it until you say so.
 
 1. In Frigate's configuration editor, rename the camera and choose **Save & Restart**. Frigate uses the new name only after it restarts, so **Save** alone changes nothing yet.
-2. Open the Cameras page. The old entry reads **Frigate no longer has** the old name, and the new name has its own row, **new in Frigate and isn't recorded**. If Frigate's detection is off for the camera, the new row has no box, because nothing is being dropped, but it still offers **Point**.
+2. Open the Cameras page. The old entry reads **Frigate no longer has** the old name, and the new name has its own row, **new in Frigate and isn't recorded**. If Frigate's detection is off for the camera, the new row has no box, because nothing is being dropped, but it still offers **Point**. If the old entry's **Database capture** is off too, it has no box either, because nothing was being recorded from it, and the new row still offers **Point**.
 3. On the new row, choose **Point `<entry>` at this**, and confirm.
 
 ![The confirmation for Point camera_1_3fa9c2 at oak_ave_tele, saying that events from oak_ave_tele will be recorded as camera_1_3fa9c2 with the same settings and nothing already recorded changes](../assets/images/cameras-point.png){ width="300" }
 
 The entry keeps its name and settings, so the camera's records carry on under the same name, in the same deployment, with nothing changed in the database. If two cameras were renamed together, each new row offers a button for each entry whose camera is gone. To choose the right pair, look at the entries' rows: each shows Frigate's old name for its camera and its radar. An entry whose camera is only turned **Off** in Frigate isn't offered, because that camera still exists.
 
-Until you point the entry at the new name, the Status page's **Cameras in config.yml** check is a problem. While Frigate's detection is off for the camera, it's a warning instead, about the old entry, whose camera is gone.
+Until you point the entry at the new name, the Status page's **Cameras in config.yml** check is a problem. While Frigate's detection is off for the camera, it's a warning instead, about the old entry, whose camera is gone. If the entry's **Database capture** is off as well, the check passes, because nothing is being dropped. Pointing the entry at the new name doesn't turn **Database capture** on; do that in its settings if you want the camera recorded.
 
 ## Add a camera
 

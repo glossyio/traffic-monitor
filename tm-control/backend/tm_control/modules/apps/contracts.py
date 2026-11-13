@@ -74,8 +74,11 @@ def frigate_zones_link(frigate_camera: str) -> Fix:
 
 
 def cameras_in_config(context: Context) -> list[Check]:
-    """Every enabled Frigate camera has a sensors.cameras entry that points at it (by frigate_camera, else by its key)
-    and is enabled, and no two entries point at the same camera."""
+    """Every Frigate camera that is on, with detection not off, has a sensors.cameras entry that points at it (by
+    frigate_camera, else by its key), no two entries point at the same camera, and an entry that records is paired with
+    a camera that detects. An entry whose Database capture is off is flagged only while Frigate detects on its camera,
+    and not at all when its camera is gone or turned off: nothing is recorded from it, so nothing is dropped. With no
+    camera having both switches on, the check passes."""
 
     def check(status, detail, fix=None):
         return [Check(id="config.cameras", title="Cameras in config.yml", status=status, detail=detail, fix=fix)]
