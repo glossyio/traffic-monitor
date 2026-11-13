@@ -246,7 +246,7 @@ def set_detection(
             raise ApiError(
                 502, "frigate_error", "Frigate didn't take the change. Try again, or use Frigate's own switch."
             )
-    Audit(app_state.state).record(admin.id, "camera.detection", name)
+    Audit(app_state.state).record(admin.id, "camera.detection_on" if body.enabled else "camera.detection_off", name)
     return cameras_state(request)
 
 

@@ -439,7 +439,7 @@ def test_every_write_is_audited_with_the_key_only(admin, token, monkeypatch):
     assert audit_rows(admin) == [
         ("camera.add", NEUTRAL),
         ("camera.update", "picam_h265"),
-        ("camera.detection", "picam_h265"),
+        ("camera.detection_off", "picam_h265"),
         ("camera.point", "main_st"),
         ("camera.neutral_name", "camera_2_b07e11"),
         ("camera.remove", NEUTRAL),
@@ -508,7 +508,7 @@ def test_detection_switches_frigates_live_switch_and_leaves_config_yml_alone(adm
     assert cameras(admin)["rows"][0]["detect"] is False
     assert detection(admin, "picam_h265", True).json()["rows"][0]["detect"] is True
     assert admin.app.state.config_path.read_text() == before and backups(admin) == []
-    assert audit_rows(admin) == [("camera.detection", "picam_h265"), ("camera.detection", "picam_h265")]
+    assert audit_rows(admin) == [("camera.detection_off", "picam_h265"), ("camera.detection_on", "picam_h265")]
 
 
 def test_detection_asks_frigate_by_its_own_name(admin, monkeypatch, token):
