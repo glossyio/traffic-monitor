@@ -2049,7 +2049,8 @@ def test_a_download_says_it_is_gzip():
 
 UPLOAD_REQUEST = "677a57bbf3619854"  # thingsboard: tb post http api
 ENABLED_SWITCH = "93aa421659d2c20b"  # thingsboard: thingsboard.enabled
-RATE_LIMIT = "21944450ecc08385"  # thingsboard: the delay before the protocol switch
+RATE_LIMIT = "21944450ecc08385"  # thingsboard: the rate limit after thingsboard.enabled
+PROTOCOL_SWITCH = "9b8c2bcc16a637fd"  # thingsboard: tb protocol?
 TB_CATCH = "695200d405f2d323"  # thingsboard: the tab's catch node
 CONFIG_LOADED = "2b50b0bfb900ff09"  # init-config: tm-internal: config loaded
 SHARING_OFF = {"target": None, "host": None, "exact_location": False, "public_map": "none", "notice_version": None}
@@ -2096,7 +2097,7 @@ GATE_ATTRIBUTES = {
     "sysinfo_osHostname": "traffic-monitor",
     "sysinfo_osRelease": "13",
     "sysinfo_osTimeZone": "UTC",
-    "sysinfo_deviceName": "a06979cfbfcc59da",
+    "sysinfo_deviceName": "0000000000000000",
     "sysinfo_frigateVersion": "0.16.0",
 }
 
@@ -2288,10 +2289,12 @@ def test_gate_sends_the_exact_location_with_consent_a_matching_host_and_https():
     assert sent["consents"] == {"share_data": True, "exact_location": True, "public_map": "rounded_point",
                                 "notice_version": "2026-11", "target": "maintainer"}
     assert sent["exact_location"] == {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
-    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={**GATE_THINGSBOARD, "url": "http://tb.example.invalid"})
+    sent = deployments_attribute(sharing=SHARING_ON,
+                                 thingsboard={**GATE_THINGSBOARD, "url": "http://tb.example.invalid"})
     assert sent["exact_location"] == {}
     assert sent["consents"]["exact_location"] is True
-    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={**GATE_THINGSBOARD, "url": "HTTPS://tb.example.invalid"})
+    sent = deployments_attribute(sharing=SHARING_ON,
+                                 thingsboard={**GATE_THINGSBOARD, "url": "HTTPS://tb.example.invalid"})
     assert sent["exact_location"] == {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
 
 
@@ -2303,7 +2306,8 @@ def test_gate_sends_no_exact_location_to_a_host_the_choice_was_not_made_for():
     assert sent["public_map"] == {}
     assert sent["consents"]["exact_location"] is False
     assert sent["consents"]["public_map"] == "none"
-    sent = deployments_attribute(sharing={**SHARING_ON, "host": None}, thingsboard={"url": "https://tb.example.invalid"})
+    sent = deployments_attribute(sharing={**SHARING_ON, "host": None},
+                                 thingsboard={"url": "https://tb.example.invalid"})
     assert (sent["consents"]["exact_location"], sent["exact_location"]) == (False, {})
 
 
@@ -2337,6 +2341,13 @@ def test_gate_public_map_is_a_rounded_point_for_the_maintainer_target_only():
 
 
 @needs_node
+@pytest.mark.parametrize("given, expected", [("2026-11", "2026-11"), ("", None), (3, None), (None, None)])
+def test_gate_reads_notice_version_as_init_config_defaults_does(given, expected):
+    sent = deployments_attribute(sharing={**SHARING_ON, "notice_version": given})
+    assert sent["consents"]["notice_version"] == expected
+
+
+@needs_node
 @pytest.mark.parametrize("msg", [
     {"type": "settings", "payload": {"event": {}}},
     {"payload": {"ts": TS, "values": {"event": {}}}},
@@ -2359,14 +2370,19 @@ def test_gate_sends_only_the_type_and_the_payload():
 
 
 def test_everything_uploaded_passes_the_gate():
+    """The gate comes after the rate limit: a message waiting there is judged under the config it is sent with, the
+    one the URL templates read."""
     flows, nodes = thingsboard_nodes()
     by_id = {node["id"]: node for node in flows}
     gate = named(flows, "upload gate")
     assert gate["z"] == tab_id(flows, "thingsboard")
     assert (gate["type"], gate["outputs"], gate["initialize"], gate["finalize"]) == ("function", 1, "", "")
-    assert [node["id"] for node in flows if gate["id"] in sum(node.get("wires", []), [])] == [ENABLED_SWITCH]
-    assert by_id[ENABLED_SWITCH]["wires"] == [[gate["id"]]]
-    assert gate["wires"] == [[RATE_LIMIT]]
+    def into(node_id):
+        return [node["id"] for node in flows if node_id in sum(node.get("wires", []), [])]
+
+    assert by_id[ENABLED_SWITCH]["wires"] == [[RATE_LIMIT]] and into(RATE_LIMIT) == [ENABLED_SWITCH]
+    assert by_id[RATE_LIMIT]["wires"] == [[gate["id"]]] and into(gate["id"]) == [RATE_LIMIT]
+    assert gate["wires"] == [[PROTOCOL_SWITCH]] and into(PROTOCOL_SWITCH) == [gate["id"]]
     downstream = {node["id"] for node in reachable(by_id, [gate["id"]])}
     assert UPLOAD_REQUEST in downstream
     cut = {**by_id, gate["id"]: {**gate, "wires": [[]]}}
@@ -2477,7 +2493,8 @@ def test_upload_result_wiring():
     record = named(flows, "record upload result")
     assert record["z"] == tab_id(flows, "thingsboard")
     assert (record["type"], record["outputs"], record["wires"]) == ("function", 0, [])
-    assert {node["id"] for node in flows if record["id"] in sum(node.get("wires", []), [])} == {UPLOAD_REQUEST, TB_CATCH}
+    feeding = {node["id"] for node in flows if record["id"] in sum(node.get("wires", []), [])}
+    assert feeding == {UPLOAD_REQUEST, TB_CATCH}
     assert by_id[UPLOAD_REQUEST]["wires"] == [["df6ac2f42ac6d8c7", record["id"]]]
     assert by_id[TB_CATCH]["wires"] == [["5fc376fb123914c0", record["id"]]]
     assert by_id[TB_CATCH]["scope"] is None  # every node on the tab; the record node keeps only the upload's
