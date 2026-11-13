@@ -131,6 +131,22 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
     assert file_data(admin)["deployment"]["survey_id"] == place["id"]
 
 
+def test_places_say_what_is_shared(admin):
+    """sharing is none with the upload off, data with it on, and exact with the exact location chosen for its server."""
+    from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
+
+    admin.app.state.secrets.entered[THINGSBOARD_ACCESS_TOKEN] = "tb-placeholder-0001"
+    version = admin.app.state.notice.version
+    choice = {"target": "maintainer", "enabled": True, "exact_location": False, "public_map": "none",
+              "notice_version": version}
+    assert places(admin)["sharing"] == "none"
+    assert admin.put("/api/v1/sharing", json=choice, headers=ORIGIN).status_code == 200
+    assert places(admin)["sharing"] == "data"
+    choice["exact_location"] = True
+    assert admin.put("/api/v1/sharing", json=choice, headers=ORIGIN).status_code == 200
+    assert places(admin)["sharing"] == "exact"
+
+
 def test_create_a_planned_place_and_list_order(admin):
     in_use = first_place(admin)
     first = create(admin, "First planned", bearings=[bearing(CAMERA, " E ")])

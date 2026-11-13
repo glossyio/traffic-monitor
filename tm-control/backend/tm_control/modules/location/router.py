@@ -80,7 +80,7 @@ class PlacesState(BaseModel):
     precision: Literal["none", "1", "2"]
     in_use: str | None
     sensors: list[Bearing]  # the enabled sensors in config.yml, each with its bearing there
-    sharing: Literal["data", "none"]
+    sharing: Literal["none", "data", "exact"]  # what the upload sends: nothing, data, or data and the exact location
     surveys: list[SurveyOut]
     unassigned: Unassigned | None
     reconcile: Literal["done", "waiting_nodered", "config_unreadable"]

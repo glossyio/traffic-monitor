@@ -419,6 +419,12 @@ def openapi_document() -> dict:
         return create_app(settings).openapi()
 
 
+def _iso(when: float) -> str:
+    """A Unix time as Node-RED writes one: UTC, milliseconds, a trailing Z."""
+    moment = datetime.fromtimestamp(when, timezone.utc)
+    return moment.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 class FakeNodeRed(NodeRed):
     """Fake mode's Node-RED: the /tm-internal/ endpoints over deployment rows kept in memory, and the deployment
     engine's rules (the flows' "deployment engine" function) run on them whenever config.yml changes.
@@ -426,7 +432,8 @@ class FakeNodeRed(NodeRed):
     Like the watch node, it notices a change to the file by itself (on its next call), so reconcile's writes and hand
     edits are applied too; after_config_write applies one at once. It starts as Node-RED does, by running the engine
     once, so the seeded file's sensors have open rows with no survey id, which the engine adopts once the file names a
-    survey. Events are never recorded: a survey's event count is always 0.
+    survey. Events are never recorded: a survey's event count is always 0. Nothing is uploaded either: with the file's
+    upload on, the status says the server accepted an upload a minute ago.
     """
 
     SCHEMA_VERSION = 2
@@ -438,6 +445,7 @@ class FakeNodeRed(NodeRed):
         self._lock = threading.RLock()
         self._seen = None  # the file's (inode, size, mtime) when the engine last ran
         self._deployment = None  # config.yml's deployment keys as last read (the engine's global.config.deployment)
+        self._upload = False  # config.yml's thingsboard.enabled as last read
         self._watch()
 
     # the watch node and the engine
@@ -467,6 +475,7 @@ class FakeNodeRed(NodeRed):
         except ConfigError:
             return  # as init-config: a file that doesn't load leaves the previous config in place
         self._deployment = config.deployment()
+        self._upload = config.upload().enabled
         self._engine(self._deployment, config.sensors(), config.listed_sensors())
 
     def _engine(self, place, sensors, listed) -> None:
@@ -541,6 +550,13 @@ class FakeNodeRed(NodeRed):
             "deployment": {
                 "survey_id": place.survey_id if place else None,
                 "database_precision": place.precision if place else "2",
+            },
+            # With the upload on, the server accepted an upload a minute ago; nothing is ever sent.
+            "upload": {
+                "enabled": self._upload,
+                "last_ok_at": _iso(time.time() - 60) if self._upload else None,
+                "last_failure_at": None,
+                "last_failure": None,
             },
         }
 

@@ -32,5 +32,11 @@
     "deployment": {
         "survey_id": null,
         "database_precision": "1"
+    },
+    "upload": {
+        "enabled": false,
+        "last_ok_at": null,
+        "last_failure_at": null,
+        "last_failure": null
     }
 }

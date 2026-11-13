@@ -17,6 +17,22 @@ def test_committed_openapi_document_matches_the_app(settings):
     )
 
 
+def test_sharing_paths_are_declared_with_their_answers(settings):
+    """The Sharing page's client is typed from these, so each path declares its success answer and its model."""
+    paths = create_app(settings).openapi()["paths"]
+    expected = {
+        ("/api/v1/sharing", "get"): "200",
+        ("/api/v1/sharing", "put"): "200",
+        ("/api/v1/sharing/notice", "get"): "200",
+        ("/api/v1/sharing/reviewed", "post"): "204",
+    }
+    for (path, method), status in expected.items():
+        responses = paths[path][method]["responses"]
+        assert status in responses, (path, method)
+        if status != "204":
+            assert "$ref" in str(responses[status]["content"]["application/json"]["schema"]), (path, method)
+
+
 def test_surveys_paths_are_declared_with_their_answers(settings):
     """The Location page's client is typed from these, so each path declares its success answer and its model."""
     paths = create_app(settings).openapi()["paths"]
