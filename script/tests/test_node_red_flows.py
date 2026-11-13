@@ -563,6 +563,9 @@ def test_each_config_load_resets_the_status_and_reads_the_schema_version():
     loaded = named(flows, "tm-internal: config loaded")
     pickers = [node_id for node_id in by_id[SET_CONFIG]["wires"][0] if by_id[node_id]["type"] == "link out"]
     assert by_id[SET_CONFIG]["wires"] == [["ac8b2de05ec27001", loaded["id"], *pickers]] and len(pickers) == 1
+    # A load that set global.config clears the upload's results: they were about the last load's server and token
+    assert 'global.set("tm_status.upload", { last_ok_at: null, last_failure_at: null, last_failure: null });' in (
+        loaded["func"])
 
 
 def test_radar_status_follows_the_four_serial_nodes():
@@ -2037,3 +2040,447 @@ def test_a_download_says_it_is_gzip():
     _, by_id = _download_nodes()
     assert "'Content-Type', 'application/gzip'" in by_id["857384c653c6a46c"]["func"]
     assert "octet-stream" not in by_id["857384c653c6a46c"]["func"]
+
+
+# What leaves the unit for ThingsBoard, and how the server answered. The sharing: block in config.yml says what an
+# operator chose on the Sharing page, and for which server. Every upload passes the "upload gate", which sends only
+# the listed kinds of data, deployment rows at the precision tmdb stores, and, on the deployments attribute, what was
+# chosen. "record upload result" keeps how the server answered the last upload for GET /tm-internal/status.
+
+UPLOAD_REQUEST = "677a57bbf3619854"  # thingsboard: tb post http api
+ENABLED_SWITCH = "93aa421659d2c20b"  # thingsboard: thingsboard.enabled
+RATE_LIMIT = "21944450ecc08385"  # thingsboard: the delay before the protocol switch
+TB_CATCH = "695200d405f2d323"  # thingsboard: the tab's catch node
+CONFIG_LOADED = "2b50b0bfb900ff09"  # init-config: tm-internal: config loaded
+SHARING_OFF = {"target": None, "host": None, "exact_location": False, "public_map": "none", "notice_version": None}
+SHARING_ON = {"target": "maintainer", "host": "tb.example.invalid", "exact_location": True,
+              "public_map": "rounded_point", "notice_version": "2026-11"}
+# The host rule, shared with tm-control: trim, lower-case, drop a leading http:// or https://, drop one trailing /.
+SHARING_HOST_CASES = [
+    ("tb.example.invalid", "tb.example.invalid"),
+    ("HTTPS://TB.Example.invalid/", "tb.example.invalid"),
+    ("http://tb.example.invalid", "tb.example.invalid"),
+    ("https://tb.example.invalid/", "tb.example.invalid"),
+    ("  tb.example.invalid  ", "tb.example.invalid"),
+    ("tb.example.invalid//", "tb.example.invalid/"),
+    ("https://", None),
+    ("", None),
+    ("   ", None),
+    (42, None),
+    (None, None),
+]
+GATE_PLACE = {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.69120, "database_precision": "2"}
+GATE_THINGSBOARD = {"host": "tb.example.invalid", "url": "https://tb.example.invalid"}
+GATE_ADDED = {"consents", "exact_location", "public_map"}
+CONSENTS_OFF = {"share_data": True, "exact_location": False, "public_map": "none", "notice_version": None,
+                "target": None}
+TS = 1761800000000
+GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
+            "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
+            "survey_id": "3f9a1c2e-si"}
+GATE_TELEMETRY = {
+    "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
+    "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
+    "airquality": {"entryDateTime": 1761800000, "pm025": 4.0, "sensorName": "aq"},
+    "system_metrics": {"time_ms_utc": TS, "cpu_percent": 12.5},
+    "deployments": {"updatedDeployment": [{**GATE_ROW, "entryEndDateTime": TS}], "currentDeployment": [GATE_ROW]},
+}
+GATE_ATTRIBUTES = {
+    "deployments": {
+        "picam_h265": {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "bearing": "n",
+                       "id": "1761800000000-0a1b2c3d-d"},
+        "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": "2"},
+    },
+    "radarinfo": {"TM_RADAR_SERIAL_PORT_00": {"Product": "OPS243-C", "SamplingRate": "20000"}},
+    "sysinfo_tmVersion": "0.9.0",
+    "sysinfo_osHostname": "traffic-monitor",
+    "sysinfo_osRelease": "13",
+    "sysinfo_osTimeZone": "UTC",
+    "sysinfo_deviceName": "a06979cfbfcc59da",
+    "sysinfo_frigateVersion": "0.16.0",
+}
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected", [
+    (MISSING, SHARING_OFF),
+    ({**SHARING_ON, "host": "HTTPS://TB.Example.invalid/"}, SHARING_ON),
+    ({"exact_location": "true"}, SHARING_OFF),
+    ({"public_map": "block"}, SHARING_OFF),
+    (["maintainer"], SHARING_OFF),
+    (None, SHARING_OFF),
+    ({"target": "own"}, {**SHARING_OFF, "target": "own"}),
+    ({"target": "everyone"}, SHARING_OFF),
+    ({"notice_version": 3}, SHARING_OFF),
+] + [({"host": given}, {**SHARING_OFF, "host": expected}) for given, expected in SHARING_HOST_CASES],
+    ids=["missing", "all-on", "exact-location-string", "public-map-block", "list", "empty", "target-own",
+         "target-unknown", "notice-version-number"] + [f"host-{index}" for index in range(len(SHARING_HOST_CASES))])
+def test_init_config_defaults_sharing(given, expected):
+    """sharing: always has all five keys; anything that isn't one of a key's values is that key's off value, and a
+    missing block logs nothing."""
+    config = new_device_config()
+    config.pop("sharing", None)
+    if given is not MISSING:
+        config["sharing"] = given
+    [step] = run_functions([(node_by_id(INIT_DEFAULTS), {"payload": config})])["results"]
+    assert step["result"]["payload"]["sharing"] == expected
+    assert step["logged"] == []
+
+
+def gate_node():
+    return named(json.loads(FLOWS.read_text()), "upload gate")
+
+
+def gate_run(msgs, sharing=None, thingsboard=None, deployment=None):
+    """Run the upload gate on each message in turn, with this config; returns the run (results, global)."""
+    config = {"sharing": SHARING_OFF if sharing is None else sharing,
+              "thingsboard": GATE_THINGSBOARD if thingsboard is None else thingsboard,
+              "deployment": GATE_PLACE if deployment is None else deployment}
+    gate = gate_node()
+    return run_functions([(gate, msg) for msg in msgs], context={"config": config, "tm_warned": {}})
+
+
+def gate(msg, sharing=None, thingsboard=None, deployment=None):
+    """The upload gate's output for one message (None when it sends nothing), and its log."""
+    [step] = gate_run([msg], sharing, thingsboard, deployment)["results"]
+    return step["result"], step["logged"]
+
+
+def attributes(payload, **kwargs):
+    out, _ = gate({"type": "attributes", "payload": payload}, **kwargs)
+    return None if out is None else out["payload"]
+
+
+def deployments_attribute(**kwargs):
+    return attributes({"deployments": GATE_ATTRIBUTES["deployments"]}, **kwargs)
+
+
+@needs_node
+def test_gate_passes_each_listed_kind():
+    for kind, values in GATE_TELEMETRY.items():
+        item = {"ts": TS, "values": {kind: values}}
+        out, logged = gate({"type": "telemetry", "payload": item})
+        assert out["payload"] == item, kind
+        assert logged == [], kind
+    for key, value in GATE_ATTRIBUTES.items():
+        out, logged = gate({"type": "attributes", "payload": {key: value}})
+        assert logged == [], key
+        if key == "deployments":
+            assert {k: v for k, v in out["payload"].items() if k not in GATE_ADDED} == {key: value}
+            assert set(out["payload"]) == {key} | GATE_ADDED
+        else:
+            assert out["payload"] == {key: value}, key
+
+
+@needs_node
+def test_gate_drops_an_unlisted_key_and_warns_once():
+    surprise = {"ts": TS, "values": {"event": GATE_TELEMETRY["event"], "surprise": {"note": "kept-on-the-unit"}}}
+    settings = {"config_tm": {"thingsboard": {"host": "tb.example.invalid"}, "note": "kept-on-the-unit"}}
+    run = gate_run([{"type": "telemetry", "payload": surprise}, {"type": "telemetry", "payload": surprise},
+                    {"type": "attributes", "payload": settings}])
+    first, second, third = run["results"]
+    for step in (first, second):
+        assert step["result"]["payload"] == {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}
+    assert third["result"] is None
+    warnings = [text for step in run["results"] for level, text, _ in step["logged"] if level == "warn"]
+    assert len(warnings) == 2
+    assert "surprise" in warnings[0] and "config_tm" in warnings[1]
+    assert all(entry[0] == "warn" for step in run["results"] for entry in step["logged"])
+    logged = json.dumps([step["logged"] for step in run["results"]])
+    assert "kept-on-the-unit" not in logged and "tb.example.invalid" not in logged and "note" not in logged
+    assert run["global"]["tm_warned"] == {"upload:surprise": True, "upload:config_tm": True}
+
+
+@needs_node
+def test_gate_passes_a_radar_array_item_by_item():
+    radar = {"ts": TS, "values": {"radar": GATE_TELEMETRY["radar"]}}
+    unlisted = {"ts": TS + 1, "values": {"surprise": 1}}
+    out, _ = gate({"type": "telemetry", "payload": [radar, unlisted, radar]})
+    assert out["payload"] == [radar, radar]
+    out, _ = gate({"type": "telemetry", "payload": [unlisted, unlisted]})
+    assert out is None
+
+
+def deployment_row(**changes):
+    row = {**GATE_ROW, "lat": 45.52252, "lon": -122.69120}
+    for key, value in changes.items():
+        if value is MISSING:
+            row.pop(key, None)
+        else:
+            row[key] = value
+    return row
+
+
+@needs_node
+@pytest.mark.parametrize("row, unit, lat, lon", [
+    (deployment_row(location_precision=1), "2", 45.5, -122.7),
+    (deployment_row(location_precision=2), "1", 45.5, -122.7),
+    (deployment_row(location_precision=2), "2", 45.52, -122.69),
+    (deployment_row(location_precision=MISSING), "2", 45.52, -122.69),
+    (deployment_row(location_precision=MISSING), "1", 45.5, -122.7),
+    (deployment_row(location_precision=2), "none", None, None),
+    (deployment_row(location_precision=None), "2", None, None),
+    (deployment_row(location_precision=1, lat=-0.05, lon=0.05), "2", -0.1, 0.1),
+    (deployment_row(location_precision=2, lat=None, lon=None), "2", None, None),
+], ids=["row-1", "unit-1", "both-2", "missing-is-the-units", "missing-unit-1", "unit-none", "row-null",
+        "half-away-from-zero", "no-location"])
+def test_gate_re_rounds_deployment_rows(row, unit, lat, lon):
+    """lat and lon to min(the row's location_precision, the unit's database_precision) places, half away from zero."""
+    place = {**GATE_PLACE, "database_precision": unit}
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [row], "currentDeployment": [row]}}}
+    out, _ = gate({"type": "telemetry", "payload": payload}, deployment=place)
+    deployments = out["payload"]["values"]["deployments"]
+    for rows in (deployments["updatedDeployment"], deployments["currentDeployment"]):
+        [sent] = rows
+        assert (sent["lat"], sent["lon"]) == (lat, lon)
+        assert {k: v for k, v in sent.items() if k not in ("lat", "lon")} == {
+            k: v for k, v in row.items() if k not in ("lat", "lon")}
+
+
+@needs_node
+@pytest.mark.parametrize("precision, places, lat, lon", [("1", 1, 45.5, -122.7), ("2", 2, 45.52, -122.69),
+                                                       ("none", None, None, None)])
+def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
+    """The engine rounds the same way, so the rows it sends at the unit's precision (a new one, one it closes, one it
+    keeps) pass unchanged. A closed row stored finer than the unit's precision now goes out at the unit's."""
+    place = {**ENGINE_PLACE, "database_precision": precision}
+    run = engine(engine_sensors({"bearing": "w"}), [camera_row(lat=lat, lon=lon, precision=places), radar_row()],
+                 place)
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "format deployment telemetry"),
+                             {"payload": run.payload})])["results"]
+    out, logged = gate({"type": "telemetry", "payload": step["result"]["payload"]}, deployment=place)
+    assert out["payload"] == step["result"]["payload"] and logged == []
+    assert run.payload["updatedDeployment"] and run.payload["currentDeployment"]
+
+
+@needs_node
+@pytest.mark.parametrize("given, unit, expected", [
+    (("45.52252", "-122.69120"), "2", ("45.52", "-122.69")),
+    (("45.52252", "-122.69120"), "1", ("45.5", "-122.7")),
+    (("", ""), "2", ("", "")),
+    (("45.52252", "-122.69120"), "none", (None, None)),
+    (("-0.05", "0.05"), "1", ("-0.1", "0.1")),
+], ids=["strings-2", "strings-1", "empty", "unit-none", "half-away-from-zero"])
+def test_gate_re_rounds_the_deployments_attribute(given, unit, expected):
+    """The attribute's per-sensor rows hold strings (a template renders them): they go out as strings, at the
+    unit's precision. deploymentTopLevel names the survey and holds no coordinates."""
+    rows = {"picam_h265": {"sensorType": "cameras", "lat": given[0], "lon": given[1], "bearing": "n", "id": "x-d"},
+            "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": unit}}
+    sent = attributes({"deployments": rows}, deployment={**GATE_PLACE, "database_precision": unit})["deployments"]
+    assert (sent["picam_h265"]["lat"], sent["picam_h265"]["lon"]) == expected
+    assert sent["deploymentTopLevel"] == rows["deploymentTopLevel"]
+
+
+@needs_node
+def test_gate_adds_the_three_attributes_to_the_deployments_attribute():
+    sent = deployments_attribute()
+    assert sent["consents"] == CONSENTS_OFF
+    assert sent["exact_location"] == {}
+    assert sent["public_map"] == {}
+    for key in GATE_ATTRIBUTES:
+        if key.startswith("sysinfo_"):
+            assert set(attributes({key: GATE_ATTRIBUTES[key]})) == {key}
+
+
+@needs_node
+def test_gate_sends_the_exact_location_with_consent_a_matching_host_and_https():
+    sent = deployments_attribute(sharing=SHARING_ON)
+    assert sent["consents"] == {"share_data": True, "exact_location": True, "public_map": "rounded_point",
+                                "notice_version": "2026-11", "target": "maintainer"}
+    assert sent["exact_location"] == {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
+    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={**GATE_THINGSBOARD, "url": "http://tb.example.invalid"})
+    assert sent["exact_location"] == {}
+    assert sent["consents"]["exact_location"] is True
+    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={**GATE_THINGSBOARD, "url": "HTTPS://tb.example.invalid"})
+    assert sent["exact_location"] == {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
+
+
+@needs_node
+def test_gate_sends_no_exact_location_to_a_host_the_choice_was_not_made_for():
+    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={"host": "other.example.invalid",
+                                                                  "url": "https://other.example.invalid"})
+    assert sent["exact_location"] == {}
+    assert sent["public_map"] == {}
+    assert sent["consents"]["exact_location"] is False
+    assert sent["consents"]["public_map"] == "none"
+    sent = deployments_attribute(sharing={**SHARING_ON, "host": None}, thingsboard={"url": "https://tb.example.invalid"})
+    assert (sent["consents"]["exact_location"], sent["exact_location"]) == (False, {})
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected", SHARING_HOST_CASES,
+                         ids=[f"host-{index}" for index in range(len(SHARING_HOST_CASES))])
+def test_gate_compares_hosts_by_the_shared_rule(given, expected):
+    """thingsboard.host is normalised by the same rule as sharing.host before the two are compared."""
+    sent = deployments_attribute(sharing=SHARING_ON, thingsboard={"host": given, "url": "https://tb.example.invalid"})
+    assert sent["consents"]["exact_location"] is (expected == "tb.example.invalid")
+
+
+@needs_node
+def test_gate_exact_location_needs_a_point_and_reads_quoted_numbers():
+    sent = deployments_attribute(sharing=SHARING_ON, deployment={**GATE_PLACE, "lat": ""})
+    assert sent["exact_location"] == {} and sent["public_map"] == {}
+    sent = deployments_attribute(sharing=SHARING_ON, deployment={**GATE_PLACE, "lat": "45.522520", "lon": "-122.69120"})
+    assert sent["exact_location"] == {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
+    sent = deployments_attribute(sharing=SHARING_ON, deployment={**GATE_PLACE, "survey_id": None})
+    assert sent["exact_location"] == {}
+
+
+@needs_node
+def test_gate_public_map_is_a_rounded_point_for_the_maintainer_target_only():
+    sent = deployments_attribute(sharing=SHARING_ON)
+    assert sent["public_map"] == {"survey_id": "3f9a1c2e-si", "mode": "rounded_point", "lat": 45.523, "lon": -122.691}
+    sent = deployments_attribute(sharing={**SHARING_ON, "target": "own"})
+    assert sent["public_map"] == {}
+    sent = deployments_attribute(sharing={**SHARING_ON, "public_map": "none"})
+    assert sent["public_map"] == {} and sent["consents"]["public_map"] == "none"
+
+
+@needs_node
+@pytest.mark.parametrize("msg", [
+    {"type": "settings", "payload": {"event": {}}},
+    {"payload": {"ts": TS, "values": {"event": {}}}},
+    {"type": "attributes", "payload": "radarinfo"},
+    {"type": "telemetry", "payload": None},
+    {"type": "telemetry"},
+], ids=["unknown-type", "no-type", "attributes-not-a-mapping", "telemetry-null", "no-payload"])
+def test_gate_sends_nothing_it_cannot_read(msg):
+    out, logged = gate(msg)
+    assert out is None
+    assert all(level == "warn" for level, _, _ in logged)
+
+
+@needs_node
+def test_gate_sends_only_the_type_and_the_payload():
+    """Properties an upstream node left on msg (headers, cookies) would reach the http request node: none pass."""
+    item = {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}
+    out, _ = gate({"type": "telemetry", "payload": item, "headers": {"x-note": "kept-on-the-unit"}, "topic": "t"})
+    assert out == {"type": "telemetry", "payload": item}
+
+
+def test_everything_uploaded_passes_the_gate():
+    flows, nodes = thingsboard_nodes()
+    by_id = {node["id"]: node for node in flows}
+    gate = named(flows, "upload gate")
+    assert gate["z"] == tab_id(flows, "thingsboard")
+    assert (gate["type"], gate["outputs"], gate["initialize"], gate["finalize"]) == ("function", 1, "", "")
+    assert [node["id"] for node in flows if gate["id"] in sum(node.get("wires", []), [])] == [ENABLED_SWITCH]
+    assert by_id[ENABLED_SWITCH]["wires"] == [[gate["id"]]]
+    assert gate["wires"] == [[RATE_LIMIT]]
+    downstream = {node["id"] for node in reachable(by_id, [gate["id"]])}
+    assert UPLOAD_REQUEST in downstream
+    cut = {**by_id, gate["id"]: {**gate, "wires": [[]]}}
+    starts = [node["id"] for node in nodes if node["id"] not in downstream]
+    assert UPLOAD_REQUEST not in {node["id"] for node in reachable(cut, starts)}
+    assert {node["id"] for node in nodes if node["type"] == "http request"} == {UPLOAD_REQUEST}
+
+
+def test_gate_lists():
+    func = gate_node()["func"]
+    assert 'const TELEMETRY = ["event", "radar", "airquality", "system_metrics", "deployments"];' in func
+    assert ('const ATTRIBUTES = ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname", '
+            '"sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName", "sysinfo_frigateVersion"];') in func
+
+
+def record_node():
+    return named(json.loads(FLOWS.read_text()), "record upload result")
+
+
+EARLIER = "2026-11-13T00:00:00.000Z"
+
+
+@needs_node
+@pytest.mark.parametrize("code, failure", [
+    (200, None), (204, None),
+    (401, "refused"), (403, "refused"),
+    (400, "rejected"), (404, "rejected"), (429, "rejected"),
+    (500, "server_error"), (503, "server_error"),
+    ("ECONNREFUSED", "unreachable"), (MISSING, "unreachable"), ("401", "unreachable"),
+], ids=lambda value: str(value) if value is not MISSING else "missing")
+def test_upload_result_is_classed_by_status_code(code, failure):
+    msg = {} if code is MISSING else {"statusCode": code}
+    before = {"last_ok_at": EARLIER, "last_failure_at": EARLIER, "last_failure": "rejected"}
+    run = run_functions([(record_node(), msg)], context={"tm_status": {"upload": before}})
+    [step] = run["results"]
+    assert step["result"] is None and step["logged"] == []
+    upload = run["global"]["tm_status"]["upload"]
+    assert set(upload) == {"last_ok_at", "last_failure_at", "last_failure"}
+    if failure is None:
+        assert upload["last_ok_at"] > EARLIER and upload["last_ok_at"].endswith("Z")
+        assert (upload["last_failure_at"], upload["last_failure"]) == (EARLIER, "rejected")
+    else:
+        assert upload["last_ok_at"] == EARLIER
+        assert upload["last_failure_at"] > EARLIER and upload["last_failure_at"].endswith("Z")
+        assert upload["last_failure"] == failure
+
+
+@needs_node
+def test_upload_result_starts_from_nothing():
+    run = run_functions([(record_node(), {"statusCode": 200})])
+    upload = run["global"]["tm_status"]["upload"]
+    assert upload["last_ok_at"].endswith("Z")
+    assert (upload["last_failure_at"], upload["last_failure"]) == (None, None)
+
+
+@needs_node
+def test_upload_result_keeps_nothing_else():
+    url = "https://tb.example.invalid/api/v1/tb-placeholder-0001/telemetry"
+    answered = {"statusCode": 401, "payload": "tb-placeholder-0001 is not a device", "url": url,
+                "headers": {"x-token": "tb-placeholder-0001"}, "responseUrl": url}
+    caught = {"payload": {"values": {"event": {}}}, "url": url,
+              "error": {"message": f"RequestError: connect ECONNREFUSED : {url}",
+                        "source": {"id": UPLOAD_REQUEST, "type": "http request", "name": "tb post http api"}}}
+    run = run_functions([(record_node(), answered), (record_node(), caught)])
+    assert "tb-placeholder-0001" not in json.dumps(run["global"])
+    assert "tb.example.invalid" not in json.dumps(run["global"])
+    assert all(step["logged"] == [] for step in run["results"])
+    assert run["global"]["tm_status"]["upload"]["last_failure"] == "unreachable"
+
+
+@needs_node
+def test_a_caught_error_counts_only_when_it_came_from_the_upload():
+    def caught(source_id):
+        return {"error": {"message": "Error", "source": {"id": source_id, "type": "function", "name": "x"}}}
+
+    run = run_functions([(record_node(), caught(UPLOAD_REQUEST))])
+    upload = run["global"]["tm_status"]["upload"]
+    assert upload["last_failure"] == "unreachable" and upload["last_failure_at"].endswith("Z")
+    assert upload["last_ok_at"] is None
+    for other in ("4bec488857c0553f", None):
+        run = run_functions([(record_node(), caught(other))])
+        assert "tm_status" not in run["global"]
+    run = run_functions([(record_node(), {"error": None})])
+    assert "tm_status" not in run["global"]
+
+
+@needs_node
+def test_status_reports_the_upload():
+    loaded = node_by_id(CONFIG_LOADED)
+    nulls = {"last_ok_at": None, "last_failure_at": None, "last_failure": None}
+    config = {"thingsboard": {"enabled": True}, "deployment": {}, "sensors": {"radars": {}}}
+    out = run_functions([status_step()], context={"config": config})
+    assert out["results"][0]["result"]["payload"]["upload"] == {"enabled": True, **nulls}
+    out = run_functions([(record_node(), {"statusCode": 503}), status_step()], context={"config": config})
+    upload = out["results"][1]["result"]["payload"]["upload"]
+    assert upload == {"enabled": True, **out["global"]["tm_status"]["upload"]}
+    assert upload["last_failure"] == "server_error" and upload["last_failure_at"].endswith("Z")
+    off = {**config, "thingsboard": {"enabled": False}}
+    out = run_functions([(loaded, {}), status_step()], context={**out["global"], "config": off})
+    assert out["results"][1]["result"]["payload"]["upload"] == {"enabled": False, **nulls}
+    [step] = run_functions([status_step()])["results"]
+    assert step["result"]["payload"]["upload"] == {"enabled": False, **nulls}
+
+
+def test_upload_result_wiring():
+    flows, nodes = thingsboard_nodes()
+    by_id = {node["id"]: node for node in flows}
+    record = named(flows, "record upload result")
+    assert record["z"] == tab_id(flows, "thingsboard")
+    assert (record["type"], record["outputs"], record["wires"]) == ("function", 0, [])
+    assert {node["id"] for node in flows if record["id"] in sum(node.get("wires", []), [])} == {UPLOAD_REQUEST, TB_CATCH}
+    assert by_id[UPLOAD_REQUEST]["wires"] == [["df6ac2f42ac6d8c7", record["id"]]]
+    assert by_id[TB_CATCH]["wires"] == [["5fc376fb123914c0", record["id"]]]
+    assert by_id[TB_CATCH]["scope"] is None  # every node on the tab; the record node keeps only the upload's
+    func = record["func"]
+    for forbidden in ("msg.payload", "msg.url", "msg.headers", "error.message", "node.warn", "node.error", "node.log"):
+        assert forbidden not in func, forbidden
